@@ -1,0 +1,83 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 105,
+  "ticks": 288000,
+  "ticksRun": 288001,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 106, "factions": 3, "claims": 6, "captures": 0, "sales": 0, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 37, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 6.44, "tickMsWorst": 756.00, "heapMbMax": 1297, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {},
+      "deaths": [
+        {"tick": 9787, "cause": "Kindred was slain by Polar Bear", "x": -454, "y": 63, "z": 283, "light": 15, "timeOfDay": 9949, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 39323, "cause": "Kindred was blown up by Creeper", "x": -241, "y": 87, "z": 107, "light": 4, "timeOfDay": 15485, "dimension": "minecraft:overworld", "hunger": 14, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 118968, "cause": "Kindred was shot by Skeleton", "x": -74, "y": 73, "z": 43, "light": 7, "timeOfDay": 23130, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 136479, "cause": "Kindred was slain by Zombie", "x": -169, "y": 68, "z": 106, "light": 4, "timeOfDay": 16641, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 140056, "cause": "Kindred was slain by Zombie", "x": -57, "y": 74, "z": 53, "light": 4, "timeOfDay": 20218, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 162224, "cause": "Kindred was shot by Skeleton", "x": -237, "y": 100, "z": 172, "light": 4, "timeOfDay": 18386, "dimension": "minecraft:overworld", "hunger": 14, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 163329, "cause": "Kindred was slain by Spider", "x": -115, "y": 70, "z": 93, "light": 4, "timeOfDay": 19491, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 164981, "cause": "Kindred was shot by Skeleton", "x": -196, "y": 86, "z": 150, "light": 4, "timeOfDay": 21143, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 166492, "cause": "Kindred was slain by Spider", "x": -164, "y": 65, "z": 119, "light": 3, "timeOfDay": 22654, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 166970, "cause": "Kindred was slain by Zombie", "x": -56, "y": 76, "z": 63, "light": 9, "timeOfDay": 23132, "dimension": "minecraft:overworld", "hunger": 20, "underSky": true, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 187852, "cause": "Kindred was slain by Zombie", "x": -165, "y": 68, "z": 104, "light": 4, "timeOfDay": 20014, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 188084, "cause": "Kindred was slain by Zombie", "x": -79, "y": 73, "z": 50, "light": 4, "timeOfDay": 20246, "dimension": "minecraft:overworld", "hunger": 20, "underSky": true, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 188546, "cause": "Kindred was slain by Zombie", "x": -64, "y": 75, "z": 45, "light": 3, "timeOfDay": 20708, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 188844, "cause": "Kindred was slain by Zombie", "x": -75, "y": 74, "z": 51, "light": 2, "timeOfDay": 21006, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 191139, "cause": "Kindred was slain by Zombie", "x": -60, "y": 81, "z": 56, "light": 11, "timeOfDay": 23301, "dimension": "minecraft:overworld", "hunger": 20, "underSky": true, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 261657, "cause": "Kindred was blown up by Creeper", "x": -414, "y": 63, "z": 229, "light": 4, "timeOfDay": 21819, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 278382, "cause": "Kindred was shot by Skeleton", "x": -126, "y": 72, "z": 97, "light": 3, "timeOfDay": 14544, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 280805, "cause": "Kindred was slain by Zombie", "x": -212, "y": 103, "z": 168, "light": 2, "timeOfDay": 16967, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Interrupted: Explore south for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {},
+      "deaths": [
+        {"tick": 114047, "cause": "Sol was impaled by Drowned", "x": -416, "y": 63, "z": 361, "light": 4, "timeOfDay": 18209, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 118774, "cause": "Sol was shot by Skeleton", "x": -72, "y": 78, "z": 52, "light": 6, "timeOfDay": 22936, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 120132, "cause": "Sol was shot by Skeleton", "x": -54, "y": 71, "z": 23, "light": 10, "timeOfDay": 294, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 120859, "cause": "Sol was shot by Skeleton", "x": -65, "y": 75, "z": 55, "light": 10, "timeOfDay": 1021, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 121094, "cause": "Sol was shot by Skeleton", "x": -70, "y": 72, "z": 46, "light": 9, "timeOfDay": 1256, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 122142, "cause": "Sol was shot by Skeleton", "x": -58, "y": 79, "z": 55, "light": 10, "timeOfDay": 2304, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 122642, "cause": "Sol was slain by Zombie", "x": -53, "y": 73, "z": 46, "light": 10, "timeOfDay": 2804, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 187370, "cause": "Sol was slain by Zombie", "x": -61, "y": 82, "z": 55, "light": 4, "timeOfDay": 19532, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {},
+      "deaths": [
+        {"tick": 5228, "cause": "Echo was slain by Polar Bear", "x": -401, "y": 63, "z": 316, "light": 15, "timeOfDay": 5390, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 122744, "cause": "Echo was slain by Phantom", "x": -344, "y": 63, "z": 264, "light": 10, "timeOfDay": 2906, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 123095, "cause": "Echo was slain by Zombie", "x": -74, "y": 74, "z": 52, "light": 9, "timeOfDay": 3257, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 136261, "cause": "Echo was slain by Zombie", "x": -126, "y": 69, "z": 87, "light": 3, "timeOfDay": 16423, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 161021, "cause": "Echo was blown up by Creeper", "x": -164, "y": 67, "z": 111, "light": 4, "timeOfDay": 17183, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 162930, "cause": "Echo was slain by Zombie", "x": -190, "y": 83, "z": 153, "light": 4, "timeOfDay": 19092, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 182174, "cause": "Echo was blown up by Creeper", "x": -118, "y": 74, "z": 319, "light": 2, "timeOfDay": 14336, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 188625, "cause": "Echo was slain by Spider", "x": -213, "y": 103, "z": 170, "light": 4, "timeOfDay": 20787, "dimension": "minecraft:overworld", "hunger": 15, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 190040, "cause": "Echo was slain by Zombie", "x": -101, "y": 68, "z": 79, "light": 4, "timeOfDay": 22202, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 278250, "cause": "Echo was slain by Phantom", "x": -382, "y": 62, "z": 312, "light": 3, "timeOfDay": 14412, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 278839, "cause": "Echo was shot by Skeleton", "x": -54, "y": 73, "z": 43, "light": 4, "timeOfDay": 15001, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Starting", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

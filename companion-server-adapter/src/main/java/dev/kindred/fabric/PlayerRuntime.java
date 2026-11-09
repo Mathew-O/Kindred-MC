@@ -8661,7 +8661,9 @@ final class PlayerRuntime {
      * The run divided between the players on it (E-40a): the native players with a goal in its world within
      * {@link #TEAM_RANGE}, none in a match. Before the portal is lit, the one with the best pickaxe (or with a portal
      * already under way) builds the team's one portal and the rest get iron, food and wood for the run and wait for it;
-     * once a teammate's portal is lit, each takes it as its own. Each says its part as it takes it up, once. Only the
+     * once a teammate's portal is lit, each takes it as its own. Each says its part as it takes it up, once: a claim is
+     * said when it changes, never again as the run is weighed anew (a teammate out of range and back, a part re-weighed),
+     * and the same part not again within {@link #PART_SAID_AGAIN} (F-34c, E-40 iteration 17's 123 repeats). Only the
      * parts before the portal steer play yet; the later ones (the Nether, the End's kit, the stronghold) are neither
      * acted on nor said, so nothing is promised that is not done. A player alone is left its own route.
      */
@@ -8703,10 +8705,16 @@ final class PlayerRuntime {
         var role = part.role();
         boolean steered = role == dev.kindred.core.team.RunDivision.Role.PORTAL || role == dev.kindred.core.team.RunDivision.Role.PROVISIONS;
         entry.campaign.team(new dev.kindred.core.survival.PortalRunPlanner.Team(role == dev.kindred.core.team.RunDivision.Role.PROVISIONS));
-        if (steered && (entry.runPart == null || entry.runPart.role() != role)) {
-            say(entry, part.says(), "");
-            if (entry.partsTaken.size() < 16) entry.partsTaken.add(role + ": " + part.says());
-            KindredMod.LOGGER.info("{} takes up its part of the run: {} ({})", entry.data.displayName(), role, part.why());
+        if (steered && entry.partSaid != role) {
+            long now = server.getTicks();
+            Long said = entry.partSaidAt.get(role);
+            if (said == null || now - said >= PART_SAID_AGAIN) {
+                say(entry, part.says(), "");
+                entry.partSaidAt.put(role, now);
+                if (entry.partsTaken.size() < 16) entry.partsTaken.add(role + ": " + part.says());
+                KindredMod.LOGGER.info("{} takes up its part of the run: {} ({})", entry.data.displayName(), role, part.why());
+            }
+            entry.partSaid = role; // The claim the team has heard, kept while it is alone or between parts.
         }
         entry.runPart = steered ? part : null;
     }
@@ -8759,6 +8767,8 @@ final class PlayerRuntime {
     private static final ShareOut.Material[] SHARED_FINDS = {ShareOut.Material.DIAMOND, ShareOut.Material.IRON, ShareOut.Material.GOLD};
     /** How far off a teammate may be to share a find with, and how long a hand-over is held for before it is let go. */
     static final double TEAM_RANGE = 48;
+    /** Ticks before a player says the same part of the run again: five minutes. */
+    static final long PART_SAID_AGAIN = 6_000;
     static final long HAND_OVER_LEASE = 24_000;
 
     /**
@@ -16363,6 +16373,9 @@ final class PlayerRuntime {
         private long aggressionSaidAt = -1_000_000;
         /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
+        /** The part of the run it last said it took up, and when it said each (F-34c): a claim said once, when it changes. */
+        private dev.kindred.core.team.RunDivision.Role partSaid;
+        private final Map<dev.kindred.core.team.RunDivision.Role, Long> partSaidAt = new java.util.EnumMap<>(dev.kindred.core.team.RunDivision.Role.class);
         private final List<String> partsTaken = new ArrayList<>();
         /** The time spoken to that it has stopped to look for, and the pause's task (E-33a). */
         private long attendedAt = Long.MIN_VALUE / 2;

@@ -1,0 +1,51 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT (strategist asked for, the strategist not configured)",
+  "seed": 202,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1800, "stone_tools": 2180, "iron_ingot": 55080, "iron_pickaxe": 76300, "obsidian": 200213, "portal_lit": 209368},
+      "deaths": [
+        {"tick": 83396, "cause": "Kindred was slain by Zombie", "x": -98, "y": 40, "z": 40, "light": 0, "timeOfDay": 11558, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 109282, "cause": "Kindred was doomed to fall by Skeleton", "x": 30, "y": 6, "z": -36, "light": 0, "timeOfDay": 13444, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: Mine iron ore (5/7) - Back to where it saw iron ore at 26, 15, -37", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28380, "x": -48, "y": 35, "z": 11, "attempt": 1}, {"tick": 141300, "x": 24, "y": 8, "z": -34, "attempt": 1}, {"tick": 156680, "x": 9, "y": 7, "z": -40, "attempt": 1}, {"tick": 160760, "x": 9, "y": 8, "z": -38, "attempt": 2}, {"tick": 203820, "x": 145, "y": -54, "z": 209, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 800, "stone_tools": 1460, "iron_ingot": 3400, "iron_pickaxe": 25040},
+      "deaths": [
+        {"tick": 188650, "cause": "Sol was slain by Zombie", "x": -255, "y": 16, "z": 0, "light": 4, "timeOfDay": 20812, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: inventory full - Drop surplus andesite", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 220616, "cause": "Sol was doomed to fall by Skeleton", "x": -247, "y": 8, "z": 35, "light": 0, "timeOfDay": 4778, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2480, "stone_tools": 3900, "iron_ingot": 20580, "iron_pickaxe": 92100, "obsidian": 119593},
+      "deaths": [
+        {"tick": 25828, "cause": "Echo was doomed to fall by Skeleton", "x": -102, "y": 23, "z": 43, "light": 0, "timeOfDay": 1990, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: hurt and out of food - Climb toward the surface for food: clear -102, 24, 42", "stance": "PRESS_ON", "habits": "[]", "task": "Climb toward the surface for food: clear -102, 24, 42"},
+        {"tick": 42114, "cause": "Echo was slain by Zombie", "x": -118, "y": 72, "z": 12, "light": 4, "timeOfDay": 18276, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Wood: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 195642, "cause": "Echo was slain by Spider", "x": -111, "y": 32, "z": 69, "light": 0, "timeOfDay": 3804, "dimension": "minecraft:overworld", "hunger": 7, "underSky": false, "stage": "Iron: fight back - Run from creeper (tried elsewhere 5 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30160, "x": -99, "y": 59, "z": 37, "attempt": 1}, {"tick": 76980, "x": -117, "y": 19, "z": -13, "attempt": 1}, {"tick": 87060, "x": -118, "y": 19, "z": -1, "attempt": 1}, {"tick": 168160, "x": -103, "y": 35, "z": 60, "attempt": 1}, {"tick": 171760, "x": -103, "y": 35, "z": 60, "attempt": 2}, {"tick": 175360, "x": -103, "y": 35, "z": 60, "attempt": 3}, {"tick": 178960, "x": -104, "y": 35, "z": 60, "attempt": 4}, {"tick": 194200, "x": -116, "y": 34, "z": 52, "attempt": 5}, {"tick": 233580, "x": -80, "y": 3, "z": 56, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
