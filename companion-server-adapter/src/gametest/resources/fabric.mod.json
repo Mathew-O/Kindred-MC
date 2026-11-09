@@ -88,6 +88,7 @@
       "dev.kindred.fabric.NativeCavernLedgeGameTests",
       "dev.kindred.fabric.NativeLakeBedClimbGameTests",
       "dev.kindred.fabric.NativeTripWoodGameTests",
+      "dev.kindred.fabric.NativeCastTableGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeRescueRoundsGameTests",
@@ -168,6 +169,7 @@
       "dev.kindred.fabric.NativeWireGameTests",
       "dev.kindred.fabric.NativeChronicleGameTests",
       "dev.kindred.fabric.NativeKnowledgeGameTests",
+      "dev.kindred.fabric.NativeCostGameTests",
       "dev.kindred.fabric.NativeCraftHelperGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
       "dev.kindred.fabric.NativeOutingGameTests"
