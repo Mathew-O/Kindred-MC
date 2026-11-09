@@ -5608,7 +5608,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * Staged: stone ground under a lit roof of stone four thick, forty-one blocks across with a gap over the player,
      * walled round, and four cows 45 blocks out beyond the walls, kept from wandering; the kit is given as though made.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "hungryRoof", tickLimit = 1200)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "hungryRoof", tickLimit = 1200)
     public void hurtAndOutOfFoodUpUnderAGapInTheRockItGoesOnLookingForAnimals(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] at = new BlockPos[1];
@@ -5622,7 +5622,10 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its field, 105 across, laid in the middle of a structure as wide: on a small one the test server
+                    // placed other tests inside the field, and on #72's CI run 42584495579 the open ground beyond its
+                    // north wall lay under something one of them had built, where it took the climb for food.
+                    BlockPos p = context.getAbsolutePos(new BlockPos(60, 2, 60)).toImmutable();
                     at[0] = p;
                     FixtureGround.keep(context, p.add(-52, -1, -52), p.add(52, 6, 52));
                     for (int x = -52; x <= 52; x++) for (int z = -52; z <= 52; z++) {

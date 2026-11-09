@@ -148,6 +148,17 @@ public final class NativeBringGameTests implements FabricGameTest {
         scene(context, false, false, false, false, true, true);
     }
 
+    /**
+     * As the last, the librarian stepping into Hal's boat a moment late, after Hal's wait for it: Hal does not break the
+     * boat that now holds it, but rows it across and brings it home. In CI on #72 (`a2c7baa`) Hal's break of that boat,
+     * planned while it stood empty, was still under way when the librarian stepped in; it broke the boat under it and let
+     * it go (F-22c32). Staged: the librarian seated in the boat, once, when it has stood empty past Hal's wait.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringSeated", tickLimit = 16000)
+    public void aLibrarianThatStepsIntoTheBoatLateIsHeldInIt(TestContext context) {
+        scene(context, false, false, false, false, true, true, false, false, true);
+    }
+
     private static void scene(TestContext context, boolean make) {
         scene(context, make, false);
     }
@@ -179,11 +190,19 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed) {
+        scene(context, make, wander, river, mine, strolling, lake, slowed, derailed, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
+                              boolean slowed, boolean derailed, boolean seated) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         boolean[] damped = {false};
         boolean[] derailedOnce = {false};
         BlockPos[] firstRail = {null};
+        java.util.UUID[] seatedIn = {null};
+        long[] seatedAt = {0};
+        String[] seatLost = {null};
         boolean[] backAtEnd = {false};
         String[] offLine = {null};
         var hall = TradingHall.of(3, "oak", "cobblestone");
@@ -340,6 +359,25 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 + cart.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()) + ", past the line's first rail at "
                                 + firstRail[0].subtract(origin[0]).toShortString();
                     }
+                    // Staged: the boat Hal put down beside the librarian, stood empty past Hal's wait for it, stepped into by the
+                    // librarian, as a strolling villager steps into one a moment late (F-22c32).
+                    if (seated && seatedIn[0] == null && librarian[0].getVehicle() == null) {
+                        var world = context.getWorld();
+                        var empty = world.getEntitiesByClass(net.minecraft.entity.vehicle.BoatEntity.class, librarian[0].getBoundingBox().expand(2.5),
+                                boat -> boat.isAlive() && !boat.hasPassengers() && boat.age >= 12);
+                        if (!empty.isEmpty() && librarian[0].startRiding(empty.getFirst(), true)) {
+                            seatedIn[0] = empty.getFirst().getUuid();
+                            seatedAt[0] = world.getTime();
+                            KindredMod.LOGGER.info("Bring: the librarian stepped into the boat Hal had put down, at {}",
+                                    empty.getFirst().getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                        }
+                    }
+                    // Held by that boat: not broken under it in the moments after.
+                    if (seatedIn[0] != null && seatLost[0] == null && context.getWorld().getTime() - seatedAt[0] <= 100
+                            && !(context.getWorld().getEntity(seatedIn[0]) instanceof net.minecraft.entity.vehicle.BoatEntity held && held.isAlive())) {
+                        seatLost[0] = "the boat it sat in broken " + (context.getWorld().getTime() - seatedAt[0]) + " ticks after, the librarian riding "
+                                + librarian[0].getVehicle();
+                    }
                     if (context.getWorld().getTime() % 100 == 0) {
                         KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}, health {}{}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
                                 librarian[0].getVehicle(), librarian[0].getHealth(),
@@ -351,6 +389,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                   try {
                     context.assertTrue(offLine[0] == null, "Kept on the rails, never rolled off the line's start: " + offLine[0]);
+                    context.assertTrue(seatLost[0] == null, "Held in the boat it stepped into, never broken out of it: " + seatLost[0]);
                     var world = context.getWorld();
                     var cell = TradingHall.cells(3).stream().filter(c -> librarian[0].getBlockX() == origin[0].getX() + c.stand().x()).findFirst();
                     context.assertTrue(cell.isPresent(), "In a cell's column: at " + librarian[0].getBlockPos().subtract(origin[0]).toShortString());
