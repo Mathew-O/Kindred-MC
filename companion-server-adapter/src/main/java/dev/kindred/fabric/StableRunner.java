@@ -29,6 +29,7 @@ final class StableRunner {
     }
 
     String outcome() { return outcome; }
+    int mounts() { return mounts; }
     String progress() { return progress; }
 
     /** The next step, or none when it is done ({@link #outcome}). */
