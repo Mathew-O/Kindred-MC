@@ -3987,7 +3987,10 @@ final class PortalRunCampaign {
         for (int slot = 0; slot < inventory.size() && !pickaxe; slot++) pickaxe = inventory.getStack(slot).isIn(ItemTags.PICKAXES);
         // Boxed into a hole, every walk out fails at once and sets the way it came aside. Without a pickaxe it
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
-        boolean underWater = underWaterAt != null && lastTick - underWaterTick <= 600 && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24;
+        // Or still no higher than a block over where the water was over it: out from under it by hand, a block of stone some
+        // seven seconds, the half minute ran out a few blocks out, and the way back led under the lake again (F-25c4cu).
+        boolean underWater = underWaterAt != null && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24
+                && (lastTick - underWaterTick <= 600 || lastFeet.getY() <= underWaterAt.getY() + 1);
         // Under water with no pickaxe, out from under it first, its way out dug by hand: its way back first, it was walked
         // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
         // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
