@@ -188,6 +188,13 @@ final class KindredWire {
         return out;
     }
 
+    /** Messages held in all the inboxes (the month-long cost check). */
+    long inboxed() {
+        long n = 0;
+        for (var q : inboxes.values()) n += q.size();
+        return n;
+    }
+
     /** Sent, refused, told and spoken counts since start. */
     long[] counts() { return new long[] {sent, refused, toldCount, spoken}; }
 
