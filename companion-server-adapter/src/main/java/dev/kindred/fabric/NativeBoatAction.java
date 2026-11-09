@@ -201,8 +201,21 @@ final class NativeBoatAction extends NativeRecordedAction {
                 b -> b.isAlive() && b.age <= 2);
         if (placed.isEmpty()) {
             var look = body.entity().raycast(5.0, 1.0f, true);
+            // With what vanilla refuses a boat for besides a block: an entity it would collide with where it goes, or the eye
+            // inside an entity's box. A strolling librarian's twelve boats, all to one spot within a second, were refused and
+            // the reason could not be told (PR #51's CI, run 42527742264) (F-22c29's diagnostics).
+            var player = body.entity();
+            net.minecraft.util.math.Vec3d hit = look.getPos();
+            var boatBox = new Box(hit.x - 0.6875, hit.y, hit.z - 0.6875, hit.x + 0.6875, hit.y + 0.5625, hit.z + 0.6875);
+            var inTheWay = player.getServerWorld().getOtherEntities(player, boatBox, e -> !e.isSpectator() && (e.isPushable() || e.isCollidable()))
+                    .stream().map(e -> e.getType().getUntranslatedName() + "@" + String.format(java.util.Locale.ROOT, "%.2f,%.2f,%.2f", e.getX(), e.getY(), e.getZ())).toList();
+            var eyeIn = player.getServerWorld().getOtherEntities(player, player.getBoundingBox().expand(2.0),
+                    e -> !e.isSpectator() && e.canHit() && e.getBoundingBox().expand(e.getTargetingMargin()).contains(player.getEyePos()))
+                    .stream().map(e -> e.getType().getUntranslatedName()).toList();
             return settle("The boat was not put down (the look met " + (look instanceof net.minecraft.util.hit.BlockHitResult block
-                    ? block.getBlockPos().toShortString() + " " + block.getSide() : look.getType()) + ", for " + water.toShortString() + ")", null);
+                    ? block.getBlockPos().toShortString() + " " + block.getSide() : look.getType()) + ", for " + water.toShortString()
+                    + (inTheWay.isEmpty() ? "" : "; in its way " + String.join(", ", inTheWay))
+                    + (eyeIn.isEmpty() ? "" : "; its eye inside " + String.join(", ", eyeIn)) + ")", null);
         }
         boat = placed.getFirst().getUuid();
         boatAt = placed.getFirst().getBlockPos();
