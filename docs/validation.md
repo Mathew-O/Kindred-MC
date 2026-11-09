@@ -3354,6 +3354,14 @@ After the block's first merge from main, CI on PR #25 found:
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
 
+- **[F-22c33](evidence/F-22c33.md):** a fixture's stand-in person is logged out as its test ends (fixture; #73's CI: the
+  second-night fixture ran out of its ticks with full-length nights, a stand-in left awake in the world by earlier fixtures).
+  - A throwaway reproduction (a test leaving a creative stand-in, then the second-night fixture): before, 91 s to the second
+    bedtime and a 49 s second night ending at dawn (23461); after, 32 s and the night skipped (time 1). Locally both pass;
+    CI's slower runners ran out of ticks.
+  - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
+    `MockPlayers`, 1 run, 89 of 89.
+
 - **[F-22c38](evidence/F-22c38.md):** a horse's swap or ride under way is kept to till it ends, not counted again (product;
   #82's run 42566194927: the saddle's swap planned four times while it waited on its record, and the saddle given up).
   - The staged fixture (each swap's and ride's record 1.5 s late): 0 of 3 before, as CI; 3 of 3 after.
