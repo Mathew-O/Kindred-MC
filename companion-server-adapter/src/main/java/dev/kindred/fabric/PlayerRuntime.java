@@ -261,6 +261,8 @@ final class PlayerRuntime {
     private final PeerTalk peerTalk;
     /** F-34b: the Wire, the one way typed messages travel between players. */
     private final KindredWire wire;
+    /** F-32: what each AI player knows, filled from the Wire. */
+    private final KnowledgeWebs webs;
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -534,8 +536,10 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
+        webs = new KnowledgeWebs(server::getTicks);
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
                 PlayerRuntime::now);
+        wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -765,6 +769,11 @@ final class PlayerRuntime {
                     reportOpenSales(loaded.store());
                     matches.restore(ledgers.matches().values());
                     flushMatches();
+                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
+                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
+                        if (unread == null && events != null) webs.rebuild(events);
+                        else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
+                    }));
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
@@ -3594,6 +3603,10 @@ final class PlayerRuntime {
             candidates.addAll(seedCandidates(entry, body));
             return candidates;
         }
+        if (entry.stable != null) {
+            candidates.addAll(stableCandidates(entry, body));
+            return candidates;
+        }
         if (entry.growing != null) {
             candidates.addAll(growCandidates(entry, body));
             return candidates;
@@ -3637,7 +3650,8 @@ final class PlayerRuntime {
         // and then built as any build is.
         if (baseDecision(entry, body)) {
             // A base begun is a build; a ranch of its own begun is a ranch (M-01a).
-            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.growing != null ? growCandidates(entry, body)
+            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.stable != null ? stableCandidates(entry, body)
+                    : entry.growing != null ? growCandidates(entry, body)
                     : entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
             return candidates;
         }
@@ -4558,6 +4572,68 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
+    /**
+     * A horse of its own (M-01a): with no new kind to keep and no horse yet, the nearest grown wild horse it can see is
+     * tamed, then saddled with a saddle it found. Only what it can see from where it stands counts.
+     */
+    private boolean horseDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record) {
+        var player = body.entity();
+        var wild = player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.HorseEntity.class, player.getBoundingBox().expand(RANCH_LOOK),
+                h -> h.isAlive() && !h.isTame() && !h.isBaby() && player.canSee(h));
+        var choice = dev.kindred.core.survival.HorseChoice.next(true, record.horse != null, wild.size(), player.getInventory().count(Items.SADDLE) > 0);
+        if (!choice.tame()) return false;
+        var nearest = wild.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        entry.stable = new StableRunner(nearest.getUuid());
+        entry.ranchNote = choice.why();
+        entry.goalProgress = "Horse: " + choice.why();
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        KindredMod.LOGGER.info("{} horse: {}", entry.data.displayName(), choice.why());
+        return true;
+    }
+
+    /** Its horse's next step (M-01a), as one project candidate; survival needs still outrank it. */
+    private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
+        var stable = entry.stable;
+        var player = body.entity();
+        var task = stable.next(player);
+        if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            KindredMod.LOGGER.info("{} horse: {}", entry.data.displayName(), stable.progress());
+        }
+        if (task.isEmpty()) {
+            entry.stable = null;
+            entry.buildTasks.clear();
+            entry.ranchNote = stable.outcome();
+            // Its own once tamed to it, kept with its bases: not tamed twice.
+            if (player.getServerWorld().getEntity(stable.horse) instanceof net.minecraft.entity.passive.AbstractHorseEntity horse && horse.isTame()
+                    && player.getUuid().equals(horse.getOwnerUuid()) && entry.bases != null) {
+                entry.bases.horse = stable.horse.toString();
+                memories.saveBases(entry.data.id(), entry.bases);
+            }
+            say(entry, stable.outcome() + ".", "its horse");
+            entry.baseCheckAt = 0;
+            entry.routineRefreshPending = true;
+            return List.of();
+        }
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("horse:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.buildTasks.clear();
+        entry.buildTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    /** The horse a player keeps (M-01a), by its id, for fixtures. */
+    Optional<String> ownHorse(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.bases == null ? Optional.empty() : Optional.ofNullable(entry.bases.horse);
+    }
+
     /** The ranch's next step, as one project candidate; survival needs still outrank it (M-01a). */
     private List<NativeTaskCandidate> ranchCandidates(Entry entry, NativePlayerBody body) {
         var ranch = entry.ranch;
@@ -4751,7 +4827,8 @@ final class PlayerRuntime {
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
         if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
-                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
+                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.stable != null
+                || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
@@ -4909,6 +4986,7 @@ final class PlayerRuntime {
             food.put(kind, held);
         }
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
+        if (choice.kind().isEmpty() && horseDecision(entry, body, record)) return true;
         if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
@@ -5729,6 +5807,7 @@ final class PlayerRuntime {
             entry.ownRanch = null;
             entry.seeding = null;
             entry.growing = null;
+            entry.stable = null;
             entry.goalProgress = "";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -12458,6 +12537,22 @@ final class PlayerRuntime {
      * is to it, what it is at, its goal, its run's last events, what it last said and what it remembers of this world.
      * Null when it cannot be voiced now.
      */
+    /**
+     * What the player knows of the others for its voice: its peer ledger (E-50), then what its web (F-32) holds that this
+     * speaker may know by their relation to each fact; the voice's tiers then apply to both.
+     */
+    private List<dev.kindred.core.social.PeerLedger.Told> voicePeers(UUID id, ServerPlayerEntity speaker) {
+        var out = new ArrayList<>(peerRadio.told(id));
+        var web = webs.existing(id);
+        var viewer = wire.roster().stream().filter(l -> l.id().equals(wire.idOf(speaker))).findFirst();
+        viewer.ifPresent(l -> {
+            var asker = dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(l);
+            web.ifPresent(w -> out.addAll(dev.kindred.core.knowledge.WebLines.forListener(w, asker, server.getTicks(), PeerRadio.TOLD)));
+            out.addAll(dev.kindred.core.knowledge.WebLines.forListener(webs.world(), asker, server.getTicks(), PeerRadio.TOLD));
+        });
+        return out;
+    }
+
     private PlayerVoice.Facts voiceFacts(UUID id, ServerPlayerEntity speaker) {
         Entry entry = entries.get(id);
         if (entry == null || !running || !ready) return null;
@@ -12476,7 +12571,7 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), peerRadio.told(id));
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
     }
 
     /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
@@ -13222,6 +13317,9 @@ final class PlayerRuntime {
     /** The AI player a body belongs to, either body; null for a person or anything else. */
     /** The Wire (F-34): send typed messages on named channels; read what an AI player was told. Server thread only. */
     KindredWire wire() { return wire; }
+
+    /** What each AI player knows (F-32); ask on someone's behalf with their viewer. Server thread only. */
+    KnowledgeWebs webs() { return webs; }
 
     /** Sets how a player's faction is known (M-06i, the Factions mode's ledger): an id, or empty for none. */
     void setFactionOf(java.util.function.Function<UUID, String> factionOf) {
@@ -15532,6 +15630,7 @@ final class PlayerRuntime {
                 for (var event : written) {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
+                    webs.recorded(event); // F-32b: what the Record tells everyone.
                 }
             });
         });
@@ -16159,6 +16258,8 @@ final class PlayerRuntime {
         PlayerMemoryStore.Pen ownRanch;
         /** Seeds being earned from the grass for chickens of its own (M-01a), or null. */
         SeedRunner seeding;
+        /** The horse it is taming to keep (M-01a), or none. */
+        StableRunner stable;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */

@@ -63,8 +63,8 @@ final class KindredWire {
         GameModes.WorldMode mode();
     }
 
-    /** Where an AI receiver's knowledge goes. */
-    interface Knowledge { void told(Delivery.Told told); }
+    /** Where an AI receiver's knowledge goes: what it was told, the receiver as the Wire saw it, and whether a person sent it. */
+    interface Knowledge { void told(Delivery.Told told, Listener receiver, boolean senderIsPerson); }
 
     /** How a line reaches one person. */
     interface Speaker { void say(ServerPlayerEntity person, String words); }
@@ -79,13 +79,20 @@ final class KindredWire {
     private final Map<UUID, ArrayDeque<Delivery.Told>> inboxes = new HashMap<>();
     private final Map<UUID, String> names = new HashMap<>();
     private long sent, refused, toldCount, spoken;
+    /** Where a delivery to AI players is kept in the World Record (F-32b), or nowhere. */
+    private java.util.function.Consumer<dev.kindred.core.record.WorldEvent> recorder = e -> { };
+
+    /** Keeps each delivery to AI players in the World Record through {@code record}, so what they were told survives a restart. */
+    void recordTo(java.util.function.Consumer<dev.kindred.core.record.WorldEvent> record) {
+        recorder = record == null ? e -> { } : record;
+    }
 
     KindredWire(MinecraftServer server, Wire wire, Wording wording, Memberships memberships, Knowledge knowledge, Speaker speaker, LongSupplier now) {
         this.server = server;
         this.wire = Objects.requireNonNull(wire);
         this.wording = Objects.requireNonNull(wording);
         this.memberships = Objects.requireNonNull(memberships);
-        this.knowledge = knowledge == null ? t -> { } : knowledge;
+        this.knowledge = knowledge == null ? (t, r, p) -> { } : knowledge;
         this.speaker = speaker == null ? KindredWire::chat : speaker;
         this.now = Objects.requireNonNull(now);
     }
@@ -125,12 +132,23 @@ final class KindredWire {
             return d;
         }
         sent++;
+        Map<UUID, Listener> byId = new HashMap<>();
+        for (Listener l : roster) byId.put(l.id(), l);
+        Listener sender = message.fromServer() ? null : byId.get(message.from());
+        boolean senderIsPerson = sender != null && sender.person();
         for (Delivery.Told t : d.told()) {
             var inbox = inboxes.computeIfAbsent(t.receiver(), k -> new ArrayDeque<>());
             inbox.addLast(t);
             while (inbox.size() > INBOX) inbox.removeFirst();
-            knowledge.told(t);
+            knowledge.told(t, byId.get(t.receiver()), senderIsPerson);
             toldCount++;
+        }
+        if (!d.told().isEmpty()) {
+            var first = byId.get(d.told().getFirst().receiver());
+            var data = dev.kindred.core.knowledge.WebFeed.record(message, first, senderIsPerson, d.told().stream().map(Delivery.Told::receiver).toList());
+            recorder.accept(new dev.kindred.core.record.WorldEvent(0, server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.knowledge.WebFeed.MESSAGE,
+                    message.from(), message.scope().channel().id() + ":" + message.scope().key(), "", data,
+                    senderIsPerson ? dev.kindred.core.record.WorldEvent.HowKnown.CLAIMED : dev.kindred.core.record.WorldEvent.HowKnown.TOLD));
         }
         Map<UUID, ServerPlayerEntity> bodies = new HashMap<>();
         for (ServerPlayerEntity body : server.getPlayerManager().getPlayerList()) bodies.put(body.getUuid(), body);
