@@ -3325,3 +3325,11 @@ After the block's first merge from main, CI on PR #25 found:
   - Two other forms were tried first and are not kept: set down in the pit from the start (0 of 3, no way back behind
     it), and the ore at the pit's foot (2 of 3, the ore not seen from the plot's top). The benches ran beside the
     Factions evaluation, at the lowest priority.
+
+- **[F-22c33](evidence/F-22c33.md):** a fixture's stand-in person is logged out as its test ends (fixture; #73's CI: the
+  second-night fixture ran out of its ticks with full-length nights, a stand-in left awake in the world by earlier fixtures).
+  - A throwaway reproduction (a test leaving a creative stand-in, then the second-night fixture): before, 91 s to the second
+    bedtime and a 49 s second night ending at dawn (23461); after, 32 s and the night skipped (time 1). Locally both pass;
+    CI's slower runners ran out of ticks.
+  - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
+    `MockPlayers`, 1 run, 89 of 89.
