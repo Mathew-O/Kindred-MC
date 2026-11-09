@@ -92,6 +92,22 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 24: the trip's wood from the next trees (F-25c4cr) — 8 November 2026 (`claude/e40-ladder-24-1108`)
+
+- **The planner test** (F-25c4cr, [evidence](evidence/F-25c4cr.md)): `PortalRunPlannerTest.theTripsWoodIsTakenAmongTheTreesBeforeTheFirstStone`
+  now asks for the trip's wood from a tree forty blocks off and none from beyond 64. On `c1c401e`, without the fix, it
+  fails; with it, the class's 44 tests pass.
+- **The fixture**: `NativeTripWoodGameTests.itsOwnTreeCutTheNextFortyBlocksOffItTakesTheTripsWoodBeforeItsFirstStone`, staged
+  as it says (a flat stone plot, four trunks forty blocks off told to the campaign as seen, a wooden pickaxe and three
+  planks).
+  - On `ec0695f`, without the fix: fails 3 of 3, its first cobblestone mined where it stood with 3 planks.
+  - With it (`3f80bac`): passes 3 of 3, with 55 planks' worth in hand at its first cobblestone after 1,314 to 1,474 ticks.
+  - The fixture's first form, with the trees not told, is in the evidence.
+- **The benches** ran beside the Factions evaluation (`factions2-495b879`), at the lowest priority.
+- **The classes that pack, climb, tunnel, dig out and jump down** (`NativeTripWoodGameTests`, `NativePortalCampaignGameTests` with
+  its sibling trip-wood fixture, and the rest of batch 22's 25 classes): with the fix, 156 of 156.
+- **Build:** `bash ./gradlew build` successful; JUnit 1,033 tests, 0 failures, 6 skipped.
+
 ## E-40, batch 23: out from under a lake's bed (F-25c4cq) — 8 November 2026 (`claude/e40-ladder-23-1108`)
 
 - **The fixture** (F-25c4cq, [evidence](evidence/F-25c4cq.md)): `NativeLakeBedClimbGameTests.underALakesBedWithNoPickaxeItGetsOutFromUnderTheLake`,
