@@ -1,0 +1,328 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 108001,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    223,
+    53,
+    -133
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.449151582740768,
+    8.081907984035873,
+    16.438867420171604
+  ],
+  "yaw": -443.74063,
+  "pitch": -4.9999995,
+  "health": 16.0,
+  "food": 19,
+  "saturation": 0.0,
+  "air": -13,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:amethyst_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:birch_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 47
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 15
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:raw_gold",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 43
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 57
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 19
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 18
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:lilac",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 5
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:lava_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 19
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 12001,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: up for air",
+  "task": "Get out of the water: up for air",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Echo drowned",
+  "ticks": 1200,
+  "log": [
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto CANCELLED: In deep water; up for air first [Explore south for animals]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+    "[23:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 121616477,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 320, "stone_tools": 2060, "iron_ingot": 5260, "iron_pickaxe": 12860},
+      "deaths": [
+        {"tick": 35887, "cause": "Kindred was shot by Skeleton", "x": 11, "y": 25, "z": 95, "light": 9, "timeOfDay": 12049, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 20660, "line": "rescue asked: spell 1 round 1, 1205 ticks after its last progress"}, {"tick": 20920, "line": "rescue: dig up 2, pillar 2, walk north 3 -> refused: the stuck spell is over"}, {"tick": 68140, "line": "rescue asked: spell 5 round 1, 1201 ticks after its last progress"}, {"tick": 68360, "line": "rescue: dig up 2, pillar 3, walk north 2 -> refused: it is no longer where it asked from"}, {"tick": 68380, "line": "rescue asked: spell 5 round 2, 1424 ticks after its last progress"}, {"tick": 68600, "line": "rescue: dig up 2, pillar 3, look up -> refused: the stuck spell is over"}],
+      "rescuesNotListed": 0,
+      "tokens": 7887
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 780, "stone_tools": 2120, "iron_ingot": 5500, "iron_pickaxe": 19460},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 10940, "line": "rescue asked: spell 1 round 1, 1210 ticks after its last progress"}, {"tick": 11100, "line": "rescue: tunnel west 3, look up -> refused: it is no longer where it asked from"}, {"tick": 11100, "line": "rescue asked: spell 1 round 2, 1360 ticks after its last progress"}, {"tick": 11260, "line": "rescue: dig up 2, pillar 2, walk north 2 -> refused: it is no longer where it asked from"}, {"tick": 11260, "line": "rescue asked: spell 1 round 3, 1523 ticks after its last progress"}, {"tick": 11440, "line": "rescue: dig up 2, pillar 2, walk north 2 -> refused: the stuck spell is over"}],
+      "rescuesNotListed": 0,
+      "tokens": 7929
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 500, "stone_tools": 2600, "iron_ingot": 10300, "iron_pickaxe": 20700, "obsidian": 32597, "portal_lit": 49171},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 39200, "x": 11, "y": -48, "z": 36, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 6280, "line": "rescue asked: spell 1 round 1, 1230 ticks after its last progress"}, {"tick": 6600, "line": "rescue: dig up 2, dig south 1, walk north 2 -> failed: 'walk north 2' went 0, then a two-high wall of stone"}, {"tick": 6600, "line": "rescue asked: spell 1 round 2, 1543 ticks after its last progress"}, {"tick": 6760, "line": "rescue: dig up 2, pillar 2, walk west 3 -> refused: the stuck spell is over"}],
+      "rescuesNotListed": 0,
+      "tokens": 5078
+    }
+  }
+}
