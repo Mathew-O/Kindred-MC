@@ -71,6 +71,14 @@ public final class ClaudeStrategist implements Strategist {
             @JsonPropertyDescription(RescuePrompt.STEPS) List<String> steps,
             @JsonPropertyDescription(RescuePrompt.REASON) String reason) { }
 
+    /** A page of the Chronicle as the model is constrained to write it (F-33). */
+    public record PageReply(@JsonPropertyDescription(ChroniclePrompt.SENTENCES) List<PageSentence> sentences) { }
+
+    /** One sentence of a page and the number of its line. */
+    public record PageSentence(
+            @JsonPropertyDescription(ChroniclePrompt.LINE) List<Long> lines,
+            @JsonPropertyDescription(ChroniclePrompt.SAY) String text) { }
+
     /** A follow-up for the player's queue (F-19e). */
     public record FollowUp(
             @JsonPropertyDescription(StrategistPrompt.QUEUE_NEED) Need need,
@@ -312,6 +320,47 @@ public final class ClaudeStrategist implements Strategist {
         } catch (RuntimeException other) {
             long millis = (System.nanoTime() - started) / 1_000_000;
             return Line.failed(millis >= CHAT_DEADLINE.toMillis() ? "deadline passed" : other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), millis);
+        }
+    }
+
+    /**
+     * Writes one page of the Chronicle (F-33) on the planning lane, with a minute to answer: a nightly page waits
+     * behind nothing urgent, and no tick waits on it.
+     */
+    @Override
+    public CompletableFuture<Page> chronicle(String request) {
+        Objects.requireNonNull(request);
+        long started = System.nanoTime();
+        return CompletableFuture.supplyAsync(() -> chronicleCall(request, started), executor);
+    }
+
+    private Page chronicleCall(String request, long started) {
+        var builder = MessageCreateParams.builder()
+                .model(model)
+                .maxTokens(CHRONICLE_MAX_OUTPUT_TOKENS)
+                .systemOfTextBlockParams(List.of(TextBlockParam.builder().text(ChroniclePrompt.SYSTEM).build()))
+                .outputConfig(StructuredOutputConfig.<PageReply>builder().format(PageReply.class).effort(Optional.ofNullable(effort)).build())
+                .addUserMessage(request);
+        builder.thinking(ThinkingConfigDisabled.builder().build());
+        try {
+            var message = client.messages().create(builder.build(), RequestOptions.builder().timeout(java.time.Duration.ofSeconds(60)).build());
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            var usage = message.usage();
+            long cached = usage.cacheReadInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            String stop = message.stopReason().map(Object::toString).orElse("none");
+            if (!stop.equalsIgnoreCase("end_turn")) return Page.failed("stopped: " + stop, in, cached, out, millis);
+            Optional<PageReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
+            if (reply.isEmpty()) return Page.failed("no reply text", in, cached, out, millis);
+            var said = reply.get().sentences() == null ? List.<PageSentence>of() : reply.get().sentences();
+            return ChroniclePrompt.page(said.stream().map(x -> x.lines() == null ? new long[0] : x.lines().stream().filter(java.util.Objects::nonNull).mapToLong(Long::longValue).toArray()).toList(), said.stream().map(PageSentence::text).toList(),
+                    in, cached, out, millis);
+        } catch (RateLimitException limited) {
+            return Page.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
+        } catch (AnthropicServiceException service) {
+            return Page.failed("service error " + service.statusCode(), (System.nanoTime() - started) / 1_000_000);
+        } catch (RuntimeException other) {
+            return Page.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
         }
     }
 

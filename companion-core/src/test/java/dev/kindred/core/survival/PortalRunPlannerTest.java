@@ -635,8 +635,15 @@ class PortalRunPlannerTest {
         assertEquals(Action.GATHER_LOGS, pack.action(), "the trip's wood first: " + pack);
         assertTrue(pack.why().contains("trip below"), pack.why());
         assertEquals(Action.GATHER_STONE, PortalRunPlanner.plan(sim.snapshot()).getLast().action(), "no tree in sight: the stone");
-        var farTree = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 40), WorldFacts.ordinary().methods());
-        assertEquals(Action.GATHER_STONE, PortalRunPlanner.plan(sim.snapshot(), farTree).getLast().action(), "nor from forty blocks off");
+        // Its own tree cut, the next forty blocks off: still packed from, before the first stone (F-25c4cr). In E-40's
+        // iteration 15 (`e40a15-dbf4e5c`) six of the ten players who later climbed from deep down for logs for sticks had
+        // packed at most five steps of the trip's wood: their tree cut or a teammate's, the next beyond 24 blocks.
+        var nextTree = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, 40), WorldFacts.ordinary().methods());
+        var packed = PortalRunPlanner.plan(sim.snapshot(), nextTree).getLast();
+        assertEquals(Action.GATHER_LOGS, packed.action(), "the trip's wood from forty blocks off: " + packed);
+        assertTrue(packed.why().contains("trip below"), packed.why());
+        var farTree = new WorldFacts(java.util.Map.of(WorldFacts.Source.TREE, PortalRunPlanner.TREE_PACK_RANGE + 16), WorldFacts.ordinary().methods());
+        assertEquals(Action.GATHER_STONE, PortalRunPlanner.plan(sim.snapshot(), farTree).getLast().action(), "nor from beyond the packing range");
         // Among the trees until the first stone; then below, with no tree in sight, on to the frame's diamonds.
         List<Action> below = new ArrayList<>();
         boolean down = false;

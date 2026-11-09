@@ -281,6 +281,137 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         return body.toString();
     }
 
+    /**
+     * Writes one page of the Chronicle (F-33) in the background on the planning lane, with a minute to answer and one
+     * repair in JSON mode when the provider refuses the schema. Never on a tick.
+     */
+    @Override
+    public CompletableFuture<Page> chronicle(String request) {
+        Objects.requireNonNull(request);
+        long started = System.nanoTime();
+        return CompletableFuture.supplyAsync(() -> chronicleCall(request, started), executor);
+    }
+
+    private static final java.time.Duration CHRONICLE_DEADLINE = java.time.Duration.ofSeconds(60);
+
+    private Page chronicleCall(String request, long started) {
+        try {
+            boolean schema = choice.provider().shape() == StrategistProvider.Shape.JSON_SCHEMA;
+            HttpResponse<String> response = send(chronicleRequest(request, schema), started, CHRONICLE_DEADLINE);
+            if (schema && response.statusCode() == 400 && mentionsShape(response.body())) {
+                response = send(chronicleRequest(request, false), started, CHRONICLE_DEADLINE);
+            }
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            if (response.statusCode() == 429) return Page.failed("rate limited", millis);
+            if (response.statusCode() / 100 != 2) return Page.failed("service error " + response.statusCode(), millis);
+            return pageReply(JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+        } catch (java.net.http.HttpTimeoutException late) {
+            return Page.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return Page.failed("interrupted", (System.nanoTime() - started) / 1_000_000);
+        } catch (Exception other) {
+            return Page.failed(other.getClass().getSimpleName() + ": " + String.valueOf(other.getMessage()), (System.nanoTime() - started) / 1_000_000);
+        }
+    }
+
+    /** A page's request: the Chronicle's instructions, the lines, and the reply's two fields. */
+    String chronicleRequest(String request, boolean schema) {
+        var body = new JsonObject();
+        body.addProperty("model", choice.model());
+        var messages = new JsonArray();
+        String words = "Reply with one JSON object and nothing else, with exactly one field: \"sentences\" (" + ChroniclePrompt.SENTENCES
+                + "), an array of objects each with \"lines\" (" + ChroniclePrompt.LINE + ", an array of integers) and \"text\" (" + ChroniclePrompt.SAY + ")";
+        messages.add(message("system", schema ? ChroniclePrompt.SYSTEM : ChroniclePrompt.SYSTEM + "\n\n" + words));
+        messages.add(message("user", request));
+        body.add("messages", messages);
+        body.addProperty(choice.provider() == StrategistProvider.Provider.OPENAI ? "max_completion_tokens" : "max_tokens", CHRONICLE_MAX_OUTPUT_TOKENS);
+        withoutThinking(body);
+        var format = new JsonObject();
+        if (schema) {
+            var sentence = new JsonObject();
+            sentence.addProperty("type", "object");
+            sentence.addProperty("additionalProperties", false);
+            var fields = new JsonObject();
+            var line = new JsonObject();
+            line.addProperty("type", "array");
+            line.addProperty("description", ChroniclePrompt.LINE);
+            var integer = new JsonObject();
+            integer.addProperty("type", "integer");
+            line.add("items", integer);
+            fields.add("lines", line);
+            fields.add("text", stringField(ChroniclePrompt.SAY));
+            sentence.add("properties", fields);
+            var both = new JsonArray();
+            both.add("lines");
+            both.add("text");
+            sentence.add("required", both);
+            var list = new JsonObject();
+            list.addProperty("type", "array");
+            list.addProperty("description", ChroniclePrompt.SENTENCES);
+            list.add("items", sentence);
+            var properties = new JsonObject();
+            properties.add("sentences", list);
+            var all = new JsonArray();
+            for (String name : properties.keySet()) all.add(name);
+            var shape = new JsonObject();
+            shape.addProperty("type", "object");
+            shape.addProperty("additionalProperties", false);
+            shape.add("properties", properties);
+            shape.add("required", all);
+            format.addProperty("type", "json_schema");
+            var spec = new JsonObject();
+            spec.addProperty("name", "chronicle_page");
+            spec.addProperty("strict", true);
+            spec.add("schema", shape);
+            format.add("json_schema", spec);
+        } else {
+            format.addProperty("type", "json_object");
+        }
+        body.add("response_format", format);
+        return body.toString();
+    }
+
+    /** A page's completion: its sentences in their lines' order and the numbers cited, unchecked, or why there are none. */
+    static Page pageReply(JsonObject completion, long millis) {
+        long in = 0, cached = 0, out = 0;
+        if (completion.has("usage") && completion.get("usage").isJsonObject()) {
+            var usage = completion.getAsJsonObject("usage");
+            in = number(usage, "prompt_tokens");
+            out = number(usage, "completion_tokens");
+            if (usage.has("prompt_tokens_details") && usage.get("prompt_tokens_details").isJsonObject()) {
+                cached = number(usage.getAsJsonObject("prompt_tokens_details"), "cached_tokens");
+            }
+        }
+        var choices = completion.has("choices") && completion.get("choices").isJsonArray() ? completion.getAsJsonArray("choices") : new JsonArray();
+        if (choices.isEmpty()) return Page.failed("no reply", in, cached, out, millis);
+        var first = choices.get(0).getAsJsonObject();
+        String finish = text(first, "finish_reason");
+        if (finish != null && !finish.equals("stop")) return Page.failed("stopped: " + finish, in, cached, out, millis);
+        var message = first.has("message") && first.get("message").isJsonObject() ? first.getAsJsonObject("message") : new JsonObject();
+        String content = text(message, "content");
+        if (content == null || content.isBlank()) return Page.failed("no reply text", in, cached, out, millis);
+        JsonObject reply;
+        try {
+            reply = JsonParser.parseString(stripFence(content)).getAsJsonObject();
+        } catch (RuntimeException unreadable) {
+            return Page.failed("unreadable reply", in, cached, out, millis);
+        }
+        if (!reply.has("sentences") || !reply.get("sentences").isJsonArray()) return Page.failed("no sentences", in, cached, out, millis);
+        var numbers = new java.util.ArrayList<long[]>();
+        var said = new java.util.ArrayList<String>();
+        for (var e : reply.getAsJsonArray("sentences")) {
+            if (!e.isJsonObject()) continue;
+            var o = e.getAsJsonObject();
+            if (!o.has("lines") || !o.get("lines").isJsonArray()) continue;
+            var ns = new java.util.ArrayList<Long>();
+            for (var n : o.getAsJsonArray("lines")) if (n.isJsonPrimitive() && n.getAsJsonPrimitive().isNumber()) ns.add(n.getAsLong());
+            numbers.add(ns.stream().mapToLong(Long::longValue).toArray());
+            said.add(text(o, "text"));
+        }
+        return ChroniclePrompt.page(numbers, said, in, cached, out, millis);
+    }
+
     /** A rescue's completion: its steps as text and its reason, or why there are none. Core parses the steps. */
     static Rescue rescueReply(JsonObject completion, long millis) {
         long in = 0, cached = 0, out = 0;

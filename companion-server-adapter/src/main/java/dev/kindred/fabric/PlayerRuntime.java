@@ -218,6 +218,8 @@ final class PlayerRuntime {
      * bridge when there is one, else the same memory with no model behind it.
      */
     private StrategistBridge memory;
+    /** F-33: each AI player's page of the Chronicle once a game day, from the World Record. */
+    private final ChronicleKeeper chronicle = new ChronicleKeeper(new ChronicleHost());
     private boolean lessons = true;
     /** Whether the players keep an atlas of the world and use it (F-30): on unless {@code KINDRED_ATLAS=off} or a scenario says so. */
     private boolean atlasOn = true;
@@ -352,6 +354,8 @@ final class PlayerRuntime {
     private final MarketDesk market;
     /** The auction house (M-06h). */
     private final AuctionHouse auctions;
+    /** The Factions panel and its vanilla fallback (M-06l). */
+    private final FactionsHud hud;
     /** Set by a fixture only: the world plays Factions though the mode is not yet playable for operators. */
     private boolean factionsForTest;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
@@ -505,9 +509,12 @@ final class PlayerRuntime {
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
         this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.hud = new FactionsHud(factions, market);
+        factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
+        this.memory.chronicle(id -> chronicle.pages(id)); // F-33: the report reads a player's latest page.
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.recipeStore = new RescueRecipeStore(metadataDirectory);
         this.rescueBook = recipeStore.load();
@@ -797,6 +804,7 @@ final class PlayerRuntime {
                     reportOpenSales(loaded.store());
                     matches.restore(ledgers.matches().values());
                     flushMatches();
+                    chronicle.start();
                     // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
                     store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
                         if (unread == null && events != null) webs.rebuild(events);
@@ -2573,12 +2581,14 @@ final class PlayerRuntime {
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
+        chronicle.tick();
         if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
             auctions.tick();
             factions.notices();
+            hud.tick(server.getPlayerManager().getPlayerList());
         }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
@@ -3644,6 +3654,10 @@ final class PlayerRuntime {
             candidates.addAll(seedCandidates(entry, body));
             return candidates;
         }
+        if (entry.stable != null) {
+            candidates.addAll(stableCandidates(entry, body));
+            return candidates;
+        }
         if (entry.growing != null) {
             candidates.addAll(growCandidates(entry, body));
             return candidates;
@@ -3687,7 +3701,8 @@ final class PlayerRuntime {
         // and then built as any build is.
         if (baseDecision(entry, body)) {
             // A base begun is a build; a ranch of its own begun is a ranch (M-01a).
-            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.growing != null ? growCandidates(entry, body)
+            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.stable != null ? stableCandidates(entry, body)
+                    : entry.growing != null ? growCandidates(entry, body)
                     : entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
             return candidates;
         }
@@ -4608,6 +4623,68 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
+    /**
+     * A horse of its own (M-01a): with no new kind to keep and no horse yet, the nearest grown wild horse it can see is
+     * tamed, then saddled with a saddle it found. Only what it can see from where it stands counts.
+     */
+    private boolean horseDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record) {
+        var player = body.entity();
+        var wild = player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.HorseEntity.class, player.getBoundingBox().expand(RANCH_LOOK),
+                h -> h.isAlive() && !h.isTame() && !h.isBaby() && player.canSee(h));
+        var choice = dev.kindred.core.survival.HorseChoice.next(true, record.horse != null, wild.size(), player.getInventory().count(Items.SADDLE) > 0);
+        if (!choice.tame()) return false;
+        var nearest = wild.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        entry.stable = new StableRunner(nearest.getUuid());
+        entry.ranchNote = choice.why();
+        entry.goalProgress = "Horse: " + choice.why();
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        KindredMod.LOGGER.info("{} horse: {}", entry.data.displayName(), choice.why());
+        return true;
+    }
+
+    /** Its horse's next step (M-01a), as one project candidate; survival needs still outrank it. */
+    private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
+        var stable = entry.stable;
+        var player = body.entity();
+        var task = stable.next(player);
+        if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            KindredMod.LOGGER.info("{} horse: {}", entry.data.displayName(), stable.progress());
+        }
+        if (task.isEmpty()) {
+            entry.stable = null;
+            entry.buildTasks.clear();
+            entry.ranchNote = stable.outcome();
+            // Its own once tamed to it, kept with its bases: not tamed twice.
+            if (player.getServerWorld().getEntity(stable.horse) instanceof net.minecraft.entity.passive.AbstractHorseEntity horse && horse.isTame()
+                    && player.getUuid().equals(horse.getOwnerUuid()) && entry.bases != null) {
+                entry.bases.horse = stable.horse.toString();
+                memories.saveBases(entry.data.id(), entry.bases);
+            }
+            say(entry, stable.outcome() + ".", "its horse");
+            entry.baseCheckAt = 0;
+            entry.routineRefreshPending = true;
+            return List.of();
+        }
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("horse:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.buildTasks.clear();
+        entry.buildTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    /** The horse a player keeps (M-01a), by its id, for fixtures. */
+    Optional<String> ownHorse(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.bases == null ? Optional.empty() : Optional.ofNullable(entry.bases.horse);
+    }
+
     /** The ranch's next step, as one project candidate; survival needs still outrank it (M-01a). */
     private List<NativeTaskCandidate> ranchCandidates(Entry entry, NativePlayerBody body) {
         var ranch = entry.ranch;
@@ -4801,7 +4878,8 @@ final class PlayerRuntime {
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
         if (!bases || !worldEditsEnabled() || goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
-                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
+                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.stable != null
+                || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
@@ -4959,6 +5037,7 @@ final class PlayerRuntime {
             food.put(kind, held);
         }
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
+        if (choice.kind().isEmpty() && horseDecision(entry, body, record)) return true;
         if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
@@ -5784,6 +5863,7 @@ final class PlayerRuntime {
             entry.ownRanch = null;
             entry.seeding = null;
             entry.growing = null;
+            entry.stable = null;
             entry.goalProgress = "";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -9673,6 +9753,14 @@ final class PlayerRuntime {
         /** The blocks of the bridge the line is laid on over water, in the line's order; and every one it put down. */
         List<BlockPos> bridge;
         final Set<BlockPos> bridged = new HashSet<>();
+        /**
+         * The block of its own that stops the line's open end, beyond a rail of its own in the cell it pushes from, and
+         * whether the stop was looked at for this roll (F-22c30): a loaded cart rolling back fast went through the player
+         * waiting on the rails behind it and off the line's start, off the rails (CI on #70, run 42533785406).
+         */
+        BlockPos stop;
+        boolean stopLooked;
+        int stopTakes;
         /** The boat that holds a villager that strolls (its AI on) while the line is laid, and the boats put down for it. */
         UUID boatId;
         int boatTries;
@@ -10209,6 +10297,12 @@ final class PlayerRuntime {
                     b.rollAt = cart.getPos();
                     b.rollSince = now;
                 }
+                // The line's open end stopped while the cart rolls away from it, from where the push left the player: a rail of its
+                // own in the push's cell, joined to the line, and a block of its own just beyond on the line's axis. A cart that
+                // rolls back fast then stops on that rail, still on the rails, against the block (F-22c30). Not with none of
+                // either to spare, nor where there is no room: the line's start is then open as before.
+                var stopStep = lineStop(entry, body, b, cart);
+                if (stopStep != null) return stopStep;
                 // Still: no speed, or none it got a quarter of a block by in the last two seconds.
                 boolean still = speed < 0.01 || !b.rollMoved;
                 boolean inFront = cart.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot));
@@ -10276,9 +10370,23 @@ final class PlayerRuntime {
                 }
                 // On the rail behind it: two behind ran through a turn into the corridor's wall.
                 var stand = at >= 1 ? b.rails.get(at - 1) : b.push;
+                // Stopped against the line's stop, on its rail in the push's cell: the stop's block broken, as any break it makes
+                // (the server's policy and any claim judged then), and the cart pushed on from where it stood, straight behind
+                // it; the block is put back as the cart rolls away. Pushed from beside the block, at an angle, a push gave the
+                // cart too little way, and eight of them left it short of the climb into the hall (F-22c30).
+                boolean atStop = b.stop != null && cart.getBlockPos().equals(b.push) && world.getBlockState(b.push).isIn(net.minecraft.registry.tag.BlockTags.RAILS);
+                if (atStop) {
+                    if (isShutter(world.getBlockState(b.stop))) {
+                        var open = bringTask(entry, "open the stop:" + b.pushes);
+                        if (!reaches(player, b.stop)) return List.of(goNear(open, b.stop));
+                        return List.of(breakAt(open, b.stop));
+                    }
+                    if (!world.getBlockState(b.stop).isReplaceable()) return giveUp(entry, body, "The cart with the " + b.noun + " stopped at the line's end, with no room to push it on.");
+                    stand = b.stop;
+                }
                 b.since = now;
                 b.repush = true;
-                if (player.getBlockPos().getSquaredDistance(stand) > 1) {
+                if (atStop ? !player.getBlockPos().equals(stand) : player.getBlockPos().getSquaredDistance(stand) > 1) {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "after:" + b.pushes), "native_goto", Map.of("x", String.valueOf(stand.getX()),
                             "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()), "range", "0", "centre", "true")));
                 }
@@ -10505,6 +10613,21 @@ final class PlayerRuntime {
                 return bringCandidates(entry, body);
             }
             case UNBRIDGE -> {
+                // The line's stop taken back first, from wherever it is in reach; its drop picked up with the rest (F-22c30).
+                if (b.stop != null) {
+                    if (!isShutter(world.getBlockState(b.stop))) b.stop = null;
+                    else {
+                        // A break refused there (the policy, a claim since) is not asked for without end: left, and said.
+                        if (b.stopTakes++ >= 400) {
+                            KindredMod.LOGGER.info("{} bringing: the line's stop at {} left standing", entry.data.displayName(), b.stop.toShortString());
+                            b.stop = null;
+                            return bringCandidates(entry, body);
+                        }
+                        var take = bringTask(entry, "take back the stop");
+                        if (!reaches(player, b.stop)) return List.of(goNear(take, b.stop));
+                        return List.of(breakAt(take, b.stop));
+                    }
+                }
                 // The bridge taken back toward the hall: the block furthest from its door first, from the block beside it
                 // on the hall's side, so that it ends on the hall's bank. A block broken over the water floats up beside it.
                 var in = dev.kindred.core.construction.RailRoute.approach(b.cells);
@@ -10810,6 +10933,59 @@ final class PlayerRuntime {
      * first, walked onto the bridge so far to reach it. Null when the bridge stands; it gives up when what is left of
      * it has nothing to be put down against.
      */
+    /** The next step of putting down the line's stop as the cart rolls away (F-22c30), or null when there is none to take. */
+    private List<NativeTaskCandidate> lineStop(Entry entry, NativePlayerBody body, Bring b, net.minecraft.entity.vehicle.AbstractMinecartEntity cart) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var axis = b.push.subtract(b.rails.getFirst());
+        BlockPos end = b.push.add(axis);
+        if (!b.stopLooked) {
+            b.stopLooked = true;
+            boolean straight = Math.abs(axis.getX()) + Math.abs(axis.getZ()) == 1 && axis.getY() == 0;
+            boolean room = world.getBlockState(b.push).isReplaceable() && world.getBlockState(b.push.down()).isSideSolidFullSquare(world, b.push.down(), net.minecraft.util.math.Direction.UP)
+                    && world.getBlockState(end).isReplaceable() && world.getBlockState(end.down()).isSideSolidFullSquare(world, end.down(), net.minecraft.util.math.Direction.UP);
+            if (straight && room && slotOf(player, Items.RAIL) >= 0 && shutterSlot(player) >= 0) b.stop = end;
+            KindredMod.LOGGER.info("{} bringing: the line's end {}", entry.data.displayName(), b.stop != null ? "stopped at " + end.toShortString()
+                    : "left open (" + (!straight ? "not straight" : !room ? "no room" : "no rail or block to spare") + ")");
+        }
+        if (b.stop == null) return null;
+        // Only while the cart is away from the line's start: one already back there is met as before.
+        if (cart.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(b.push)) < 2.5 * 2.5) return null;
+        if (!world.getBlockState(b.push).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
+            if (!world.getBlockState(b.push).isReplaceable()) {
+                b.stop = null;
+                return null;
+            }
+            var rail = bringTask(entry, "stop rail");
+            int slot = slotOf(player, Items.RAIL);
+            if (slot < 0) {
+                b.stop = null;
+                return null;
+            }
+            if (slot >= 9) return List.of(new NativeTaskCandidate(rail, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+            if (!reaches(player, b.push)) return List.of(goNear(rail, b.push));
+            b.laid.add(b.push);
+            return List.of(new NativeTaskCandidate(rail, "native_place", Map.of("x", String.valueOf(b.push.getX()), "y", String.valueOf(b.push.getY()),
+                    "z", String.valueOf(b.push.getZ()), "slot", String.valueOf(slot), "side", "up")));
+        }
+        if (!isShutter(world.getBlockState(b.stop))) {
+            if (!world.getBlockState(b.stop).isReplaceable()) {
+                b.stop = null;
+                return null;
+            }
+            var block = bringTask(entry, "stop block");
+            int slot = shutterSlot(player);
+            if (slot < 0) return null;
+            if (slot >= 9) return List.of(new NativeTaskCandidate(block, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+            // Not from inside the cell it goes in.
+            if (player.getBlockPos().equals(b.stop)) return List.of(standAt(bringTask(entry, "off the stop"), b.push));
+            if (!reaches(player, b.stop)) return List.of(goNear(block, b.stop));
+            return List.of(new NativeTaskCandidate(block, "native_place", Map.of("x", String.valueOf(b.stop.getX()), "y", String.valueOf(b.stop.getY()),
+                    "z", String.valueOf(b.stop.getZ()), "slot", String.valueOf(slot), "side", "up")));
+        }
+        return null;
+    }
+
     private List<NativeTaskCandidate> bridgeStep(Entry entry, NativePlayerBody body, Bring b) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -12958,6 +13134,7 @@ final class PlayerRuntime {
         memory = strategist.get();
         memory.lessons(lessons);
         memory.rescueHost(rescueHost);
+        memory.chronicle(id -> chronicle.pages(id));
         memory.rescue(rescueOn);
         memory.advice(adviceOn);
     }
@@ -15635,6 +15812,37 @@ final class PlayerRuntime {
         record(changed.stream().map(stored -> dev.kindred.core.record.MatchLedger.event(tick, now, "", stored)).toList());
     }
 
+    /** The Chronicle (F-33), for fixtures: its pages and counts, and a day's pages written now. */
+    ChronicleKeeper chronicleForFixtures() { return chronicle; }
+
+    /** The keeper's side: the Record, the AI players with their bodies' ids, the strategist's bridge. */
+    private final class ChronicleHost implements ChronicleKeeper.Host {
+        @Override public java.util.concurrent.CompletableFuture<List<dev.kindred.core.record.WorldEvent>> events(java.util.Set<String> kinds, long afterId, int limit) {
+            SqliteCompanionStore database = store;
+            return database == null ? java.util.concurrent.CompletableFuture.completedFuture(List.of()) : database.worldEvents(kinds, afterId, limit);
+        }
+
+        @Override public void record(dev.kindred.core.record.WorldEvent event) { PlayerRuntime.this.record(event); }
+
+        @Override public List<ChronicleKeeper.Player> players() {
+            var out = new ArrayList<ChronicleKeeper.Player>();
+            for (Entry entry : entries.values()) {
+                if (entry.data == null) continue;
+                var actors = new java.util.HashSet<UUID>();
+                actors.add(entry.data.id());
+                if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
+                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors));
+            }
+            return out;
+        }
+
+        @Override public long tick() { return server.getTicks(); }
+
+        @Override public StrategistBridge bridge() { return memory; }
+
+        @Override public net.minecraft.server.MinecraftServer server() { return server; }
+    }
+
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
@@ -15673,6 +15881,12 @@ final class PlayerRuntime {
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
+    }
+
+    /** The Factions panel's server side (M-06l). */
+    FactionsHud hud() {
+        requireThread();
+        return hud;
     }
 
     /** The auction house (M-06h). */
@@ -16059,7 +16273,10 @@ final class PlayerRuntime {
     /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
     void playerLeft(UUID playerId) {
         requireThread();
-        if (factionsWorld()) factions.disconnected(playerId);
+        if (factionsWorld()) {
+            factions.disconnected(playerId);
+            hud.left(playerId);
+        }
         matches.departed(playerId).ifPresent(this::announce);
     }
 
@@ -16531,6 +16748,8 @@ final class PlayerRuntime {
         PlayerMemoryStore.Pen ownRanch;
         /** Seeds being earned from the grass for chickens of its own (M-01a), or null. */
         SeedRunner seeding;
+        /** The horse it is taming to keep (M-01a), or none. */
+        StableRunner stable;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */
