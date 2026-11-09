@@ -517,7 +517,14 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     long adults = penned.stream().filter(c -> !c.isBaby()).count(), calves = penned.stream().filter(CowEntity::isBaby).count();
                     context.assertTrue(adults == 2 && penned.stream().filter(c -> !c.isBaby()).allMatch(c -> c.getUuid().equals(cows[0]) || c.getUuid().equals(cows[1])),
                             "Both cows penned: " + adults);
-                    context.assertTrue(calves == 1, "A calf born in the pen: " + calves);
+                    // Every cow about the pen named in the failure, from the gate (F-22c39): on #91's CI (run 42568179856) the ranch
+                    // was done with a calf it saw in the pen, and "A calf born in the pen: 0" at every look said nothing more.
+                    var about = new StringBuilder();
+                    for (var cow : world.getEntitiesByClass(CowEntity.class, new Box(pen).expand(40), c -> true)) {
+                        about.append(String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f", cow.getX() - gate.getX(), cow.getY() - gate.getY(), cow.getZ() - gate.getZ()))
+                                .append(cow.isBaby() ? " young" : "").append(cow.isAlive() ? "" : " dead").append(inPen(pen, cow.getBlockPos()) ? " in" : " out").append("; ");
+                    }
+                    context.assertTrue(calves == 1, "A calf born in the pen: " + calves + "; cows from the gate: " + about + "gate " + world.getBlockState(gate));
                     // Every block exact but the pen's gate, which turns to face whoever opens it: checked above as a gate, shut.
                     NativeBaseGameTests.exact(context, plans.get(0), origin);
                     NativeBaseGameTests.exact(context, plans.get(1), origin);
