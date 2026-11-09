@@ -130,13 +130,6 @@ public final class Ranch {
     /** Whether the animal it leads has been brought round to the front of the gate. */
     private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
-    /** Its last look; a walk refused below the yard's floor, one of its kind beside it, is taken for one hemmed in (F-22c43). */
-    private Observation lastSeenFrom;
-    /** When it put the food away, hemmed in below the yard: {@link #WEDGED} until the next look, -1 when not. */
-    private long wedgedSince = -1;
-    private int wedges;
-    private static final long WEDGED = -2;
-    private static final int WEDGES = 4;
     /** Why each it gave up on was given up, for {@link #diagnosis()}: kept when it tries them again. */
     private final java.util.Map<UUID, String> givenUpWhy = new java.util.LinkedHashMap<>();
     /** The one the last walk it asked for went toward, or whose last-seen spot it went to ({@link #goingToSpot}); none for others. */
@@ -214,7 +207,7 @@ public final class Ranch {
         var gave = givenUpWhy.entrySet().stream()
                 .map(e -> e.getKey().toString().substring(0, 8) + " " + e.getValue() + (givenUp.contains(e.getKey()) ? "" : ", tried again"))
                 .toList();
-        return "given up " + gave + "; hemmed in " + wedges + " of " + WEDGES + "; searched " + searched + " of " + SEARCHES + ", retried " + retried + " of " + RETRIES
+        return "given up " + gave + "; searched " + searched + " of " + SEARCHES + ", retried " + retried + " of " + RETRIES
                 + ", relined " + relined + " of " + RELINES + ", refetched " + refetched + "; leading "
                 + (leading == null ? "none" : leading.toString().substring(0, 8));
     }
@@ -244,16 +237,6 @@ public final class Ranch {
         goingFor = null;
         goingToSpot = false;
         if (phase == Phase.DONE) return new Step.Done(outcome, bred);
-        lastSeenFrom = seen;
-        // Down in a way one wide, below the yard, a walk refused: the food put away for the animals hemming it in to
-        // wander off, then on as before (F-22c43).
-        if (wedgedSince == WEDGED) wedgedSince = seen.tick();
-        if (wedgedSince >= 0) {
-            if (seen.tick() - wedgedSince <= LOOSEN) {
-                return new Step.Wait(false, "Down in a way one wide among the " + kind.plural() + ": the food put away for them to wander off");
-            }
-            wedgedSince = -1;
-        }
         // Where it sees each grown one of its kind outside the pen, from the first: one may wander off while it builds.
         for (var a : seen.animals()) if (a.kind() == kind && a.adult() && !inside(a.at())) lastSeen.put(a.id(), a.at());
         if (!seen.built()) {
@@ -367,17 +350,6 @@ public final class Ranch {
      * or out of the pen, to the gate) is asked for again as before.
      */
     public void refused() {
-        // Below the yard, in a way one wide (a pasture's way in under its wall), the walk was refused because the animals
-        // following the food fill the way each side of it: on #98's CI the player stood under the pasture's east wall with
-        // a cow each side of it, every walk "blocked", and gave both up. Not the animal's doing: none given up; the food
-        // is put away for them to wander off, a few times at most (F-22c43).
-        if (hemmedIn() && wedges < WEDGES) {
-            wedges++;
-            wedgedSince = WEDGED;
-            goingFor = null;
-            goingToSpot = false;
-            return;
-        }
         if (goingFor == null) return;
         if (goingToSpot) {
             lastSeen.remove(goingFor);
@@ -390,14 +362,6 @@ public final class Ranch {
         }
         goingFor = null;
         goingToSpot = false;
-    }
-
-    /** At its last look, below the yard's floor with one of its kind within two blocks across: hemmed in down there. */
-    private boolean hemmedIn() {
-        if (lastSeenFrom == null) return false;
-        var feet = lastSeenFrom.feet();
-        return feet.y() <= origin.y() - 2 && lastSeenFrom.animals().stream().anyMatch(a -> a.kind() == kind
-                && Math.abs(a.at().y() - feet.y()) <= 1 && Math.abs(a.at().x() - feet.x()) + Math.abs(a.at().z() - feet.z()) <= 2);
     }
 
     /** Two or more of the kind outside in the row of {@code mouth}, within a block of it across: jammed at a way in one wide. */
@@ -528,9 +492,11 @@ public final class Ranch {
                     : new Step.Wait(true, "Wait for the " + kind.noun() + " to come in");
         }
         waitingSince = -1;
+        // The one already in shut in whenever it is out for the next, until the next is lined up at the gate's front: shut
+        // only for one far off, the gate stood open as the player led the second up, the first walked out of it and on
+        // through the pasture, down its way in, and hemmed the player in there (#98's CI) (F-22c43).
+        if (seen.gateOpen() && adultsIn > 0 && !lined) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
         if (apart > FOLLOWING) {
-            // The one already in is shut in before it walks off for the next.
-            if (seen.gateOpen() && adultsIn > 0) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
             return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
         }
         if (apart > LAGGING) {

@@ -3463,3 +3463,9 @@ After the block's first merge from main, CI on PR #25 found:
   and why (#96's run 42583930289: "no other in sight" with a sheep in sight behind the pen's far fence). A ranch walk
   ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
   `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
+
+- **[F-22c43](evidence/F-22c43.md):** cattle loose in the pasture keep out of its way in, behind a door and a fence; the
+  pen's gate shut while the next is fetched (product; #98's run 42574813864: the player hemmed in under the pasture's
+  east wall by its own cows, "Both cows penned: 0").
+  - The new fixture (a cow following wheat toward the way in): 0 of 3 before, as CI; 3 of 3 after.
+  - The class runs pending.
