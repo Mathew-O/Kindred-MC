@@ -35,7 +35,7 @@ Changed file: `companion-server-adapter` `PortalRunCampaign`.
 | Criterion | Check | Result |
 | --- | --- | --- |
 | With its sword in the backpack and a zombie after it, it takes the sword to hand, strikes with it and kills the zombie | `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`, staged as below | On `e7e0b57`, without the fix: fails 3 of 3, "The sword never reached its hotbar", the zombie struck five times with the stone pickaxe each time. With the fix: passes 3 of 3, the sword taken to hand ("Take its weapon to hand") before "Fight zombie" |
-| The death it came from | `ReplayGameTests` with 707 Kindred's replay (`kindred-43985-707`) | On `e7e0b57`, without the fix: died again 2 of 3, fighting with its stone pickaxe. With the fix: lived 3 of 3, the sword taken to hand first; the replay is kept in the suite |
+| The death it came from | `ReplayGameTests` with 707 Kindred's replay (`kindred-43985-707`) | On `e7e0b57`, without the fix: died again 2 of 3, fighting with its stone pickaxe. With the fix: lived 3 of 3 here, the sword taken to hand first. Not kept: on #96's CI (run 42583930289, attempt 2) it died again 2 of 3 with the sword taken to hand, and locally 3 of 21, each time badly hurt among several zombies backing off "the way it came". F-27 keeps a replay only with the fix that makes it pass 3 of 3; this replay waits for the back-off fix, with which it is to be committed |
 | The classes that fight, swap and cast, with the replays | Nine classes, 126 fixtures, three runs | See [validation](../validation.md) |
 
 The fixture's staging: an 8-by-8 room walled and roofed in stone on the flat test plot, the player's inventory set to 707
