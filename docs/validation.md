@@ -3404,6 +3404,13 @@ After the block's first merge from main, CI on PR #25 found:
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
 
+- **[F-22c42](evidence/F-22c42.md):** the hungry search's field under a gapped roof is laid inside its own structure (fixture;
+  #72's run 42584495579: "Back to the climb … back the way it came at -12, 0, -30", 32 blocks out beyond its north wall).
+  - A throwaway copy (not committed) with stone laid 8 blocks over its origin beyond the walls on all four sides, as a test
+    beside it could leave: 0 of 3, each with the CI's text. Over the north side only: 3 of 3, its search went another way.
+  - The fixed fixture on `FixtureGround.WIDE` with sky access, its origin at the middle: a copy, 2 of 2;
+    `NativePortalCampaignGameTests`, 1 run, 95 of 95.
+
 - **[F-22c33](evidence/F-22c33.md):** a fixture's stand-in person is logged out as its test ends (fixture; #73's CI: the
   second-night fixture ran out of its ticks with full-length nights, a stand-in left awake in the world by earlier fixtures).
   - A throwaway reproduction (a test leaving a creative stand-in, then the second-night fixture): before, 91 s to the second
