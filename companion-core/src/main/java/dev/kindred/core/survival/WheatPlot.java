@@ -47,11 +47,24 @@ public final class WheatPlot {
 
     private final Pos corner;
     private final int size;
+    /** Planted from the food itself, as carrots and potatoes are: what is sown is what it wants to keep. */
+    private final boolean seedIsFood;
 
     public WheatPlot(Pos corner, int size) {
+        this(corner, size, false);
+    }
+
+    /**
+     * With {@code seedIsFood}, a plot of a crop planted from the food itself (a pig's carrots or potatoes, M-01a): the
+     * {@link Observation}'s seeds and wheat are then both what it holds of that one item. Once it holds what it wants it is
+     * done; short of that, it plants one only when nothing is growing, so that each harvest (two to five from one) leaves
+     * it more, and planting never eats the food it grew.
+     */
+    public WheatPlot(Pos corner, int size, boolean seedIsFood) {
         if (size < 1 || size > 9) throw new IllegalArgumentException("A plot 1 to 9 cells a side");
         this.corner = corner;
         this.size = size;
+        this.seedIsFood = seedIsFood;
     }
 
     public Pos corner() { return corner; }
@@ -66,13 +79,21 @@ public final class WheatPlot {
     /** The next step toward {@code wanted} wheat. */
     public Step next(Observation seen, int wanted) {
         var ripe = nearest(seen, Soil.RIPE);
-        if (ripe.isPresent()) return new Step.Harvest(ripe.get(), "Harvest the ripe wheat");
+        if (ripe.isPresent()) return new Step.Harvest(ripe.get(), seedIsFood ? "Harvest what is ripe" : "Harvest the ripe wheat");
         var dry = nearest(seen, Soil.DRY);
         if (dry.isPresent()) {
             if (!seen.hoe()) return new Step.NeedHoe("A hoe to till the plot");
             return new Step.Till(dry.get(), "Till the plot");
         }
         var bare = nearest(seen, Soil.FARMLAND);
+        if (seedIsFood) {
+            boolean sown = seen.soil().values().stream().anyMatch(s -> s == Soil.SOWN);
+            if (seen.wheat() >= wanted) return new Step.Done("Enough to keep: " + seen.wheat());
+            if (bare.isPresent() && seen.seeds() > 0 && !sown) return new Step.Sow(bare.get(), "Plant the plot");
+            if (sown) return new Step.Growing("Planted; waiting for it to ripen");
+            if (bare.isPresent()) return new Step.NeedSeeds("One to plant");
+            return new Step.Done("The plot has nothing to grow on");
+        }
         if (bare.isPresent()) {
             if (seen.seeds() <= 0) return new Step.NeedSeeds("Seeds to sow the plot");
             return new Step.Sow(bare.get(), "Sow the plot");
