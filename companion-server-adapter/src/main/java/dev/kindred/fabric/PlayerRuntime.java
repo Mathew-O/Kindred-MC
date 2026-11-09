@@ -1639,6 +1639,9 @@ final class PlayerRuntime {
     /** {@code own}: chosen by the player itself (its goal, its needs), not asked for by a command. */
     private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments, boolean own) {
         requireThread();
+        // Where this task was proposed, for its outcome line (M-01): only the autonomous choice hands one over.
+        String proposedBy = own && entry.pendingSource != null ? entry.pendingSource : "";
+        entry.pendingSource = null;
         UUID id = entry.data.id();
         if (!running || !ready || entry.nativeState == null || (actor != null && !entry.nativeState.access().mayControl(actor))) {
             return 0;
@@ -1979,6 +1982,7 @@ final class PlayerRuntime {
                     try {
                         entry.skillId = skill;
                         entry.skillArgs = Map.copyOf(arguments);
+                        entry.dispatchSource = proposedBy;
                         entry.nativeTask = task;
                         UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
                         entry.lease = entry.runner.start(descriptor, arguments,
@@ -2433,7 +2437,24 @@ final class PlayerRuntime {
         return best;
     }
 
-    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) { }
+    /**
+     * A task it might do now. {@code source} is where it was proposed (the routine's method and line), found when it is
+     * made, so that an outcome with no task label of its own still says which routine issued it (M-01): a goal-less
+     * player's thousand refused walks were logged with nothing to trace them by.
+     */
+    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments, String source) {
+        NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) {
+            this(candidate, skill, arguments, proposer());
+        }
+
+        private static final StackWalker WALKER = StackWalker.getInstance();
+
+        /** The method (and line) that made the candidate: the first frame past this record's own. */
+        private static String proposer() {
+            return WALKER.walk(frames -> frames.filter(f -> !f.getClassName().endsWith("NativeTaskCandidate")).findFirst()
+                    .map(f -> f.getMethodName() + ":" + f.getLineNumber()).orElse("?"));
+        }
+    }
 
     private boolean canScanBlock() {
         return blocksScannedThisTick < MAX_BLOCK_CHECKS_PER_TICK;
@@ -6642,6 +6663,7 @@ final class PlayerRuntime {
                             teamCoordinator.startTask(tId, entry.data.id());
                         }
                     }
+                    entry.pendingSource = candidateToDispatch.source();
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
@@ -7317,6 +7339,8 @@ final class PlayerRuntime {
             return;
         }
         UUID finishedTaskId = entry.currentTaskId;
+        // Its life task's label, read before the life task is let go below.
+        String lifeLabel = finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null ? entry.lifeTask.label() : null;
         if (state == SkillRunner.State.CANCELLED && entry.runner.reason().filter(r -> r.startsWith("authority lost")).isPresent()) {
             var snapshot = entry.arbiter.snapshot();
             KindredMod.LOGGER.debug("{} {} lost authority: lifecycle={} stop={} intent={} task={} lease={}", entry.data.displayName(),
@@ -7527,15 +7551,13 @@ final class PlayerRuntime {
             }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
+            // Its label, or the routine that issued it: every outcome says where it came from (M-01).
+            String label = outcomeLabel(entry, lifeLabel);
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
-                    entry.runner.reason().map(r -> ": " + r).orElse(""),
-                    entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
+                    entry.runner.reason().map(r -> ": " + r).orElse(""), label.isEmpty() ? "" : " [" + label + "]");
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
-                    + (entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : ""));
-            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label()
-                    : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
+                    + (label.isEmpty() ? "" : " [" + label + "]"));
+            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
@@ -13688,6 +13710,17 @@ final class PlayerRuntime {
         this.replays = replays;
     }
 
+    /**
+     * What an ended task is called in its outcome line: its campaign or build step's label, its life task's, or else
+     * "from" the routine that proposed it (M-01); empty for a task asked for by a command.
+     */
+    private static String outcomeLabel(Entry entry, String lifeLabel) {
+        if (entry.activeCampaignTask != null) return entry.activeCampaignTask.label();
+        if (entry.activeBuildTask != null) return entry.activeBuildTask.label();
+        if (lifeLabel != null) return lifeLabel;
+        return entry.dispatchSource == null || entry.dispatchSource.isEmpty() ? "" : "from " + entry.dispatchSource;
+    }
+
     /** Who is told of deaths and ended tasks beside the log; {@link RunObserver#NONE} for no one. */
     void observeRun(RunObserver observer) {
         requireThread();
@@ -16318,6 +16351,8 @@ final class PlayerRuntime {
         }
         private SkillRunner.State lastRunnerState = SkillRunner.State.IDLE;
         private String skillId;
+        /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
+        private String dispatchSource = "", pendingSource;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
