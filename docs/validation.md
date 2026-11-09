@@ -3331,3 +3331,7 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
   - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
   - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
+
+- **F-22c37 (fixture diagnostics, in progress):** the gather pause-and-resume fixture's "Gather completed" failure names
+  what ran instead (#87's run 42565807178: resumed, and not completed within the test). No assertion changed.
+  `NativeGatherGameTests`, 3 runs, 5 of 5 each.
