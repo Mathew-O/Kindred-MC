@@ -2971,7 +2971,7 @@ final class PlayerRuntime {
         // 0a. Deep water: a player that stops swimming sinks, so head for the nearest dry ground while breath lasts.
         // A running goal does this itself, choosing a way out it can reach (straight up for air when short of breath).
         boolean shortOfBreath = player.getAir() < player.getMaxAir() / 2;
-        boolean goalSurfaces = entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null;
+        boolean goalSurfaces = goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null;
         if (candidates.isEmpty() && !goalSurfaces && inDeepWater(player) && (server.getTicks() >= entry.waterEscapeRetryTick || shortOfBreath)) {
             // A shore it could not reach is passed over for a minute, and dry ground looked for along the ways it can
             // swim: the nearest by distance, behind a wall, was made for again at once while short of breath, nineteen
@@ -3152,7 +3152,7 @@ final class PlayerRuntime {
 
         // 3. Tactical combat choices from TacticalPriorityPolicy. While a goal runs, its campaign is the one controller
         // of a fight (strike, back off, cover, hole up); only a weapon swap is still offered from here.
-        boolean goalOwnsCombat = entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null;
+        boolean goalOwnsCombat = goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null;
         if (entry.lastTacticalObservation != null && !entry.lastTacticalObservation.observedMobs().isEmpty()
                 && entry.lastTacticalDecision != null && entry.lastTacticalDecision.hasViableOption()) {
             var bestOpt = entry.lastTacticalDecision.bestOption();
@@ -3673,8 +3673,8 @@ final class PlayerRuntime {
         var trading = tradeCandidates(entry, body);
         if (trading != null) return trading;
 
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
-                || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
+        if (goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
+                || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.DRAGON) {
             candidates.addAll(campaignCandidates(entry, body));
             // A piece of gold on in the Nether, the better piece back on out of it (E-07e).
             goldCandidate(entry, body).ifPresent(candidates::add);
@@ -4416,7 +4416,7 @@ final class PlayerRuntime {
         entry.campaign.atlas(atlasOn ? entry.atlas : null);
         entry.campaign.recipes(rescueBook, rescueSkills);
         entry.campaign.customs(customs);
-        entry.campaign.pursue(entry.goal);
+        entry.campaign.pursue(goalOf(entry));
         entry.campaign.dragonAllowed(dragonFight);
         entry.campaign.huntersKit(gearingHunter(body));
         entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
@@ -4427,8 +4427,8 @@ final class PlayerRuntime {
         // Through a portal only on purpose: while it is after the End portal (the operator's goal is what allows the
         // trip) and the step it is on or about to take goes through one. Never while it works beside one: a player
         // digging stone by its lit portal stood in it and was carried into the Nether (suite on 2026-10-22).
-        boolean mayTravel = entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
-                || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight;
+        boolean mayTravel = goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD
+                || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.DRAGON && dragonFight;
         boolean trip = task.filter(PortalRunCampaign::throughPortal).isPresent() || PortalRunCampaign.throughPortal(entry.activeCampaignTask);
         // In Co-op Survival a trip into another world keeps to the humans' pace (M-01e): it waits by the portal until
         // someone has entered that world. The way home is never held.
@@ -4447,13 +4447,13 @@ final class PlayerRuntime {
             entry.goalProgress = entry.campaign.portalAdopted() ? "Done: the team's Nether portal is lit" : "Done: the Nether portal is built and lit";
         }
         var endPortal = entry.campaign.stronghold().endPortal();
-        if ((entry.goal == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD || entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON)
+        if ((goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.DRAGON)
                 && endPortal.isPresent() && !entry.endPortalAnnounced) {
             entry.endPortalAnnounced = true;
             var at = endPortal.get();
             say(entry, "I found the End portal!", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
         }
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.DRAGON && entry.campaign.stronghold().endFight().dragonKilled() && !entry.dragonAnnounced) {
+        if (goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.DRAGON && entry.campaign.stronghold().endFight().dragonKilled() && !entry.dragonAnnounced) {
             entry.dragonAnnounced = true;
             say(entry, "The Ender Dragon is dead. I beat the game!", "");
         }
@@ -4800,7 +4800,7 @@ final class PlayerRuntime {
      */
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
-        if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
+        if (!bases || !worldEditsEnabled() || goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
                 || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
         var world = player.getServerWorld();
@@ -5405,9 +5405,14 @@ final class PlayerRuntime {
 
     private static final int FOOD_LOOKS = 3, FOOD_RETRY = 6000, SLEEP_RETRY = 600, BED_REACH = 96;
 
-    /** Life comes first for it (F-25c9): no running goal, and work of its own (a ranch, a field, a build or its base). */
+    /**
+     * Life comes first for it (F-25c9): no running goal, and work of its own (a ranch, a field, a build or its base); or a
+     * faction world, goal or not (M-06i), where the faction world's choices come before goal steps and so must not come
+     * before its bed at night and food when hunger is low.
+     */
     private boolean lifeFirst(Entry entry) {
-        return entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE
+        if (factionsWorld()) return true;
+        return goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE
                 && (entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled());
     }
 
@@ -6192,7 +6197,7 @@ final class PlayerRuntime {
         // The scene and its state kept for a replay, before its work stops and vanilla drops what it holds (F-27).
         if (replays != null) {
             var doingThen = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
-            replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(entry.goal),
+            replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(goalOf(entry)),
                     entry.campaign == null ? "no goal" : entry.campaign.progress(), doingThen, entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
                     entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString()));
         }
@@ -6364,7 +6369,7 @@ final class PlayerRuntime {
             takeUpWork(entry, body);
             refreshTacticalObservation(entry, server.getTicks());
             // A goal looks around as it goes, and so does a build, for the trees and stone its needs may send it to (E-08c).
-            if (entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
+            if (goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
                 entry.campaign.atlas(atlasOn ? entry.atlas : null); // What it sees goes into its atlas from the first look (F-30).
                 entry.campaign.observe(body.entity());
@@ -6544,7 +6549,7 @@ final class PlayerRuntime {
         // On a goal with no skill started for a minute of game time, it says once which of its gates holds it: a player
         // stood seven minutes in play with its goal still offering steps and nothing in its log to say why (F-25c4m).
         int tick = server.getTicks();
-        if (busy || entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE || entry.lastBusyTick < 0) {
+        if (busy || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE || entry.lastBusyTick < 0) {
             entry.lastBusyTick = tick;
             entry.stallReported = false;
         } else if (!entry.stallReported && tick - entry.lastBusyTick > STALL_TICKS) {
@@ -11460,7 +11465,7 @@ final class PlayerRuntime {
             entry.recentlyTaken.values().removeIf(at -> now - at > 6000);
             held.keySet().removeAll(entry.recentlyTaken.keySet());
             var stow = dev.kindred.core.guide.Worth.stow(held, Valuables.holding(player, lootWanted(entry)),
-                    entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE);
+                    goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE);
             target = null;
             for (var store : ownStores(entry, player)) {
                 if (entry.untrustedStores.contains(store.pos().asLong()) || !world.isChunkLoaded(store.pos())
@@ -11504,7 +11509,7 @@ final class PlayerRuntime {
      * wants or the store holds: the store, and the take. None when the run wants nothing it has stored there.
      */
     private Map.Entry<BlockPos, Map<String, String>> fetchFor(Entry entry, ServerPlayerEntity player) {
-        if (entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE || entry.setup == null || entry.setup.storage() == null) return null;
+        if (goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE || entry.setup == null || entry.setup.storage() == null) return null;
         var assigned = entry.setup.storage().position();
         BlockPos pos = new BlockPos(assigned.x(), assigned.y(), assigned.z());
         if (ownStore(entry, player, pos) == null || entry.untrustedStores.contains(pos.asLong())
@@ -12782,7 +12787,7 @@ final class PlayerRuntime {
                 : teammate ? dev.kindred.core.ConversationAudience.Relation.TEAMMATE : dev.kindred.core.ConversationAudience.Relation.PLAYER;
         boolean busy = entry.runner != null && runnerBusy(entry);
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
-                busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
+                busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(goalOf(entry)), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
                 memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
     }
@@ -12797,7 +12802,7 @@ final class PlayerRuntime {
             PeerUpdate update = null;
             if (body != null) {
                 boolean busy = entry.runner != null && runnerBusy(entry);
-                String goal = PlayerVoice.goal(entry.goal);
+                String goal = PlayerVoice.goal(goalOf(entry));
                 String doing = !goal.isEmpty() ? "working on " + goal + (entry.goalProgress.isEmpty() ? "" : ": " + entry.goalProgress)
                         : busy ? PlayerVoice.doing(entry.skillId) : "idle";
                 var spare = new java.util.TreeMap<String, Integer>();
@@ -13043,7 +13048,7 @@ final class PlayerRuntime {
         @Override public List<dev.kindred.core.gift.GiftPolicy.Spare> spare(UUID id) {
             Entry entry = entries.get(id);
             var body = nativeBodyOf(id).orElse(null);
-            if (entry == null || body == null || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE) return List.of();
+            if (entry == null || body == null || goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE) return List.of();
             var counts = new java.util.TreeMap<String, Integer>();
             for (var stack : body.getInventory().main) {
                 if (stack.isEmpty() || stack.get(net.minecraft.component.DataComponentTypes.FOOD) != null) continue;
@@ -13101,7 +13106,7 @@ final class PlayerRuntime {
         /** Nothing of its own to do: no goal, no ranch, field or build, no team task. */
         @Override public boolean idle(UUID id) {
             Entry entry = entries.get(id);
-            return entry != null && entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE && entry.ranch == null && entry.field == null
+            return entry != null && goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE && entry.ranch == null && entry.field == null
                     && entry.build == null && teamCoordinator.getPlayerCurrentTask(id).isEmpty();
         }
 
@@ -13112,7 +13117,7 @@ final class PlayerRuntime {
 
         @Override public boolean hasGoal(UUID id) {
             Entry entry = entries.get(id);
-            return entry != null && entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE;
+            return entry != null && goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE;
         }
 
         @Override public void remember(UUID id, UUID other, String name, String what, boolean together, String key) {
@@ -13366,7 +13371,7 @@ final class PlayerRuntime {
             if (replays == null || entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return;
             var campaign = entry.campaign;
             replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("stuck",
-                    String.valueOf(entry.goal), campaign == null ? "no goal" : campaign.progress(),
+                    String.valueOf(goalOf(entry)), campaign == null ? "no goal" : campaign.progress(),
                     entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
                     campaign == null ? "" : String.valueOf(campaign.stance()), campaign == null ? "" : String.valueOf(campaign.preferences().habits()),
                     "stuck"));
@@ -15934,6 +15939,13 @@ final class PlayerRuntime {
         factions.tick(server.getPlayerManager().getPlayerList());
     }
 
+    /** A player's own goal and the goal it works toward, for a fixture; null for none. */
+    dev.kindred.core.survival.SurvivalGoal[] goalsForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? null : new dev.kindred.core.survival.SurvivalGoal[] {entry.goal, goalOf(entry)};
+    }
+
     /** A fixture's accounts recorded as first seen long ago, so the new-account rule is not what it tests. */
     void factionsSeenLongAgoForTest(List<UUID> players) {
         requireThread();
@@ -16458,7 +16470,10 @@ final class PlayerRuntime {
         long idleNextWanderTick = 0L;
         BlockPos portalFrameInterior = null;
         long manualHoldUntilTick = Long.MIN_VALUE;
+        /** Its own goal, as set for it; what it works toward is {@link #goalOf}. */
         dev.kindred.core.survival.SurvivalGoal goal = dev.kindred.core.survival.SurvivalGoal.NONE;
+        /** Whether a goal was set for it ("none" included), so a faction world's standing goal does not take its place. Not saved. */
+        boolean goalChosen;
         String goalProgress = "";
         PortalRunCampaign campaign;
         final Map<UUID, PortalRunCampaign.Task> campaignTasks = new HashMap<>();
@@ -16968,7 +16983,7 @@ final class PlayerRuntime {
             boolean busy = entry.runner != null && runnerBusy(entry);
             bots.add(new PanelBot(entry.data.id(), entry.data.displayName(), connected, entry.nativeState.phase().name(),
                     entry.snapshot().stopLatched(), busy, entry.runtimeSettings.playstyleProfile().name(),
-                    entry.runtimeSettings.collaborationMode().name(), entry.goal, entry.explanation(), entry.goalProgress,
+                    entry.runtimeSettings.collaborationMode().name(), goalOf(entry), entry.explanation(), entry.goalProgress,
                     player != null ? player.getHealth() : 0f, player != null ? player.getHungerManager().getFoodLevel() : 0,
                     player != null ? player.getBlockPos().toImmutable() : null,
                     player != null ? player.getServerWorld().getRegistryKey().getValue().getPath() : entry.data.dimension(),
@@ -17494,9 +17509,18 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * The goal it works toward ({@link dev.kindred.core.survival.StandingGoal}): its own, or in a faction world without
+     * one the survival progression, the dragon where the server allows the fight. Computed each time, never stored.
+     */
+    private dev.kindred.core.survival.SurvivalGoal goalOf(Entry entry) {
+        return dev.kindred.core.survival.StandingGoal.of(entry.goal, entry.goalChosen, factionsWorld(), worldEditsEnabled(), dragonFight);
+    }
+
     /** The goal set and work toward it begun at once, whoever asked: a command, or a race starting (M-03a). */
     private void beginGoal(Entry entry, dev.kindred.core.survival.SurvivalGoal goal) {
         entry.goal = goal;
+        entry.goalChosen = true;
         // Portal travel is the goal's to allow, a step at a time (campaignCandidates); a new goal starts without it.
         if (entry.nativeBody != null) entry.nativeBody.setPortalTravelAuthorized(false);
         entry.goalProgress = goal == dev.kindred.core.survival.SurvivalGoal.NONE ? "" : "Starting: " + goal.label();
@@ -17512,7 +17536,7 @@ final class PlayerRuntime {
     boolean adviseGoal(UUID id, dev.kindred.core.survival.StrategyAdvice advice) {
         requireThread();
         Entry entry = id != null ? entries.get(id) : null;
-        if (entry == null || entry.goal == dev.kindred.core.survival.SurvivalGoal.NONE) return false;
+        if (entry == null || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE) return false;
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         entry.campaign.advise(advice, server.getTicks());
         return true;

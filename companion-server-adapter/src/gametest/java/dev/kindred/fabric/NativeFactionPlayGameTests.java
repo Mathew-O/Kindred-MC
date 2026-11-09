@@ -131,6 +131,67 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * With no goal of its own, in a faction world, it takes up the survival progression (the End portal here, the
+     * server's dragon fight being off) and earns its first wooden tool from an empty inventory, from the trees about it:
+     * playing the mode asks it to. Before, a player without a goal in a faction world gathered and crafted nothing
+     * (factions2b: ten seeds, four game hours, not one break or craft). Its own goal stays unset throughout.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "factionPlayGoal", tickLimit = 9000)
+    public void withNoGoalOfItsOwnInAFactionWorldItTakesUpTheProgressionAndEarnsAWoodenTool(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8800);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(40, 7, 4), o.add(40, 7, 40)};
+        BlockPos home = o.add(16, 7, 16);
+        var tools = java.util.Set.of(net.minecraft.item.Items.WOODEN_PICKAXE, net.minecraft.item.Items.WOODEN_AXE,
+                net.minecraft.item.Items.WOODEN_SWORD, net.minecraft.item.Items.WOODEN_SHOVEL, net.minecraft.item.Items.WOODEN_HOE);
+        long[] earnedAt = {-1};
+        long[] start = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    NativeBaseGameTests.ground(context, trunks);
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    player.getInventory().clear();
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
+                    var before = f.runtime.goalsForTest(f.id);
+                    context.assertTrue(before[0] == dev.kindred.core.survival.SurvivalGoal.NONE && before[1] == dev.kindred.core.survival.SurvivalGoal.NONE,
+                            "No goal outside a faction world: " + java.util.Arrays.toString(before));
+                    f.runtime.factionsWorldForTest(WIDE);
+                    var after = f.runtime.goalsForTest(f.id);
+                    context.assertTrue(after[0] == dev.kindred.core.survival.SurvivalGoal.NONE && after[1] == dev.kindred.core.survival.SurvivalGoal.STRONGHOLD,
+                            "In a faction world, the progression (the dragon fight off): " + java.util.Arrays.toString(after));
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    start[0] = context.getWorld().getServer().getTicks();
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    var inventory = player.getInventory();
+                    boolean holds = false;
+                    for (int slot = 0; slot < inventory.size() && !holds; slot++) holds = tools.contains(inventory.getStack(slot).getItem());
+                    if (holds && earnedAt[0] < 0) {
+                        earnedAt[0] = context.getWorld().getServer().getTicks() - start[0];
+                        KindredMod.LOGGER.info("Faction world, standing goal: a wooden tool earned {} ticks in", earnedAt[0]);
+                    }
+                    context.assertTrue(holds, "A wooden tool earned: " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    var goals = f.runtime.goalsForTest(f.id);
+                    context.assertTrue(goals[0] == dev.kindred.core.survival.SurvivalGoal.NONE, "Its own goal still unset: " + goals[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionPlayRaid", tickLimit = 2400)
     public void aFiercePlayerScoutsTheExposedBorderItSawAndCapturesItThere(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
