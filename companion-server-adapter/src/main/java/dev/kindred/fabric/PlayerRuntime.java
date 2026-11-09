@@ -1639,6 +1639,9 @@ final class PlayerRuntime {
     /** {@code own}: chosen by the player itself (its goal, its needs), not asked for by a command. */
     private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments, boolean own) {
         requireThread();
+        // Where this task was proposed, for its outcome line (M-01): only the autonomous choice hands one over.
+        String proposedBy = own && entry.pendingSource != null ? entry.pendingSource : "";
+        entry.pendingSource = null;
         UUID id = entry.data.id();
         if (!running || !ready || entry.nativeState == null || (actor != null && !entry.nativeState.access().mayControl(actor))) {
             return 0;
@@ -1980,6 +1983,7 @@ final class PlayerRuntime {
                     try {
                         entry.skillId = skill;
                         entry.skillArgs = Map.copyOf(arguments);
+                        entry.dispatchSource = proposedBy;
                         entry.nativeTask = task;
                         UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
                         entry.lease = entry.runner.start(descriptor, arguments,
@@ -2434,7 +2438,24 @@ final class PlayerRuntime {
         return best;
     }
 
-    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) { }
+    /**
+     * A task it might do now. {@code source} is where it was proposed (the routine's method and line), found when it is
+     * made, so that an outcome with no task label of its own still says which routine issued it (M-01): a goal-less
+     * player's thousand refused walks were logged with nothing to trace them by.
+     */
+    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments, String source) {
+        NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) {
+            this(candidate, skill, arguments, proposer());
+        }
+
+        private static final StackWalker WALKER = StackWalker.getInstance();
+
+        /** The method (and line) that made the candidate: the first frame past this record's own. */
+        private static String proposer() {
+            return WALKER.walk(frames -> frames.filter(f -> !f.getClassName().endsWith("NativeTaskCandidate")).findFirst()
+                    .map(f -> f.getMethodName() + ":" + f.getLineNumber()).orElse("?"));
+        }
+    }
 
     private boolean canScanBlock() {
         return blocksScannedThisTick < MAX_BLOCK_CHECKS_PER_TICK;
@@ -4603,19 +4624,27 @@ final class PlayerRuntime {
         return true;
     }
 
+    /** Ticks a horse's swap or ride handed out and not yet chosen is kept for, before it is planned again (F-22c38). */
+    private static final int STABLE_HOLD = 200;
+
     /** Its horse's next step (M-01a), as one project candidate; survival needs still outrank it. */
     private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
         var stable = entry.stable;
         var player = body.entity();
-        // A swap or a ride under way is kept to till it ends: planned again while it waited on its record, each plan was a
-        // try, and four of them gave the saddle up as the swap completed, and 12 mounts were counted for 3 rides (#82's
-        // CI, run 42566194927) (F-22c38).
+        // A swap or a ride handed out is kept till a task of it has run and ended: planned again meanwhile, each plan was a
+        // try. Four gave the saddle up as the swap completed, and 12 mounts were counted for 3 rides (#82's CI, run
+        // 42566194927). Kept only while it ran, mounts were still counted as it waited to be chosen (thrown off during
+        // "Hold on"), between the wait's end and its choosing, and as it waited on its record with the runner still
+        // showing the wait's end: 24 for 4 rides (#87's CI, run 42584555878) (F-22c38). One not chosen is let go after
+        // STABLE_HOLD ticks.
         var step = entry.stableStep;
-        if (step != null && step.candidate().id().equals(entry.currentTaskId) && entry.runner.state() == SkillRunner.State.RUNNING
-                && ("native_swap".equals(step.skill()) || "native_ride".equals(step.skill()))) {
-            return List.of(step);
+        if (step != null && ("native_swap".equals(step.skill()) || "native_ride".equals(step.skill()))) {
+            boolean current = step.candidate().id().equals(entry.currentTaskId);
+            if (current) entry.stableStepStarted = true;
+            if (current || !entry.stableStepStarted && server.getTicks() - entry.stableStepAt <= STABLE_HOLD) return List.of(step);
         }
         entry.stableStep = null;
+        entry.stableStepStarted = false;
         var task = stable.next(player);
         if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
@@ -4645,7 +4674,15 @@ final class PlayerRuntime {
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         entry.stableStep = new NativeTaskCandidate(candidate, t.skill(), t.args());
+        entry.stableStepAt = server.getTicks();
         return List.of(entry.stableStep);
+    }
+
+    /** The mounts its horse's taming has counted so far, for fixtures; -1 with no horse being taken on (F-22c38). */
+    int stableMountsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.stable == null ? -1 : entry.stable.mounts();
     }
 
     /** The horse a player keeps (M-01a), by its id, for fixtures. */
@@ -6653,6 +6690,7 @@ final class PlayerRuntime {
                             teamCoordinator.startTask(tId, entry.data.id());
                         }
                     }
+                    entry.pendingSource = candidateToDispatch.source();
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
@@ -7328,6 +7366,8 @@ final class PlayerRuntime {
             return;
         }
         UUID finishedTaskId = entry.currentTaskId;
+        // Its life task's label, read before the life task is let go below.
+        String lifeLabel = finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null ? entry.lifeTask.label() : null;
         if (state == SkillRunner.State.CANCELLED && entry.runner.reason().filter(r -> r.startsWith("authority lost")).isPresent()) {
             var snapshot = entry.arbiter.snapshot();
             KindredMod.LOGGER.debug("{} {} lost authority: lifecycle={} stop={} intent={} task={} lease={}", entry.data.displayName(),
@@ -7538,15 +7578,13 @@ final class PlayerRuntime {
             }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
+            // Its label, or the routine that issued it: every outcome says where it came from (M-01).
+            String label = outcomeLabel(entry, lifeLabel);
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
-                    entry.runner.reason().map(r -> ": " + r).orElse(""),
-                    entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
+                    entry.runner.reason().map(r -> ": " + r).orElse(""), label.isEmpty() ? "" : " [" + label + "]");
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
-                    + (entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : ""));
-            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label()
-                    : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
+                    + (label.isEmpty() ? "" : " [" + label + "]"));
+            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
@@ -13702,6 +13740,17 @@ final class PlayerRuntime {
         this.replays = replays;
     }
 
+    /**
+     * What an ended task is called in its outcome line: its campaign or build step's label, its life task's, or else
+     * "from" the routine that proposed it (M-01); empty for a task asked for by a command.
+     */
+    private static String outcomeLabel(Entry entry, String lifeLabel) {
+        if (entry.activeCampaignTask != null) return entry.activeCampaignTask.label();
+        if (entry.activeBuildTask != null) return entry.activeBuildTask.label();
+        if (lifeLabel != null) return lifeLabel;
+        return entry.dispatchSource == null || entry.dispatchSource.isEmpty() ? "" : "from " + entry.dispatchSource;
+    }
+
     /** Who is told of deaths and ended tasks beside the log; {@link RunObserver#NONE} for no one. */
     void observeRun(RunObserver observer) {
         requireThread();
@@ -16332,6 +16381,8 @@ final class PlayerRuntime {
         }
         private SkillRunner.State lastRunnerState = SkillRunner.State.IDLE;
         private String skillId;
+        /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
+        private String dispatchSource = "", pendingSource;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
@@ -16438,6 +16489,9 @@ final class PlayerRuntime {
         StableRunner stable;
         /** Its horse's last step handed out, kept while it runs if it is a swap or a ride (F-22c38). */
         NativeTaskCandidate stableStep;
+        /** Whether a task of {@link #stableStep} has been chosen, and the tick it was handed out (F-22c38). */
+        boolean stableStepStarted;
+        int stableStepAt;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */
