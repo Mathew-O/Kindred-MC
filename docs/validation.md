@@ -16,6 +16,11 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeNavigationGameTests` (the gap fixture: 0 of 3 before, passing after) with `NativeRanchGameTests`, `NativeHouseGameTests`, `NativeBuildGameTests` and `NativeLakeBedClimbGameTests` alone, 3 runs, 20 of 20 each.
+
 ## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `7bc5b42`. `python3 tools/eval/run.py --ref
