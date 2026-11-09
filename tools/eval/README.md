@@ -48,6 +48,15 @@ operator guide.
   scenario says `strategist=on` or `voice=on`, and never writes them to a file. The voice has no switch of its own: it
   speaks only when spoken to, through the strategist, so in a run with no people it is rarely asked. A run that asks
   for either with none configured says so in its result's `build` field.
+  - The release jar `run.py --ref` builds does not carry the Anthropic SDK, so a run reaches Anthropic's server through
+    the compatible route. Give these to the one `run.py` process, on its command line:
+    `KINDRED_STRATEGIST=on`, `KINDRED_STRATEGIST_PROVIDER=openai-compatible`,
+    `KINDRED_STRATEGIST_BASE_URL=https://api.anthropic.com/v1`, `KINDRED_STRATEGIST_MODEL` set to the default in
+    `ClaudeStrategist.DEFAULT_MODEL` (the compatible route has none of its own), and the key as
+    `KINDRED_STRATEGIST_API_KEY`. With the provider named, `ANTHROPIC_API_KEY` is not read.
+  - Before a whole arm, check one short seed: its console says "Kindred strategist on:", a spell is followed by a rescue
+    asked for, and its `eval-result.json` counts tokens. Two arms on 8 November ran with the strategist off because only
+    `ANTHROPIC_API_KEY` was set: no plans and no tokens on any seed.
 - **The dragon.** `goal=dragon` is refused, as in play, unless the dragon fight is on in the server's edit policy
   (`/aiplayer dragonfight on`); the run does not turn it on.
 
@@ -69,8 +78,9 @@ cast and the portal's lighting as they complete; a frame's obsidian is cast wher
   not overlap.
 - **Summaries only.** Results go under `docs/evidence/eval/` as `summary.md` files, no logs; the tracker cites them as
   it cites any evidence.
-- **Cores and memory.** Each server wants about 3 GB of heap and a core or more. On four cores, two at a time
-  (`--parallel 2`); nothing else should run on the cores meanwhile, or the runs take longer.
+- **Cores and memory.** Each server wants about 3 GB of heap and a core or more. On four cores and 15 GB, up to three
+  at a time (`--parallel 3`). Watch the pace in the run's own lines ("ticks run N, T s" for each seed): if a server falls under 20 ticks a second, go back to two.
+  Nothing else should run on the cores meanwhile, or the runs take longer.
 - **The server.** `run.py` fetches the Fabric server launcher once into `run/eval/cache/` at the pinned loader version,
   and uses the vanilla server jar from Loom's cache (or Mojang's, fetched once). It needs the network the first time.
   Loom's `runServer` is the fallback with no network: copy the scenario into its environment by hand.

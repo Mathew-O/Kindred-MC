@@ -94,7 +94,7 @@ import net.minecraft.util.Identifier;
  * controller or work queue lives here. All methods, including native ticking, are server-thread only.
  */
 final class NativePlayerBody implements BodyAdapter {
-    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART, SHEAR, ENCHANT, BREW, SMITH, FISH }
+    enum Intent { MOVE, SELECT_SLOT, EAT, EQUIP, MINE, CRAFT, PLACE, SMELT, SWAP, ATTACK, BLOCK, TILL, PLANT, HARVEST, SLEEP, IGNITE_PORTAL, CHEST_ORGANIZE, TOSS, BUCKET, THROW, BOAT, FRAME, SHOOT, FEED, GATE, TAKE, DOOR, LOOK, RENAME, TRADE, CART, SHEAR, ENCHANT, BREW, SMITH, FISH, RIDE }
 
     /** Rechecks server policy, paid activity, revisions/claims and the task's authorized target. */
     @FunctionalInterface
@@ -2313,6 +2313,59 @@ final class NativePlayerBody implements BodyAdapter {
             boarded[0] = player.interact(boat, Hand.MAIN_HAND).isAccepted() && player.getVehicle() == boat;
         });
         return done && boarded[0];
+    }
+
+    /**
+     * Onto {@code horse} with the empty hand in {@code emptySlot}, as a player's use click on one does (M-01a): vanilla
+     * seats it. An untamed one bucks it off before long, a little tamer each time, until it bonds with it. Only within
+     * the reach the server allows a player's click.
+     */
+    boolean mount(ActionLease lease, int emptySlot, net.minecraft.entity.passive.AbstractHorseEntity horse) {
+        requireThread();
+        if (emptySlot < 0 || emptySlot > 8 || horse == null || !horse.isAlive() || horse.isBaby() || player.hasVehicle()
+                || !player.getInventory().getStack(emptySlot).isEmpty() || !player.canInteractWithEntity(horse, 0)) return false;
+        boolean[] on = {false};
+        boolean done = execute(lease, Intent.RIDE, horse.getBlockPos(), () -> {
+            if (player.getInventory().selectedSlot != emptySlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = emptySlot;
+            }
+            face(horse.getBoundingBox().getCenter());
+            on[0] = player.interact(horse, Hand.MAIN_HAND).isAccepted() && player.getVehicle() == horse;
+            player.swingHand(Hand.MAIN_HAND);
+        });
+        return done && on[0];
+    }
+
+    /**
+     * Saddles {@code horse} with the saddle in {@code hotbarSlot}, as a player's use click with one does (M-01a): vanilla
+     * takes the saddle onto a tamed horse that has none.
+     */
+    boolean saddle(ActionLease lease, int hotbarSlot, net.minecraft.entity.passive.AbstractHorseEntity horse) {
+        requireThread();
+        if (hotbarSlot < 0 || hotbarSlot > 8 || horse == null || !horse.isAlive() || player.hasVehicle()
+                || !player.getInventory().getStack(hotbarSlot).isOf(net.minecraft.item.Items.SADDLE) || !player.canInteractWithEntity(horse, 0)) return false;
+        return execute(lease, Intent.RIDE, horse.getBlockPos(), () -> {
+            if (player.getInventory().selectedSlot != hotbarSlot) {
+                player.clearActiveItem();
+                player.getInventory().selectedSlot = hotbarSlot;
+            }
+            face(horse.getBoundingBox().getCenter());
+            player.interact(horse, Hand.MAIN_HAND);
+            player.swingHand(Hand.MAIN_HAND);
+        });
+    }
+
+    /** Off the horse it rides, as a player's sneak gets it off (M-01a). */
+    boolean dismount(ActionLease lease) {
+        requireThread();
+        if (!(player.getVehicle() instanceof net.minecraft.entity.passive.AbstractHorseEntity horse)) return false;
+        return execute(lease, Intent.RIDE, horse.getBlockPos(), () -> {
+            forward = sideways = 0;
+            jump = sprint = false;
+            player.applyInput(0, 0);
+            player.stopRiding();
+        });
     }
 
     /** The paddles: forward and either way, held until changed or halted. Looks where the boat heads. */

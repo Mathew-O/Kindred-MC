@@ -85,6 +85,7 @@
       "dev.kindred.fabric.NativeCobwebHeadRoomGameTests",
       "dev.kindred.fabric.NativeHalfCastFrameGameTests",
       "dev.kindred.fabric.NativeObstructedPortalGameTests",
+      "dev.kindred.fabric.NativeCavernLedgeGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeRescueRoundsGameTests",
@@ -127,6 +128,7 @@
       "dev.kindred.fabric.NativeBaseGameTests",
       "dev.kindred.fabric.NativeCoopPaceGameTests",
       "dev.kindred.fabric.NativeOwnRanchGameTests",
+      "dev.kindred.fabric.NativeHorseGameTests",
       "dev.kindred.fabric.NativeBaseRepairGameTests",
       "dev.kindred.fabric.NativeLifeFirstGameTests",
       "dev.kindred.fabric.NativeSeedBuildGameTests",
@@ -159,6 +161,7 @@
       "dev.kindred.fabric.NativePetGameTests",
       "dev.kindred.fabric.NativeRoughTalkGameTests",
       "dev.kindred.fabric.NativeWireGameTests",
+      "dev.kindred.fabric.NativeKnowledgeGameTests",
       "dev.kindred.fabric.NativeCraftHelperGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
       "dev.kindred.fabric.NativeOutingGameTests"
