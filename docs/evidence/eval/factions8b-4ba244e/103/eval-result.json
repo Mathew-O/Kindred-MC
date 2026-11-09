@@ -1,0 +1,99 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=72000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions; players=Ada,Bram,Cleo,Dara,Eli; founders=3",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 103,
+  "ticks": 72000,
+  "ticksRun": 72271,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 740, "factions": 4, "claims": 11, "captures": 0, "sales": 212, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 3, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 26.25, "tickMsWorst": 621.67, "tickMsWorstAt": 11364, "ticksOver50ms": 692, "ticksOver200ms": 7, "heapMbMax": 1204, "samples": 3600},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 5740, "stone_tools": 8280, "iron_ingot": 10360, "iron_pickaxe": 36640},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 21640, "x": -85, "y": 36, "z": -76, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1740, "stone_tools": 4380, "iron_ingot": 13720},
+      "deaths": [
+        {"tick": 55211, "cause": "Sol was slain by Zombie", "x": 165, "y": 47, "z": 513, "light": 0, "timeOfDay": 7573, "dimension": "minecraft:overworld", "hunger": 3, "underSky": false, "stage": "Stone: fight back - Back off from zombie the way it came (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31600, "x": 93, "y": 66, "z": 507, "attempt": 1}, {"tick": 55020, "x": 165, "y": 48, "z": 512, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 9120, "stone_tools": 24160, "iron_ingot": 41320},
+      "deaths": [
+        {"tick": 47590, "cause": "Echo drowned", "x": -399, "y": 39, "z": -195, "light": 3, "timeOfDay": 23952, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 53920, "x": 25, "y": 65, "z": -3, "attempt": 1}, {"tick": 57780, "x": 25, "y": 65, "z": -2, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Ada": {
+      "stages": {"wooden_tool": 1480, "stone_tools": 8020, "iron_ingot": 12180, "iron_pickaxe": 26400},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 24080, "x": 32, "y": 16, "z": 97, "attempt": 1}, {"tick": 59620, "x": -73, "y": -54, "z": 90, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Bram": {
+      "stages": {},
+      "deaths": [
+        {"tick": 43781, "cause": "Bram was shot by Skeleton", "x": 40, "y": 62, "z": -4, "light": 3, "timeOfDay": 20143, "dimension": "minecraft:overworld", "hunger": 13, "underSky": true, "stage": "Wood: Get out of the water: to dry ground (tried elsewhere 4 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 5080, "x": 18, "y": 64, "z": -44, "attempt": 1}, {"tick": 9460, "x": -21, "y": 70, "z": -49, "attempt": 2}, {"tick": 26780, "x": 16, "y": 64, "z": -42, "attempt": 3}, {"tick": 33220, "x": -29, "y": 66, "z": -8, "attempt": 4}, {"tick": 52040, "x": 18, "y": 65, "z": -42, "attempt": 1}, {"tick": 56020, "x": 16, "y": 64, "z": -40, "attempt": 2}, {"tick": 71160, "x": 22, "y": 66, "z": -2, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Cleo": {
+      "stages": {"wooden_tool": 29280, "stone_tools": 29920, "iron_ingot": 37860, "iron_pickaxe": 48680},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 4840, "x": 27, "y": 65, "z": -2, "attempt": 1}, {"tick": 8860, "x": 25, "y": 65, "z": 2, "attempt": 2}, {"tick": 47380, "x": 31, "y": 16, "z": 190, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Dara": {
+      "stages": {"wooden_tool": 2280, "stone_tools": 7440, "iron_ingot": 11220, "iron_pickaxe": 17960},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 71960, "x": 72, "y": 22, "z": 131, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Eli": {
+      "stages": {"wooden_tool": 10060, "stone_tools": 12540, "iron_ingot": 58220},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 4420, "x": -17, "y": 69, "z": 46, "attempt": 1}, {"tick": 8480, "x": 18, "y": 66, "z": 68, "attempt": 1}, {"tick": 56840, "x": 13, "y": 66, "z": 68, "attempt": 1}, {"tick": 64640, "x": 58, "y": 63, "z": 4, "attempt": 1}, {"tick": 68440, "x": 34, "y": 63, "z": 2, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

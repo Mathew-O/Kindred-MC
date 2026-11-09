@@ -1,0 +1,100 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=72000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions; players=Ada,Bram,Cleo,Dara,Eli; founders=3",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 72000,
+  "ticksRun": 72216,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 601, "factions": 3, "claims": 7, "captures": 0, "sales": 178, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 4, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 19.25, "tickMsWorst": 521.37, "tickMsWorstAt": 40585, "ticksOver50ms": 271, "ticksOver200ms": 6, "heapMbMax": 964, "samples": 3600},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1380, "stone_tools": 2200, "iron_ingot": 24880},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52700, "x": -437, "y": 34, "z": -138, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 1420, "iron_ingot": 9080, "iron_pickaxe": 32140},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 49520, "x": -565, "y": 43, "z": -182, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 30020, "stone_tools": 30940, "iron_ingot": 36100},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Ada": {
+      "stages": {"wooden_tool": 3520, "stone_tools": 4140, "iron_ingot": 19260},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31280, "x": -192, "y": 16, "z": -205, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Bram": {
+      "stages": {"wooden_tool": 1660, "stone_tools": 2120, "iron_ingot": 12520},
+      "deaths": [
+        {"tick": 14799, "cause": "Bram was slain by Spider", "x": -401, "y": 31, "z": -159, "light": 0, "timeOfDay": 15161, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Fight spider", "stance": "PRESS_ON", "habits": "[]", "task": "Fight spider"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Cleo": {
+      "stages": {"wooden_tool": 2280, "stone_tools": 2880, "iron_ingot": 8120},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29040, "x": -319, "y": 31, "z": -140, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Dara": {
+      "stages": {"wooden_tool": 24440, "stone_tools": 25040, "iron_ingot": 36380},
+      "deaths": [
+        {"tick": 10713, "cause": "Dara was slain by Zombie", "x": -365, "y": 37, "z": -99, "light": 0, "timeOfDay": 11075, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Eli": {
+      "stages": {"wooden_tool": 3140, "stone_tools": 5640, "iron_ingot": 14620, "iron_pickaxe": 64700},
+      "deaths": [
+        {"tick": 16146, "cause": "Eli was shot by Skeleton", "x": -352, "y": 33, "z": -145, "light": 0, "timeOfDay": 16508, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 65305, "cause": "Eli was slain by Zombie", "x": -339, "y": 39, "z": -192, "light": 0, "timeOfDay": 17667, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
