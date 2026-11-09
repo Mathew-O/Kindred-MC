@@ -4602,19 +4602,27 @@ final class PlayerRuntime {
         return true;
     }
 
+    /** Ticks a horse's swap or ride handed out and not yet chosen is kept for, before it is planned again (F-22c38). */
+    private static final int STABLE_HOLD = 200;
+
     /** Its horse's next step (M-01a), as one project candidate; survival needs still outrank it. */
     private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
         var stable = entry.stable;
         var player = body.entity();
-        // A swap or a ride under way is kept to till it ends: planned again while it waited on its record, each plan was a
-        // try, and four of them gave the saddle up as the swap completed, and 12 mounts were counted for 3 rides (#82's
-        // CI, run 42566194927) (F-22c38).
+        // A swap or a ride handed out is kept till a task of it has run and ended: planned again meanwhile, each plan was a
+        // try. Four gave the saddle up as the swap completed, and 12 mounts were counted for 3 rides (#82's CI, run
+        // 42566194927). Kept only while it ran, mounts were still counted as it waited to be chosen (thrown off during
+        // "Hold on"), between the wait's end and its choosing, and as it waited on its record with the runner still
+        // showing the wait's end: 24 for 4 rides (#87's CI, run 42584555878) (F-22c38). One not chosen is let go after
+        // STABLE_HOLD ticks.
         var step = entry.stableStep;
-        if (step != null && step.candidate().id().equals(entry.currentTaskId) && entry.runner.state() == SkillRunner.State.RUNNING
-                && ("native_swap".equals(step.skill()) || "native_ride".equals(step.skill()))) {
-            return List.of(step);
+        if (step != null && ("native_swap".equals(step.skill()) || "native_ride".equals(step.skill()))) {
+            boolean current = step.candidate().id().equals(entry.currentTaskId);
+            if (current) entry.stableStepStarted = true;
+            if (current || !entry.stableStepStarted && server.getTicks() - entry.stableStepAt <= STABLE_HOLD) return List.of(step);
         }
         entry.stableStep = null;
+        entry.stableStepStarted = false;
         var task = stable.next(player);
         if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
@@ -4644,7 +4652,15 @@ final class PlayerRuntime {
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         entry.stableStep = new NativeTaskCandidate(candidate, t.skill(), t.args());
+        entry.stableStepAt = server.getTicks();
         return List.of(entry.stableStep);
+    }
+
+    /** The mounts its horse's taming has counted so far, for fixtures; -1 with no horse being taken on (F-22c38). */
+    int stableMountsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.stable == null ? -1 : entry.stable.mounts();
     }
 
     /** The horse a player keeps (M-01a), by its id, for fixtures. */
@@ -16434,6 +16450,9 @@ final class PlayerRuntime {
         StableRunner stable;
         /** Its horse's last step handed out, kept while it runs if it is a swap or a ride (F-22c38). */
         NativeTaskCandidate stableStep;
+        /** Whether a task of {@link #stableStep} has been chosen, and the tick it was handed out (F-22c38). */
+        boolean stableStepStarted;
+        int stableStepAt;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */
