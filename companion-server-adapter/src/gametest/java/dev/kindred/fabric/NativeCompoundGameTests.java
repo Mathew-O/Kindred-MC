@@ -438,6 +438,21 @@ public final class NativeCompoundGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundCattle", tickLimit = 9000)
     public void aPlayerBringsAPairInByThePasturesDoorwayBreedsThemAndShutsItBehindThem(TestContext context) {
+        pastureDoorway(context, false);
+    }
+
+    /**
+     * The same with the player and the pair down in the pasture's way in under its east wall: on #98's CI (run
+     * 42574813864) a cow got out of the pasture by that passage one wide, and the player went for it, and led it, through
+     * it. Stood under the wall with a cow each side of it, every walk was "Route … is blocked", both cows were given up,
+     * and the ranch left with them out of the pen (F-22c43). Staged: all three put there as the leading begins.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundCattlePassage", tickLimit = 9000)
+    public void downInThePasturesWayInWithACowEachSideItLetsThemWanderOffAndBringsThemIn(TestContext context) {
+        pastureDoorway(context, true);
+    }
+
+    private static void pastureDoorway(TestContext context, boolean passage) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8800);
         var style = new BuildStyle("", "oak", "cobblestone", 0, 0);
         var plans = java.util.List.of(Compounds.keep(style), Compounds.farmWard(style), Compounds.pastureWard(style));
@@ -496,6 +511,20 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     }
                     world.setTimeOfDay(1000);
                     context.assertTrue(f.runtime.startPasture(f.source, f.id, origin, dev.kindred.core.survival.Ranch.Kind.COW) == 1, "Pasture started");
+                })
+                .createAndAdd(() -> {
+                    if (!passage) return;
+                    // Staged, as #98's CI ended, once the doorway is open and the leading begun: the player and both cows
+                    // down in the way in under the east wall, the player under the wall, a cow each side of it in the
+                    // passage one wide. Staged a step earlier, a cow just past the passage's east stair, it was led round
+                    // and in, 3 of 3: that form does not reproduce CI.
+                    context.assertTrue(f.runtime.ranchStatus(f.id).orElse("").contains("leading"), "Leading begun: " + f.runtime.ranchStatus(f.id).orElse(""));
+                    var world = context.getWorld();
+                    int row = origin.getZ() + Compounds.pastureWayIn(style);
+                    f.player().refreshPositionAndAngles(origin.getX() + wall.east() - 0.5, origin.getY() - 3, row + 0.5, 0, 0);
+                    for (int i = 0; i < 2; i++) {
+                        world.getEntity(cows[i]).refreshPositionAndAngles(origin.getX() + wall.east() - 2 + 3 * i + 0.5, origin.getY() - 3, row + 0.5, 0, 0);
+                    }
                 })
                 .createAndAdd(() -> {
                     var status = f.runtime.ranchStatus(f.id);
