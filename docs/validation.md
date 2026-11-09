@@ -16,6 +16,11 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## F-35b: a cave pocket up a wall climbed to once, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeCaveLedgeGameTests` alone, 0 of 3 before (the fix taken out), passing after; the campaign and climb classes, 3 runs (recorded in the PR).
+
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
 - Build: `./gradlew build`.
