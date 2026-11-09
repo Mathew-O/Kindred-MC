@@ -3419,3 +3419,11 @@ After the block's first merge from main, CI on PR #25 found:
   - `NativePetGameTests`, 3 runs, 2 of 2 each.
   - The other workstation users (`NativeBrewGameTests`, `NativeEnchantGameTests`, `NativeHouseGameTests`,
     `NativeKitNameGameTests`, `NativeNetheriteGameTests`), 1 run: 10 of 10.
+
+- **[F-22c38](evidence/F-22c38.md):** a horse's swap or ride under way is kept to till it ends, not counted again (product;
+  #82's run 42566194927: the saddle's swap planned four times while it waited on its record, and the saddle given up).
+  - The staged fixture (each swap's and ride's record 1.5 s late): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+  - Reopened (#87's run 42584555878: 24 mounts counted for 5 rides). The fixture now checks each mount counted was made.
+    With the first form of the change, 0 of 3 ("counted 24, made 6"); with the step kept till a task of it has run, 3
+    of 3. `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.

@@ -149,12 +149,40 @@ public final class NativeHorseGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownHorse", tickLimit = 6000)
     public void withItsCabinStandingItTamesAWildHorseItSeesAndSaddlesIt(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
+        ownHorse(context, false);
+    }
+
+    /**
+     * The same with each step's durable record slow to be kept, as on a busy runner: on #82's CI (run 42566194927) the
+     * saddle's swap, planned while it waited on its record, was counted as tried four times and the saddle given up
+     * ("its saddle could not be brought to hand") as the swap completed; its mounts likewise were counted 12 for 3 rides.
+     * Staged: the record of each swap and ride kept 1.5 seconds late.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownHorseSlow", tickLimit = 6000)
+    public void withItsStepsSlowToBeRecordedItStillSaddlesTheHorseItTames(TestContext context) {
+        ownHorse(context, true);
+    }
+
+    private static void ownHorse(TestContext context, boolean slow) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> !slow ? writer : new dev.kindred.core.ActionAdmission.Writer() {
+            @Override public java.util.concurrent.CompletableFuture<dev.kindred.core.ActionRecord> prepare(dev.kindred.core.ActionRecord intent) {
+                if (!"native_swap".equals(intent.kind()) && !"native_ride".equals(intent.kind())) return writer.prepare(intent);
+                return writer.prepare(intent).thenCompose(kept -> java.util.concurrent.CompletableFuture.supplyAsync(() -> kept,
+                        java.util.concurrent.CompletableFuture.delayedExecutor(1500, java.util.concurrent.TimeUnit.MILLISECONDS)));
+            }
+            @Override public java.util.concurrent.CompletableFuture<dev.kindred.core.ActionRecord> transition(dev.kindred.core.ActionRecord next, long expectedRevision) {
+                return writer.transition(next, expectedRevision);
+            }
+        }, true, 5500);
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
         BlockPos home = o.add(16, 7, 16);
         BlockPos cabinAt = home.add(-3, 0, -3);
         UUID[] horse = new UUID[1];
+        // The mounts made, seen tick by tick, and the most its taming counted: a mount counted that was not made is a try
+        // lost (24 counted for 4 made on #87's CI, run 42584555878, the horse given up unbonded) (F-22c38).
+        int[] made = {0, 0};
+        boolean[] on = {false};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Wrangler"))
@@ -194,11 +222,16 @@ public final class NativeHorseGameTests implements FabricGameTest {
                         new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
                 .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
                 .createAndAdd(() -> {
-                    var kept = f.runtime.ownHorse(f.id);
                     var wild = (HorseEntity) context.getWorld().getEntity(horse[0]);
+                    boolean riding = wild != null && f.player().getVehicle() == wild;
+                    if (riding && !on[0]) made[0]++;
+                    on[0] = riding;
+                    made[1] = Math.max(made[1], f.runtime.stableMountsForTest(f.id));
+                    var kept = f.runtime.ownHorse(f.id);
                     context.assertTrue(kept.isPresent(), "A horse of its own kept: " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id)
-                            + (wild == null ? "" : "; tame " + wild.isTame() + ", temper " + wild.getTemper()));
+                            + (wild == null ? "" : "; tame " + wild.isTame() + ", temper " + wild.getTemper()) + "; mounts counted " + made[1] + ", made " + made[0]);
                 })
+                .createAndAdd(() -> context.assertTrue(made[1] <= made[0] + 1, "Each mount counted made: counted " + made[1] + ", made " + made[0]))
                 .createAndAdd(() -> {
                     var player = f.player();
                     var kept = (HorseEntity) context.getWorld().getEntity(horse[0]);
