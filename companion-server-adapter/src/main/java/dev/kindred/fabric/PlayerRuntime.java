@@ -352,6 +352,8 @@ final class PlayerRuntime {
     private final MarketDesk market;
     /** The auction house (M-06h). */
     private final AuctionHouse auctions;
+    /** The Factions panel and its vanilla fallback (M-06l). */
+    private final FactionsHud hud;
     /** Set by a fixture only: the world plays Factions though the mode is not yet playable for operators. */
     private boolean factionsForTest;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
@@ -505,6 +507,8 @@ final class PlayerRuntime {
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
         this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.hud = new FactionsHud(factions, market);
+        factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
@@ -2538,6 +2542,7 @@ final class PlayerRuntime {
             factions.applyBorders();
             auctions.tick();
             factions.notices();
+            hud.tick(server.getPlayerManager().getPlayerList());
         }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
@@ -15449,6 +15454,12 @@ final class PlayerRuntime {
                 }));
     }
 
+    /** The Factions panel's server side (M-06l). */
+    FactionsHud hud() {
+        requireThread();
+        return hud;
+    }
+
     /** The auction house (M-06h). */
     AuctionHouse auctions() {
         requireThread();
@@ -15777,7 +15788,10 @@ final class PlayerRuntime {
     /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
     void playerLeft(UUID playerId) {
         requireThread();
-        if (factionsWorld()) factions.disconnected(playerId);
+        if (factionsWorld()) {
+            factions.disconnected(playerId);
+            hud.left(playerId);
+        }
         matches.departed(playerId).ifPresent(this::announce);
     }
 

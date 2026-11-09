@@ -138,6 +138,14 @@ final class FactionsService {
 
     FactionBook book() { return ledgers.get().factions(); }
 
+    /** The ledgers as the rules read them now. */
+    dev.kindred.core.record.Ledgers ledgersNow() { return ledgers.get(); }
+
+    /** Each faction notice also kept for its members' panels (M-06l). */
+    private java.util.function.BiConsumer<UUID, String> panelNotices = (f, line) -> { };
+
+    void panelNotices(java.util.function.BiConsumer<UUID, String> sink) { panelNotices = sink; }
+
     PowerBook powers() { return ledgers.get().power(); }
 
     Factions.At at(String world) { return new Factions.At(server.getTicks(), now(), world); }
@@ -168,6 +176,7 @@ final class FactionsService {
                 boolean vulnerable = exposure.exposed() > 0;
                 events.add(dev.kindred.core.factions.Capture.notice(faction.id(), vulnerable, exposure, at("")));
                 broadcast(faction.name() + (vulnerable ? " is vulnerable: " + exposure.exposed() + " chunks exposed" : " is secure again"));
+                panelNotices.accept(faction.id(), faction.name() + (vulnerable ? " is vulnerable" : " is secure again"));
             }
         }
         exposedSeen = seen;
@@ -181,6 +190,7 @@ final class FactionsService {
 
     /** A line told to a faction's members online. */
     void tellFaction(UUID faction, String line) {
+        panelNotices.accept(faction, line);
         var members = book().get(faction).map(f -> f.members().keySet()).orElse(java.util.Set.of());
         for (UUID member : members) {
             var player = server.getPlayerManager().getPlayer(member);

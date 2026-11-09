@@ -46,10 +46,18 @@ final class KindredPanelPayloads {
         @Override public Id<? extends CustomPayload> getId() { return ID; }
     }
 
+    /** The Factions panel's state for one player (M-06l): what that player may know, as {@code Hud.encode} writes it. */
+    record Hud(String text) implements CustomPayload {
+        static final Id<Hud> ID = new Id<>(Identifier.of("kindred", "factions_hud"));
+        static final PacketCodec<RegistryByteBuf, Hud> CODEC = PacketCodec.tuple(PacketCodecs.string(32_768), Hud::text, Hud::new);
+        @Override public Id<? extends CustomPayload> getId() { return ID; }
+    }
+
     /** Tells Minecraft about these messages. */
     static void register() {
         PayloadTypeRegistry.playC2S().register(Request.ID, Request.CODEC);
         PayloadTypeRegistry.playC2S().register(Action.ID, Action.CODEC);
         PayloadTypeRegistry.playS2C().register(State.ID, State.CODEC);
+        PayloadTypeRegistry.playS2C().register(Hud.ID, Hud.CODEC);
     }
 }
