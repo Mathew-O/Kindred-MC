@@ -263,6 +263,8 @@ final class PlayerRuntime {
     private final PeerTalk peerTalk;
     /** F-34b: the Wire, the one way typed messages travel between players. */
     private final KindredWire wire;
+    /** F-32: what each AI player knows, filled from the Wire. */
+    private final KnowledgeWebs webs;
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -527,8 +529,10 @@ final class PlayerRuntime {
         chatIntents = new ChatIntents(this, server);
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), null, null,
+        webs = new KnowledgeWebs(server::getTicks);
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
                 PlayerRuntime::now);
+        wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -758,6 +762,11 @@ final class PlayerRuntime {
                     matches.restore(ledgers.matches().values());
                     flushMatches();
                     chronicle.start();
+                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
+                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
+                        if (unread == null && events != null) webs.rebuild(events);
+                        else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
+                    }));
                     entries.putAll(pendingEntries);
                     ready = true;
                     edits = loaded.edits();
@@ -12449,6 +12458,22 @@ final class PlayerRuntime {
      * is to it, what it is at, its goal, its run's last events, what it last said and what it remembers of this world.
      * Null when it cannot be voiced now.
      */
+    /**
+     * What the player knows of the others for its voice: its peer ledger (E-50), then what its web (F-32) holds that this
+     * speaker may know by their relation to each fact; the voice's tiers then apply to both.
+     */
+    private List<dev.kindred.core.social.PeerLedger.Told> voicePeers(UUID id, ServerPlayerEntity speaker) {
+        var out = new ArrayList<>(peerRadio.told(id));
+        var web = webs.existing(id);
+        var viewer = wire.roster().stream().filter(l -> l.id().equals(wire.idOf(speaker))).findFirst();
+        viewer.ifPresent(l -> {
+            var asker = dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(l);
+            web.ifPresent(w -> out.addAll(dev.kindred.core.knowledge.WebLines.forListener(w, asker, server.getTicks(), PeerRadio.TOLD)));
+            out.addAll(dev.kindred.core.knowledge.WebLines.forListener(webs.world(), asker, server.getTicks(), PeerRadio.TOLD));
+        });
+        return out;
+    }
+
     private PlayerVoice.Facts voiceFacts(UUID id, ServerPlayerEntity speaker) {
         Entry entry = entries.get(id);
         if (entry == null || !running || !ready) return null;
@@ -12467,7 +12492,7 @@ final class PlayerRuntime {
         return new PlayerVoice.Facts(entry.data.displayName(), entry.profile.personality(), relation, controls, entry.snapshot().stopLatched(), busy,
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(entry.goal), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
-                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), peerRadio.told(id));
+                memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
     }
 
     /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
@@ -13214,6 +13239,9 @@ final class PlayerRuntime {
     /** The AI player a body belongs to, either body; null for a person or anything else. */
     /** The Wire (F-34): send typed messages on named channels; read what an AI player was told. Server thread only. */
     KindredWire wire() { return wire; }
+
+    /** What each AI player knows (F-32); ask on someone's behalf with their viewer. Server thread only. */
+    KnowledgeWebs webs() { return webs; }
 
     /** Sets how a player's faction is known (M-06i, the Factions mode's ledger): an id, or empty for none. */
     void setFactionOf(java.util.function.Function<UUID, String> factionOf) {
@@ -15369,6 +15397,7 @@ final class PlayerRuntime {
                 for (var event : written) {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
+                    webs.recorded(event); // F-32b: what the Record tells everyone.
                 }
             });
         });
