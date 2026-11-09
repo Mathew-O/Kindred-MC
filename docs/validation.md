@@ -16,6 +16,38 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The lake-bed fixture's intermittent (F-25c4cu) — 9 November 2026 (`claude/lakebed-memory-1109`)
+
+- **[F-25c4cu](evidence/F-25c4cu.md):** `NativeLakeBedClimbGameTests`' fixture in copies of eight (a scratch class, not
+  committed).
+  - On `feb4f82`, without the fix: 14 of 16 out from under the lake (median 6,674 ticks, at most 7,628), and 2 still under it
+    at the end.
+  - With the fix: 24 of 24 out (median 6,861 ticks, at most 6,875).
+  - Scratch logging, never committed, counted "back the way it came" chosen with the under-water order run out: 544 times in
+    eight copies without the fix, none in 24 with it.
+- **The climb's classes**, batch 23's 26 (`NativeLakeBedClimbGameTests`, `NativePortalCampaignGameTests`,
+  `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests` and the rest): 156 of 156 in each of
+  three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+## Two cast-route intermittents (F-25c4cs, F-25c4ct) — 9 November 2026 (`claude/cast-refusal-1109`)
+
+- **[F-25c4ct](evidence/F-25c4ct.md), a frame's mould refused with nothing placed:** `NativeCastRefusalGameTests`, the thick-rock
+  cast scene, the inventory changed while the first mould's placement was being recorded (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the refused mould passed over for some 2,400 ticks while the cast stepped
+    closer 244 to 246 times.
+  - With the fix: passes 3 of 3, the mould placed 4 to 5 ticks after its refusal, with no step closer.
+- **[F-25c4cs](evidence/F-25c4cs.md), the obsidian site kept until its water is taken back:** `NativeObsidianPickupGameTests`,
+  the poured-water obsidian scene, the step to take the water back asked for once and not run (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the site given up with its water still standing.
+  - With the fix: passes 3 of 3.
+  - Two forms of the fixture not kept are in the evidence: one cancelled the mining, the other told the two apart 1 of 3.
+- **The classes that cast and make obsidian**, with both fixes (`NativePortalCampaignGameTests`, `NativeCastRefusalGameTests`,
+  `NativeObsidianPickupGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
+  106 of 106 in each of three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `bash ./gradlew build` successful; JUnit 1,067 tests, 0 failures, 6 skipped.
 ## E-40, iteration 16 (`e40a16-922f4fd`, batches 22 to 24) — 9 November 2026 (`claude/e40-iter16-1109`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `922f4fd`. `python3 tools/eval/run.py --ref 922f4fd
@@ -589,6 +621,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01f: every ended task traced to its routine, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeOwnRanchGameTests` alone, 3 runs before the change (0 of 3: 4 tasks unlabelled each), 3 after (6 of 6 each).
 
 ## M-01a: the pigs' carrots or potatoes grown, 2026-11-09
 
