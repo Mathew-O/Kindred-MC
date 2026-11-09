@@ -218,6 +218,8 @@ final class PlayerRuntime {
      * bridge when there is one, else the same memory with no model behind it.
      */
     private StrategistBridge memory;
+    /** F-33: each AI player's page of the Chronicle once a game day, from the World Record. */
+    private final ChronicleKeeper chronicle = new ChronicleKeeper(new ChronicleHost());
     private boolean lessons = true;
     /** Whether the players keep an atlas of the world and use it (F-30): on unless {@code KINDRED_ATLAS=off} or a scenario says so. */
     private boolean atlasOn = true;
@@ -352,6 +354,8 @@ final class PlayerRuntime {
     private final MarketDesk market;
     /** The auction house (M-06h). */
     private final AuctionHouse auctions;
+    /** The Factions panel and its vanilla fallback (M-06l). */
+    private final FactionsHud hud;
     /** Set by a fixture only: the world plays Factions though the mode is not yet playable for operators. */
     private boolean factionsForTest;
     /** Titles, sounds and a boss bar for the players in a match (M-00b). */
@@ -505,9 +509,12 @@ final class PlayerRuntime {
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
         this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.hud = new FactionsHud(factions, market);
+        factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
         this.memory.rescueHost(rescueHost);
+        this.memory.chronicle(id -> chronicle.pages(id)); // F-33: the report reads a player's latest page.
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.recipeStore = new RescueRecipeStore(metadataDirectory);
         this.rescueBook = recipeStore.load();
@@ -765,6 +772,7 @@ final class PlayerRuntime {
                     reportOpenSales(loaded.store());
                     matches.restore(ledgers.matches().values());
                     flushMatches();
+                    chronicle.start();
                     // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
                     store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
                         if (unread == null && events != null) webs.rebuild(events);
@@ -2532,12 +2540,14 @@ final class PlayerRuntime {
         blocksScannedThisTick = 0;
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
+        chronicle.tick();
         if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
             auctions.tick();
             factions.notices();
+            hud.tick(server.getPlayerManager().getPlayerList());
         }
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
@@ -3598,6 +3608,10 @@ final class PlayerRuntime {
             candidates.addAll(seedCandidates(entry, body));
             return candidates;
         }
+        if (entry.stable != null) {
+            candidates.addAll(stableCandidates(entry, body));
+            return candidates;
+        }
         if (entry.growing != null) {
             candidates.addAll(growCandidates(entry, body));
             return candidates;
@@ -3641,7 +3655,8 @@ final class PlayerRuntime {
         // and then built as any build is.
         if (baseDecision(entry, body)) {
             // A base begun is a build; a ranch of its own begun is a ranch (M-01a).
-            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.growing != null ? growCandidates(entry, body)
+            candidates.addAll(entry.seeding != null ? seedCandidates(entry, body) : entry.stable != null ? stableCandidates(entry, body)
+                    : entry.growing != null ? growCandidates(entry, body)
                     : entry.ranch != null ? ranchCandidates(entry, body) : buildCandidates(entry, body));
             return candidates;
         }
@@ -4562,6 +4577,68 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
+    /**
+     * A horse of its own (M-01a): with no new kind to keep and no horse yet, the nearest grown wild horse it can see is
+     * tamed, then saddled with a saddle it found. Only what it can see from where it stands counts.
+     */
+    private boolean horseDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record) {
+        var player = body.entity();
+        var wild = player.getServerWorld().getEntitiesByClass(net.minecraft.entity.passive.HorseEntity.class, player.getBoundingBox().expand(RANCH_LOOK),
+                h -> h.isAlive() && !h.isTame() && !h.isBaby() && player.canSee(h));
+        var choice = dev.kindred.core.survival.HorseChoice.next(true, record.horse != null, wild.size(), player.getInventory().count(Items.SADDLE) > 0);
+        if (!choice.tame()) return false;
+        var nearest = wild.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        entry.stable = new StableRunner(nearest.getUuid());
+        entry.ranchNote = choice.why();
+        entry.goalProgress = "Horse: " + choice.why();
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+        KindredMod.LOGGER.info("{} horse: {}", entry.data.displayName(), choice.why());
+        return true;
+    }
+
+    /** Its horse's next step (M-01a), as one project candidate; survival needs still outrank it. */
+    private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
+        var stable = entry.stable;
+        var player = body.entity();
+        var task = stable.next(player);
+        if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
+        if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
+            entry.loggedGoalProgress = entry.goalProgress;
+            KindredMod.LOGGER.info("{} horse: {}", entry.data.displayName(), stable.progress());
+        }
+        if (task.isEmpty()) {
+            entry.stable = null;
+            entry.buildTasks.clear();
+            entry.ranchNote = stable.outcome();
+            // Its own once tamed to it, kept with its bases: not tamed twice.
+            if (player.getServerWorld().getEntity(stable.horse) instanceof net.minecraft.entity.passive.AbstractHorseEntity horse && horse.isTame()
+                    && player.getUuid().equals(horse.getOwnerUuid()) && entry.bases != null) {
+                entry.bases.horse = stable.horse.toString();
+                memories.saveBases(entry.data.id(), entry.bases);
+            }
+            say(entry, stable.outcome() + ".", "its horse");
+            entry.baseCheckAt = 0;
+            entry.routineRefreshPending = true;
+            return List.of();
+        }
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("horse:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.buildTasks.clear();
+        entry.buildTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
+                new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
+    /** The horse a player keeps (M-01a), by its id, for fixtures. */
+    Optional<String> ownHorse(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.bases == null ? Optional.empty() : Optional.ofNullable(entry.bases.horse);
+    }
+
     /** The ranch's next step, as one project candidate; survival needs still outrank it (M-01a). */
     private List<NativeTaskCandidate> ranchCandidates(Entry entry, NativePlayerBody body) {
         var ranch = entry.ranch;
@@ -4755,7 +4832,8 @@ final class PlayerRuntime {
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
         if (!bases || !worldEditsEnabled() || entry.goal != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
-                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
+                || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.stable != null
+                || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
@@ -4913,6 +4991,7 @@ final class PlayerRuntime {
             food.put(kind, held);
         }
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
+        if (choice.kind().isEmpty() && horseDecision(entry, body, record)) return true;
         if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
@@ -5733,6 +5812,7 @@ final class PlayerRuntime {
             entry.ownRanch = null;
             entry.seeding = null;
             entry.growing = null;
+            entry.stable = null;
             entry.goalProgress = "";
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
@@ -12665,6 +12745,7 @@ final class PlayerRuntime {
         memory = strategist.get();
         memory.lessons(lessons);
         memory.rescueHost(rescueHost);
+        memory.chronicle(id -> chronicle.pages(id));
         memory.rescue(rescueOn);
         memory.advice(adviceOn);
     }
@@ -15339,6 +15420,37 @@ final class PlayerRuntime {
         record(changed.stream().map(stored -> dev.kindred.core.record.MatchLedger.event(tick, now, "", stored)).toList());
     }
 
+    /** The Chronicle (F-33), for fixtures: its pages and counts, and a day's pages written now. */
+    ChronicleKeeper chronicleForFixtures() { return chronicle; }
+
+    /** The keeper's side: the Record, the AI players with their bodies' ids, the strategist's bridge. */
+    private final class ChronicleHost implements ChronicleKeeper.Host {
+        @Override public java.util.concurrent.CompletableFuture<List<dev.kindred.core.record.WorldEvent>> events(java.util.Set<String> kinds, long afterId, int limit) {
+            SqliteCompanionStore database = store;
+            return database == null ? java.util.concurrent.CompletableFuture.completedFuture(List.of()) : database.worldEvents(kinds, afterId, limit);
+        }
+
+        @Override public void record(dev.kindred.core.record.WorldEvent event) { PlayerRuntime.this.record(event); }
+
+        @Override public List<ChronicleKeeper.Player> players() {
+            var out = new ArrayList<ChronicleKeeper.Player>();
+            for (Entry entry : entries.values()) {
+                if (entry.data == null) continue;
+                var actors = new java.util.HashSet<UUID>();
+                actors.add(entry.data.id());
+                if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
+                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors));
+            }
+            return out;
+        }
+
+        @Override public long tick() { return server.getTicks(); }
+
+        @Override public StrategistBridge bridge() { return memory; }
+
+        @Override public net.minecraft.server.MinecraftServer server() { return server; }
+    }
+
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
@@ -15377,6 +15489,12 @@ final class PlayerRuntime {
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
+    }
+
+    /** The Factions panel's server side (M-06l). */
+    FactionsHud hud() {
+        requireThread();
+        return hud;
     }
 
     /** The auction house (M-06h). */
@@ -15707,7 +15825,10 @@ final class PlayerRuntime {
     /** A player left the game: a duel it was in is forfeited, or called off if it had not started. */
     void playerLeft(UUID playerId) {
         requireThread();
-        if (factionsWorld()) factions.disconnected(playerId);
+        if (factionsWorld()) {
+            factions.disconnected(playerId);
+            hud.left(playerId);
+        }
         matches.departed(playerId).ifPresent(this::announce);
     }
 
@@ -16174,6 +16295,8 @@ final class PlayerRuntime {
         PlayerMemoryStore.Pen ownRanch;
         /** Seeds being earned from the grass for chickens of its own (M-01a), or null. */
         SeedRunner seeding;
+        /** The horse it is taming to keep (M-01a), or none. */
+        StableRunner stable;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */

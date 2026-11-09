@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
@@ -168,7 +169,7 @@ class OpenAiCompatibleStrategistTest {
              var lookalike = new OpenAiCompatibleStrategist(new StrategistProvider.Choice(StrategistProvider.Provider.COMPATIBLE, null, "test-model",
                      "https://notanthropic.com/v1"), HttpClient.newBuilder().build())) {
             for (String body : List.of(anthropic.request("r", true), anthropic.askRequest(RAID, true), anthropic.rescueRequest("r", true),
-                    anthropic.converseRequest(TALK, true), anthropic.rescueRequest("r", false))) {
+                    anthropic.converseRequest(TALK, true), anthropic.rescueRequest("r", false), anthropic.chronicleRequest("r", true))) {
                 var thinking = JsonParser.parseString(body).getAsJsonObject().getAsJsonObject("thinking");
                 assertNotNull(thinking, body);
                 assertEquals("disabled", thinking.get("type").getAsString());
@@ -178,6 +179,28 @@ class OpenAiCompatibleStrategistTest {
                     assertFalse(JsonParser.parseString(body).getAsJsonObject().has("thinking"), body);
                 }
             }
+        }
+    }
+
+    @Test
+    void aChroniclePageIsAskedForWithItsSchemaAndReadBackUnchecked() throws Exception {
+        try (var s = start(StrategistProvider.Provider.COMPATIBLE, "k")) {
+            replies.add(completion("{\"sentences\":[{\"lines\":[103],\"text\":\"Wren sold iron\"},{\"lines\":[101],\"text\":\"Wren fell into lava.\"},"
+                    + "{\"lines\":[104,102],\"text\":\"A Zombie killed Wren.\"}]}", "stop"));
+            var page = s.chronicle("Write the page. Its lines, in the order they happened:\n[101] death: x\n").get(10, java.util.concurrent.TimeUnit.SECONDS);
+            assertTrue(page.failure().isEmpty(), page.toString());
+            assertEquals("Wren fell into lava. A Zombie killed Wren. Wren sold iron.", page.text().orElseThrow(), "in the lines' order, never the reply's");
+            assertEquals(List.of(101L, 104L, 102L, 103L), page.cites());
+            var sent = JsonParser.parseString(bodies.getFirst()).getAsJsonObject();
+            assertEquals("chronicle_page", sent.getAsJsonObject("response_format").getAsJsonObject("json_schema").get("name").getAsString());
+            assertTrue(sent.getAsJsonArray("messages").get(0).getAsJsonObject().get("content").getAsString().startsWith("You keep the Chronicle"));
+            // A refused schema is repaired once in JSON mode; a reply with no text is no page.
+            statuses.add(new int[] {400});
+            replies.add("{\"error\":{\"message\":\"response_format json_schema not supported\"}}");
+            replies.add(completion("{\"sentences\":[]}", "stop"));
+            var empty = s.chronicle("r").get(10, java.util.concurrent.TimeUnit.SECONDS);
+            assertEquals(Optional.of("no sentences"), empty.failure());
+            assertTrue(JsonParser.parseString(bodies.getLast()).getAsJsonObject().getAsJsonObject("response_format").get("type").getAsString().equals("json_object"));
         }
     }
 

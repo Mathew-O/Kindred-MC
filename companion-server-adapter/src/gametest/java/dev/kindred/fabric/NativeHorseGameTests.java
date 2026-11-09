@@ -140,4 +140,79 @@ public final class NativeHorseGameTests implements FabricGameTest {
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A horse of its own (M-01a): with its cabin standing, nothing more to build yet and no animals to keep, it sees a
+     * wild horse, tames it by getting on it until it bonds, saddles it with the saddle it found, and keeps it with its
+     * bases. Staged as the own-ranch fixtures are: the ground laid, its cabin set and recorded as its own, stone tools
+     * given, the saddle in its pack as though found, a horse put in sight. Nothing tells it to take a horse.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownHorse", tickLimit = 6000)
+    public void withItsCabinStandingItTamesAWildHorseItSeesAndSaddlesIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
+        BlockPos home = o.add(16, 7, 16);
+        BlockPos cabinAt = home.add(-3, 0, -3);
+        UUID[] horse = new UUID[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Wrangler"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, trunks);
+                    world.setTimeOfDay(1000);
+                    var cabin = dev.kindred.core.construction.Houses.of(dev.kindred.core.construction.Houses.Stage.CABIN, "oak", "cobblestone");
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
+                        try {
+                            world.setBlockState(BuildRunner.blockPos(b.at()), net.minecraft.command.argument.BlockArgumentParser.block(
+                                    net.minecraft.registry.Registries.BLOCK.getReadOnlyWrapper(), b.spec().toString(), false).blockState());
+                        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException failure) {
+                            throw new RuntimeException(failure);
+                        }
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    ItemStack[] held = {new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_AXE), new ItemStack(Items.OAK_LOG, 14),
+                            new ItemStack(Items.BREAD, 16)};
+                    for (int slot = 0; slot < held.length; slot++) inventory.setStack(slot, held[slot]);
+                    // Staged: a saddle in its pack, as though found in a chest.
+                    inventory.setStack(20, new ItemStack(Items.SADDLE));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = home.add(8, 0, 0);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    // Staged: a wild horse in sight, east of its cabin.
+                    horse[0] = context.spawnEntity(EntityType.HORSE, home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN))).getUuid();
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.stageBaseForTest(f.id,
+                        new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
+                .createAndAdd(() -> {
+                    var kept = f.runtime.ownHorse(f.id);
+                    var wild = (HorseEntity) context.getWorld().getEntity(horse[0]);
+                    context.assertTrue(kept.isPresent(), "A horse of its own kept: " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id)
+                            + (wild == null ? "" : "; tame " + wild.isTame() + ", temper " + wild.getTemper()));
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var kept = (HorseEntity) context.getWorld().getEntity(horse[0]);
+                    context.assertTrue(f.runtime.ownHorse(f.id).orElseThrow().equals(horse[0].toString()), "The one it saw");
+                    context.assertTrue(kept.isTame() && player.getUuid().equals(kept.getOwnerUuid()), "Tamed to it");
+                    context.assertTrue(kept.isSaddled() && player.getInventory().count(Items.SADDLE) == 0, "Saddled with its one saddle");
+                    context.assertTrue(!player.hasVehicle(), "Off it");
+                    KindredMod.LOGGER.info("Own horse: {}, tame {}, saddled {}; {}", horse[0], kept.isTame(), kept.isSaddled(), f.runtime.ranchNote(f.id));
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
 }
