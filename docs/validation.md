@@ -3389,4 +3389,4 @@ After the block's first merge from main, CI on PR #25 found:
   - `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
   - Reopened (#87's run 42584555878: 24 mounts counted for 5 rides). The fixture now checks each mount counted was made.
     With the first form of the change, 0 of 3 ("counted 24, made 6"); with the step kept till a task of it has run, 3
-    of 3. The class runs pending.
+    of 3. `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
