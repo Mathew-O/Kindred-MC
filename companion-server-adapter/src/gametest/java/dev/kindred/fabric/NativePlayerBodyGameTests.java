@@ -34,6 +34,44 @@ import java.util.UUID;
  * evidence.
  */
 public final class NativePlayerBodyGameTests implements FabricGameTest {
+    /**
+     * A block of sand left in the air two chunks from a player falls, as on a live server, its default simulation distance
+     * of 10 around the player. The test server sets none, and with 0 only the chunks next to a player ticked. Sand a climb
+     * dug two chunks off hung in the air till its fixture's end, whenever the grid put a chunk's edge in its way (F-22c26).
+     * Staged: the player in the air, 60 blocks off its test's own structure, so that the structure's chunk is no help; the
+     * sand 40 blocks beyond it, with stone five below.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "simulatedAround", tickLimit = 1200)
+    public void sandTwoChunksFromAPlayerFallsAsOnALiveServer(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] sand = new BlockPos[1];
+        int[] waited = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Onlooker"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos p = f.player().getBlockPos();
+                    f.player().refreshPositionAndAngles(p.getX() + 60.5, p.getY() + 30, p.getZ() + 0.5, 0, 0);
+                    f.player().getAbilities().flying = true;
+                    sand[0] = p.add(100, 20, 0);
+                    context.assertTrue((sand[0].getX() >> 4) - (f.player().getBlockX() >> 4) >= 2, "Two chunks off");
+                    world.setBlockState(sand[0].down(5), Blocks.STONE.getDefaultState());
+                    world.setBlockState(sand[0], Blocks.SAND.getDefaultState());
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    boolean fell = !world.getBlockState(sand[0]).isOf(Blocks.SAND) && world.getBlockState(sand[0].down(4)).isOf(Blocks.SAND);
+                    if (!fell) context.assertTrue(++waited[0] > 200, "Waiting for the sand");
+                    context.assertTrue(fell, "The sand two chunks off fell: simulation distance "
+                            + context.getWorld().getServer().getPlayerManager().getSimulationDistance());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void eatingTakesVanillaTimeConsumesOneRealItemAndFeedsHungerWithoutDirectHealing(TestContext context) {
         Fixture f = new Fixture(context);
