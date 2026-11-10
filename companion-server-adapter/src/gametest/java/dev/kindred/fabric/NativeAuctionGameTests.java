@@ -135,6 +135,57 @@ public final class NativeAuctionGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * The runtime stopped mid-handover: Ben's win closed, its delivery begun (the {@code auction.delivering} write asked
+     * for) and the runtime stopped in the same tick. The write's callback comes back after the stop and is dropped:
+     * nothing is handed over and no write is tried after the stop ("Stop revokes synchronously and invalidates late
+     * callbacks"). Begun and not delivered, the delivery is the Record's to report at the next start. In #137's CI run
+     * 42826937829 an auction callback wrote {@code auction.delivered} after its runtime stopped, refused by the closing store.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "auctionStopMidHandover", tickLimit = 600)
+    public void aStopMidHandoverHandsNothingOverAndWritesNothingAfterIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 580);
+        ServerPlayerEntity[] p = new ServerPlayerEntity[2];
+        List<String> told = new ArrayList<>();
+        boolean[] stopped = new boolean[1];
+        int[] waited = new int[1];
+        cleanUp(context, p);
+        // The stop right after the delivery's begin is asked for (by the runtime's own step or the test's), before its
+        // write comes back.
+        f.runtime.auctions().afterBeginForTest(() -> {
+            if (stopped[0]) return;
+            stopped[0] = true;
+            f.runtime.stop();
+        });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> start(context, f, p))
+                .createAndAdd(() -> {
+                    p[0].getInventory().setStack(0, new ItemStack(Items.DIAMOND, 3));
+                    p[0].getInventory().selectedSlot = 0;
+                    f.runtime.auctions().list(p[0], 5_000, 0, 24, "minecraft:overworld", told::add);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(told.size() == 1 && told.getFirst().startsWith("Listed"), "Listed: " + told);
+                    String id = f.runtime.auctions().book().listings().keySet().iterator().next();
+                    context.assertTrue(f.runtime.auctions().bid(p[1], id, 6_000, "minecraft:overworld", told::add) == null, "Ben bids 60");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(told.size() == 2, "Ben's bid written: " + told);
+                    f.runtime.auctions().clockForTest(DAY + 60_000);
+                    f.runtime.auctions().tick(); // The close; the delivery follows at a later step of the house.
+                })
+                .createAndAdd(() -> context.assertTrue(stopped[0], "Stopped as the delivery was begun"))
+                .createAndAdd(() -> context.assertTrue(++waited[0] >= 40, "The late callback's time to come back"))
+                .createAndAdd(() -> {
+                    int[] late = f.runtime.lateAfterStopForTest();
+                    context.assertTrue(p[1].getInventory().count(Items.DIAMOND) == 0, "Nothing handed over after the stop: " + p[1].getInventory().count(Items.DIAMOND));
+                    context.assertTrue(late[0] == 0, "No write tried after the stop: " + late[0]);
+                    context.assertTrue(f.runtime.shutdownComplete(), "Cleanup");
+                })
+                .completeIfSuccessful();
+    }
+
     private static void start(TestContext context, NativePaidSkillsGameTests.Fixture f, ServerPlayerEntity[] p) {
         f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
         p[0] = MockPlayers.survival(context, "Ana", new BlockPos(2, 2, 2));

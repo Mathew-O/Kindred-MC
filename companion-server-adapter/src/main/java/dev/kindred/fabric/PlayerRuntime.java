@@ -511,7 +511,7 @@ final class PlayerRuntime {
         this.metadataDirectory = metadataDirectory;
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
-        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market, () -> running && !stopping);
         this.hud = new FactionsHud(factions, market, hudSections);
         factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
@@ -703,6 +703,7 @@ final class PlayerRuntime {
     }
 
     void start() {
+        stopping = false; // A runtime started again begins a new epoch: its writes and callbacks are live.
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
@@ -14079,6 +14080,10 @@ final class PlayerRuntime {
     void stop() {
         requireThread();
         ready = false;
+        // The stop barrier first: whatever stop() itself waits on (the store's last writes) may hand callbacks back on
+        // this thread, and every write-then-callback begun before now is stale from here on (recordThen).
+        stopping = true;
+        ++stopEpoch;
         if (replays != null) replays.close();
         // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
         for (var raced : racePace.entrySet()) {
@@ -16078,16 +16083,41 @@ final class PlayerRuntime {
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
+        // Stop revokes synchronously and invalidates late callbacks: a write asked for after the stop (a callback of
+        // work begun before it) is not tried, and neither callback runs. What it would have finished stays unfinished in
+        // the Record, reported for an operator at the next start, never replayed (M-06h's intent and delivery rules).
+        if (!running || stopping) {
+            lateWritesRefused++;
+            KindredMod.LOGGER.warn("Kindred stopped: {} event(s) not written, their work left for reconciliation: {}", drafts.size(),
+                    drafts.isEmpty() ? "" : drafts.getFirst().kind());
+            return;
+        }
         if (store == null) {
             failed.accept(new IllegalStateException("World Record not open"));
             return;
         }
+        long epoch = stopEpoch;
         record(drafts);
         var write = recordFlush;
         write.whenComplete((ignored, failure) -> handBack(() -> {
+            if (epoch != stopEpoch) {
+                lateCallbacksDropped++;
+                KindredMod.LOGGER.warn("Kindred stopped: a callback of {} event(s) dropped after the stop", drafts.size());
+                return;
+            }
             if (failure == null) written.run(); else failed.accept(failure);
         }));
     }
+
+    /** Bumped as each stop begins: a write-then-callback begun under an earlier epoch drops its callback. */
+    private long stopEpoch;
+    /** From the first line of stop() until the next start(): no write-then-callback is begun. */
+    private boolean stopping;
+    /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
+    private int lateWritesRefused, lateCallbacksDropped;
+
+    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it}. */
+    int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped}; }
 
     /**
      * A sale's intent the Record holds with neither its sale nor its cancel is ambiguous: the server stopped between
