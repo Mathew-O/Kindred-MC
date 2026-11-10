@@ -1,0 +1,188 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 110664,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -37,
+  20,
+  -49
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.315178690335312,
+  8.0,
+  16.349522519401113
+ ],
+ "yaw": -60.143448,
+ "pitch": 15.637146,
+ "health": 14.666666,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:lead",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 31
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 22
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 21
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 3
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 6
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 51
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 39
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 2
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 3
+   }
+  }
+ ],
+ "selected": 2,
+ "timeOfDay": 14664,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "Back off from zombie",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[02:25:48] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -10, 57, -32 is blocked [Get out of the water: to dry ground]",
+  "[02:25:50] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -9, 57, -32 is blocked [Get out of the water: to dry ground]",
+  "[02:25:53] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -8, 57, -33 is blocked [Get out of the water: to dry ground]",
+  "[02:25:55] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 1, 57, -39 is blocked [Get out of the water: to dry ground]",
+  "[02:25:58] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -2, 57, -37 is blocked [Get out of the water: to dry ground]",
+  "[02:26:00] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 0, 57, -38 is blocked [Get out of the water: to dry ground]",
+  "[02:26:03] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 2, 57, -39 is blocked [Get out of the water: to dry ground]",
+  "[02:26:05] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 2, 54, -38 is blocked [Get out of the water: to dry ground]",
+  "[02:26:07] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 3, 57, -39 is blocked [Get out of the water: to dry ground]",
+  "[02:26:08] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+  "[02:26:09] [Server thread/INFO]: Sol native_fight COMPLETED [Fight skeleton]",
+  "[02:26:10] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[02:26:10] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]",
+  "[02:26:11] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+  "[02:26:11] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[02:26:12] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[02:26:12] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[02:26:13] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[02:26:13] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie]",
+  "[02:26:13] [Server thread/INFO]: Sol died at -21, 28, -33: Sol was slain by Zombie (tick 110664, night, under cover, hunger 16, armour 0, holding stone_sword, no shield; doing \"Back off from zombie\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40a13-fe2ba3b",
+  "seed": "505",
+  "build": "fe2ba3b",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a13-fe2ba3b/505/replays/world/Sol-110664",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

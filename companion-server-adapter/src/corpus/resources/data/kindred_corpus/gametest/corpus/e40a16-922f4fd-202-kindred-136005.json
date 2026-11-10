@@ -1,0 +1,328 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 136005,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -174,
+  -17,
+  91
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.30000001192093,
+  8.419999986886978,
+  16.64161581587959
+ ],
+ "yaw": 189.46231,
+ "pitch": -1.1558106,
+ "health": 3.4166698,
+ "food": 15,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:brown_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 62
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 4
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cherry_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 20
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 71
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 25
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cherry_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 33
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 5
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 61
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 3
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 26
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 13
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 6
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:light_gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 9
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 2,
+ "timeOfDay": 16005,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from skeleton (tried elsewhere 1 time)",
+ "task": "Back off from skeleton the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Kindred was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[04:20:21] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[04:20:21] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[04:20:24] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -162, 2, 100 is blocked [Back off from skeleton the way it came]",
+  "[04:20:25] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+  "[04:20:25] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[04:20:25] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[04:20:26] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -158, -8, 106]",
+  "[04:20:26] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -158, -7, 96 [Back off from skeleton]",
+  "[04:20:26] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+  "[04:20:26] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[04:20:26] [Server thread/INFO]: Kindred native_place COMPLETED [Place a torch at -158, -7, 105]",
+  "[04:20:27] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -158, -7, 107]",
+  "[04:20:27] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -158, -8, 107]",
+  "[04:20:28] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -158, -9, 107]",
+  "[04:20:28] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[04:20:28] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[04:20:28] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -159, -6, 107 [Back off from skeleton the way it came]",
+  "[04:20:28] [Server thread/INFO]: Kindred native_swap COMPLETED",
+  "[04:20:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+  "[04:20:32] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from skeleton the way it came]"
+ ],
+ "corpus": {
+  "run": "e40a16-922f4fd",
+  "seed": "202",
+  "build": "922f4fd",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a16-922f4fd/202/replays/world/Kindred-136005",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

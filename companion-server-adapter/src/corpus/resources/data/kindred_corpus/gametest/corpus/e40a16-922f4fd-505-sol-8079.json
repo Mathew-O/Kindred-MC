@@ -1,0 +1,185 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 8079,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -70,
+  22,
+  -46
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.17493356935701,
+  8.0,
+  16.833622727388505
+ ],
+ "yaw": -148.0446,
+ "pitch": 17.929419,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 3.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 5
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 51
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 5
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 9
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 75
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 52
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 19
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 8079,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Run from creeper",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was blown up by Creeper",
+ "ticks": 1200,
+ "log": [
+  "[04:27:34] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -44, 35, -25]",
+  "[04:27:34] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[04:27:35] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -43, 36, -25]",
+  "[04:27:35] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -43, 35, -25]",
+  "[04:27:35] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[04:27:36] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -42, 36, -25]",
+  "[04:27:36] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -42, 35, -25]",
+  "[04:27:36] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[04:27:36] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -41, 36, -25]",
+  "[04:27:37] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -41, 35, -25]",
+  "[04:27:37] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[04:27:37] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -40, 36, -25]",
+  "[04:27:38] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[04:27:38] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -39, 36, -25]",
+  "[04:27:38] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -39, 35, -25]",
+  "[04:27:38] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[04:27:39] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -38, 36, -25]",
+  "[04:27:39] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward iron: step down]",
+  "[04:27:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[04:27:43] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]"
+ ],
+ "corpus": {
+  "run": "e40a16-922f4fd",
+  "seed": "505",
+  "build": "922f4fd",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a16-922f4fd/505/replays/world/Sol-8079",
+  "class": "death: creeper",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

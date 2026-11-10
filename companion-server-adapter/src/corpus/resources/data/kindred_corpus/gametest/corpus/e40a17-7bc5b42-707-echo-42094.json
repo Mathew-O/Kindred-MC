@@ -1,0 +1,73 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 42094,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -21,
+  71,
+  25
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.38726688258333,
+  8.796735600668711,
+  16.461534549335852
+ ],
+ "yaw": 18.415735,
+ "pitch": 18.110126,
+ "health": 19.666666,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [],
+ "selected": 0,
+ "timeOfDay": 18094,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from zombie",
+ "task": "Back off from zombie",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[08:53:46] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+  "[08:53:46] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+  "[08:53:47] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+  "[08:53:48] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+  "[08:53:48] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[08:53:49] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+  "[08:53:49] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[08:53:49] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:51] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[08:53:51] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:51] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:52] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[08:53:52] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:53] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:54] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:54] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:54] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 3, 80, 52 [Back off from zombie]",
+  "[08:53:55] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[08:53:56] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:53:56] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie]"
+ ],
+ "corpus": {
+  "run": "e40a17-7bc5b42",
+  "seed": "707",
+  "build": "7bc5b42",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a17-7bc5b42/707/replays/world/Echo-42094",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

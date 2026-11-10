@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "kindred_corpus",
+  "version": "1.0.0",
+  "name": "Kindred failure corpus",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "dev.kindred.fabric.GameTestPacing"
+    ],
+    "fabric-gametest": [
+      "dev.kindred.fabric.CorpusGameTests"
+    ]
+  },
+  "depends": {
+    "kindred": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}

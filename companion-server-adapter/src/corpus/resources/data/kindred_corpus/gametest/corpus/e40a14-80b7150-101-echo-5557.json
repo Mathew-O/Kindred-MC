@@ -1,0 +1,185 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 5557,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -366,
+  26,
+  -142
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.382561033761988,
+  8.0,
+  16.30000001192093
+ ],
+ "yaw": -122.81925,
+ "pitch": 18.14354,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 2.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 4
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:beef",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 5
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 19
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 86
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 58
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 3
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 23
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 5557,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "Back off from zombie the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[05:40:14] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -368, 42, -127]",
+  "[05:40:14] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+  "[05:40:14] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -369, 43, -127]",
+  "[05:40:14] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -369, 42, -127]",
+  "[05:40:14] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[05:40:15] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -370, 43, -127]",
+  "[05:40:15] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -370, 42, -127]",
+  "[05:40:15] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -370, 41, -127]",
+  "[05:40:15] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+  "[05:40:16] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -371, 40, -127]",
+  "[05:40:16] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at -350, 33, -151]",
+  "[05:40:16] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from spider]",
+  "[05:40:17] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from spider]",
+  "[05:40:17] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from creeper]",
+  "[05:40:17] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[05:40:18] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to coal ore at -354, 34, -124]",
+  "[05:40:18] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie_villager]",
+  "[05:40:19] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from spider the way it came]",
+  "[05:40:20] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+  "[05:40:20] [Server thread/INFO]: Echo died at -350, 34, -126: Echo was slain by Zombie (tick 5557, day, under cover, hunger 19, armour 0, holding stone_pickaxe, no shield; doing \"Back off from zombie the way it came\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40a14-80b7150",
+  "seed": "101",
+  "build": "80b7150",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a14-80b7150/101/replays/world/Echo-5557",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
