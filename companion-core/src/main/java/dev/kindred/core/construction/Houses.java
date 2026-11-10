@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,8 +58,8 @@ public final class Houses {
         return out;
     }
 
-    private static final Set<String> FUNCTIONAL = Set.of("minecraft:chest", "minecraft:crafting_table", "minecraft:furnace",
-            "minecraft:enchanting_table", "minecraft:bookshelf");
+    private static final Set<String> FUNCTIONAL = Set.of(VanillaIds.CHEST, VanillaIds.CRAFTING_TABLE, VanillaIds.FURNACE,
+            VanillaIds.ENCHANTING_TABLE, VanillaIds.BOOKSHELF);
 
     private Houses() { }
 
@@ -120,7 +122,7 @@ public final class Houses {
     public static Blueprint of(Stage stage, BuildStyle style) {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
-        String s = stone.contains(":") ? stone : "minecraft:" + stone;
+        String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
         var shape = shape(stage, style.variant());
         var b = new Builder(shape.width(), shape.depth(), wood, s);
         switch (stage) {
@@ -153,11 +155,11 @@ public final class Houses {
         }
         // Furniture along the walls, nothing in the way of the door.
         b.bed(1, 1, 2, "north");
-        b.put(b.width - 2, 1, 1, "minecraft:crafting_table");
-        b.put(b.width - 2, 1, 2, "minecraft:furnace[facing=west]");
-        b.put(b.width - 2, 1, 4, "minecraft:chest[facing=west,type=single]");
-        b.put(1, 1, 4, "minecraft:chest[facing=east,type=single]");
-        b.put(b.width / 2, 2, 1, "minecraft:wall_torch[facing=south]");
+        b.put(b.width - 2, 1, 1, VanillaIds.CRAFTING_TABLE);
+        b.put(b.width - 2, 1, 2, VanillaIds.FURNACE + "[facing=west]");
+        b.put(b.width - 2, 1, 4, VanillaIds.CHEST + "[facing=west,type=single]");
+        b.put(1, 1, 4, VanillaIds.CHEST + "[facing=east,type=single]");
+        b.put(b.width / 2, 2, 1, VanillaIds.WALL_TORCH + "[facing=south]");
         b.clearInside(1, 3);
     }
 
@@ -183,17 +185,17 @@ public final class Houses {
         int sx = b.width - 2;
         b.stairs(sx, 1, 6, "north", 4);
         // Below: a storage wall of chests along the west wall, one apart so none join into a double chest, and the workshop.
-        for (int z = 1; z < b.depth - 2; z += 2) b.put(1, 1, z, "minecraft:chest[facing=east,type=single]");
-        b.put(sx - 1, 1, 1, "minecraft:crafting_table");
-        b.put(sx - 2, 1, 1, "minecraft:furnace[facing=south]");
-        b.put(sx - 3, 1, 1, "minecraft:furnace[facing=south]");
-        b.put(b.width / 2, 3, b.depth - 2, "minecraft:wall_torch[facing=north]");
-        b.put(1, 3, 2, "minecraft:wall_torch[facing=east]");
+        for (int z = 1; z < b.depth - 2; z += 2) b.put(1, 1, z, VanillaIds.CHEST + "[facing=east,type=single]");
+        b.put(sx - 1, 1, 1, VanillaIds.CRAFTING_TABLE);
+        b.put(sx - 2, 1, 1, VanillaIds.FURNACE + "[facing=south]");
+        b.put(sx - 3, 1, 1, VanillaIds.FURNACE + "[facing=south]");
+        b.put(b.width / 2, 3, b.depth - 2, VanillaIds.WALL_TORCH + "[facing=north]");
+        b.put(1, 3, 2, VanillaIds.WALL_TORCH + "[facing=east]");
         // Above: the bedroom.
         b.bed(1, 6, 2, "north");
         b.bed(3, 6, 2, "north");
-        b.put(1, 6, b.depth - 3, "minecraft:chest[facing=east,type=single]");
-        b.put(b.width / 2, 7, 1, "minecraft:wall_torch[facing=south]");
+        b.put(1, 6, b.depth - 3, VanillaIds.CHEST + "[facing=east,type=single]");
+        b.put(b.width / 2, 7, 1, VanillaIds.WALL_TORCH + "[facing=south]");
         b.clearInside(1, 4);
         b.clearInside(6, 8);
         b.flatRoof(9);
@@ -218,28 +220,28 @@ public final class Houses {
         int sx = b.width - 2;
         b.stairs(sx, 1, 6, "north", 4);
         // The storage hall along the west wall.
-        for (int z = 1; z < b.depth - 1; z += 2) b.put(1, 1, z, "minecraft:chest[facing=east,type=single]");
+        for (int z = 1; z < b.depth - 1; z += 2) b.put(1, 1, z, VanillaIds.CHEST + "[facing=east,type=single]");
         // The workshop by the stairs.
-        b.put(sx - 1, 1, 8, "minecraft:crafting_table");
-        b.put(sx - 1, 1, 9, "minecraft:furnace[facing=west]");
-        b.put(sx - 1, 1, 10, "minecraft:furnace[facing=west]");
+        b.put(sx - 1, 1, 8, VanillaIds.CRAFTING_TABLE);
+        b.put(sx - 1, 1, 9, VanillaIds.FURNACE + "[facing=west]");
+        b.put(sx - 1, 1, 10, VanillaIds.FURNACE + "[facing=west]");
         // The enchanting room in the north-west: the table, the ring of bookshelves two out with its gap facing south.
         int ex = 5, ez = 3;
-        b.put(ex, 1, ez, "minecraft:enchanting_table");
+        b.put(ex, 1, ez, VanillaIds.ENCHANTING_TABLE);
         int shelves = 0;
         for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
             if (Math.abs(dx) != 2 && Math.abs(dz) != 2) continue;
             if (dz == 2 && dx == 0) continue; // The way in.
-            if (shelves++ < 15) b.put(ex + dx, 1, ez + dz, "minecraft:bookshelf");
+            if (shelves++ < 15) b.put(ex + dx, 1, ez + dz, VanillaIds.BOOKSHELF);
         }
-        b.put(b.width / 2, 3, b.depth - 2, "minecraft:wall_torch[facing=north]");
-        b.put(1, 3, b.depth - 2, "minecraft:wall_torch[facing=east]");
+        b.put(b.width / 2, 3, b.depth - 2, VanillaIds.WALL_TORCH + "[facing=north]");
+        b.put(1, 3, b.depth - 2, VanillaIds.WALL_TORCH + "[facing=east]");
         // Above: two bedrooms and a library of shelves along the north wall.
         b.bed(1, 6, 2, "north");
         b.bed(3, 6, 2, "north");
         b.bed(1, 6, b.depth - 3, "south");
-        for (int x = 5; x < b.width - 3; x++) b.put(x, 6, 1, "minecraft:bookshelf");
-        b.put(b.width / 2, 7, b.depth - 2, "minecraft:wall_torch[facing=north]");
+        for (int x = 5; x < b.width - 3; x++) b.put(x, 6, 1, VanillaIds.BOOKSHELF);
+        b.put(b.width / 2, 7, b.depth - 2, VanillaIds.WALL_TORCH + "[facing=north]");
         b.clearInside(1, 4);
         b.clearInside(6, 8);
         b.flatRoof(9);
@@ -260,7 +262,7 @@ public final class Houses {
             this.stone = stone;
         }
 
-        String planks() { return "minecraft:" + wood + "_planks"; }
+        String planks() { return VanillaIds.NAMESPACE + wood + "_planks"; }
 
         void put(int x, int y, int z, String spec) { at.put(new Pos(x, y, z), BlockSpec.parse(spec)); }
 
@@ -278,7 +280,7 @@ public final class Houses {
             for (int y = from; y <= to; y++) for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) {
                 if (!edge(x, z)) continue;
                 boolean corner = (x == 0 || x == width - 1) && (z == 0 || z == depth - 1);
-                put(x, y, z, corner ? "minecraft:" + wood + "_log[axis=y]" : stone);
+                put(x, y, z, corner ? VanillaIds.NAMESPACE + wood + "_log[axis=y]" : stone);
             }
         }
 
@@ -297,8 +299,8 @@ public final class Houses {
         /** A door in the wall at ({@code x}, {@code z}), hung from outside facing in. */
         void door(int x, int y, int z) {
             String facing = z == depth - 1 ? "north" : z == 0 ? "south" : x == 0 ? "east" : "west";
-            put(x, y, z, "minecraft:" + wood + "_door[facing=" + facing + ",half=lower,hinge=left,open=false]");
-            put(x, y + 1, z, "minecraft:" + wood + "_door[facing=" + facing + ",half=upper,hinge=left,open=false]");
+            put(x, y, z, VanillaIds.NAMESPACE + wood + "_door[facing=" + facing + ",half=lower,hinge=left,open=false]");
+            put(x, y + 1, z, VanillaIds.NAMESPACE + wood + "_door[facing=" + facing + ",half=upper,hinge=left,open=false]");
         }
 
         /** A window: a cell of wall left open. */
@@ -311,8 +313,8 @@ public final class Houses {
         void bed(int x, int y, int z, String facing) {
             var foot = new Pos(x, y, z);
             var head = foot.offset(Placement.face(facing));
-            at.put(foot, BlockSpec.parse("minecraft:red_bed[facing=" + facing + ",part=foot]"));
-            at.put(head, BlockSpec.parse("minecraft:red_bed[facing=" + facing + ",part=head]"));
+            at.put(foot, BlockSpec.parse(VanillaIds.RED_BED + "[facing=" + facing + ",part=foot]"));
+            at.put(head, BlockSpec.parse(VanillaIds.RED_BED + "[facing=" + facing + ",part=head]"));
         }
 
         /** A flight of {@code steps} stairs up from ({@code x}, {@code y}, {@code z}), rising toward {@code facing}. */
@@ -320,7 +322,7 @@ public final class Houses {
             var way = Placement.face(facing);
             var at = new Pos(x, y, z);
             for (int k = 0; k < steps; k++) {
-                put(at.x(), at.y(), at.z(), "minecraft:" + wood + "_stairs[facing=" + facing + ",half=bottom]");
+                put(at.x(), at.y(), at.z(), VanillaIds.NAMESPACE + wood + "_stairs[facing=" + facing + ",half=bottom]");
                 // Head room over each step.
                 for (int h = 1; h <= 2; h++) open.add(at.add(0, h, 0));
                 at = at.offset(way).up();
@@ -334,7 +336,7 @@ public final class Houses {
 
         /** Stairs along the north and south eaves facing in, planks under each course, slabs along an odd ridge. */
         void gableRoof(int eaves) {
-            String stair = "minecraft:" + wood + "_stairs[facing=%s,half=bottom]", slab = "minecraft:" + wood + "_slab[type=bottom]";
+            String stair = VanillaIds.NAMESPACE + wood + "_stairs[facing=%s,half=bottom]", slab = VanillaIds.NAMESPACE + wood + "_slab[type=bottom]";
             for (int x = 0; x < width; x++) {
                 put(x, eaves, 0, stair.formatted("south"));
                 put(x, eaves, depth - 1, stair.formatted("north"));
@@ -362,7 +364,7 @@ public final class Houses {
 
         /** As {@link #gableRoof}, the ridge running north to south: stairs along the west and east eaves facing in. */
         void gableRoofAlongZ(int eaves) {
-            String stair = "minecraft:" + wood + "_stairs[facing=%s,half=bottom]", slab = "minecraft:" + wood + "_slab[type=bottom]";
+            String stair = VanillaIds.NAMESPACE + wood + "_stairs[facing=%s,half=bottom]", slab = VanillaIds.NAMESPACE + wood + "_slab[type=bottom]";
             for (int z = 0; z < depth; z++) {
                 put(0, eaves, z, stair.formatted("east"));
                 put(width - 1, eaves, z, stair.formatted("west"));

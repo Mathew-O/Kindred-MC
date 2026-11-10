@@ -1,5 +1,7 @@
 package dev.kindred.core.social;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -89,9 +91,9 @@ public final class Claims {
     /** The dimension a place in words is in, when it names one. */
     static String dimension(String where) {
         String w = " " + where + " ";
-        if (w.contains(" nether ")) return "minecraft:the_nether";
-        if (w.contains(" end ") && !w.contains(" end of ")) return "minecraft:the_end";
-        if (w.contains(" overworld ") || w.contains(" surface ")) return "minecraft:overworld";
+        if (w.contains(" nether ")) return VanillaIds.THE_NETHER;
+        if (w.contains(" end ") && !w.contains(" end of ")) return VanillaIds.THE_END;
+        if (w.contains(" overworld ") || w.contains(" surface ")) return VanillaIds.OVERWORLD;
         return null;
     }
 }

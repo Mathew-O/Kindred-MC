@@ -1,5 +1,7 @@
 package dev.kindred.core.match;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,12 +26,12 @@ public final class SpeedrunSplits {
 
     /** Any%: iron, the Nether, blaze rods, the stronghold, the End and the dragon, the last one the finish. */
     public static final List<Split> ANY_PERCENT = List.of(
-            new Split("iron", "Iron", "minecraft:story/smelt_iron"),
-            new Split("nether", "Nether", "minecraft:story/enter_the_nether"),
-            new Split("rods", "Blaze rods", "minecraft:nether/obtain_blaze_rod"),
-            new Split("stronghold", "Stronghold", "minecraft:story/follow_ender_eye"),
-            new Split("end", "The End", "minecraft:story/enter_the_end"),
-            new Split("dragon", "Dragon", "minecraft:end/kill_dragon"));
+            new Split("iron", "Iron", VanillaIds.ADV_STORY_SMELT_IRON),
+            new Split("nether", "Nether", VanillaIds.ADV_STORY_ENTER_THE_NETHER),
+            new Split("rods", "Blaze rods", VanillaIds.ADV_NETHER_OBTAIN_BLAZE_ROD),
+            new Split("stronghold", "Stronghold", VanillaIds.ADV_STORY_FOLLOW_ENDER_EYE),
+            new Split("end", "The End", VanillaIds.ADV_STORY_ENTER_THE_END),
+            new Split("dragon", "Dragon", VanillaIds.ADV_END_KILL_DRAGON));
 
     /** A split reached: by whom, and at what time since the start. */
     public record Reached(UUID runner, Split split, long ticks) {
