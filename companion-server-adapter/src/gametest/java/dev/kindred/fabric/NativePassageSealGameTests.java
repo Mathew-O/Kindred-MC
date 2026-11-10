@@ -22,7 +22,8 @@ import net.minecraft.util.math.Vec3d;
  * Technical: F-25c4dc. In the kept replay kindred-43985-707 Kindred, at 17.5 health with three zombies after it in a
  * dead end underground, met them one at a time and was killed. Staged: a stone tunnel one wide and two high along x at
  * z 1 (x 1 to 11, y 2 and 3) closed at both ends, stone all round and over it, so it is dark at any hour; daytime is set
- * on purpose. The player at its west end with a stone sword in hand and cobblestone, at full health and fed, the goal
+ * on purpose. The player at its west end with a stone sword in hand, a shield in its off hand and cobblestone, at full
+ * health and fed, the goal
  * begun; zombies set on it from the tunnel's far end. With two, once the seal has held for half a minute they are removed,
  * as though they gave up.
  */
@@ -69,6 +70,8 @@ public final class NativePassageSealGameTests implements FabricGameTest {
                     inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
                     inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 16));
                     inventory.setStack(2, new ItemStack(Items.STONE_PICKAXE));
+                    // A shield in the off hand, as 707's player had: with one, two zombies are not reason enough to hole up.
+                    player.equipStack(net.minecraft.entity.EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
                     inventory.selectedSlot = 0;
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
