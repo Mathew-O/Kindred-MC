@@ -1,5 +1,7 @@
 package dev.kindred.core.factions;
 
+import dev.kindred.core.ui.HudPanel;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,15 +51,15 @@ class HudTest {
     @Test
     void everySectionWithItsColour() {
         stage(4, 10);
-        var lines = Hud.layout(state(ana), Hud.Mode.FULL);
-        assertEquals(new Hud.Line("[RED] Red_Hand ★", Hud.Role.FACTION, "red"), lines.get(0), "the faction in its colour, the leader marked");
+        var lines = Hud.layout(state(ana), HudPanel.Mode.FULL);
+        assertEquals(new HudPanel.Line("[RED] Red_Hand ★", HudPanel.Role.FACTION, "red"), lines.get(0), "the faction in its colour, the leader marked");
         assertEquals("1 of 2 online", lines.get(1).text());
         assertEquals("Power 10 / 10", lines.get(2).text());
-        assertEquals(new Hud.Line("power 10 · claims 4 / 10", Hud.Role.GREEN, ""), lines.get(3), "secure: green");
+        assertEquals(new HudPanel.Line("power 10 · claims 4 / 10", HudPanel.Role.GREEN, ""), lines.get(3), "secure: green");
         assertTrue(lines.stream().anyMatch(l -> l.text().equals("Coins 123.45  +12.00 sold oak logs")));
-        assertTrue(lines.stream().anyMatch(l -> l.text().equals("Your land") && l.role() == Hud.Role.GREEN));
-        assertTrue(lines.stream().anyMatch(l -> l.text().equals("» [RED] 10 · 4 · 2 ▲") && l.role() == Hud.Role.FACTION), "standings with the own row and its arrow");
-        assertTrue(lines.stream().anyMatch(l -> l.text().equals("Red is vulnerable") && l.role() == Hud.Role.AMBER), "notices");
+        assertTrue(lines.stream().anyMatch(l -> l.text().equals("Your land") && l.role() == HudPanel.Role.GREEN));
+        assertTrue(lines.stream().anyMatch(l -> l.text().equals("» [RED] 10 · 4 · 2 ▲") && l.role() == HudPanel.Role.FACTION), "standings with the own row and its arrow");
+        assertTrue(lines.stream().anyMatch(l -> l.text().equals("Red is vulnerable") && l.role() == HudPanel.Role.AMBER), "notices");
         assertTrue(lines.stream().anyMatch(l -> l.text().equals("iron_ingot -12%")), "the market's movers");
         assertTrue(lines.stream().anyMatch(l -> l.text().equals("In hand: pays 5.10")));
     }
@@ -65,33 +67,33 @@ class HudTest {
     @Test
     void amberNearPowerRedWhenExposed() {
         stage(9, 10);
-        assertEquals(Hud.Role.AMBER, Hud.layout(state(ana), Hud.Mode.FULL).get(3).role(), "claims within two of power: amber");
+        assertEquals(HudPanel.Role.AMBER, Hud.layout(state(ana), HudPanel.Mode.FULL).get(3).role(), "claims within two of power: amber");
         factions = FactionBook.EMPTY;
         stage(12, 10);
-        var line = Hud.layout(state(ana), Hud.Mode.FULL).get(3);
-        assertEquals(new Hud.Line("power 10 · claims 12 / 10 · 2 exposed", Hud.Role.RED, ""), line, "exposed: red, with the count");
+        var line = Hud.layout(state(ana), HudPanel.Mode.FULL).get(3);
+        assertEquals(new HudPanel.Line("power 10 · claims 12 / 10 · 2 exposed", HudPanel.Role.RED, ""), line, "exposed: red, with the count");
         var here = Hud.here(cy, factions, powers, claims, Set.of(), S, ClaimLedger.chunk(W, 100, 100));
-        assertEquals(Map.entry("Red_Hand (enemy), exposed, capturable", Hud.Role.RED), here);
-        assertEquals(Map.entry("Safe zone", Hud.Role.GREEN), Hud.here(cy, factions, powers, claims, Set.of("x"), S, "x"));
-        assertEquals(Map.entry("Wilderness", Hud.Role.DIM), Hud.here(cy, factions, powers, claims, Set.of(), S, "y"));
+        assertEquals(Map.entry("Red_Hand (enemy), exposed, capturable", HudPanel.Role.RED), here);
+        assertEquals(Map.entry("Safe zone", HudPanel.Role.GREEN), Hud.here(cy, factions, powers, claims, Set.of("x"), S, "x"));
+        assertEquals(Map.entry("Wilderness", HudPanel.Role.DIM), Hud.here(cy, factions, powers, claims, Set.of(), S, "y"));
     }
 
     @Test
     void shieldsAreGreenAndCountDown() {
         stage(1, 10);
-        var fresh = Hud.build(ana, factions, powers, claims, Capture.Book.EMPTY, 0, S, Set.of(ana), "", "Wilderness", Hud.Role.DIM, List.of(), Map.of(), List.of(), "", 60_000);
-        assertTrue(Hud.layout(fresh, Hud.Mode.FULL).contains(new Hud.Line("New-faction shield 47h 59m", Hud.Role.GREEN, "")));
+        var fresh = Hud.build(ana, factions, powers, claims, Capture.Book.EMPTY, 0, S, Set.of(ana), "", "Wilderness", HudPanel.Role.DIM, List.of(), Map.of(), List.of(), "", 60_000);
+        assertTrue(Hud.layout(fresh, HudPanel.Mode.FULL).contains(new HudPanel.Line("New-faction shield 47h 59m", HudPanel.Role.GREEN, "")));
     }
 
     @Test
     void compactAndHidden() {
         stage(4, 10);
-        var compact = Hud.layout(state(ana), Hud.Mode.COMPACT);
+        var compact = Hud.layout(state(ana), HudPanel.Mode.COMPACT);
         assertEquals(List.of("[RED] Red_Hand ★", "1 of 2 online", "Power 10 / 10", "power 10 · claims 4 / 10", "Coins 123.45  +12.00 sold oak logs", "Your land"),
-                compact.stream().map(Hud.Line::text).toList());
-        assertTrue(Hud.layout(state(ana), Hud.Mode.HIDDEN).isEmpty());
-        assertEquals(Hud.Mode.COMPACT, Hud.Mode.FULL.next());
-        assertEquals(Hud.Mode.FULL, Hud.Mode.HIDDEN.next());
+                compact.stream().map(HudPanel.Line::text).toList());
+        assertTrue(Hud.layout(state(ana), HudPanel.Mode.HIDDEN).isEmpty());
+        assertEquals(HudPanel.Mode.COMPACT, HudPanel.Mode.FULL.next());
+        assertEquals(HudPanel.Mode.FULL, HudPanel.Mode.HIDDEN.next());
     }
 
     @Test
@@ -102,7 +104,7 @@ class HudTest {
         assertTrue(outsider.notices().isEmpty(), "no faction's notices");
         String text = Hud.encode(outsider);
         assertFalse(text.contains("online") || text.contains("own="), "nobody's members online: " + text);
-        assertEquals("[RED] 10 · 4 · 2 ▲", Hud.layout(outsider, Hud.Mode.FULL).stream().filter(l -> l.role() == Hud.Role.FACTION).findFirst().orElseThrow().text(),
+        assertEquals("[RED] 10 · 4 · 2 ▲", Hud.layout(outsider, HudPanel.Mode.FULL).stream().filter(l -> l.role() == HudPanel.Role.FACTION).findFirst().orElseThrow().text(),
                 "everyone's public numbers: power, claims, members");
         assertEquals(outsider, Hud.decode(text));
         assertEquals(state(ana), Hud.decode(Hud.encode(state(ana))));
