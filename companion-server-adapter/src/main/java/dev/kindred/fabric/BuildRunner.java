@@ -601,7 +601,7 @@ final class BuildRunner {
                     ? Optional.of(outside(groundBeside(step.target(), world, overFailed), step.reason() + OVER + feet))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
                     ? Optional.of(outside(groundBeside(feet, world), step.reason() + "; down off the build first"))
-                    : outOfReachTwice(step, tally)
+                    : outOfReachTwice(step, tally, player.isOnGround())
                     ? Optional.empty()
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
@@ -987,6 +987,12 @@ final class BuildRunner {
         // A walk to a break that found no way there lets the break go, to be planned again from where it is: kept, the
         // same walk was asked for again, and eight such failures in a row stopped a hideout at its first steps (F-22c10).
         if ("native_break".equals(task.skill()) && completed) walksWithoutBreak = 0;
+        // A block broken or placed since: the next "out of reach to take down" counts as the first again. Coming down its own
+        // column, a plan made mid-descent called the top below out of reach twice running, the break between them under
+        // way, and ended a seed cabin with that scaffold left standing (F-22c47's class run).
+        if (completed && ("native_break".equals(task.skill()) || "native_place".equals(task.skill()) || "native_pillar".equals(task.skill()))) {
+            outOfReachTop = null;
+        }
         if ("native_goto".equals(task.skill()) && task.label().startsWith("To break ")) {
             breakWalks++;
             if (completed) walksWithoutBreak++;
@@ -1127,8 +1133,10 @@ final class BuildRunner {
      * class run the house cabin's builder, slid off its column onto the cabin, waited so on "out of reach to take down" until
      * the fixture's ticks ran out. Refused once, as before; the second time it says so and stops.
      */
-    private boolean outOfReachTwice(ConstructionPlanner.Step step, ConstructionPlanner.Progress tally) {
+    private boolean outOfReachTwice(ConstructionPlanner.Step step, ConstructionPlanner.Progress tally, boolean onGround) {
         boolean outOfReach = step.reason().endsWith("is out of reach to take down") && step.target() != null;
+        // A plan made mid-fall, just down off a block of its own column, counts for nothing: it lands lower and plans again.
+        if (outOfReach && !onGround) return false;
         if (!outOfReach) {
             outOfReachTop = null;
             return false;
