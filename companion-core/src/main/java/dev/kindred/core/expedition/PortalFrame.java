@@ -1,5 +1,7 @@
 package dev.kindred.core.expedition;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,9 +34,9 @@ public record PortalFrame(
         }
     }
 
-    public static final String OBSIDIAN = "minecraft:obsidian";
-    public static final String AIR = "minecraft:air";
-    public static final String PORTAL = "minecraft:nether_portal";
+    public static final String OBSIDIAN = VanillaIds.OBSIDIAN;
+    public static final String AIR = VanillaIds.AIR;
+    public static final String PORTAL = VanillaIds.NETHER_PORTAL;
 
     /**
      * Evaluates whether a valid Nether portal frame exists with the given interior opening dimensions
@@ -192,7 +194,7 @@ public record PortalFrame(
 
     /** Whether a block inside the frame is empty enough for a portal. */
     private static boolean isInteriorPassable(String blockId) {
-        return blockId == null || AIR.equals(blockId) || "minecraft:cave_air".equals(blockId)
-                || PORTAL.equals(blockId) || "minecraft:fire".equals(blockId);
+        return blockId == null || AIR.equals(blockId) || VanillaIds.CAVE_AIR.equals(blockId)
+                || PORTAL.equals(blockId) || VanillaIds.FIRE.equals(blockId);
     }
 }

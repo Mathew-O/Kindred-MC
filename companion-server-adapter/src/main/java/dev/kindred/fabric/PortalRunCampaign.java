@@ -6215,7 +6215,10 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
-        if (blocked(cell) || eyeDistance(player, cell) > 5.0) return Optional.empty();
+        // Only where it may change the world: in a faction world another faction's land or a safe zone is no one's to
+        // seal, and the territory guard refused each block put there (in RUNNER 2's `factions-e40a16seeds-d5057a4`, on 505,
+        // 29 refused seals of a shelter in the hub). Its other openings, outside them, are sealed as before.
+        if (blocked(cell) || eyeDistance(player, cell) > 5.0 || !mayWork(player, cell)) return Optional.empty();
         var inventory = player.getInventory();
         int slot = wayBlockSlot(inventory);
         // With none of those, sand or gravel into a cell over solid ground, where it rests: a desert dug by hand gives nothing

@@ -49,19 +49,19 @@ public final class Netherite {
                 .filter(e -> ORDER.contains(kind(e.getValue())))
                 .min(Comparator.comparingInt(e -> ORDER.indexOf(kind(e.getValue()))));
         if (first.isEmpty()) return Optional.empty();
-        int ingots = held.getOrDefault("minecraft:netherite_ingot", 0), templates = held.getOrDefault("minecraft:netherite_upgrade_smithing_template", 0);
-        int scrap = held.getOrDefault("minecraft:netherite_scrap", 0), debris = held.getOrDefault("minecraft:ancient_debris", 0);
+        int ingots = held.getOrDefault(VanillaIds.NETHERITE_INGOT, 0), templates = held.getOrDefault(VanillaIds.NETHERITE_UPGRADE_SMITHING_TEMPLATE, 0);
+        int scrap = held.getOrDefault(VanillaIds.NETHERITE_SCRAP, 0), debris = held.getOrDefault(VanillaIds.ANCIENT_DEBRIS, 0);
         if (templates >= 1 && ingots > templates && diamondPieces.size() > templates
-                && held.getOrDefault("minecraft:diamond", 0) - diamondsKept >= 7 && held.getOrDefault("minecraft:netherrack", 0) >= 1) {
+                && held.getOrDefault(VanillaIds.ICON_VALUABLES, 0) - diamondsKept >= 7 && held.getOrDefault(VanillaIds.NETHERRACK, 0) >= 1) {
             return Optional.of(new Step.Template());
         }
         if (ingots >= 1 && templates >= 1) return Optional.of(new Step.Upgrade(first.get().getKey(), first.get().getValue()));
-        if (scrap >= 4 && held.getOrDefault("minecraft:gold_ingot", 0) >= 4) return Optional.of(new Step.Ingot());
+        if (scrap >= 4 && held.getOrDefault(VanillaIds.GOLD_INGOT, 0) >= 4) return Optional.of(new Step.Ingot());
         if (debris >= 1 && scrap < 4) return Optional.of(new Step.Smelt(Math.min(debris, 4 - scrap)));
         return Optional.empty();
     }
 
-    /** The kind of a piece by its id: "minecraft:diamond_sword" is a sword. */
+    /** The kind of a piece by its id: minecraft:diamond_sword is a sword. */
     public static String kind(String item) {
         String path = item.substring(item.indexOf(':') + 1);
         int at = path.lastIndexOf('_');

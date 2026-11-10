@@ -1,5 +1,7 @@
 package dev.kindred.core.team;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -29,19 +31,19 @@ public final class HandOvers {
         return "held:" + Objects.requireNonNull(player) + ":" + Objects.requireNonNull(item);
     }
 
-    /** The item a material is counted in: "minecraft:diamond", "minecraft:iron_ingot". */
+    /** The item a material is counted in: minecraft:diamond, minecraft:iron_ingot. */
     public static String materialItem(ShareOut.Material material) {
         return switch (material) {
-            case DIAMOND -> "minecraft:diamond";
-            case IRON -> "minecraft:iron_ingot";
-            case GOLD -> "minecraft:gold_ingot";
-            case NETHERITE -> "minecraft:netherite_ingot";
-            case LEATHER -> "minecraft:leather";
+            case DIAMOND -> VanillaIds.ICON_VALUABLES;
+            case IRON -> VanillaIds.IRON_INGOT;
+            case GOLD -> VanillaIds.GOLD_INGOT;
+            case NETHERITE -> VanillaIds.NETHERITE_INGOT;
+            case LEATHER -> VanillaIds.LEATHER;
             case CHAIN, NONE -> throw new IllegalArgumentException("Nothing is made of " + material);
         };
     }
 
-    /** The item a piece is: "minecraft:diamond_boots", "minecraft:golden_helmet", "minecraft:iron_sword". */
+    /** The item a piece is: minecraft:diamond_boots, minecraft:golden_helmet, minecraft:iron_sword. */
     public static String pieceItem(ShareOut.Slot slot, ShareOut.Material material) {
         String prefix = switch (material) {
             case DIAMOND -> "diamond";
@@ -52,7 +54,7 @@ public final class HandOvers {
             case CHAIN, NONE -> throw new IllegalArgumentException("Nothing is made of " + material);
         };
         if (material == ShareOut.Material.LEATHER && !slot.armour()) throw new IllegalArgumentException("No leather " + slot);
-        return "minecraft:" + prefix + "_" + slot.name().toLowerCase(Locale.ROOT);
+        return VanillaIds.NAMESPACE + prefix + "_" + slot.name().toLowerCase(Locale.ROOT);
     }
 
     /** One piece to hand over, as a task's arguments carry it. */

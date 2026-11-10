@@ -15,20 +15,20 @@ import java.util.Set;
 public final class SurvivalPolicy {
 
     public static final Set<String> FORBIDDEN_BOSSES = Set.of(
-            "minecraft:wither",
-            "minecraft:ender_dragon",
-            "minecraft:warden",
-            "minecraft:elder_guardian"
+            VanillaIds.WITHER,
+            VanillaIds.ENDER_DRAGON,
+            VanillaIds.WARDEN,
+            VanillaIds.ELDER_GUARDIAN
     );
 
     public static final Set<String> HAZARDOUS_BLOCKS = Set.of(
-            "minecraft:fire",
-            "minecraft:soul_fire",
-            "minecraft:lava",
-            "minecraft:magma_block",
-            "minecraft:cactus",
-            "minecraft:sweet_berry_bush",
-            "minecraft:powder_snow"
+            VanillaIds.FIRE,
+            VanillaIds.SOUL_FIRE,
+            VanillaIds.LAVA,
+            VanillaIds.MAGMA_BLOCK,
+            VanillaIds.CACTUS,
+            VanillaIds.SWEET_BERRY_BUSH,
+            VanillaIds.POWDER_SNOW
     );
 
     public static final long EAT_COOLDOWN_MS = 3_000L;
