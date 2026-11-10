@@ -50,6 +50,7 @@ final class NativeNavigator {
     private final Long2ObjectOpenHashMap<BlockState> states = new Long2ObjectOpenHashMap<>();
     private final Long2ByteOpenHashMap chunks = new Long2ByteOpenHashMap();
     private final Navigator core;
+    private final Terrain terrain;
 
     /** A navigator for the given world that drops the body no further than is safe. */
     NativeNavigator(ServerWorld world) {
@@ -93,11 +94,15 @@ final class NativeNavigator {
      */
     NativeNavigator(ServerWorld world, int maxDrop) {
         this.world = world;
-        this.core = new Navigator(new WorldTerrain(), maxDrop);
+        this.terrain = new WorldTerrain();
+        this.core = new Navigator(terrain, maxDrop);
     }
 
     /** The core navigator this one hands its searches to, over this world. */
     Navigator core() { return core; }
+
+    /** This navigator's view of the world's per-cell facts, read through its own cache of the blocks (F-35e). */
+    Terrain terrain() { return terrain; }
 
     /** The same navigator, ending an unfinished route only where {@code where} allows. */
     NativeNavigator endingOnly(Predicate<BlockPos> where) {

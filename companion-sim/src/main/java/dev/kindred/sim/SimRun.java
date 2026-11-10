@@ -10,8 +10,11 @@ import dev.kindred.core.atlas.Priors;
 import dev.kindred.core.eval.EvalRecord;
 import dev.kindred.core.eval.EvalScenario;
 import dev.kindred.core.route.Cell;
+import dev.kindred.core.route.DigTerrain;
+import dev.kindred.core.route.Digger;
 import dev.kindred.core.route.Navigator;
 import dev.kindred.core.route.RoutePlanner;
+import dev.kindred.core.route.SetAside;
 import dev.kindred.core.survival.Lessons;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
@@ -43,7 +46,9 @@ import java.util.UUID;
  * simulator's: a skill's outcome and its duration by vanilla's rules where they matter (breaking by tool and block,
  * walking speed, smelting, hunger, fall damage), roughly elsewhere (mobs walk straight at the player). A walk is
  * planned by the core's own route planners over the simulator's world, as the adapter plans over the live one (F-35d),
- * and paid for a leg at a time. It tests decisions and plans, not execution: the adapter's actions are not run. Its log
+ * and paid for a leg at a time. Its ways up, down and along through rock, and the targets it gives up on, are the
+ * campaign's own decisions in core ({@link Digger}, {@link SetAside}), each step carried out here (F-35e). It tests
+ * decisions and plans, not execution: the adapter's actions are not run. Its log
  * lines are the server's, in the form RunMetrics reads, and its result is an {@link EvalRecord}.
  */
 public final class SimRun {
@@ -106,6 +111,10 @@ public final class SimRun {
     private final List<int[]> caves = new ArrayList<>();
     /** The cells of four blocks it has explored a cave in, as the campaign keeps them. */
     private final Set<Long> visitedCaves = new java.util.HashSet<>();
+    /** The campaign's own ways up, down and along through rock, and the heading it digs along (F-35e). */
+    private final Digger digger = new Digger();
+    /** What it has given up on for now, as the campaign's ledger: a target no walk reached, and the column round it (F-35e). */
+    private final SetAside cellsAside = new SetAside();
     private final Atlas atlas;
     private final PlayerDecisionLoop mind;
     private final Personality personality = Personality.defaults();
@@ -541,7 +550,7 @@ public final class SimRun {
     private void look() {
         // What it saw a moment ago from about here still holds; a look again once it has moved or a while has passed.
         if (Math.abs(x - lookedX) + Math.abs(y - lookedY) + Math.abs(z - lookedZ) < 3 && world.tick - lookedAt < 400) {
-            seen.values().removeIf(at -> source(world.at(at[0], at[1], at[2])) == null);
+            seen.values().removeIf(at -> source(world.at(at[0], at[1], at[2])) == null || givenUp(at[0], at[1], at[2]));
             stages();
             return;
         }
@@ -589,6 +598,8 @@ public final class SimRun {
     }
 
     private void remember(WorldFacts.Source source, int px, int py, int pz) {
+        // As the campaign's knowledge is asked for the nearest of a kind: none it has set aside or found no way to.
+        if (givenUp(px, py, pz)) return;
         int[] was = seen.get(source);
         double d = sq(px - x) + sq(py - y) + sq(pz - z);
         if (was == null || d < sq(was[0] - x) + sq(was[1] - y) + sq(was[2] - z)) seen.put(source, new int[] {px, py, pz});
@@ -731,7 +742,10 @@ public final class SimRun {
         };
         if (pickaxeTier < tier) return Outcome.blocked(skill, "its pickaxe cannot mine " + block.name().toLowerCase(java.util.Locale.ROOT));
         var walked = reach(at[0], at[1], at[2], skill);
-        if (walked != null) return walked;
+        if (walked != null) {
+            giveUpOn(walked, at, false);
+            return walked;
+        }
         var broke = breakBlock(at[0], at[1], at[2], skill);
         if (broke != null) return broke;
         return Outcome.done(skill);
@@ -744,6 +758,13 @@ public final class SimRun {
     private Outcome explore(WorldFacts.Source source, String skill) {
         boolean below = source != WorldFacts.Source.TREE && source != WorldFacts.Source.WATER;
         if (below && pickaxeTier == 0) return Outcome.blocked(skill, "nothing seen, and nothing to dig with");
+        // Below ground with what it wants up at the surface: the campaign's climb, a staircase up through the rock.
+        if (!below && underground()) {
+            String label = skill.equals("native_hunt") ? "Climb out to look for animals"
+                    : source == WorldFacts.Source.WATER ? "Climb toward the surface for water" : "Climb toward the surface for logs";
+            var up = digger.climb(digBody, label);
+            if (up.isPresent()) return carry(up.get());
+        }
         if (below) {
             var cave = caveToward(target(source));
             if (cave != null) {
@@ -752,12 +773,175 @@ public final class SimRun {
                 return walked != null ? walked : Outcome.done("native_goto");
             }
         }
+        // An ore or lava not in view: the campaign's own dig toward it (F-35e), a staircase down toward its depth, a tunnel
+        // past liquid under the way down, and a branch mine at that depth; coal is climbed toward from well below it.
+        Optional<Dig> dig = switch (source) {
+            case IRON_ORE -> digger.descendOrTunnel(digBody, IRON_TOP, IRON_TARGET, "iron");
+            case DIAMOND_ORE -> digger.descendOrTunnel(digBody, Math.max(DIAMOND_TOP, DIAMOND_TARGET), DIAMOND_TARGET, "diamonds");
+            case LAVA -> digger.descendOrTunnel(digBody, LAVA_TOP, LAVA_TARGET, "lava");
+            case COAL_ORE -> (y < COAL_TARGET - 12 ? digger.climb(digBody, "Climb toward coal") : Optional.<Dig>empty())
+                    .or(() -> digger.tunnel(digBody, "Tunnel for coal"));
+            default -> null;
+        };
+        if (dig != null) return dig.isPresent() ? carry(dig.get()) : Outcome.blocked(skill, "Waiting for a feasible step");
         int nx = Math.clamp(x + random.nextInt(-20, 21), 2, SimWorld.SIZE - 3), nz = Math.clamp(z + random.nextInt(-20, 21), 2, SimWorld.SIZE - 3);
-        // Below ground, the campaign's dig down and tunnel toward the height the ore is likeliest at; over it, its
+        // Gravel below ground: a straight tunnel toward the height it is likeliest at; over the ground, the campaign's
         // explore, a walk as far toward the place as the way goes.
         var walked = below ? tunnelTo(nx, Math.max(SimWorld.MIN_Y + 6, target(source)), nz, "native_goto")
                 : walkTo(nx, ground(nx, nz), nz, "native_goto", WALK, Way.PARTIAL, 3);
         return walked != null ? walked : Outcome.done("native_goto");
+    }
+
+    /** The campaign's depths for an ore not in view: where its staircases dig to, and the top a branch mine starts below. */
+    private static final int IRON_TOP = 56, IRON_TARGET = 16, COAL_TARGET = 48, DIAMOND_TOP = -52, DIAMOND_TARGET = -58,
+            LAVA_TOP = -54, LAVA_TARGET = -57;
+
+    // ------------------------------------------------------------------ the campaign's dig decisions, carried out here
+
+    /** One step the core's dig decisions ask for (F-35e): what it is, where, and its label, as the campaign's task would be. */
+    private record Dig(String kind, Cell cell, double range, boolean partial, String label) { }
+
+    /** Whether the cell is one the campaign has set aside or found no way to, from where it stands now. */
+    private boolean givenUp(int px, int py, int pz) {
+        Cell cell = new Cell(px, py, pz);
+        return cellsAside.blocked(cell.asLong(), world.tick) || cellsAside.unreachable(cell, world.tick, new Cell(x, y, z));
+    }
+
+    /**
+     * A walk to a target that found no way: the target given up on, and the column round it (a pool's part, for water
+     * or lava), as the campaign's failed "Walk to" does; skipped until its back-off ends and it has moved well off.
+     */
+    private void giveUpOn(Outcome walked, int[] at, boolean pool) {
+        if (walked.state().equals("COMPLETED")) return;
+        cellsAside.avoid(new Cell(at[0], at[1], at[2]), true, pool, world.tick, new Cell(x, y, z));
+    }
+
+    /** The player's eyes to the middle of the cell, as the campaign's reach is measured. */
+    private double eyeDistance(Cell cell) {
+        return Math.sqrt(sq(cell.x() - x) + sq(cell.y() + 0.5 - (y + 1.62)) + sq(cell.z() - z));
+    }
+
+    /** The campaign's reach for a break: 4.3 blocks from its eyes to the block's middle. */
+    private static final double REACH = 4.3;
+
+    /** A block a player could mine from here, as the body's {@code miningEligible} has it: in reach, there, and not bedrock. */
+    private boolean eligible(Cell cell) {
+        Block b = world.at(cell.x(), cell.y(), cell.z());
+        return eyeDistance(cell) <= REACH && b != Block.AIR && world.hardness(cell.x(), cell.y(), cell.z()) >= 0;
+    }
+
+    /**
+     * As the adapter's {@code RoamingEdits.breakDenial}: something solid, breakable, not a furnace (a block entity), not the
+     * block it stands on, and no lava beside it (but under it, with {@code overLava}).
+     */
+    private boolean breakAllowed(Cell cell, boolean overLava) {
+        Block b = world.at(cell.x(), cell.y(), cell.z());
+        if (b == Block.AIR || b == Block.TORCH || b == Block.WATER || b == Block.LAVA) return false;
+        if (world.hardness(cell.x(), cell.y(), cell.z()) < 0 || b == Block.FURNACE) return false;
+        if (cell.x() == x && cell.y() == y - 1 && cell.z() == z) return false;
+        for (var side : dev.kindred.core.route.Side.values()) {
+            if (overLava && side == dev.kindred.core.route.Side.DOWN) continue;
+            Cell near = cell.offset(side);
+            if (world.at(near.x(), near.y(), near.z()) == Block.LAVA) return false;
+        }
+        return true;
+    }
+
+    /** The body as the core's dig decisions see it, each fact answered as the campaign answers it for the matching block. */
+    private final Digger.Body<Dig> digBody = new Digger.Body<>() {
+        @Override public DigTerrain world() { return world; }
+        @Override public Cell feet() { return new Cell(x, y, z); }
+        @Override public long now() { return world.tick; }
+        @Override public boolean onGround() { return !world.empty(x, y - 1, z); }
+        /** As the runtime's {@code inDeepWater}: under water, or in it, off the ground, with water under its feet. */
+        @Override public boolean swimming() {
+            return world.at(x, y + 1, z) == Block.WATER || world.at(x, y, z) == Block.WATER && world.empty(x, y - 1, z) && world.at(x, y - 1, z) == Block.WATER;
+        }
+        /** Bedrock under every column: no void in the simulator. */
+        @Override public boolean groundBelow() { return true; }
+        @Override public boolean blocked(Cell cell) { return cellsAside.blocked(cell.asLong(), world.tick); }
+        @Override public void setAside(Cell cell, long until) { cellsAside.until(cell.asLong(), until); }
+        @Override public boolean breakableNow(Cell cell) {
+            return eligible(cell) && breakAllowed(cell, false) && SimRun.this.harvestable(world.at(cell.x(), cell.y(), cell.z()));
+        }
+        /** No pickaxe held, and no harder than cobbled deepslate: a hand punches through it. */
+        @Override public boolean handClearable(Cell cell) {
+            return pickaxeTier == 0 && world.hardness(cell.x(), cell.y(), cell.z()) <= 3.5f && eligible(cell) && breakAllowed(cell, false);
+        }
+        /** A cobweb or a bush: none in the simulator. */
+        @Override public boolean snareClearable(Cell cell) { return false; }
+        @Override public boolean opensOverLava(Cell cell) {
+            return eligible(cell) && breakAllowed(cell, true) && SimRun.this.harvestable(world.at(cell.x(), cell.y(), cell.z()));
+        }
+        @Override public boolean harvestable(Cell cell) { return SimRun.this.harvestable(world.at(cell.x(), cell.y(), cell.z())); }
+        @Override public boolean islandEdge(Cell cell) { return false; }
+        /** The campaign's danger zones, where mobs killed or cornered it: the simulator keeps none. */
+        @Override public boolean dangerBelow(Cell cell) { return false; }
+        /** Its dirt or cobblestone, held as one stack on the hotbar: the simulator has no slots. */
+        @Override public int wayBlockSlot() { return count("dirt") + count("cobblestone") > 0 ? 0 : -1; }
+        @Override public Dig go(Cell to, double range, boolean partial, String label) { return new Dig("goto", to, range, partial, label); }
+        @Override public Dig clear(Cell cell, String label) { return new Dig("break", cell, 0, false, label); }
+        @Override public Dig openOverLava(Cell cell, String label) { return new Dig("break", cell, 0, false, label); }
+        @Override public Dig settle(String label) { return new Dig("wait", null, 0, false, label); }
+        @Override public Dig pillar(Cell feet, int slot, String label) { return new Dig("pillar", feet, 0, false, label); }
+        @Override public Dig swap(int slot, String label) { return new Dig("swap", null, 0, false, label); }
+        /** As the campaign's {@code placeBlock}: not a cell set aside, within five of its eyes, with a block and a face to set it on. */
+        @Override public Optional<Dig> fill(Cell cell, String label) {
+            if (blocked(cell) || eyeDistance(cell) > 5.0 || wayBlockSlot() < 0) return Optional.empty();
+            for (var side : dev.kindred.core.route.Side.values()) {
+                Cell support = cell.offset(side);
+                if (support.x() == x && support.z() == z && (support.y() == y || support.y() == y + 1)) continue;
+                if (world.placeAgainst(support.x(), support.y(), support.z())) return Optional.of(new Dig("place", cell, 0, false, label));
+            }
+            return Optional.empty();
+        }
+    };
+
+    /**
+     * One of the core's dig steps carried out in the simulator's world: a walk on its route, a block broken by the
+     * pickaxe it has, a block of its own put under its feet at a jump or into a cell, or a moment's wait. Its outcome
+     * teaches the campaign's state as the adapter's does: a cleared cell counted as dug, a tunnel's cell as tunnelled and a
+     * branch mine's leg a block on; a failed step's cell set aside, and a failed dig, tunnel or climb turned a quarter.
+     */
+    private Outcome carry(Dig dig) {
+        Cell c = dig.cell();
+        Outcome outcome = switch (dig.kind()) {
+            case "goto" -> {
+                var walked = walkTo(c.x(), c.y(), c.z(), "native_goto", WALK, dig.partial() ? Way.PARTIAL : Way.WALK, dig.range());
+                yield walked != null ? walked : new Outcome("native_goto", "COMPLETED", dig.label());
+            }
+            case "break" -> {
+                var broke = breakBlock(c.x(), c.y(), c.z(), "native_break");
+                yield broke != null ? broke : new Outcome("native_break", "COMPLETED", dig.label());
+            }
+            case "pillar", "place" -> {
+                String block = count("dirt") > 0 ? "dirt" : count("cobblestone") > 0 ? "cobblestone" : null;
+                String skill = dig.kind().equals("pillar") ? "native_pillar" : "native_place";
+                if (block == null) yield Outcome.blocked(skill, "no block to place");
+                take(block, 1);
+                world.set(c.x(), c.y(), c.z(), block.equals("dirt") ? Block.DIRT : Block.COBBLE);
+                if (dig.kind().equals("pillar")) y++;
+                pass(dig.kind().equals("pillar") ? PLACE_TICKS + 5 : PLACE_TICKS, false);
+                yield new Outcome(skill, "COMPLETED", dig.label());
+            }
+            case "wait" -> {
+                pass(20, false);
+                yield new Outcome("native_wait", "COMPLETED", dig.label());
+            }
+            default -> new Outcome("native_swap", "COMPLETED", dig.label());
+        };
+        String label = dig.label();
+        if (outcome.state().equals("COMPLETED")) {
+            if (dig.kind().equals("break") && label.contains(": clear ")) digger.dug(c);
+            if (label.endsWith(": advance")) {
+                if (label.startsWith("Branch mine")) digger.branchAdvanced(label.startsWith("Branch mine for lava"));
+                digger.tunnelled(c);
+            }
+        } else {
+            if (c != null) cellsAside.avoid(c, false, false, world.tick, new Cell(x, y, z));
+            if (label.startsWith("Dig") || label.startsWith("Tunnel") || label.startsWith("Climb")) digger.heading(digger.heading().clockwise());
+        }
+        return outcome;
     }
 
     /** Night as the campaign reckons it: vanilla's, and from dusk once it has learned to shelter early. */
@@ -862,8 +1046,8 @@ public final class SimRun {
     }
 
     /**
-     * Stone as the campaign gathers it: what is in view within six blocks first, then dug for under its feet, three
-     * blocks down; with neither (it stands on leaves, or in water), refused, as a dig with nothing to dig is.
+     * Stone as the campaign gathers it: what is in view within six blocks first, then the campaign's own staircase down
+     * for it, six below its feet; with neither (no step it may dig), refused, as a dig with nothing to dig is.
      */
     private Outcome gatherStone() {
         if (pickaxeTier == 0) return Outcome.blocked("native_break", "stone wants a pickaxe");
@@ -872,16 +1056,12 @@ public final class SimRun {
                 && !(stone[0] == x && stone[2] == z && stone[1] == y - 1)) {
             return mineNearest(WorldFacts.Source.STONE, "native_break");
         }
-        if (!diggable(world.at(x, y - 1, z))) return Outcome.blocked("native_break", "no stone in reach and nothing to dig under it");
-        for (int i = 0; i < 3 && diggable(world.at(x, y - 1, z)); i++) {
-            var broke = breakBlock(x, y - 1, z, "native_break");
-            if (broke != null) return broke;
-            y--;
-        }
-        return Outcome.done("native_break");
+        // None in view close by: the campaign's staircase down for stone, six below its feet (F-35e).
+        var dig = digger.digDown(digBody, y - 6, "Dig for stone");
+        return dig.isPresent() ? carry(dig.get()) : Outcome.blocked("native_break", "no stone in reach and no way to dig for it");
     }
 
-    /** Ground a dig for stone goes down through: stone, ores, dirt, gravel, sand. */
+    /** Ground a night's shelter is dug down through: stone, ores, dirt, gravel, sand. */
     private static boolean diggable(Block b) {
         return b == Block.STONE || b == Block.COBBLE || b == Block.DIRT || b == Block.GRASS || b == Block.GRAVEL || b == Block.SAND
                 || b == Block.COAL_ORE || b == Block.IRON_ORE || b == Block.DIAMOND_ORE;
@@ -968,7 +1148,7 @@ public final class SimRun {
 
     /** What the campaign lets a made way do: dig what its tools harvest with no liquid by it, and place its dirt and cobblestone. */
     private RoutePlanner.Allowance allowance() {
-        return new RoutePlanner.Allowance(cell -> harvestable(world.at(cell.x(), cell.y(), cell.z())) && !liquidNear(cell.x(), cell.y(), cell.z()),
+        return new RoutePlanner.Allowance(cell -> harvestable(world.at(cell.x(), cell.y(), cell.z())) && !Digger.liquidNear(world, cell),
                 cell -> false, count("dirt") + count("cobblestone"));
     }
 
@@ -983,30 +1163,6 @@ public final class SimRun {
         };
         return pickaxeTier >= tier;
     }
-
-    /**
-     * As the campaign's {@code liquidNear}: lava on any side or in it, or water above or beside, which would pour into the
-     * opening; or a liquid beside a column of sand or gravel resting on it, which comes down once the block is dug.
-     */
-    private boolean liquidNear(int cx, int cy, int cz) {
-        if (world.at(cx, cy, cz) == Block.LAVA) return true;
-        for (int[] d : SIX) {
-            Block b = world.at(cx + d[0], cy + d[1], cz + d[2]);
-            if (b == Block.LAVA || d[1] != -1 && b == Block.WATER) return true;
-        }
-        for (int up = 1; up <= 16; up++) {
-            Block b = world.at(cx, cy + up, cz);
-            if (b != Block.SAND && b != Block.GRAVEL) break;
-            for (int[] d : SIX) {
-                if (d[1] == -1) continue;
-                Block beside = world.at(cx + d[0], cy + up + d[1], cz + d[2]);
-                if (beside == Block.WATER || beside == Block.LAVA) return true;
-            }
-        }
-        return false;
-    }
-
-    private static final int[][] SIX = {{0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
 
     /** The navigator's way as legs: each cell walked to in turn. */
     private List<Leg> walked(Cell from, List<Cell> nodes, double pace) {
@@ -1416,8 +1572,16 @@ public final class SimRun {
         if (count("bucket") == 0) return Outcome.blocked("native_fill", "no empty bucket");
         int[] at = seen.get(source);
         if (at == null) return explore(source, "native_fill");
+        // Water well overhead from underground: dug up toward, as the campaign's fillWater climbs to it, not walked to.
+        if (source == WorldFacts.Source.WATER && underground() && at[1] > y + 4) {
+            var up = digger.climb(digBody, "Climb toward water at " + at[0] + ", " + at[1] + ", " + at[2]);
+            if (up.isPresent()) return carry(up.get());
+        }
         var walked = reach(at[0], at[1], at[2], "native_fill");
-        if (walked != null) return walked;
+        if (walked != null) {
+            giveUpOn(walked, at, true);
+            return walked;
+        }
         take("bucket", 1);
         give(filled, 1);
         if (source == WorldFacts.Source.LAVA) world.set(at[0], at[1], at[2], Block.AIR);

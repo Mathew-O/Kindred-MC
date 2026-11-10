@@ -11,8 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * In plain terms: the first staged scene for the simulator (F-35d step 3): Echo on seed 505 in E-40's iteration 15,
- * hemmed in on a ledge at Y 47 between an aquifer and a cavern, its way to iron refused on every side. These tests pass
- * while the simulator still gets stuck there as Echo did; the fix that gets it out will flip them.
+ * hemmed in on a ledge at Y 47 between an aquifer and a cavern, its way to iron refused on every side. With the
+ * campaign's own climb, dig down and giving up on a target in the simulator (F-35e), the iron stage gets off the ledge,
+ * as the game's own fixture of the ledge ({@code NativeCavernLedgeGameTests}) does: that test is flipped. Echo's own kit,
+ * no pickaxe, still stays: that test still reproduces, now through the climb's own steps.
  *
  * Technical: the run's place (x 16 to 18, Y 47, z -48 to -44; F-25c4cp's `ledge-505`) staged in a {@link SimWorld} at
  * the same x and Y, z shifted by 128 into the simulator's square: a ledge of five by three dug cells open on its east
@@ -21,9 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code RoutePlanner} over the scene: no drop deeper than three, no step that digs down (the planner digs only at the
  * body's own level), and every dig at the ledge's level refused as the campaign refuses it, for the water beside or
  * over it. The step the run logged, "Mine iron ore - Tunnel past liquid toward iron: advance", is the campaign's own
- * ({@code PortalRunCampaign.descendOrTunnel}, then {@code tunnel}: an ore not in view, water under every way down), which
- * lives in the adapter: the simulator's goal step is the planner's "Iron: Mine iron ore", and with the ore out of view
- * its stand-in for that tunnel, a straight tunnel that walks through water, takes it out of the scene.
+ * ({@code descendOrTunnel}, then {@code tunnel}: an ore not in view, water under every way down), now the core's
+ * {@code Digger}, which the simulator asks as the adapter does.
  */
 class HemmedInSceneTest {
     /** Where Echo stood, in the simulator's square. */
@@ -57,9 +58,13 @@ class HemmedInSceneTest {
                 new int[] {X, Y, Z}, kit);
     }
 
+    /**
+     * Still where it stood, through the watchdog's spells: within a level of the ledge (its climb steps a level down and
+     * back up), and within a few blocks of where it stood.
+     */
     private static void stillOnTheLedge(SimRun run, SimRun.Result result) {
         int[] at = run.at();
-        assertEquals(Y, at[1], "still at the ledge's level: " + java.util.Arrays.toString(at) + "\n" + result.log());
+        assertTrue(Math.abs(at[1] - Y) <= 1, "still at the ledge's level, or a level under it: " + java.util.Arrays.toString(at) + "\n" + result.log());
         assertTrue(Math.abs(at[0] - X) <= 3 && Math.abs(at[2] - Z) <= 3, "within a few blocks of where it stood: "
                 + java.util.Arrays.toString(at) + "\n" + result.log());
         assertTrue(result.stuck() >= 2, "stuck spells " + result.stuck() + "\n" + result.log());
@@ -67,23 +72,34 @@ class HemmedInSceneTest {
     }
 
     /**
-     * The iron stage as F-25c4cp's fixture has it, a stone pickaxe in hand, the ore in view down in the cavern: every
-     * walk to it is "No walkable route", and every made way too, and it stands on the ledge through the watchdog's
-     * spells. This reproduces the stuck spell; the fix will flip these assertions.
+     * The iron stage as F-25c4cp's fixture has it, a stone pickaxe in hand, the ore in view down in the cavern: the walk to
+     * it is still "No walkable route", and every made way too. That ore is then given up, with the column round it, as the
+     * campaign gives a target up after a walk to it fails, and with no other ore in view its staircase goes down toward
+     * iron's depth, off the ledge. Flipped by F-35e (in step 3 it stood on the ledge through three spells): it passes as
+     * the game's own fixture does, on ground eight or more from where it stood, alive. Not within that fixture's 3,000
+     * ticks: five blocks down its staircase the cavern's floor is in view, and the simulator's walks to it (its stand-in
+     * for the campaign's cave walk) are refused one after another, each choice let be half a minute, until the watchdog's
+     * spell at 3:32; then the staircase goes on down.
      */
     @Test
-    void hemmedInByLiquidTowardIronOn505Reproduces() {
+    void hemmedInByLiquidTowardIronOn505GetsOffTheLedge() {
         var run = on505(Map.of("stone_pickaxe", 1, "stick", 4, "crafting_table", 1, "cobblestone", 32, "torch", 16, "bread", 8));
         var result = run.run();
-        stillOnTheLedge(run, result);
+        int[] at = run.at();
         assertTrue(result.log().contains("Echo goal at 18 47 80: Iron: Mine iron ore"), result.log());
         assertTrue(result.log().contains("Echo native_break BLOCKED: No walkable route toward 29, 32, 82 [Mine iron ore"), result.log());
-        assertEquals(0, run.holding("raw_iron"), "no iron mined: " + result.log());
+        assertTrue(result.log().contains("Dig down toward iron: step down [Mine iron ore"), "its staircase down: " + result.log());
+        assertTrue(at[1] < Y && sq(at[0] - X) + sq(at[1] - Y) + sq(at[2] - Z) >= 8 * 8, "off the ledge: " + java.util.Arrays.toString(at) + "\n" + result.log());
+        assertEquals(0, result.deaths(), result.log());
     }
 
+    private static int sq(int v) { return v * v; }
+
     /**
-     * Echo's kit as the run ended it: an iron ingot and no pickaxe. The plan asks for logs for sticks, and every walk
-     * toward the surface is refused or ends on the ledge again. This reproduces the stuck spell; the fix will flip it.
+     * Echo's kit as the run ended it: an iron ingot and no pickaxe. The plan asks for logs for sticks; walks toward the
+     * surface are refused, and the campaign's climb, by hand, meets the aquifer's water over every way up: its way out
+     * from under the water steps a level down, and its climb steps back up onto the ledge, by turns. This still
+     * reproduces the stuck spell (F-35e: within a level of the ledge, where step 3 stood at its level).
      */
     @Test
     void hemmedInWithEchosKitNoPickaxeOn505Reproduces() {
@@ -92,6 +108,8 @@ class HemmedInSceneTest {
         stillOnTheLedge(run, result);
         assertTrue(result.log().contains("Echo goal at 18 47 80: Wood: Gather logs for sticks"), result.log());
         assertTrue(result.log().contains("Echo native_goto BLOCKED: No walkable route toward"), result.log());
+        assertTrue(result.log().contains("Climb toward the surface for logs: out from under the water, a level lower: step down"), result.log());
+        assertTrue(result.log().contains("Climb toward the surface for logs: step up"), result.log());
         assertEquals(1, run.holding("iron_ingot"), result.log());
         assertEquals(0, run.holding("wooden_pickaxe") + run.holding("stone_pickaxe"), "still no pickaxe: " + result.log());
     }

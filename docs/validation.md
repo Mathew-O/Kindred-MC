@@ -16,6 +16,14 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## F-35e: the campaign's climb, dig down, tunnel and giving up, in core, 2026-11-10
+
+- Build: `./gradlew build --offline`, successful; `DiggerTest` (new, pure), 8 of 8; `companion-sim` tests, 8 of 8 (`HemmedInSceneTest`'s iron stage flipped to getting off the ledge, as the game's own fixture of it does; the no-pickaxe one still reproduces, its end level restated as the ledge's or one under it).
+- Equivalence: a temporary GameTest (not committed) ran the campaign's `climb`, `digDown`, `tunnel`, `tunnelStraight`, `tunnelAlong` and `descendOrTunnel` over the scenes of eight portal-campaign fixtures, the stair, stranded-return and branch-mine fixtures, the `ledge-505` structure and two more scenes. It ran them on every standing cell with 4 kits by 4 headings, each outcome fed back, and the set-aside ledger alone: 564,704 calls, byte-identical before and after.
+- Native: the ten classes (`NativeNavigationGameTests`, `NativeStairGameTests`, `NativeCaveLedgeGameTests`, `NativeCavernLedgeGameTests`, `NativeLakeBedClimbGameTests`, `NativeStrandedReturnGameTests`, `NativePortalCampaignGameTests`, `NativeBranchMineGameTests`, `NativeDeepPortalGameTests`, `NativeSpireGameTests`) alone, one run each: before, 1 run, 115 of 115; after, 3 runs, 115 of 115 each.
+- Simulator: the three packs of 100, step 3's after → now: stuck spells 48 → 2, 341 → 71, 1,480 → 240; the portal pack's iron pickaxe 8 → 43 of 100 (97 with step 3's straight walks). Logs identical on two runs.
+- Not run: a ten-seed batch, a live run.
+
 ## F-35d: the route planners in core behind a terrain, 2026-11-10
 
 - Build: `./gradlew build`; `RoutePlannerTest` (new, pure), 11 of 11.

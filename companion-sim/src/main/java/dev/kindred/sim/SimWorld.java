@@ -2,6 +2,7 @@ package dev.kindred.sim;
 
 import dev.kindred.core.atlas.Atlas;
 import dev.kindred.core.atlas.Priors;
+import dev.kindred.core.route.DigTerrain;
 import dev.kindred.core.route.Terrain;
 
 import java.util.SplittableRandom;
@@ -14,9 +15,10 @@ import java.util.SplittableRandom;
  * the atlas's priors for 1.21.1 ({@link Priors#atHeight}), so the simulator and the atlas agree on where things are. Sky
  * light is by column (open to the sky or not), block light by radius from torches and lava; light is never propagated.
  * No Minecraft code: what a block does is what the simulator's skills say, and what the route planners ask of a cell
- * ({@link Terrain}) is answered as the server adapter answers it for the matching vanilla block (F-35d).
+ * ({@link Terrain}), and what the core's dig decisions ask ({@link DigTerrain}), is answered as the server adapter answers it
+ * for the matching vanilla block (F-35d, F-35e).
  */
-public final class SimWorld implements Terrain {
+public final class SimWorld implements DigTerrain {
     public static final int SIZE = 128, MIN_Y = -64, HEIGHT = 192, SEA = 62;
 
     public enum Block {
@@ -264,6 +266,28 @@ public final class SimWorld implements Terrain {
     /** As the adapter's {@code NativeStairAction.solid}: loaded, not replaceable, no fluid, and a collision box. */
     @Override
     public boolean placeAgainst(int x, int y, int z) { return inside(x, y, z) && cube(at(x, y, z)); }
+
+    /** No collision box: air, the torch, water and lava, as {@link #passThrough}: the simulator has no carpet or door. */
+    @Override
+    public boolean empty(int x, int y, int z) { return !cube(at(x, y, z)); }
+
+    /** Vanilla's falling blocks among the simulator's: gravel and sand (though in the simulator they never fall). */
+    @Override
+    public boolean falls(int x, int y, int z) {
+        Block b = at(x, y, z);
+        return b == Block.GRAVEL || b == Block.SAND;
+    }
+
+    /** As vanilla's {@code FallingBlock.canFallThrough}: air, a liquid, or a replaceable block; a torch is none of them. */
+    @Override
+    public boolean fallsThrough(int x, int y, int z) {
+        Block b = at(x, y, z);
+        return b == Block.AIR || b == Block.WATER || b == Block.LAVA;
+    }
+
+    /** Nothing falls in the simulator: no falling block is ever in flight. */
+    @Override
+    public boolean falling(int x0, int y0, int z0, int x1, int y1, int z1) { return false; }
 
     /** Whether the block has a collision box, a full cube's: all but air, the torch, water and lava. */
     private static boolean cube(Block b) {
