@@ -1,8 +1,8 @@
 # F-25c4dc — Two or more mobs after it down a dark passage are sealed out, not met one at a time
 
 Date: 2026-11-10
-Agent / branch: Claude / claude/survival-1110-seal (SURVIVAL track), stacked on `claude/cover-climb-1109` (#107, F-25c4cy's
-`holdCover`) with main `b95911c` merged in
+Agent / branch: Claude / claude/survival-1110-seal (SURVIVAL track), on main with #107 (F-25c4cy's
+`holdCover`), main `335da88`; the fixtures and classes ran on it stacked on #107 before #107 merged
 Build: recorded in [validation](../validation.md)
 Status: in progress. The fixtures pass; the ten-seed measure (RUNNER 2's survival-1) is to come.
 
@@ -68,4 +68,3 @@ goal mined that cell. The zombies now start within six.
   (RUNNER 2's survival-1 on `784691d`).
 - The seal answers only a passage one wide with every mob on one side; a cave, or mobs from both ways, is fought or backed off
   from as before.
-- It merges after #107.
