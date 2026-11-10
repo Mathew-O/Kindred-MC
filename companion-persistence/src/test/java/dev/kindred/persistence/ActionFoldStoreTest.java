@@ -106,9 +106,13 @@ class ActionFoldStoreTest {
         assertTrue(reopened.checkActionLedger().join().agrees());
         reopened.closeAsync().join();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + directory.resolve("companions.sqlite")); var statement = connection.createStatement()) {
-            assertThrows(SQLException.class, () -> statement.execute("DELETE FROM world_events WHERE kind = 'claim'"));
-            assertThrows(SQLException.class, () -> statement.execute("DELETE FROM world_events WHERE kind = '" + ActionLedgerView.FOLDED + "'"));
-            assertThrows(SQLException.class, () -> statement.execute("UPDATE world_events SET subject = 'blue' WHERE kind = '" + ActionLedgerView.ACTION + "'"));
+            for (String sql : List.of("DELETE FROM world_events WHERE kind = 'claim'",
+                    "DELETE FROM world_events WHERE kind = '" + ActionLedgerView.FOLDED + "'",
+                    "UPDATE world_events SET subject = 'blue' WHERE kind = '" + ActionLedgerView.ACTION + "'")) {
+                var refused = assertThrows(SQLException.class, () -> statement.execute(sql), sql);
+                assertTrue(refused.getMessage().contains("The World Record is append-only"), sql + ": " + refused.getMessage());
+            }
+            try (var row = statement.executeQuery("SELECT COUNT(*) FROM world_events WHERE kind = 'claim'")) { assertEquals(1, row.getInt(1)); }
         }
     }
 
