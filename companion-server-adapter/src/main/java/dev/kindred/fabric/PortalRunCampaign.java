@@ -63,7 +63,7 @@ final class PortalRunCampaign {
 
     private static final double REACH = 4.3;
     /** Standing where a cut trunk stood, a player reaches the log this many blocks over its feet (eye 1.62, reach 4.3). */
-    private static final int TRUNK_REACH = 5;
+    private static final int TRUNK_REACH = dev.kindred.core.route.Sight.TRUNK_REACH;
     /** Iron is most common around Y=16; coal in caves well above deepslate, which has very little. */
     private static final int IRON_TOP = 56, IRON_TARGET = 16, COAL_TARGET = 48;
     /** Exploration stays within this many blocks of where the run started, so the player can find its way back. */
@@ -3698,45 +3698,13 @@ final class PortalRunCampaign {
     /**
      * Where a player stands to chop {@code log}: on solid ground under its trunk, at most {@link #TRUNK_REACH} blocks
      * below it, through the trunk or the cells where its lower logs were cut. Nothing for logs held up by leaves, or
-     * hanging higher, which would need a pillar, or for a column of logs built into something ({@link #builtIn}): a
-     * player short of logs cut the corner posts out of its own cabin (E-08d). Planning and gathering both use it, so a
-     * log the player would not go for is never a tree in sight either.
+     * hanging higher, which would need a pillar, or for a column of logs built into something (touching planks, stairs,
+     * slabs, a wall, a door, a fence, glass, a pane, wool or a bed, as a hut's corner post does; never cobblestone, dirt or
+     * stone): a player short of logs cut the corner posts out of its own cabin (E-08d). Planning and gathering both use
+     * it, so a log the player would not go for is never a tree in sight either. The core's rule (F-35f: {@code Sight}).
      */
     private static Optional<BlockPos> trunkFoot(ServerWorld world, BlockPos log) {
-        if (builtIn(world, log)) return Optional.empty();
-        BlockPos below = log.down();
-        for (int depth = 1; depth <= TRUNK_REACH + 1; depth++, below = below.down()) {
-            BlockState state = world.getBlockState(below);
-            // The rest of a trunk whose bottom logs were cut is still chopped from the ground beneath it.
-            if (state.isAir()) continue;
-            if (state.isIn(BlockTags.LOGS)) {
-                if (builtIn(world, below)) return Optional.empty();
-                continue;
-            }
-            return !state.getCollisionShape(world, below).isEmpty() && !state.isIn(BlockTags.LEAVES) ? Optional.of(below.up()) : Optional.empty();
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * A log built into something rather than grown: touching planks, stairs, slabs, a wall, a door, a fence, glass, a
-     * pane, wool or a bed, as a hut's or a cabin's corner post does (its floor under it, its roof over it). Never
-     * cobblestone or dirt, which the player's own scaffolding beside a trunk is, nor stone, which trees grow against.
-     * A neighbour in a chunk not loaded counts as nothing built.
-     */
-    private static boolean builtIn(ServerWorld world, BlockPos log) {
-        for (Direction direction : Direction.values()) {
-            BlockPos next = log.offset(direction);
-            if (!world.isChunkLoaded(next.getX() >> 4, next.getZ() >> 4)) continue;
-            BlockState state = world.getBlockState(next);
-            if (state.isIn(BlockTags.PLANKS) || state.isIn(BlockTags.STAIRS) || state.isIn(BlockTags.SLABS) || state.isIn(BlockTags.WALLS)
-                    || state.isIn(BlockTags.DOORS) || state.isIn(BlockTags.TRAPDOORS) || state.isIn(BlockTags.FENCES)
-                    || state.isIn(BlockTags.FENCE_GATES) || state.isIn(BlockTags.WOOL) || state.isIn(BlockTags.BEDS)
-                    || state.isIn(BlockTags.IMPERMEABLE) || state.getBlock() instanceof net.minecraft.block.PaneBlock) {
-                return true;
-            }
-        }
-        return false;
+        return WorldKnowledge.trunkFoot(world, log);
     }
 
     /**
@@ -5076,36 +5044,11 @@ final class PortalRunCampaign {
      * that level, which opens a cell with lava under it to show the lava (F-25c4ad). The staircases turn where a cell is
      * refused. The tunnel goes only the two ways that close on the lava, and bridges a drop on the way with a block of its
      * own: turned aside by a cave's drop at every step, Kindred, in the live pair on 64c298d, tunnelled 81 blocks west at
-     * the lava's level, past the lava it saw across the cave (F-25c4ak). With neither way open it digs nothing.
+     * the lava's level, past the lava it saw across the cave (F-25c4ak). With neither way open it digs nothing. The core's
+     * decision (F-35f: {@code Digger.toward}).
      */
     private Optional<Task> digToward(NativePlayerBody body, BlockPos lava, String label) {
-        BlockPos feet = body.entity().getBlockPos();
-        int dx = lava.getX() - feet.getX(), dz = lava.getZ() - feet.getZ(), rise = lava.getY() + 1 - feet.getY();
-        if (dx == 0 && dz == 0) return rise > 0 ? climb(body, label) : rise < 0 ? digDown(body, lava.getY() + 1, label) : Optional.empty();
-        Direction across = dx > 0 ? Direction.EAST : Direction.WEST, along = dz > 0 ? Direction.SOUTH : Direction.NORTH;
-        boolean xFirst = Math.abs(dx) >= Math.abs(dz);
-        Direction major = xFirst ? across : along;
-        digDirection(major);
-        if (rise > 0) return climb(body, label);
-        if (rise < 0) return digDown(body, lava.getY() + 1, label);
-        List<Direction> ways = (xFirst ? dz : dx) == 0 ? List.of(major) : List.of(major, xFirst ? along : across);
-        int floor = digger.tunnelFloor(), turns = digger.tunnelTurns();
-        try {
-            digger.tunnelFloor(lava.getY() + 1);
-            digger.tunnelTurns(1);
-            digger.bridgeDrops(true);
-            for (Direction way : ways) {
-                digDirection(way);
-                Optional<Task> step = tunnel(body, label, true);
-                if (step.isPresent()) return step;
-            }
-            return Optional.empty();
-        } finally {
-            digger.tunnelFloor(floor);
-            digger.tunnelTurns(turns);
-            digger.bridgeDrops(false);
-            digDirection(major);
-        }
+        return digger.toward(dig(body), cell(lava), label);
     }
 
     /**

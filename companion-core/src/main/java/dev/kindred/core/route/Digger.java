@@ -362,6 +362,44 @@ public final class Digger {
         }
     }
 
+    /**
+     * Toward {@code lava} by digging (F-35f, ported from the campaign's {@code digToward}): a staircase up or down until
+     * its feet are a block above the lava, then a tunnel along that level, which opens a cell with lava under it to show
+     * the lava (F-25c4ad). The staircases turn where a cell is refused. The tunnel goes only the two ways that close on
+     * the lava, and bridges a drop on the way with a block of its own: turned aside by a cave's drop at every step,
+     * Kindred, in the live pair on 64c298d, tunnelled 81 blocks west at the lava's level, past the lava it saw across the
+     * cave (F-25c4ak). With neither way open it digs nothing.
+     */
+    public <T> Optional<T> toward(Body<T> body, Cell lava, String label) {
+        Cell feet = body.feet();
+        int dx = lava.x() - feet.x(), dz = lava.z() - feet.z(), rise = lava.y() + 1 - feet.y();
+        if (dx == 0 && dz == 0) return rise > 0 ? climb(body, label) : rise < 0 ? digDown(body, lava.y() + 1, label) : Optional.empty();
+        Side across = dx > 0 ? Side.EAST : Side.WEST, along = dz > 0 ? Side.SOUTH : Side.NORTH;
+        boolean xFirst = Math.abs(dx) >= Math.abs(dz);
+        Side major = xFirst ? across : along;
+        heading = major;
+        if (rise > 0) return climb(body, label);
+        if (rise < 0) return digDown(body, lava.y() + 1, label);
+        List<Side> ways = (xFirst ? dz : dx) == 0 ? List.of(major) : List.of(major, xFirst ? along : across);
+        int floor = tunnelFloor, turns = tunnelTurns;
+        try {
+            tunnelFloor = lava.y() + 1;
+            tunnelTurns = 1;
+            bridgeDrops = true;
+            for (Side way : ways) {
+                heading = way;
+                Optional<T> step = tunnel(body, label, true);
+                if (step.isPresent()) return step;
+            }
+            return Optional.empty();
+        } finally {
+            tunnelFloor = floor;
+            tunnelTurns = turns;
+            bridgeDrops = false;
+            heading = major;
+        }
+    }
+
     /** A two-high tunnel forward along the heading, turning where that way is refused. */
     public <T> Optional<T> tunnel(Body<T> body, String label) {
         return tunnel(body, label, false);

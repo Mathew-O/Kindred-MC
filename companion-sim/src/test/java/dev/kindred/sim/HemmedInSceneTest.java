@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * hemmed in on a ledge at Y 47 between an aquifer and a cavern, its way to iron refused on every side. With the
  * campaign's own climb, dig down and giving up on a target in the simulator (F-35e), the iron stage gets off the ledge,
  * as the game's own fixture of the ledge ({@code NativeCavernLedgeGameTests}) does: that test is flipped. Echo's own kit,
- * no pickaxe, still stays: that test still reproduces, now through the climb's own steps.
+ * no pickaxe, still stays on the ledge's level, as the game's Echo did: that test still reproduces.
  *
  * Technical: the run's place (x 16 to 18, Y 47, z -48 to -44; F-25c4cp's `ledge-505`) staged in a {@link SimWorld} at
  * the same x and Y, z shifted by 128 into the simulator's square: a ledge of five by three dug cells open on its east
@@ -59,12 +59,15 @@ class HemmedInSceneTest {
     }
 
     /**
-     * Still where it stood, through the watchdog's spells: within a level of the ledge (its climb steps a level down and
-     * back up), and within a few blocks of where it stood.
+     * Still where it stood, through the watchdog's spells: at the ledge's level, Y 47, and within a few blocks of where it
+     * stood. As the game had it (F-35f): in E-40's iteration 15 (`e40a15-dbf4e5c`, its summary's 505 row: Echo, furthest the
+     * iron ingot, 29 stuck spells) 26 of Echo's 29 spells were at Y 47 on this ledge (F-25c4cp in E-40's batch 22), until a
+     * zombie's blows put it into the cavern. No native fixture has this kit, and no corpus scene on main has an iron ingot
+     * and no pickaxe on 505.
      */
     private static void stillOnTheLedge(SimRun run, SimRun.Result result) {
         int[] at = run.at();
-        assertTrue(Math.abs(at[1] - Y) <= 1, "still at the ledge's level, or a level under it: " + java.util.Arrays.toString(at) + "\n" + result.log());
+        assertEquals(Y, at[1], "still at the ledge's level: " + java.util.Arrays.toString(at) + "\n" + result.log());
         assertTrue(Math.abs(at[0] - X) <= 3 && Math.abs(at[2] - Z) <= 3, "within a few blocks of where it stood: "
                 + java.util.Arrays.toString(at) + "\n" + result.log());
         assertTrue(result.stuck() >= 2, "stuck spells " + result.stuck() + "\n" + result.log());
@@ -96,10 +99,14 @@ class HemmedInSceneTest {
     private static int sq(int v) { return v * v; }
 
     /**
-     * Echo's kit as the run ended it: an iron ingot and no pickaxe. The plan asks for logs for sticks; walks toward the
-     * surface are refused, and the campaign's climb, by hand, meets the aquifer's water over every way up: its way out
-     * from under the water steps a level down, and its climb steps back up onto the ledge, by turns. This still
-     * reproduces the stuck spell (F-35e: within a level of the ledge, where step 3 stood at its level).
+     * Echo's kit as the run ended it: an iron ingot and no pickaxe. The plan asks for logs for sticks, and below ground
+     * the campaign's only step for them is its way up: its climb, by hand, meets the aquifer's water over every way up,
+     * its way out from under the water steps a level down, and its climb steps back up onto the ledge, by turns; with no
+     * step up it waits for a feasible step. This still reproduces the stuck spell, ending at the ledge's own level.
+     * F-35f restated two things, not silently: F-35e had widened the end level to a level under the ledge, now the
+     * ledge's again; and step 3's refused walk ("No walkable route toward") was the simulator's own walk about below
+     * ground, which the campaign's {@code GATHER_LOGS} never makes there (its way up or nothing): its place is taken by
+     * the campaign's own "Waiting for a feasible step".
      */
     @Test
     void hemmedInWithEchosKitNoPickaxeOn505Reproduces() {
@@ -107,7 +114,7 @@ class HemmedInSceneTest {
         var result = run.run();
         stillOnTheLedge(run, result);
         assertTrue(result.log().contains("Echo goal at 18 47 80: Wood: Gather logs for sticks"), result.log());
-        assertTrue(result.log().contains("Echo native_goto BLOCKED: No walkable route toward"), result.log());
+        assertTrue(result.log().contains("Echo native_gather BLOCKED: Waiting for a feasible step [Gather logs for sticks]"), result.log());
         assertTrue(result.log().contains("Climb toward the surface for logs: out from under the water, a level lower: step down"), result.log());
         assertTrue(result.log().contains("Climb toward the surface for logs: step up"), result.log());
         assertEquals(1, run.holding("iron_ingot"), result.log());

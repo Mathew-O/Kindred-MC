@@ -174,6 +174,23 @@ class DiggerTest {
     }
 
     @Test
+    void theCastDigsTowardItsLavaDownThenAlongItsLevelThenOpensTheCellOverIt() {
+        var digger = new Digger();
+        // Lava three down and four east: a staircase down along the way that closes most on it, east.
+        var scene = pocket();
+        Cell lava = new Cell(4, -3, 0);
+        assertEquals(Optional.of("break Cast: clear 1, 1, 0"), digger.toward(new Body(scene, new Cell(0, 0, 0)), lava, "Cast"));
+        assertEquals(Side.EAST, digger.heading());
+        // At a block above its top, on its level: a tunnel east, never below that level, opening the cell over it once there.
+        var level = new Scene().set(0, -2, 0, Block.AIR).set(0, -1, 0, Block.AIR).set(1, -1, 0, Block.AIR).set(1, -2, 0, Block.AIR)
+                .set(2, -1, 0, Block.AIR).set(2, -3, 0, Block.LAVA);
+        assertEquals(Optional.of("open Cast: open 2, -2, 0 over lava"), digger.toward(new Body(level, new Cell(1, -2, 0)), new Cell(2, -3, 0), "Cast"));
+        // Straight over it: a staircase down to a block above it; level with that, nothing to dig.
+        assertEquals(Optional.empty(), digger.toward(new Body(pocket(), new Cell(0, 0, 0)), new Cell(0, -1, 0), "Cast"));
+        assertEquals(Side.EAST, digger.heading(), "its heading kept");
+    }
+
+    @Test
     void aTargetNoWalkReachedIsSkippedWithItsColumnUntilItsBackOffEndsAndThePlayerHasMovedOff() {
         var ledger = new SetAside();
         Cell ore = new Cell(5, 10, 5), feet = new Cell(0, 10, 0);

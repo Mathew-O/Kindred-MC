@@ -73,4 +73,46 @@ class SimWorldTerrainTest {
         assertTrue(path.complete(), "over a step of one");
         assertTrue(path.nodes().contains(new Cell(10, 2, 2)), path.nodes().toString());
     }
+
+    /** The perception's facts (F-35f) as the adapter's {@code WorldKnowledge} reads them for the matching vanilla block. */
+    @Test
+    void eachBlockAnswersThePerceptionAsItsVanillaBlockDoes() {
+        var world = SimWorld.staged(1);
+        int x = 10, z = 10;
+        for (Block b : Block.values()) world.set(x + b.ordinal(), 0, z, b);
+        for (Block b : Block.values()) {
+            int bx = x + b.ordinal();
+            boolean open = b == Block.AIR || b == Block.TORCH, fluid = b == Block.WATER || b == Block.LAVA;
+            assertEquals(b == Block.AIR, world.air(bx, 0, z), b + " is air");
+            assertEquals(!fluid, world.fluidEmpty(bx, 0, z), b + " holds no fluid");
+            assertEquals(!open && !fluid && b != Block.LEAVES, world.opaqueFullCube(bx, 0, z), b + " is an opaque full cube");
+            assertEquals(open || fluid, world.collisionEmpty(bx, 0, z), b + " has no collision box");
+        }
+        assertEquals(dev.kindred.core.route.Sight.Kind.STONE, world.kind(x + Block.COBBLE.ordinal(), 0, z), "cobblestone is stone to the sweep");
+        assertEquals(null, world.kind(x + Block.DIRT.ordinal(), 0, z));
+        assertTrue(world.inLoadedChunk(0, 500, 0) && !world.inLoadedChunk(-1, 0, 0), "a column of the square is loaded at any height");
+        assertEquals(new Cell(x + Block.STONE.ordinal(), 0, z), world.ray(x + 0.5, 0.5, z + 0.5, x + Block.STONE.ordinal() + 0.5, 0.5, z + 0.5, false),
+                "a line along the row meets the first full cube on it");
+    }
+
+    /**
+     * Ore where vanilla 1.21.1's ore features put it (F-35f): diamonds no higher than their ranges' top, 16, and a vein's
+     * reach; coal no lower than 0 and a vein's reach; iron several times the atlas-placed world's 200 veins of at most 6.
+     */
+    @Test
+    void oreIsPlacedAsVanillasOreFeaturesPlaceIt() {
+        var world = SimWorld.generate(7);
+        int iron = 0, ironMiddle = 0;
+        for (int x = 0; x < SimWorld.SIZE; x++) for (int z = 0; z < SimWorld.SIZE; z++) for (int y = SimWorld.MIN_Y; y < SimWorld.MIN_Y + SimWorld.HEIGHT; y++) {
+            Block b = world.at(x, y, z);
+            if (b == Block.DIAMOND_ORE) assertTrue(y <= 19, "diamond at " + y);
+            if (b == Block.COAL_ORE) assertTrue(y >= -4, "coal at " + y);
+            if (b == Block.IRON_ORE) {
+                iron++;
+                if (y >= -24 && y <= 56) ironMiddle++;
+            }
+        }
+        assertTrue(iron > 2_400, "iron blocks " + iron);
+        assertTrue(ironMiddle > iron / 2, "most iron in the middle band: " + ironMiddle + " of " + iron);
+    }
 }

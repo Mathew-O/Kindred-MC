@@ -15,6 +15,7 @@ import dev.kindred.core.route.Digger;
 import dev.kindred.core.route.Navigator;
 import dev.kindred.core.route.RoutePlanner;
 import dev.kindred.core.route.SetAside;
+import dev.kindred.core.route.Sight;
 import dev.kindred.core.survival.Lessons;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
@@ -109,6 +110,8 @@ public final class SimRun {
     private final Map<WorldFacts.Source, int[]> seen = new EnumMap<>(WorldFacts.Source.class);
     /** Cave floor it saw on its last look: open cells below the ground with a floor to stand on. */
     private final List<int[]> caves = new ArrayList<>();
+    /** What it has seen, and how it sees: the game's perception, the core's (F-35f). */
+    private final Sight sight = new Sight();
     /** The cells of four blocks it has explored a cave in, as the campaign keeps them. */
     private final Set<Long> visitedCaves = new java.util.HashSet<>();
     /** The campaign's own ways up, down and along through rock, and the heading it digs along (F-35e). */
@@ -184,7 +187,7 @@ public final class SimRun {
     }
 
     public SimRun(Config config, Priors priors) {
-        this(config, priors, SimWorld.generate(config.seed(), priors), null, Map.of());
+        this(config, priors, SimWorld.generate(config.seed()), null, Map.of());
     }
 
     /**
@@ -196,6 +199,19 @@ public final class SimRun {
         this.world = world;
         this.random = new SplittableRandom(config.seed() * 31 + 7);
         this.atlas = new Atlas(priors);
+        // What it sees of iron, diamonds, coal, lava, water and trees goes into its atlas the first time, as the campaign's.
+        sight.onFirstSight((kind, c) -> {
+            var resource = switch (kind) {
+                case IRON_ORE -> Atlas.Resource.IRON;
+                case DIAMOND_ORE -> Atlas.Resource.DIAMOND;
+                case COAL_ORE -> Atlas.Resource.COAL;
+                case LAVA -> Atlas.Resource.LAVA;
+                case WATER -> Atlas.Resource.WATER;
+                case LOG -> Atlas.Resource.TREES;
+                default -> null;
+            };
+            if (resource != null) atlas.sighted(resource, new Atlas.Place("overworld", c.x(), c.y(), c.z()), this.world.tick, null);
+        });
         this.mind = new PlayerDecisionLoop(new PlayerIdentity(UUID.nameUUIDFromBytes(name.getBytes()), UUID.nameUUIDFromBytes(("sim" + config.seed()).getBytes()), name));
         this.record = new EvalRecord(EvalScenario.parse("starters=" + name + "; goal=nether; ticks=" + config.ticks()));
         this.log = new SimLog(name);
@@ -317,6 +333,18 @@ public final class SimRun {
 
     /** How many of {@code item} it holds now. */
     int holding(String item) { return count(item); }
+
+    /** A staged scene's mob, where it stood with the health it had (F-35f's corpus scenes): a zombie, skeleton, creeper or spider. */
+    void mob(String kind, double mx, double my, double mz, float mobHealth) {
+        mobs.add(new Mob(kind, mx, my, mz, mobHealth));
+    }
+
+    /** A staged scene's body as it was: its health, food and saturation (F-35f's corpus scenes). */
+    void body(float health, int food, float saturation) {
+        this.health = health;
+        this.food = food;
+        this.saturation = saturation;
+    }
 
     private record Choice(String kind, String label, PortalRunPlanner.Step step, Mob mob) { }
 
@@ -544,13 +572,16 @@ public final class SimRun {
     }
 
     /**
-     * What it sees from where it stands, as a player would: the faces of blocks open to the air within sixteen blocks,
-     * and trees and water on open ground within forty-eight. Kept as the nearest of each kind; the atlas told of ores.
+     * What it sees from where it stands, by the game's own perception (F-35f: the core's {@link Sight}, as the adapter's
+     * {@code WorldKnowledge} sees): a sweep of the chunk sections round it, remembering blocks with a face open to the air,
+     * and ores, fluids and cave floors only where a sight line from its eyes reaches them; with open sky over its head,
+     * trees on the skyline out to the campaign's {@code TREE_SIGHT}. What it saw is remembered, as the game's knowledge is,
+     * and the nearest of each kind it would go for is taken from that memory, by the campaign's own filters.
      */
     private void look() {
         // What it saw a moment ago from about here still holds; a look again once it has moved or a while has passed.
         if (Math.abs(x - lookedX) + Math.abs(y - lookedY) + Math.abs(z - lookedZ) < 3 && world.tick - lookedAt < 400) {
-            seen.values().removeIf(at -> source(world.at(at[0], at[1], at[2])) == null || givenUp(at[0], at[1], at[2]));
+            choose();
             stages();
             return;
         }
@@ -558,59 +589,68 @@ public final class SimRun {
         lookedY = y;
         lookedZ = z;
         lookedAt = world.tick;
-        seen.clear();
-        caves.clear();
-        for (int dx = -16; dx <= 16; dx++) for (int dy = -12; dy <= 12; dy++) for (int dz = -16; dz <= 16; dz++) {
-            int px = x + dx, py = y + dy, pz = z + dz;
-            Block b = world.at(px, py, pz);
-            if (b.open() && world.at(px, py + 1, pz).open() && world.at(px, py - 1, pz).solid() && py < ground(px, pz) - 2) caves.add(new int[] {px, py, pz});
-            var source = source(b);
-            if (source == null || !world.exposed(px, py, pz)) continue;
-            remember(source, px, py, pz);
+        double[] eye = {x + 0.5, y + 1.62, z + 0.5};
+        Cell feet = new Cell(x, y, z);
+        // A whole sweep from here at once: the game's is spread over its ticks, a few thousand block reads and two dozen
+        // sight lines a tick, and is begun again from wherever the player then stands.
+        for (int scan = 0; scan < 4_000; scan++) {
+            sight.scan(world, eye, feet);
+            if (sight.swept()) break;
         }
-        for (int dx = -48; dx <= 48; dx += 2) for (int dz = -48; dz <= 48; dz += 2) {
-            int px = x + dx, pz = z + dz, top = world.top(px, pz);
-            Block b = world.at(px, top, pz);
-            if (b == Block.LEAVES || b == Block.LOG) {
-                int ty = top;
-                while (ty > top - 8 && world.at(px, ty, pz) != Block.LOG) ty--;
-                if (world.at(px, ty, pz) == Block.LOG) remember(WorldFacts.Source.TREE, px, ty, pz);
-            } else if (b == Block.WATER) {
-                remember(WorldFacts.Source.WATER, px, top, pz);
-            }
-        }
-        if (world.at(x, y - 1, z) == Block.STONE) remember(WorldFacts.Source.STONE, x, y - 1, z);
+        // Trees on the skyline, with open sky over its head, as the campaign's own look for trees has it.
+        if (world.skyLight(x, y + 1, z) >= 15) sight.treeInView(world, eye, feet, TREE_SIGHT, c -> !givenUp(c.x(), c.y(), c.z()));
+        choose();
         stages();
     }
 
-    private static WorldFacts.Source source(Block b) {
-        return switch (b) {
-            case LOG -> WorldFacts.Source.TREE;
-            case STONE -> WorldFacts.Source.STONE;
-            case COAL_ORE -> WorldFacts.Source.COAL_ORE;
-            case IRON_ORE -> WorldFacts.Source.IRON_ORE;
-            case DIAMOND_ORE -> WorldFacts.Source.DIAMOND_ORE;
-            case LAVA -> WorldFacts.Source.LAVA;
-            case WATER -> WorldFacts.Source.WATER;
-            case GRAVEL -> WorldFacts.Source.GRAVEL;
+    /** The campaign's reach for trees seen far off. */
+    private static final int TREE_SIGHT = 96;
+
+    /** The kind the perception keeps for each source the planner asks after. */
+    private static Sight.Kind kind(WorldFacts.Source source) {
+        return switch (source) {
+            case TREE -> Sight.Kind.LOG;
+            case STONE -> Sight.Kind.STONE;
+            case COAL_ORE -> Sight.Kind.COAL_ORE;
+            case IRON_ORE -> Sight.Kind.IRON_ORE;
+            case DIAMOND_ORE -> Sight.Kind.DIAMOND_ORE;
+            case LAVA -> Sight.Kind.LAVA;
+            case WATER -> Sight.Kind.WATER;
+            case GRAVEL -> Sight.Kind.GRAVEL;
             default -> null;
         };
     }
 
-    private void remember(WorldFacts.Source source, int px, int py, int pz) {
-        // As the campaign's knowledge is asked for the nearest of a kind: none it has set aside or found no way to.
-        if (givenUp(px, py, pz)) return;
-        int[] was = seen.get(source);
-        double d = sq(px - x) + sq(py - y) + sq(pz - z);
-        if (was == null || d < sq(was[0] - x) + sq(was[1] - y) + sq(was[2] - z)) seen.put(source, new int[] {px, py, pz});
-        var resource = switch (source) {
-            case IRON_ORE -> Atlas.Resource.IRON;
-            case DIAMOND_ORE -> Atlas.Resource.DIAMOND;
-            case COAL_ORE -> Atlas.Resource.COAL;
-            case LAVA -> Atlas.Resource.LAVA;
-            default -> null;
-        };
-        if (resource != null) atlas.sighted(resource, new Atlas.Place("overworld", px, py, pz), world.tick, name);
+    /**
+     * The nearest remembered block of each kind it would go for from here, by the campaign's own {@code gatherable}: not
+     * set aside or given up, not the block it stands on, within the gather's radius (logs 64; ore 24 below ground, else coal
+     * 32 and iron and diamond 40; stone 6; gravel 48; water under 64, as its fillWater asks), and for a log, a tree's, chopped from the ground at most five below it
+     * ({@code trunkFoot}). The cave floors it remembers, still cave floors, are the caves it may explore.
+     */
+    private void choose() {
+        seen.clear();
+        Cell feet = new Cell(x, y, z), support = feet.down();
+        boolean below = underground();
+        for (WorldFacts.Source source : WorldFacts.Source.values()) {
+            Sight.Kind kind = kind(source);
+            if (kind == null) continue;
+            int radius = switch (source) {
+                case TREE -> 64;
+                case COAL_ORE -> below ? 24 : 32;
+                case IRON_ORE, DIAMOND_ORE -> below ? 24 : 40;
+                case STONE -> 6;
+                case WATER -> 64;
+                case GRAVEL -> 48;
+                default -> 1 << 14;
+            };
+            // Squared distances are whole: the gather's "within" is at most its radius, fillWater's "under 64" is less.
+            double most = source == WorldFacts.Source.WATER ? 64 * 64 - 1 : (double) radius * radius;
+            sight.nearest(world, kind, feet, c -> !givenUp(c.x(), c.y(), c.z()) && !c.equals(support) && c.squaredDistance(feet) <= most
+                            && (source != WorldFacts.Source.TREE || c.y() <= y + Sight.TRUNK_REACH && Sight.trunkFoot(world, c).isPresent()))
+                    .ifPresent(c -> seen.put(source, new int[] {c.x(), c.y(), c.z()}));
+        }
+        caves.clear();
+        for (Cell c : sight.all(Sight.Kind.CAVE)) if (Sight.caveFloor(world, c)) caves.add(new int[] {c.x(), c.y(), c.z()});
     }
 
     /** The stages it has reached, as the server's evaluation reads them from what it holds. */
@@ -700,7 +740,7 @@ public final class SimRun {
             case MINE_COAL -> mineNearest(WorldFacts.Source.COAL_ORE, "native_break");
             case MINE_IRON -> mineNearest(WorldFacts.Source.IRON_ORE, "native_break");
             case MINE_DIAMOND -> mineNearest(WorldFacts.Source.DIAMOND_ORE, "native_break");
-            case GATHER_FLINT -> mineNearest(WorldFacts.Source.GRAVEL, "native_break");
+            case GATHER_FLINT -> flint();
             case SMELT -> smelt(step.item());
             case AWAIT_SMELT -> awaitSmelt();
             case COLLECT_SMELTED -> collect();
@@ -724,6 +764,20 @@ public final class SimRun {
             refusedRuns.remove(key);
         }
         return outcome;
+    }
+
+    /**
+     * Flint as the campaign's {@code flint} gets it (F-35f): gravel it carries set down beside it and dug again until it
+     * drops flint; with none carried, the nearest gravel it has seen within 48 ({@link #choose}'s radius for gravel).
+     */
+    private Outcome flint() {
+        if (count("gravel") > 0) {
+            take("gravel", 1);
+            pass(PLACE_TICKS + breakTicks(Block.GRAVEL), false);
+            drop(Block.GRAVEL);
+            return Outcome.done("native_break");
+        }
+        return mineNearest(WorldFacts.Source.GRAVEL, "native_break");
     }
 
     /** Walks to the nearest seen block of {@code source}, digging its way when it is under ground, and breaks it. */
@@ -764,6 +818,9 @@ public final class SimRun {
                     : source == WorldFacts.Source.WATER ? "Climb toward the surface for water" : "Climb toward the surface for logs";
             var up = digger.climb(digBody, label);
             if (up.isPresent()) return carry(up.get());
+            // For logs and for animals, the campaign's way up is all it does below ground (its GATHER_LOGS and SEEK_FOOD):
+            // with no step up, no walk about down here, but nothing (F-35f). Water it still searches for.
+            if (source == WorldFacts.Source.TREE || skill.equals("native_hunt")) return Outcome.blocked(skill, "Waiting for a feasible step");
         }
         if (below) {
             var cave = caveToward(target(source));
@@ -1258,6 +1315,16 @@ public final class SimRun {
      */
     private Outcome tunnelTo(int tx, int ty, int tz, String skill) {
         int sx = x, sy = y, sz = z;
+        // Never into lava, as no tunnel of the campaign's goes into a liquid (F-35f: lava now burns): stopped a cell short.
+        var cells = line(sx, sy, sz, tx, ty, tz);
+        for (int i = 0; i < cells.size(); i += 2) { // A step's feet, then its head.
+            int[] c = cells.get(i);
+            if (world.at(c[0], c[1], c[2]) != Block.LAVA && world.at(c[0], c[1] + 1, c[2]) != Block.LAVA) continue;
+            if (i == 0) return Outcome.blocked(skill, "No walkable route toward " + tx + ", " + ty + ", " + tz);
+            int[] before = cells.get(i - 2);
+            if (before[0] == tx && before[1] == ty && before[2] == tz) break;
+            return tunnelTo(before[0], before[1], before[2], skill);
+        }
         double pace = WALK;
         double flat = Math.sqrt(sq(tx - sx) + sq(tz - sz));
         boolean overGround = sy >= ground(sx, sz) && ty >= ground(tx, tz);
@@ -1602,16 +1669,18 @@ public final class SimRun {
 
     /**
      * The frame cast in place, a cell a pour: the empty bucket filled at the lava it knows (as the campaign's cast fetches
-     * its own), carried back to the frame's site, poured and hardened with the water bucket.
+     * its own, {@link #lavaForCast}), carried back to the frame's site, poured and hardened with the water bucket.
      */
     private Outcome castPortal() {
         if (count("water_bucket") == 0) return Outcome.blocked("native_cast", "no water bucket");
-        if (frameAt == null) frameAt = new int[] {x, y, z};
         if (count("lava_bucket") == 0) {
             if (count("bucket") == 0) return Outcome.blocked("native_cast", "no bucket for the lava");
-            var filled = fill(WorldFacts.Source.LAVA, "lava_bucket");
+            var filled = lavaForCast();
             if (!filled.state().equals("COMPLETED") || count("lava_bucket") == 0) return filled;
         }
+        // Its site chosen once it holds the lava, where it stands, as the campaign's castPortal chooses its frame's site by
+        // the lava (F-35f): not where it stood before it went for the lava.
+        if (frameAt == null) frameAt = new int[] {x, y, z};
         var back = walkTo(frameAt[0], frameAt[1], frameAt[2], "native_cast", WALK, Way.MAKE, RANGE);
         if (back != null) return back;
         pass(60, true);
@@ -1623,6 +1692,47 @@ public final class SimRun {
             portalFramed = true;
         }
         return Outcome.done("native_cast");
+    }
+
+    /** The lava the cast fills its bucket at, while it is still lava and not set aside; else the nearest it knows. */
+    private Cell castLava;
+    /** Lava a walk found no way to: dug toward from now on, until a bucket is filled (the campaign's {@code lavaNoWalk}). */
+    private Cell lavaNoWalk;
+
+    /**
+     * The cast's bucket of lava, as the campaign's {@code lavaForCast} fetches it: lava it knows of, walked to; lava a walk
+     * found no way to, within sixteen of the source, dug toward (F-35f: the core's {@link Digger#toward}, the campaign's
+     * {@code digToward}) until it is in reach; then the bucket filled. With none known, looked for as lava is: a cave, then
+     * the staircase and branch mine toward the deep lava.
+     */
+    private Outcome lavaForCast() {
+        if (castLava != null && (cellsAside.blocked(castLava.asLong(), world.tick) || world.at(castLava.x(), castLava.y(), castLava.z()) != Block.LAVA)) castLava = null;
+        if (castLava == null) {
+            int[] at = seen.get(WorldFacts.Source.LAVA);
+            if (at != null) castLava = new Cell(at[0], at[1], at[2]);
+        }
+        if (castLava == null) return explore(WorldFacts.Source.LAVA, "native_cast");
+        Cell lava = castLava;
+        String where = lava.x() + ", " + lava.y() + ", " + lava.z();
+        if (lavaNoWalk != null && lava.squaredDistance(lavaNoWalk) <= 16 * 16 && eyeDistance(lava) > 4.2) {
+            var dig = digger.toward(digBody, lava, "Cast: dig toward the lava at " + where);
+            if (dig.isPresent()) return carry(dig.get());
+        }
+        if (eyeDistance(lava) > 4.2) {
+            var walked = walkTo(lava.x(), lava.y(), lava.z(), "native_goto", WALK, Way.WALK, 2.5);
+            if (walked == null) return new Outcome("native_goto", "COMPLETED", "Cast: walk to the lava");
+            // No way there: that pool is dug toward from now on, and the source itself is set aside a while, as the campaign's.
+            if (walked.state().equals("BLOCKED")) {
+                lavaNoWalk = lava;
+                cellsAside.avoid(lava, false, false, world.tick, new Cell(x, y, z));
+            }
+            return walked;
+        }
+        take("bucket", 1);
+        give("lava_bucket", 1);
+        world.set(lava.x(), lava.y(), lava.z(), Block.AIR);
+        lavaNoWalk = null;
+        return Outcome.done("native_bucket");
     }
 
     private Outcome buildPortal() {
@@ -2047,10 +2157,13 @@ public final class SimRun {
                 if (saturation > 0) saturation = Math.max(0, saturation - 1);
                 else food = Math.max(0, food - 1);
             }
-            if (world.tick % 80 == 0) {
+            // Every sixteenth step of five ticks: on the clock's multiples of 80 when it began on one of 5, and on time
+            // whatever tick a staged scene began on.
+            if (world.tick / 5 % 16 == 0) {
                 if (food >= 18 && health < 20) health = Math.min(20, health + 1);
                 if (food == 0) hurt(1, "starved to death");
             }
+            surroundings();
             mobs(passed);
             if (interruptible && health < before - 0.5f && health > 0) break;
             // As the runtime stops whatever is running for a creeper that starts to hiss close by (0b).
@@ -2061,7 +2174,7 @@ public final class SimRun {
 
     private void mobs(long passed) {
         // Vanilla's cap is seventy hostiles to the ground a player loads, about sixteen to a map this size.
-        if (world.tick % 20 == 0 && mobs.size() < 16 && !sheltered) spawn();
+        if (world.tick / 5 % 4 == 0 && mobs.size() < 16 && !sheltered) spawn();
         for (var it = mobs.iterator(); it.hasNext(); ) {
             Mob mob = it.next();
             int mx = (int) Math.floor(mob.x), my = (int) Math.floor(mob.y), mz = (int) Math.floor(mob.z);
@@ -2185,6 +2298,42 @@ public final class SimRun {
             mobs.add(new Mob(kind, mx + 0.5, my, mz + 0.5, kind.equals("spider") ? 16 : 20));
         }
     }
+
+    /** Its breath, 300 ticks of it full, as vanilla's air supply (F-35f). */
+    private int air = 300;
+    /** Ticks it has left to burn after lava, as vanilla's fire on an entity. */
+    private int burning;
+
+    /**
+     * Five ticks of what the cells it is in do to it, as vanilla does (F-35f): with its head under water it loses a tick of
+     * breath a tick and, out of breath, two points a second; out of the water it gets four a tick back. In lava four points
+     * each half second and set alight for fifteen seconds; alight, a point a second, until water puts it out.
+     */
+    private void surroundings() {
+        Block feet = world.at(x, y, z), head = world.at(x, y + 1, z);
+        if (head == Block.WATER) {
+            air -= 5;
+            if (air <= -20) {
+                air += 20;
+                hurt(2, "drowned");
+            }
+        } else {
+            air = Math.min(300, air + 20);
+        }
+        if (feet == Block.LAVA || head == Block.LAVA) {
+            if (world.tick / 5 % 2 == 0) hurt(4, "tried to swim in lava");
+            burning = 300;
+        } else if (feet == Block.WATER || head == Block.WATER) {
+            burning = 0;
+        }
+        if (burning > 0) {
+            burning -= 5;
+            if (world.tick / 5 % 4 == 0 && feet != Block.LAVA && head != Block.LAVA) hurt(1, "burned to death");
+        }
+    }
+
+    /** A staged scene's breath as it was (F-35f's corpus scenes). */
+    void air(int ticks) { air = ticks; }
 
     private void hurt(float amount, String how) {
         float reduced = amount * (1 - (chestTier >= 3 ? 0.24f : 0));

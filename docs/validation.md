@@ -16,6 +16,8 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+- F-35f: [evidence](evidence/F-35f.md)
+
 ## F-35e: the campaign's climb, dig down, tunnel and giving up, in core, 2026-11-10
 
 - Build: `./gradlew build --offline`, successful; `DiggerTest` (new, pure), 8 of 8; `companion-sim` tests, 8 of 8 (`HemmedInSceneTest`'s iron stage flipped to getting off the ledge, as the game's own fixture of it does; the no-pickaxe one still reproduces, its end level restated as the ledge's or one under it).
