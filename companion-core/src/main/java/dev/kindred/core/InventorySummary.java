@@ -34,6 +34,38 @@ public record InventorySummary(long revision, int capacity, int occupiedSlots, i
         return amount <= 0 || count(itemId) >= amount;
     }
 
+    /** How many it carries of everything in this group (F-38: #minecraft:logs, not a list of logs). */
+    public int count(VanillaIds.Group group) {
+        Capabilities facts = Capabilities.current();
+        int total = 0;
+        for (Map.Entry<String, Integer> entry : itemCounts.entrySet()) {
+            if (facts.is(group, entry.getKey())) total += entry.getValue();
+        }
+        return total;
+    }
+
+    /** Whether it carries at least this many of what is in this group. */
+    public boolean has(VanillaIds.Group group, int amount) {
+        return amount <= 0 || count(group) >= amount;
+    }
+
+    /** Whether it carries a tool of this kind at this tier or better ({@link Capabilities.Tool}). */
+    public boolean hasTool(String kind, int minimumTier) {
+        return hasTool(kind, minimumTier, Integer.MAX_VALUE);
+    }
+
+    /** Whether it carries a tool of this kind with a tier from {@code minimumTier} to {@code maximumTier}. */
+    public boolean hasTool(String kind, int minimumTier, int maximumTier) {
+        Capabilities facts = Capabilities.current();
+        for (Map.Entry<String, Integer> entry : itemCounts.entrySet()) {
+            if (entry.getValue() <= 0) continue;
+            var tool = facts.tool(entry.getKey());
+            if (tool.isPresent() && tool.get().kind().equals(kind)
+                    && tool.get().tier() >= minimumTier && tool.get().tier() <= maximumTier) return true;
+        }
+        return false;
+    }
+
     /** How many slots are still empty. */
     public int freeSlots() {
         return capacity - occupiedSlots;

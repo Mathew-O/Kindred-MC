@@ -1,0 +1,5 @@
+# F-38: minecraft: literals left per main source file in core, outside VanillaIds. Only ever lowered.
+# factions/ and market/ are FACTIONS A's this week (Active work); they move when that claim ends.
+factions/SafeZones.java 2
+factions/Territory.java 2
+market/MarketTable.java 1
