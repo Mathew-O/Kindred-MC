@@ -11883,7 +11883,12 @@ final class PlayerRuntime {
         KindredMod.LOGGER.info("{} found {} gone from {} ({}{}): {}", entry.data.displayName(), dev.kindred.core.team.Missing.items(look.gone()),
                 place.words(), mode, since == null ? ", nobody seen at it" : ", saw " + since.name() + " at it", response.say());
         if (response.say() != null) {
-            if (response.to() == dev.kindred.core.team.Missing.Audience.TEAM) sayToTeam(entry, response.say());
+            if (response.to() == dev.kindred.core.team.Missing.Audience.TEAM) {
+                sayToTeam(entry, response.say());
+                // F-34c: what is gone, from where, as facts on the Wire to its team; who it suspects stays in its words.
+                String what = dev.kindred.core.team.Missing.items(look.gone()), where = place.words();
+                wire.sendTeam(entry.data.id(), scope -> dev.kindred.core.wire.TeamNews.missing(entry.data.id(), scope, what, where));
+            }
             else if (response.to() == dev.kindred.core.team.Missing.Audience.OWN) say(entry, response.say(), "");
         }
         if (response.ask()) entry.storageAsk = new StorageAsk(look, now + STORAGE_ASK_WAIT);
@@ -11925,6 +11930,9 @@ final class PlayerRuntime {
         long now = server.getTicks();
         var place = storePlace(player, pos);
         sayToTeam(entry, dev.kindred.core.team.TeamTalk.stored(put, place, items));
+        // F-34c: the same on the Wire, as facts, so its teammates know it as told (their webs); people hear the line above.
+        String what = dev.kindred.core.team.Missing.items(items), where = place.words();
+        wire.sendTeam(entry.data.id(), scope -> dev.kindred.core.wire.TeamNews.stored(entry.data.id(), scope, put, what, where));
         for (Entry mate : sharers(entry, player, pos)) {
             for (var each : items.entrySet()) {
                 if (put) mate.storage.put(place, dev.kindred.core.team.Storage.Whose.TEAM, each.getKey(), each.getValue(), now);
