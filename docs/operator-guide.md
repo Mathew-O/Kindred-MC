@@ -977,6 +977,9 @@ for each player, with:
 - what it weighed at its last decision, with each candidate's priority and score;
 - what it said last, and the lines before that;
 - its habits and notes;
+- what it was told lately on the Wire, its last ten: a message whose every fact is public in full, and of anything
+  narrower (its team's, its faction's, its side's, its own) only who it came from, the channel and the kind, as
+  "[faction] Ada: need (kept to its faction)", so a page on a stream never shows a team's or a faction's facts;
 - a feed of highlights: deaths, the stages of its run, rescues, habits taken up, matches starting and ending.
 
 It reads once a second. The same data is served as JSON, each request with the token, as `Authorization: Bearer <token>`

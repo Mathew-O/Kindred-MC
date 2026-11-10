@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -154,6 +155,55 @@ public final class NativeWatchGameTests implements FabricGameTest {
                     var bot = f.runtime.panelBots(Actor.console()).getFirst();
                     String after = bot.goal() + " " + bot.phase() + " " + bot.stopped() + " " + bot.playstyle() + " " + bot.collaboration();
                     context.assertTrue(after.equals(before[0]), "Nothing changed: " + before[0] + " then " + after);
+                    f.runtime.watch(null);
+                    watch[0].close();
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * What an AI player was told on the Wire is on its card (F-34c), as an onlooker may read it, since the page may be on
+     * a stream: Ada tells her faction she needs iron; Bram's card says a faction message came from Ada, never the iron.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "watchTold", tickLimit = 1200)
+    public void whatItWasToldIsOnItsCardWithNothingNarrowerThanPublicInWords(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        var server = context.getWorld().getServer();
+        WatchServer[] watch = new WatchServer[1];
+        UUID[] ids = new UUID[2];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Ada"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bram"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(st -> st.connected()), "Both connected");
+                    for (var st : statuses) {
+                        var body = server.getPlayerManager().getPlayer(st.nativeId());
+                        ids[body.getName().getString().equals("Ada") ? 0 : 1] = f.runtime.wire().idOf(body);
+                    }
+                    f.runtime.setFactionOf(id -> id.equals(ids[0]) || id.equals(ids[1]) ? "oak" : "");
+                    var d = f.runtime.wire().send(dev.kindred.core.wire.Message.of("faction.need", ids[0], dev.kindred.core.wire.Scope.faction("oak"),
+                            Map.of("needs", dev.kindred.core.wire.Fact.of("iron", dev.kindred.core.wire.Visibility.FACTION)), List.of()));
+                    context.assertTrue(d.sent() && d.receivers().equals(List.of(ids[1])), "Told to Bram: " + d);
+                    try {
+                        watch[0] = WatchServer.start("127.0.0.1", 0, TOKEN, server::isOnThread);
+                    } catch (IOException failed) {
+                        throw new GameTestException("The watch page did not start: " + failed);
+                    }
+                    f.runtime.watch(watch[0]);
+                })
+                .createAndAdd(() -> {
+                    var latest = watch[0].latest();
+                    context.assertTrue(latest != null && latest.players().size() == 2, "A snapshot of both");
+                    var bram = latest.players().stream().filter(p -> p.name().equals("Bram")).findFirst().orElseThrow();
+                    var ada = latest.players().stream().filter(p -> p.name().equals("Ada")).findFirst().orElseThrow();
+                    context.assertTrue(bram.told().equals(List.of("[faction] Ada: need (kept to its faction)")), "Bram's card: " + bram.told());
+                    context.assertTrue(ada.told().isEmpty(), "Ada, the sender, was told nothing: " + ada.told());
+                    context.assertTrue(latest.players().stream().flatMap(p -> p.told().stream()).noneMatch(line -> line.contains("iron")), "Never the iron");
                     f.runtime.watch(null);
                     watch[0].close();
                     f.runtime.stop();

@@ -13796,7 +13796,7 @@ final class PlayerRuntime {
                     bot.goal().label(), bot.goalProgress(), doing, bot.status(), bot.dimension(), at == null ? 0 : at.getX(),
                     at == null ? 0 : at.getY(), at == null ? 0 : at.getZ(), weighed, List.copyOf(entry.decisions), List.copyOf(entry.saidLately),
                     campaign == null ? List.of() : campaign.preferences().habits().stream().map(Enum::name).sorted().toList(),
-                    memory.notes(bot.id()), strategist.map(bridge -> bridge.tokensToday(bot.id())).orElse(0L)));
+                    memory.notes(bot.id()), strategist.map(bridge -> bridge.tokensToday(bot.id())).orElse(0L), toldLately(bot.id())));
         }
         if (tick % 20 == 0) watchEval = runObserver.resultSoFar();
         watch.publish(new dev.kindred.core.watch.WatchSnapshot(tick, Thread.currentThread().getName(), players, List.copyOf(highlights), watchEval));
@@ -14482,6 +14482,20 @@ final class PlayerRuntime {
             if (entry.nativeBody != null && entry.nativeBody.entity() != null && entry.nativeBody.entity().getUuid().equals(playerId)) return entry;
         }
         return null;
+    }
+
+    private final dev.kindred.core.wire.Wording onlookerWording = new dev.kindred.core.wire.Wording();
+
+    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page may read it. */
+    private List<String> toldLately(UUID ai) {
+        var inbox = wire.inbox(ai);
+        var out = new ArrayList<String>();
+        for (var t : inbox.subList(Math.max(0, inbox.size() - dev.kindred.core.watch.WatchSnapshot.TOLD), inbox.size())) {
+            var m = t.message();
+            Entry from = m.fromServer() ? null : entries.get(m.from());
+            out.add(onlookerWording.forOnlookers(m, m.fromServer() ? "" : from != null ? from.data.displayName() : playerName(m.from())));
+        }
+        return out;
     }
 
     private String playerName(UUID playerId) {
