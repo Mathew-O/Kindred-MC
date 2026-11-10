@@ -7,6 +7,13 @@
   earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
   ranges do not overlap. Summaries go under `docs/evidence/eval/<name>/summary.md`; logs and worlds are never
   committed.
+- **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
+  `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
+  touches what a player decides runs `tools/corpus/gate.sh` (three runs) in its own container. It fails when a scene that
+  passed 3 of 3 in `tools/corpus/baseline.json` (the last three runs on main) fails 2 of 3. The daily number is the
+  report's pass rate over three runs on main: passing, failing and intermittent, an intermittent scene never a pass,
+  and staged scenes listed apart. A scene is never removed or loosened to pass the gate.
 - **Death replays (F-27).** A death captured in a run (`replay.snbt` and `replay.json` under
   `kindred/replays/<world>/<player>-<tick>/`, or a seed's `replays/` folder from `run.py`) becomes a test under the
   gametest resources: the structure as `data/kindred_gametest/gametest/structure/replays/<id>.snbt` and the state as

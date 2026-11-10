@@ -1,0 +1,264 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 93075,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  152,
+  8,
+  -184
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.56081595183352,
+  8.921599998474122,
+  16.49818392324866
+ ],
+ "yaw": 449.26102,
+ "pitch": 18.159489,
+ "health": 4.497801,
+ "food": 7,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 82
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 40
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 50
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 20
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 22
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 18
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 7
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 11
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 17
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 4
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  }
+ ],
+ "selected": 3,
+ "timeOfDay": 21075,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "Hole up: back into the passage",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Kindred was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[01:09:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to iron ore at 121, 16, -149]",
+  "[01:09:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+  "[01:09:18] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[01:09:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[01:09:20] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[01:09:21] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[01:09:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[01:09:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[01:09:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Hole up: back into the passage]",
+  "[01:09:24] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 166, 15, -166]",
+  "[01:09:26] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[01:09:27] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[01:09:28] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[01:09:30] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[01:09:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[01:09:31] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 172, 17, -169]",
+  "[01:09:31] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 173, 18, -169]",
+  "[01:09:31] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 174, 17, -169]",
+  "[01:09:33] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Hole up: back into the passage]",
+  "[01:09:33] [Server thread/INFO]: Kindred died at 168, 16, -168: Kindred was slain by Zombie (tick 93075, night, under cover, hunger 7, armour 0, holding dirt, a shield; doing \"Hole up: back into the passage\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "891567637",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/891567637/replays/world/Kindred-93075",
+  "source": "docs/evidence/eval/f29e-on/891567637/replays/world/Kindred-93075",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

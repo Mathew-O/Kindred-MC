@@ -40,6 +40,12 @@ sourceSets {
         compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
         runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
     }
+    // The failure corpus (F-27a): scenes from real runs' deaths and stuck spells, a suite of its own. It uses the
+    // gametest classes (the replay player) but not their mod metadata, so only its own scenes register.
+    corpus {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath + sourceSets.gametest.output.classesDirs
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath + sourceSets.gametest.output.classesDirs
+    }
 }
 
 // Ways to start the game from here: runClient, runServer, and runGametest, which starts a test
@@ -48,6 +54,7 @@ loom {
     mods {
         kindred { sourceSet sourceSets.main }
         kindred_gametest { sourceSet sourceSets.gametest }
+        kindred_corpus { sourceSet sourceSets.corpus }
     }
     runs {
         client {
@@ -66,7 +73,68 @@ loom {
             System.properties.findAll { it.key.toString().startsWith('kindred.') }.each { vmArg "-D${it.key}=${it.value}" }
             runDir 'build/gametest'
         }
+        corpus {
+            server()
+            name 'Kindred failure corpus'
+            source sourceSets.corpus
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file('corpus-results.xml').get().asFile}"
+            runDir 'build/corpus'
+        }
     }
+}
+
+// The corpus's kept structures (F-27a), gzipped in src/corpus/structures, unpacked for the corpus's resources.
+tasks.register('unpackCorpusStructures') {
+    def kept = file('src/corpus/structures')
+    def out = layout.buildDirectory.dir('corpus-structures')
+    inputs.dir(kept).optional()
+    outputs.dir(out)
+    doLast {
+        def target = out.get().asFile
+        target.mkdirs()
+        if (kept.isDirectory()) {
+            kept.listFiles().findAll { it.name.endsWith('.snbt.gz') }.each { gz ->
+                new File(target, gz.name - '.gz').withOutputStream { o ->
+                    new java.util.zip.GZIPInputStream(new FileInputStream(gz)).withStream { i -> o << i }
+                }
+            }
+        }
+    }
+}
+
+// Each scene's structure is its replay's own, taken from the folder the scene names (F-27a), not kept twice.
+tasks.named('processCorpusResources', ProcessResources).configure {
+    def scenes = file('src/corpus/resources/data/kindred_corpus/gametest/corpus')
+    inputs.dir(scenes).optional()
+    if (scenes.isDirectory()) {
+        scenes.listFiles().findAll { it.name.endsWith('.json') }.each { scene ->
+            def replay = new groovy.json.JsonSlurper().parse(scene).corpus?.replay
+            def kept = file("src/corpus/structures/${scene.name.replace('.json', '.snbt.gz')}")
+            if (replay && rootProject.file("${replay}/replay.snbt").isFile()) {
+                from(rootProject.file("${replay}/replay.snbt")) {
+                    into 'data/kindred_corpus/gametest/structure/corpus'
+                    rename { scene.name.replace('.json', '.snbt') }
+                }
+            }
+        }
+    }
+    // Replays not filed on main (the iterations' own, from their data branch): kept compressed, unpacked first.
+    dependsOn tasks.named('unpackCorpusStructures')
+    from(layout.buildDirectory.dir('corpus-structures')) {
+        into 'data/kindred_corpus/gametest/structure/corpus'
+    }
+    // The contract suite's grounds (its structures), for the staged fixtures run as scenes; not its mod metadata.
+    from(sourceSets.gametest.resources.srcDirs) {
+        include 'data/**'
+    }
+}
+
+tasks.named('runCorpus').configure {
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    })
+    dependsOn tasks.named('gametestClasses')
 }
 
 tasks.named('runGametest').configure {
