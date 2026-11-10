@@ -2211,6 +2211,15 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
             return room;
         }
+        // Its sword or axe on the hotbar, where the goal's fights strike from and armed() looks for one: behind a hotbar of
+        // odds and ends it was never fought with. On 707 in E-40's iteration 16 (`e40a16-922f4fd`) Kindred, its stone sword
+        // in slot 15, backed off from three zombies as though it had none and struck them with its stone pickaxe, and they
+        // killed it; four of the iteration's 23 deaths carried a sword off the hotbar (F-25c4cv).
+        Optional<Task> weapon = weaponToHand(body);
+        if (weapon.isPresent()) {
+            progress = stageLabel(stage) + ": " + weapon.get().label();
+            return weapon;
+        }
         // A fight or a retreat, once chosen, is held for a few seconds, as a player commits to one: a zombie knocked a
         // step back by a hit is no reason to turn and wall off, nor a skeleton stepping out of view one to walk back
         // into its fire (live run 58's three deaths came as the goal switched between them every second). Only a
@@ -4925,7 +4934,64 @@ final class PortalRunCampaign {
         var inventory = body.entity().getInventory();
         int target = 8;
         for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { target = s; break; }
+        // Not the only sword or axe on the hotbar: swapped out for a block, it was only taken back to hand (F-25c4cv).
+        if (onlyWeaponAt(inventory, target)) target = 7;
         return new Task("native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(target)), label);
+    }
+
+    static final String WEAPON_TO_HAND = "Take its weapon to hand";
+
+    /** Its best sword or axe swapped onto the hotbar when none is there; empty when one is, or it has none (F-25c4cv). */
+    private Optional<Task> weaponToHand(NativePlayerBody body) {
+        var player = body.entity();
+        if (armed(player)) return Optional.empty();
+        var best = Weapons.choose(player, player.getMaxHealth(), false);
+        if (best.isEmpty() || best.get().slot() < 9) return Optional.empty();
+        int target = handSlot(player.getInventory());
+        if (target < 0) return Optional.empty();
+        return Optional.of(new Task("native_swap", Map.of("source", String.valueOf(best.get().slot()), "target", String.valueOf(target)),
+                WEAPON_TO_HAND));
+    }
+
+    /**
+     * The hotbar slot a weapon taken to hand goes to: an empty one; else one holding nothing kept to hand (no tool,
+     * bucket, food, torch, shield or block); else a block while another block stays on the hotbar, so that nothing has to
+     * be readied again; -1 when every slot holds something kept to hand.
+     */
+    static int handSlot(net.minecraft.entity.player.PlayerInventory inventory) {
+        for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) return s;
+        for (int s = 0; s < 9; s++) {
+            var stack = inventory.getStack(s);
+            if (!keptToHand(stack) && !(stack.getItem() instanceof net.minecraft.item.BlockItem)) return s;
+        }
+        int blocks = 0;
+        for (int s = 0; s < 9; s++) if (inventory.getStack(s).getItem() instanceof net.minecraft.item.BlockItem && !keptToHand(inventory.getStack(s))) blocks++;
+        if (blocks < 2) return -1;
+        for (int s = 8; s >= 0; s--) {
+            var stack = inventory.getStack(s);
+            if (stack.getItem() instanceof net.minecraft.item.BlockItem && !keptToHand(stack)) return s;
+        }
+        return -1;
+    }
+
+    /** What the goal keeps on the hotbar for its own use: tools and weapons, buckets, food, torches, a shield, flint and steel. */
+    private static boolean keptToHand(ItemStack stack) {
+        var item = stack.getItem();
+        return item instanceof net.minecraft.item.MiningToolItem || stack.isIn(ItemTags.SWORDS) || item instanceof net.minecraft.item.BucketItem
+                || item instanceof net.minecraft.item.ShieldItem || item instanceof net.minecraft.item.FlintAndSteelItem
+                || item instanceof net.minecraft.item.ShearsItem || stack.contains(DataComponentTypes.FOOD)
+                || stack.isOf(Items.TORCH) || stack.isOf(Items.SOUL_TORCH);
+    }
+
+    /** Whether hotbar {@code slot} holds a sword or axe and no other hotbar slot does. */
+    private static boolean onlyWeaponAt(net.minecraft.entity.player.PlayerInventory inventory, int slot) {
+        if (!meleeWeapon(inventory.getStack(slot))) return false;
+        for (int s = 0; s < 9; s++) if (s != slot && meleeWeapon(inventory.getStack(s))) return false;
+        return true;
+    }
+
+    private static boolean meleeWeapon(ItemStack stack) {
+        return stack.isIn(ItemTags.SWORDS) || stack.isIn(ItemTags.AXES);
     }
 
     private Optional<Task> smelt(NativePlayerBody body) {
@@ -6741,7 +6807,9 @@ final class PortalRunCampaign {
         if (running != null && "native_goto".equals(running.skill()) && holdingForRescue(player)) return "A way out asked for; holding still";
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
-                || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)) return null;
+                || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)
+                // Nor the weapon taken to hand, a swap of one tick, for the mob it is taken up to fight (F-25c4cv).
+                || running.label().equals(WEAPON_TO_HAND)) return null;
         // Short of breath, the way out of the water comes first: the next plan only chose it again, and in the live pair
         // on 41f9de9 Echo drowned at Y=8 so, its walk up for air stopped each time to fight back first (F-25c4af).
         // Still in deep water, the way out comes first whatever its breath: while there is one the goal gives it before

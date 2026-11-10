@@ -170,6 +170,25 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: a sword in the backpack taken to hand (F-25c4cv) — 9 November 2026 (`claude/backoff-1109`)
+
+- **The fixture** (F-25c4cv, [evidence](evidence/F-25c4cv.md)): `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`,
+  staged as it says (a walled and roofed room, 707 Kindred's hotbar as its death's replay held it, the stone sword in
+  slot 15, and a zombie set on the player).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "The sword never reached its hotbar", the zombie struck five times with
+    the stone pickaxe each time.
+  - With the fix: passes 3 of 3, the sword taken to hand ("Take its weapon to hand") before "Fight zombie".
+- **The death it came from**: `ReplayGameTests` with 707 Kindred's replay (`kindred-43985-707`). On `e7e0b57` it died
+  again 2 of 3, fighting with the stone pickaxe; with the fix it lived 3 of 3 here, the sword taken to hand first. Not kept:
+  on #96's CI (run 42583930289, attempt 2) it died again 2 of 3 with the sword in hand, and locally 3 of 21, badly hurt
+  among several zombies and backing off "the way it came". F-27 keeps a replay only with the fix that makes it pass 3 of 3,
+  so it waits for the back-off fix.
+- **The classes that fight, swap and cast** (`NativeWeaponToHandGameTests`, `ReplayGameTests`, `NativePortalCampaignGameTests`,
+  `NativeCombatGameTests`, `NativeTacticalGameTests`, `NativeEncounterGameTests`, `NativeFallGameTests`,
+  `NativeInitiativeGameTests`, `NativeSpireGameTests`): 126 of 126 in each of three runs.
+- **The kept replay `echo-73670`** died again once in the first replay run with the fix (1 of 3), knocked off a ledge by a
+  zombie villager. The new step never ran there: its sword was on its hotbar from the start. In the three class runs it
+  lived 9 of 9, so 11 of 12 with the fix; on `e7e0b57` it lived 3 of 3. Its course varies; the fix does not reach it.
 ## E-40, batch 25: the cast route takes its table along (F-25c4cw) — 9 November 2026 (`claude/cast-table-1109`)
 
 - **The fixture** (F-25c4cw, [evidence](evidence/F-25c4cw.md)): `NativeCastTableGameTests.onTheCastRouteItsTableIsTakenAlongWhenItGoesOnForLava`,
