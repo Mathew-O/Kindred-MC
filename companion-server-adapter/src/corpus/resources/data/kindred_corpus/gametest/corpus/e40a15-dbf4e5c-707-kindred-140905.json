@@ -1,0 +1,286 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 140905,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  250,
+  55,
+  -90
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.520653313724154,
+  8.0,
+  16.375658739360404
+ ],
+ "yaw": 1316.8573,
+ "pitch": 18.024635,
+ "health": 1.8950008,
+ "food": 10,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 33
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 3
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 31
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 18
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 128
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:flint_and_steel",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 38
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 4
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 9
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 3
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 11
+    }
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 30
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 5
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 10
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 20
+    }
+   }
+  }
+ ],
+ "selected": 2,
+ "timeOfDay": 20905,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Done: The Nether portal is built and lit",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was slain by Phantom",
+ "ticks": 1200,
+ "log": [
+  "[15:47:48] [Server thread/INFO]: Kindred died at 266, 63, -74: Kindred was slain by Phantom (tick 140905, night, under the sky, hunger 10, armour 6, holding dirt, a shield; doing \"native_goto\" in \"Done: The Nether portal is built and lit\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40a15-dbf4e5c",
+  "seed": "707",
+  "build": "dbf4e5c",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a15-dbf4e5c/707/replays/world/Kindred-140905",
+  "class": "death: phantom",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

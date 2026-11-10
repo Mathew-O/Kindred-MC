@@ -1,0 +1,126 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 77615,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  15,
+  20,
+  -15
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.287712872477393,
+  8.0,
+  16.314618573038636
+ ],
+ "yaw": 54.723217,
+ "pitch": -49.61492,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 4.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 3
+   }
+  }
+ ],
+ "selected": 6,
+ "timeOfDay": 5615,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Stone: fight back - Run from creeper",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred fell from a high place",
+ "ticks": 1200,
+ "log": [
+  "[04:46:29] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at 28, 75, -27]",
+  "[04:46:29] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft acacia planks]",
+  "[04:46:29] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft crafting table]",
+  "[04:46:29] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft acacia planks]",
+  "[04:46:29] [Server thread/INFO]: Kindred native_place COMPLETED [Place a crafting table]",
+  "[04:46:29] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft wooden pickaxe]",
+  "[04:46:31] [Server thread/INFO]: Kindred native_break COMPLETED [Pick up the crafting table]",
+  "[04:46:32] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at 28, 76, -27]",
+  "[04:46:33] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at 28, 77, -27]",
+  "[04:46:35] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at 28, 78, -27]",
+  "[04:46:39] [Server thread/INFO]: Kindred native_goto COMPLETED [Recover dropped items near 36, 29, 14]",
+  "[04:46:39] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at 31, 59, 1]",
+  "[04:46:40] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at 31, 58, 1]",
+  "[04:46:41] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at 31, 58, 0]",
+  "[04:46:41] [Server thread/INFO]: Kindred native_break CANCELLED: authority lost [Mine stone at 31, 58, 2]",
+  "[04:46:41] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 31, 48, 29 [Explore south for stone]",
+  "[04:46:41] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 3, 42, 1 [Explore west for stone]",
+  "[04:46:41] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore north for stone]",
+  "[04:46:41] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Run from creeper]",
+  "[04:46:41] [Server thread/INFO]: Kindred died at 31, 28, 1: Kindred fell from a high place (tick 77615, day, under cover, hunger 20, armour 0, holding wooden_pickaxe, no shield; doing \"Run from creeper\" in \"Stone: fight back - Run from creeper\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40a16-922f4fd",
+  "seed": "505",
+  "build": "922f4fd",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a16-922f4fd/505/replays/world/Kindred-77615",
+  "class": "death: fell",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

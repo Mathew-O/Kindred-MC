@@ -1,0 +1,321 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 33010,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -361,
+  -1,
+  -107
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.569657766057105,
+  8.535840625044555,
+  16.52748327403016
+ ],
+ "yaw": -58.057335,
+ "pitch": 18.159485,
+ "health": 9.875002,
+ "food": 15,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:cooked_porkchop",
+    "count": 3
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 9
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 5
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 165
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 42
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 21
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 22
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 5
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 2
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:wheat_seeds",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 8
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 6
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 26
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 35
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 10
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 9010,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: outmatched - Hole up: back into the passage",
+ "task": "Hole up: back into the passage",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[05:30:27] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+  "[05:30:27] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -342, 11, -88]",
+  "[05:30:28] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -342, 10, -88]",
+  "[05:30:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+  "[05:30:28] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -343, 6, -88]",
+  "[05:30:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+  "[05:30:28] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -344, 7, -88]",
+  "[05:30:28] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear -344, 6, -88]",
+  "[05:30:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]",
+  "[05:30:31] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[05:30:32] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[05:30:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[05:30:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[05:30:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[05:30:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[05:30:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[05:30:35] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[05:30:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+  "[05:30:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Hole up: back into the passage]",
+  "[05:30:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]"
+ ],
+ "corpus": {
+  "run": "f29e-on-4h",
+  "seed": "101",
+  "build": "4h",
+  "replay": "docs/evidence/eval/f29e-on-4h/101/replays/world/Kindred-33010",
+  "source": "docs/evidence/eval/f29e-on-4h/101/replays/world/Kindred-33010",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
