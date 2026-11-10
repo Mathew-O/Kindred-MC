@@ -181,8 +181,10 @@ class RanchTest {
         assertEquals(new Pos(3, 64, 7), out.target());
         assertEquals("Out to bring the cow round to the gate", out.why());
         assertFalse(out.holdFood());
-        // Outside: round to the front of the gate with the food, for her to come up behind it in line.
-        var round = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 7, true, 8, 140, cow(DAISY, 3, 3), cow(BESS, 2, 8))));
+        // Outside, Daisy in the pen and the gate open: the gate shut on her first (F-22c43).
+        assertInstanceOf(Ranch.Step.Gate.class, ranch.next(seen(3, 7, true, 8, 140, cow(DAISY, 3, 3), cow(BESS, 2, 8))));
+        // Then round to the front of the gate with the food, for her to come up behind it in line.
+        var round = assertInstanceOf(Ranch.Step.Go.class, ranch.next(seen(3, 7, false, 8, 145, cow(DAISY, 3, 3), cow(BESS, 2, 8))));
         assertEquals(new Pos(3, 64, 10), round.target());
         assertTrue(round.holdFood());
         // In line with the gate, as one that will not come in, she is in the end given up as before.

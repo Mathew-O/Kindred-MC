@@ -36,7 +36,8 @@ import java.util.function.Supplier;
  * diamond pickaxe: water from the player's own bucket is poured into the cell above the target, lava from its
  * own bucket is poured into the target, where vanilla hardens it at once because water touches it, and the
  * water is taken back. The lava never stands uncovered, so it cannot spread. Outcome: obsidian at the target,
- * one lava bucket emptied, the water bucket refilled.
+ * one lava bucket emptied, the water bucket refilled; or, the water not taken back, its bucket emptied too with the
+ * water seen standing where it was poured or under a block that came down into it (F-25c4cx).
  */
 final class NativeCastAction extends NativeRecordedAction {
     private enum Phase { WATER, LAVA, RECOVER, DONE }
@@ -271,6 +272,22 @@ final class NativeCastAction extends NativeRecordedAction {
         return lava == count(Items.LAVA_BUCKET) - 1 && empty == count(Items.BUCKET) + 1 && filled == count(Items.WATER_BUCKET);
     }
 
+    /**
+     * Cast, its water not taken back: one lava bucket and the water bucket poured both empty, the other buckets as they
+     * were, and the water's cell showing where the water went: still standing there, or under a block that came down
+     * into it. Null for anything else, which stays uncertain.
+     */
+    private String waterNotTakenBack(net.minecraft.server.world.ServerWorld world) {
+        var now = body.entity().getInventory();
+        int lava = ItemMoves.count(now, Items.LAVA_BUCKET), empty = ItemMoves.count(now, Items.BUCKET), filled = ItemMoves.count(now, Items.WATER_BUCKET);
+        if (lava != count(Items.LAVA_BUCKET) - 1 || filled != count(Items.WATER_BUCKET) - 1 || empty != count(Items.BUCKET) + 2) return null;
+        var fluid = world.getFluidState(water);
+        if (fluid.isIn(FluidTags.WATER)) return fluid.isStill() ? "its water left standing at " + water.toShortString() : null;
+        var state = world.getBlockState(water);
+        if (state.isAir() || !fluid.isEmpty()) return null;
+        return "its water lost under " + net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath() + " at " + water.toShortString();
+    }
+
     private int count(Item item) {
         int total = 0;
         for (var stack : before.stacks()) if (stack.isOf(item)) total += stack.getCount();
@@ -283,9 +300,18 @@ final class NativeCastAction extends NativeRecordedAction {
         var world = body.entity().getServerWorld();
         var after = InventoryEvidence.capture(body);
         boolean hardened = world.getBlockState(target).isOf(Blocks.OBSIDIAN);
+        String waterGone = hardened ? waterNotTakenBack(world) : null;
         if (cast && hardened && conserved(after)) {
             admission.verify(after.description() + "; obsidian at " + target.toShortString(), "Lava hardened in place under poured water");
             result = Step.completed(Map.of("obsidian", target.toShortString()));
+        } else if (waterGone != null) {
+            // Cast, with its water not back in the bucket: the water's cell shows where it went, so nothing is in doubt.
+            // On 31102026 in E-40's iteration 16 (`e40a16-922f4fd`) Kindred's water was lost under gravel coming down into
+            // it, and on 404 Sol's take-back was denied with the water left standing; both were left uncertain, and each
+            // player was stopped for reconciliation for the rest of its run (F-25c4cx).
+            admission.verify(after.description() + "; obsidian at " + target.toShortString() + "; " + waterGone,
+                    "Lava hardened in place under poured water; " + waterGone);
+            result = Step.completed(Map.of("obsidian", target.toShortString(), "water", waterGone));
         } else if (before.sameContents(body) && !hardened && !world.getFluidState(target).isIn(FluidTags.LAVA)) {
             // Both buckets as they were and no lava out: at most water still draining from the target.
             admission.noEffect(before.description() + "; buckets as before, nothing cast", reason);
