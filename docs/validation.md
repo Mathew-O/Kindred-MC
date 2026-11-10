@@ -23,6 +23,16 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
+
+- **[F-22c45](evidence/F-22c45.md):** taking its scaffold down, the last block down a hollow is taken down from the hollow's floor when a
+  scaffold of its own blocks takes it back out (product; #121's run 42750254641: "out of reach to take down" until the build stopped).
+  - `ConstructionPlannerTest`'s new case, CI's end state staged: fails without the change with CI's message, passes with it; none to
+    spare and water in the way stay refused. `neverABreakFromWhereItCouldNotWalkBackToTheBuild` unchanged. 21 of 21.
+  - Build, house, life-first, seed-build and base classes, 3 runs: 21, 22 and 22 of 22, the new path firing in none (the one failure
+    the life-first cabin's door, another intermittent).
+  - `./gradlew build`: green, JUnit 1,113 tests, 0 failures, 7 skipped.
+
 ## The autonomous log mine read as it happens (F-22c52) — 10 November 2026 (`claude/ci-green-1110-minelatch`)
 
 - **[F-22c52](evidence/F-22c52.md):** the fixture takes the mine's completion, charged, and its one verified record on the tick
