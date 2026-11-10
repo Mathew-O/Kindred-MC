@@ -672,6 +672,19 @@ final class PortalRunCampaign {
             lavaNoWalk = position(task.args()).toImmutable();
         }
         if (task != null && completed && "native_bucket".equals(task.skill()) && task.label().equals("Cast: fill a bucket with lava")) lavaNoWalk = null;
+        // Where its bucket was filled: the lava flowing in there comes from the pocket round it, followed from there (F-25c4cz).
+        if (task != null && completed && "native_bucket".equals(task.skill()) && task.label().equals("Cast: fill a bucket with lava")
+                && position(task.args()) != null) {
+            BlockPos hole = position(task.args()).toImmutable();
+            lavaHoles.remove(hole);
+            lavaHoles.addLast(hole);
+            while (lavaHoles.size() > POCKET_HOLES) lavaHoles.removeFirst();
+        }
+        // A cell over the pocket it could not open, or a walk back to it that found no way: set aside, not tried again and again.
+        if (task != null && !completed && position(task.args()) != null
+                && task.label().startsWith(POCKET_OPEN)) {
+            blockedUntil.put(position(task.args()).asLong(), tick + 1200);
+        }
         if (task != null && task.label().startsWith(LAVA_LEG_LABEL)) {
             boolean nearer = completed && lavaLegFrom != null && lavaLegFrom.getSquaredDistance(lastFeet) >= 8 * 8;
             lavaLegStalls = nearer ? 0 : lavaLegStalls + 1;
@@ -1119,7 +1132,7 @@ final class PortalRunCampaign {
         // in, was sent out by its cast's next steps (a cave open to the sky, coal in view) and dug in again, and on 707
         // Echo was stepped out by the watchdog's move and back in by the dig-in: 56 of the watchdog's lines (F-25c4cd).
         var dweller = body.entity();
-        boolean nightIn = night(dweller.getServerWorld()) && nightShelterAt != null && sheltered(dweller) && inNightShelter(dweller);
+        boolean nightIn = dugInForTheNight(dweller);
         // Its work only: a walk up for air, a back-off, a run from a creeper or any other safety step goes as before.
         if (nightIn && planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get())
                 && outUnderTheSky(dweller.getServerWorld(), planned.get())) {
@@ -2227,6 +2240,15 @@ final class PortalRunCampaign {
         if (room.isPresent()) {
             progress = stageLabel(stage) + ": inventory full - " + room.get().label();
             return room;
+        }
+        // Its sword or axe on the hotbar, where the goal's fights strike from and armed() looks for one: behind a hotbar of
+        // odds and ends it was never fought with. On 707 in E-40's iteration 16 (`e40a16-922f4fd`) Kindred, its stone sword
+        // in slot 15, backed off from three zombies as though it had none and struck them with its stone pickaxe, and they
+        // killed it; four of the iteration's 23 deaths carried a sword off the hotbar (F-25c4cv).
+        Optional<Task> weapon = weaponToHand(body);
+        if (weapon.isPresent()) {
+            progress = stageLabel(stage) + ": " + weapon.get().label();
+            return weapon;
         }
         // A fight or a retreat, once chosen, is held for a few seconds, as a player commits to one: a zombie knocked a
         // step back by a hit is no reason to turn and wall off, nor a skeleton stepping out of view one to walk back
@@ -4942,7 +4964,64 @@ final class PortalRunCampaign {
         var inventory = body.entity().getInventory();
         int target = 8;
         for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { target = s; break; }
+        // Not the only sword or axe on the hotbar: swapped out for a block, it was only taken back to hand (F-25c4cv).
+        if (onlyWeaponAt(inventory, target)) target = 7;
         return new Task("native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(target)), label);
+    }
+
+    static final String WEAPON_TO_HAND = "Take its weapon to hand";
+
+    /** Its best sword or axe swapped onto the hotbar when none is there; empty when one is, or it has none (F-25c4cv). */
+    private Optional<Task> weaponToHand(NativePlayerBody body) {
+        var player = body.entity();
+        if (armed(player)) return Optional.empty();
+        var best = Weapons.choose(player, player.getMaxHealth(), false);
+        if (best.isEmpty() || best.get().slot() < 9) return Optional.empty();
+        int target = handSlot(player.getInventory());
+        if (target < 0) return Optional.empty();
+        return Optional.of(new Task("native_swap", Map.of("source", String.valueOf(best.get().slot()), "target", String.valueOf(target)),
+                WEAPON_TO_HAND));
+    }
+
+    /**
+     * The hotbar slot a weapon taken to hand goes to: an empty one; else one holding nothing kept to hand (no tool,
+     * bucket, food, torch, shield or block); else a block while another block stays on the hotbar, so that nothing has to
+     * be readied again; -1 when every slot holds something kept to hand.
+     */
+    static int handSlot(net.minecraft.entity.player.PlayerInventory inventory) {
+        for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) return s;
+        for (int s = 0; s < 9; s++) {
+            var stack = inventory.getStack(s);
+            if (!keptToHand(stack) && !(stack.getItem() instanceof net.minecraft.item.BlockItem)) return s;
+        }
+        int blocks = 0;
+        for (int s = 0; s < 9; s++) if (inventory.getStack(s).getItem() instanceof net.minecraft.item.BlockItem && !keptToHand(inventory.getStack(s))) blocks++;
+        if (blocks < 2) return -1;
+        for (int s = 8; s >= 0; s--) {
+            var stack = inventory.getStack(s);
+            if (stack.getItem() instanceof net.minecraft.item.BlockItem && !keptToHand(stack)) return s;
+        }
+        return -1;
+    }
+
+    /** What the goal keeps on the hotbar for its own use: tools and weapons, buckets, food, torches, a shield, flint and steel. */
+    private static boolean keptToHand(ItemStack stack) {
+        var item = stack.getItem();
+        return item instanceof net.minecraft.item.MiningToolItem || stack.isIn(ItemTags.SWORDS) || item instanceof net.minecraft.item.BucketItem
+                || item instanceof net.minecraft.item.ShieldItem || item instanceof net.minecraft.item.FlintAndSteelItem
+                || item instanceof net.minecraft.item.ShearsItem || stack.contains(DataComponentTypes.FOOD)
+                || stack.isOf(Items.TORCH) || stack.isOf(Items.SOUL_TORCH);
+    }
+
+    /** Whether hotbar {@code slot} holds a sword or axe and no other hotbar slot does. */
+    private static boolean onlyWeaponAt(net.minecraft.entity.player.PlayerInventory inventory, int slot) {
+        if (!meleeWeapon(inventory.getStack(slot))) return false;
+        for (int s = 0; s < 9; s++) if (s != slot && meleeWeapon(inventory.getStack(s))) return false;
+        return true;
+    }
+
+    private static boolean meleeWeapon(ItemStack stack) {
+        return stack.isIn(ItemTags.SWORDS) || stack.isIn(ItemTags.AXES);
     }
 
     private Optional<Task> smelt(NativePlayerBody body) {
@@ -5324,7 +5403,8 @@ final class PortalRunCampaign {
         var inventory = player.getInventory();
         BlockPos feet = player.getBlockPos();
         if (knownCastLava(player) == null) {
-            return cave(body, "lava", DIAMOND_TARGET).or(this::lookAround).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
+            return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
+                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
         // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set aside,
@@ -5399,6 +5479,55 @@ final class PortalRunCampaign {
         BlockPos lava = knownCastLava(player);
         boolean below = lava != null && !player.getServerWorld().isSkyVisible(lava.up()) && lava.getSquaredDistance(player.getBlockPos()) <= 64 * 64;
         return below ? lavaForCast(body) : Optional.empty();
+    }
+
+    /** Where it filled its cast's bucket lately, newest last: each the way into the pocket of lava round it (F-25c4cz). */
+    private final java.util.ArrayDeque<BlockPos> lavaHoles = new java.util.ArrayDeque<>();
+    private static final int POCKET_HOLES = 24, POCKET_RANGE = 16;
+    private static final String POCKET_OPEN = "Cast: open the rock over the lava flowing in at ", POCKET_DIG = "Cast: dig toward the lava flowing in at ";
+
+    /**
+     * The pocket of lava under the rock its bucket was filled from, followed (F-25c4cz): the lava flowing into where it took
+     * a source comes from the still sources beside that cell, under the rock, and the cell over each is opened, from where it
+     * stands, as its tunnel opens the cell ahead over lava (F-25c4ac); out of reach or of view, it digs toward that lava as
+     * toward lava seen that no walk leads to (F-25c4ad), whose tunnel opens the cell when it comes to it. Opened, the lava is
+     * in view and filled in turn, so the pocket is followed a source at a time. Before, once the one or two
+     * sources it could see from the cell its tunnel opened were taken, the search went back to branch legs leading away: on
+     * 707 in E-40's iteration 17 (`e40a17-7bc5b42`) Kindred took 2 of a pocket of 208 and branch-mined on for half an hour.
+     */
+    private Optional<Task> followPocket(NativePlayerBody body) {
+        if (lavaHoles.isEmpty()) return Optional.empty();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        // Each cell over a still source beside a hole, with the hole it is beside, nearest first.
+        java.util.List<BlockPos[]> cells = new java.util.ArrayList<>();
+        for (BlockPos hole : lavaHoles) {
+            if (hole.getSquaredDistance(feet) > POCKET_RANGE * POCKET_RANGE) continue;
+            for (Direction side : Direction.Type.HORIZONTAL) {
+                BlockPos source = hole.offset(side), cell = source.up();
+                var fluid = world.getFluidState(source);
+                if (!fluid.isIn(FluidTags.LAVA) || !fluid.isStill() || passable(world, cell) || blocked(cell) || !onlyLavaBelow(world, cell)) continue;
+                cells.add(new BlockPos[] {cell, hole});
+            }
+        }
+        if (cells.isEmpty()) return Optional.empty();
+        cells.sort(java.util.Comparator.comparingDouble(pair -> pair[0].getSquaredDistance(feet)));
+        // In reach and in view: opened from where it stands.
+        for (BlockPos[] pair : cells) {
+            if (eyeDistance(player, pair[0]) <= REACH && body.miningEligible(pair[0])) {
+                return Optional.of(new Task("native_break", coords(pair[0], Map.of("collect", "false", "over_lava", "true")), POCKET_OPEN + pair[0].toShortString()));
+            }
+        }
+        // Out of reach or of view: dug toward, as lava seen that no walk leads to is (F-25c4ad), until it stands a block above
+        // the lava, where the cell over it is opened and its bucket filled.
+        for (BlockPos[] pair : cells) {
+            BlockPos source = pair[0].down();
+            Optional<Task> dig = digToward(body, source, POCKET_DIG + source.toShortString());
+            if (dig.isPresent()) return dig;
+            blockedUntil.put(pair[0].asLong(), lastTick + 1200);
+        }
+        return Optional.empty();
     }
 
     /** The lava the cast fills its bucket at: the one chosen, while it is still there, else the nearest it knows of. */
@@ -6070,6 +6199,11 @@ final class PortalRunCampaign {
      * Dug in for the night, not down in a mine or a cave: within a night shelter's depth of the ground's top over it,
      * or by where it dug in tonight (under a hillside the ground's top is the hill's).
      */
+    /** Whether it is dug in for the night: night, its shelter sealed, and it inside it. */
+    boolean dugInForTheNight(ServerPlayerEntity player) {
+        return night(player.getServerWorld()) && nightShelterAt != null && sheltered(player) && inNightShelter(player);
+    }
+
     private boolean inNightShelter(ServerPlayerEntity player) {
         BlockPos feet = player.getBlockPos();
         if (player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - feet.getY() <= NIGHT_SHELTER_DEPTH) return true;
@@ -6703,7 +6837,9 @@ final class PortalRunCampaign {
         if (running != null && "native_goto".equals(running.skill()) && holdingForRescue(player)) return "A way out asked for; holding still";
         if (running == null || running.label().startsWith("Back off") || running.label().startsWith("Run from")
                 || running.label().startsWith("Take cover") || running.label().startsWith("Hole up")
-                || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)) return null;
+                || running.label().startsWith("Hold the passage") || running.label().startsWith(OUT_OF_REACH)
+                // Nor the weapon taken to hand, a swap of one tick, for the mob it is taken up to fight (F-25c4cv).
+                || running.label().equals(WEAPON_TO_HAND)) return null;
         // Short of breath, the way out of the water comes first: the next plan only chose it again, and in the live pair
         // on 41f9de9 Echo drowned at Y=8 so, its walk up for air stopped each time to fight back first (F-25c4af).
         // Still in deep water, the way out comes first whatever its breath: while there is one the goal gives it before

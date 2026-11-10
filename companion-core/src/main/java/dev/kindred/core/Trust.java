@@ -15,9 +15,10 @@ import java.util.UUID;
  * Technical: E-49. Pure and bounded, per player: a score from 0 to {@link #MOST} for each person, separate from
  * friendship and tone, from events the adapter attributes; {@link #WARY} and above withholds. Each harmful event adds
  * its weight; each whole game day ({@link #DAY} ticks) since the last of them takes {@link #QUIET_DAY} away; a gift
- * takes {@link #GIFT} away at once. Tosses to one person are capped at {@link #TOSS_CAP} items a game day (the day as
- * the world's tick divided by {@link #DAY}), and none while wary; each ask past the cap counts as an event. The game
- * clock only moves forward here: a tick earlier than one seen counts as the latest seen.
+ * takes {@link #GIFT} away at once. Tosses to one person are capped at {@link #TOSS_CAP} items a game day, and none
+ * while wary; each ask past the cap counts as an event. The clock is the server's ticks since it started, as the adapter
+ * passes them, and a game day is {@link #DAY} of them: sleep and a set time of day do not move it, so a night slept does
+ * not bring sixteen more. The clock only moves forward here: a tick earlier than one seen counts as the latest seen.
  */
 public final class Trust {
     /** Wariness at or above which the player withholds: asks refused, nothing tossed. */

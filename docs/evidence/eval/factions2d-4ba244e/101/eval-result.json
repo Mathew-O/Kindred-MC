@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 288000,
+  "ticksRun": 288468,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 1056, "factions": 3, "claims": 11, "captures": 0, "sales": 347, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 6, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 9.10, "tickMsWorst": 866.29, "tickMsWorstAt": 10, "ticksOver50ms": 135, "ticksOver200ms": 7, "heapMbMax": 1258, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 7740, "stone_tools": 9640, "iron_ingot": 39320, "iron_pickaxe": 58340},
+      "deaths": [
+        {"tick": 134347, "cause": "Kindred drowned", "x": -500, "y": 61, "z": -163, "light": 2, "timeOfDay": 14509, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Wood: Get out of the water: up for air (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Get out of the water: up for air"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 6820, "x": -487, "y": 63, "z": -187, "attempt": 1}, {"tick": 31800, "x": -315, "y": 19, "z": -63, "attempt": 1}, {"tick": 37320, "x": -313, "y": 17, "z": -58, "attempt": 1}, {"tick": 49400, "x": -293, "y": 16, "z": -63, "attempt": 1}, {"tick": 127320, "x": -455, "y": 57, "z": -145, "attempt": 1}, {"tick": 193200, "x": -263, "y": 18, "z": -156, "attempt": 1}, {"tick": 217420, "x": -261, "y": 30, "z": -155, "attempt": 2}, {"tick": 243220, "x": -254, "y": 54, "z": -157, "attempt": 3}, {"tick": 266540, "x": -253, "y": 70, "z": -155, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3200, "stone_tools": 4100, "iron_ingot": 15980, "iron_pickaxe": 72240},
+      "deaths": [
+        {"tick": 80651, "cause": "Sol was slain by Zombie", "x": -392, "y": 32, "z": -218, "light": 0, "timeOfDay": 8813, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 120598, "cause": "Sol was slain by Zombie", "x": -389, "y": 24, "z": -287, "light": 0, "timeOfDay": 760, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: light the way - Craft torch", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 134639, "cause": "Sol was shot by Skeleton", "x": -368, "y": 29, "z": -314, "light": 0, "timeOfDay": 14801, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 155884, "cause": "Sol was slain by Zombie", "x": -341, "y": 61, "z": -336, "light": 0, "timeOfDay": 12046, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Stone: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 127020, "x": -342, "y": 71, "z": -316, "attempt": 1}, {"tick": 225000, "x": -424, "y": -29, "z": -168, "attempt": 1}, {"tick": 240280, "x": -424, "y": -25, "z": -168, "attempt": 2}, {"tick": 249020, "x": -423, "y": -23, "z": -169, "attempt": 3}, {"tick": 267620, "x": -405, "y": -11, "z": -196, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 25300, "stone_tools": 26380, "iron_ingot": 31820, "iron_pickaxe": 50420, "obsidian": 60229},
+      "deaths": [
+        {"tick": 153203, "cause": "Echo drowned", "x": -267, "y": 52, "z": -101, "light": 1, "timeOfDay": 9365, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Obsidian: Get out of the water: up for air (tried elsewhere 9 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 77760, "x": -498, "y": 64, "z": -358, "attempt": 1}, {"tick": 82260, "x": -501, "y": 64, "z": -359, "attempt": 1}, {"tick": 99220, "x": -506, "y": 64, "z": -356, "attempt": 2}, {"tick": 102980, "x": -523, "y": 65, "z": -354, "attempt": 3}, {"tick": 108300, "x": -270, "y": 71, "z": -107, "attempt": 4}, {"tick": 122920, "x": -293, "y": 68, "z": -108, "attempt": 5}, {"tick": 127560, "x": -276, "y": 68, "z": -108, "attempt": 6}, {"tick": 131240, "x": -293, "y": 68, "z": -108, "attempt": 7}, {"tick": 147440, "x": -273, "y": 67, "z": -105, "attempt": 8}, {"tick": 152280, "x": -296, "y": 68, "z": -112, "attempt": 9}, {"tick": 243200, "x": -344, "y": 81, "z": -128, "attempt": 1}, {"tick": 267560, "x": -398, "y": 65, "z": -126, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

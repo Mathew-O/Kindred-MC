@@ -53,4 +53,15 @@ class AttentionSchedulePolicyTest {
 
         assertTrue(policy.isEligible(AttentionState.RECOVERY, WorkKind.ROUTINE_GOALS));
     }
+
+    @org.junit.jupiter.api.Test
+    void aLargerServerSharesTheSameBudgetAmongMorePlayers() {
+        var policy = AttentionSchedulePolicy.defaultPolicy();
+        var larger = policy.withMaxPlayers(12);
+        org.junit.jupiter.api.Assertions.assertEquals(AttentionSchedulePolicy.MAX_PLAYERS, policy.maxPlayers(), "the default stays three");
+        org.junit.jupiter.api.Assertions.assertEquals(12, larger.maxPlayers());
+        org.junit.jupiter.api.Assertions.assertEquals(policy.maxSlicesPerTick(), larger.maxSlicesPerTick(), "the same slices a tick");
+        org.junit.jupiter.api.Assertions.assertEquals(policy.softTimeLimitNanos(), larger.softTimeLimitNanos(), "the same time a tick");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> policy.withMaxPlayers(0));
+    }
 }

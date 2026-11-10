@@ -28,6 +28,17 @@
     was a back-off "the way it came" while badly hurt, with no cover taken. That cause is open.
   - Nineteen classes that fight, take cover and climb, 3 runs: 138, 139 and 138 of 139. Both failures were
     `kindred-43985-707`, as above.
+## A pocket of lava followed (F-25c4cz) — 9 November 2026 (`claude/lava-pocket-1109`)
+
+- **[F-25c4cz](evidence/F-25c4cz.md):** looking for its cast's lava, the pocket under the rock its bucket was filled from
+  is followed a source at a time (product; E-40's iteration 17, `e40a17-7bc5b42`, 707: 2 of a pocket of 208 taken, then
+  branch mining on for half an hour; the kept world read offline for diagnosis only).
+  - `NativePortalCampaignGameTests.aPocketOfLavaUnderTheRockIsFollowedOnceTheLavaItSawIsTaken` (staged, as it says): on main
+    without the fix, 0 of 3 (1, 1 and 3 of 9 sources taken); with it, 3 of 3.
+  - The classes that cast and make obsidian (`NativePortalCampaignGameTests`, `NativeCastRefusalGameTests`,
+    `NativeObsidianPickupGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+    `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
+    107 of 107 in each of three runs.
   - **Build:** `./gradlew build` successful; JUnit 1,081 tests, 0 failures, 7 skipped.
 
 ## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
@@ -171,6 +182,25 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: a sword in the backpack taken to hand (F-25c4cv) — 9 November 2026 (`claude/backoff-1109`)
+
+- **The fixture** (F-25c4cv, [evidence](evidence/F-25c4cv.md)): `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`,
+  staged as it says (a walled and roofed room, 707 Kindred's hotbar as its death's replay held it, the stone sword in
+  slot 15, and a zombie set on the player).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "The sword never reached its hotbar", the zombie struck five times with
+    the stone pickaxe each time.
+  - With the fix: passes 3 of 3, the sword taken to hand ("Take its weapon to hand") before "Fight zombie".
+- **The death it came from**: `ReplayGameTests` with 707 Kindred's replay (`kindred-43985-707`). On `e7e0b57` it died
+  again 2 of 3, fighting with the stone pickaxe; with the fix it lived 3 of 3 here, the sword taken to hand first. Not kept:
+  on #96's CI (run 42583930289, attempt 2) it died again 2 of 3 with the sword in hand, and locally 3 of 21, badly hurt
+  among several zombies and backing off "the way it came". F-27 keeps a replay only with the fix that makes it pass 3 of 3,
+  so it waits for the back-off fix.
+- **The classes that fight, swap and cast** (`NativeWeaponToHandGameTests`, `ReplayGameTests`, `NativePortalCampaignGameTests`,
+  `NativeCombatGameTests`, `NativeTacticalGameTests`, `NativeEncounterGameTests`, `NativeFallGameTests`,
+  `NativeInitiativeGameTests`, `NativeSpireGameTests`): 126 of 126 in each of three runs.
+- **The kept replay `echo-73670`** died again once in the first replay run with the fix (1 of 3), knocked off a ledge by a
+  zombie villager. The new step never ran there: its sword was on its hotbar from the start. In the three class runs it
+  lived 9 of 9, so 11 of 12 with the fix; on `e7e0b57` it lived 3 of 3. Its course varies; the fix does not reach it.
 ## E-40, batch 25: the cast route takes its table along (F-25c4cw) — 9 November 2026 (`claude/cast-table-1109`)
 
 - **The fixture** (F-25c4cw, [evidence](evidence/F-25c4cw.md)): `NativeCastTableGameTests.onTheCastRouteItsTableIsTakenAlongWhenItGoesOnForLava`,
@@ -3471,3 +3501,33 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
     both staged copies held and brought home.
   - `NativeBringGameTests`, 3 runs, 10 of 10 each.
+
+- **[F-22c36](evidence/F-22c36.md):** the toss-cap fixture's asks all fall in one of the cap's days (fixture; #83's run
+  42563294688: a cap day ended between the refused third ask and the command's toss, which the new day's cap let through).
+  - The staged fixture (the server's tick 55 before a cap day ends): 0 of 3 before the guard; after, 3 of 3.
+  - `NativeTrustGameTests`, 3 runs, 8 of 8 each.
+
+- **[F-22c35](evidence/F-22c35.md):** a walk from a roof of slabs or stairs crosses them to the nearest stand (product;
+  #78's run 42556777789: a cabin's builder on its roof, "no walkable route" eight times, the cabin eight blocks short).
+  - The staged fixture (the player on a slab roof's middle): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeNavigationGameTests`, 3 runs, 8 of 8 each; `NativeHouseGameTests`, `NativeBaseGameTests`,
+    `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c37 (fixture diagnostics, in progress):** the gather pause-and-resume fixture's "Gather completed" failure names
+  what ran instead (#87's run 42565807178: resumed, and not completed within the test). No assertion changed.
+  `NativeGatherGameTests`, 3 runs, 5 of 5 each.
+
+- **F-22c39 (fixture diagnostics, in progress):** the pasture-doorway fixture's "A calf born in the pen" failure names every
+  cow about the pen (#91's run 42568179856: the ranch done with the calf in the pen, then no calf counted in it). No
+  assertion changed. `NativeCompoundGameTests`, 3 runs, 6 of 6 each.
+
+- **[F-22c40](evidence/F-22c40.md):** a scaffold column left too high to take down from the ground is reached from a scaffold
+  beside it (product; #86's run 42566156809: fallen off its column, "out of reach to take down" eight times).
+  - The staged fixture (the player put in the pit as its scaffold comes down): 1 of 3 before, the failures CI's; 3 of 3 after.
+  - `:companion-core:test` 899 of 899; `NativeBuildGameTests`, 3 runs, 6 of 6 each; `NativeHouseGameTests`,
+    `NativeBaseGameTests`, `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c41 (diagnostics, in progress):** the ranch's leaving and done lines name each animal by id, and what it gave up
+  and why (#96's run 42583930289: "no other in sight" with a sheep in sight behind the pen's far fence). A ranch walk
+  ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
+  `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
