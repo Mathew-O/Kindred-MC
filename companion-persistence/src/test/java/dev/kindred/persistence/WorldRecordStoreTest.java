@@ -59,6 +59,22 @@ class WorldRecordStoreTest {
     }
 
     @Test
+    void onlyARegisteredKindIsWrittenAndTheBatchIsRefusedWhole() {
+        SqliteCompanionStore store = open();
+        String kind = "test.catch." + Long.toHexString(System.nanoTime());
+        var refused = store.record(List.of(
+                WorldEvent.recorded(1, 1, "w", "claim", null, "red", "w:0:0", Map.of()),
+                WorldEvent.recorded(2, 2, "w", kind, null, "", "", Map.of())));
+        var failure = assertThrows(java.util.concurrent.CompletionException.class, refused::join);
+        assertTrue(failure.getCause() instanceof IllegalArgumentException && failure.getCause().getMessage().contains(kind), "refused: " + failure);
+        assertEquals(List.of(), store.allWorldEvents(Set.of()).join(), "all or none: nothing written");
+        // Registered, as an integration registers its own kind, the same event is written.
+        dev.kindred.core.record.EventKinds.register(kind, "test-integration");
+        var written = store.record(WorldEvent.recorded(2, 2, "w", kind, null, "", "", Map.of())).join();
+        assertEquals(List.of(written), store.worldEvents(Set.of(kind), 0, 10).join());
+    }
+
+    @Test
     void theRecordRefusesAnUpdateOrADelete() throws Exception {
         SqliteCompanionStore store = open();
         store.record(WorldEvent.recorded(1, 1, "w", "claim", null, "red", "w:0:0", Map.of())).join();

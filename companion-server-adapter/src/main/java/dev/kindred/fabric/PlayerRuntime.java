@@ -16057,7 +16057,7 @@ final class PlayerRuntime {
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
-                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
+                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     result.complete(agree);
                 }));
@@ -16137,7 +16137,7 @@ final class PlayerRuntime {
                     for (var e : open.values()) {
                         String id = e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) ? e.get("purchase", "") : e.subject();
                         KindredMod.LOGGER.error("Market {} {} by {} is unfinished: reconcile its items and coins by hand", e.kind(), id, e.actor());
-                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), "market.uncertain", e.actor(), id, "",
+                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), MarketDesk.UNCERTAIN, e.actor(), id, "",
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));

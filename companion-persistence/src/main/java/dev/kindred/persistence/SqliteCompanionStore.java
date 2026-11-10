@@ -1711,7 +1711,7 @@ public final class SqliteCompanionStore {
         data.put("sequence", String.valueOf(sequence));
         data.put("detail", detail.length() > 4_000 ? detail.substring(0, 4_000) : detail);
         if (detail.length() > 4_000) data.put("truncated", "1");
-        insertWorldEvent(WorldEvent.recorded(-1, at.toEpochMilli(), "", "journal", id, type.length() > WorldEvent.MAX_TEXT ? type.substring(0, WorldEvent.MAX_TEXT) : type, "", data));
+        insertWorldEvent(WorldEvent.recorded(-1, at.toEpochMilli(), "", dev.kindred.core.record.ActionLedgerView.JOURNAL, id, type.length() > WorldEvent.MAX_TEXT ? type.substring(0, WorldEvent.MAX_TEXT) : type, "", data));
         return new JournalEvent(sequence, id, Instant.ofEpochMilli(at.toEpochMilli()), type, detail);
     }
 
@@ -1763,6 +1763,12 @@ public final class SqliteCompanionStore {
         List<WorldEvent> copy = List.copyOf(drafts);
         if (copy.isEmpty()) return CompletableFuture.completedFuture(List.of());
         for (WorldEvent draft : copy) if (draft.id() != 0) throw new IllegalArgumentException("Only an unwritten event is recorded");
+        // Only a registered kind is written (F-31, event kinds as a registry): all or none, the batch refused, not the tick.
+        for (WorldEvent draft : copy) {
+            if (!dev.kindred.core.record.EventKinds.known(draft.kind())) {
+                return CompletableFuture.failedFuture(new IllegalArgumentException("Unregistered event kind " + draft.kind()));
+            }
+        }
         return submit(() -> transaction(() -> {
             var written = new ArrayList<WorldEvent>(copy.size());
             for (WorldEvent draft : copy) written.add(insertWorldEvent(draft));
