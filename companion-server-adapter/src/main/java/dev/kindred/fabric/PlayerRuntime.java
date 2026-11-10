@@ -1676,8 +1676,9 @@ final class PlayerRuntime {
     }
 
     /** {@code own}: chosen by the player itself (its goal, its needs), not asked for by a command. */
-    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments, boolean own) {
+    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> requested, boolean own) {
         requireThread();
+        final Map<String, String> arguments = own && skill.equals("native_goto") ? onItsHorse(entry, requested) : requested;
         // Where this task was proposed, for its outcome line (M-01): only the autonomous choice hands one over.
         String proposedBy = own && entry.pendingSource != null ? entry.pendingSource : "";
         entry.pendingSource = null;
@@ -2256,6 +2257,8 @@ final class PlayerRuntime {
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
                         || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
+                    // A far walk ridden on its own horse (M-01a): getting on and off it, the trip's own step permits checked too.
+                    || ("native_goto".equals(entry.skillId) && intent == NativePlayerBody.Intent.RIDE && entry.skillArgs.containsKey("horse"))
                     || (("native_feed".equals(entry.skillId) || "native_pet".equals(entry.skillId))
                         && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -3594,6 +3597,10 @@ final class PlayerRuntime {
         if (evade != null) return evade;
         var raid = raidCandidates(entry, body);
         if (raid != null) return raid;
+
+        // Left on its horse by a ride stopped part way: off it before other work (M-01a).
+        var off = offTheHorse(entry, body);
+        if (off != null) return off;
         // A find shared out with its team as it comes, and its hand-overs taken up again after a stop (E-40a).
         shareOutFinds(entry, body);
 
@@ -4732,6 +4739,55 @@ final class PlayerRuntime {
         requireThread();
         Entry entry = id != null ? entries.get(id) : null;
         return entry == null || entry.stable == null ? -1 : entry.stable.mounts();
+    }
+
+    /**
+     * A far walk it chose itself, ridden on its own horse (M-01a): the walk's arguments with {@code horse} added when it
+     * keeps a horse, tamed to it and saddled, in sight and near, the walk is long, it walks with nothing to lead or flee
+     * and a hand is free to get on with. Otherwise the walk as it was.
+     */
+    private Map<String, String> onItsHorse(Entry entry, Map<String, String> walk) {
+        if (entry.bases == null || entry.bases.horse == null || entry.nativeBody == null || walk.containsKey("horse")) return walk;
+        if (walk.containsKey("hold") || walk.containsKey("leg") || "true".equals(walk.get("sprint")) || "true".equals(walk.get("avoid"))) return walk;
+        var player = entry.nativeBody.entity();
+        if (player.isTouchingWater() || (player.hasVehicle() && !(player.getVehicle() instanceof net.minecraft.entity.passive.AbstractHorseEntity))) return walk;
+        final UUID horseId;
+        try {
+            horseId = UUID.fromString(entry.bases.horse);
+        } catch (IllegalArgumentException bad) {
+            return walk;
+        }
+        double dx, dz;
+        try {
+            dx = Integer.parseInt(walk.get("x")) + 0.5 - player.getX();
+            dz = Integer.parseInt(walk.get("z")) + 0.5 - player.getZ();
+        } catch (RuntimeException bad) {
+            return walk;
+        }
+        if (Math.hypot(dx, dz) < NativeTripSkill.RIDE_FROM) return walk;
+        if (!(player.getServerWorld().getEntity(horseId) instanceof net.minecraft.entity.passive.AbstractHorseEntity horse) || !horse.isAlive()
+                || !horse.isTame() || !horse.isSaddled() || !player.getUuid().equals(horse.getOwnerUuid()) || horse.isLeashed()) return walk;
+        boolean on = player.getVehicle() == horse;
+        if (!on && (horse.hasPassengers() || player.distanceTo(horse) > NativeTripSkill.HORSE_NEAR || !player.canSee(horse))) return walk;
+        int empty = -1;
+        for (int s = 0; s < 9 && empty < 0; s++) if (player.getInventory().getStack(s).isEmpty()) empty = s;
+        if (!on && empty < 0) return walk;
+        KindredMod.LOGGER.info("{} rides its horse toward {} {} ({} blocks)", entry.data.displayName(), walk.get("x"), walk.get("z"), (int) Math.hypot(dx, dz));
+        var out = new java.util.HashMap<>(walk);
+        out.put("horse", horseId.toString());
+        out.put("ride_slot", String.valueOf(Math.max(empty, 0)));
+        return Map.copyOf(out);
+    }
+
+    /** Off its horse, when on one and not on a trip (a ride stopped part way): its work is done on foot. */
+    private List<NativeTaskCandidate> offTheHorse(Entry entry, NativePlayerBody body) {
+        if (!(body.entity().getVehicle() instanceof net.minecraft.entity.passive.AbstractHorseEntity) || entry.stable != null) return null;
+        var t = new PortalRunCampaign.Task("native_ride", Map.of("op", "off"), "Off its horse");
+        // Not one of a runner's steps (no build task): its completion is credited to no build, ranch or field.
+        UUID id = UUID.nameUUIDFromBytes(("horse-off:" + entry.data.id()).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
     /** The horse a player keeps (M-01a), by its id, for fixtures. */
@@ -5876,6 +5932,24 @@ final class PlayerRuntime {
         return true;
     }
 
+    /** A horse of its own staged as kept, as a fixture lays one down (M-01a); its taming is its own fixture's. */
+    boolean stageHorseForTest(UUID id, UUID horse) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || !basesLoaded(entry)) return false;
+        entry.bases.horse = horse.toString();
+        return true;
+    }
+
+    /** A walk to {@code target} dispatched as one it chose itself, as its goals do, for fixtures of how it travels. */
+    int ownWalkForTest(UUID id, BlockPos target, double range) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null) return 0;
+        return dispatchNativeTask(Actor.console(), entry, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", String.valueOf(range)), true);
+    }
+
     /** A pen of its own staged as run, as a fixture lays one down (M-01a). */
     boolean stagePenForTest(UUID id, PlayerMemoryStore.Pen pen) {
         requireThread();
@@ -6667,6 +6741,16 @@ final class PlayerRuntime {
 
         // 2. Scheduled routine candidates (cached from scheduler slices)
         List<NativeTaskCandidate> routineCandidates = autonomyAdmitted ? entry.cachedRoutineCandidates : List.of();
+        if (autonomyAdmitted && extraCandidatesForTest != null) {
+            var extra = extraCandidatesForTest.apply(entry.data.id());
+            if (extra != null && !extra.isEmpty()) {
+                var with = new ArrayList<NativeTaskCandidate>(routineCandidates);
+                with.addAll(extra);
+                routineCandidates = with;
+            }
+        }
+        // A walk let be for now (LOOPS 1): its routine's work only, never a reflex or a life need.
+        routineCandidates = withoutWalksSetAside(entry, body, routineCandidates);
 
         // Not admitted to its work, its reflexes are all it has to choose from.
         List<NativeTaskCandidate> taskCandidates;
@@ -7633,6 +7717,7 @@ final class PlayerRuntime {
                 entry.walksFailed++;
                 entry.walkFailedAt = server.getTicks();
             }
+            walkOutcome(entry, state, lifeLabel);
             // A faction walk (M-06i): a refusal backs it off and, after three, sets the place aside; a walk that went
             // somewhere forgets its refusals.
             var factionMove = entry.factionPlay.move;
@@ -9280,7 +9365,8 @@ final class PlayerRuntime {
             case CLAIM -> factions.request(id, "claim", List.of(), world, pos, this::playerByName, this::factionName);
             case CAPTURE -> factions.request(id, "capture", List.of(), world, pos, this::playerByName, this::factionName);
             case SELL -> {
-                var slots = FactionsPlayer.spareSlots(player);
+                // Only the kinds it chose to sell, each a lot worth selling (FactionPlay.MIN_LOT); none named, all its spare.
+                var slots = FactionsPlayer.spareSlots(player, target.isEmpty() ? null : java.util.Set.of(target.split(",")));
                 if (slots.isEmpty()) yield FactionsService.Reply.refused("Nothing spare to sell");
                 market.sell(player, slots, world, line -> KindredMod.LOGGER.info("{} faction: {}", name, line));
                 yield FactionsService.Reply.told(List.of("Offered its spare blocks to the market"));
@@ -14053,6 +14139,81 @@ final class PlayerRuntime {
      * What an ended task is called in its outcome line: its campaign or build step's label, its life task's, or else
      * "from" the routine that proposed it (M-01); empty for a task asked for by a command.
      */
+    /**
+     * The four-block cell a walk's target is in, as the set-aside keys it: a refused patch of gravel or a border is walked
+     * for block by neighbouring block (seed 109's trace: 99 refusals over a few gravel blocks, three each).
+     */
+    private static long walkCell(BlockPos target) {
+        return BlockPos.asLong(target.getX() >> 2, target.getY() >> 2, target.getZ() >> 2);
+    }
+
+    /** A walk's target, as its arguments name it; null when they name none. */
+    private static BlockPos walkTarget(Map<String, String> arguments) {
+        try {
+            if (arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z"))
+                return new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
+        } catch (NumberFormatException malformed) {
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * A walk refused for want of a route (the planner's "No walkable route", or a route found blocked) counts against its
+     * target from where the player stands; one that arrived forgets its refusals; its own breaks and placements change
+     * the ground, and every place gets another try (LOOPS 1, M-01f slice 2).
+     */
+    private void walkOutcome(Entry entry, SkillRunner.State state, String lifeLabel) {
+        if (entry.nativeBody == null || !entry.nativeBody.connected() || entry.skillId == null) return;
+        if (state == SkillRunner.State.COMPLETED && ("native_break".equals(entry.skillId) || "native_place".equals(entry.skillId))) {
+            entry.walksAside.groundChanged();
+            return;
+        }
+        if (!"native_goto".equals(entry.skillId)) return;
+        BlockPos target = walkTarget(entry.skillArgs);
+        if (target == null) return;
+        if (state == SkillRunner.State.COMPLETED) {
+            entry.walksAside.walked(walkCell(target));
+            return;
+        }
+        if (state != SkillRunner.State.BLOCKED) return;
+        String reason = entry.runner.reason().orElse("");
+        if (!reason.startsWith("No walkable route") && !reason.contains(" is blocked")) return;
+        if (!walksMayBeSetAside(entry.nativeBody.entity())) return;
+        BlockPos feet = entry.nativeBody.entity().getBlockPos();
+        if (entry.walksAside.refused(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), server.getTicks())) {
+            String label = outcomeLabel(entry, lifeLabel);
+            KindredMod.LOGGER.info("{} lets its walks to around {} be for ten minutes: refused {} times from around {}{}", entry.data.displayName(),
+                    target.toShortString(), dev.kindred.core.WalkSetAside.REFUSALS, feet.toShortString(), label.isEmpty() ? "" : " [" + label + "]");
+        }
+    }
+
+    /**
+     * Whether the set-aside may count or hold back a walk now: not while anything about the player is a danger, in water
+     * or lava, burning, short of air or under half its health. A walk then is very likely its way out (the replays'
+     * "Get out of the water: up for air", refused three times while it sank).
+     */
+    private static boolean walksMayBeSetAside(net.minecraft.server.network.ServerPlayerEntity player) {
+        return !player.isTouchingWater() && !player.isInLava() && !player.isOnFire() && player.getAir() >= player.getMaxAir()
+                && player.getHealth() >= player.getMaxHealth() / 2;
+    }
+
+    /** The candidates, less any walk to a place set aside for this player where it stands (LOOPS 1, M-01f slice 2). */
+    private List<NativeTaskCandidate> withoutWalksSetAside(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
+        if (candidates.isEmpty() || entry.walksAside.size() == 0 || body == null || !body.connected() || !walksMayBeSetAside(body.entity())) return candidates;
+        BlockPos feet = body.entity().getBlockPos();
+        long tick = server.getTicks();
+        List<NativeTaskCandidate> kept = null;
+        for (int i = 0; i < candidates.size(); i++) {
+            var candidate = candidates.get(i);
+            BlockPos target = "native_goto".equals(candidate.skill()) ? walkTarget(candidate.arguments()) : null;
+            boolean aside = target != null && entry.walksAside.aside(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), tick);
+            if (aside && kept == null) kept = new ArrayList<>(candidates.subList(0, i));
+            else if (!aside && kept != null) kept.add(candidate);
+        }
+        return kept == null ? candidates : kept;
+    }
+
     private static String outcomeLabel(Entry entry, String lifeLabel) {
         if (entry.activeCampaignTask != null) return entry.activeCampaignTask.label();
         if (entry.activeBuildTask != null) return entry.activeBuildTask.label();
@@ -16004,6 +16165,22 @@ final class PlayerRuntime {
     }
 
     /**
+     * Bare {@code /ah}: a person at a client gets the auction house's chest screen ({@link AuctionScreenHandler}); an AI
+     * player, the console or an operator without a body gets the listings as text, as {@code /ah list}.
+     */
+    int openAuctionScreen(ServerCommandSource source) {
+        requireThread();
+        var player = source.getPlayer();
+        if (player == null || player instanceof PreparedNativePlayer) return auctionRequest(source, player == null ? new UUID(0, 0) : player.getUuid(), "list", List.of());
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
+                (syncId, inventory, p) -> new AuctionScreenHandler(syncId, inventory, auctions, player, () -> ready && running && factionsWorld()),
+                Text.literal("Auction house")));
+        return 1;
+    }
+
+    /**
      * {@code who}'s auction request (M-06h), a person's or an AI player's alike: {@code list} (open listings and orders),
      * {@code mine}, {@code sell <start> [buyNow] [hours]} (the stack in hand), {@code bid <id> <amount>}, {@code buy <id>},
      * {@code cancel <id>}, {@code order <item> <count> <each>}, {@code unorder <id>}. Prices in coins. Only in a faction
@@ -16256,6 +16433,13 @@ final class PlayerRuntime {
     }
 
     /** The faction world's once-a-second step, for a fixture whose runtime has no AI body to tick it. */
+    /** A routine of the fixture's own, its candidates weighed with the routine ones at each decision; null for none. */
+    private java.util.function.Function<UUID, List<NativeTaskCandidate>> extraCandidatesForTest;
+
+    void extraCandidatesForTest(java.util.function.Function<UUID, List<NativeTaskCandidate>> routine) {
+        extraCandidatesForTest = routine;
+    }
+
     void factionsTickForTest() {
         requireThread();
         factions.tick(server.getPlayerManager().getPlayerList());
@@ -16765,6 +16949,8 @@ final class PlayerRuntime {
         private String skillId;
         /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
         private String dispatchSource = "", pendingSource;
+        /** Walks refused again and again from about one place, let be for ten minutes whatever asks for them (LOOPS 1, M-01f). */
+        private final dev.kindred.core.WalkSetAside walksAside = new dev.kindred.core.WalkSetAside();
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
