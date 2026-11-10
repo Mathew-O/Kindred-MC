@@ -108,7 +108,10 @@ final class FactionsPlayer {
     List<UUID> met() { return List.copyOf(met.keySet()); }
 
     /** The slots of its spare common blocks: those beyond the first {@value #KEEP} of each kind, whole stacks only. */
-    static List<Integer> spareSlots(ServerPlayerEntity player) {
+    static List<Integer> spareSlots(ServerPlayerEntity player) { return spareSlots(player, null); }
+
+    /** As above, only of the kinds named in {@code kinds} (all of them when null). */
+    static List<Integer> spareSlots(ServerPlayerEntity player, Set<String> kinds) {
         var kept = new LinkedHashMap<String, Integer>();
         var out = new ArrayList<Integer>();
         var inventory = player.getInventory();
@@ -116,7 +119,7 @@ final class FactionsPlayer {
             var stack = inventory.main.get(slot);
             if (stack.isEmpty()) continue;
             String id = Registries.ITEM.getId(stack.getItem()).toString();
-            if (!COMMON.contains(id) || stack.getComponentChanges().size() > 0) continue;
+            if (!COMMON.contains(id) || stack.getComponentChanges().size() > 0 || kinds != null && !kinds.contains(id)) continue;
             int have = kept.getOrDefault(id, 0);
             if (have < KEEP) kept.put(id, have + stack.getCount());
             else out.add(slot);

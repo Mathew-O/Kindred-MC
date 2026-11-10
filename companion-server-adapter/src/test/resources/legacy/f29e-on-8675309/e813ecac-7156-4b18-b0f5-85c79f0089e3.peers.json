@@ -1,0 +1,105 @@
+{
+  "self": "e813ecac-7156-4b18-b0f5-85c79f0089e3",
+  "peers": [
+    {
+      "id": "f41041bd-47d3-4020-a8ae-fd9283de5b2a",
+      "name": "Sol",
+      "kind": "AI_PLAYER",
+      "firstMet": 83,
+      "lastSeen": 523,
+      "touched": 144103,
+      "lastWorld": "minecraft:overworld",
+      "teamPlace": {
+        "dimension": "minecraft:overworld",
+        "x": -32,
+        "y": -51,
+        "z": 98
+      },
+      "notes": [
+        {
+          "topic": "DOING",
+          "source": "TEAM",
+          "text": "working on nether portal: Done: The Nether portal is built and lit",
+          "by": "f41041bd-47d3-4020-a8ae-fd9283de5b2a",
+          "at": 144103,
+          "until": 9223372036854775807,
+          "correctedAt": 0,
+          "confirmedAt": 0
+        },
+        {
+          "topic": "NEEDS",
+          "source": "TEAM",
+          "text": "",
+          "by": "f41041bd-47d3-4020-a8ae-fd9283de5b2a",
+          "at": 144103,
+          "until": 9223372036854775807,
+          "correctedAt": 0,
+          "confirmedAt": 0
+        },
+        {
+          "topic": "SPARE",
+          "source": "TEAM",
+          "text": "",
+          "by": "f41041bd-47d3-4020-a8ae-fd9283de5b2a",
+          "at": 144103,
+          "until": 9223372036854775807,
+          "correctedAt": 0,
+          "confirmedAt": 0
+        }
+      ],
+      "episodes": [],
+      "given": {},
+      "received": {}
+    },
+    {
+      "id": "74d7d7c2-7971-4557-8d9b-64d105e0c911",
+      "name": "Echo",
+      "kind": "AI_PLAYER",
+      "firstMet": 183,
+      "lastSeen": 2163,
+      "touched": 144103,
+      "lastWorld": "minecraft:overworld",
+      "teamPlace": {
+        "dimension": "minecraft:overworld",
+        "x": 30,
+        "y": 57,
+        "z": 95
+      },
+      "notes": [
+        {
+          "topic": "DOING",
+          "source": "TEAM",
+          "text": "working on nether portal: Done: The Nether portal is built and lit",
+          "by": "74d7d7c2-7971-4557-8d9b-64d105e0c911",
+          "at": 144103,
+          "until": 9223372036854775807,
+          "correctedAt": 0,
+          "confirmedAt": 0
+        },
+        {
+          "topic": "NEEDS",
+          "source": "TEAM",
+          "text": "",
+          "by": "74d7d7c2-7971-4557-8d9b-64d105e0c911",
+          "at": 144103,
+          "until": 9223372036854775807,
+          "correctedAt": 0,
+          "confirmedAt": 0
+        },
+        {
+          "topic": "SPARE",
+          "source": "TEAM",
+          "text": "",
+          "by": "74d7d7c2-7971-4557-8d9b-64d105e0c911",
+          "at": 144103,
+          "until": 9223372036854775807,
+          "correctedAt": 0,
+          "confirmedAt": 0
+        }
+      ],
+      "episodes": [],
+      "given": {},
+      "received": {}
+    }
+  ]
+}

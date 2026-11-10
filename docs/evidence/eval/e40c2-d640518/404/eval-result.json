@@ -1,0 +1,47 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1280, "stone_tools": 3600, "iron_ingot": 16440, "iron_pickaxe": 55400},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 34160, "x": 79, "y": -1, "z": -9, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2940, "stone_tools": 5040, "iron_ingot": 8520, "iron_pickaxe": 33840, "diamond": 88240, "obsidian": 133720, "portal_lit": 156033, "nether_entered": 156820},
+      "deaths": [
+        {"tick": 51563, "cause": "Sol was slain by Zombie", "x": 41, "y": 51, "z": -101, "light": 0, "timeOfDay": 3725, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 20220, "x": 15, "y": 19, "z": -89, "attempt": 0}, {"tick": 152460, "x": -26, "y": -55, "z": 141, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 380, "stone_tools": 4420, "iron_ingot": 35520, "iron_pickaxe": 48260, "diamond": 52820, "obsidian": 63900, "portal_lit": 76908},
+      "deaths": [
+        {"tick": 6442, "cause": "Echo was slain by Zombie", "x": 59, "y": 42, "z": -104, "light": 0, "timeOfDay": 6604, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 10522, "cause": "Echo was blown up by Creeper", "x": 45, "y": 33, "z": -86, "light": 0, "timeOfDay": 10684, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Wood: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 96159, "cause": "Echo was slain by Zombie", "x": 28, "y": 67, "z": -142, "light": 9, "timeOfDay": 321, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "End: Prepare: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "Fight zombie"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

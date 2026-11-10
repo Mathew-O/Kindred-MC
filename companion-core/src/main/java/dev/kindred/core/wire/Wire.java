@@ -59,7 +59,8 @@ public final class Wire {
     }
 
     private static final long MINUTE = 60_000;
-    private static final long LONGEST = java.util.Arrays.stream(Channel.values()).mapToLong(c -> c.dedupeMillis).max().orElse(MINUTE);
+    /** The longest dedupe window of any channel known now: registered channels may add a longer one. */
+    private static long longest() { return Channel.values().stream().mapToLong(c -> c.dedupeMillis).max().orElse(MINUTE); }
 
     private final Config config;
     private final Map<String, ArrayDeque<Long>> sentOn = new HashMap<>();
@@ -98,7 +99,8 @@ public final class Wire {
         if (!ModeChannels.allows(mode, channel)) return Delivery.refused(message, Delivery.Refusal.MODE);
         if (!message.fromServer()) {
             if (sender == null) return Delivery.refused(message, Delivery.Refusal.UNKNOWN_SENDER);
-            boolean group = channel != Channel.PRIVATE && channel != Channel.PUBLIC && channel != Channel.OPERATOR;
+            var a = channel.audience();
+            boolean group = a != Channel.Audience.PRIVATE && a != Channel.Audience.PUBLIC && a != Channel.Audience.OPERATOR;
             if (group && !sender.inAudience(scope)) return Delivery.refused(message, Delivery.Refusal.NOT_MEMBER);
         }
         boolean announcement = scope.serverWide();
@@ -166,11 +168,12 @@ public final class Wire {
      * facts only on that group's channel or privately (where the receiver's own relation then decides).
      */
     static boolean carries(Channel channel, Visibility fact, boolean fromServer) {
-        if (fact == Visibility.PUBLIC || channel == Channel.OPERATOR) return true;
+        var a = channel.audience();
+        if (fact == Visibility.PUBLIC || a == Channel.Audience.OPERATOR) return true;
         if (fact == Visibility.OPERATOR) return false;
-        if (channel == Channel.PUBLIC) return false;
-        if (fact == Visibility.SELF) return channel == Channel.PRIVATE || !fromServer;
-        return channel == Channel.PRIVATE || channel.visibility == fact;
+        if (a == Channel.Audience.PUBLIC) return false;
+        if (fact == Visibility.SELF) return a == Channel.Audience.PRIVATE || !fromServer;
+        return a == Channel.Audience.PRIVATE || channel.visibility == fact;
     }
 
     /**
@@ -211,8 +214,9 @@ public final class Wire {
     private void prune(long now) {
         if (lastPrune != Long.MIN_VALUE && now - lastPrune < MINUTE) return;
         lastPrune = now;
-        lastSame.values().removeIf(t -> now - t >= LONGEST);
-        heardSame.values().removeIf(t -> now - t >= LONGEST);
+        long longest = longest();
+        lastSame.values().removeIf(t -> now - t >= longest);
+        heardSame.values().removeIf(t -> now - t >= longest);
         for (Iterator<ArrayDeque<Long>> it = sentOn.values().iterator(); it.hasNext(); ) {
             var q = it.next();
             trim(q, now);

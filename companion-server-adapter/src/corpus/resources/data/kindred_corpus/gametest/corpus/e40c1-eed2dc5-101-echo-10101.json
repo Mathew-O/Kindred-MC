@@ -1,0 +1,205 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 10101,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -344,
+  30,
+  -139
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.69999998807907,
+  8.0,
+  16.029446929481466
+ ],
+ "yaw": -173.42085,
+ "pitch": -4.350271,
+ "health": 17.5,
+ "food": 19,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 11
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 6
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 3
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 10
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 8
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 55
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:bow",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 326
+    }
+   }
+  }
+ ],
+ "selected": 1,
+ "timeOfDay": 10101,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "DRAGON",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[14:31:48] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]",
+  "[14:31:48] [Server thread/INFO]: Echo native_craft COMPLETED [Craft stone pickaxe]",
+  "[14:31:48] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the crafting table]",
+  "[14:31:48] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 46, -98]",
+  "[14:31:48] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 45, -98]",
+  "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 44, -98]",
+  "[14:31:49] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+  "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 45, -97]",
+  "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 44, -97]",
+  "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 43, -97]",
+  "[14:31:49] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+  "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 44, -96]",
+  "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 43, -96]",
+  "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 42, -96]",
+  "[14:31:49] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+  "[14:31:50] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 43, -95]",
+  "[14:31:50] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 42, -95]",
+  "[14:31:50] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -349, 41, -95]",
+  "[14:31:52] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[14:31:53] [Server thread/INFO]: Echo native_fight COMPLETED [Fight skeleton]"
+ ],
+ "corpus": {
+  "run": "e40c1-eed2dc5",
+  "seed": "101",
+  "build": "eed2dc5",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40c1-eed2dc5/101/replays/world/Echo-10101",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

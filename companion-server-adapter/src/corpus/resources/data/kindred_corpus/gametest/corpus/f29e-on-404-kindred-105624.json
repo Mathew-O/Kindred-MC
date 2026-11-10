@@ -1,0 +1,349 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 105624,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  112,
+  53,
+  -135
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.477336957958954,
+  8.987764016896541,
+  16.45430113069493
+ ],
+ "yaw": 6036.448,
+ "pitch": 18.159489,
+ "health": 4.7399993,
+ "food": 0,
+ "saturation": 0.0,
+ "air": 256,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 6
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 48
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 28
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:lava_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 55
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:azalea",
+    "count": 2
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:moss_block",
+    "count": 7
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 8
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:big_dripleaf",
+    "count": 1
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 2
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:amethyst_block",
+    "count": 6
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 14
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:jungle_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 11
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  }
+ ],
+ "selected": 6,
+ "timeOfDay": 9624,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: Get out of the water: to dry ground",
+ "task": "Get out of the water: to dry ground",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Kindred was impaled by Drowned",
+ "ticks": 1200,
+ "log": [
+  "[23:14:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: out from under the water: advance]",
+  "[23:14:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[23:14:49] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: out from under the water: clear 137, 60, -138]",
+  "[23:14:49] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: out from under the water: clear 137, 59, -138]",
+  "[23:14:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: out from under the water: advance]",
+  "[23:14:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[23:14:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[23:14:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[23:14:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[23:14:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[23:14:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[23:14:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[23:14:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[23:14:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[23:14:51] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 150, 63, -150 [Walk to logs at 150, 63, -150]",
+  "[23:14:51] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 146, 63, -154 [Walk to logs at 146, 63, -154]",
+  "[23:14:51] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 153, 63, -150 [Walk to logs at 153, 63, -150]",
+  "[23:14:55] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 62, 62, -78 is blocked [Head back up toward home]",
+  "[23:14:58] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Get out of the water: to dry ground]",
+  "[23:14:58] [Server thread/INFO]: Kindred died at 128, 61, -119: Kindred was impaled by Drowned (tick 105624, day, under cover, hunger 0, armour 6, holding clay_ball, a shield; doing \"Get out of the water: to dry ground\" in \"Wood: Get out of the water: to dry ground\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "404",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/404/replays/world/Kindred-105624",
+  "source": "docs/evidence/eval/f29e-on/404/replays/world/Kindred-105624",
+  "class": "death: drowned",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
