@@ -142,13 +142,16 @@ public final class NativeAuctionGameTests implements FabricGameTest {
      * callbacks"). Begun and not delivered, the delivery is the Record's to report at the next start. In #137's CI run
      * 42826937829 an auction callback wrote {@code auction.delivered} after its runtime stopped, refused by the closing store.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "auctionStopMidHandover", tickLimit = 600)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "auctionStopMidHandover", tickLimit = 900)
     public void aStopMidHandoverHandsNothingOverAndWritesNothingAfterIt(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 580);
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 880);
         ServerPlayerEntity[] p = new ServerPlayerEntity[2];
         List<String> told = new ArrayList<>();
+        var server = context.getWorld().getServer();
         boolean[] stopped = new boolean[1];
-        int[] waited = new int[1];
+        int[] waited = new int[2];
+        @SuppressWarnings("unchecked")
+        java.util.concurrent.CompletableFuture<List<dev.kindred.core.record.WorldEvent>>[] audit = new java.util.concurrent.CompletableFuture[1];
         cleanUp(context, p);
         // The stop right after the delivery's begin is asked for (by the runtime's own step or the test's), before its
         // write comes back.
@@ -181,8 +184,87 @@ public final class NativeAuctionGameTests implements FabricGameTest {
                     int[] late = f.runtime.lateAfterStopForTest();
                     context.assertTrue(p[1].getInventory().count(Items.DIAMOND) == 0, "Nothing handed over after the stop: " + p[1].getInventory().count(Items.DIAMOND));
                     context.assertTrue(late[0] == 0, "No write tried after the stop: " + late[0]);
-                    context.assertTrue(f.runtime.shutdownComplete(), "Cleanup");
+                    context.assertTrue(f.runtime.shutdownComplete(), "Stopped");
                 })
+                // Conservation across a restart: the diamonds in exactly one place. Begun and not delivered, the delivery is
+                // the Record's, reported for an operator, and never begun again: not with Ben, not back with Ana, not owed.
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Restarted"))
+                .createAndAdd(() -> {
+                    f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
+                    audit[0] = f.runtime.worldEventsForTest(java.util.Set.of(dev.kindred.core.market.Auctions.DELIVERING, dev.kindred.core.market.Auctions.DELIVERED, "market.uncertain"));
+                })
+                .createAndAdd(() -> context.assertTrue(++waited[1] >= 60, "The restarted house's steps"))
+                .createAndAdd(() -> {
+                    context.assertTrue(audit[0].isDone(), "The Record read");
+                    var events = audit[0].join();
+                    long begun = events.stream().filter(e -> e.kind().equals(dev.kindred.core.market.Auctions.DELIVERING)).count();
+                    long delivered = events.stream().filter(e -> e.kind().equals(dev.kindred.core.market.Auctions.DELIVERED)).count();
+                    context.assertTrue(begun == 1 && delivered == 0, "Begun once, never delivered: " + events);
+                    context.assertTrue(f.runtime.auctions().book().owed().isEmpty(), "Not owed again: " + f.runtime.auctions().book().owed());
+                    context.assertTrue(p[1].getInventory().count(Items.DIAMOND) == 0 && p[0].getInventory().count(Items.DIAMOND) == 0,
+                            "In one place only, the begun delivery: Ben " + p[1].getInventory().count(Items.DIAMOND) + ", Ana " + p[0].getInventory().count(Items.DIAMOND));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A crash after the hand-over: the delivery's begin written and the diamonds in Ben's file, the receipt not yet
+     * written. Staged by writing the begin and giving Ben the stack, then stopping. After the restart the delivery is not
+     * handed over again (it is owed no longer once begun): Ben holds the three diamonds once, and the Record keeps it
+     * begun and not delivered for an operator. Before {@code auction.delivering} was folded, the restart handed it over
+     * a second time.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "auctionCrashAfterHandover", tickLimit = 900)
+    public void aCrashAfterTheHandoverIsNeverHandedOverTwice(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 880);
+        var server = context.getWorld().getServer();
+        ServerPlayerEntity[] p = new ServerPlayerEntity[2];
+        List<String> told = new ArrayList<>();
+        int[] waited = new int[1];
+        cleanUp(context, p);
+        // The house's own deliveries held off until the staged crash: its step finds the delivery begun and stops.
+        boolean[] staged = new boolean[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> start(context, f, p))
+                .createAndAdd(() -> {
+                    p[0].getInventory().setStack(0, new ItemStack(Items.DIAMOND, 3));
+                    p[0].getInventory().selectedSlot = 0;
+                    f.runtime.auctions().list(p[0], 5_000, 0, 24, "minecraft:overworld", told::add);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(told.size() == 1, "Listed: " + told);
+                    String id = f.runtime.auctions().book().listings().keySet().iterator().next();
+                    context.assertTrue(f.runtime.auctions().bid(p[1], id, 6_000, "minecraft:overworld", told::add) == null, "Ben bids 60");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(told.size() == 2, "Ben's bid written: " + told);
+                    // The crash staged at the delivery's begin: the stack handed and Ben's file as it would be, the receipt never.
+                    f.runtime.auctions().afterBeginForTest(() -> {
+                        if (staged[0]) return;
+                        staged[0] = true;
+                        p[1].getInventory().offerOrDrop(new ItemStack(Items.DIAMOND, 3));
+                        f.runtime.stop();
+                    });
+                    f.runtime.auctions().clockForTest(DAY + 60_000);
+                    f.runtime.auctions().tick();
+                })
+                .createAndAdd(() -> context.assertTrue(staged[0] && f.runtime.shutdownComplete(), "Crashed after the hand-over"))
+                .createAndAdd(() -> context.assertTrue(p[1].getInventory().count(Items.DIAMOND) == 3, "Ben holds them once: " + p[1].getInventory().count(Items.DIAMOND)))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Restarted"))
+                .createAndAdd(() -> f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS))
+                .createAndAdd(() -> context.assertTrue(++waited[0] >= 60, "The restarted house's steps"))
+                .createAndAdd(() -> {
+                    f.runtime.auctions().tick();
+                    context.assertTrue(p[1].getInventory().count(Items.DIAMOND) == 3, "Never handed over twice: Ben holds " + p[1].getInventory().count(Items.DIAMOND));
+                    context.assertTrue(f.runtime.auctions().book().owed().isEmpty(), "Not owed again: " + f.runtime.auctions().book().owed());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
 
