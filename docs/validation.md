@@ -7,6 +7,13 @@
   earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
   ranges do not overlap. Summaries go under `docs/evidence/eval/<name>/summary.md`; logs and worlds are never
   committed.
+- **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
+  `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
+  touches what a player decides runs `tools/corpus/gate.sh` (three runs) in its own container. It fails when a scene that
+  passed 3 of 3 in `tools/corpus/baseline.json` (the last three runs on main) fails 2 of 3. The daily number is the
+  report's pass rate over three runs on main: passing, failing and intermittent, an intermittent scene never a pass,
+  and staged scenes listed apart. A scene is never removed or loosened to pass the gate.
 - **Death replays (F-27).** A death captured in a run (`replay.snbt` and `replay.json` under
   `kindred/replays/<world>/<player>-<tick>/`, or a seed's `replays/` folder from `run.py`) becomes a test under the
   gametest resources: the structure as `data/kindred_gametest/gametest/structure/replays/<id>.snbt` and the state as
@@ -35,6 +42,16 @@
   - Build, house, life-first, seed-build and base classes, 3 runs: 21, 22 and 22 of 22, the new path firing in none (the one failure
     the life-first cabin's door, another intermittent).
   - `./gradlew build`: green, JUnit 1,113 tests, 0 failures, 7 skipped.
+
+## A mob in reach stops the badly hurt goal's work (F-25c4dd) — 10 November 2026 (`claude/survival-1110-cornered`)
+
+- **[F-25c4dd](evidence/F-25c4dd.md):** a mob on foot in reach stops the goal's running work whatever the player's health (product;
+  `ReplayGameTests`' `echo-73670` on main `335da88`: the hungry climb dug on by hand with a zombie on the player).
+  - The new fixture in `NativePortalCampaignGameTests` (staged, as it says): 0 of 3 without the fix, 3 of 3 with it.
+  - Thirteen classes that fight, take cover, shelter and climb, with `ReplayGameTests`, 3 runs: 131 of 131 each.
+  - `ReplayGameTests`, 6 runs alone and in the 3 class runs: `echo-73670` lived 27 of 27 with the fix; on main, 11 of 12 in 4 runs (the
+    replay's figure), 100 of 102 over every run here. Too few deaths to tell the two apart.
+  - `./gradlew build`: green, JUnit 1,109 tests, 0 failures, 7 skipped.
 
 ## Cover kept from a mob (F-25c4cy) — 9 November 2026 (`claude/cover-climb-1109`)
 
@@ -3581,6 +3598,12 @@ After the block's first merge from main, CI on PR #25 found:
   ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
   `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
 
+- **[F-22c43](evidence/F-22c43.md):** cattle loose in the pasture keep out of its way in, behind a door and a fence; the
+  pen's gate shut while the next is fetched (product; #98's run 42574813864: the player hemmed in under the pasture's
+  east wall by its own cows, "Both cows penned: 0").
+  - The new fixture (a cow following wheat toward the way in): 0 of 3 before, as CI; 3 of 3 after. `CompoundsTest`,
+    `ConstructionPlanner*`, `Ranch*` pass. `NativeCompoundGameTests` 7 of 7 (the pasture build 3 of 3);
+    `NativeRanchGameTests`, 3 runs, 3 of 3 each.
 - **[F-22c44](evidence/F-22c44.md):** a pasture doorway left a block short is shut from the block's own drop, picked up
   where it lies (product; #101's run 42584569435: "Nothing in hand to place", a plank short, for good).
   - The staged fixture (a doorway plank left lying): 0 of 3 before, as CI; 3 of 3 after.

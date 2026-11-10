@@ -1,0 +1,329 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 58485,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -197,
+  5,
+  19
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.100475736645706,
+  8.0,
+  16.69999998807907
+ ],
+ "yaw": 32.343323,
+ "pitch": -4.9999924,
+ "health": 20.0,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cooked_mutton",
+    "count": 4
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:raw_gold",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 27
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 32
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 4
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:calcite",
+    "count": 5
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:amethyst_block",
+    "count": 5
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 28
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 13
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 40
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:rail",
+    "count": 7
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 57
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:diamond",
+    "count": 4
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:enchanted_book",
+    "count": 1,
+    "components": {
+     "minecraft:stored_enchantments": {
+      "levels": {
+       "minecraft:sweeping_edge": 2
+      }
+     }
+    }
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 10
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 10485,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from zombie",
+ "task": "Back off from zombie the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Kindred was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[05:44:39] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+  "[05:44:41] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -182, 17, 37 by hand]",
+  "[05:44:42] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -183, 16, 37 by hand]",
+  "[05:44:44] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -183, 17, 37 by hand]",
+  "[05:44:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+  "[05:44:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Head back up toward home]",
+  "[05:44:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+  "[05:44:45] [Server thread/INFO]: Kindred native_goto COMPLETED [Head back up toward home]",
+  "[05:44:46] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -181, 16, 37 by hand]",
+  "[05:44:48] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -181, 17, 37 by hand]",
+  "[05:44:48] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+  "[05:44:48] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for logs: clear -181, 17, 38 by hand]",
+  "[05:44:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[05:44:49] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -186, 16, 44 [Back off from zombie]",
+  "[05:44:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Head back up toward home]",
+  "[05:44:50] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for logs: clear -181, 17, 38 by hand]",
+  "[05:44:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[05:44:50] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -189, 16, 41 [Back off from zombie]",
+  "[05:44:50] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Head back up toward home]",
+  "[05:44:52] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]"
+ ],
+ "corpus": {
+  "run": "f29e-on-4h",
+  "seed": "202",
+  "build": "4h",
+  "replay": "docs/evidence/eval/f29e-on-4h/202/replays/world/Kindred-58485",
+  "source": "docs/evidence/eval/f29e-on-4h/202/replays/world/Kindred-58485",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
