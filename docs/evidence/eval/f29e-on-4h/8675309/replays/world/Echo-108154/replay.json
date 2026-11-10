@@ -1,0 +1,238 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 108154,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    38,
+    71,
+    108
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.1103141154711,
+    8.0,
+    16.60812237904082
+  ],
+  "yaw": -38.65811,
+  "pitch": 16.723513,
+  "health": 1.5333328,
+  "food": 12,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 27
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 6
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 14
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 6
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 54
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 9
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 75
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 3
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 12
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 7
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 25
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 10
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 24
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 12154,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: heal before going on",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was stung to death",
+  "ticks": 1200,
+  "log": [
+    "[05:05:27] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+    "[05:05:29] [Server thread/INFO]: Echo native_goto COMPLETED [Explore east for animals]",
+    "[05:05:29] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[05:05:29] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[05:05:29] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt cow]",
+    "[05:05:29] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[05:05:29] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[05:05:29] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt cow]",
+    "[05:05:30] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up food]",
+    "[05:05:30] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 70, 78, 141 [Pick up food]",
+    "[05:05:30] [Server thread/INFO]: Echo native_swap COMPLETED",
+    "[05:05:30] [Server thread/INFO]: Echo native_eat COMPLETED",
+    "[05:05:31] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[05:05:31] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt cow]",
+    "[05:05:31] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[05:05:32] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt cow]",
+    "[05:05:32] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt cow]",
+    "[05:05:32] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up food]",
+    "[05:05:32] [Server thread/INFO]: Echo native_eat CANCELLED: The player died",
+    "[05:05:32] [Server thread/INFO]: Echo died at 54, 79, 124: Echo was stung to death (tick 108154, day, under cover, hunger 15, armour 0, holding beef, a shield; doing \"native_eat\" in \"Iron: heal before going on\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

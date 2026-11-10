@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 891567637,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 960, "stone_tools": 2760, "iron_ingot": 6540},
+      "deaths": [
+        {"tick": 7946, "cause": "Kindred was doomed to fall by Skeleton", "x": 75, "y": 18, "z": -145, "light": 0, "timeOfDay": 8108, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: hurt and out of food - Climb toward the surface for food: back the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 23222, "cause": "Kindred was slain by Zombie", "x": 77, "y": 33, "z": -150, "light": 0, "timeOfDay": 23384, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 36087, "cause": "Kindred was shot by Skeleton", "x": 74, "y": 47, "z": -116, "light": 0, "timeOfDay": 12249, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 65556, "cause": "Kindred was killed by Witch using magic", "x": 184, "y": 16, "z": -173, "light": 0, "timeOfDay": 17718, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Ready a block", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 92913, "cause": "Kindred was slain by Zombie", "x": 168, "y": 16, "z": -168, "light": 8, "timeOfDay": 21075, "dimension": "minecraft:overworld", "hunger": 7, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 123135, "cause": "Kindred was slain by Zombie", "x": 107, "y": 20, "z": -160, "light": 0, "timeOfDay": 3297, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 127640, "x": -1, "y": 112, "z": -22, "attempt": 1}, {"tick": 131300, "x": -3, "y": 112, "z": -22, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 21800, "line": "rescue asked: spell 1 round 1, 8056 ticks after its last progress"}, {"tick": 21900, "line": "rescue: pillar 3, walk west 3 -> failed: 'pillar 3' did not go (No head room to jump up a block)"}, {"tick": 21900, "line": "rescue asked: spell 1 round 2, 8158 ticks after its last progress"}, {"tick": 22020, "line": "rescue: dig up 2, pillar 3 -> failed: 'dig up 2' did not go (Nothing solid to break)"}, {"tick": 22020, "line": "rescue asked: spell 1 round 3, 8281 ticks after its last progress"}, {"tick": 22180, "line": "rescue: dig north 1, walk north 2 -> failed: 'dig north 1' did not go (Nothing solid to break)"}, {"tick": 22180, "line": "rescue spell 1: not out after 3 rounds"}, {"tick": 86580, "line": "rescue asked: spell 2 round 1, 1253 ticks after its last progress"}, {"tick": 87220, "line": "rescue: dig east 1, walk east 8 -> failed: 'walk east 8' went 0, then it made no headway"}, {"tick": 87220, "line": "rescue asked: spell 2 round 2, 1878 ticks after its last progress"}, {"tick": 87340, "line": "rescue: dig up 1, pillar 2 -> failed: 'pillar 2' did not go (No head room to jump up a block)"}, {"tick": 87340, "line": "rescue asked: spell 2 round 3, 2005 ticks after its last progress"}, {"tick": 87400, "line": "rescue: dig up 2, pillar 2, walk west 2 -> refused: the stuck spell is over"}, {"tick": 119860, "line": "rescue asked: spell 4 round 1, 1251 ticks after its last progress"}, {"tick": 119940, "line": "rescue: dig up 1, walk north 2 -> refused: the stuck spell is over"}],
+      "rescuesNotListed": 0,
+      "tokens": 18130
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3700, "stone_tools": 5160, "iron_ingot": 17400, "iron_pickaxe": 41700, "obsidian": 69000, "portal_lit": 70081},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 13360, "line": "rescue asked: spell 1 round 1, 1202 ticks after its last progress"}, {"tick": 13620, "line": "rescue: dig up 2, pillar 2, walk north 2 -> failed: 'walk north 2' went 0, then a two-high wall of stone"}, {"tick": 13620, "line": "rescue asked: spell 1 round 2, 1447 ticks after its last progress"}, {"tick": 13840, "line": "rescue: dig up 2, pillar 2, walk north 2 -> failed: 'pillar 2' did not go (The player is no longer where the pillar was planned)"}, {"tick": 13840, "line": "rescue asked: spell 1 round 3, 1675 ticks after its last progress"}, {"tick": 13960, "line": "rescue: dig down 1, walk south 2, dig up 2 -> failed: 'dig down 1' did not go (Would remove the block the player stands on)"}, {"tick": 13960, "line": "rescue spell 1: not out after 3 rounds"}, {"tick": 68080, "line": "rescue asked: spell 6 round 1, 1202 ticks after its last progress"}, {"tick": 68300, "line": "rescue: tunnel north 2, walk north 2 -> failed: 'walk north 2' went 0, then a two-high wall of deepslate"}, {"tick": 68300, "line": "rescue asked: spell 6 round 2, 1419 ticks after its last progress"}, {"tick": 68540, "line": "rescue: dig north 1, walk north 1, dig up 1, walk south 2 -> failed: 'dig north 1' did not go (Breaking it would release lava)"}, {"tick": 68540, "line": "rescue asked: spell 6 round 3, 1653 ticks after its last progress"}, {"tick": 68740, "line": "rescue: look west, walk west 1, dig up 2, walk south 2 -> unstuck"}, {"tick": 69000, "line": "rescue spell 6: out after 3 rounds"}, {"tick": 69000, "line": "rescue recipe kept: walk west 1, dig up 2, walk south 2 (weight 1)"}],
+      "rescuesNotListed": 0,
+      "tokens": 16054
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2420, "stone_tools": 4820, "iron_ingot": 12740, "iron_pickaxe": 65260, "obsidian": 94946},
+      "deaths": [
+        {"tick": 27260, "cause": "Echo drowned", "x": 14, "y": 57, "z": -244, "light": 9, "timeOfDay": 3422, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "Interrupted: Rescue: pillar 3", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 26480, "line": "rescue asked: spell 1 round 1, 1205 ticks after its last progress"}, {"tick": 26660, "line": "rescue: dig up 2, pillar 2, walk west 1 -> failed: 'dig up 2' did not go (Nothing solid to break)"}, {"tick": 26660, "line": "rescue asked: spell 1 round 2, 1388 ticks after its last progress"}, {"tick": 26760, "line": "rescue: dig down 1, walk south 2 -> refused: it is no longer where it asked from"}, {"tick": 26760, "line": "rescue asked: spell 1 round 3, 1495 ticks after its last progress"}, {"tick": 27280, "line": "rescue spell 1: out after 3 rounds"}, {"tick": 27300, "line": "rescue: pillar 3 -> failed: 'pillar 3' did not go (Owned hotbar slot does not hold a placeable block)"}, {"tick": 56000, "line": "rescue asked: spell 5 round 1, 1212 ticks after its last progress"}, {"tick": 56100, "line": "rescue: walk south 8 -> refused: it is no longer where it asked from"}, {"tick": 56100, "line": "rescue asked: spell 5 round 2, 1325 ticks after its last progress"}, {"tick": 56200, "line": "rescue: walk north 8, dig up 2 -> refused: it is no longer where it asked from"}, {"tick": 56200, "line": "rescue asked: spell 5 round 3, 1410 ticks after its last progress"}, {"tick": 56260, "line": "rescue: dig down 1, walk south 1 -> refused: it is no longer where it asked from"}, {"tick": 56260, "line": "rescue spell 5: not out after 3 rounds"}, {"tick": 86020, "line": "rescue asked: spell 9 round 1, 1203 ticks after its last progress"}, {"tick": 86200, "line": "rescue: walk north 8 -> unstuck"}, {"tick": 86400, "line": "rescue spell 9: out after 1 round"}, {"tick": 86400, "line": "rescue recipe kept: walk north 8 (weight 1)"}, {"tick": 120660, "line": "rescue asked: spell 14 round 1, 1201 ticks after its last progress"}, {"tick": 120740, "line": "rescue: dig up 2, walk north 3, stairs down north 4 -> failed: 'walk north 3' went 0, then a two-high wall of dirt"}, {"tick": 120740, "line": "rescue asked: spell 14 round 2, 1287 ticks after its last progress"}, {"tick": 121040, "line": "rescue spell 14: out after 2 rounds"}, {"tick": 121640, "line": "rescue: dig north 1, walk north 3, look north -> failed: 'walk north 3' went 1, then the move did not take it there"}, {"tick": 121640, "line": "rescue recipe kept: dig north 1, walk north 1 (weight 1)"}],
+      "rescuesNotListed": 0,
+      "tokens": 24214
+    }
+  }
+}

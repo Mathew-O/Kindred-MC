@@ -1,0 +1,316 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 63903,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    41,
+    -45,
+    74
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.380758021087303,
+    8.024424088213685,
+    16.229003874193722
+  ],
+  "yaw": -375.93588,
+  "pitch": 18.137352,
+  "health": 14.599998,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 23
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 177
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 15
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 29
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:ender_pearl",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 44
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 13
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 14
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 15903,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from spider",
+  "task": "Hole up: back into the passage",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Spider",
+  "ticks": 1200,
+  "log": [
+    "[00:38:25] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward lava: clear 45, -35, 78]",
+    "[00:38:25] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward lava: clear 45, -36, 78]",
+    "[00:38:26] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[00:38:26] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward lava: clear 46, -35, 78]",
+    "[00:38:26] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward lava: clear 46, -36, 78]",
+    "[00:38:26] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[00:38:26] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 32, -31, 95 [Explore the cave toward lava]",
+    "[00:38:26] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 72, -29, 88 [Explore the cave toward lava]",
+    "[00:38:26] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 76, -29, 84 [Explore the cave toward lava]",
+    "[00:38:26] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 47, -37, 78]",
+    "[00:38:26] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward lava: step down]",
+    "[00:38:27] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 48, -37, 78]",
+    "[00:38:27] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward lava: clear 48, -38, 78]",
+    "[00:38:27] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward lava: step down]",
+    "[00:38:28] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+    "[00:38:29] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider the way it came]",
+    "[00:38:31] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[00:38:31] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+    "[00:38:32] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Hole up: back into the passage]",
+    "[00:38:32] [Server thread/INFO]: Sol died at 57, -37, 90: Sol was slain by Spider (tick 63903, night, under cover, hunger 16, armour 6, holding iron_pickaxe, a shield; doing \"Hole up: back into the passage\" in \"Iron: fight back - Back off from spider\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

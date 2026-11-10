@@ -265,6 +265,8 @@ final class PlayerRuntime {
     private final KindredWire wire;
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
+    /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
+    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -1673,6 +1675,9 @@ final class PlayerRuntime {
     /** {@code own}: chosen by the player itself (its goal, its needs), not asked for by a command. */
     private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments, boolean own) {
         requireThread();
+        // Where this task was proposed, for its outcome line (M-01): only the autonomous choice hands one over.
+        String proposedBy = own && entry.pendingSource != null ? entry.pendingSource : "";
+        entry.pendingSource = null;
         UUID id = entry.data.id();
         if (!running || !ready || entry.nativeState == null || (actor != null && !entry.nativeState.access().mayControl(actor))) {
             return 0;
@@ -1818,6 +1823,7 @@ final class PlayerRuntime {
                         arguments.containsKey("target") ? UUID.fromString(arguments.get("target")) : null,
                         arguments.containsKey("hx") && water != null ? new Vec3d(Double.parseDouble(arguments.get("hx")), water.getY() + 1.0,
                                 Double.parseDouble(arguments.get("hz"))) : null);
+                if ("true".equals(arguments.get("empty"))) ((NativeBoatAction) task).onlyEmpty();
             } else if (skill.equals("native_cart")) {
                 var mode = NativeCartAction.Mode.valueOf(arguments.get("mode").toUpperCase(java.util.Locale.ROOT));
                 BlockPos rail = arguments.containsKey("x") ? new BlockPos(Integer.parseInt(arguments.get("x")),
@@ -2018,6 +2024,7 @@ final class PlayerRuntime {
                     try {
                         entry.skillId = skill;
                         entry.skillArgs = Map.copyOf(arguments);
+                        entry.dispatchSource = proposedBy;
                         entry.nativeTask = task;
                         UUID taskId = entry.currentTaskId != null ? entry.currentTaskId : UUID.randomUUID();
                         entry.lease = entry.runner.start(descriptor, arguments,
@@ -2472,7 +2479,24 @@ final class PlayerRuntime {
         return best;
     }
 
-    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) { }
+    /**
+     * A task it might do now. {@code source} is where it was proposed (the routine's method and line), found when it is
+     * made, so that an outcome with no task label of its own still says which routine issued it (M-01): a goal-less
+     * player's thousand refused walks were logged with nothing to trace them by.
+     */
+    record NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments, String source) {
+        NativeTaskCandidate(dev.kindred.core.TaskPreferences.Candidate candidate, String skill, Map<String, String> arguments) {
+            this(candidate, skill, arguments, proposer());
+        }
+
+        private static final StackWalker WALKER = StackWalker.getInstance();
+
+        /** The method (and line) that made the candidate: the first frame past this record's own. */
+        private static String proposer() {
+            return WALKER.walk(frames -> frames.filter(f -> !f.getClassName().endsWith("NativeTaskCandidate")).findFirst()
+                    .map(f -> f.getMethodName() + ":" + f.getLineNumber()).orElse("?"));
+        }
+    }
 
     private boolean canScanBlock() {
         return blocksScannedThisTick < MAX_BLOCK_CHECKS_PER_TICK;
@@ -2582,7 +2606,10 @@ final class PlayerRuntime {
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
         chronicle.tick();
-        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) checkLedgers();
+        if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
+            checkLedgers();
+            logCost(tick / LEDGER_CHECK_TICKS + 1);
+        }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
             factions.applyBorders();
@@ -4643,10 +4670,27 @@ final class PlayerRuntime {
         return true;
     }
 
+    /** Ticks a horse's swap or ride handed out and not yet chosen is kept for, before it is planned again (F-22c38). */
+    private static final int STABLE_HOLD = 200;
+
     /** Its horse's next step (M-01a), as one project candidate; survival needs still outrank it. */
     private List<NativeTaskCandidate> stableCandidates(Entry entry, NativePlayerBody body) {
         var stable = entry.stable;
         var player = body.entity();
+        // A swap or a ride handed out is kept till a task of it has run and ended: planned again meanwhile, each plan was a
+        // try. Four gave the saddle up as the swap completed, and 12 mounts were counted for 3 rides (#82's CI, run
+        // 42566194927). Kept only while it ran, mounts were still counted as it waited to be chosen (thrown off during
+        // "Hold on"), between the wait's end and its choosing, and as it waited on its record with the runner still
+        // showing the wait's end: 24 for 4 rides (#87's CI, run 42584555878) (F-22c38). One not chosen is let go after
+        // STABLE_HOLD ticks.
+        var step = entry.stableStep;
+        if (step != null && ("native_swap".equals(step.skill()) || "native_ride".equals(step.skill()))) {
+            boolean current = step.candidate().id().equals(entry.currentTaskId);
+            if (current) entry.stableStepStarted = true;
+            if (current || !entry.stableStepStarted && server.getTicks() - entry.stableStepAt <= STABLE_HOLD) return List.of(step);
+        }
+        entry.stableStep = null;
+        entry.stableStepStarted = false;
         var task = stable.next(player);
         if (!stable.progress().isEmpty()) entry.goalProgress = "Horse: " + stable.progress();
         if (!entry.goalProgress.equals(entry.loggedGoalProgress)) {
@@ -4675,7 +4719,16 @@ final class PlayerRuntime {
         entry.buildTasks.put(id, t);
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 70.0,
                 new dev.kindred.core.TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.6), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+        entry.stableStep = new NativeTaskCandidate(candidate, t.skill(), t.args());
+        entry.stableStepAt = server.getTicks();
+        return List.of(entry.stableStep);
+    }
+
+    /** The mounts its horse's taming has counted so far, for fixtures; -1 with no horse being taken on (F-22c38). */
+    int stableMountsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.stable == null ? -1 : entry.stable.mounts();
     }
 
     /** The horse a player keeps (M-01a), by its id, for fixtures. */
@@ -5039,9 +5092,19 @@ final class PlayerRuntime {
         var choice = dev.kindred.core.survival.RanchChoice.next(true, seen, food, SeedRunner.grassInSight(player), kept);
         if (choice.kind().isEmpty() && horseDecision(entry, body, record)) return true;
         if (choice.kind().isEmpty() && againDecision(entry, body, record, dimension, food)) return true;
+        if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() == dev.kindred.core.survival.Ranch.Kind.PIG) {
+            // The pigs' carrots or potatoes grown in the plot from one it holds (its beetroot is food, not planted).
+            var held = player.getInventory();
+            var crop = held.count(Items.CARROT) > 0 ? WheatRunner.Crop.CARROT : held.count(Items.POTATO) > 0 ? WheatRunner.Crop.POTATO : null;
+            if (crop == null) {
+                entry.ranchNote = "A pair of pigs close by; no carrot or potato to plant";
+                return false;
+            }
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), crop);
+        }
         if (choice.kind().isEmpty() && choice.earn().isPresent() && choice.earn().get() != dev.kindred.core.survival.Ranch.Kind.CHICKEN) {
             // The cows' or sheep's wheat grown in a plot by its base; then the ranch, with it in hand.
-            return wheatDecision(entry, body, record, last, dimension, choice.why());
+            return wheatDecision(entry, body, record, last, dimension, choice.why(), WheatRunner.Crop.WHEAT);
         }
         if (choice.kind().isEmpty() && choice.earn().isPresent()) {
             // The chickens' seeds earned first, from the grass about it; then the ranch, with them in hand.
@@ -5115,12 +5178,12 @@ final class PlayerRuntime {
     }
 
     /**
-     * The cows' or sheep's wheat grown (M-01a): its plot by its base, sited on the nearest flat open ground and kept with its
+     * The cows' or sheep's wheat grown (M-01a), or the pigs' carrots or potatoes from one it holds: its plot by its base, sited on the nearest flat open ground and kept with its
      * bases, worked until it holds the wheat; while the wheat grows it gets on with other things, and each look at its
      * base takes the plot up again.
      */
     private boolean wheatDecision(Entry entry, NativePlayerBody body, PlayerMemoryStore.Bases record, PlayerMemoryStore.Base last,
-                                  String dimension, String why) {
+                                  String dimension, String why, WheatRunner.Crop crop) {
         var player = body.entity();
         if (record.plot == null || !record.plot.dimension().equals(dimension)) {
             var before = footprint(last);
@@ -5142,7 +5205,7 @@ final class PlayerRuntime {
         }
         String wood = RanchRunner.woodOf(player);
         entry.growing = new WheatRunner(new BlockPos(record.plot.x(), record.plot.y(), record.plot.z()), PLOT,
-                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood);
+                dev.kindred.core.survival.RanchChoice.EARN, wood == null ? "oak" : wood, crop);
         if (!why.equals(entry.ranchNote)) KindredMod.LOGGER.info("{} ranch: {}", entry.data.displayName(), why);
         entry.ranchNote = why;
         entry.cachedRoutineCandidates = List.of();
@@ -6681,6 +6744,7 @@ final class PlayerRuntime {
                             teamCoordinator.startTask(tId, entry.data.id());
                         }
                     }
+                    entry.pendingSource = candidateToDispatch.source();
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
@@ -7356,6 +7420,8 @@ final class PlayerRuntime {
             return;
         }
         UUID finishedTaskId = entry.currentTaskId;
+        // Its life task's label, read before the life task is let go below.
+        String lifeLabel = finishedTaskId != null && finishedTaskId.equals(entry.lifeTaskId) && entry.lifeTask != null ? entry.lifeTask.label() : null;
         if (state == SkillRunner.State.CANCELLED && entry.runner.reason().filter(r -> r.startsWith("authority lost")).isPresent()) {
             var snapshot = entry.arbiter.snapshot();
             KindredMod.LOGGER.debug("{} {} lost authority: lifecycle={} stop={} intent={} task={} lease={}", entry.data.displayName(),
@@ -7578,15 +7644,13 @@ final class PlayerRuntime {
             }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
+            // Its label, or the routine that issued it: every outcome says where it came from (M-01).
+            String label = outcomeLabel(entry, lifeLabel);
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
-                    entry.runner.reason().map(r -> ": " + r).orElse(""),
-                    entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : "");
+                    entry.runner.reason().map(r -> ": " + r).orElse(""), label.isEmpty() ? "" : " [" + label + "]");
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
-                    + (entry.activeCampaignTask != null ? " [" + entry.activeCampaignTask.label() + "]"
-                            : entry.activeBuildTask != null ? " [" + entry.activeBuildTask.label() + "]" : ""));
-            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label()
-                    : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "");
+                    + (label.isEmpty() ? "" : " [" + label + "]"));
+            runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
@@ -8589,7 +8653,9 @@ final class PlayerRuntime {
      * The run divided between the players on it (E-40a): the native players with a goal in its world within
      * {@link #TEAM_RANGE}, none in a match. Before the portal is lit, the one with the best pickaxe (or with a portal
      * already under way) builds the team's one portal and the rest get iron, food and wood for the run and wait for it;
-     * once a teammate's portal is lit, each takes it as its own. Each says its part as it takes it up, once. Only the
+     * once a teammate's portal is lit, each takes it as its own. Each says its part as it takes it up, once: a claim is
+     * said when it changes, never again as the run is weighed anew (a teammate out of range and back, a part re-weighed),
+     * and the same part not again within {@link #PART_SAID_AGAIN} (F-34c, E-40 iteration 17's 123 repeats). Only the
      * parts before the portal steer play yet; the later ones (the Nether, the End's kit, the stronghold) are neither
      * acted on nor said, so nothing is promised that is not done. A player alone is left its own route.
      */
@@ -8631,10 +8697,16 @@ final class PlayerRuntime {
         var role = part.role();
         boolean steered = role == dev.kindred.core.team.RunDivision.Role.PORTAL || role == dev.kindred.core.team.RunDivision.Role.PROVISIONS;
         entry.campaign.team(new dev.kindred.core.survival.PortalRunPlanner.Team(role == dev.kindred.core.team.RunDivision.Role.PROVISIONS));
-        if (steered && (entry.runPart == null || entry.runPart.role() != role)) {
-            say(entry, part.says(), "");
-            if (entry.partsTaken.size() < 16) entry.partsTaken.add(role + ": " + part.says());
-            KindredMod.LOGGER.info("{} takes up its part of the run: {} ({})", entry.data.displayName(), role, part.why());
+        if (steered && entry.partSaid != role) {
+            long now = server.getTicks();
+            Long said = entry.partSaidAt.get(role);
+            if (said == null || now - said >= PART_SAID_AGAIN) {
+                say(entry, part.says(), "");
+                entry.partSaidAt.put(role, now);
+                if (entry.partsTaken.size() < 16) entry.partsTaken.add(role + ": " + part.says());
+                KindredMod.LOGGER.info("{} takes up its part of the run: {} ({})", entry.data.displayName(), role, part.why());
+            }
+            entry.partSaid = role; // The claim the team has heard, kept while it is alone or between parts.
         }
         entry.runPart = steered ? part : null;
     }
@@ -8687,6 +8759,8 @@ final class PlayerRuntime {
     private static final ShareOut.Material[] SHARED_FINDS = {ShareOut.Material.DIAMOND, ShareOut.Material.IRON, ShareOut.Material.GOLD};
     /** How far off a teammate may be to share a find with, and how long a hand-over is held for before it is let go. */
     static final double TEAM_RANGE = 48;
+    /** Ticks before a player says the same part of the run again: five minutes. */
+    static final long PART_SAID_AGAIN = 6_000;
     static final long HAND_OVER_LEASE = 24_000;
 
     /**
@@ -9927,9 +10001,11 @@ final class PlayerRuntime {
             case HOLD -> {
                 // A villager that strolls (its AI on) held while the line is laid, as players hold one: a boat put down
                 // beside its feet takes it up, and it sits where it is, carried in the boat by the cart to its cell.
-                // A boat step under way is kept to till it ends: the boat it puts down is spent from its hand at once.
+                // A boat step under way is kept to till it ends: the boat it puts down is spent from its hand at once. Not once
+                // the villager sits in a boat: a break of a boat it had passed by, still under way when it stepped in, broke the
+                // boat that held it and let it go (the lake fixture in CI on #72, a2c7baa) (F-22c32).
                 if (b.boatStep != null && "native_boat".equals(entry.skillId) && b.boatStep.candidate().id().equals(entry.currentTaskId)
-                        && entry.runner.state() == SkillRunner.State.RUNNING) return List.of(b.boatStep);
+                        && entry.runner.state() == SkillRunner.State.RUNNING && !(villager.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity)) return List.of(b.boatStep);
                 b.boatStep = null;
                 if (villager.getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
                     b.boatId = boat.getUuid();
@@ -9965,7 +10041,8 @@ final class PlayerRuntime {
                 // which had not been opened for a boat (the strolling fixture, hurt by its ride, in a full suite on 7 November).
                 if (b.boatId != null && world.getEntity(b.boatId) instanceof net.minecraft.entity.vehicle.BoatEntity empty && empty.isAlive()) {
                     if (!player.canInteractWithEntity(empty, 0)) return List.of(goNear(bringTask(entry, "to the boat:" + b.boatTries), empty.getBlockPos()));
-                    b.boatStep = new NativeTaskCandidate(bringTask(entry, "boat up:" + b.boatTries), "native_boat", Map.of("mode", "break", "target", empty.getUuid().toString()));
+                    b.boatStep = new NativeTaskCandidate(bringTask(entry, "boat up:" + b.boatTries), "native_boat", Map.of("mode", "break", "target", empty.getUuid().toString(),
+                            "empty", "true"));
                     return List.of(b.boatStep);
                 }
                 var boatLying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
@@ -12830,11 +12907,15 @@ final class PlayerRuntime {
     private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
+        var state = Registries.BLOCK.get(Identifier.of(block)).getDefaultState();
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
             for (BlockPos pos : List.of(feet.offset(side), feet.offset(side).offset(side.rotateYClockwise()))) {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
                         || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) continue;
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
+                // Not where something stands, as the server's own placement checks: its tamed wolf sat in the cell it
+                // chose, and it chose that cell again on every decision, refused each time (#74's CI, run 42556590202).
+                if (!world.canPlace(state, pos, net.minecraft.block.ShapeContext.of(player))) continue;
                 if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
@@ -13933,6 +14014,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
+        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -13963,6 +14045,17 @@ final class PlayerRuntime {
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
+    }
+
+    /**
+     * What an ended task is called in its outcome line: its campaign or build step's label, its life task's, or else
+     * "from" the routine that proposed it (M-01); empty for a task asked for by a command.
+     */
+    private static String outcomeLabel(Entry entry, String lifeLabel) {
+        if (entry.activeCampaignTask != null) return entry.activeCampaignTask.label();
+        if (entry.activeBuildTask != null) return entry.activeBuildTask.label();
+        if (lifeLabel != null) return lifeLabel;
+        return entry.dispatchSource == null || entry.dispatchSource.isEmpty() ? "" : "from " + entry.dispatchSource;
     }
 
     /** Who is told of deaths and ended tasks beside the log; {@link RunObserver#NONE} for no one. */
@@ -16033,6 +16126,14 @@ final class PlayerRuntime {
         }
     }
 
+    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    CompletableFuture<String> logCost(long day) {
+        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept());
+        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        line.thenAccept(KindredMod.LOGGER::info);
+        return line;
+    }
+
     /** One event written to the World Record (F-31). */
     void record(dev.kindred.core.record.WorldEvent draft) { record(List.of(draft)); }
 
@@ -16064,6 +16165,7 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
+                    gauge.written(event); // The month-long cost check.
                 }
             });
         });
@@ -16564,6 +16666,9 @@ final class PlayerRuntime {
         private long aggressionSaidAt = -1_000_000;
         /** Its part of the team's run as it last took it up, said once (E-40a), and each it has taken up. */
         private dev.kindred.core.team.RunDivision.Part runPart;
+        /** The part of the run it last said it took up, and when it said each (F-34c): a claim said once, when it changes. */
+        private dev.kindred.core.team.RunDivision.Role partSaid;
+        private final Map<dev.kindred.core.team.RunDivision.Role, Long> partSaidAt = new java.util.EnumMap<>(dev.kindred.core.team.RunDivision.Role.class);
         private final List<String> partsTaken = new ArrayList<>();
         /** The time spoken to that it has stopped to look for, and the pause's task (E-33a). */
         private long attendedAt = Long.MIN_VALUE / 2;
@@ -16656,6 +16761,8 @@ final class PlayerRuntime {
         }
         private SkillRunner.State lastRunnerState = SkillRunner.State.IDLE;
         private String skillId;
+        /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
+        private String dispatchSource = "", pendingSource;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
@@ -16763,6 +16870,11 @@ final class PlayerRuntime {
         SeedRunner seeding;
         /** The horse it is taming to keep (M-01a), or none. */
         StableRunner stable;
+        /** Its horse's last step handed out, kept while it runs if it is a swap or a ride (F-22c38). */
+        NativeTaskCandidate stableStep;
+        /** Whether a task of {@link #stableStep} has been chosen, and the tick it was handed out (F-22c38). */
+        boolean stableStepStarted;
+        int stableStepAt;
         /** Its wheat plot being worked for cows or sheep of its own (M-01a), or null. */
         WheatRunner growing;
         /** Grown animals it has seen about its base, where and when last (M-01a): a herd that wandered off is remembered. */
