@@ -45,7 +45,7 @@ final class KindredCapabilities {
     /** Builds the snapshot from the server's current tags, tools and recipes, and installs it. Server thread only. */
     static Capabilities refresh(net.minecraft.server.MinecraftServer server) {
         var tags = tagMembers();
-        Capabilities facts = Capabilities.fromServer(tags, tools(), woods(server, tags));
+        Capabilities facts = Capabilities.fromServer(tags, tools(), woods(server, tags), recipes(server));
         Capabilities.install(facts);
         return facts;
     }
@@ -138,6 +138,34 @@ final class KindredCapabilities {
         }
         plankRecipes = Map.copyOf(recipeOf);
         return woods;
+    }
+
+    /**
+     * The server's crafting and smelting recipes for items outside vanilla's namespace, as plain values: each
+     * ingredient by its first matching item, counted. Core works a mod's item's worth out of these (vanilla's items keep
+     * their written worth).
+     */
+    private static java.util.List<Capabilities.Recipe> recipes(net.minecraft.server.MinecraftServer server) {
+        var registries = server.getRegistryManager();
+        var out = new java.util.ArrayList<Capabilities.Recipe>();
+        for (var entry : server.getRecipeManager().values()) {
+            var recipe = entry.value();
+            if (recipe.getType() != net.minecraft.recipe.RecipeType.CRAFTING && recipe.getType() != net.minecraft.recipe.RecipeType.SMELTING) continue;
+            var result = recipe.getResult(registries);
+            if (result.isEmpty()) continue;
+            String output = Registries.ITEM.getId(result.getItem()).toString();
+            if (output.startsWith(VanillaIds.NAMESPACE)) continue;
+            Map<String, Integer> inputs = new java.util.TreeMap<>();
+            boolean whole = true;
+            for (var ingredient : recipe.getIngredients()) {
+                if (ingredient.isEmpty()) continue;
+                var stacks = ingredient.getMatchingStacks();
+                if (stacks.length == 0) { whole = false; break; }
+                inputs.merge(Registries.ITEM.getId(stacks[0].getItem()).toString(), 1, Integer::sum);
+            }
+            if (whole && !inputs.isEmpty()) out.add(new Capabilities.Recipe(output, result.getCount(), inputs));
+        }
+        return out;
     }
 
     private static String kind(Item item) {

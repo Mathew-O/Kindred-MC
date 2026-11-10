@@ -52,15 +52,29 @@ public final class Capabilities {
         }
     }
 
+    /**
+     * A way the server makes an item: {@code makes} of {@code output} from {@code inputs} (an ingredient's first
+     * matching id, with how many of it), as the adapter read the server's crafting and smelting recipes.
+     */
+    public record Recipe(String output, int makes, Map<String, Integer> inputs) {
+        public Recipe {
+            java.util.Objects.requireNonNull(output, "output");
+            inputs = Map.copyOf(inputs);
+            if (makes < 1 || inputs.isEmpty()) throw new IllegalArgumentException("A recipe makes something from something");
+        }
+    }
+
     private final Map<String, Set<String>> members;
     private final Map<String, Tool> tools;
     private final Map<String, Wood> woods;
+    private final Map<String, java.util.List<Recipe>> recipes;
 
     private Capabilities(Map<String, Set<String>> tagMembers) {
-        this(tagMembers, Map.of(), java.util.List.of());
+        this(tagMembers, Map.of(), java.util.List.of(), java.util.List.of());
     }
 
-    private Capabilities(Map<String, Set<String>> tagMembers, Map<String, Tool> serverTools, java.util.List<Wood> serverWoods) {
+    private Capabilities(Map<String, Set<String>> tagMembers, Map<String, Tool> serverTools, java.util.List<Wood> serverWoods,
+                         java.util.List<Recipe> serverRecipes) {
         Map<String, Set<String>> groups = new HashMap<>();
         for (VanillaIds.Group group : VanillaIds.groups()) {
             Set<String> fromServer = group.exact() ? tagMembers.get(group.tag()) : null;
@@ -78,6 +92,11 @@ public final class Capabilities {
             allWoods.putIfAbsent(wood.name(), wood);
         }
         this.woods = java.util.Collections.unmodifiableMap(allWoods);
+        Map<String, java.util.List<Recipe>> byOutput = new HashMap<>();
+        for (Recipe recipe : serverRecipes) byOutput.computeIfAbsent(recipe.output(), k -> new java.util.ArrayList<>()).add(recipe);
+        Map<String, java.util.List<Recipe>> frozen = new HashMap<>();
+        byOutput.forEach((k, v) -> frozen.put(k, java.util.List.copyOf(v)));
+        this.recipes = Map.copyOf(frozen);
     }
 
     /** The vanilla facts, from {@link VanillaIds} alone. */
@@ -109,10 +128,16 @@ public final class Capabilities {
      */
     public static Capabilities fromServer(Map<String, ? extends Set<String>> tagMembers, Map<String, Tool> tools,
                                           java.util.List<Wood> woods) {
+        return fromServer(tagMembers, tools, woods, java.util.List.of());
+    }
+
+    /** As above, with the server's recipes for items vanilla's tables do not name (a mod's), for their worth. */
+    public static Capabilities fromServer(Map<String, ? extends Set<String>> tagMembers, Map<String, Tool> tools,
+                                          java.util.List<Wood> woods, java.util.List<Recipe> recipes) {
         Objects.requireNonNull(tagMembers, "tagMembers");
         Map<String, Set<String>> copy = new HashMap<>();
         tagMembers.forEach((tag, ids) -> copy.put(tag, Set.copyOf(ids)));
-        return new Capabilities(copy, Map.copyOf(tools), java.util.List.copyOf(woods));
+        return new Capabilities(copy, Map.copyOf(tools), java.util.List.copyOf(woods), java.util.List.copyOf(recipes));
     }
 
     /** The facts in force: the server's once the adapter installed them, else the vanilla ones. */
@@ -171,6 +196,12 @@ public final class Capabilities {
         String full = normalize(id);
         for (Wood wood : woods.values()) if (wood.has(full)) return java.util.Optional.of(wood);
         return java.util.Optional.empty();
+    }
+
+    /** The server's ways of making an item, as read; none for a vanilla item or one nothing makes. */
+    public java.util.List<Recipe> recipesFor(String id) {
+        if (id == null || id.isBlank()) return java.util.List.of();
+        return recipes.getOrDefault(normalize(id), java.util.List.of());
     }
 
     /** An id in its full form: trimmed, lower case, the vanilla namespace added when it has none. */
