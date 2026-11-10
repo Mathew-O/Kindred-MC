@@ -1,0 +1,323 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 105962,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  10,
+  24,
+  66
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.30000001192093,
+  8.0,
+  16.69999998807907
+ ],
+ "yaw": -81.84534,
+ "pitch": -3.3989942,
+ "health": 3.5600028,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 16
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 19
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 3
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 24
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 37
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 27
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 17
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 37
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 4
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 16
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:spider_eye",
+    "count": 2
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 5
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:fishing_rod",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 1
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 23
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 2
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 17
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 70
+    }
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 9962,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from skeleton",
+ "task": "Hole up: recover behind the wall",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Echo was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[21:54:06] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 40, 33, 64]",
+  "[21:54:06] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[21:54:06] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward lava: clear 39, 33, 64]",
+  "[21:54:09] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight skeleton]",
+  "[21:54:09] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[21:54:10] [Server thread/INFO]: Echo native_fight COMPLETED [Fight skeleton]",
+  "[21:54:11] [Server thread/INFO]: Echo native_fight COMPLETED [Fight skeleton]",
+  "[21:54:12] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie_villager]",
+  "[21:54:12] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[21:54:12] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal 27, 32, 82]",
+  "[21:54:12] [Server thread/INFO]: Echo native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Hole up: seal 27, 33, 82]",
+  "[21:54:12] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[21:54:12] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 19, 32, 89 [Back off from skeleton]",
+  "[21:54:12] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal 26, 32, 81]",
+  "[21:54:12] [Server thread/INFO]: Echo native_swap COMPLETED",
+  "[21:54:12] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[21:54:12] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[21:54:13] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]",
+  "[21:54:14] [Server thread/INFO]: Echo native_wait CANCELLED: The player died [Hole up: recover behind the wall]",
+  "[21:54:14] [Server thread/INFO]: Echo died at 26, 32, 82: Echo was shot by Skeleton (tick 105962, day, under cover, hunger 18, armour 6, holding dirt, a shield; doing \"Hole up: recover behind the wall\" in \"Iron: fight back - Back off from skeleton\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "8675309",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/8675309/replays/world/Echo-105962",
+  "source": "docs/evidence/eval/f29e-on/8675309/replays/world/Echo-105962",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

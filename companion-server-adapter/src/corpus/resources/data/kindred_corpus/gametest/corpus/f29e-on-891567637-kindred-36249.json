@@ -1,0 +1,157 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 36249,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  58,
+  39,
+  -132
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.69682949904613,
+  8.0,
+  16.03241144121037
+ ],
+ "yaw": -162.3791,
+ "pitch": 13.690027,
+ "health": 11.966665,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 53
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 29
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 92
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 59
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 12249,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Take cover from skeleton",
+ "task": "Back off from skeleton",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[00:56:51] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear 73, 49, -119]",
+  "[00:56:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+  "[00:56:52] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward iron: clear 73, 49, -118]",
+  "[00:56:52] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward iron: clear 73, 48, -118]",
+  "[00:56:52] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward iron: step down]",
+  "[00:56:52] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward iron: advance]",
+  "[00:56:52] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[00:56:52] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[00:56:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[00:56:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[00:56:54] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[00:56:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[00:56:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+  "[00:56:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[00:56:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[00:56:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[00:56:55] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 62, 47, -114 [Back off from skeleton]",
+  "[00:56:57] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[00:56:57] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from skeleton]",
+  "[00:56:57] [Server thread/INFO]: Kindred died at 74, 47, -116: Kindred was shot by Skeleton (tick 36249, day, under cover, hunger 15, armour 0, holding stone_pickaxe, no shield; doing \"Back off from skeleton\" in \"Iron: fight back - Take cover from skeleton\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "891567637",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/891567637/replays/world/Kindred-36249",
+  "source": "docs/evidence/eval/f29e-on/891567637/replays/world/Kindred-36249",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

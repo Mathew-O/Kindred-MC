@@ -1,0 +1,311 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 114191,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -11,
+  28,
+  95
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.30000001192093,
+  8.495200877005914,
+  16.69999998807907
+ ],
+ "yaw": -135.0,
+ "pitch": 50.107643,
+ "health": 13.9,
+ "food": 20,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 32
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 11
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 3
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:egg",
+    "count": 2
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 1
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 115
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:chicken",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 8
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 50
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 10
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 8
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 39
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 3
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 18191,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "DRAGON",
+ "stage": "Iron: fight back - Fight zombie",
+ "task": "Fight zombie",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[15:24:21] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward coal: step up]",
+  "[15:24:21] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal 5, 35, 109]",
+  "[15:24:21] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal 5, 36, 109]",
+  "[15:24:21] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -2, 46, 129 [Walk to coal ore at -2, 46, 129]",
+  "[15:24:21] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -4, 47, 128 [Walk to coal ore at -4, 47, 128]",
+  "[15:24:21] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward coal: clear 5, 36, 111]",
+  "[15:24:21] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward coal: step up]",
+  "[15:24:21] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+  "[15:24:21] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+  "[15:24:22] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal 5, 37, 112]",
+  "[15:24:22] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal 4, 36, 111]",
+  "[15:24:22] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal 4, 37, 111]",
+  "[15:24:22] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 5, 35, 110 [Hole up: back into the passage]",
+  "[15:24:22] [Server thread/INFO]: Sol native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[15:24:22] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 3, 29, 106 [Back off from skeleton the way it came]",
+  "[15:24:23] [Server thread/INFO]: Sol native_fight COMPLETED [Fight skeleton]",
+  "[15:24:23] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 12, 36, 116 [Back off from skeleton]",
+  "[15:24:23] [Server thread/INFO]: Sol native_fight COMPLETED [Fight skeleton]",
+  "[15:24:24] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[15:24:24] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 0, 36, 113 [Back off from zombie]"
+ ],
+ "corpus": {
+  "run": "e40c1-eed2dc5",
+  "seed": "8675309",
+  "build": "eed2dc5",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40c1-eed2dc5/8675309/replays/world/Sol-114191",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
