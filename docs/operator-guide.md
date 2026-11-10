@@ -675,8 +675,9 @@ Roster skins come from the bundled textures. To show the same skins to clients w
 ## A place it cannot walk to (M-01f)
 
 When an AI player is refused a walk to a place three times from about the same spot, for want of any route ("No
-walkable route", or a route found blocked), it lets that place be for ten minutes. This holds whatever asked for the
-walk: its goal, its base, a faction move or any other routine. The place is a four-block cell, so neighbouring blocks of
+walkable route", or a route found blocked), it lets that place be for ten minutes. This holds for its routines' walks, such as its
+base, exploring or gathering. It never holds for a step of its goal or of a build, nor for patch mining, an evade or a
+faction match's move: each of those judges its own refused walks. The place is a four-block cell, so neighbouring blocks of
 one patch count together. The log says so once: `<player> lets its walks to around x, y, z be for ten minutes: refused 3
 times from around … [<the routine>]`. Moving more than eight blocks away, arriving there by another way, or breaking or
 placing a block gives the place another try at once. Commands given by people are never held back by it.

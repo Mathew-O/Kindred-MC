@@ -14172,7 +14172,7 @@ final class PlayerRuntime {
         if (!"native_goto".equals(entry.skillId)) return;
         // A goal's or a build's own walk is its plan's to judge: it has its own back-off and its own way on when a step
         // is not feasible. Set aside, the goal stayed on a walk it could not make (the spire fixture, after #120).
-        if (entry.activeCampaignTask != null || entry.activeBuildTask != null) return;
+        if (entry.activeCampaignTask != null || entry.activeBuildTask != null || hasItsOwnBackOff(entry.dispatchSource)) return;
         BlockPos target = walkTarget(entry.skillArgs);
         if (target == null) return;
         if (state == SkillRunner.State.COMPLETED) {
@@ -14212,13 +14212,28 @@ final class PlayerRuntime {
         List<NativeTaskCandidate> kept = null;
         for (int i = 0; i < candidates.size(); i++) {
             var candidate = candidates.get(i);
-            boolean planned = entry.campaignTasks.containsKey(candidate.candidate().id()) || entry.buildTasks.containsKey(candidate.candidate().id());
+            boolean planned = entry.campaignTasks.containsKey(candidate.candidate().id()) || entry.buildTasks.containsKey(candidate.candidate().id())
+                    || hasItsOwnBackOff(candidate.source());
             BlockPos target = "native_goto".equals(candidate.skill()) && !planned ? walkTarget(candidate.arguments()) : null;
             boolean aside = target != null && entry.walksAside.aside(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), tick);
             if (aside && kept == null) kept = new ArrayList<>(candidates.subList(0, i));
             else if (!aside && kept != null) kept.add(candidate);
         }
         return kept == null ? candidates : kept;
+    }
+
+    /**
+     * Routines whose walks the set-aside leaves alone, by the method that proposed them: each judges its own refused
+     * walks. Patch mining sets a refused drop aside and tries it twice more once the patch is open (on #133's run the
+     * set-aside held Hal off its last two raw iron); an evade walk is a reflex's way out of reach of a mob; a faction
+     * match's moves are the match's to make. A proposer renamed here must be renamed in this set too.
+     */
+    private static final java.util.Set<String> OWN_BACK_OFF = java.util.Set.of("patchMineCandidates", "evadeCandidates", "factionCandidates");
+
+    private static boolean hasItsOwnBackOff(String source) {
+        if (source == null || source.isEmpty()) return false;
+        int colon = source.indexOf(':');
+        return OWN_BACK_OFF.contains(colon < 0 ? source : source.substring(0, colon));
     }
 
     private static String outcomeLabel(Entry entry, String lifeLabel) {
