@@ -27,7 +27,8 @@ import net.minecraft.test.GameTest;
  *   structure is {@code kindred_corpus:corpus/<id>}, and {@link ReplayGameTests#play} plays it;</li>
  *   <li>a staged fixture: {@code {"fixture": "<GameTest class>.<method>", "corpus": {...}}}, a GameTest of the contract
  *   suite run as it stands, with its own template, ticks and staging (its javadoc says how it is staged).</li>
- * </ul> Scenes go ten to a batch, so a batch's scenes run side by side. The suite
+ * </ul> Scenes go ten to a batch, so a batch's scenes run side by side. With {@code KINDRED_CORPUS_ONLY} set to scene ids
+ * (comma-separated) only those run, together in one batch: the gate's confirming runs of a flagged scene. The suite
  * is its own mod and run ({@code runCorpus}), so the contract tests and the corpus never run together.
  */
 public final class CorpusGameTests implements FabricGameTest {
@@ -40,10 +41,14 @@ public final class CorpusGameTests implements FabricGameTest {
         var tests = new ArrayList<TestFunction>();
         var folder = FabricLoader.getInstance().getModContainer("kindred_corpus").flatMap(mod -> mod.findPath(CORPUS));
         if (folder.isEmpty() || !Files.isDirectory(folder.get())) return tests;
+        // KINDRED_CORPUS_ONLY: scene ids, comma-separated, to run alone (the gate's confirming runs); unset, every scene.
+        String onlyList = System.getenv("KINDRED_CORPUS_ONLY");
+        var only = onlyList == null || onlyList.isBlank() ? null : new java.util.HashSet<>(java.util.Arrays.asList(onlyList.trim().split("\\s*,\\s*")));
         try (var files = Files.list(folder.get())) {
             int index = 0;
             for (Path file : files.filter(f -> f.getFileName().toString().endsWith(".json")).sorted().toList()) {
                 String id = file.getFileName().toString().replace(".json", "");
+                if (only != null && !only.contains(id)) continue;
                 JsonObject scene = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
                 String batch = "corpus_" + (index++ / BATCH);
                 if (scene.has("fixture")) {
