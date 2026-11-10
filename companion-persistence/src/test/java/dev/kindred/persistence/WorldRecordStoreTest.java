@@ -151,7 +151,7 @@ class WorldRecordStoreTest {
         var upgraded = open();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement();
              var row = statement.executeQuery("PRAGMA user_version")) {
-            assertEquals(12, row.getInt(1));
+            assertEquals(13, row.getInt(1));
         }
         var journal = upgraded.worldEvents(Set.of("journal"), 0, 1000).join();
         // Reopening reconciled the dispatched action: one journal line and one action event more than the backfill.
@@ -165,7 +165,7 @@ class WorldRecordStoreTest {
         assertEquals("UNCERTAIN", agreement.kept().get(prepared.actionId()).state());
         upgraded.closeAsync().join();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
-            statement.execute("PRAGMA user_version = 13");
+            statement.execute("PRAGMA user_version = 14");
         }
         assertThrows(Exception.class, () -> SqliteCompanionStore.open(path(), 10).join(), "a newer schema is refused, never downgraded");
     }

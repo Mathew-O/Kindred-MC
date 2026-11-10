@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 360, "stone_tools": 2440, "iron_ingot": 13460, "iron_pickaxe": 36140},
+      "deaths": [
+        {"tick": 135504, "cause": "Kindred was shot by Skeleton", "x": 201, "y": -39, "z": -38, "light": 0, "timeOfDay": 15666, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 202, -39, -38 (tried elsewhere 11 times)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 9860, "x": 232, "y": 26, "z": -53, "attempt": 1}, {"tick": 53720, "x": 179, "y": 51, "z": -74, "attempt": 1}, {"tick": 57480, "x": 181, "y": 51, "z": -76, "attempt": 2}, {"tick": 61320, "x": 179, "y": 51, "z": -74, "attempt": 3}, {"tick": 68520, "x": 180, "y": 51, "z": -76, "attempt": 4}, {"tick": 74740, "x": 179, "y": 50, "z": -74, "attempt": 5}, {"tick": 78700, "x": 178, "y": 50, "z": -73, "attempt": 6}, {"tick": 96840, "x": 181, "y": 50, "z": -75, "attempt": 7}, {"tick": 102440, "x": 179, "y": 50, "z": -74, "attempt": 8}, {"tick": 106180, "x": 178, "y": 50, "z": -74, "attempt": 9}, {"tick": 111260, "x": 193, "y": 55, "z": -71, "attempt": 10}, {"tick": 122920, "x": 184, "y": 60, "z": -50, "attempt": 11}, {"tick": 147520, "x": 193, "y": 71, "z": -11, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 220, "stone_tools": 2120, "iron_ingot": 3980, "iron_pickaxe": 33860, "obsidian": 99279, "portal_lit": 100289},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 9000, "x": 223, "y": 56, "z": -39, "attempt": 1}, {"tick": 40720, "x": 231, "y": 57, "z": -16, "attempt": 1}, {"tick": 45040, "x": 223, "y": 58, "z": -26, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1160, "stone_tools": 2740, "iron_ingot": 20380, "iron_pickaxe": 46400},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 9860, "x": 226, "y": 36, "z": -54, "attempt": 1}, {"tick": 31040, "x": 200, "y": 19, "z": -71, "attempt": 1}, {"tick": 122560, "x": 123, "y": -49, "z": 72, "attempt": 1}, {"tick": 146760, "x": 98, "y": -49, "z": 147, "attempt": 2}, {"tick": 171180, "x": 114, "y": -49, "z": 31, "attempt": 1}, {"tick": 195120, "x": 176, "y": -49, "z": 12, "attempt": 2}, {"tick": 219480, "x": 109, "y": -54, "z": -2, "attempt": 1}, {"tick": 243440, "x": 109, "y": -36, "z": -2, "attempt": 2}, {"tick": 267600, "x": 161, "y": -24, "z": -23, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

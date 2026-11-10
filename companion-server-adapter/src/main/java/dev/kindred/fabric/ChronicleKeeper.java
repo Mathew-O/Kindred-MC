@@ -34,8 +34,12 @@ final class ChronicleKeeper {
     /** Pages kept in memory a player, newest last. */
     static final int KEPT = 7;
 
-    /** One AI player as the keeper sees it: its id, its name, and every id its events may carry (its own, its body's). */
-    record Player(UUID id, String name, Set<UUID> actors) { }
+    /** One AI player as the keeper sees it: its id, its name, every id its events may carry (its own, its body's), its faction ("" for none). */
+    record Player(UUID id, String name, Set<UUID> actors, String faction) {
+        Player(UUID id, String name, Set<UUID> actors) { this(id, name, actors, ""); }
+
+        Player { faction = faction == null ? "" : faction; }
+    }
 
     /** The runtime's side. */
     interface Host {
@@ -56,6 +60,8 @@ final class ChronicleKeeper {
     private final Host host;
     private final Map<UUID, List<Chronicle.Summary>> pages = new HashMap<>();
     private final Map<String, UUID> named = new HashMap<>();
+    /** The weeks and months, by scope ("faction:<id>", "world"), newest last. */
+    private final Map<String, List<Chronicle.Summary>> above = new HashMap<>();
     private long through = -1, day = -1;
     private boolean busy;
     private int written, byModel;
@@ -69,7 +75,10 @@ final class ChronicleKeeper {
             long last = 0;
             if (failure == null && events != null) {
                 for (var e : events) {
-                    Chronicle.fromPage(e).ifPresent(page -> keep(e.actor(), page));
+                    Chronicle.fromPage(e).ifPresent(page -> {
+                        if (page.tier() == Chronicle.Tier.PLAYER_DAY) keep(e.actor(), page);
+                        else keepAbove(page);
+                    });
                     try { last = Math.max(last, Long.parseLong(e.data().getOrDefault("through", "0"))); } catch (NumberFormatException ignored) { }
                 }
             }
@@ -87,8 +96,100 @@ final class ChronicleKeeper {
         if (now == day) return;
         long ended = day;
         day = now;
-        writeDay(ended * Chronicle.DAY, now * Chronicle.DAY);
+        writeDay(ended * Chronicle.DAY, now * Chronicle.DAY).thenRun(() -> host.server().execute(() -> {
+            long weekSpan = Chronicle.Tier.FACTION_WEEK.span / Chronicle.DAY, monthSpan = Chronicle.Tier.WORLD_MONTH.span / Chronicle.DAY;
+            if (now % weekSpan == 0) writeWeeks((now - weekSpan) * Chronicle.DAY);
+            if (now % monthSpan == 0) writeMonth((now - monthSpan) * Chronicle.DAY);
+        }));
     }
+
+    /**
+     * Each faction's week from {@code from}: written only from its members' day pages in that week (the tier below),
+     * the model's when it checks out, else the plain list; its citations the day pages' own, so every one is a real
+     * event. A faction with no member's page that week has none. How many were written.
+     */
+    CompletableFuture<Integer> writeWeeks(long from) {
+        var byFaction = new LinkedHashMap<String, List<Chronicle.Summary>>();
+        for (Player p : host.players()) {
+            if (p.faction().isEmpty()) continue;
+            for (var page : pages(p.id())) {
+                if (page.from() >= from && page.until() <= from + Chronicle.Tier.FACTION_WEEK.span) {
+                    byFaction.computeIfAbsent(p.faction(), k -> new ArrayList<>()).add(page);
+                }
+            }
+        }
+        var writes = new ArrayList<CompletableFuture<Void>>();
+        for (var en : byFaction.entrySet()) {
+            var below = new ArrayList<>(en.getValue());
+            below.sort(java.util.Comparator.comparingLong(Chronicle.Summary::from));
+            writes.add(above(Chronicle.Tier.FACTION_WEEK, "faction:" + en.getKey(), "the faction " + en.getKey(), from, below));
+        }
+        return CompletableFuture.allOf(writes.toArray(CompletableFuture[]::new)).thenApply(v -> writes.size());
+    }
+
+    /** The world's month from {@code from}, written only from the faction weeks in it; nothing when there are none. */
+    CompletableFuture<Integer> writeMonth(long from) {
+        var below = new ArrayList<Chronicle.Summary>();
+        for (var en : above.entrySet()) {
+            for (var page : en.getValue()) {
+                if (page.tier() == Chronicle.Tier.FACTION_WEEK && page.from() >= from && page.until() <= from + Chronicle.Tier.WORLD_MONTH.span) below.add(page);
+            }
+        }
+        if (below.isEmpty()) return CompletableFuture.completedFuture(0);
+        below.sort(java.util.Comparator.comparingLong(Chronicle.Summary::from));
+        return above(Chronicle.Tier.WORLD_MONTH, "world", "the world", from, below).thenApply(v -> 1);
+    }
+
+    /** One page above the players' days: the plain list of the tier below, or the model's page of it when it checks out. */
+    private CompletableFuture<Void> above(Chronicle.Tier tier, String scope, String name, long from, List<Chronicle.Summary> below) {
+        var plain = Chronicle.plainFrom(tier, scope, from, below);
+        if (plain.text().length() > Chronicle.ABOVE_CHARS) {
+            plain = new Chronicle.Summary(plain.tier(), plain.scope(), plain.from(), plain.until(), plain.text().substring(0, Chronicle.ABOVE_CHARS - 1) + "…",
+                    plain.cites(), false);
+        }
+        var ids = new HashSet<Long>();
+        for (var s : below) ids.addAll(s.cites());
+        var bridge = host.bridge();
+        var fallback = plain;
+        if (bridge == null || !bridge.writesPages()) {
+            writeAbove(fallback);
+            return CompletableFuture.completedFuture(null);
+        }
+        var lines = below.stream().limit(Chronicle.MAX_LINES).map(ChroniclePrompt::line).toList();
+        String request = ChroniclePrompt.request(tier, name, from, lines);
+        var done = new CompletableFuture<Void>();
+        bridge.page(new UUID(0, scope.hashCode()), name, request, host.server()).whenComplete((page, failure) -> host.server().execute(() -> {
+            Optional<Chronicle.Summary> fromModel = page == null ? Optional.empty()
+                    : page.flatMap(p -> Chronicle.fromModel(tier, scope, from, p.text(), p.cites()));
+            var kept = Chronicle.keep(fromModel, fallback, ids, Chronicle.Facts.none());
+            if (fromModel.isPresent() && kept == fallback) {
+                KindredMod.LOGGER.info("{} chronicle: the model's {} refused ({}); the plain list kept", name, tier.name().toLowerCase(java.util.Locale.ROOT),
+                        Chronicle.check(fromModel.get(), ids, Chronicle.Facts.none()));
+            }
+            writeAbove(kept);
+            done.complete(null);
+        }));
+        return done;
+    }
+
+    private void writeAbove(Chronicle.Summary page) {
+        host.record(new WorldEvent(0, host.tick(), System.currentTimeMillis(), "", Chronicle.PAGE, null, page.scope(), "",
+                Chronicle.pageData(page, through), page.model() ? WorldEvent.HowKnown.CLAIMED : WorldEvent.HowKnown.RECORDED));
+        keepAbove(page);
+        written++;
+        if (page.model()) byModel++;
+        KindredMod.LOGGER.info("{} chronicle: {} from day {} ({}, {} characters, {} events cited)", page.scope(), page.tier().name().toLowerCase(java.util.Locale.ROOT),
+                page.from() / Chronicle.DAY + 1, page.model() ? "the model's" : "the plain list", page.text().length(), page.cites().size());
+    }
+
+    private void keepAbove(Chronicle.Summary page) {
+        var list = above.computeIfAbsent(page.scope(), k -> new ArrayList<>());
+        list.add(page);
+        while (list.size() > KEPT) list.removeFirst();
+    }
+
+    /** A faction's or the world's latest pages, oldest first ("faction:<id>", "world"). */
+    List<Chronicle.Summary> pagesAbove(String scope) { return List.copyOf(above.getOrDefault(scope, List.of())); }
 
     /** The pages for the span just ended, from the Record's events since the last page. */
     CompletableFuture<Integer> writeDay(long from, long until) {

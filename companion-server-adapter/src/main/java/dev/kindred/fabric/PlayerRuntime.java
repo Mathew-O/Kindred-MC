@@ -242,6 +242,7 @@ final class PlayerRuntime {
     private long startupGeneration = 0;
     private int nativeCreationsPending;
     private final Map<UUID, Entry> entries = new HashMap<>();
+    private final KindredHudSections hudSections = new KindredHudSections();
     private final Set<CompanionEntity> awaitingRegistry = new HashSet<>();
     private final Set<UUID> creating = new HashSet<>();
     private SqliteCompanionStore store;
@@ -511,7 +512,7 @@ final class PlayerRuntime {
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
         this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
-        this.hud = new FactionsHud(factions, market);
+        this.hud = new FactionsHud(factions, market, hudSections);
         factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
@@ -1676,8 +1677,9 @@ final class PlayerRuntime {
     }
 
     /** {@code own}: chosen by the player itself (its goal, its needs), not asked for by a command. */
-    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> arguments, boolean own) {
+    private int dispatchNativeTask(Actor actor, Entry entry, String skill, Map<String, String> requested, boolean own) {
         requireThread();
+        final Map<String, String> arguments = own && skill.equals("native_goto") ? onItsHorse(entry, requested) : requested;
         // Where this task was proposed, for its outcome line (M-01): only the autonomous choice hands one over.
         String proposedBy = own && entry.pendingSource != null ? entry.pendingSource : "";
         entry.pendingSource = null;
@@ -2256,6 +2258,8 @@ final class PlayerRuntime {
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
                         || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
+                    // A far walk ridden on its own horse (M-01a): getting on and off it, the trip's own step permits checked too.
+                    || ("native_goto".equals(entry.skillId) && intent == NativePlayerBody.Intent.RIDE && entry.skillArgs.containsKey("horse"))
                     || (("native_feed".equals(entry.skillId) || "native_pet".equals(entry.skillId))
                         && (intent == NativePlayerBody.Intent.FEED || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_shear".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SHEAR || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -2656,6 +2660,7 @@ final class PlayerRuntime {
         }
         attentionScheduler.synchronizeEntries(batch);
         if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
+        if (tick % 20 == 5) readOldMemories(); // F-32b: each AI player's old files into its web, once a start.
         if (tick % 20 == 11) initiative.tick(); // E-53: speaking first, within each person's budget.
         if (tick % 20 == 15) peerTalk.tick(); // E-51: AI players talking when they meet again.
         if (tick % 20 == 17) gifts.tick(); // E-22a: tosses picked up, or left.
@@ -3594,6 +3599,10 @@ final class PlayerRuntime {
         if (evade != null) return evade;
         var raid = raidCandidates(entry, body);
         if (raid != null) return raid;
+
+        // Left on its horse by a ride stopped part way: off it before other work (M-01a).
+        var off = offTheHorse(entry, body);
+        if (off != null) return off;
         // A find shared out with its team as it comes, and its hand-overs taken up again after a stop (E-40a).
         shareOutFinds(entry, body);
 
@@ -4736,6 +4745,55 @@ final class PlayerRuntime {
         return entry == null || entry.stable == null ? -1 : entry.stable.mounts();
     }
 
+    /**
+     * A far walk it chose itself, ridden on its own horse (M-01a): the walk's arguments with {@code horse} added when it
+     * keeps a horse, tamed to it and saddled, in sight and near, the walk is long, it walks with nothing to lead or flee
+     * and a hand is free to get on with. Otherwise the walk as it was.
+     */
+    private Map<String, String> onItsHorse(Entry entry, Map<String, String> walk) {
+        if (entry.bases == null || entry.bases.horse == null || entry.nativeBody == null || walk.containsKey("horse")) return walk;
+        if (walk.containsKey("hold") || walk.containsKey("leg") || "true".equals(walk.get("sprint")) || "true".equals(walk.get("avoid"))) return walk;
+        var player = entry.nativeBody.entity();
+        if (player.isTouchingWater() || (player.hasVehicle() && !(player.getVehicle() instanceof net.minecraft.entity.passive.AbstractHorseEntity))) return walk;
+        final UUID horseId;
+        try {
+            horseId = UUID.fromString(entry.bases.horse);
+        } catch (IllegalArgumentException bad) {
+            return walk;
+        }
+        double dx, dz;
+        try {
+            dx = Integer.parseInt(walk.get("x")) + 0.5 - player.getX();
+            dz = Integer.parseInt(walk.get("z")) + 0.5 - player.getZ();
+        } catch (RuntimeException bad) {
+            return walk;
+        }
+        if (Math.hypot(dx, dz) < NativeTripSkill.RIDE_FROM) return walk;
+        if (!(player.getServerWorld().getEntity(horseId) instanceof net.minecraft.entity.passive.AbstractHorseEntity horse) || !horse.isAlive()
+                || !horse.isTame() || !horse.isSaddled() || !player.getUuid().equals(horse.getOwnerUuid()) || horse.isLeashed()) return walk;
+        boolean on = player.getVehicle() == horse;
+        if (!on && (horse.hasPassengers() || player.distanceTo(horse) > NativeTripSkill.HORSE_NEAR || !player.canSee(horse))) return walk;
+        int empty = -1;
+        for (int s = 0; s < 9 && empty < 0; s++) if (player.getInventory().getStack(s).isEmpty()) empty = s;
+        if (!on && empty < 0) return walk;
+        KindredMod.LOGGER.info("{} rides its horse toward {} {} ({} blocks)", entry.data.displayName(), walk.get("x"), walk.get("z"), (int) Math.hypot(dx, dz));
+        var out = new java.util.HashMap<>(walk);
+        out.put("horse", horseId.toString());
+        out.put("ride_slot", String.valueOf(Math.max(empty, 0)));
+        return Map.copyOf(out);
+    }
+
+    /** Off its horse, when on one and not on a trip (a ride stopped part way): its work is done on foot. */
+    private List<NativeTaskCandidate> offTheHorse(Entry entry, NativePlayerBody body) {
+        if (!(body.entity().getVehicle() instanceof net.minecraft.entity.passive.AbstractHorseEntity) || entry.stable != null) return null;
+        var t = new PortalRunCampaign.Task("native_ride", Map.of("op", "off"), "Off its horse");
+        // Not one of a runner's steps (no build task): its completion is credited to no build, ranch or field.
+        UUID id = UUID.nameUUIDFromBytes(("horse-off:" + entry.data.id()).getBytes(StandardCharsets.UTF_8));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
+    }
+
     /** The horse a player keeps (M-01a), by its id, for fixtures. */
     Optional<String> ownHorse(UUID id) {
         requireThread();
@@ -5876,6 +5934,24 @@ final class PlayerRuntime {
         if (entry == null || !basesLoaded(entry)) return false;
         entry.bases.built.add(base);
         return true;
+    }
+
+    /** A horse of its own staged as kept, as a fixture lays one down (M-01a); its taming is its own fixture's. */
+    boolean stageHorseForTest(UUID id, UUID horse) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || !basesLoaded(entry)) return false;
+        entry.bases.horse = horse.toString();
+        return true;
+    }
+
+    /** A walk to {@code target} dispatched as one it chose itself, as its goals do, for fixtures of how it travels. */
+    int ownWalkForTest(UUID id, BlockPos target, double range) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null) return 0;
+        return dispatchNativeTask(Actor.console(), entry, "native_goto", Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()),
+                "z", String.valueOf(target.getZ()), "range", String.valueOf(range)), true);
     }
 
     /** A pen of its own staged as run, as a fixture lays one down (M-01a). */
@@ -9282,7 +9358,8 @@ final class PlayerRuntime {
             case CLAIM -> factions.request(id, "claim", List.of(), world, pos, this::playerByName, this::factionName);
             case CAPTURE -> factions.request(id, "capture", List.of(), world, pos, this::playerByName, this::factionName);
             case SELL -> {
-                var slots = FactionsPlayer.spareSlots(player);
+                // Only the kinds it chose to sell, each a lot worth selling (FactionPlay.MIN_LOT); none named, all its spare.
+                var slots = FactionsPlayer.spareSlots(player, target.isEmpty() ? null : java.util.Set.of(target.split(",")));
                 if (slots.isEmpty()) yield FactionsService.Reply.refused("Nothing spare to sell");
                 market.sell(player, slots, world, line -> KindredMod.LOGGER.info("{} faction: {}", name, line));
                 yield FactionsService.Reply.told(List.of("Offered its spare blocks to the market"));
@@ -13057,6 +13134,31 @@ final class PlayerRuntime {
                 memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
     }
 
+    /**
+     * F-32b: each AI player's old memory files (its peer ledger and atlas, E-50 and F-30) read into its knowledge web
+     * once a start, after the webs are rebuilt from the Record; read off the thread, put in on it. The files stay as
+     * they are, and so does everything that reads them.
+     */
+    private record OldFiles(dev.kindred.core.social.PeerLedger.Snapshot peers, dev.kindred.core.atlas.Atlas.Snapshot atlas) { }
+
+    private void readOldMemories() {
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null || entry.snapshot().lifecycle() == LifecycleState.REMOVED) continue;
+            UUID id = entry.data.id();
+            if (!webs.readOldOnce(id)) continue;
+            String name = entry.data.displayName();
+            String faction = factionOf.apply(id);
+            String team = faction == null || faction.isEmpty() ? KindredWire.TEAM : KindredWire.TEAM + ":" + faction;
+            memories.loadPeers(id, name).thenCombine(memories.loadAtlas(id, name), OldFiles::new)
+                    .whenComplete((files, failure) -> handBack(() -> {
+                        if (!running || failure != null || files == null) return;
+                        var read = webs.readOld(id, files.peers(), files.atlas(), team);
+                        if (read.added() > 0) KindredMod.LOGGER.info("Kindred knowledge: {}'s old memory files read into its web: {} facts added, {} already held",
+                                name, read.added(), read.kept());
+                    }));
+        }
+    }
+
     /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
     private List<PeerRadio.Member> peerMembers() {
         var out = new ArrayList<PeerRadio.Member>();
@@ -15867,6 +15969,12 @@ final class PlayerRuntime {
 
     /** Once a game day, at night: the ledgers checked against the Record (F-31). */
     static final int LEDGER_CHECK_TICKS = 24_000;
+    /** How old a settled action's last event is before its history is folded: three game days of real time at 20 ticks a second. */
+    static final long ACTION_FOLD_AGE_MS = 3L * 24_000 / 20 * 1_000;
+    /** The most actions one fold takes, so a pass keeps the writer busy for a bounded time. */
+    static final int ACTION_FOLD_MAX = 5_000;
+    /** The most passes after one check: 50,000 actions, about 3.6 s of the writer's time, in jobs of about 0.36 s each. */
+    static final int ACTION_FOLD_PASSES = 10;
 
     /**
      * The agreement check (F-31): every ledger kept here, and the action ledger's own table, against the same rebuilt from
@@ -15900,9 +16008,34 @@ final class PlayerRuntime {
                             check.ledger(), check.kept(), check.fromRecord());
                     if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
                             agree ? "agrees" : "differs", "", data));
+                    // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
+                    // three game days compacted on the writer, a batch at a time, never on the tick.
+                    if (agree && running) foldActions(database, System.currentTimeMillis() - ACTION_FOLD_AGE_MS, ACTION_FOLD_PASSES, new long[3]);
                     result.complete(agree);
                 }));
         return result;
+    }
+
+    /**
+     * The action fold's passes (F-31): each a separate job on the writer, so other writes run between them; another
+     * while the last took its full share, at most {@code passes}; the totals logged once at the end.
+     */
+    private static void foldActions(SqliteCompanionStore database, long olderThanMs, int passes, long[] totals) {
+        database.foldSettledActions(olderThanMs, ACTION_FOLD_MAX).whenComplete((fold, unfolded) -> {
+            if (unfolded != null) {
+                KindredMod.LOGGER.warn("Action fold could not run: {}", unfolded.toString());
+                return;
+            }
+            totals[0] += fold.actions();
+            totals[1] += fold.eventsRemoved();
+            totals[2] += fold.millis();
+            if (fold.actions() == ACTION_FOLD_MAX && passes > 1) {
+                foldActions(database, olderThanMs, passes - 1, totals);
+                return;
+            }
+            if (totals[0] > 0) KindredMod.LOGGER.info("Kindred action fold: {} settled actions, {} events, folded in {} ms on the writer",
+                    totals[0], totals[1], totals[2]);
+        });
     }
 
     /** Each match changed since the last flush written to the World Record as it now stands (F-31). */
@@ -15932,7 +16065,7 @@ final class PlayerRuntime {
                 var actors = new java.util.HashSet<UUID>();
                 actors.add(entry.data.id());
                 if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
-                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors));
+                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors, factionOf.apply(entry.data.id())));
             }
             return out;
         }
@@ -15985,6 +16118,9 @@ final class PlayerRuntime {
     }
 
     /** The Factions panel's server side (M-06l). */
+    /** The panel's section sources: Factions' and any integration's (mod-support decision 7). */
+    KindredHudSections hudSections() { return hudSections; }
+
     FactionsHud hud() {
         requireThread();
         return hud;
@@ -16003,6 +16139,22 @@ final class PlayerRuntime {
         } catch (RuntimeException bad) {
             return -1;
         }
+    }
+
+    /**
+     * Bare {@code /ah}: a person at a client gets the auction house's chest screen ({@link AuctionScreenHandler}); an AI
+     * player, the console or an operator without a body gets the listings as text, as {@code /ah list}.
+     */
+    int openAuctionScreen(ServerCommandSource source) {
+        requireThread();
+        var player = source.getPlayer();
+        if (player == null || player instanceof PreparedNativePlayer) return auctionRequest(source, player == null ? new UUID(0, 0) : player.getUuid(), "list", List.of());
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
+                (syncId, inventory, p) -> new AuctionScreenHandler(syncId, inventory, auctions, player, () -> ready && running && factionsWorld()),
+                Text.literal("Auction house")));
+        return 1;
     }
 
     /**
@@ -16270,6 +16422,13 @@ final class PlayerRuntime {
     CompletableFuture<List<dev.kindred.core.record.WorldEvent>> worldEventsForTest(Set<String> kinds) {
         requireThread();
         return store.allWorldEvents(kinds);
+    }
+
+    /** Test-only and read-only: the label of the goal step a player is on now, or null. */
+    String goalStepForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.activeCampaignTask == null ? null : entry.activeCampaignTask.label();
     }
 
     /** A player's own goal and the goal it works toward, for a fixture; null for none. */

@@ -1,0 +1,324 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 72940,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  4,
+  55,
+  7
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.518599420422678,
+  8.110472353982821,
+  16.676981098875668
+ ],
+ "yaw": 51.905407,
+ "pitch": 18.159489,
+ "health": 9.099999,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 298,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 37
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 3
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 45
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 3
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:mutton",
+    "count": 2
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 4
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 59
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 9
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 18
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:wheat_seeds",
+    "count": 1
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 12
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:bow",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 289
+    }
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 1
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:light_gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 24
+    }
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 940,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from drowned",
+ "task": "Get out of the water: to dry ground",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was impaled by Drowned",
+ "ticks": 1200,
+ "log": [
+  "[14:27:53] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus arrow]",
+  "[14:27:54] [Server thread/INFO]: Sol native_goto COMPLETED [Explore north for water]",
+  "[14:27:58] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 30, 62, 16 is blocked [Walk to water at 30, 62, 16]",
+  "[14:28:00] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to water at 23, 62, 20]",
+  "[14:28:01] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[14:28:02] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to water at 23, 62, 18]",
+  "[14:28:02] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+  "[14:28:05] [Server thread/INFO]: Sol native_fight BLOCKED: The fight broke off [Fight drowned]",
+  "[14:28:05] [Server thread/INFO]: Sol native_swap COMPLETED",
+  "[14:28:05] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[14:28:06] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 21, 62, 16]",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 20, 62, 16]",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 22, 62, 16]",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 19, 62, 16]",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 23, 62, 16]",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 21, 62, 17]",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 20, 62, 17]",
+  "[14:28:06] [Server thread/INFO]: Sol native_bucket refused: The fluid source is not in reach or sight [Fill a bucket at 18, 62, 16]",
+  "[14:28:07] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Get out of the water: to dry ground]"
+ ],
+ "corpus": {
+  "run": "e40a15-dbf4e5c",
+  "seed": "303",
+  "build": "dbf4e5c",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a15-dbf4e5c/303/replays/world/Sol-72940",
+  "class": "death: drowned",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

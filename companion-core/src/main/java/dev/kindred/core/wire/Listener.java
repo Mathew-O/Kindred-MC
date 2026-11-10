@@ -49,7 +49,7 @@ public record Listener(UUID id, String name, boolean person, Set<String> teams, 
 
     /** Whether this listener is in the scope's audience, by relation; earshot only for public scopes. */
     public boolean inAudience(Scope scope) {
-        return switch (scope.channel()) {
+        return switch (scope.channel().audience()) {
             case PRIVATE -> id.toString().equals(scope.key());
             case TEAM -> teams.contains(scope.key());
             case FACTION -> !faction.isEmpty() && faction.equals(scope.key());

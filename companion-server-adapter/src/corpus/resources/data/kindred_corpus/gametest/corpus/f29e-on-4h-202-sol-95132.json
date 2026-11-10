@@ -1,0 +1,337 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 95132,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -60,
+  -56,
+  -162
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.69999998807907,
+  8.0,
+  16.30000001192093
+ ],
+ "yaw": 22.062662,
+ "pitch": 27.080324,
+ "health": 7.8366756,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [
+  {
+   "id": "minecraft:hunger",
+   "amplifier": 0,
+   "duration": 554
+  }
+ ],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 27
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 8
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 8
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 15
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:pink_petals",
+    "count": 4
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 2
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 8
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 8
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 26
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 4
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 13
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 1
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 4
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cherry_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:cherry_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 16
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 16
+    }
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 23132,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: heal before going on",
+ "task": "Rest to heal",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Sol was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[05:51:24] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[05:51:24] [Server thread/INFO]: Sol native_swap COMPLETED",
+  "[05:51:24] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[05:51:25] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[05:51:25] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus gravel]",
+  "[05:51:25] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus tuff]",
+  "[05:51:25] [Server thread/INFO]: Sol native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus rotten flesh]",
+  "[05:51:25] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[05:51:26] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus cobblestone]",
+  "[05:51:26] [Server thread/INFO]: Sol native_wait CANCELLED: A hostile mob is attacking; fight back first [Rest to heal]",
+  "[05:51:27] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[05:51:27] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -43, -48, -156 [Back off from skeleton]",
+  "[05:51:28] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[05:51:28] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+  "[05:51:29] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[05:51:29] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -40, -48, -154 [Back off from skeleton]",
+  "[05:51:29] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[05:51:29] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal -44, -46, -146]",
+  "[05:51:30] [Server thread/INFO]: Sol native_wait CANCELLED: The player died [Rest to heal]",
+  "[05:51:30] [Server thread/INFO]: Sol died at -44, -48, -146: Sol was shot by Skeleton (tick 95132, night, under cover, hunger 20, armour 6, holding cobbled_deepslate, a shield; doing \"Rest to heal\" in \"Iron: heal before going on\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "f29e-on-4h",
+  "seed": "202",
+  "build": "4h",
+  "replay": "docs/evidence/eval/f29e-on-4h/202/replays/world/Sol-95132",
+  "source": "docs/evidence/eval/f29e-on-4h/202/replays/world/Sol-95132",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

@@ -1,0 +1,81 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 121775,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -20,
+  82,
+  26
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.335731827781434,
+  8.0,
+  16.177069803926997
+ ],
+ "yaw": -76.50134,
+ "pitch": 7.705812,
+ "health": 6.499998,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:wheat_seeds",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 1775,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: hurt and out of food - Explore south for animals",
+ "task": "Explore south for animals",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Kindred was doomed to fall by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[07:58:39] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[07:58:39] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[07:58:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from creeper]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[07:58:41] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -5, 97, 36 [Back off from creeper]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for animals]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -11, 96, 35 [Run from creeper]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight creeper]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight creeper]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight creeper]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight creeper]",
+  "[07:58:42] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Explore south for animals]",
+  "[07:58:42] [Server thread/INFO]: Kindred died at -4, 90, 42: Kindred was doomed to fall by Skeleton (tick 121775, day, under the sky, hunger 16, armour 0, holding nothing, no shield; doing \"Explore south for animals\" in \"Wood: hurt and out of food - Explore south for animals\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+ ],
+ "corpus": {
+  "run": "e40a17-7bc5b42",
+  "seed": "303",
+  "build": "7bc5b42",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a17-7bc5b42/303/replays/world/Kindred-121775",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
