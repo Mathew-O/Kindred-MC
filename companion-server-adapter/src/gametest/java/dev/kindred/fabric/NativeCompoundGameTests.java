@@ -439,6 +439,21 @@ public final class NativeCompoundGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundCattle", tickLimit = 9000)
     public void aPlayerBringsAPairInByThePasturesDoorwayBreedsThemAndShutsItBehindThem(TestContext context) {
+        pastureDoorway(context, false);
+    }
+
+    /**
+     * The same with one of the doorway's planks not picked up as it was dug out: on #101's CI (run 42584569435) the
+     * doorway's shut placed seven of its eight blocks and stopped, "Nothing in hand to place", a plank short, for good
+     * (F-22c44). Staged: once the doorway is open, one plank taken from the player's pack and left lying in the
+     * pasture's south-west corner, in sight of the doorway and off the player's ways to the pen.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundCattleDrop", tickLimit = 9000)
+    public void withADoorwayPlankLeftLyingItPicksItUpToShutTheDoorway(TestContext context) {
+        pastureDoorway(context, true);
+    }
+
+    private static void pastureDoorway(TestContext context, boolean dropLeft) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8800);
         var style = new BuildStyle("", "oak", "cobblestone", 0, 0);
         var plans = java.util.List.of(Compounds.keep(style), Compounds.farmWard(style), Compounds.pastureWard(style));
@@ -497,6 +512,20 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     }
                     world.setTimeOfDay(1000);
                     context.assertTrue(f.runtime.startPasture(f.source, f.id, origin, dev.kindred.core.survival.Ranch.Kind.COW) == 1, "Pasture started");
+                })
+                .createAndAdd(() -> {
+                    if (!dropLeft) return;
+                    context.assertTrue(f.runtime.ranchStatus(f.id).orElse("").contains("leading"), "Leading begun: " + f.runtime.ranchStatus(f.id).orElse(""));
+                    var inventory = f.player().getInventory();
+                    int slot = -1;
+                    for (int s = 0; s < 36 && slot < 0; s++) if (inventory.getStack(s).isOf(Items.OAK_PLANKS)) slot = s;
+                    context.assertTrue(slot >= 0, "A doorway plank in its pack");
+                    inventory.removeStack(slot, 1);
+                    var world = context.getWorld();
+                    var lying = new net.minecraft.entity.ItemEntity(world, origin.getX() + wall.west() + 2.5, origin.getY() + 0.1,
+                            origin.getZ() + wall.south() - 2.5, new ItemStack(Items.OAK_PLANKS));
+                    lying.setVelocity(0, 0, 0);
+                    world.spawnEntity(lying);
                 })
                 .createAndAdd(() -> {
                     var status = f.runtime.ranchStatus(f.id);

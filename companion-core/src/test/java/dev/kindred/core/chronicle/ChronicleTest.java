@@ -59,7 +59,7 @@ class ChronicleTest {
         assertFalse(week.text().contains("not read"));
         assertFalse(week.cites().contains(999L));
         assertEquals(28, week.cites().size());
-        assertTrue(week.text().startsWith("Day 1 (" + WREN + "): 2 deaths"), week.text());
+        assertTrue(week.text().startsWith(WREN + ": day 1 2 deaths"), week.text());
     }
 
     @Test
@@ -165,5 +165,27 @@ class ChronicleTest {
         assertTrue(after < before, after + " against " + before);
         System.out.println("F-33 busy day: " + events.size() + " events, " + lines.size() + " lines, page " + page.text().length()
                 + " chars, history " + after + " chars against " + before + " with 16 events");
+    }
+
+    @Test
+    void aMonthOfEightPlayersStillFitsTheRecord() {
+        var days = new ArrayList<Summary>();
+        long id = 1;
+        for (int player = 0; player < 8; player++) for (long d = 0; d < 30; d++) {
+            var cites = new ArrayList<Long>();
+            for (int i = 0; i < 40; i++) cites.add(id++);
+            days.add(new Summary(Tier.PLAYER_DAY, "p" + player, d * Chronicle.DAY, (d + 1) * Chronicle.DAY, "x".repeat(500), cites, false));
+        }
+        var weeks = new ArrayList<Summary>();
+        for (long w = 0; w < 4; w++) weeks.add(Chronicle.plainFrom(Tier.FACTION_WEEK, "faction:oak", w * 7 * Chronicle.DAY, days));
+        var month = Chronicle.plainFrom(Tier.WORLD_MONTH, "world", 0, weeks);
+        assertTrue(month.cites().size() > Chronicle.MAX_CITES, "a month carries thousands: " + month.cites().size());
+        var data = Chronicle.pageData(month, id);
+        assertTrue(dev.kindred.core.record.EventData.encode(data).length() < dev.kindred.core.record.WorldEvent.MAX_DATA, "fits: " + dev.kindred.core.record.EventData.encode(data).length());
+        assertEquals(String.valueOf(month.cites().size() - Chronicle.MAX_CITES), data.get("cites_more"));
+        var week = weeks.getFirst().text();
+        assertTrue(week.length() <= Chronicle.ABOVE_CHARS, week.length() + "");
+        for (int player = 0; player < 8; player++) assertTrue(week.contains("p" + player + ": day 1 "), "every member told: " + week);
+        assertTrue(week.contains("/ day 7 "), "every day: " + week);
     }
 }

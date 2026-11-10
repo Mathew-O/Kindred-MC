@@ -739,6 +739,14 @@ final class BuildRunner {
         }
         String missing = bill.missing().entrySet().stream().map(e -> e.getValue() + " " + shortName(e.getKey()))
                 .collect(java.util.stream.Collectors.joining(", "));
+        // A drop of what it is short of lying in sight close by, its own not picked up (a block it dug out, whose drop
+        // landed out of its reach): picked up first, once each, before it fetches, gathers or crafts any. On #101's CI a
+        // pasture doorway's shut stopped a plank short, "Nothing in hand to place", for good (F-22c44).
+        for (var item : bill.missing().keySet()) {
+            if (item.endsWith("_wool")) continue;
+            var lying = pickUp(player, Registries.ITEM.get(Identifier.of(item)), 1);
+            if (lying.isPresent()) return lying;
+        }
         boolean placeable = step.kind() == ConstructionPlanner.Kind.PLACE || step.kind() == ConstructionPlanner.Kind.SUPPORT
                 || step.kind() == ConstructionPlanner.Kind.BREAK || step.kind() == ConstructionPlanner.Kind.SCAFFOLD;
         Map<String, Integer> stored = Map.of();
@@ -859,6 +867,30 @@ final class BuildRunner {
      * it can spare; else a sheep of its colour hunted, one wool a sheep, never one of its ranch's or one named. None in
      * sight: out over the ground to look, a few times, before the build ends without it.
      */
+    /**
+     * A walk to (or a moment beside) the nearest drop of {@code item} in sight within twelve blocks, each drop walked to
+     * {@code times} at most; empty when there is none to go for.
+     */
+    private Optional<PortalRunCampaign.Task> pickUp(ServerPlayerEntity player, Item item, int times) {
+        String name = shortName(Registries.ITEM.getId(item).toString());
+        var drops = player.getServerWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(12, 4, 12),
+                drop -> drop.isAlive() && drop.getStack().isOf(item) && woolWalks.getOrDefault(drop.getUuid(), 0) < times && player.canSee(drop));
+        if (drops.isEmpty()) return Optional.empty();
+        var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        needsNote = "Picking up " + name + " for the rest of the build";
+        // Counted once the wait or walk has ended, not here: the plan is asked for its next step again and again while
+        // one runs, and a count kept here passed six in a wait for a drop to land, which was then let lie (on CI on
+        // #12, short of the beds' wool after all nine sheep were shorn).
+        woolFor = drop.getUuid();
+        woolLabel = "Pick up " + name;
+        // Beside it already: a moment for it, as a drop is not picked up in its first half second. Still falling: a
+        // moment for it to land, a walk to a block in the air being no walk at all.
+        if (player.getBoundingBox().expand(1, 0.5, 1).intersects(drop.getBoundingBox()) || !drop.isOnGround()) {
+            return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), woolLabel));
+        }
+        return Optional.of(PortalRunCampaign.go(drop.getBlockPos(), 0.6, false, woolLabel));
+    }
+
     private Optional<PortalRunCampaign.Task> wool(NativePlayerBody body, Supply supply, String wool, String missing) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -869,23 +901,8 @@ final class BuildRunner {
             wanting = missing;
             return Optional.empty();
         }
-        var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(12, 4, 12),
-                drop -> drop.isAlive() && drop.getStack().isOf(item) && woolWalks.getOrDefault(drop.getUuid(), 0) < 6 && player.canSee(drop));
-        if (!drops.isEmpty()) {
-            var drop = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
-            needsNote = "Picking up " + shortName(wool) + " for the rest of the build";
-            // Counted once the wait or walk has ended, not here: the plan is asked for its next step again and again while
-            // one runs, and a count kept here passed six in a wait for a drop to land, which was then let lie (on CI on
-            // #12, short of the beds' wool after all nine sheep were shorn).
-            woolFor = drop.getUuid();
-            woolLabel = "Pick up " + shortName(wool);
-            // Beside it already: a moment for it, as a drop is not picked up in its first half second. Still falling from
-            // the sheep: a moment for it to land, a walk to a block in the air being no walk at all.
-            if (player.getBoundingBox().expand(1, 0.5, 1).intersects(drop.getBoundingBox()) || !drop.isOnGround()) {
-                return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Pick up " + shortName(wool)));
-            }
-            return Optional.of(PortalRunCampaign.go(drop.getBlockPos(), 0.6, false, "Pick up " + shortName(wool)));
-        }
+        var picking = pickUp(player, item, 6);
+        if (picking.isPresent()) return picking;
         int shears = -1;
         for (int s = 0; s < 36 && shears < 0; s++) if (player.getInventory().getStack(s).isOf(Items.SHEARS)) shears = s;
         if (shears < 0 && player.getInventory().count(Items.IRON_INGOT) - supply.ironKept() >= 2) {
