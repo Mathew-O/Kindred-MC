@@ -1,0 +1,303 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 31126,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -36,
+  57,
+  -2
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.367683592242198,
+  8.419999986886978,
+  16.552406547884058
+ ],
+ "yaw": -245.64606,
+ "pitch": 10.0537,
+ "health": 12.7987175,
+ "food": 13,
+ "saturation": 0.8000001,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 11
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 39
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 44
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:spruce_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 21
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 35
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:spruce_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:spruce_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 19
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 18
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 4
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 61
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 3
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 59
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 5
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 11
+    }
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 7126,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Fight creeper",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[05:05:17] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+  "[05:05:17] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+  "[05:05:18] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+  "[05:05:18] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt rabbit]",
+  "[05:05:18] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+  "[05:05:18] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+  "[05:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+  "[05:05:19] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt rabbit]",
+  "[05:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up food]",
+  "[05:05:19] [Server thread/INFO]: Echo native_swap COMPLETED",
+  "[05:05:19] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[05:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for water: advance]",
+  "[05:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for water: advance]",
+  "[05:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for water: advance]",
+  "[05:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for water: advance]",
+  "[05:05:22] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for water]",
+  "[05:05:25] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore west for water]",
+  "[05:05:26] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+  "[05:05:27] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[05:05:28] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Run from creeper]"
+ ],
+ "corpus": {
+  "run": "e40a16-922f4fd",
+  "seed": "707",
+  "build": "922f4fd",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a16-922f4fd/707/replays/world/Echo-31126",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

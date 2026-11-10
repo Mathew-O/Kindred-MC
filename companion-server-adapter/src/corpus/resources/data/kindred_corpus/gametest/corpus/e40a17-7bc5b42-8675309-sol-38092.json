@@ -1,0 +1,230 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 38092,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  12,
+  24,
+  49
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.6820106485291,
+  8.28671999606371,
+  16.62414675205443
+ ],
+ "yaw": -103.54925,
+ "pitch": 17.843544,
+ "health": 7.158638,
+ "food": 6,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 18
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 48
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 27
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 8
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 20
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 14
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 26
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 18
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 3
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 14092,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Run from creeper",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Sol was blown up by Creeper",
+ "ticks": 1200,
+ "log": [
+  "[06:56:18] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 19, 44, 98]",
+  "[06:56:18] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[06:56:18] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 19, 45, 97]",
+  "[06:56:18] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 19, 44, 97]",
+  "[06:56:19] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 19, 43, 97]",
+  "[06:56:19] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]",
+  "[06:56:19] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 19, 44, 96]",
+  "[06:56:19] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 19, 43, 96]",
+  "[06:56:19] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[06:56:20] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 19, 44, 95]",
+  "[06:56:20] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 19, 43, 95]",
+  "[06:56:20] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]",
+  "[06:56:20] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 19, 43, 95 [Hole up: back into the passage]",
+  "[06:56:21] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward iron: advance]",
+  "[06:56:22] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+  "[06:56:22] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+  "[06:56:23] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+  "[06:56:25] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[06:56:27] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Get out of the water: to dry ground]",
+  "[06:56:28] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Run from creeper]"
+ ],
+ "corpus": {
+  "run": "e40a17-7bc5b42",
+  "seed": "8675309",
+  "build": "7bc5b42",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a17-7bc5b42/8675309/replays/world/Sol-38092",
+  "class": "death: creeper",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

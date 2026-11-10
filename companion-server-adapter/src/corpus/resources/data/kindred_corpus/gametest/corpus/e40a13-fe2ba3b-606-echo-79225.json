@@ -1,0 +1,164 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 79225,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  270,
+  17,
+  -13
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.11718654096734,
+  8.0,
+  16.50145256488661
+ ],
+ "yaw": -90.15499,
+ "pitch": 18.027996,
+ "health": 6.9731607,
+ "food": 15,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 31
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 4
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 7
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 6
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 40
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:birch_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 6
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 9
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 7225,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Take cover from skeleton",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Echo was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[02:44:59] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 247, 55, 11]",
+  "[02:44:59] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 247, 56, 11]",
+  "[02:44:59] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[02:45:01] [Server thread/INFO]: Echo native_goto COMPLETED [Explore north for animals]",
+  "[02:45:01] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 56, 2]",
+  "[02:45:01] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 55, 2]",
+  "[02:45:01] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+  "[02:45:01] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 56, 1]",
+  "[02:45:02] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 55, 1]",
+  "[02:45:02] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+  "[02:45:02] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 56, 0]",
+  "[02:45:02] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 55, 0]",
+  "[02:45:02] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+  "[02:45:02] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 56, -1]",
+  "[02:45:02] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 252, 55, -1]",
+  "[02:45:02] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+  "[02:45:02] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 252, 55, -29 [Explore north for animals]",
+  "[02:45:04] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore east for animals]",
+  "[02:45:05] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Run from creeper]",
+  "[02:45:05] [Server thread/INFO]: Echo died at 286, 25, 3: Echo was shot by Skeleton (tick 79225, day, under cover, hunger 14, armour 0, holding stone_pickaxe, no shield; doing \"Run from creeper\" in \"Iron: fight back - Take cover from skeleton\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+ ],
+ "corpus": {
+  "run": "e40a13-fe2ba3b",
+  "seed": "606",
+  "build": "fe2ba3b",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a13-fe2ba3b/606/replays/world/Echo-79225",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
