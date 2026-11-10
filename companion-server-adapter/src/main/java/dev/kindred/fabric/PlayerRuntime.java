@@ -6675,6 +6675,8 @@ final class PlayerRuntime {
                 routineCandidates = with;
             }
         }
+        // A walk let be for now (LOOPS 1): its routine's work only, never a reflex or a life need.
+        routineCandidates = withoutWalksSetAside(entry, body, routineCandidates);
 
         // Not admitted to its work, its reflexes are all it has to choose from.
         List<NativeTaskCandidate> taskCandidates;
@@ -6695,7 +6697,6 @@ final class PlayerRuntime {
             taskCandidates.addAll(routineCandidates);
         }
 
-        taskCandidates = withoutWalksSetAside(entry, body, taskCandidates);
         List<dev.kindred.core.TaskPreferences.Candidate> candidates = taskCandidates.stream().map(NativeTaskCandidate::candidate).toList();
         if (watch != null && !taskCandidates.isEmpty()) entry.weighed = List.copyOf(taskCandidates);
 
@@ -14103,6 +14104,7 @@ final class PlayerRuntime {
         if (state != SkillRunner.State.BLOCKED) return;
         String reason = entry.runner.reason().orElse("");
         if (!reason.startsWith("No walkable route") && !reason.contains(" is blocked")) return;
+        if (!walksMayBeSetAside(entry.nativeBody.entity())) return;
         BlockPos feet = entry.nativeBody.entity().getBlockPos();
         if (entry.walksAside.refused(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), server.getTicks())) {
             String label = outcomeLabel(entry, lifeLabel);
@@ -14111,9 +14113,19 @@ final class PlayerRuntime {
         }
     }
 
+    /**
+     * Whether the set-aside may count or hold back a walk now: not while anything about the player is a danger, in water
+     * or lava, burning, short of air or under half its health. A walk then is very likely its way out (the replays'
+     * "Get out of the water: up for air", refused three times while it sank).
+     */
+    private static boolean walksMayBeSetAside(net.minecraft.server.network.ServerPlayerEntity player) {
+        return !player.isTouchingWater() && !player.isInLava() && !player.isOnFire() && player.getAir() >= player.getMaxAir()
+                && player.getHealth() >= player.getMaxHealth() / 2;
+    }
+
     /** The candidates, less any walk to a place set aside for this player where it stands (LOOPS 1, M-01f slice 2). */
     private List<NativeTaskCandidate> withoutWalksSetAside(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
-        if (candidates.isEmpty() || entry.walksAside.size() == 0 || body == null || !body.connected()) return candidates;
+        if (candidates.isEmpty() || entry.walksAside.size() == 0 || body == null || !body.connected() || !walksMayBeSetAside(body.entity())) return candidates;
         BlockPos feet = body.entity().getBlockPos();
         long tick = server.getTicks();
         List<NativeTaskCandidate> kept = null;
