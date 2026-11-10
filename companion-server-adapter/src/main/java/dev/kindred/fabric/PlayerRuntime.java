@@ -2659,6 +2659,7 @@ final class PlayerRuntime {
         }
         attentionScheduler.synchronizeEntries(batch);
         if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
+        if (tick % 20 == 5) readOldMemories(); // F-32b: each AI player's old files into its web, once a start.
         if (tick % 20 == 11) initiative.tick(); // E-53: speaking first, within each person's budget.
         if (tick % 20 == 15) peerTalk.tick(); // E-51: AI players talking when they meet again.
         if (tick % 20 == 17) gifts.tick(); // E-22a: tosses picked up, or left.
@@ -13139,6 +13140,31 @@ final class PlayerRuntime {
                 busy ? PlayerVoice.doing(entry.skillId) : "", PlayerVoice.goal(goalOf(entry)), entry.goalProgress,
                 entry.campaign == null ? List.of() : entry.campaign.lastEvents(5), entry.lastSaid == null ? "" : entry.lastSaid,
                 memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
+    }
+
+    /**
+     * F-32b: each AI player's old memory files (its peer ledger and atlas, E-50 and F-30) read into its knowledge web
+     * once a start, after the webs are rebuilt from the Record; read off the thread, put in on it. The files stay as
+     * they are, and so does everything that reads them.
+     */
+    private record OldFiles(dev.kindred.core.social.PeerLedger.Snapshot peers, dev.kindred.core.atlas.Atlas.Snapshot atlas) { }
+
+    private void readOldMemories() {
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null || entry.snapshot().lifecycle() == LifecycleState.REMOVED) continue;
+            UUID id = entry.data.id();
+            if (!webs.readOldOnce(id)) continue;
+            String name = entry.data.displayName();
+            String faction = factionOf.apply(id);
+            String team = faction == null || faction.isEmpty() ? KindredWire.TEAM : KindredWire.TEAM + ":" + faction;
+            memories.loadPeers(id, name).thenCombine(memories.loadAtlas(id, name), OldFiles::new)
+                    .whenComplete((files, failure) -> handBack(() -> {
+                        if (!running || failure != null || files == null) return;
+                        var read = webs.readOld(id, files.peers(), files.atlas(), team);
+                        if (read.added() > 0) KindredMod.LOGGER.info("Kindred knowledge: {}'s old memory files read into its web: {} facts added, {} already held",
+                                name, read.added(), read.kept());
+                    }));
+        }
     }
 
     /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
