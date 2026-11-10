@@ -302,6 +302,10 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                     ada[1] = statuses.getFirst().nativeId();
                     context.assertTrue(f.runtime.socialSetting(f.source, ada[0], null, false, Personality.Trait.COMBATIVENESS, 70) == 1, "Ada made fierce");
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, ada[0], dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    // No goal, chosen by its operator: only faction play moves it. With the faction world's standing goal, a
+                    // step for logs could carry it past the border chunk in mid-walk, and it captured the chunk beyond
+                    // instead (#131's CI run 42772117542: "Captured ...:-900504:874087", keys[2]).
+                    context.assertTrue(f.runtime.startGoal(f.source, ada[0], dev.kindred.core.survival.SurvivalGoal.NONE) == 1, "No goal");
                     // Both founded more than 48 hours ago, past the new-faction shield.
                     f.runtime.factionsWorldForTest(WIDE);
                     ben[0] = MockPlayers.survival(context, "Ben", new BlockPos(2, 2, 2));

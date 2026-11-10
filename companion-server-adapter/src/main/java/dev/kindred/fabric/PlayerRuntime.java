@@ -6741,16 +6741,6 @@ final class PlayerRuntime {
 
         // 2. Scheduled routine candidates (cached from scheduler slices)
         List<NativeTaskCandidate> routineCandidates = autonomyAdmitted ? entry.cachedRoutineCandidates : List.of();
-        if (autonomyAdmitted && extraCandidatesForTest != null) {
-            var extra = extraCandidatesForTest.apply(entry.data.id());
-            if (extra != null && !extra.isEmpty()) {
-                var with = new ArrayList<NativeTaskCandidate>(routineCandidates);
-                with.addAll(extra);
-                routineCandidates = with;
-            }
-        }
-        // A walk let be for now (LOOPS 1): its routine's work only, never a reflex or a life need.
-        routineCandidates = withoutWalksSetAside(entry, body, routineCandidates);
 
         // Not admitted to its work, its reflexes are all it has to choose from.
         List<NativeTaskCandidate> taskCandidates;
@@ -7717,7 +7707,6 @@ final class PlayerRuntime {
                 entry.walksFailed++;
                 entry.walkFailedAt = server.getTicks();
             }
-            walkOutcome(entry, state, lifeLabel);
             // A faction walk (M-06i): a refusal backs it off and, after three, sets the place aside; a walk that went
             // somewhere forgets its refusals.
             var factionMove = entry.factionPlay.move;
@@ -14139,81 +14128,6 @@ final class PlayerRuntime {
      * What an ended task is called in its outcome line: its campaign or build step's label, its life task's, or else
      * "from" the routine that proposed it (M-01); empty for a task asked for by a command.
      */
-    /**
-     * The four-block cell a walk's target is in, as the set-aside keys it: a refused patch of gravel or a border is walked
-     * for block by neighbouring block (seed 109's trace: 99 refusals over a few gravel blocks, three each).
-     */
-    private static long walkCell(BlockPos target) {
-        return BlockPos.asLong(target.getX() >> 2, target.getY() >> 2, target.getZ() >> 2);
-    }
-
-    /** A walk's target, as its arguments name it; null when they name none. */
-    private static BlockPos walkTarget(Map<String, String> arguments) {
-        try {
-            if (arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z"))
-                return new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
-        } catch (NumberFormatException malformed) {
-            return null;
-        }
-        return null;
-    }
-
-    /**
-     * A walk refused for want of a route (the planner's "No walkable route", or a route found blocked) counts against its
-     * target from where the player stands; one that arrived forgets its refusals; its own breaks and placements change
-     * the ground, and every place gets another try (LOOPS 1, M-01f slice 2).
-     */
-    private void walkOutcome(Entry entry, SkillRunner.State state, String lifeLabel) {
-        if (entry.nativeBody == null || !entry.nativeBody.connected() || entry.skillId == null) return;
-        if (state == SkillRunner.State.COMPLETED && ("native_break".equals(entry.skillId) || "native_place".equals(entry.skillId))) {
-            entry.walksAside.groundChanged();
-            return;
-        }
-        if (!"native_goto".equals(entry.skillId)) return;
-        BlockPos target = walkTarget(entry.skillArgs);
-        if (target == null) return;
-        if (state == SkillRunner.State.COMPLETED) {
-            entry.walksAside.walked(walkCell(target));
-            return;
-        }
-        if (state != SkillRunner.State.BLOCKED) return;
-        String reason = entry.runner.reason().orElse("");
-        if (!reason.startsWith("No walkable route") && !reason.contains(" is blocked")) return;
-        if (!walksMayBeSetAside(entry.nativeBody.entity())) return;
-        BlockPos feet = entry.nativeBody.entity().getBlockPos();
-        if (entry.walksAside.refused(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), server.getTicks())) {
-            String label = outcomeLabel(entry, lifeLabel);
-            KindredMod.LOGGER.info("{} lets its walks to around {} be for ten minutes: refused {} times from around {}{}", entry.data.displayName(),
-                    target.toShortString(), dev.kindred.core.WalkSetAside.REFUSALS, feet.toShortString(), label.isEmpty() ? "" : " [" + label + "]");
-        }
-    }
-
-    /**
-     * Whether the set-aside may count or hold back a walk now: not while anything about the player is a danger, in water
-     * or lava, burning, short of air or under half its health. A walk then is very likely its way out (the replays'
-     * "Get out of the water: up for air", refused three times while it sank).
-     */
-    private static boolean walksMayBeSetAside(net.minecraft.server.network.ServerPlayerEntity player) {
-        return !player.isTouchingWater() && !player.isInLava() && !player.isOnFire() && player.getAir() >= player.getMaxAir()
-                && player.getHealth() >= player.getMaxHealth() / 2;
-    }
-
-    /** The candidates, less any walk to a place set aside for this player where it stands (LOOPS 1, M-01f slice 2). */
-    private List<NativeTaskCandidate> withoutWalksSetAside(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
-        if (candidates.isEmpty() || entry.walksAside.size() == 0 || body == null || !body.connected() || !walksMayBeSetAside(body.entity())) return candidates;
-        BlockPos feet = body.entity().getBlockPos();
-        long tick = server.getTicks();
-        List<NativeTaskCandidate> kept = null;
-        for (int i = 0; i < candidates.size(); i++) {
-            var candidate = candidates.get(i);
-            BlockPos target = "native_goto".equals(candidate.skill()) ? walkTarget(candidate.arguments()) : null;
-            boolean aside = target != null && entry.walksAside.aside(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), tick);
-            if (aside && kept == null) kept = new ArrayList<>(candidates.subList(0, i));
-            else if (!aside && kept != null) kept.add(candidate);
-        }
-        return kept == null ? candidates : kept;
-    }
-
     private static String outcomeLabel(Entry entry, String lifeLabel) {
         if (entry.activeCampaignTask != null) return entry.activeCampaignTask.label();
         if (entry.activeBuildTask != null) return entry.activeBuildTask.label();
@@ -16464,13 +16378,6 @@ final class PlayerRuntime {
     }
 
     /** The faction world's once-a-second step, for a fixture whose runtime has no AI body to tick it. */
-    /** A routine of the fixture's own, its candidates weighed with the routine ones at each decision; null for none. */
-    private java.util.function.Function<UUID, List<NativeTaskCandidate>> extraCandidatesForTest;
-
-    void extraCandidatesForTest(java.util.function.Function<UUID, List<NativeTaskCandidate>> routine) {
-        extraCandidatesForTest = routine;
-    }
-
     void factionsTickForTest() {
         requireThread();
         factions.tick(server.getPlayerManager().getPlayerList());
@@ -16987,8 +16894,6 @@ final class PlayerRuntime {
         private String skillId;
         /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
         private String dispatchSource = "", pendingSource;
-        /** Walks refused again and again from about one place, let be for ten minutes whatever asks for them (LOOPS 1, M-01f). */
-        private final dev.kindred.core.WalkSetAside walksAside = new dev.kindred.core.WalkSetAside();
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;

@@ -1,0 +1,181 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 103976,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  88,
+  55,
+  224
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.981515719542372,
+  8.0,
+  16.642515911889376
+ ],
+ "yaw": 87.217575,
+ "pitch": 18.153679,
+ "health": 16.566673,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 14
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 8
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:black_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 63
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 40
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 18
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 3
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 7976,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Portal: fight back - Run from creeper",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was blown up by Creeper",
+ "ticks": 1200,
+ "log": [
+  "[22:52:14] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 103, 59, 212]",
+  "[22:52:14] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 103, 58, 212]",
+  "[22:52:15] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 103, 57, 212]",
+  "[22:52:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward iron: step down]",
+  "[22:52:15] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 102, 58, 212]",
+  "[22:52:15] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 102, 57, 212]",
+  "[22:52:16] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 102, 56, 212]",
+  "[22:52:16] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward iron: step down]",
+  "[22:52:16] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 101, 57, 212]",
+  "[22:52:16] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 101, 56, 212]",
+  "[22:52:17] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 101, 55, 212]",
+  "[22:52:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward iron: step down]",
+  "[22:52:20] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[22:52:21] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[22:52:22] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 211, 15, 235]",
+  "[22:52:24] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[22:52:26] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[22:52:28] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight creeper]",
+  "[22:52:28] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Run from creeper]",
+  "[22:52:28] [Server thread/INFO]: Kindred died at 104, 63, 240: Kindred was blown up by Creeper (tick 103976, day, under cover, hunger 16, armour 0, holding stone_sword, no shield; doing \"Run from creeper\" in \"Portal: fight back - Run from creeper\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "303",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/303/replays/world/Kindred-103976",
+  "source": "docs/evidence/eval/f29e-on/303/replays/world/Kindred-103976",
+  "class": "death: creeper",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
