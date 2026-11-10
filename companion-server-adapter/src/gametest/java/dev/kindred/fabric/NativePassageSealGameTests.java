@@ -24,8 +24,9 @@ import net.minecraft.util.math.Vec3d;
  * z 1 (x 1 to 11, y 2 and 3) closed at both ends, stone all round and over it, so it is dark at any hour; daytime is set
  * on purpose. The player at its west end with a stone sword in hand, a shield in its off hand and cobblestone, at full
  * health and fed, the goal
- * begun; zombies set on it from the tunnel's far end. With two, once the seal has held for half a minute they are removed,
- * as though they gave up.
+ * begun; zombies set on it from five and six blocks off along the tunnel, within six of where its seal goes. With two,
+ * once the seal has held for half a minute they are removed, as though they gave up. The seal must not open while a
+ * zombie is within six blocks of it, the reach of the spec's hold.
  */
 public final class NativePassageSealGameTests implements FabricGameTest {
 
@@ -77,7 +78,7 @@ public final class NativePassageSealGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(20);
                     context.getWorld().setTimeOfDay(1000);
                     for (int i = 0; i < count; i++) {
-                        zombies[i] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(10.5 - i, 2, 1.5));
+                        zombies[i] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(6.5 + i, 2, 1.5));
                         zombies[i].setBaby(false);
                         zombies[i].setTarget(player);
                     }
@@ -106,7 +107,9 @@ public final class NativePassageSealGameTests implements FabricGameTest {
                         context.assertTrue(false, failed[0]);
                     }
                     if (sealed && sealedAt[0] < 0) sealedAt[0] = world.getTime();
-                    if (sealedAt[0] >= 0 && !sealed) {
+                    boolean near = false;
+                    for (ZombieEntity zombie : zombies) near |= zombie.isAlive() && zombie.squaredDistanceTo(Vec3d.ofCenter(context.getAbsolutePos(foot))) <= 6 * 6;
+                    if (sealedAt[0] >= 0 && !sealed && near) {
                         failed[0] = "Its seal opened with the zombies about: " + progress;
                         context.assertTrue(false, failed[0]);
                     }
