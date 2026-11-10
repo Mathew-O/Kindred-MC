@@ -508,7 +508,7 @@ final class BuildRunner {
             breakTarget = breakStance = null;
         }
         var walkedTo = placeWalkedTo(player, site);
-        var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
+        var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned, spareScaffold(player, wanted, site));
         if (supply != null && step.kind() != ConstructionPlanner.Kind.DONE) {
             var fetch = fetch(body, supply, wanted, site, step);
             if (fetch.isPresent()) {
@@ -1104,6 +1104,17 @@ final class BuildRunner {
             if (!stack.isEmpty()) items.add(Registries.ITEM.getId(stack.getItem()).toString());
         }
         return items;
+    }
+
+    /** How many blocks it holds that it can spare for scaffolding, beyond what the build still needs of them (F-22c45). */
+    private static int spareScaffold(ServerPlayerEntity player, List<Blueprint.Block> wanted, BuildSite site) {
+        var bill = dev.kindred.core.construction.BillOfMaterials.of(wanted, site, Map.of());
+        int spare = 0;
+        for (Item item : SCAFFOLD) {
+            int need = bill.needed().getOrDefault(Registries.ITEM.getId(item).toString(), 0);
+            spare += Math.max(0, player.getInventory().count(item) - need);
+        }
+        return spare;
     }
 
     /** A slot holding a block it can spare for scaffolding: one the build needs no more of. */

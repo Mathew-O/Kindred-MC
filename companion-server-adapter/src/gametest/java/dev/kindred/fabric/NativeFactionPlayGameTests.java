@@ -13,10 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
+import net.minecraft.block.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 /**
  * In plain terms: GameTests of an AI player playing a faction world (M-06i): on its own, with nobody telling it, it
@@ -185,6 +189,87 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var goals = f.runtime.goalsForTest(f.id);
                     context.assertTrue(goals[0] == dev.kindred.core.survival.SurvivalGoal.NONE, "Its own goal still unset: " + goals[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its goal begun in a safe zone, with a tree inside the zone beside it and another outside it: it fells the one
+     * outside and puts its crafting table down outside, never working the zone's tree. A safe zone takes no edit, and
+     * the goal's choice of what to gather and where to work reads the same rule (TerritoryGuard) as the edit itself.
+     * Before, it walked to the zone's logs, could not cut them, and wandered off (the e40a16 seeds in a faction world:
+     * its first wooden tool at 14.5 game minutes, against 0.85 without the hub).
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "factionPlaySafeTrees", tickLimit = 2400)
+    public void startingInASafeZoneItFellsATreeOutsideItAndWorksThere(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        var server = context.getWorld().getServer();
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos inside = o.add(20, 7, 16), outside = o.add(40, 7, 40);
+        BlockPos[] trunks = {inside, outside};
+        BlockPos home = o.add(16, 7, 16);
+        var zone = new java.util.TreeSet<String>();
+        var tools = java.util.Set.of(net.minecraft.item.Items.WOODEN_PICKAXE, net.minecraft.item.Items.WOODEN_AXE,
+                net.minecraft.item.Items.WOODEN_SWORD, net.minecraft.item.Items.WOODEN_SHOVEL, net.minecraft.item.Items.WOODEN_HOE);
+        // Every goal step it takes about logs in the zone (a walk to them or a cut), watched each tick.
+        var zoneSteps = new java.util.ArrayList<String>();
+        var logsAt = java.util.regex.Pattern.compile("logs at (-?\\d+), (-?\\d+), (-?\\d+)");
+        context.runAtEveryTick(() -> {
+            if (zone.isEmpty() || !f.runtime.isReady()) return;
+            String step = f.runtime.goalStepForTest(f.id);
+            if (step == null) return;
+            var m = logsAt.matcher(step);
+            if (m.find() && zone.contains(dev.kindred.core.factions.SafeZones.chunkAt(W, Integer.parseInt(m.group(1)), Integer.parseInt(m.group(3))))
+                    && (zoneSteps.isEmpty() || !zoneSteps.getLast().equals(step))) zoneSteps.add(step);
+        });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    NativeBaseGameTests.ground(context, trunks);
+                    context.getWorld().setTimeOfDay(1000);
+                    f.runtime.factionsWorldForTest(WIDE);
+                    // The safe zone: every chunk the field's near part touches, the player's start and the near tree among
+                    // them; the far tree, sixteen blocks beyond its edge, is in another chunk.
+                    for (int x = -12; x <= 24; x += 4) for (int z = -12; z <= 24; z += 4) {
+                        var at = o.add(x, 0, z);
+                        zone.add(dev.kindred.core.factions.SafeZones.chunkAt(W, at.getX(), at.getZ()));
+                    }
+                    context.assertTrue(zone.contains(dev.kindred.core.factions.SafeZones.chunkAt(W, inside.getX(), inside.getZ()))
+                            && !zone.contains(dev.kindred.core.factions.SafeZones.chunkAt(W, outside.getX(), outside.getZ())), "One tree in the zone, one out");
+                    f.runtime.record(dev.kindred.core.factions.SafeZones.zone("fixture", zone, null, server.getTicks(), System.currentTimeMillis()));
+                    var player = f.player();
+                    player.getInventory().clear();
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.recordWritten(), "The zone written"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    var inventory = player.getInventory();
+                    boolean holds = false;
+                    for (int slot = 0; slot < inventory.size() && !holds; slot++) holds = tools.contains(inventory.getStack(slot).getItem());
+                    context.assertTrue(holds, "A wooden tool earned: " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(zoneSteps.isEmpty(), "No goal step about the zone's logs: " + zoneSteps);
+                    for (int y = 0; y < 6; y++) context.assertTrue(world.getBlockState(inside.up(y)).isOf(net.minecraft.block.Blocks.OAK_LOG),
+                            "The zone's tree whole: " + inside.up(y).toShortString());
+                    for (var cell : BlockPos.iterate(o.add(-12, 6, -12), o.add(24, 12, 24))) {
+                        context.assertTrue(!world.getBlockState(cell).isOf(net.minecraft.block.Blocks.CRAFTING_TABLE), "No crafting table in the zone: " + cell.toShortString());
+                    }
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
@@ -387,6 +472,90 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Night in a pocket dug under the stone of a safe zone, its way in open to the side and a stack of cobblestone
+     * carried: the way in is not sealed, the zone's cells being no one's to change, and it waits for daylight. In
+     * RUNNER 2's factions run on `d5057a4` (factions-e40a16seeds), on 505, Kindred proposed "Seal the shelter at ..."
+     * in another faction's land or a safe zone 29 times, each refused by the territory guard, since the night's seal
+     * placed its block wherever the shelter's openings were. Staged: a field of stone, all of it one recorded safe zone,
+     * a pocket three below its top with a shaft to the sky beside it, and the night held.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionPlaySafeShelter", tickLimit = 2400)
+    public void atNightInAPocketInASafeZoneItDoesNotSealTheZonesCellsAndWaits(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        BlockPos o = context.getAbsolutePos(new BlockPos(40, 8, 40));
+        int field = 12;
+        BlockPos feet = o.add(0, 3, 0);
+        var zone = new java.util.TreeSet<String>();
+        var seals = new java.util.ArrayList<String>();
+        int[] watched = new int[1];
+        boolean[] waited = new boolean[1];
+        context.runAtEveryTick(() -> {
+            if (zone.isEmpty() || !f.runtime.isReady()) return;
+            String step = f.runtime.goalStepForTest(f.id);
+            if (step != null && step.startsWith("Seal the shelter") && (seals.isEmpty() || !seals.getLast().equals(step))) seals.add(step);
+        });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Kindred"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-field, -2, -field), o.add(field, 14, field));
+                    FixtureGround.simulated(context, o.add(-field, 0, -field), o.add(field, 0, field));
+                    for (int x = -field; x <= field; x++) for (int z = -field; z <= field; z++) for (int y = -2; y <= 14; y++) {
+                        world.setBlockState(o.add(x, y, z), (y <= 6 ? Blocks.STONE : Blocks.AIR).getDefaultState());
+                    }
+                    // The pocket, roofed by the stone over it; its way in one cell east at feet and head, and a shaft up from there.
+                    for (int y = 3; y <= 4; y++) world.setBlockState(o.add(0, y, 0), Blocks.AIR.getDefaultState());
+                    for (int y = 3; y <= 6; y++) world.setBlockState(o.add(1, y, 0), Blocks.AIR.getDefaultState());
+                    world.setTimeOfDay(14000);
+                    f.runtime.factionsWorldForTest(WIDE);
+                    for (int x = -field; x <= field; x += 4) for (int z = -field; z <= field; z += 4) {
+                        var at = o.add(x, 0, z);
+                        zone.add(dev.kindred.core.factions.SafeZones.chunkAt(W, at.getX(), at.getZ()));
+                    }
+                    context.assertTrue(zone.contains(dev.kindred.core.factions.SafeZones.chunkAt(W, o.getX() + 1, o.getZ())), "The way in is in the zone");
+                    f.runtime.record(dev.kindred.core.factions.SafeZones.zone("fixture", zone, null, server.getTicks(), System.currentTimeMillis()));
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.COBBLESTONE, 16));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.recordWritten(), "The zone written"))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(feet), "In its pocket"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(14000);
+                    String step = f.runtime.goalStepForTest(f.id);
+                    waited[0] |= step != null && step.equals("Wait for daylight");
+                    context.assertTrue(seals.isEmpty(), "No seal of the zone's cells: " + seals);
+                    context.assertTrue(++watched[0] >= 600, "Through the night");
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(seals.isEmpty(), "No seal of the zone's cells: " + seals);
+                    for (int y = 3; y <= 4; y++) context.assertTrue(world.getBlockState(o.add(1, y, 0)).isAir(), "Its way in left as it was");
+                    // Ending the night covered: still in its pocket, under the stone over it, not climbed out to find another way.
+                    BlockPos at = f.player().getBlockPos();
+                    context.assertTrue(at.equals(feet) && !world.isSkyVisible(at.up()), "Covered through the night: at " + at.toShortString());
+                    context.assertTrue(waited[0], "Waiting for daylight: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
 }

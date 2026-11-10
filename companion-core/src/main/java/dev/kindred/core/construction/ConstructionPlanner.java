@@ -141,6 +141,16 @@ public final class ConstructionPlanner {
      */
     public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
                             Set<Pos> shunned) {
+        return next(blocks, clear, world, feet, items, scaffold, shunned, 0);
+    }
+
+    /**
+     * As {@link #next(List, List, BuildSite, Pos, Set, Set, Set)}, with {@code spare} the scaffold blocks the player holds
+     * beyond what the build still needs: taking its scaffold down, a spot it could not walk back from counts as one it
+     * can come back from when a scaffold of those blocks takes it back up (F-22c45).
+     */
+    public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
+                            Set<Pos> shunned, int spare) {
         BuildSite site = steps(blocks, clear, world);
         Map<Pos, BlockSpec> wanted = Blueprint.byPosition(blocks);
         Set<Pos> keepClear = new HashSet<>(clear);
@@ -161,7 +171,8 @@ public final class ConstructionPlanner {
         // the build and the ground round it, only spots it can walk back from: a drop off the edge of its ground is
         // walkable one way, and stood down there (three below a cabin's ring, run 5 of 29 October), the scaffolding
         // beside it was out of reach and the way back up a wall.
-        Set<Pos> walk = walkable(site, feet, scaffold);
+        Set<Pos> reachable = walkable(site, feet, scaffold);
+        Set<Pos> walk = new HashSet<>(reachable);
         walk.retainAll(returnable(site, walk, feet, scaffold, box));
         walk.removeAll(shunned);
         // Of the top layer, one it can break from where it stands first. The nearest first, the last two blocks of a
@@ -213,7 +224,27 @@ public final class ConstructionPlanner {
                 var up = scaffoldToBreak(site, high, feet, wanted, box, walk);
                 if (up.isPresent()) return up.get();
             }
-            if (!tops.isEmpty()) return Step.blockedAt(tops.getFirst(), "Scaffolding at " + tops.getFirst() + " is out of reach to take down");
+            // Still out of reach: from a spot it could not walk back from, if a scaffold of its own blocks would take it back
+            // up, the blocks it can spare and the one it gets back from the break (F-22c45). In #121's CI (run 42750254641)
+            // its last column stood in a hollow three below the ground; it climbed out on F-22c40's scaffold to take the
+            // others down, and the drop back into the hollow was walkable one way only, so the block was left "out of
+            // reach to take down" until the build stopped.
+            if (!tops.isEmpty()) {
+                // Its way back worked out with the tops gone, as they will be: never back up by the block it breaks.
+                var gone = new HashMap<Pos, Cell>();
+                for (Pos high : tops) gone.put(high, Cell.AIR);
+                BuildSite without = site.with(gone);
+                var standing = new HashSet<>(scaffold);
+                standing.removeAll(tops);
+                Set<Pos> outAgain = new HashSet<>(reachable);
+                outAgain.retainAll(returnable(without, walkable(without, feet, standing), feet, standing, box, spare + 1));
+                outAgain.removeAll(shunned);
+                if (!outAgain.equals(walk)) {
+                    var fromBelow = takeDown(site, tops, feet, wanted, box, outAgain, "Scaffolding down, a scaffold of its own back out");
+                    if (fromBelow.isPresent()) return fromBelow.get();
+                }
+                return Step.blockedAt(tops.getFirst(), "Scaffolding at " + tops.getFirst() + " is out of reach to take down");
+            }
             return Step.done();
         }
         todo.sort(Comparator.<Blueprint.Block>comparingInt(b -> b.at().y()).thenComparingLong(b -> b.at().distanceSquared(feet)));
@@ -564,6 +595,14 @@ public final class ConstructionPlanner {
      * the ground a block round it, by steps taken the other way. Spots there count as back already.
      */
     static Set<Pos> returnable(BuildSite site, Set<Pos> walk, Pos feet, Set<Pos> scaffold, Box box) {
+        return returnable(site, walk, feet, scaffold, box, 0);
+    }
+
+    /**
+     * As {@link #returnable(BuildSite, Set, Pos, Set, Box)}, and with {@code blocks} to put up under its own feet, also a spot
+     * from which a scaffold of at most that many, and no higher than {@link #MAX_DROP}, takes it up to a step back (F-22c45).
+     */
+    static Set<Pos> returnable(BuildSite site, Set<Pos> walk, Pos feet, Set<Pos> scaffold, Box box, int blocks) {
         var back = new HashSet<Pos>();
         var queue = new ArrayDeque<Pos>();
         for (Pos p : walk) {
@@ -592,8 +631,38 @@ public final class ConstructionPlanner {
                 back.add(above);
                 queue.add(above);
             }
+            // With nothing left to look at, a spot a scaffold of its own takes back up from.
+            if (queue.isEmpty() && blocks > 0) {
+                for (Pos at : walk) {
+                    if (!back.contains(at) && pillarsBack(site, at, back, blocks)) {
+                        back.add(at);
+                        queue.add(at);
+                    }
+                }
+            }
         }
         return back;
+    }
+
+    /**
+     * Whether a scaffold of at most {@code blocks} under its feet at {@code at}, no higher than {@link #MAX_DROP} (no higher
+     * than the drop the walk takes down), lifts the player to where one step lands on a spot of {@code back}: each cell it
+     * rises through open, with head room over it.
+     */
+    private static boolean pillarsBack(BuildSite site, Pos at, Set<Pos> back, int blocks) {
+        if (!site.standable(at)) return false;
+        var raised = new HashMap<Pos, Cell>();
+        for (int h = 1; h <= Math.min(blocks, MAX_DROP); h++) {
+            if (!through(site, at.add(0, h, 0)) || !through(site, at.add(0, h + 1, 0))) return false;
+            raised.put(at.add(0, h - 1, 0), SCAFFOLD_CELL);
+            var with = site.with(raised);
+            Pos top = at.add(0, h, 0);
+            for (Face f : SIDES) {
+                Pos to = stepTo(with, top, f);
+                if (to != null && back.contains(to)) return true;
+            }
+        }
+        return false;
     }
 
     /** How far {@code yaw} is from the middle of the quarter it falls in, in degrees. */

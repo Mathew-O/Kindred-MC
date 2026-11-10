@@ -262,7 +262,9 @@ public final class Worth {
 
     /** A piece of gear by its item id, or nothing for anything that is not gear. */
     static Kit kit(String item) {
-        String path = id(item).substring("minecraft:".length());
+        // The path, whatever the namespace: a mod's id can be shorter than vanilla's prefix ("mymod:odd").
+        String full = id(item);
+        String path = full.substring(full.indexOf(':') + 1);
         int split = path.lastIndexOf('_');
         if (split < 0) return null;
         Slot slot;
