@@ -22,12 +22,12 @@ public final class PetPolicy {
     public enum Support { FIRST, SECOND, LATER, UNSUPPORTED }
 
     public enum Species {
-        WOLF("minecraft:wolf", Support.FIRST, "bone", 1),
-        CAT("minecraft:cat", Support.FIRST, "raw cod or raw salmon", 1),
-        PARROT("minecraft:parrot", Support.SECOND, "seeds", 1),
-        HORSE("minecraft:horse", Support.LATER, "repeated mounting", 0),
-        DONKEY("minecraft:donkey", Support.LATER, "repeated mounting", 0),
-        MULE("minecraft:mule", Support.LATER, "repeated mounting", 0);
+        WOLF(VanillaIds.WOLF, Support.FIRST, "bone", 1),
+        CAT(VanillaIds.CAT, Support.FIRST, "raw cod or raw salmon", 1),
+        PARROT(VanillaIds.PARROT, Support.SECOND, "seeds", 1),
+        HORSE(VanillaIds.HORSE, Support.LATER, "repeated mounting", 0),
+        DONKEY(VanillaIds.DONKEY, Support.LATER, "repeated mounting", 0),
+        MULE(VanillaIds.MULE, Support.LATER, "repeated mounting", 0);
 
         public final String entityId;
         public final Support support;

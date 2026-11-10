@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Pos.Face;
 
 import java.util.List;
@@ -50,16 +52,16 @@ public final class Placement {
         UNSUPPORTED
     }
 
-    private static final Set<String> GRAVITY = Set.of("minecraft:sand", "minecraft:red_sand", "minecraft:gravel",
-            "minecraft:suspicious_sand", "minecraft:suspicious_gravel");
-    private static final Set<String> ON_TOP = Set.of("minecraft:torch", "minecraft:soul_torch", "minecraft:redstone_torch",
-            "minecraft:snow");
-    private static final Set<String> WALL = Set.of("minecraft:wall_torch", "minecraft:soul_wall_torch", "minecraft:redstone_wall_torch",
-            "minecraft:ladder");
-    private static final Set<String> FACING_PLAYER = Set.of("minecraft:furnace", "minecraft:smoker", "minecraft:blast_furnace",
-            "minecraft:chest", "minecraft:trapped_chest", "minecraft:ender_chest", "minecraft:carved_pumpkin",
-            "minecraft:jack_o_lantern", "minecraft:loom", "minecraft:stonecutter", "minecraft:lectern", "minecraft:beehive",
-            "minecraft:bee_nest");
+    private static final Set<String> GRAVITY = Set.of(VanillaIds.SAND, VanillaIds.RED_SAND, VanillaIds.GRAVEL,
+            VanillaIds.SUSPICIOUS_SAND, VanillaIds.SUSPICIOUS_GRAVEL);
+    private static final Set<String> ON_TOP = Set.of(VanillaIds.TORCH, VanillaIds.SOUL_TORCH, VanillaIds.REDSTONE_TORCH,
+            VanillaIds.SNOW);
+    private static final Set<String> WALL = Set.of(VanillaIds.WALL_TORCH, VanillaIds.SOUL_WALL_TORCH, VanillaIds.REDSTONE_WALL_TORCH,
+            VanillaIds.LADDER);
+    private static final Set<String> FACING_PLAYER = Set.of(VanillaIds.FURNACE, VanillaIds.SMOKER, VanillaIds.BLAST_FURNACE,
+            VanillaIds.CHEST, VanillaIds.TRAPPED_CHEST, VanillaIds.ENDER_CHEST, VanillaIds.CARVED_PUMPKIN,
+            VanillaIds.JACK_O_LANTERN, VanillaIds.LOOM, VanillaIds.STONECUTTER, VanillaIds.LECTERN, VanillaIds.BEEHIVE,
+            VanillaIds.BEE_NEST);
 
     private Placement() { }
 
@@ -67,8 +69,8 @@ public final class Placement {
         String id = spec.block();
         if (WALL.contains(id)) return Rule.WALL;
         if (ON_TOP.contains(id) || id.endsWith("_carpet") || id.endsWith("_pressure_plate")
-                || id.equals("minecraft:lantern") && !"true".equals(spec.property("hanging"))
-                || id.equals("minecraft:soul_lantern") && !"true".equals(spec.property("hanging"))) return Rule.ON_TOP;
+                || id.equals(VanillaIds.LANTERN) && !"true".equals(spec.property("hanging"))
+                || id.equals(VanillaIds.SOUL_LANTERN) && !"true".equals(spec.property("hanging"))) return Rule.ON_TOP;
         if (GRAVITY.contains(id) || id.endsWith("_concrete_powder")) return Rule.GRAVITY;
         if (id.endsWith("_stairs") && spec.property("half") != null) return Rule.STAIRS;
         if (id.endsWith("_slab")) return "double".equals(spec.property("type")) ? Rule.UNSUPPORTED : Rule.SLAB;
@@ -79,7 +81,7 @@ public final class Placement {
             return "upper".equals(spec.property("half")) ? Rule.COMPANION : Rule.DOOR;
         }
         if (id.endsWith("_bed") && spec.property("facing") != null) return "head".equals(spec.property("part")) ? Rule.COMPANION : Rule.BED;
-        if (id.equals("minecraft:hopper")) {
+        if (id.equals(VanillaIds.HOPPER)) {
             Face facing = face(spec.property("facing") == null ? "down" : spec.property("facing"));
             return facing == null || facing == Face.UP ? Rule.UNSUPPORTED : Rule.HOPPER;
         }
@@ -95,13 +97,13 @@ public final class Placement {
     private static final Set<String> UNSUPPORTED_SUFFIXES = Set.of("_door", "_bed", "_sign", "_banner", "_button", "_sapling",
             "_flower", "_tulip", "_rail", "_head", "_skull", "_candle", "_coral", "_coral_fan", "_mushroom", "_wall_hanging_sign",
             "_hanging_sign", "_trapdoor");
-    private static final Set<String> UNSUPPORTED = Set.of("minecraft:rail", "minecraft:redstone_wire", "minecraft:lever",
-            "minecraft:vine", "minecraft:water", "minecraft:lava", "minecraft:fire", "minecraft:tripwire", "minecraft:tripwire_hook",
-            "minecraft:short_grass", "minecraft:tall_grass", "minecraft:fern", "minecraft:large_fern", "minecraft:dandelion",
-            "minecraft:poppy", "minecraft:sugar_cane", "minecraft:cactus", "minecraft:kelp", "minecraft:seagrass", "minecraft:bamboo",
-            "minecraft:scaffolding", "minecraft:piston", "minecraft:sticky_piston", "minecraft:observer", "minecraft:dispenser",
-            "minecraft:dropper", "minecraft:anvil", "minecraft:chipped_anvil", "minecraft:damaged_anvil",
-            "minecraft:bell", "minecraft:end_portal_frame", "minecraft:nether_portal", "minecraft:end_portal");
+    private static final Set<String> UNSUPPORTED = Set.of(VanillaIds.RAIL, VanillaIds.REDSTONE_WIRE, VanillaIds.LEVER,
+            VanillaIds.VINE, VanillaIds.WATER, VanillaIds.LAVA, VanillaIds.FIRE, VanillaIds.TRIPWIRE, VanillaIds.TRIPWIRE_HOOK,
+            VanillaIds.SHORT_GRASS, VanillaIds.TALL_GRASS, VanillaIds.FERN, VanillaIds.LARGE_FERN, VanillaIds.DANDELION,
+            VanillaIds.POPPY, VanillaIds.SUGAR_CANE, VanillaIds.CACTUS, VanillaIds.KELP, VanillaIds.SEAGRASS, VanillaIds.BAMBOO,
+            VanillaIds.SCAFFOLDING, VanillaIds.PISTON, VanillaIds.STICKY_PISTON, VanillaIds.OBSERVER, VanillaIds.DISPENSER,
+            VanillaIds.DROPPER, VanillaIds.ANVIL, VanillaIds.CHIPPED_ANVIL, VanillaIds.DAMAGED_ANVIL,
+            VanillaIds.BELL, VanillaIds.END_PORTAL_FRAME, VanillaIds.NETHER_PORTAL, VanillaIds.END_PORTAL);
 
     /**
      * The faces of the block a placed block is set against that give {@code spec}: the face is on the support's side
@@ -186,9 +188,9 @@ public final class Placement {
     /** The item a block in {@code spec} is placed from: a wall torch from a torch, and so on. */
     public static String item(BlockSpec spec) {
         return switch (spec.block()) {
-            case "minecraft:wall_torch" -> "minecraft:torch";
-            case "minecraft:soul_wall_torch" -> "minecraft:soul_torch";
-            case "minecraft:redstone_wall_torch" -> "minecraft:redstone_torch";
+            case VanillaIds.WALL_TORCH -> VanillaIds.TORCH;
+            case VanillaIds.SOUL_WALL_TORCH -> VanillaIds.SOUL_TORCH;
+            case VanillaIds.REDSTONE_WALL_TORCH -> VanillaIds.REDSTONE_TORCH;
             default -> spec.block();
         };
     }

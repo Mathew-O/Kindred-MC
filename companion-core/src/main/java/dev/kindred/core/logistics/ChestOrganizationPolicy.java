@@ -1,13 +1,14 @@
 package dev.kindred.core.logistics;
 
+import dev.kindred.core.Capabilities;
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -28,14 +29,14 @@ public final class ChestOrganizationPolicy {
      * Canonical storage categories for single/double chests and Item-Frame warehouse columns.
      */
     public enum StorageCategory {
-        ORES_AND_VALUABLES("Ores, Ingots & Gems", "minecraft:diamond", 10),
-        TOOLS_AND_COMBAT("Tools, Weapons & Armor", "minecraft:iron_pickaxe", 20),
-        FOOD_AND_CROPS("Food, Crops & Seeds", "minecraft:golden_carrot", 30),
-        WOOD_AND_TIMBER("Logs, Planks & Saplings", "minecraft:oak_log", 40),
-        STONE_AND_MASONRY("Stone, Bricks & Terracotta", "minecraft:stone_bricks", 50),
-        REDSTONE_AND_RAILS("Redstone, Rails & Mechanisms", "minecraft:redstone", 60),
-        NETHER_AND_END("Nether, Potions & End Materials", "minecraft:blaze_rod", 70),
-        MOB_DROPS_AND_MISC("Mob Drops, Utility & Trinkets", "minecraft:ender_pearl", 80);
+        ORES_AND_VALUABLES("Ores, Ingots & Gems", VanillaIds.ICON_VALUABLES, 10),
+        TOOLS_AND_COMBAT("Tools, Weapons & Armor", VanillaIds.ICON_TOOLS, 20),
+        FOOD_AND_CROPS("Food, Crops & Seeds", VanillaIds.ICON_FOOD, 30),
+        WOOD_AND_TIMBER("Logs, Planks & Saplings", VanillaIds.ICON_WOOD, 40),
+        STONE_AND_MASONRY("Stone, Bricks & Terracotta", VanillaIds.ICON_STONE, 50),
+        REDSTONE_AND_RAILS("Redstone, Rails & Mechanisms", VanillaIds.ICON_REDSTONE, 60),
+        NETHER_AND_END("Nether, Potions & End Materials", VanillaIds.ICON_NETHER_END, 70),
+        MOB_DROPS_AND_MISC("Mob Drops, Utility & Trinkets", VanillaIds.ICON_MISC, 80);
 
         private final String displayName;
         private final String itemFrameIconId;
@@ -77,7 +78,7 @@ public final class ChestOrganizationPolicy {
             if (slotIndex < 0) {
                 throw new IllegalArgumentException("slotIndex must be >= 0: " + slotIndex);
             }
-            itemId = itemId == null ? "minecraft:air" : normalizeId(itemId);
+            itemId = itemId == null ? VanillaIds.AIR : normalizeId(itemId);
             if (count < 0) {
                 throw new IllegalArgumentException("count must be >= 0: " + count);
             }
@@ -88,7 +89,7 @@ public final class ChestOrganizationPolicy {
 
         /** Whether the slot holds nothing. */
         public boolean isEmpty() {
-            return count <= 0 || "minecraft:air".equals(itemId);
+            return count <= 0 || VanillaIds.AIR.equals(itemId);
         }
 
         /** Whether two stacks are the same item and can be combined. */
@@ -147,40 +148,9 @@ public final class ChestOrganizationPolicy {
         }
     }
 
-    private static final Set<String> VALUABLE_ITEMS = Set.of(
-            "minecraft:diamond", "minecraft:diamond_block",
-            "minecraft:emerald", "minecraft:emerald_block",
-            "minecraft:iron_ingot", "minecraft:iron_block", "minecraft:raw_iron", "minecraft:raw_iron_block",
-            "minecraft:gold_ingot", "minecraft:gold_block", "minecraft:raw_gold", "minecraft:raw_gold_block", "minecraft:gold_nugget",
-            "minecraft:copper_ingot", "minecraft:raw_copper",
-            "minecraft:coal", "minecraft:charcoal", "minecraft:coal_block",
-            "minecraft:lapis_lazuli", "minecraft:lapis_block",
-            "minecraft:quartz", "minecraft:amethyst_shard",
-            "minecraft:ancient_debris", "minecraft:netherite_scrap", "minecraft:netherite_ingot",
-            "minecraft:netherite_upgrade_smithing_template"
-    );
-
-    private static final Set<String> REDSTONE_ITEMS = Set.of(
-            "minecraft:redstone", "minecraft:redstone_block", "minecraft:redstone_torch",
-            "minecraft:repeater", "minecraft:comparator", "minecraft:observer",
-            "minecraft:piston", "minecraft:sticky_piston", "minecraft:hopper", "minecraft:dropper", "minecraft:dispenser",
-            "minecraft:rail", "minecraft:powered_rail", "minecraft:detector_rail", "minecraft:activator_rail",
-            "minecraft:minecart", "minecraft:chest_minecart", "minecraft:hopper_minecart",
-            "minecraft:lever", "minecraft:target", "minecraft:daylight_detector"
-    );
-
-    private static final Set<String> NETHER_END_ITEMS = Set.of(
-            "minecraft:blaze_rod", "minecraft:blaze_powder", "minecraft:NETHER_WART".toLowerCase(Locale.ROOT),
-            "minecraft:magma_cream", "minecraft:ghast_tear", "minecraft:glowstone_dust", "minecraft:glowstone",
-            "minecraft:shroomlight", "minecraft:soul_sand", "minecraft:soul_soil", "minecraft:rying_obsidian",
-            "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:ender_eye", "minecraft:end_rod",
-            "minecraft:chorus_fruit", "minecraft:shulker_shell", "minecraft:dragon_breath", "minecraft:elytra"
-    );
-
     /** Cleans up an item id so the same item always matches. */
     private static String normalizeId(String raw) {
-        String clean = raw.trim().toLowerCase(Locale.ROOT);
-        return clean.startsWith("minecraft:") ? clean : "minecraft:" + clean;
+        return Capabilities.normalize(raw);
     }
 
     /**
@@ -191,24 +161,21 @@ public final class ChestOrganizationPolicy {
             return StorageCategory.MOB_DROPS_AND_MISC;
         }
         String id = normalizeId(itemId);
-        if (VALUABLE_ITEMS.contains(id) || id.endsWith("_ore")) {
+        Capabilities facts = Capabilities.current();
+        if (facts.is(VanillaIds.CHEST_VALUABLES, id) || id.endsWith("_ore")) {
             return StorageCategory.ORES_AND_VALUABLES;
         }
-        if (REDSTONE_ITEMS.contains(id)) {
+        if (facts.is(VanillaIds.CHEST_REDSTONE, id)) {
             return StorageCategory.REDSTONE_AND_RAILS;
         }
-        if (NETHER_END_ITEMS.contains(id) || id.contains("potion") || id.startsWith("minecraft:nether_")) {
+        if (facts.is(VanillaIds.CHEST_NETHER_END, id) || id.contains("potion") || id.startsWith(VanillaIds.NETHER_PREFIX)) {
             return StorageCategory.NETHER_AND_END;
         }
         if (id.endsWith("_sword") || id.endsWith("_pickaxe") || id.endsWith("_axe")
                 || id.endsWith("_shovel") || id.endsWith("_hoe")
                 || id.endsWith("_helmet") || id.endsWith("_chestplate")
                 || id.endsWith("_leggings") || id.endsWith("_boots")
-                || id.equals("minecraft:bow") || id.equals("minecraft:crossbow")
-                || id.equals("minecraft:trident") || id.equals("minecraft:mace")
-                || id.equals("minecraft:shield") || id.equals("minecraft:totem_of_undying")
-                || id.equals("minecraft:arrow") || id.equals("minecraft:spectral_arrow")
-                || id.equals("minecraft:wind_charge") || id.equals("minecraft:enchanted_book")) {
+                || facts.is(VanillaIds.CHEST_COMBAT, id)) {
             return StorageCategory.TOOLS_AND_COMBAT;
         }
         if (id.contains("bread") || id.contains("beef") || id.contains("porkchop")
@@ -216,13 +183,12 @@ public final class ChestOrganizationPolicy {
                 || id.contains("salmon") || id.contains("potato") || id.contains("carrot")
                 || id.contains("apple") || id.contains("melon") || id.contains("pumpkin")
                 || id.contains("wheat") || id.contains("beetroot") || id.contains("berries")
-                || id.endsWith("_seeds") || id.contains("stew") || id.equals("minecraft:sugar_cane")
-                || id.equals("minecraft:hay_block") || id.equals("minecraft:kelp") || id.equals("minecraft:dried_kelp")) {
+                || id.endsWith("_seeds") || id.contains("stew") || facts.is(VanillaIds.CHEST_CROPS, id)) {
             return StorageCategory.FOOD_AND_CROPS;
         }
         if (id.endsWith("_log") || id.endsWith("_wood") || id.endsWith("_stem")
                 || id.endsWith("_hyphae") || id.endsWith("_planks") || id.endsWith("_sapling")
-                || id.endsWith("_leaves") || id.equals("minecraft:stick") || id.equals("minecraft:bamboo")
+                || id.endsWith("_leaves") || facts.is(VanillaIds.CHEST_TIMBER, id)
                 || id.endsWith("_door") || id.endsWith("_trapdoor") || id.endsWith("_fence")
                 || id.endsWith("_fence_gate") || id.endsWith("_sign")) {
             return StorageCategory.WOOD_AND_TIMBER;
@@ -286,7 +252,7 @@ public final class ChestOrganizationPolicy {
                             dst.maxStackSize(), dst.componentFingerprint());
                     int remaining = src.count() - transfer;
                     SlotSnapshot updatedSrc = remaining <= 0
-                            ? new SlotSnapshot(src.slotIndex(), "minecraft:air", 0, 64, 0L)
+                            ? new SlotSnapshot(src.slotIndex(), VanillaIds.AIR, 0, 64, 0L)
                             : new SlotSnapshot(src.slotIndex(), src.itemId(), remaining, src.maxStackSize(), src.componentFingerprint());
                     working.set(i, dst);
                     working.set(j, updatedSrc);
@@ -357,20 +323,20 @@ public final class ChestOrganizationPolicy {
             if (cat == StorageCategory.TOOLS_AND_COMBAT) {
                 continue; // Keep personal tools/weapons/arrows
             }
-            if ("minecraft:torch".equals(slot.itemId()) || "minecraft:lantern".equals(slot.itemId())) {
+            if (slot.itemId().equals(VanillaIds.TORCH) || slot.itemId().equals(VanillaIds.LANTERN)) {
                 if (keptTorches < 64) {
                     keptTorches += slot.count();
                     continue;
                 }
             }
             if (cat == StorageCategory.FOOD_AND_CROPS) {
-                if (keptFoodItems < 32 && !slot.itemId().endsWith("_seeds") && !"minecraft:wheat".equals(slot.itemId())) {
+                if (keptFoodItems < 32 && !slot.itemId().endsWith("_seeds") && !slot.itemId().equals(VanillaIds.WHEAT)) {
                     keptFoodItems += slot.count();
                     continue;
                 }
             }
-            if ("minecraft:cobblestone".equals(slot.itemId()) || "minecraft:oak_planks".equals(slot.itemId())
-                    || "minecraft:dirt".equals(slot.itemId())) {
+            if (slot.itemId().equals(VanillaIds.COBBLESTONE) || slot.itemId().equals(VanillaIds.OAK_PLANKS)
+                    || slot.itemId().equals(VanillaIds.DIRT)) {
                 if (keptBuildingBlocks < 64) {
                     keptBuildingBlocks += slot.count();
                     continue;
@@ -415,7 +381,7 @@ public final class ChestOrganizationPolicy {
             actions.add(new PlayerQolAssistance(
                     humanId,
                     PlayerQolAssistance.AssistKind.YIELD_CHEST_ACCESS,
-                    "minecraft:chest",
+                    VanillaIds.CHEST,
                     0,
                     "Take your time with the chest, " + humanName + "—I'll sort my pack once you're done."
             ));
@@ -438,7 +404,7 @@ public final class ChestOrganizationPolicy {
             actions.add(new PlayerQolAssistance(
                     humanId,
                     PlayerQolAssistance.AssistKind.TOSS_TORCHES_IN_DARK,
-                    "minecraft:torch",
+                    VanillaIds.TORCH,
                     8,
                     "Getting dark in here, " + humanName + "—dropping you some torches."
             ));
