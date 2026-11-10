@@ -59,7 +59,7 @@ public final class Compounds {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
         String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
-        String planks = VanillaIds.NAMESPACE + wood + "_planks";
+        String planks = Woods.planks(wood);
         var wall = wall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var open = new LinkedHashSet<Pos>();
@@ -153,7 +153,7 @@ public final class Compounds {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
         String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
-        String planks = VanillaIds.NAMESPACE + wood + "_planks";
+        String planks = Woods.planks(wood);
         var keep = wall(style);
         var ward = farmWall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();
@@ -249,7 +249,7 @@ public final class Compounds {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
         String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
-        String planks = VanillaIds.NAMESPACE + wood + "_planks";
+        String planks = Woods.planks(wood);
         var ward = pastureWall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var open = new LinkedHashSet<Pos>();
@@ -302,7 +302,7 @@ public final class Compounds {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
         String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
-        String planks = VanillaIds.NAMESPACE + wood + "_planks";
+        String planks = Woods.planks(wood);
         var ward = hallWall(style);
         var pasture = pastureWall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();

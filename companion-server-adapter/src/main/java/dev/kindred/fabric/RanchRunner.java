@@ -91,8 +91,19 @@ final class RanchRunner {
             String id = Registries.ITEM.getId(stack.getItem()).getPath();
             String kind = id.endsWith("_planks") ? id.substring(0, id.length() - "_planks".length())
                     : id.endsWith("_log") && !id.startsWith("stripped_") ? id.substring(0, id.length() - "_log".length()) : null;
-            if (kind == null || !Registries.ITEM.containsId(Identifier.ofVanilla(kind + "_fence"))) continue;
-            wood.merge(kind, stack.getCount() * (id.endsWith("_log") ? 4 : 1), Integer::sum);
+            boolean log = id.endsWith("_log");
+            if (kind == null || !Registries.ITEM.containsId(Identifier.ofVanilla(kind + "_fence"))) {
+                // F-38: a wood the server's tags and recipes name, with a fence of its own.
+                if (stack.isEmpty()) continue;
+                String full = Registries.ITEM.getId(stack.getItem()).toString();
+                var facts = dev.kindred.core.Capabilities.current();
+                log = facts.is(dev.kindred.core.VanillaIds.LOGS, full);
+                if (!log && !facts.is(dev.kindred.core.VanillaIds.PLANKS, full)) continue;
+                var family = facts.woodOfPart(full).filter(w -> w.fence() != null && w.fenceGate() != null);
+                if (family.isEmpty()) continue;
+                kind = family.get().name();
+            }
+            wood.merge(kind, stack.getCount() * (log ? 4 : 1), Integer::sum);
         }
         return wood.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
     }

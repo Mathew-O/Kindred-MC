@@ -682,5 +682,33 @@ public final class VanillaIds {
     /** Every vanilla tool, by id. */
     public static java.util.Map<String, Capabilities.Tool> tools() { return TOOLS; }
 
+    // ---- Woods a build is made of: the eight it always used, each family named the vanilla way. Would be read from
+    // the recipes that take each #minecraft:logs item, as the adapter does for the server's other woods. ----
+
+    private static final List<Capabilities.Wood> WOODS = buildWoods();
+
+    private static List<Capabilities.Wood> buildWoods() {
+        List<Capabilities.Wood> woods = new ArrayList<>();
+        for (String w : new String[] {"oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry"}) {
+            String n = NAMESPACE + w;
+            woods.add(new Capabilities.Wood(w, n + "_log", n + "_planks", n + "_stairs", n + "_slab", n + "_fence",
+                    n + "_fence_gate", n + "_door", n + "_trapdoor"));
+        }
+        return List.copyOf(woods);
+    }
+
+    /** Vanilla's building woods, in the order they were always listed. */
+    public static List<Capabilities.Wood> woods() { return WOODS; }
+
+    /**
+     * Planks in #minecraft:planks that builds never used (Nether stems, bamboo): kept out of the server's woods so a
+     * vanilla build is chosen as before.
+     */
+    public static final Group UNBUILT_PLANKS = group("#kindred:unbuilt_planks", false,
+            "minecraft:crimson_planks", "minecraft:warped_planks", "minecraft:bamboo_planks");
+
+    /** Whether these planks are ones builds never used. */
+    public static boolean unbuiltWood(String planks) { return UNBUILT_PLANKS.ids().contains(planks); }
+
     private VanillaIds() { }
 }
