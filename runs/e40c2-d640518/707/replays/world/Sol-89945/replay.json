@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 89945,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -4,
+    53,
+    -11
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.554897614223893,
+    8.2333217998235,
+    16.42342549221649
+  ],
+  "yaw": -3156.08,
+  "pitch": 18.159492,
+  "health": 17.666668,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 17945,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Wood: Get out of the water: to dry ground",
+  "task": "Back off from drowned",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Sol was slain by Drowned",
+  "ticks": 1200,
+  "log": [
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[04:00:43] [Server thread/INFO]: Sol native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[04:00:45] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from drowned]"
+  ]
+}

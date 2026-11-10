@@ -1,0 +1,93 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 10684,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    29,
+    25,
+    -102
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.504348273881384,
+    8.376886822582989,
+    16.405466526146327
+  ],
+  "yaw": 193.89589,
+  "pitch": 4.7843413,
+  "health": 5.66667,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:moss_carpet",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 10684,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Wood: fight back - Run from creeper",
+  "task": "Run from creeper",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was blown up by Creeper",
+  "ticks": 1200,
+  "log": [
+    "[02:11:00] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:01] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:02] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:03] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:04] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:05] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:06] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:06] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:07] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:11:08] [Server thread/INFO]: Echo native_eat COMPLETED",
+    "[02:11:08] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]",
+    "[02:11:09] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[02:11:09] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[02:11:09] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[02:11:11] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 32, 37, -91 by hand]",
+    "[02:11:13] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 32, 38, -91 by hand]",
+    "[02:11:13] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[02:11:16] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[02:11:17] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]",
+    "[02:11:18] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Run from creeper]"
+  ]
+}

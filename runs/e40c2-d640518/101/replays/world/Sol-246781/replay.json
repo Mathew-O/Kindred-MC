@@ -1,0 +1,288 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 246781,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -392,
+    27,
+    -126
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.50007775902145,
+    8.001335979112149,
+    16.719599988022452
+  ],
+  "yaw": 360.0057,
+  "pitch": -3.6060083,
+  "health": 0.108334064,
+  "food": 13,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dandelion",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 25
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oxeye_daisy",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 27
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 41
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 48
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 16
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 63
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 60
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 9
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 56
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 21
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 20
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 3
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 8
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:white_bed",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 24
+        }
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 6781,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Wood: fight back - Back off from skeleton the way it came",
+  "task": "Climb toward the surface for food: back the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[12:58:22] [Server thread/INFO]: Sol native_pillar COMPLETED [Climb toward the surface for food: pillar up]",
+    "[12:58:25] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -328, 26, -114 is blocked [Back off from spider the way it came]",
+    "[12:58:27] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -356, 47, -78 is blocked [Climb toward the surface for food: back the way it came]",
+    "[12:58:27] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[12:58:29] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -373, 34, -108 by hand]",
+    "[12:58:29] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[12:58:30] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[12:58:30] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+    "[12:58:30] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[12:58:30] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[12:58:31] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+    "[12:58:31] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[12:58:31] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[12:58:31] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+    "[12:58:34] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -356, 43, -83 is blocked [Climb toward the surface for food: back the way it came]",
+    "[12:58:35] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[12:58:36] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -369, 46, -92 by hand]",
+    "[12:58:36] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[12:58:39] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -356, 48, -78 is blocked [Climb toward the surface for food: back the way it came]",
+    "[12:58:41] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]"
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 54692,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -18,
+    72,
+    29
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.632141389885778,
+    8.753199980521202,
+    16.30000001192093
+  ],
+  "yaw": 125.575005,
+  "pitch": 18.159492,
+  "health": 12.0,
+  "food": 14,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 5
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 6692,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "End: Prepare: fight back - Fight zombie_villager",
+  "task": "Climb toward the surface for food: back the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Kindred was slain by Zombie Villager",
+  "ticks": 1200,
+  "log": [
+    "[03:54:52] [Server thread/INFO]: Kindred native_break COMPLETED [Dig for stone: clear -2, 73, 31]",
+    "[03:54:52] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig for stone: step down]",
+    "[03:54:52] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig for stone: step down]",
+    "[03:54:52] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel for stone: advance]",
+    "[03:54:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie_villager the way it came]",
+    "[03:54:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie_villager]",
+    "[03:54:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie_villager]",
+    "[03:54:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie_villager]",
+    "[03:54:55] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 3, 80, 51 [Back off from zombie_villager]",
+    "[03:54:55] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie_villager]",
+    "[03:54:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie_villager]",
+    "[03:54:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie_villager]",
+    "[03:54:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie_villager]",
+    "[03:54:57] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie_villager]",
+    "[03:54:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie_villager the way it came]",
+    "[03:54:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie_villager]",
+    "[03:54:57] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 5, 80, 50 [Back off from zombie_villager]",
+    "[03:54:57] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from zombie_villager]",
+    "[03:54:57] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]",
+    "[03:54:57] [Server thread/INFO]: Kindred died at -2, 80, 45: Kindred was slain by Zombie Villager (tick 54692, day, under cover, hunger 13, armour 0, holding nothing, no shield; doing \"Climb toward the surface for food: back the way it came\" in \"End: Prepare: fight back - Fight zombie_villager\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

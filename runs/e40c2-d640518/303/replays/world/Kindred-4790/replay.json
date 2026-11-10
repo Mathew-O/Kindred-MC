@@ -1,0 +1,183 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 4790,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    8,
+    50,
+    22
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.448647681456364,
+    8.0,
+    16.02497403480303
+  ],
+  "yaw": 161.03404,
+  "pitch": 65.287224,
+  "health": 18.5,
+  "food": 20,
+  "saturation": 2.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 13
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 85
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 5
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 6
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 17
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 4
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 4790,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 24, 58, 38",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred suffocated in a wall",
+  "ticks": 1200,
+  "log": [
+    "[02:10:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]",
+    "[02:10:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 24, 58, 38]"
+  ]
+}

@@ -1,0 +1,312 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 41774,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -109,
+    -7,
+    -177
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.55616837495505,
+    8.0,
+    16.49065991964335
+  ],
+  "yaw": 5068.2207,
+  "pitch": -4.9999995,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.4000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cooked_mutton",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:sunflower",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:dripstone_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 50
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 54
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:white_bed",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 63
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 21
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 18
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 11
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 31
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 11
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 4
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 11
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 17774,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: Get out of the water: up for air",
+  "task": "Get out of the water: up for air",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred discovered the floor was lava",
+  "ticks": 1200,
+  "log": [
+    "[12:35:23] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -89, 17, -143]",
+    "[12:35:23] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -89, 18, -144]",
+    "[12:35:23] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -89, 18, -143]",
+    "[12:35:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+    "[12:35:23] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -88, 18, -143]",
+    "[12:35:23] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -88, 17, -143]",
+    "[12:35:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+    "[12:35:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+    "[12:35:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+    "[12:35:24] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -88, 18, -144]",
+    "[12:35:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Jump down from the ledge]",
+    "[12:35:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[12:35:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Jump down from the ledge]",
+    "[12:35:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[12:35:52] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -84, 16, -149 [Explore the cave toward iron]",
+    "[12:35:55] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -93, 14, -162 is blocked [Explore the cave toward iron]",
+    "[12:35:56] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -93, 13, -161 is blocked [Get out of the water: up for air]",
+    "[12:35:58] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -93, 13, -161 is blocked [Get out of the water: up for air]",
+    "[12:35:59] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Get out of the water: up for air]",
+    "[12:35:59] [Server thread/INFO]: Kindred died at -93, 1, -161: Kindred discovered the floor was lava (tick 41774, night, under cover, hunger 19, armour 0, holding stone_pickaxe, a shield; doing \"Get out of the water: up for air\" in \"Iron: Get out of the water: up for air\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,328 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 51725,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    25,
+    43,
+    -117
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.057625030871257,
+    8.0,
+    16.013942733848452
+  ],
+  "yaw": 252.27176,
+  "pitch": 12.211533,
+  "health": 9.970001,
+  "food": 14,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 11
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 44
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 5
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 62
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 16
+        }
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 5
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 11
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:big_dripleaf",
+        "count": 2
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 8
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 35
+        }
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 3725,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Back off from zombie",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[02:18:01] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 44, 63, -155 [Explore north for animals]",
+    "[02:18:01] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for animals]",
+    "[02:18:02] [Server thread/INFO]: Sol native_goto COMPLETED [Explore north for animals]",
+    "[02:18:02] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for animals: advance]",
+    "[02:18:02] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for animals: advance]",
+    "[02:18:02] [Server thread/INFO]: Sol native_break COMPLETED [Cut through east for animals: clear 45, 64, -127]",
+    "[02:18:03] [Server thread/INFO]: Sol native_break COMPLETED [Cut through east for animals: clear 45, 63, -127]",
+    "[02:18:03] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for animals: advance]",
+    "[02:18:03] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus dirt]",
+    "[02:18:03] [Server thread/INFO]: Sol native_break COMPLETED [Cut through east for animals: clear 46, 64, -127]",
+    "[02:18:03] [Server thread/INFO]: Sol native_break COMPLETED [Cut through east for animals: clear 46, 63, -127]",
+    "[02:18:03] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for animals: advance]",
+    "[02:18:04] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore east for animals]",
+    "[02:18:05] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[02:18:05] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[02:18:06] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus dirt]",
+    "[02:18:06] [Server thread/INFO]: Sol native_discard BLOCKED: Owned inventory changed before toss dispatch; no transfer issued [Drop surplus cobblestone]",
+    "[02:18:06] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus raw copper]",
+    "[02:18:06] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[02:18:06] [Server thread/INFO]: Sol died at 41, 51, -101: Sol was slain by Zombie (tick 51725, day, under cover, hunger 14, armour 6, holding stone_sword, a shield; doing \"Back off from zombie the way it came\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

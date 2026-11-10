@@ -1,0 +1,319 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 135666,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    185,
+    -47,
+    -54
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": -75.96376,
+  "pitch": 8.279643,
+  "health": 4.050001,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 11
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 16
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 23
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 95
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 21
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 14
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 3
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 20
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 6
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 36
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 6
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 8
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 9
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 15666,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 202, -39, -38 (tried elsewhere 11 times)",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[04:06:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from cave_spider]",
+    "[04:06:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Hole up: back into the passage]",
+    "[04:06:08] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 196, -36, -34]",
+    "[04:06:08] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 198, -37, -33]",
+    "[04:06:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Hole up: back into the passage]",
+    "[04:06:08] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 197, -35, -34]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 200, -39, -38]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 200, -38, -38]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 201, -39, -39]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 201, -38, -39]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: wait behind the wall]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 211, -39, -37 [Back off from skeleton]",
+    "[04:06:09] [Server thread/INFO]: Kindred native_swap COMPLETED",
+    "[04:06:09] [Server thread/INFO]: Kindred native_swap COMPLETED",
+    "[04:06:10] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 202, -38, -38]",
+    "[04:06:10] [Server thread/INFO]: Kindred native_swap COMPLETED",
+    "[04:06:10] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 202, -38, -38]",
+    "[04:06:10] [Server thread/INFO]: Kindred native_swap COMPLETED",
+    "[04:06:10] [Server thread/INFO]: Kindred native_swap CANCELLED: The player died"
+  ]
+}

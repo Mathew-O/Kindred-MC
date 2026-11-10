@@ -1,0 +1,315 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 58945,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -174,
+    63,
+    -23
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.519500108192716,
+    8.0,
+    16.83851621441368
+  ],
+  "yaw": 0.40548927,
+  "pitch": 16.35203,
+  "health": 0.5140686,
+  "food": 0,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 12
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 50
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 3
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 102
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 9
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 8
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 5
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:azalea",
+        "count": 2
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:moss_carpet",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 60
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 33
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 18
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 28
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:coarse_dirt",
+        "count": 2
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 8
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 37
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 62
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 3
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 19
+        }
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 10945,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Take cover from skeleton",
+  "task": "Explore south for animals",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[11:45:19] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear -161, 71, -40]",
+    "[11:45:19] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear -161, 70, -40]",
+    "[11:45:19] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+    "[11:45:19] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -161, 70, -68 [Explore north for animals]",
+    "[11:45:20] [Server thread/INFO]: Echo native_goto COMPLETED [Explore east for animals]",
+    "[11:45:21] [Server thread/INFO]: Echo native_goto COMPLETED [Explore south for animals]",
+    "[11:45:21] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 71, -18]",
+    "[11:45:21] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 70, -18]",
+    "[11:45:21] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+    "[11:45:22] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 71, -17]",
+    "[11:45:22] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 70, -17]",
+    "[11:45:22] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+    "[11:45:22] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 71, -16]",
+    "[11:45:22] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 70, -16]",
+    "[11:45:22] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+    "[11:45:23] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 71, -15]",
+    "[11:45:23] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear -156, 70, -15]",
+    "[11:45:23] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+    "[11:45:24] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Explore south for animals]",
+    "[11:45:24] [Server thread/INFO]: Echo died at -158, 71, -7: Echo was shot by Skeleton (tick 58945, day, under cover, hunger 0, armour 0, holding dirt, a shield; doing \"Explore south for animals\" in \"Iron: fight back - Take cover from skeleton\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

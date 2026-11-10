@@ -1,0 +1,319 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 252841,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    16,
+    78,
+    -1
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.650049487169085,
+    8.0,
+    16.97768289788008
+  ],
+  "yaw": 734.63617,
+  "pitch": 18.11585,
+  "health": 2.6916652,
+  "food": 5,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_sapling",
+        "count": 5
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 20
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 38
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 15
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 115
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:moss_carpet",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 16
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 6
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 3
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 20
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 12
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 10
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 17
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 12841,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[12:21:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[12:21:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[12:21:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:34] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through north for animals: clear 68, 84, 50]",
+    "[12:21:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:34] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through north for animals: clear 68, 84, 49]",
+    "[12:21:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[12:21:37] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 68, 84, 21 is blocked [Explore north for animals]",
+    "[12:21:38] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[12:21:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[12:21:41] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus cobbled deepslate]",
+    "[12:21:41] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus andesite]",
+    "[12:21:41] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus bone]",
+    "[12:21:41] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[12:21:41] [Server thread/INFO]: Kindred died at 32, 86, 15: Kindred was slain by Zombie (tick 252841, night, under cover, hunger 5, armour 6, holding nothing, a shield; doing \"Back off from zombie the way it came\" in \"Iron: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

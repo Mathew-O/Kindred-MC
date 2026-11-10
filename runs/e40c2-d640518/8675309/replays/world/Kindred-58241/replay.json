@@ -1,0 +1,314 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 58241,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -16,
+    27,
+    93
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.455658248821727,
+    8.0,
+    16.410275930844605
+  ],
+  "yaw": -7.036396,
+  "pitch": 18.142433,
+  "health": 0.025000572,
+  "food": 14,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 33
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 47
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 24
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 58
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 10
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 3
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 7
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:bow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 56
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 10241,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Take cover from skeleton",
+  "task": "Back off from skeleton",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[11:42:49] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[11:42:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[11:42:49] [Server thread/INFO]: Kindred native_swap BLOCKED: Owned inventory changed before swap dispatch; no transfer issued [Ready a block]",
+    "[11:42:49] [Server thread/INFO]: Kindred native_swap COMPLETED [Ready a block]",
+    "[11:42:49] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[11:42:49] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[11:42:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[11:42:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[11:42:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[11:42:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[11:42:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[11:42:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[11:42:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[11:42:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[11:42:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[11:42:51] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[11:42:51] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[11:42:51] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[11:42:51] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[11:42:52] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from skeleton]"
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 9074,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -352,
+    28,
+    -159
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.113758204135138,
+    8.0,
+    16.69999998807907
+  ],
+  "yaw": -60.218884,
+  "pitch": 18.1398,
+  "health": 7.624938,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 4
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 26
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 38
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 4
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 6
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 30
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 8
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 3
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 9074,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Back off from zombie",
+  "task": "Hole up: back into the passage",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[12:15:37] [Server thread/INFO]: Sol native_place COMPLETED [Set down gravel to dig for flint]",
+    "[12:15:37] [Server thread/INFO]: Sol native_break COMPLETED [Mine gravel at -341, 38, -147]",
+    "[12:15:37] [Server thread/INFO]: Sol native_place COMPLETED [Set down gravel to dig for flint]",
+    "[12:15:37] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to gravel at -336, 36, -141]",
+    "[12:15:37] [Server thread/INFO]: Sol native_break COMPLETED [Mine gravel at -337, 36, -140]",
+    "[12:15:38] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Dig gravel for flint]",
+    "[12:15:39] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+    "[12:15:39] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[12:15:39] [Server thread/INFO]: Sol native_wait COMPLETED [Hold the passage against zombie]",
+    "[12:15:39] [Server thread/INFO]: Sol native_wait COMPLETED [Hold the passage against zombie]",
+    "[12:15:40] [Server thread/INFO]: Sol native_wait COMPLETED [Hold the passage against zombie]",
+    "[12:15:40] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[12:15:41] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[12:15:41] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[12:15:42] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[12:15:42] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[12:15:43] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+    "[12:15:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[12:15:44] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Hole up: back into the passage]",
+    "[12:15:44] [Server thread/INFO]: Sol died at -336, 36, -143: Sol was slain by Zombie (tick 9074, day, under cover, hunger 17, armour 0, holding stone_sword, no shield; doing \"Hole up: back into the passage\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

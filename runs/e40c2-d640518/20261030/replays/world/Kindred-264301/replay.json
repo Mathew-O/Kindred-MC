@@ -1,0 +1,100 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 264301,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -15,
+    116,
+    -22
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.0,
+    16.69999998807907
+  ],
+  "yaw": 106.44969,
+  "pitch": -68.55326,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 5.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 8
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 301,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Wood: fight back - Back off from zombie the way it came",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[12:23:11] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -1, 125, -10 [Climb toward the surface for logs: back the way it came]",
+    "[12:23:11] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -3, 123, -10]",
+    "[12:23:11] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+    "[12:23:11] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -1, 124, -10 [Climb toward the surface for logs: back the way it came]",
+    "[12:23:12] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -3, 124, -10]",
+    "[12:23:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[12:23:12] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -2, 124, -11]",
+    "[12:23:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[12:23:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk under the logs at -6, 129, -10]",
+    "[12:23:13] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at -6, 129, -10]",
+    "[12:23:14] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at -6, 130, -10]",
+    "[12:23:14] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to logs at -8, 128, -12]",
+    "[12:23:14] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to logs at -8, 128, -12]",
+    "[12:23:14] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to logs at -8, 128, -12]",
+    "[12:23:15] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at -8, 128, -12]",
+    "[12:23:15] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft spruce planks]",
+    "[12:23:15] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stick]",
+    "[12:23:15] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to logs at -8, 129, -12]",
+    "[12:23:16] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs at -8, 129, -12]",
+    "[12:23:19] [Server thread/INFO]: Kindred died at 1, 124, -6: Kindred was slain by Zombie (tick 264301, day, under the sky, hunger 19, armour 0, holding dirt, no shield; doing \"native_break\" in \"Wood: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

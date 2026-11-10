@@ -1,0 +1,100 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 97949,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -18,
+    66,
+    71
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.50562075553984,
+    8.166109260938214,
+    16.93918240651884
+  ],
+  "yaw": 0.4647732,
+  "pitch": 7.228839,
+  "health": 1.6579905,
+  "food": 13,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 34
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 10
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 5
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 11
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 1949,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "End: Prepare: fight back - Back off from zombie the way it came",
+  "task": "Explore south for animals",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[04:01:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[04:01:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[04:01:42] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -6, 116, 51]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -6, 115, 51]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore west for animals]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -9, 116, 52]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -9, 115, 52]",
+    "[04:01:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[04:01:44] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -8, 116, 52]",
+    "[04:01:44] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -8, 115, 52]",
+    "[04:01:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[04:01:44] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -7, 116, 52]",
+    "[04:01:44] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through east for animals: clear -7, 115, 52]",
+    "[04:01:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[04:01:48] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 21, 73, 52 is blocked [Explore east for animals]",
+    "[04:01:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore south for animals]",
+    "[04:01:51] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Explore south for animals]"
+  ]
+}

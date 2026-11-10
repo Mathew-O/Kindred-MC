@@ -1,0 +1,183 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 4853,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -43,
+    45,
+    -65
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.31700430146362,
+    8.200000047683716,
+    16.232868086399684
+  ],
+  "yaw": -43.16503,
+  "pitch": -73.092064,
+  "health": 18.0,
+  "food": 20,
+  "saturation": 3.0,
+  "air": -6,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 12
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 52
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 46
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 4
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 21
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 2
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 13
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 4853,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: Get out of the water: open the way up at -27, 55, -49",
+  "task": "Get out of the water: open the way up at -27, 55, -49",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo drowned",
+  "ticks": 1200,
+  "log": [
+    "[02:09:55] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -24, 56, -48]",
+    "[02:09:55] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[02:09:56] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -25, 56, -48]",
+    "[02:09:56] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 1, 57, -39 [Explore the cave toward iron]",
+    "[02:09:56] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[02:09:56] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -26, 57, -48]",
+    "[02:09:56] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -26, 56, -48]",
+    "[02:09:56] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[02:09:56] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -27, 57, -48]",
+    "[02:09:57] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -27, 56, -48]",
+    "[02:09:57] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 4, 57, -40 [Explore the cave toward iron]",
+    "[02:09:57] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[02:09:57] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -28, 57, -48]",
+    "[02:09:57] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -28, 56, -48]",
+    "[02:09:57] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for coal: advance]",
+    "[02:09:58] [Server thread/INFO]: Echo native_break COMPLETED [Mine coal ore at -27, 55, -48]",
+    "[02:09:58] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[02:09:58] [Server thread/INFO]: Echo native_craft COMPLETED [Craft torch]",
+    "[02:09:58] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[02:10:00] [Server thread/INFO]: Echo native_break COMPLETED [Mine coal ore at -27, 56, -47]"
+  ]
+}

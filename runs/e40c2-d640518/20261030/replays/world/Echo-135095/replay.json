@@ -1,0 +1,325 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 135095,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    130,
+    27,
+    -23
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.946226318746,
+    8.343143123467577,
+    16.77522074831914
+  ],
+  "yaw": -153.71985,
+  "pitch": -14.602887,
+  "health": 5.5999975,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 43
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 5
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:spider_eye",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 26
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 73
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 5
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:oak_fence",
+        "count": 3
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 54
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 54
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 3
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 9
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 8
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:rail",
+        "count": 12
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 6
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 2
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 10
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:powered_rail",
+        "count": 4
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 49
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:bow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:diamond",
+        "count": 2
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 15
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 15095,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Fight cave_spider",
+  "task": "Fight cave_spider",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Cave Spider",
+  "ticks": 1200,
+  "log": [
+    "[12:02:23] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for water: clear 138, 37, -6]",
+    "[12:02:24] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for water: clear 138, 36, -5]",
+    "[12:02:24] [Server thread/INFO]: Echo native_discard COMPLETED [Drop surplus cobblestone]",
+    "[12:02:24] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for water: clear 138, 37, -5]",
+    "[12:02:24] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 138, 36, -5 [Climb toward the surface for water: step up]",
+    "[12:02:24] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for water: to the wall]",
+    "[12:02:24] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for water: clear 138, 36, -8]",
+    "[12:02:26] [Server thread/INFO]: Echo native_fight BLOCKED: Lost sight of the target [Fight cave_spider]",
+    "[12:02:26] [Server thread/INFO]: Echo native_fight COMPLETED [Fight cave_spider]",
+    "[12:02:28] [Server thread/INFO]: Echo native_fight COMPLETED [Fight cave_spider]",
+    "[12:02:30] [Server thread/INFO]: Echo native_fight COMPLETED [Fight cave_spider]",
+    "[12:02:31] [Server thread/INFO]: Echo native_fight COMPLETED [Fight cave_spider]",
+    "[12:02:35] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]",
+    "[12:02:38] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]",
+    "[12:02:42] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]",
+    "[12:02:45] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]",
+    "[12:02:49] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]",
+    "[12:02:52] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]",
+    "[12:02:56] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]",
+    "[12:02:59] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight cave_spider]"
+  ]
+}
