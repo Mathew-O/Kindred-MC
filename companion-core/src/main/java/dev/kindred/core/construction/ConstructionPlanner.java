@@ -216,6 +216,20 @@ public final class ConstructionPlanner {
             var tops = scaffoldTops(site, scaffold, feet);
             var down = takeDown(site, tops, feet, wanted, box, walk, "Scaffolding down");
             if (down.isPresent()) return down.get();
+            // None in reach from where it can stand beside one: onto a column's own top, if it can walk there (a drop of at
+            // most three) and come back by its own blocks, and down the column from on top (F-22c47). In a local class run the house cabin's builder
+            // slid off its column after its last slab onto the cabin, diagonal to it and two above its top, out of sight
+            // of it; the column's top was a step down, but no stance was ever offered on it, and it waited "out of reach to
+            // take down" until its ticks ran out. #113's base cabin (run 42756884925) ended much the same way.
+            Set<Pos> ontoTops = new HashSet<>(reachable);
+            ontoTops.retainAll(returnable(site, reachable, feet, scaffold, box, spare));
+            ontoTops.removeAll(shunned);
+            for (Pos high : tops) {
+                Pos on = high.up();
+                if (ontoTops.contains(on) && site.standable(on) && !wanted.containsKey(on) && !wanted.containsKey(on.up())) {
+                    return Step.breaking(high, on, "Scaffolding down, from on top of it");
+                }
+            }
             // A column left too high to take down from the ground, its taking down cut short (a fall off it), is reached
             // as a block to place is: from the top of a scaffold beside it. A builder fallen off its column three blocks
             // into a hollow climbed back out to a column four high, and its top was "out of reach to take down" eight

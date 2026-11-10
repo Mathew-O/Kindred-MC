@@ -97,6 +97,8 @@ final class BuildRunner {
     private ConstructionPlanner.Step lastPlaceStep;
     /** The placement the to-and-fro guard chose to make from where it stands, held until that placement's task ends (F-22c15). */
     private ConstructionPlanner.Step heldPlace;
+    /** The scaffold top last called out of reach to take down, the plan before: a second time running ends the build (F-22c47). */
+    private Pos outOfReachTop;
     /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
     private Pos lastStance;
     private int stanceWalks;
@@ -599,6 +601,8 @@ final class BuildRunner {
                     ? Optional.of(outside(groundBeside(step.target(), world, overFailed), step.reason() + OVER + feet))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
                     ? Optional.of(outside(groundBeside(feet, world), step.reason() + "; down off the build first"))
+                    : outOfReachTwice(step, tally)
+                    ? Optional.empty()
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
                 // Its own scaffold's block in the column it stands on, wanted gone: dug out from on top, the block underfoot
@@ -1115,6 +1119,29 @@ final class BuildRunner {
             spare += Math.max(0, player.getInventory().count(item) - need);
         }
         return spare;
+    }
+
+    /**
+     * The same scaffold top out of reach to take down at two plans running, nothing else asked between: the build is ended
+     * there, built, with that scaffolding left standing, rather than waited on till its ticks run out (F-22c47). In a local
+     * class run the house cabin's builder, slid off its column onto the cabin, waited so on "out of reach to take down" until
+     * the fixture's ticks ran out. Refused once, as before; the second time it says so and stops.
+     */
+    private boolean outOfReachTwice(ConstructionPlanner.Step step, ConstructionPlanner.Progress tally) {
+        boolean outOfReach = step.reason().endsWith("is out of reach to take down") && step.target() != null;
+        if (!outOfReach) {
+            outOfReachTop = null;
+            return false;
+        }
+        if (!step.target().equals(outOfReachTop)) {
+            outOfReachTop = step.target();
+            return false;
+        }
+        done = true;
+        complete = tally.placed() == tally.total();
+        progress = blueprint.name() + ": built, " + tally.placed() + "/" + tally.total() + " blocks; scaffolding at " + step.target()
+                + " out of reach to take down, left standing";
+        return true;
     }
 
     /** A slot holding a block it can spare for scaffolding: one the build needs no more of. */

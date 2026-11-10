@@ -274,11 +274,15 @@ class ConstructionPlannerTest {
         var down = ConstructionPlanner.next(blocks, List.of(), site, feet, ALL, scaffold, Set.of(), 1);
         assertEquals(ConstructionPlanner.Kind.BREAK, down.kind(), "one to spare and one back: two, enough: " + down);
         assertEquals(last, down.target());
-        assertEquals(new Pos(5, 1, 0), down.stance(), "from the trench's floor beside it");
+        // From the trench's floor beside it, or (F-22c47) from on top of it: either way a spot it climbs back out of.
+        assertTrue(new Pos(5, 1, 0).equals(down.stance()) || last.up().equals(down.stance()), "from the trench's floor beside it, or on top of it: " + down);
         // Never down into water: the same trench with water standing a block deep at its far end.
         cells.put(new Pos(5, 2, 0), new BuildSite.Cell(BuildSite.Kind.REPLACEABLE, BlockSpec.of("minecraft:water"), false));
         var wet = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, ALL, scaffold, Set.of(), 8);
-        assertEquals(ConstructionPlanner.Kind.BLOCKED, wet.kind(), "not into the water, however many to spare: " + wet);
+        // However many to spare: never a stance on the trench's floor under the water, nor a block into the water. (It may
+        // instead step down onto its column's own top beside the water, and take the column down from there, F-22c47.)
+        assertNotEquals(new Pos(5, 1, 0), wet.stance(), "not down under the water: " + wet);
+        assertNotEquals(new Pos(5, 2, 0), wet.target(), "nothing into the water: " + wet);
     }
 
     @Test
