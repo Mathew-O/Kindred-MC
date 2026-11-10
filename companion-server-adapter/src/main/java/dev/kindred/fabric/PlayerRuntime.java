@@ -551,6 +551,12 @@ final class PlayerRuntime {
         setFactionOf(this::factionKey);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         wire.onState(peerRadio::teamState); // F-34c: a teammate's update into the receiver's ledger, and nowhere else.
+        // F-34c: a match's titles to an AI player in it as the server's word to it alone; a person has them on screen.
+        presenter.onShown((bodyId, title) -> {
+            var body = server.getPlayerManager().getPlayer(bodyId);
+            UUID ai = body == null ? null : aiPlayerOf(body);
+            if (ai != null) dev.kindred.core.wire.MatchTitles.of(ai, title).ifPresent(wire::send);
+        });
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
@@ -11883,7 +11889,12 @@ final class PlayerRuntime {
         KindredMod.LOGGER.info("{} found {} gone from {} ({}{}): {}", entry.data.displayName(), dev.kindred.core.team.Missing.items(look.gone()),
                 place.words(), mode, since == null ? ", nobody seen at it" : ", saw " + since.name() + " at it", response.say());
         if (response.say() != null) {
-            if (response.to() == dev.kindred.core.team.Missing.Audience.TEAM) sayToTeam(entry, response.say());
+            if (response.to() == dev.kindred.core.team.Missing.Audience.TEAM) {
+                sayToTeam(entry, response.say());
+                // F-34c: what is gone, from where, as facts on the Wire to its team; who it suspects stays in its words.
+                String what = dev.kindred.core.team.Missing.items(look.gone()), where = place.words();
+                wire.sendTeam(entry.data.id(), scope -> dev.kindred.core.wire.TeamNews.missing(entry.data.id(), scope, what, where));
+            }
             else if (response.to() == dev.kindred.core.team.Missing.Audience.OWN) say(entry, response.say(), "");
         }
         if (response.ask()) entry.storageAsk = new StorageAsk(look, now + STORAGE_ASK_WAIT);
@@ -11925,6 +11936,9 @@ final class PlayerRuntime {
         long now = server.getTicks();
         var place = storePlace(player, pos);
         sayToTeam(entry, dev.kindred.core.team.TeamTalk.stored(put, place, items));
+        // F-34c: the same on the Wire, as facts, so its teammates know it as told (their webs); people hear the line above.
+        String what = dev.kindred.core.team.Missing.items(items), where = place.words();
+        wire.sendTeam(entry.data.id(), scope -> dev.kindred.core.wire.TeamNews.stored(entry.data.id(), scope, put, what, where));
         for (Entry mate : sharers(entry, player, pos)) {
             for (var each : items.entrySet()) {
                 if (put) mate.storage.put(place, dev.kindred.core.team.Storage.Whose.TEAM, each.getKey(), each.getValue(), now);
@@ -13782,7 +13796,7 @@ final class PlayerRuntime {
                     bot.goal().label(), bot.goalProgress(), doing, bot.status(), bot.dimension(), at == null ? 0 : at.getX(),
                     at == null ? 0 : at.getY(), at == null ? 0 : at.getZ(), weighed, List.copyOf(entry.decisions), List.copyOf(entry.saidLately),
                     campaign == null ? List.of() : campaign.preferences().habits().stream().map(Enum::name).sorted().toList(),
-                    memory.notes(bot.id()), strategist.map(bridge -> bridge.tokensToday(bot.id())).orElse(0L)));
+                    memory.notes(bot.id()), strategist.map(bridge -> bridge.tokensToday(bot.id())).orElse(0L), toldLately(bot.id())));
         }
         if (tick % 20 == 0) watchEval = runObserver.resultSoFar();
         watch.publish(new dev.kindred.core.watch.WatchSnapshot(tick, Thread.currentThread().getName(), players, List.copyOf(highlights), watchEval));
@@ -14468,6 +14482,20 @@ final class PlayerRuntime {
             if (entry.nativeBody != null && entry.nativeBody.entity() != null && entry.nativeBody.entity().getUuid().equals(playerId)) return entry;
         }
         return null;
+    }
+
+    private final dev.kindred.core.wire.Wording onlookerWording = new dev.kindred.core.wire.Wording();
+
+    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page may read it. */
+    private List<String> toldLately(UUID ai) {
+        var inbox = wire.inbox(ai);
+        var out = new ArrayList<String>();
+        for (var t : inbox.subList(Math.max(0, inbox.size() - dev.kindred.core.watch.WatchSnapshot.TOLD), inbox.size())) {
+            var m = t.message();
+            Entry from = m.fromServer() ? null : entries.get(m.from());
+            out.add(onlookerWording.forOnlookers(m, m.fromServer() ? "" : from != null ? from.data.displayName() : playerName(m.from())));
+        }
+        return out;
     }
 
     private String playerName(UUID playerId) {
