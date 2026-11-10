@@ -195,6 +195,17 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: a cast whose water is not taken back (F-25c4cx) — 9 November 2026 (`claude/cast-outcome-1109`)
+
+- **The fixture** (F-25c4cx, [evidence](evidence/F-25c4cx.md)): `NativeCastWaterLostGameTests.aCastWhoseWaterIsLostUnderGravelCountsAndTheFrameGoesOn`,
+  staged as it says (the thick-rock cast scene with a water source in the floor of its open end; the first cast's poured
+  water set to gravel the tick its obsidian forms).
+  - On `e7e0b57`, without the fix: fails 3 of 3, the player blocked with "Cast outcome requires reconciliation: Obsidian
+    cast", as on 31102026.
+  - With the fix: passes 3 of 3, the cast completed, a bucket filled at the room's water and the next frame cell cast.
+- **The cast route's classes** (`NativeCastWaterLostGameTests`, `NativePortalCampaignGameTests`, `NativeBucketGameTests`,
+  `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`, `NativeObstructedPortalGameTests`,
+  `NativeRescueRecipesGameTests`, `NativeTeamPortalGameTests`): 105 of 105 in each of three runs.
 ## E-40, batch 25: a sword in the backpack taken to hand (F-25c4cv) — 9 November 2026 (`claude/backoff-1109`)
 
 - **The fixture** (F-25c4cv, [evidence](evidence/F-25c4cv.md)): `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`,
