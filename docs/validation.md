@@ -23,6 +23,14 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## A resumed gather completes as it picks up its last drop (F-22c53) — 10 November 2026 (`claude/ci-green-1110-resume`)
+
+- **[F-22c53](evidence/F-22c53.md):** the resume's completion check is made on the resume's first tick only (product; #144's run
+  42805028977 and #125's and #113's CI: the resumed gather ACTIVE to the end, `runner=COMPLETING`, its record DISPATCHED).
+  - The new fixture in `NativeGatherGameTests` (staged, as it says): 0 of 3 without the fix, 3 of 3 with it.
+  - Seven classes that gather, 3 runs: 48 of 48 each.
+  - `./gradlew build`: green, JUnit 1,121 tests, 0 failures, 7 skipped.
+
 ## A mob in reach stops the badly hurt goal's work (F-25c4dd) — 10 November 2026 (`claude/survival-1110-cornered`)
 
 - **[F-25c4dd](evidence/F-25c4dd.md):** a mob on foot in reach stops the goal's running work whatever the player's health (product;
