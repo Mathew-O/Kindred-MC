@@ -1,5 +1,7 @@
 package dev.kindred.core.guide;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -31,7 +33,7 @@ import java.util.Set;
 public final class Trades {
     private Trades() { }
 
-    public static final String EMERALD = "minecraft:emerald";
+    public static final String EMERALD = VanillaIds.EMERALD;
 
     /** A villager's profession, as its clothes and its job block show it. */
     public enum Profession {
@@ -41,12 +43,12 @@ public final class Trades {
 
         private final String jobBlock;
 
-        Profession(String jobBlock) { this.jobBlock = jobBlock == null ? null : "minecraft:" + jobBlock; }
+        Profession(String jobBlock) { this.jobBlock = jobBlock == null ? null : VanillaIds.NAMESPACE + jobBlock; }
 
         /** The block that gives a villager this profession, and the one it works at; none for a nitwit or the jobless. */
         public String jobBlock() { return jobBlock; }
 
-        /** A profession by its id, "minecraft:librarian", or {@link #NONE}. */
+        /** A profession by its id, minecraft:librarian, or {@link #NONE}. */
         public static Profession of(String id) {
             String path = id.substring(id.indexOf(':') + 1).toUpperCase(Locale.ROOT);
             for (Profession each : values()) if (each.name().equals(path)) return each;
@@ -599,6 +601,6 @@ public final class Trades {
     }
 
     private static String id(String item) {
-        return item.indexOf(':') >= 0 ? item : "minecraft:" + item;
+        return item.indexOf(':') >= 0 ? item : VanillaIds.NAMESPACE + item;
     }
 }

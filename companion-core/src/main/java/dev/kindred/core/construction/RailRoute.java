@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -245,6 +247,6 @@ public final class RailRoute {
     public static Map<String, Integer> bill(Route route) {
         int rails = route.rails().size();
         int batches = (rails + 15) / 16;
-        return Map.of("minecraft:rail", rails, "minecraft:iron_ingot", batches * 6, "minecraft:stick", batches);
+        return Map.of(VanillaIds.RAIL, rails, VanillaIds.IRON_INGOT, batches * 6, VanillaIds.STICK, batches);
     }
 }
