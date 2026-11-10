@@ -124,13 +124,18 @@ public final class Auctions implements Ledger<AuctionBook> {
     }
 
     /** {@code bidder} bids {@code amount} on {@code id}: held until outbid or the close; at or above buy-now it wins at once. */
+    /** The least a bid on {@code listing} may be now: the start, then a coin or a twentieth over the best, at most buy now. */
+    public static long least(AuctionBook.Listing listing) {
+        long least = listing.bidder() == null ? listing.start() : listing.bid() + Math.max(Coins.CENT, listing.bid() / 20);
+        return listing.buyNow() > 0 ? Math.min(least, listing.buyNow()) : least;
+    }
+
     public static Decision bid(AuctionBook book, Coins.Book coins, FactionSettings settings, UUID bidder, String id, long amount, Factions.At at) {
         var listing = book.listings().get(id);
         if (listing == null) return Decision.refused("No such listing");
         if (listing.seller().equals(bidder)) return Decision.refused("Not on your own listing");
         if (at.realTimeMs() >= listing.closesAt()) return Decision.refused("It has closed");
-        long least = listing.bidder() == null ? listing.start() : listing.bid() + Math.max(Coins.CENT, listing.bid() / 20);
-        if (listing.buyNow() > 0) least = Math.min(least, listing.buyNow());
+        long least = least(listing);
         if (amount < least) return Decision.refused("A bid is at least " + Coins.show(least));
         if (listing.buyNow() > 0) amount = Math.min(amount, listing.buyNow());
         var events = new ArrayList<WorldEvent>();
