@@ -31,6 +31,14 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - (none yet)
 
+## The autonomous log mine read as it happens (F-22c52) — 10 November 2026 (`claude/ci-green-1110-minelatch`)
+
+- **[F-22c52](evidence/F-22c52.md):** the fixture takes the mine's completion, charged, and its one verified record on the tick
+  each shows (fixture only; #139's run 42793316263 and #137's run 42793187025: a routine's craft followed within the second,
+  and the latest work and record were the craft's for good).
+  - The copy that reads after the next task: 0 of 3 with the old read (throwaway edit, reverted), 9 of 9 in each of 6 runs latched.
+  - No product code changed. `./gradlew build`: green, JUnit 1,121 tests, 0 failures, 7 skipped.
+
 ## A mob in reach stops the badly hurt goal's work (F-25c4dd) — 10 November 2026 (`claude/survival-1110-cornered`)
 
 - **[F-25c4dd](evidence/F-25c4dd.md):** a mob on foot in reach stops the goal's running work whatever the player's health (product;

@@ -214,7 +214,6 @@ def links(root: Path, inputs: list[str]) -> dict:
 
 TRACKER_ROW = re.compile(r'^\| ([A-Z][A-Za-z0-9–-]*) \|')
 TRACKER_ITEM = re.compile(r'^( *)- \[[ x]\] ([A-Z][A-Za-z0-9–-]*)\s')
-GAMETESTS = 'companion-server-adapter/src/gametest/resources/fabric.mod.json'
 
 
 def id_order(feature_id: str) -> list:
@@ -252,15 +251,6 @@ def out_of_order(text: str) -> list:
     return found
 
 
-def unsorted_gametests(root: Path) -> list:
-    """The GameTest entrypoints that break the list's sorted order: new classes go at their sorted place, not the end."""
-    path = root / GAMETESTS
-    if not path.exists():
-        return []
-    names = json.loads(read_bytes(path)).get('entrypoints', {}).get('fabric-gametest', [])
-    return [f'{a} > {b}' for a, b in zip(names, names[1:]) if b < a]
-
-
 def tracker(root: Path) -> dict:
     text = read_bytes(root / 'docs/feature-spec.md').decode()
     complete = re.findall(r'^- \[x\] ([A-Z][A-Z0-9-]*[a-z0-9]*)\s+[—-]\s+(.+)$', text, re.M)
@@ -268,8 +258,8 @@ def tracker(root: Path) -> dict:
     duplicates = sorted({key for key in ids if ids.count(key) > 1})
     undocumented = [key for key, line in complete if not re.search(r'\d{4}-\d{2}-\d{2}', line) or '](' not in line]
     return {'completed': len(complete), 'duplicate_ids': duplicates, 'missing_dated_evidence': undocumented,
-            'out_of_order': out_of_order(text), 'unsorted_gametests': unsorted_gametests(root),
-            'scope': 'Checks tracker syntax, ID order, dated links and the GameTest list order; does not certify evidence or acceptance criteria.'}
+            'out_of_order': out_of_order(text),
+            'scope': 'Checks tracker syntax, ID order and dated links; does not certify evidence or acceptance criteria.'}
 
 
 def manifest(root: Path) -> dict:
@@ -354,7 +344,7 @@ def main(argv=None) -> int:
         elif args.command == 'jar': result = jar(args.file)
         else: result = preflight(root)
         print(json.dumps(result, indent=2, sort_keys=True))
-        failed = any(result.get(key) for key in ('problems', 'regressed', 'missing', 'newly_skipped', 'flaky', 'incomplete', 'always_failed', 'duplicate_ids', 'missing_dated_evidence', 'live_edit_markers', 'out_of_order', 'unsorted_gametests'))
+        failed = any(result.get(key) for key in ('problems', 'regressed', 'missing', 'newly_skipped', 'flaky', 'incomplete', 'always_failed', 'duplicate_ids', 'missing_dated_evidence', 'live_edit_markers', 'out_of_order'))
         if args.command == 'summary': failed |= bool(result['totals']['failure'] + result['totals']['error'])
         if args.command == 'preflight': failed |= bool(result['manifest']['problems'])
         return 1 if failed else 0

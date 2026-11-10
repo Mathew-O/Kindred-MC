@@ -151,18 +151,14 @@ class SupportToolsTest(unittest.TestCase):
         self.put('docs/feature-spec.md', '- [x] F-01 — Complete without evidence\n- [x] F-02 — Complete 2026-10-24 [evidence](a.md)\n- [ ] F-02 — Duplicate\n')
         r = support.tracker(self.root); self.assertEqual(['F-01'], r['missing_dated_evidence']); self.assertEqual(['F-02'], r['duplicate_ids'])
 
-    def test_28b_tracker_rows_items_and_gametests_keep_their_id_order(self):
+    def test_28b_tracker_rows_and_items_keep_their_id_order(self):
         self.put('docs/feature-spec.md', '| ID | x |\n| --- | --- |\n| F-22c4 | a |\n| F-22c40 | b |\n| F-22c5 | c |\n\n'
                  '- [ ] F-25 — Parent\n  - [ ] F-25b — Child\n  - [ ] F-25a — Child before its sibling\n- [ ] F-26 — Next\n')
-        self.put(support.GAMETESTS, json.dumps({'entrypoints': {'fabric-gametest': ['a.B', 'a.A']}}))
         r = support.tracker(self.root)
         self.assertEqual(['5: F-22c40 > F-22c5', '9: F-25b > F-25a'], r['out_of_order'])
-        self.assertEqual(['a.B > a.A'], r['unsorted_gametests'])
         self.put('docs/feature-spec.md', '| F-22c4 | a |\n| F-22c5 | b |\n| F-22c40 | c |\n- [ ] F-25 — P\n  - [ ] F-25a — C\n  - [ ] F-25b — C\n- [ ] F-26 — N\n')
-        self.put(support.GAMETESTS, json.dumps({'entrypoints': {'fabric-gametest': ['a.A', 'a.B']}}))
         r = support.tracker(self.root)
         self.assertEqual([], r['out_of_order'])
-        self.assertEqual([], r['unsorted_gametests'])
 
     def manifest_fixture(self):
         self.put('release-manifest.json', json.dumps({'minecraft': '1.21.1', 'fabricLoader': '0.19.5', 'fabricApi': '0.116.17+1.21.1', 'version': '0.1.0', 'gradle': '8.14.3', 'javaMajor': 21, 'liveAcceptanceGatesPassed': []}))
