@@ -1,0 +1,116 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 28151,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -357,
+  31,
+  -118
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.243206666908975,
+  8.0,
+  16.552866209941712
+ ],
+ "yaw": 602.0539,
+ "pitch": 17.733753,
+ "health": 14.0,
+ "food": 15,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 4
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 4
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:beef",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 15
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 4
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 4151,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "DRAGON",
+ "stage": "Wood: fight back - Back off from zombie",
+ "task": "Hole up: back into the passage",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[14:33:40] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up flint]",
+  "[14:33:40] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up flint]",
+  "[14:33:40] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up flint]",
+  "[14:33:40] [Server thread/INFO]: Sol native_break COMPLETED [Dig gravel for flint]",
+  "[14:33:41] [Server thread/INFO]: Sol native_break COMPLETED [Dig gravel for flint]",
+  "[14:33:41] [Server thread/INFO]: Sol native_break COMPLETED [Dig gravel for flint]",
+  "[14:33:41] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[14:33:41] [Server thread/INFO]: Sol native_place COMPLETED [Set down gravel to dig for flint]",
+  "[14:33:43] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to room for a workstation]",
+  "[14:33:45] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[14:33:46] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[14:33:47] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[14:33:48] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[14:33:48] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[14:33:48] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[14:33:48] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal -334, 41, -106]",
+  "[14:33:49] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[14:33:49] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[14:33:50] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Hole up: back into the passage]",
+  "[14:33:50] [Server thread/INFO]: Sol died at -341, 39, -102: Sol was slain by Zombie (tick 28151, day, under cover, hunger 15, armour 0, holding dirt, no shield; doing \"Hole up: back into the passage\" in \"Wood: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40c1-eed2dc5",
+  "seed": "101",
+  "build": "eed2dc5",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40c1-eed2dc5/101/replays/world/Sol-28151",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

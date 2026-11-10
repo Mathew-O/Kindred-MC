@@ -677,15 +677,6 @@ The log says `Outing: <host> invited <n> to <place>`, then `... set off ...`, `.
 
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`; Echo's key keeps its former name, Vesp, so settings made before the rename still apply).
 
-## A place it cannot walk to (M-01f)
-
-When an AI player is refused a walk to a place three times from about the same spot, for want of any route ("No
-walkable route", or a route found blocked), it lets that place be for ten minutes. This holds whatever asked for the
-walk: its goal, its base, a faction move or any other routine. The place is a four-block cell, so neighbouring blocks of
-one patch count together. The log says so once: `<player> lets its walks to around x, y, z be for ten minutes: refused 3
-times from around … [<the routine>]`. Moving more than eight blocks away, arriving there by another way, or breaking or
-placing a block gives the place another try at once. Commands given by people are never held back by it.
-
 ## How the players look about
 
 While a player waits (resting, by its furnace, for daylight), it looks at what matters, as a person does: a monster in plain sight, whoever speaks to it, a player close by who looks at it (for a moment), what it waits on, and otherwise about it, slowly. It never looks an enderman in the eyes. Say its name in chat while it can see you and it stops what it is doing for a moment, between one task and the next, to look at you. Mining, placing and fighting still turn its head in one step.
@@ -936,6 +927,13 @@ A replay that is to be kept as a test goes into the gametest resources (see the 
 [validation](validation.md)), and the suite plays it three times by the real runtime: it passes if the player is
 alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
 of three; one that does not is left out.
+
+### The failure corpus (F-27a)
+
+`./gradlew :companion-server-adapter:runCorpus` plays every kept death again from its own ground and state, one test a
+scene. It takes about 25 minutes on four cores. `python3 tools/corpus/report.py <results.xml>...` prints the share that
+come through. `tools/corpus/gate.sh` runs it three times and compares the result with `tools/corpus/baseline.json`.
+Nothing in a world is touched: the corpus runs in its own GameTest server.
 
 ### The simulator (F-28)
 

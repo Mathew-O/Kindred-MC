@@ -1,0 +1,185 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 76433,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  29,
+  49,
+  85
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.798475068216824,
+  8.0,
+  16.69999998807907
+ ],
+ "yaw": -14.065608,
+ "pitch": 2.380541,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 4.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 51
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 6
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:apple",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 15
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:mutton",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 6
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:dandelion",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 9
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 4433,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: heal before going on",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO, NO_CAVES]",
+ "cause": "Kindred tried to swim in lava",
+ "ticks": 1200,
+ "log": [
+  "[13:35:01] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at 46, 60, 102]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at 46, 60, 102]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_break CANCELLED: Hazard/threat detected: urgent retreat required [Mine stone at 43, 58, 102]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Walk to stone at 44, 57, 103]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_break CANCELLED: Hazard/threat detected: urgent retreat required [Mine stone at 47, 58, 100]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_break CANCELLED: Hazard/threat detected: urgent retreat required [Mine stone at 47, 59, 101]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_break CANCELLED: Hazard/threat detected: urgent retreat required [Mine stone at 48, 58, 101]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Walk to stone at 42, 58, 102]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_break CANCELLED: Hazard/threat detected: urgent retreat required [Mine stone at 46, 58, 104]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:01] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]",
+  "[13:35:02] [Server thread/INFO]: Kindred died at 45, 57, 101: Kindred tried to swim in lava (tick 76433, day, under cover, hunger 20, armour 0, holding stone_pickaxe, no shield; doing \"native_wait\" in \"Iron: heal before going on\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO, NO_CAVES])"
+ ],
+ "corpus": {
+  "run": "e40a15-dbf4e5c",
+  "seed": "8675309",
+  "build": "dbf4e5c",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a15-dbf4e5c/8675309/replays/world/Kindred-76433",
+  "class": "death: lava",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

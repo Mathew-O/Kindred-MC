@@ -1,0 +1,334 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 120452,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  147,
+  57,
+  226
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.48808212730276,
+  8.0,
+  16.766126529742564
+ ],
+ "yaw": -0.9303835,
+ "pitch": 9.285385,
+ "health": 1.3649998,
+ "food": 12,
+ "saturation": 6.6000004,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 4
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 56
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 26
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:saddle",
+    "count": 1
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:lava_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 2
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 9
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 21
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:bow",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 177
+    }
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:iron_horse_armor",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 44
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:azalea",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:moss_block",
+    "count": 5
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:moss_carpet",
+    "count": 2
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 16
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 10
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 4
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:mossy_cobblestone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 15
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 20
+    }
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 452,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: stuck in a wall - Dig out of the wall at 163, 66, 243 (tried elsewhere 6 times)",
+ "task": "Dig out of the wall at 163, 66, 243",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Echo suffocated in a wall",
+ "ticks": 1200,
+ "log": [
+  "[05:59:29] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for food: let what falls settle]",
+  "[05:59:29] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 162, 65, 244]",
+  "[05:59:29] [Server thread/INFO]: Echo native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Climb toward the surface for food: clear 162, 67, 244]",
+  "[05:59:30] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 162, 65, 244]",
+  "[05:59:30] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for food: let what falls settle]",
+  "[05:59:30] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 162, 65, 244]",
+  "[05:59:30] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for food: let what falls settle]",
+  "[05:59:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 162, 65, 244]",
+  "[05:59:31] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[05:59:31] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 163, 66, 244]",
+  "[05:59:31] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 163, 65, 244]",
+  "[05:59:31] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+  "[05:59:31] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 163, 66, 243]",
+  "[05:59:31] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 163, 65, 243]",
+  "[05:59:31] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+  "[05:59:32] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 163, 66, 242]",
+  "[05:59:32] [Server thread/INFO]: Echo native_break COMPLETED [Cut through north for animals: clear 163, 65, 242]",
+  "[05:59:32] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through north for animals: advance]",
+  "[05:59:32] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: open the ceiling beside it: clear 163, 67, 243]",
+  "[05:59:32] [Server thread/INFO]: Echo native_wait CANCELLED: Stuck in a wall; dig out first [Climb to find another way: let what falls settle]"
+ ],
+ "corpus": {
+  "run": "e40a14-80b7150",
+  "seed": "31102026",
+  "build": "80b7150",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a14-80b7150/31102026/replays/world/Echo-120452",
+  "class": "death: suffocation",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
