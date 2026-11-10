@@ -1,0 +1,174 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 5741,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -382,
+  31,
+  -123
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.758423961145013,
+  8.0,
+  16.14351365056254
+ ],
+ "yaw": -423.629,
+ "pitch": 18.142351,
+ "health": 11.0,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 59
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 16
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 53
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 68
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 2
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 5741,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from skeleton",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[07:21:22] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -352, 31, -102]",
+  "[07:21:22] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+  "[07:21:22] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -352, 32, -101]",
+  "[07:21:23] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[07:21:23] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -352, 31, -101]",
+  "[07:21:23] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[07:21:23] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal -351, 32, -101]",
+  "[07:21:23] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal -352, 31, -102]",
+  "[07:21:23] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal -352, 32, -102]",
+  "[07:21:23] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal -352, 33, -101]",
+  "[07:21:23] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: wait behind the wall]",
+  "[07:21:24] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: wait behind the wall]",
+  "[07:21:24] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -352, 32, -100]",
+  "[07:21:25] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -352, 31, -100]",
+  "[07:21:25] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[07:21:25] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -352, 32, -99]",
+  "[07:21:25] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -352, 31, -99]",
+  "[07:21:25] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward iron: advance]",
+  "[07:21:29] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -356, 31, -93 is blocked [Back off from zombie]",
+  "[07:21:30] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Run from creeper]"
+ ],
+ "corpus": {
+  "run": "e40a17-7bc5b42",
+  "seed": "101",
+  "build": "7bc5b42",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a17-7bc5b42/101/replays/world/Echo-5741",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

@@ -1,0 +1,209 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 7726,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -381,
+  32,
+  -122
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.348796181161106,
+  8.0,
+  16.12241431040647
+ ],
+ "yaw": -450.04462,
+ "pitch": 17.33397,
+ "health": 0.49999714,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 18
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 17
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 55
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 5
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 84
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 4
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 14
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 9
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 7
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 5
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 7726,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Fight spider",
+ "task": "Fight spider",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[13:49:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Pick up raw iron]",
+  "[13:49:58] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -367, 24, -122]",
+  "[13:49:58] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -367, 24, -123]",
+  "[13:49:59] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -378, 41, -113 [Walk to iron ore at -378, 41, -113]",
+  "[13:49:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore the cave toward iron]",
+  "[13:49:59] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[13:50:00] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[13:50:00] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[13:50:00] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[13:50:01] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[13:50:02] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[13:50:02] [Server thread/INFO]: Kindred native_eat COMPLETED",
+  "[13:50:03] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[13:50:04] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[13:50:04] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:50:04] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:50:05] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:50:07] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -364, 28, -103 is blocked [Back off from zombie]",
+  "[13:50:07] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from spider]",
+  "[13:50:07] [Server thread/INFO]: Kindred native_eat COMPLETED"
+ ],
+ "corpus": {
+  "run": "e40a15-dbf4e5c",
+  "seed": "101",
+  "build": "dbf4e5c",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a15-dbf4e5c/101/replays/world/Kindred-7726",
+  "class": "death: spider",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

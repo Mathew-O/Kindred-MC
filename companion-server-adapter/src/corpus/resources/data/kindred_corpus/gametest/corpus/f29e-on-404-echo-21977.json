@@ -1,0 +1,265 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 21977,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  0,
+  18,
+  -91
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.598428329001248,
+  8.31168707874468,
+  16.04876123980003
+ ],
+ "yaw": -188.10616,
+ "pitch": 10.977075,
+ "health": 1.0,
+ "food": 8,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:jungle_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 5
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 47
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 24
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:jungle_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:big_dripleaf",
+    "count": 4
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 11
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 4
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 32
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 4
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 50
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 6
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 21977,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from skeleton",
+ "task": "Back off from skeleton",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[22:58:51] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:52] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:53] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:53] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:54] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:55] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:56] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:56] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:57] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:58] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:59] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:58:59] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:00] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:01] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:02] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:02] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:03] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:03] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:04] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[22:59:04] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from skeleton]"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "404",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/404/replays/world/Echo-21977",
+  "source": "docs/evidence/eval/f29e-on/404/replays/world/Echo-21977",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

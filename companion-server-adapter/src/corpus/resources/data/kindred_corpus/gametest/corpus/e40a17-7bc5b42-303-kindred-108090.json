@@ -1,0 +1,343 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 108090,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  131,
+  -62,
+  94
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.30000001192093,
+  8.495200877005914,
+  16.30000001192093
+ ],
+ "yaw": -77.16343,
+ "pitch": 15.710033,
+ "health": 20.0,
+ "food": 15,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [
+  {
+   "id": "minecraft:darkness",
+   "amplifier": 0,
+   "duration": 153
+  }
+ ],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 27
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 51
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 22
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 19
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:azure_bluet",
+    "count": 1
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 178
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:lava_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 27
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:raw_gold",
+    "count": 3
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 7
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 43
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:redstone",
+    "count": 5
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:tuff",
+    "count": 42
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:light_gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 27
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 73
+    }
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 12090,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Fight warden",
+ "task": "Fight warden",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was slain by Warden",
+ "ticks": 1200,
+ "log": [
+  "[07:55:18] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 149, -50, 110]",
+  "[07:55:18] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 148, -50, 110]",
+  "[07:55:18] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 147, -50, 110]",
+  "[07:55:19] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 148, -54, 111]",
+  "[07:55:19] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 150, -53, 111]",
+  "[07:55:19] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 148, -53, 111]",
+  "[07:55:19] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 147, -53, 111]",
+  "[07:55:20] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 150, -52, 111]",
+  "[07:55:20] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 149, -52, 111]",
+  "[07:55:20] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 148, -52, 111]",
+  "[07:55:21] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 147, -52, 111]",
+  "[07:55:21] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 150, -51, 111]",
+  "[07:55:21] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 149, -51, 111]",
+  "[07:55:21] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 148, -51, 111]",
+  "[07:55:22] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 147, -51, 111]",
+  "[07:55:22] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear 149, -50, 111]",
+  "[07:55:22] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Cast: clear 148, -50, 111]",
+  "[07:55:22] [Server thread/INFO]: Kindred native_swap COMPLETED [Ready a block]",
+  "[07:55:22] [Server thread/INFO]: Kindred native_place CANCELLED: A hostile mob is attacking; fight back first [Cast: mould at 149, -54, 112]",
+  "[07:55:23] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against warden]"
+ ],
+ "corpus": {
+  "run": "e40a17-7bc5b42",
+  "seed": "303",
+  "build": "7bc5b42",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a17-7bc5b42/303/replays/world/Kindred-108090",
+  "class": "death: warden",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
