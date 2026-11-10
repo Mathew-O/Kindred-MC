@@ -1,7 +1,6 @@
 package dev.kindred.fabric;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
-import dev.kindred.core.factions.Hud;
 import dev.kindred.core.ui.HudOptions;
 import dev.kindred.fabric.mixin.client.InGameHudTitleAccessor;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -26,7 +25,7 @@ import org.lwjgl.glfw.GLFW;
  * player sets on their own computer how see-through and how big it is, which side it sits on, and whether it steps
  * aside while a title shows ({@code /kindredhud}).
  *
- * Technical: The HUD's client side (M-06l). It draws {@link Hud#layout} of the last state the server sent; the server
+ * Technical: The HUD's client side (M-06l). It draws {@link dev.kindred.core.ui.HudPanel#layout} of the last sections the server sent; the server
  * decides what the player may know. The card is about 35% opaque with a lighter edge, a quarter of the screen wide,
  * Minecraft's own font, scaled with the GUI scale (the draw context's coordinates already are). The player's own
  * settings ({@link HudOptions}, kept by {@link KindredHudOptions}) set its opacity (10 to 100%), its scale (0.5 to 2)
@@ -39,8 +38,8 @@ final class KindredHud {
     static final int TEXT = 0xFF_E8_E8_E8, DIM = 0xFF_A8_A8_A8, AMBER = 0xFF_FF_B3_2E, RED = 0xFF_FF_55_55, GREEN = 0xFF_6C_E0_6C;
 
     private static KeyBinding cycle;
-    private static Hud.State state;
-    private static Hud.Mode mode = Hud.Mode.FULL;
+    private static java.util.List<dev.kindred.core.ui.HudPanel.Section> state;
+    private static dev.kindred.core.ui.HudPanel.Mode mode = dev.kindred.core.ui.HudPanel.Mode.FULL;
 
     private KindredHud() {}
 
@@ -75,7 +74,7 @@ final class KindredHud {
         });
         ClientPlayNetworking.registerGlobalReceiver(KindredPanelPayloads.Hud.ID, (payload, context) -> {
             try {
-                state = Hud.decode(payload.text());
+                state = dev.kindred.core.ui.HudPanel.decode(payload.text());
             } catch (RuntimeException unreadable) {
                 state = null;
             }
@@ -85,7 +84,7 @@ final class KindredHud {
     }
 
     /** The colour a line is drawn in. */
-    static int colour(Hud.Line line) {
+    static int colour(dev.kindred.core.ui.HudPanel.Line line) {
         return switch (line.role()) {
             case FACTION -> 0xFF_00_00_00 | factionColour(line.colour());
             case TEXT -> TEXT;
@@ -113,7 +112,7 @@ final class KindredHud {
         if (state == null || client.player == null || client.currentScreen != null || client.options.hudHidden) return;
         var options = KindredHudOptions.current();
         if (options.hideForTitles() && titleShowing(client)) return;
-        var lines = Hud.layout(state, mode);
+        var lines = dev.kindred.core.ui.HudPanel.layout(state, mode);
         if (lines.isEmpty()) return;
         var font = client.textRenderer;
         // Laid out in the card's own scale, on top of the GUI scale: the screen as the card sees it.
