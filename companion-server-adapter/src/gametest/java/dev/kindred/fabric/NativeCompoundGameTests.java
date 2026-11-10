@@ -385,13 +385,14 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     var inventory = player.getInventory();
                     inventory.clear();
                     // The ward's bill, as though gathered and crafted, with stone tools to dig its way in, dirt to
-                    // scaffold with and bread.
+                    // scaffold with and bread. Its way in's door and the fence beside it since F-22c43: a door and four
+                    // fences more.
                     ItemStack[] bill = {
                             new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_SHOVEL),
                             new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.COBBLESTONE, 64),
                             new ItemStack(Items.COBBLESTONE, 27),
                             new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 34),
-                            new ItemStack(Items.OAK_FENCE, 23), new ItemStack(Items.OAK_FENCE_GATE, 1),
+                            new ItemStack(Items.OAK_FENCE, 27), new ItemStack(Items.OAK_FENCE_GATE, 1), new ItemStack(Items.OAK_DOOR, 1),
                             new ItemStack(Items.TORCH, 12), new ItemStack(Items.DIRT, 64), new ItemStack(Items.BREAD, 16)};
                     for (int slot = 0; slot < bill.length; slot++) inventory.setStack(slot, bill[slot]);
                     player.setHealth(20);
