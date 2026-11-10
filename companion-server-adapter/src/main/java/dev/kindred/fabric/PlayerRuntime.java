@@ -14170,6 +14170,9 @@ final class PlayerRuntime {
             return;
         }
         if (!"native_goto".equals(entry.skillId)) return;
+        // A goal's or a build's own walk is its plan's to judge: it has its own back-off and its own way on when a step
+        // is not feasible. Set aside, the goal stayed on a walk it could not make (the spire fixture, after #120).
+        if (entry.activeCampaignTask != null || entry.activeBuildTask != null) return;
         BlockPos target = walkTarget(entry.skillArgs);
         if (target == null) return;
         if (state == SkillRunner.State.COMPLETED) {
@@ -14198,7 +14201,10 @@ final class PlayerRuntime {
                 && player.getHealth() >= player.getMaxHealth() / 2;
     }
 
-    /** The candidates, less any walk to a place set aside for this player where it stands (LOOPS 1, M-01f slice 2). */
+    /**
+     * The candidates, less any walk to a place set aside for this player where it stands (LOOPS 1, M-01f slice 2). A
+     * routine's walks only: a goal's or a build's own step is never held back here.
+     */
     private List<NativeTaskCandidate> withoutWalksSetAside(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
         if (candidates.isEmpty() || entry.walksAside.size() == 0 || body == null || !body.connected() || !walksMayBeSetAside(body.entity())) return candidates;
         BlockPos feet = body.entity().getBlockPos();
@@ -14206,7 +14212,8 @@ final class PlayerRuntime {
         List<NativeTaskCandidate> kept = null;
         for (int i = 0; i < candidates.size(); i++) {
             var candidate = candidates.get(i);
-            BlockPos target = "native_goto".equals(candidate.skill()) ? walkTarget(candidate.arguments()) : null;
+            boolean planned = entry.campaignTasks.containsKey(candidate.candidate().id()) || entry.buildTasks.containsKey(candidate.candidate().id());
+            BlockPos target = "native_goto".equals(candidate.skill()) && !planned ? walkTarget(candidate.arguments()) : null;
             boolean aside = target != null && entry.walksAside.aside(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), tick);
             if (aside && kept == null) kept = new ArrayList<>(candidates.subList(0, i));
             else if (!aside && kept != null) kept.add(candidate);
