@@ -16,6 +16,12 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## F-35c: the walk into a far or deep portal, 2026-11-10
+
+- Build: `./gradlew build`.
+- Native: `NativeDeepPortalGameTests` alone, 0 of 3 before ("Goto target is too far for one route"), 3 of 3 after; with `NativeStrongholdGameTests`, `NativeNetherGameTests`, `NativeEndGameTests`, `NativeFollowUpGameTests` and `NativeCoopPaceGameTests`, 3 runs, 27 of 27 each.
+- Not run: a ten-seed batch.
+
 ## F-35b: a cave pocket up a wall climbed to once, 2026-11-09
 
 - Build: `./gradlew build`.
