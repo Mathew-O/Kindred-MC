@@ -1,0 +1,240 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 13531,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -369,
+  31,
+  -114
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.599662749324295,
+  8.0,
+  16.428050510105237
+ ],
+ "yaw": 88.82641,
+ "pitch": 13.083515,
+ "health": 1.0333319,
+ "food": 13,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 4
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 50
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 17
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 11
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 116
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 6
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 37
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:bow",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 355
+    }
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 14
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 12
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 13531,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "DRAGON",
+ "stage": "Iron: outmatched - Hole up: back into the passage",
+ "task": "Walk to iron ore at -359, 42, -100",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[14:32:10] [Server thread/INFO]: Sol native_break COMPLETED [Clear space for a workstation]",
+  "[14:32:10] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for the drop to settle]",
+  "[14:32:10] [Server thread/INFO]: Sol native_place COMPLETED [Place a furnace]",
+  "[14:32:11] [Server thread/INFO]: Sol native_smelt COMPLETED [Load raw iron and fuel (coal)]",
+  "[14:32:11] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+  "[14:32:11] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+  "[14:32:12] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+  "[14:32:12] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+  "[14:32:12] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]",
+  "[14:32:12] [Server thread/INFO]: Sol native_craft COMPLETED [Craft oak planks]",
+  "[14:32:12] [Server thread/INFO]: Sol native_swap COMPLETED [Ready crafting table]",
+  "[14:32:13] [Server thread/INFO]: Sol native_break COMPLETED [Clear space for a workstation]",
+  "[14:32:13] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for the drop to settle]",
+  "[14:32:13] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+  "[14:32:13] [Server thread/INFO]: Sol native_craft COMPLETED [Craft shield]",
+  "[14:32:13] [Server thread/INFO]: Sol native_equip COMPLETED",
+  "[14:32:13] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+  "[14:32:16] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -360, 42, -101 is blocked [Back to where it saw iron ore at -360, 42, -101]",
+  "[14:32:16] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Walk to iron ore at -359, 42, -100]",
+  "[14:32:16] [Server thread/INFO]: Sol died at -353, 39, -98: Sol was shot by Skeleton (tick 13531, night, under cover, hunger 13, armour 0, holding crafting_table, a shield; doing \"Walk to iron ore at -359, 42, -100\" in \"Iron: outmatched - Hole up: back into the passage\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40c1-eed2dc5",
+  "seed": "101",
+  "build": "eed2dc5",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40c1-eed2dc5/101/replays/world/Sol-13531",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
