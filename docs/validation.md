@@ -3568,3 +3568,9 @@ After the block's first merge from main, CI on PR #25 found:
     `NativeLifeFirstGameTests`, `NativeBuildGameTests`, `NativeRanchGameTests`, `NativeOwnRanchGameTests`, 1 run, 24 of 25.
     The one failure is the life-first night fixture's hut, "built but for 13 oak planks", as on #87's CI before the
     change.
+
+- **[F-25c4db](evidence/F-25c4db.md):** a shield in the off hand is raised between swings against a mob (product; the kept
+  replay `kindred-43985-707`: three zombies fought with a shield that never came up).
+  - The new fixture (a zombie, a stone sword and a shield): 0 of 3 before (the shield up 0 of ~42 ticks); 3 of 3 after.
+  - The fight classes (combat, encounter, edge fight, water fight, duel benchmark), 1 run: 12 of 12.
+  - Side figure, 707 restored, 3 runs of `ReplayGameTests` on main: 7 of 9 before, 9 of 9 after.
