@@ -346,11 +346,11 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                     f.runtime.factionsWorldForTest(WIDE);
                     f.runtime.createNative(f.source, "Ada");
                 })
+                .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
-                    var statuses = f.runtime.nativeStatuses(Actor.console());
-                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().connected(), "Ada established");
-                    ada[0] = statuses.getFirst().id();
-                    ada[1] = statuses.getFirst().nativeId();
+                    context.assertTrue(f.player() != null, "Ada's body");
+                    ada[0] = f.id;
+                    ada[1] = f.player().getUuid();
                     context.assertTrue(!f.runtime.teleportAllowed() && !f.runtime.freeItemsAllowed(), "Forbidden by default");
                     context.assertTrue(f.runtime.faction(f.source, ada[1], "create", List.of("Ada_Hold", "ADA")).accepted(), "Ada_Hold made");
                 })

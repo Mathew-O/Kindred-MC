@@ -16548,7 +16548,8 @@ final class PlayerRuntime {
      */
     private FactionsService.Reply homeTravel(ServerPlayerEntity player, FactionsService.Reply told) {
         if (!teleportAllowed()) return told;
-        if (entries.containsKey(player.getUuid())) return told;
+        // An AI player's body, by its entry or by its kind: never taken.
+        if (entryForPlayer(player.getUuid()) != null || player instanceof PreparedNativePlayer) return told;
         var faction = factions.book().of(player.getUuid()).orElse(null);
         if (faction == null || faction.home().isEmpty()) return told;
         String home = faction.home();
