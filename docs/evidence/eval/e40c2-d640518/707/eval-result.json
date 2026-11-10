@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 680, "stone_tools": 3840, "iron_ingot": 20520, "iron_pickaxe": 28200},
+      "deaths": [
+        {"tick": 29657, "cause": "Kindred was slain by Zombie", "x": -25, "y": 16, "z": 40, "light": 0, "timeOfDay": 5819, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 54530, "cause": "Kindred was slain by Zombie Villager", "x": -2, "y": 80, "z": 45, "light": 0, "timeOfDay": 6692, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "End: Prepare: fight back - Fight zombie_villager", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 97787, "cause": "Kindred was slain by Zombie", "x": -2, "y": 74, "z": 87, "light": 0, "timeOfDay": 1949, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "End: Prepare: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1100, "stone_tools": 5560, "iron_ingot": 13460, "iron_pickaxe": 23460},
+      "deaths": [
+        {"tick": 40534, "cause": "Sol was shot by Stray", "x": 26, "y": 63, "z": -100, "light": 4, "timeOfDay": 16696, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Iron: inventory full - Drop surplus granite (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 87980, "cause": "Sol was slain by Zombie", "x": 4, "y": 4, "z": -55, "light": 5, "timeOfDay": 16142, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 89783, "cause": "Sol was slain by Drowned", "x": 12, "y": 61, "z": 5, "light": 0, "timeOfDay": 17945, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Wood: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 92471, "cause": "Sol was slain by Zombie", "x": 38, "y": 67, "z": 19, "light": 4, "timeOfDay": 20633, "dimension": "minecraft:overworld", "hunger": 11, "underSky": true, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31040, "x": 6, "y": 38, "z": -93, "attempt": 1}, {"tick": 191340, "x": 99, "y": -3, "z": 55, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 6240, "stone_tools": 8520, "iron_ingot": 15560, "iron_pickaxe": 47420, "obsidian": 52286, "portal_lit": 53035},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 20880, "x": 167, "y": 14, "z": 4, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

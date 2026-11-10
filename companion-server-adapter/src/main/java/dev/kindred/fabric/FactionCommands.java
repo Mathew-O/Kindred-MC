@@ -36,7 +36,7 @@ final class FactionCommands {
         }
         // The auction house (M-06h): /ah [list|mine], /ah sell <start> [buyNow] [hours], /ah bid|buy|cancel <id> ...
         dispatcher.register(CommandManager.literal("ah")
-                .executes(context -> auction(context.getSource(), "list"))
+                .executes(context -> auctionScreen(context.getSource()))
                 .then(CommandManager.argument("request", StringArgumentType.greedyString())
                         .executes(context -> auction(context.getSource(), StringArgumentType.getString(context, "request")))));
         dispatcher.register(CommandManager.literal("sellall")
@@ -83,6 +83,12 @@ final class FactionCommands {
             return 0;
         }
         return runtime.marketRequest(source, player == null ? new UUID(0, 0) : player.getUuid(), words.isEmpty() ? "help" : words.getFirst(), words.isEmpty() ? List.of() : words.subList(1, words.size()));
+    }
+
+    /** Bare /ah: the chest screen for a person, the listings as text for anyone else. */
+    private static int auctionScreen(ServerCommandSource source) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        return runtime == null ? unavailable(source) : runtime.openAuctionScreen(source);
     }
 
     private static int auction(ServerCommandSource source, String request) {

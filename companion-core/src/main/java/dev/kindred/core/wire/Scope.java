@@ -15,11 +15,11 @@ public record Scope(Channel channel, String key, Listener.Place earshot, int rad
     public Scope {
         Objects.requireNonNull(channel);
         key = key == null ? "" : key.strip();
-        if (channel == Channel.PUBLIC) {
+        if (channel.audience() == Channel.Audience.PUBLIC) {
             if (earshot == null && !key.equals(SERVER)) throw new IllegalArgumentException("A public scope needs an earshot or the server");
             if (earshot != null && radius <= 0) throw new IllegalArgumentException("An earshot needs a radius");
         } else {
-            if (key.isEmpty() && channel != Channel.OPERATOR) throw new IllegalArgumentException("A " + channel.id() + " scope needs its key");
+            if (key.isEmpty() && channel.audience() != Channel.Audience.OPERATOR) throw new IllegalArgumentException("A " + channel.id() + " scope needs its key");
             earshot = null;
             radius = 0;
         }
@@ -39,7 +39,7 @@ public record Scope(Channel channel, String key, Listener.Place earshot, int rad
     public static Scope operators() { return new Scope(Channel.OPERATOR, "", null, 0); }
 
     /** Whether this is a whole-server public scope. */
-    public boolean serverWide() { return channel == Channel.PUBLIC && earshot == null; }
+    public boolean serverWide() { return channel.audience() == Channel.Audience.PUBLIC && earshot == null; }
 
     /** The budget and dedupe key: the channel and its key, earshot scopes by their speaker's channel alone. */
     String budgetKey() { return channel.id() + "|" + (earshot != null ? "earshot" : key); }
