@@ -14,6 +14,12 @@ import java.util.Objects;
 public final class EditPolicy {
     public enum Kind { BREAK, PLACE, CONTAINER }
 
+    /**
+     * The World Record's kind for a change of the server's switch for free travel or free items: the switch as subject,
+     * {@code allowed} and {@code by} (who changed it) as data, the operator as actor when a player (the audit, D6).
+     */
+    public static final String POLICY_SET = "policy.set";
+
     public enum Verdict {
         ALLOWED, NO_SETUP, WRONG_DIMENSION, OUTSIDE_AREA, OUTSIDE_PATCH, WRONG_RESOURCE, NOT_ASSIGNED_STORAGE,
         EDITS_DISABLED, PROTECTION_UNKNOWN

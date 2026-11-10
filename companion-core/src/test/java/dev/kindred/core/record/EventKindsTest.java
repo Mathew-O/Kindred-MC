@@ -21,7 +21,7 @@ class EventKindsTest {
             "faction.vulnerable", "faction.secure", "coins", "safe.zone", "market.sale", "market.buy", "market.baseline",
             "market.signal", "auction.list", "auction.bid", "auction.close", "auction.cancel", "auction.order",
             "auction.order.fill", "auction.order.cancel", "auction.delivering", "auction.delivered", "message", "correction",
-            "team.state", "chronicle.page");
+            "team.state", "chronicle.page", "policy.set");
 
     @Test
     void kindredsOwnKindsAreRegisteredWithTheirSavedValues() {

@@ -16533,11 +16533,36 @@ final class PlayerRuntime {
             String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : source.getWorld().getRegistryKey().getValue().toString();
             BlockPos pos = player != null ? player.getBlockPos() : BlockPos.ofFloored(source.getPosition());
             reply = factions.request(who, verb.toLowerCase(java.util.Locale.ROOT), args, world, pos, this::playerByName, this::factionName);
+            if (reply.accepted() && verb.equalsIgnoreCase("home") && player != null) reply = homeTravel(player, reply);
         }
         for (String line : reply.lines()) {
             if (reply.accepted()) feedback(source, line); else reject(source, line);
         }
         return reply;
+    }
+
+    /**
+     * {@code /faction home} with free travel allowed on this server (mod-support decision 6): whoever asks is taken to its
+     * faction's home, by the rule announced to everyone (D6). Forbidden (the default), home is only told. An AI player
+     * never travels this way: no recorded skill uses it, and the lead approves one first.
+     */
+    private FactionsService.Reply homeTravel(ServerPlayerEntity player, FactionsService.Reply told) {
+        if (!teleportAllowed()) return told;
+        if (entries.containsKey(player.getUuid())) return told;
+        var faction = factions.book().of(player.getUuid()).orElse(null);
+        if (faction == null || faction.home().isEmpty()) return told;
+        String home = faction.home();
+        int split = home.lastIndexOf(':');
+        String[] xyz = split < 0 ? new String[0] : home.substring(split + 1).split(",");
+        var world = split < 0 ? null : server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD,
+                net.minecraft.util.Identifier.tryParse(home.substring(0, split))));
+        if (world == null || xyz.length != 3) return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        try {
+            player.teleport(world, Integer.parseInt(xyz[0]) + 0.5, Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]) + 0.5, player.getYaw(), player.getPitch());
+        } catch (NumberFormatException failure) {
+            return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        }
+        return FactionsService.Reply.told(List.of("Teleported to " + faction.name() + "'s home (teleporting is allowed on this server, for everyone alike)."));
     }
 
     /** An online player's id by name, a person or an AI player. */
@@ -17606,6 +17631,10 @@ final class PlayerRuntime {
                 reject(source, "The rule applies now but could not be saved; it resets on restart.");
             }
         }));
+        // The audit: who changed which switch, and when, in the World Record (D6).
+        var by = source.getPlayer();
+        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", EditPolicy.POLICY_SET,
+                by == null ? null : by.getUuid(), which, "", Map.of("allowed", String.valueOf(allowed), "by", source.getName())));
         String line = edits.announcement().get(travel ? 0 : 1);
         for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) listener.sendMessage(Text.literal(line), false);
         KindredMod.LOGGER.info("Rule announced to every player: {}", line);

@@ -120,6 +120,7 @@ These stay commands. Press **K** in game (with the mod on your client) for the p
 | --- | --- |
 | `/aiplayer native create <name>` · `/aiplayer roster spawn <name>` | Make a player of your own, or spawn a starter (Kindred, Sol or Echo) |
 | `/aiplayer edits on` / `off` · `/aiplayer dragonfight on` | Allow or stop block breaking and placing by your players; allow the dragon fight |
+| `/aiplayer teleport allow` / `forbid` · `/aiplayer freeitems allow` / `forbid` · `/aiplayer policy` | Free travel and free items for every player alike, human or AI; forbidden by default, each change announced to everyone |
 | `/aiplayer personality <trait> <0-100> [player]` · `/aiplayer expression plain\|dry\|playful\|rough [player]` · `/aiplayer chatstyle proper\|casual\|gamer\|chaotic [player]` | Tune a trait; how it sounds; how it types |
 | `/aiplayer limit cap <hours> [player]` · `/aiplayer limit window 18.00 23.00 [player]` | How long, and when, a player may be active |
 | `/aiplayer prefs` · `/aiplayer prefs swearing\|dark\|flirting on` · `/aiplayer watch on` / `off` | Your own: how AI players speak to you, and whether you hear swearing, dark jokes or flirting (off unless you say yes); whether they may learn how deep you mine |

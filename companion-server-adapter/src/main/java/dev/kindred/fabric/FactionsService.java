@@ -311,7 +311,8 @@ final class FactionsService {
     /**
      * {@code who}'s request {@code verb} with its arguments, standing at {@code pos} in {@code world}: create, invite,
      * uninvite, join, leave, kick, promote, demote, leader, ally, truce, enemy, sethome, home, colour, disband, info, list,
-     * power. {@code players} resolves a name to a player's id. Nothing teleports: {@code home} tells where it is.
+     * power. {@code players} resolves a name to a player's id. Nothing teleports here: {@code home} tells where it is (with free
+     * travel allowed, {@code PlayerRuntime.homeTravel} takes a person who asked there).
      */
     Reply request(UUID who, String verb, List<String> args, String world, BlockPos pos, java.util.function.Function<String, UUID> players,
                   java.util.function.Function<UUID, String> names) {

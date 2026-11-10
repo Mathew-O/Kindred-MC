@@ -51,7 +51,9 @@ public final class EventKinds {
                 Auctions.LIST, Auctions.BID, Auctions.CLOSE, Auctions.CANCEL, Auctions.ORDER, Auctions.FILL,
                 Auctions.ORDER_CANCEL, Auctions.DELIVERING, Auctions.DELIVERED,
                 // The Wire, the knowledge web and the chronicle (F-32, F-33, F-34).
-                WebFeed.MESSAGE, RecordFeed.CORRECTION, TeamState.KIND, Chronicle.PAGE)) {
+                WebFeed.MESSAGE, RecordFeed.CORRECTION, TeamState.KIND, Chronicle.PAGE,
+                // The server's switches for free travel and free items (mod-support decision 6).
+                dev.kindred.core.EditPolicy.POLICY_SET)) {
             register(kind, CORE);
         }
     }
