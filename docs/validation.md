@@ -16,6 +16,18 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Cover kept from a mob (F-25c4cy) — 9 November 2026 (`claude/cover-climb-1109`)
+
+- **[F-25c4cy](evidence/F-25c4cy.md):** its own cover from a mob, standing with a living hostile mob within six blocks, is
+  held from every dig for up to two minutes (product; `ReplayGameTests`' `echo-73670` on #83's run 42583923691: the
+  hungry climb dug the cover out three times in a second, and the zombie killed it).
+  - `NativeCoverClimbGameTests` (staged, as it says): on `4361a52` without the fix, 0 of 3; with it, 3 of 3; on main
+    with it, 3 of 3.
+  - `ReplayGameTests` with the fix, 4 runs alone plus the 3 class runs: `echo-73670` lived 20 of 21, and
+    `kindred-43985-707` 18 of 21. Without the fix on `4361a52`, 3 runs: 8 of 9 and 9 of 9. Every death left with the fix
+    was a back-off "the way it came" while badly hurt, with no cover taken. That cause is open.
+  - Nineteen classes that fight, take cover and climb, 3 runs: 138, 139 and 138 of 139. Both failures were
+    `kindred-43985-707`, as above.
 ## A pocket of lava followed (F-25c4cz) — 9 November 2026 (`claude/lava-pocket-1109`)
 
 - **[F-25c4cz](evidence/F-25c4cz.md):** looking for its cast's lava, the pocket under the rock its bucket was filled from
@@ -681,6 +693,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
 - Build: `./gradlew build`.
 - JUnit: `WheatPlotTest`, `RanchChoiceTest` (one new case each).
 - Native: `NativeOwnRanchGameTests` alone, 3 runs, 6 of 6 each. Control (the pigs' choice off): 0 of 1.
+
+## M-01a: its horse ridden on its travels, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeHorseGameTests` with `NativeBoatGameTests` and `NativeOwnRanchGameTests` alone, 3 runs, 10 of 10 each. Control (`onItsHorse` off): 0 of 1.
 
 ## M-01a: a horse of its own, 2026-11-08
 
@@ -3519,3 +3536,11 @@ After the block's first merge from main, CI on PR #25 found:
   and why (#96's run 42583930289: "no other in sight" with a sheep in sight behind the pen's far fence). A ranch walk
   ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
   `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
+
+- **[F-22c44](evidence/F-22c44.md):** a pasture doorway left a block short is shut from the block's own drop, picked up
+  where it lies (product; #101's run 42584569435: "Nothing in hand to place", a plank short, for good).
+  - The staged fixture (a doorway plank left lying): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeCompoundGameTests`, 3 runs, 7 of 7 each. `NativeHouseGameTests`, `NativeBaseGameTests`,
+    `NativeLifeFirstGameTests`, `NativeBuildGameTests`, `NativeRanchGameTests`, `NativeOwnRanchGameTests`, 1 run, 24 of 25.
+    The one failure is the life-first night fixture's hut, "built but for 13 oak planks", as on #87's CI before the
+    change.
