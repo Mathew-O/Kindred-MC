@@ -57,7 +57,16 @@ STUCK_RULES = [
     ("hole or pit", re.compile(r"climb toward the surface|pillar up|climb out|step up|out of the hole|\bpit\b", re.I)),
     ("hemmed in", re.compile(r"no way on from here|climb to find another way|waiting for a feasible step|look round for a way on|boxed in", re.I)),
 ]
-STUCK_KINDS = [name for name, _ in STUCK_RULES] + ["other"]
+# Read only where no rule above reaches STUCK_LEAST: ordinary work that went on through a spell, not a failure of its own.
+STUCK_QUIET_RULES = [
+    ("waiting for daylight or a teammate", re.compile(r"Wait for daylight|Wait for the team's|nothing to do before daylight")),
+    ("mining for a find", re.compile(r"Branch mine for|Tunnel for (coal|water|iron|lava)|Dig down toward lava|Dig for stone")),
+]
+# Failing every rule, a spell whose commonest step (its numbers aside) came BUSY_LEAST times or more is busy work in a
+# loop: placing and picking up a table, readying a torch, the same step over and over without progress.
+BUSY, BUSY_LEAST = "busy-work loop", 6
+STUCK_KINDS = [name for name, _ in STUCK_RULES + STUCK_QUIET_RULES] + [BUSY, "other"]
+STEP = re.compile(r"^\w+ (?:goal at -?\d+ -?\d+ -?\d+: )?")
 REFUSED = re.compile(r"refused: (.*)")
 STUCK_AT = re.compile(r"Goal made no progress for \d+ ticks near (-?\d+), (-?\d+), (-?\d+)")
 CLOCK = re.compile(r"^\[(\d\d):(\d\d):(\d\d)\]")
@@ -101,7 +110,16 @@ def stuck_kind(lines):
         else:
             counts.append(sum(1 for line in lines if pattern.search(line)))
     best = max(counts)
-    return STUCK_RULES[counts.index(best)][0] if best >= STUCK_LEAST else "other"
+    if best >= STUCK_LEAST:
+        return STUCK_RULES[counts.index(best)][0]
+    quiet = [sum(1 for line in lines if pattern.search(line)) for _, pattern in STUCK_QUIET_RULES]
+    if max(quiet) >= STUCK_LEAST:
+        return STUCK_QUIET_RULES[quiet.index(max(quiet))][0]
+    steps = {}
+    for line in lines:
+        key = re.sub(r"\(tried elsewhere \d+ times?\)", "", re.sub(r"-?\d+", "N", STEP.sub("", line))).strip()
+        steps[key] = steps.get(key, 0) + 1
+    return BUSY if max(steps.values(), default=0) >= BUSY_LEAST else "other"
 
 
 def stuck_kinds_of(log, players):

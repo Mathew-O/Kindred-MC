@@ -81,6 +81,18 @@ class StuckKindTest(unittest.TestCase):
         self.assertEqual('no walkable route', score.stuck_kind(lines))
         self.assertEqual('other', score.stuck_kind(['x out from under the water'] * (score.STUCK_LEAST - 1)))
 
+    def test_06b_quiet_work_only_where_no_failure_rule_holds(self):
+        waits = ['Sol native_wait COMPLETED [Wait for daylight]'] * 9
+        self.assertEqual('waiting for daylight or a teammate', score.stuck_kind(waits))
+        blocked = ['Sol native_goto BLOCKED: No walkable route toward 1, 2, 3 [Walk]'] * 3
+        self.assertEqual('no walkable route', score.stuck_kind(waits + blocked))
+        self.assertEqual('mining for a find', score.stuck_kind(['Echo goal at 1 2 3: Iron: Mine iron ore (2/18) - Branch mine for iron: clear 4, 5, 6'] * 3))
+
+    def test_06c_the_same_step_over_and_over_is_a_busy_loop(self):
+        table = ['Echo native_place COMPLETED [Place a crafting table]', 'Echo native_break COMPLETED [Pick up the crafting table]']
+        self.assertEqual('busy-work loop', score.stuck_kind(table * score.BUSY_LEAST))
+        self.assertEqual('other', score.stuck_kind(table * (score.BUSY_LEAST - 1)))
+
     def test_07_a_spell_reads_its_players_lines_before_the_watchdog(self):
         log = '\n'.join(['[10:00:00] [Server thread/INFO]: Evaluation run: /tick sprint 100'] +
                         ['[10:00:01] [Server thread/INFO]: Sol goal at 0 0 0: Wood: no way on from here - wait'] * 3 +

@@ -130,7 +130,9 @@ script, `STUCK_RULES` and `DEATH_RULES`, tested by `python3 -m unittest discover
 - **A stuck spell** is read from the player's last 60 console lines before the watchdog gave the spot up (its "Goal made
   no progress ... near" line there, or the spell's tick placed on the console's clock): the bucket whose lines match most
   often, at least three times, of water loop, no walkable route (BLOCKED lines only), the same refusal repeated, hole or
-  pit, hemmed in; else other. A run with no console has its spells counted as unmatched.
+  pit, hemmed in. Failing those, ordinary work that went on through the spell (`STUCK_QUIET_RULES`): waiting for daylight
+  or a teammate, or mining for a find. Failing those, a busy-work loop when one step, its numbers aside, came six times or
+  more; else other. A run with no console has its spells counted as unmatched.
 
 ## Conventions
 
