@@ -102,8 +102,20 @@ public final class NativeRescueRoundsGameTests implements FabricGameTest {
     }
 
     private static void stage(TestContext context, NativePaidSkillsGameTests.Fixture f, BlockPos[] base, Scene scene, ItemStack... carried) {
+        stage(context, f, base, false, scene, carried);
+    }
+
+    /**
+     * {@code newGroundNorth}: the pit placed in the watchdog's eight-block cells so that a walk two north off its floor's
+     * rim crosses into a cell the player has not stood in, which is the goal's progress. Without it, whether a spell out
+     * of the pit counts as out rested on the goal's next gain within the plan's watch: in the three-round fixture, a log
+     * cut from the ledge whose drop bounced, a fraction of a block, in or out of the reach a player picks up from.
+     */
+    private static void stage(TestContext context, NativePaidSkillsGameTests.Fixture f, BlockPos[] base, boolean newGroundNorth, Scene scene,
+                              ItemStack... carried) {
         var world = context.getWorld();
-        BlockPos b = base[0] = f.player().getBlockPos().up(20).toImmutable();
+        BlockPos up = f.player().getBlockPos().up(20);
+        BlockPos b = base[0] = newGroundNorth ? new BlockPos(up.getX(), up.getY(), (up.getZ() & ~7) + 1) : up.toImmutable();
         scene.build(world, b);
         world.setTimeOfDay(1000);
         var player = f.player();
@@ -302,6 +314,11 @@ public final class NativeRescueRoundsGameTests implements FabricGameTest {
     }
 
     private static void spell(TestContext context, String name, Rounds stub, boolean log, Ledger ledger, String[] after, Check check) {
+        spell(context, name, stub, log, false, ledger, after, check);
+    }
+
+    private static void spell(TestContext context, String name, Rounds stub, boolean log, boolean newGroundNorth, Ledger ledger, String[] after,
+                              Check check) {
         var f = new NativePaidSkillsGameTests.Fixture(context, ledger.watch(), true);
         BlockPos[] base = new BlockPos[1];
         net.minecraft.server.network.ServerPlayerEntity[] who = new net.minecraft.server.network.ServerPlayerEntity[1];
@@ -314,7 +331,7 @@ public final class NativeRescueRoundsGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
-                    stage(context, f, base, (world, b) -> pit(world, b, log), new ItemStack(Items.GLASS, 8), new ItemStack(Items.BREAD, 5));
+                    stage(context, f, base, newGroundNorth, (world, b) -> pit(world, b, log), new ItemStack(Items.GLASS, 8), new ItemStack(Items.BREAD, 5));
                     f.runtime.strategistForFixtures(stub);
                 })
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(base[0]), "In the pit"))
@@ -344,13 +361,13 @@ public final class NativeRescueRoundsGameTests implements FabricGameTest {
     /**
      * A spell of three rounds that gets out: round one's walk stops at the pit's wall, and round two's report says so;
      * round two looks north, and round three's report shows the look; round three pillars up and walks onto the ledge,
-     * where the goal cuts the oak beside it: progress, the spell out after three rounds.
+     * into ground it has not stood in (the pit placed so): progress, the spell out after three rounds.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "rescueRoundsOut", tickLimit = 6000)
     public void aSpellOfThreeRoundsGetsOutEachToldHowTheLastWent(TestContext context) {
         var ledger = new Ledger();
         var stub = new Rounds(List.of(List.of("walk north 2"), List.of("look north"), List.of("pillar 3", "walk north 2")));
-        spell(context, "Rounds", stub, true, ledger, new String[]{""}, (f, b, p, c) -> {
+        spell(context, "Rounds", stub, true, true, ledger, new String[]{""}, (f, b, p, c) -> {
             context.assertTrue(stub.reports.size() == 3, "Three rounds asked: " + stub.reports.size());
             context.assertTrue(stub.reports.get(1).contains("round 1: walk north 2: went 0, then a two-high wall of obsidian"),
                     "Round two told how round one went: " + stub.reports.get(1));
