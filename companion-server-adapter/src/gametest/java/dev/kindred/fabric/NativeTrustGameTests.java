@@ -136,11 +136,29 @@ public final class NativeTrustGameTests implements FabricGameTest {
      * ticks: on #139's CI (run 42827017264) the staging set the tick to 55 before the day's end, behind the tick it was at,
      * and a runtime still live from an earlier batch refused the backward tick ("Backward tick: 167946 < 167977") and
      * stopped the whole GameTest server. The staging now only ever moves the tick forward (F-22c55). Staged: the tick set
-     * 30 before a day's end first.
+     * 30 before a day's end once its player is live.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "trustTossDayEndLate", tickLimit = 2400)
     public void tossesStopAtSixteenWhenTheDayIsAlreadyInItsLastTicks(TestContext context) {
         tosses(context, true, true);
+    }
+
+    /**
+     * The day's end staged, 55 before the next day's end ahead of the tick; with {@code late}, instead the tick set 30 before
+     * a day's end, for a runtime to tick there before the staging's own step.
+     */
+    private static void dayEnd(TestContext context, boolean late) {
+        var server = context.getWorld().getServer();
+        long day = dev.kindred.core.Trust.DAY;
+        if (late) {
+            serverTicks(context, (int) ((Math.floorDiv(server.getTicks(), day) + 1) * day - 30));
+            return;
+        }
+        long now = server.getTicks();
+        long target = dayEndLess55(now, day);
+        KindredMod.LOGGER.info("Trust fixture: the day's end staged from {} to {}", now, target);
+        context.assertTrue(target > now, "The tick moved forward: " + now + " to " + target);
+        serverTicks(context, (int) target);
     }
 
     /** The server's next tick 55 before a cap's day ends, never behind {@code now}: the tick only moves forward. */
@@ -165,23 +183,38 @@ public final class NativeTrustGameTests implements FabricGameTest {
         var f = t.f;
         int[] asked = {0};
         var server = context.getWorld().getServer();
+        // The server's tick watched each tick: a staging that set it back is what stopped CI's whole GameTest server.
+        long[] lastTick = {-1};
+        long[] lateAt = {-1};
+        boolean[] wentBack = {false};
+        if (lateAlready) context.runAtEveryTick(() -> {
+            long now = server.getTicks();
+            if (lastTick[0] >= 0 && now < lastTick[0]) wentBack[0] = true;
+            lastTick[0] = now;
+        });
         context.createTimedTaskRunner()
                 .createAndAdd(() -> {
-                    if (!dayEnding) return;
-                    long day = dev.kindred.core.Trust.DAY;
-                    if (lateAlready) serverTicks(context, (int) ((Math.floorDiv(server.getTicks(), day) + 1) * day - 30));
-                    long now = server.getTicks();
-                    long target = dayEndLess55(now, day);
-                    context.assertTrue(target > now, "The tick moved forward: " + now + " to " + target);
-                    serverTicks(context, (int) target);
+                    if (dayEnding && !lateAlready) dayEnd(context, false);
                 })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> f.established(context))
+                // Begun in the day's last ticks, staged with its player live and its runtime ticking, as an earlier batch's
+                // runtime was on CI.
+                .createAndAdd(() -> {
+                    if (lateAlready) dayEnd(context, true);
+                    lateAt[0] = server.getTicks();
+                })
+                // A tick passed there first, as on CI, where the server had been in the day's last ticks for some time.
+                .createAndAdd(() -> context.assertTrue(!lateAlready || server.getTicks() > lateAt[0], "A tick in the day's last"))
+                .createAndAdd(() -> {
+                    if (lateAlready) dayEnd(context, false);
+                })
+                .createAndAdd(() -> context.assertTrue(!wentBack[0], "The server's tick never went back"))
                 // The asks and the command's toss all in one of the cap's days: begun only with more than 600 of its ticks
                 // left (they take some 250), else once the next has begun (F-22c36).
                 .createAndAdd(() -> context.assertTrue(dev.kindred.core.Trust.DAY - Math.floorMod(server.getTicks(), dev.kindred.core.Trust.DAY) > 600,
                         "Room in the cap's day: " + Math.floorMod(server.getTicks(), dev.kindred.core.Trust.DAY)))
-                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
-                .createAndAdd(() -> t.createOwned(context))
-                .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> t.open(context))
                 .createAndAdd(() -> {
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
