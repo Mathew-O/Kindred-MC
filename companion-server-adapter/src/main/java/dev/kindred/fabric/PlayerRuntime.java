@@ -3773,9 +3773,11 @@ final class PlayerRuntime {
                     if (actualRecipe != null) {
                         BlockPos craftTable = entry.cachedCraftingTablePos;
                         if (actualRecipe.equals("oak_planks") && body.planCraft("oak_planks", craftTable).isEmpty()) {
-                            for (String logType : List.of("birch", "spruce", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo")) {
-                                if (body.planCraft(logType + "_planks", craftTable).isPresent()) {
-                                    actualRecipe = logType + "_planks";
+                            // F-38: the planks of whatever wood it holds, by the server's #minecraft:planks; vanilla's
+                            // woods in the order they were always tried, then any other the tag holds, by id.
+                            for (String planks : planksInTryOrder()) {
+                                if (body.planCraft(planks, craftTable).isPresent()) {
+                                    actualRecipe = planks;
                                     break;
                                 }
                             }
@@ -18141,5 +18143,20 @@ final class PlayerRuntime {
         @Override public boolean isSettled(ActionLease lease) {
             return entity.getNavigation().isIdle() && !entity.getMoveControl().isMoving() && !entity.isUsingItem();
         }
+    }
+
+    private static final List<String> VANILLA_PLANKS_TRY_ORDER = List.of("birch", "spruce", "jungle", "acacia", "dark_oak",
+            "mangrove", "cherry", "bamboo");
+
+    /** Planks to try when oak's cannot be made: vanilla's woods first, as before, then the tag's others by id. */
+    static List<String> planksInTryOrder() {
+        var members = dev.kindred.core.Capabilities.current().members(dev.kindred.core.VanillaIds.PLANKS);
+        var tried = new java.util.LinkedHashSet<String>();
+        for (String wood : VANILLA_PLANKS_TRY_ORDER) {
+            String id = dev.kindred.core.VanillaIds.NAMESPACE + wood + "_planks";
+            if (members.contains(id)) tried.add(id);
+        }
+        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS)).sorted().forEach(tried::add);
+        return List.copyOf(tried);
     }
 }
