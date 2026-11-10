@@ -1,0 +1,51 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 103,
+  "ticks": 288000,
+  "ticksRun": 288345,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 961, "factions": 3, "claims": 6, "captures": 0, "sales": 314, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 5, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 10.87, "tickMsWorst": 1220.82, "heapMbMax": 1530, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 10620, "stone_tools": 12320, "iron_ingot": 57740, "iron_pickaxe": 74900, "obsidian": 213951, "portal_lit": 215453},
+      "deaths": [
+        {"tick": 13434, "cause": "Kindred drowned", "x": -377, "y": 56, "z": 80, "light": 0, "timeOfDay": 13596, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31520, "x": -394, "y": 62, "z": 126, "attempt": 1}, {"tick": 100420, "x": -452, "y": 63, "z": 211, "attempt": 1}, {"tick": 104160, "x": -452, "y": 64, "z": 211, "attempt": 2}, {"tick": 107940, "x": -451, "y": 64, "z": 211, "attempt": 3}, {"tick": 124120, "x": -357, "y": 69, "z": 106, "attempt": 4}, {"tick": 130480, "x": -328, "y": 86, "z": 111, "attempt": 5}, {"tick": 149160, "x": -358, "y": 66, "z": 112, "attempt": 6}, {"tick": 155640, "x": -62, "y": 64, "z": -4, "attempt": 7}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3620, "stone_tools": 5260, "iron_ingot": 12760, "iron_pickaxe": 34120},
+      "deaths": [
+        {"tick": 51651, "cause": "Sol was slain by Zombie", "x": -134, "y": 14, "z": 19, "light": 0, "timeOfDay": 3813, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 17340, "x": -84, "y": 19, "z": -11, "attempt": 1}, {"tick": 62520, "x": -169, "y": 41, "z": 29, "attempt": 1}, {"tick": 77900, "x": -163, "y": 59, "z": 3, "attempt": 2}, {"tick": 81560, "x": -165, "y": 59, "z": 4, "attempt": 3}, {"tick": 96580, "x": -159, "y": 59, "z": 16, "attempt": 4}, {"tick": 100220, "x": -156, "y": 59, "z": 17, "attempt": 5}, {"tick": 103860, "x": -158, "y": 59, "z": 17, "attempt": 6}, {"tick": 121980, "x": -159, "y": 59, "z": 16, "attempt": 7}, {"tick": 125640, "x": -159, "y": 59, "z": 16, "attempt": 8}, {"tick": 129340, "x": -159, "y": 59, "z": 16, "attempt": 9}, {"tick": 146920, "x": -159, "y": 59, "z": 17, "attempt": 10}, {"tick": 154080, "x": -159, "y": 59, "z": 17, "attempt": 1}, {"tick": 168640, "x": -159, "y": 59, "z": 16, "attempt": 2}, {"tick": 172260, "x": -159, "y": 59, "z": 17, "attempt": 3}, {"tick": 179480, "x": -157, "y": 59, "z": 17, "attempt": 4}, {"tick": 194060, "x": -159, "y": 59, "z": 17, "attempt": 5}, {"tick": 197700, "x": -158, "y": 59, "z": 17, "attempt": 6}, {"tick": 217100, "x": -159, "y": 59, "z": 16, "attempt": 7}, {"tick": 221360, "x": -158, "y": 59, "z": 17, "attempt": 8}, {"tick": 225020, "x": -155, "y": 59, "z": 17, "attempt": 9}, {"tick": 242920, "x": -159, "y": 59, "z": 16, "attempt": 10}, {"tick": 246540, "x": -159, "y": 59, "z": 16, "attempt": 11}, {"tick": 250200, "x": -157, "y": 59, "z": 17, "attempt": 12}, {"tick": 267440, "x": -159, "y": 59, "z": 16, "attempt": 13}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3300, "stone_tools": 5020, "iron_ingot": 65160, "iron_pickaxe": 79740, "obsidian": 199517},
+      "deaths": [
+        {"tick": 9004, "cause": "Echo was slain by Zombie", "x": -168, "y": 9, "z": 29, "light": 12, "timeOfDay": 9166, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 19141, "cause": "Echo was slain by Cave Spider", "x": -418, "y": 26, "z": -378, "light": 10, "timeOfDay": 19303, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Back off from cave_spider the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 21107, "cause": "Echo was killed by Witch using magic", "x": -145, "y": 65, "z": -168, "light": 0, "timeOfDay": 21269, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Wood: shelter for the night - Dig in for the night: step down", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 105340, "x": -122, "y": 68, "z": -220, "attempt": 1}, {"tick": 130800, "x": -169, "y": 63, "z": -218, "attempt": 1}, {"tick": 152500, "x": -165, "y": 62, "z": -217, "attempt": 2}, {"tick": 240640, "x": -63, "y": 5, "z": -156, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

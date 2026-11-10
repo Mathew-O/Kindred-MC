@@ -1,0 +1,218 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 14891,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -324,
+    11,
+    -194
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.62482675507374,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": -178.74533,
+  "pitch": -71.09163,
+  "health": 18.333334,
+  "food": 20,
+  "saturation": 2.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 23
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 23
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 74
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 59
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 41
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 8
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 5
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 17
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 14891,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Rescue: walk east 8: settle",
+  "task": "Rescue: walk east 8: settle",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol suffocated in a wall",
+  "ticks": 1200,
+  "log": [
+    "[05:27:43] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:43] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:43] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:43] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:43] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:43] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:43] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]",
+    "[05:27:44] [Server thread/INFO]: Sol native_wait CANCELLED: Stuck in a wall; dig out first [Rescue: walk east 8: settle]"
+  ]
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "signature": "walls=NSE-;head=0;under=solid;liquid=;hard=true;dark=true;ledge=false;shaft=false;blocks=true;pickaxe=2",
+    "steps": [
+      "dig up 2",
+      "walk west 1",
+      "dig north 1"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  },
+  {
+    "signature": "walls=N--W;head=4;under=solid;liquid=;hard=false;dark=false;ledge=false;shaft=false;blocks=true;pickaxe=3",
+    "steps": [
+      "dig up 2",
+      "pillar 3"
+    ],
+    "weight": 1,
+    "failures": 0,
+    "source": "server"
+  }
+]

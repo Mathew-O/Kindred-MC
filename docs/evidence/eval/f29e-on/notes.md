@@ -1,0 +1,5 @@
+# f29e-on: runner notes
+
+- **Seed 303, runner shutdown hang.** The server wrote its full result ("144000 ticks run, result written") and logged "Stopping server", "Saving players", "Saving worlds" at 23:03:26, then hung. `run.py` stopped it at its 6 h timeout (exit -9, 21725 s). The result was written before the hang, so the seed counts and is scored.
+- **Ask timing.** "Game seconds from a spell's last progress to its ask" (60.2 s per-seed median, 60.1 to 61.2) is the campaign's deliberate wait, not the model's latency. At cd56501, `PortalRunCampaign.RESCUE_AFTER_TICKS = 1_200` (a minute of game time with no progress, F-29b) gates the ask (`quietClock > RESCUE_AFTER_TICKS`). The ask line records `lastTick - spellStart` (`PortalRunCampaign.rescueAsked`).
+- **Replies.** Every one of the 405 asks across the 20 consoles has a reply line before that player's next ask: 321 plans, 84 plans refused on arrival (50 "it is no longer where it asked from", 31 "the stuck spell is over", 3 malformed). There are 0 "no plan came back" or timeout lines. From an ask to its plan line took 0 to 3 s of wall time (median 1 s, n=321, at the log's one-second resolution).
