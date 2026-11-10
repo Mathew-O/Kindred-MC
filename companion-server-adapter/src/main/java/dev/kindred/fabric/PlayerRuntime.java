@@ -688,8 +688,11 @@ final class PlayerRuntime {
             }
             java.util.Properties properties = new java.util.Properties();
             try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            // Free travel and free items (mod-support decision 6): forbidden unless the operator wrote "allow".
             return new EditPolicy.ServerPolicy(Boolean.parseBoolean(properties.getProperty("autonomousEdits", "false")),
-                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")));
+                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")),
+                    "allow".equalsIgnoreCase(properties.getProperty("teleport", "forbid").trim()),
+                    "allow".equalsIgnoreCase(properties.getProperty("freeItems", "forbid").trim()));
         } catch (Exception failure) {
             KindredMod.LOGGER.error("Kindred edit policy could not be read; autonomous edits stay disabled", failure);
             return EditPolicy.ServerPolicy.deferredD4();
@@ -17534,7 +17537,7 @@ final class PlayerRuntime {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's AI edit policy.");
-        EditPolicy.ServerPolicy next = new EditPolicy.ServerPolicy(enabled, true);
+        EditPolicy.ServerPolicy next = edits.withEdits(enabled);
         edits = next; // Revocation applies to the next mutation check immediately.
         Path file = metadataDirectory.resolve("edits.properties");
         String content = policyFile(enabled, dragonFight, bases);
@@ -17562,8 +17565,59 @@ final class PlayerRuntime {
                 + "# dragonFight lets them fight the Ender Dragon; bases lets them choose, site and build their own bases;\n"
                 + "# maxNativePlayers is how many native AI players the server allows (default " + DEFAULT_NATIVE_PLAYERS + ", at most "
                 + MAX_NATIVE_PLAYERS + ").\n"
+                + "# teleport and freeItems are allow or forbid: free travel and free items for every player alike, announced to all (D6).\n"
                 + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\nbases=" + bases + "\n"
+                + "teleport=" + (this.edits.teleport() ? "allow" : "forbid") + "\nfreeItems=" + (this.edits.freeItems() ? "allow" : "forbid") + "\n"
                 + (maxNativePlayers == DEFAULT_NATIVE_PLAYERS ? "" : "maxNativePlayers=" + maxNativePlayers + "\n");
+    }
+
+    /** Whether free travel is allowed on this server, for every player alike (mod-support decision 6). */
+    boolean teleportAllowed() { return edits.teleport(); }
+
+    /** Whether free items are allowed on this server, for every player alike (mod-support decision 6). */
+    boolean freeItemsAllowed() { return edits.freeItems(); }
+
+    /**
+     * Records the server's switch for free travel ({@code teleport}) or free items ({@code freeItems}) in edits.properties;
+     * operators only. The new rule is announced to every player online in the same words (D6), and to the operator.
+     */
+    int setFreeSwitch(ServerCommandSource source, String which, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's rule for free travel and free items.");
+        boolean travel = switch (which) {
+            case "teleport" -> true;
+            case "freeItems" -> false;
+            default -> throw new IllegalArgumentException("Not a switch: " + which);
+        };
+        edits = travel ? edits.withTeleport(allowed) : edits.withFreeItems(allowed);
+        Path file = metadataDirectory.resolve("edits.properties");
+        String content = policyFile(edits.autonomousEditsEnabled(), dragonFight, bases);
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> handBack(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred free travel and items rule could not be saved", failure);
+                reject(source, "The rule applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        String line = edits.announcement().get(travel ? 0 : 1);
+        for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) listener.sendMessage(Text.literal(line), false);
+        KindredMod.LOGGER.info("Rule announced to every player: {}", line);
+        feedback(source, line);
+        return 1;
+    }
+
+    /** The standing rule for free travel and free items, as announced (D6). */
+    int tellFreeSwitches(ServerCommandSource source) {
+        requireThread();
+        for (String line : edits.announcement()) feedback(source, line);
+        return 1;
     }
 
     boolean dragonFightAllowed() { return dragonFight; }

@@ -23,10 +23,36 @@ public final class EditPolicy {
         public boolean allowed() { return verdict == Verdict.ALLOWED; }
     }
 
-    /** Server-level facts that no companion setting can change. */
-    public record ServerPolicy(boolean autonomousEditsEnabled, boolean protectionCompatibilityKnown) {
+    /**
+     * Server-level facts that no companion setting can change. {@code teleport} and {@code freeItems} are the switches for
+     * free travel and free items (teleports, kits, creative-style storage; the owner's mod-support decision 6): forbidden
+     * by default, and when an operator allows one it is allowed to every player alike, human or AI, by a rule announced
+     * to all (D6). Nothing grants either to an AI player alone.
+     */
+    public record ServerPolicy(boolean autonomousEditsEnabled, boolean protectionCompatibilityKnown, boolean teleport, boolean freeItems) {
+        /** The edit switches alone: free travel and free items forbidden. */
+        public ServerPolicy(boolean autonomousEditsEnabled, boolean protectionCompatibilityKnown) {
+            this(autonomousEditsEnabled, protectionCompatibilityKnown, false, false);
+        }
+
         /** Decision D4 is deferred: autonomous block/container edits are disabled and protection compatibility is unknown. */
         public static ServerPolicy deferredD4() { return new ServerPolicy(false, false); }
+
+        /** The same policy with world edits {@code enabled} and protection known, its travel and item switches kept. */
+        public ServerPolicy withEdits(boolean enabled) { return new ServerPolicy(enabled, true, teleport, freeItems); }
+
+        public ServerPolicy withTeleport(boolean allowed) { return new ServerPolicy(autonomousEditsEnabled, protectionCompatibilityKnown, allowed, freeItems); }
+
+        public ServerPolicy withFreeItems(boolean allowed) { return new ServerPolicy(autonomousEditsEnabled, protectionCompatibilityKnown, teleport, allowed); }
+
+        /** The standing rule for free travel and free items, as announced to every player, the same words for all (D6). */
+        public java.util.List<String> announcement() {
+            return java.util.List.of(
+                    teleport ? "Teleporting is allowed on this server, for every player alike, human or AI."
+                            : "No teleporting on this server, for anyone, human or AI: everyone travels on foot, by boat or by portal.",
+                    freeItems ? "Free items (kits, creative storage) are allowed on this server, for every player alike, human or AI."
+                            : "No free items on this server, for anyone, human or AI: everything is mined, crafted, traded or won.");
+        }
     }
 
     private EditPolicy() { }
