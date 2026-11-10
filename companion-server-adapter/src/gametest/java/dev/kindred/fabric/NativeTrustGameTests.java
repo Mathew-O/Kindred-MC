@@ -117,7 +117,7 @@ public final class NativeTrustGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "trustToss", tickLimit = 2400)
     public void tossesToOnePersonStopAtSixteenADayWhoeverAsks(TestContext context) {
-        tosses(context, false);
+        tosses(context, false, false);
     }
 
     /**
@@ -128,7 +128,25 @@ public final class NativeTrustGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "trustTossDayEnd", tickLimit = 2400)
     public void tossesStopAtSixteenWithTheCapsDayEndingAsTheAsksBegin(TestContext context) {
-        tosses(context, true);
+        tosses(context, true, false);
+    }
+
+    /**
+     * As {@link #tossesStopAtSixteenWithTheCapsDayEndingAsTheAsksBegin}, begun with the server already in its day's last 55
+     * ticks: on #139's CI (run 42827017264) the staging set the tick to 55 before the day's end, behind the tick it was at,
+     * and a runtime still live from an earlier batch refused the backward tick ("Backward tick: 167946 < 167977") and
+     * stopped the whole GameTest server. The staging now only ever moves the tick forward (F-22c55). Staged: the tick set
+     * 30 before a day's end first.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "trustTossDayEndLate", tickLimit = 2400)
+    public void tossesStopAtSixteenWhenTheDayIsAlreadyInItsLastTicks(TestContext context) {
+        tosses(context, true, true);
+    }
+
+    /** The server's next tick 55 before a cap's day ends, never behind {@code now}: the tick only moves forward. */
+    static long dayEndLess55(long now, long day) {
+        long target = (Math.floorDiv(now, day) + 1) * day - 55;
+        return target <= now ? target + day : target;
     }
 
     /** The server's tick set to {@code ticks}, for the staging above: its field, found by name. */
@@ -142,7 +160,7 @@ public final class NativeTrustGameTests implements FabricGameTest {
         }
     }
 
-    private static void tosses(TestContext context, boolean dayEnding) {
+    private static void tosses(TestContext context, boolean dayEnding, boolean lateAlready) {
         var t = new NativeVoiceGameTests.Talk(context, false);
         var f = t.f;
         int[] asked = {0};
@@ -151,7 +169,11 @@ public final class NativeTrustGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     if (!dayEnding) return;
                     long day = dev.kindred.core.Trust.DAY;
-                    serverTicks(context, (int) ((Math.floorDiv(server.getTicks(), day) + 1) * day - 55));
+                    if (lateAlready) serverTicks(context, (int) ((Math.floorDiv(server.getTicks(), day) + 1) * day - 30));
+                    long now = server.getTicks();
+                    long target = dayEndLess55(now, day);
+                    context.assertTrue(target > now, "The tick moved forward: " + now + " to " + target);
+                    serverTicks(context, (int) target);
                 })
                 // The asks and the command's toss all in one of the cap's days: begun only with more than 600 of its ticks
                 // left (they take some 250), else once the next has begun (F-22c36).
