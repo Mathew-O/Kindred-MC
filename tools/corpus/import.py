@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Turn an evaluation run's replays into failure-corpus scenes (F-27a).
 
-usage: import.py RUN_FOLDER [RUN_FOLDER ...] [--out DIR] [--only ID ...]
+usage: import.py RUN_FOLDER [RUN_FOLDER ...] [--out DIR] [--only ID ...] [--mode MODE] [--keep-structures] [--source REF]
 
 A run folder is `tools/eval/run.py`'s output (or its filing under docs/evidence/eval): seed folders, each with
 `replays/<world>/<player>-<tick>/replay.json` and `replay.snbt`, and the run's `build.json`. Each replay becomes
@@ -49,6 +49,7 @@ def main():
     parser.add_argument("--keep-structures", action="store_true",
                         help="keep each structure gzipped in companion-server-adapter/src/corpus/structures (for replays not "
                              "filed on main, such as the iterations' data branch)")
+    parser.add_argument("--mode", default="", help="the game mode the run played (for example factions), so the report reads its pass rate apart")
     parser.add_argument("--source", default="", help="where the run folders came from, recorded in each scene (a branch and commit)")
     args = parser.parse_args()
     (args.out / "corpus").mkdir(parents=True, exist_ok=True)
@@ -75,6 +76,7 @@ def main():
                 "replay": str(folder.resolve().relative_to(ROOT)) if not args.keep_structures else "",
                 "source": (args.source + ":" + "/".join(folder.parts[-5:])) if args.source else str(folder),
                 "class": classify(state),
+                **({"mode": args.mode} if args.mode else {}),
                 "staged": "the ground captured round the player at the time (the structure); the player made from its "
                           "recorded state; nothing given beyond what it held",
             }
