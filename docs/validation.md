@@ -41,6 +41,19 @@
     107 of 107 in each of three runs.
   - **Build:** `./gradlew build` successful; JUnit 1,081 tests, 0 failures, 7 skipped.
 
+## E-40, rung c's second probe (`e40c2-d640518`) — 10 November 2026 (`claude/e40c2-1110`)
+
+- **The evaluation:** all ten seeds, 288,000 ticks each, earned, on `d640518` (main with #83, #91, #96 and #98),
+  `goal=dragon`, the strategist off, worlds kept; run by RUNNER 2 (`claude/e40-evals-runner2-1110`). The container
+  restarted twice; five seeds were re-run from the start, and each counted seed is one uninterrupted run.
+  - Iron pickaxe 10 of 10 (median 26.7 min); obsidian 10 of 10; a portal lit on 7 of 10 (median 81.0 min); the
+    Nether 3 of 10; a fortress seen on 1; blaze rods 0 of 10.
+  - Deaths 0.62 a game hour [0.25 to 1.75], 34, none in the Nether. Stuck spells 15.5 [3 to 35].
+  - The causes, by seed, are in [E-40](evidence/E-40.md#rung-cs-second-probe-e40c2-d640518-the-dragon-goal-ten-seeds):
+    the walk to a deep or far lit portal fails on four seeds; the trip's food holds the teammates; in the Nether one
+    player alone finds no fortress, or one it cannot reach.
+  - [Summary](evidence/eval/e40c2-d640518/summary.md), [notes](evidence/eval/e40c2-d640518/notes.md).
+
 ## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `7bc5b42`. `python3 tools/eval/run.py --ref
@@ -182,6 +195,17 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: a cast whose water is not taken back (F-25c4cx) — 9 November 2026 (`claude/cast-outcome-1109`)
+
+- **The fixture** (F-25c4cx, [evidence](evidence/F-25c4cx.md)): `NativeCastWaterLostGameTests.aCastWhoseWaterIsLostUnderGravelCountsAndTheFrameGoesOn`,
+  staged as it says (the thick-rock cast scene with a water source in the floor of its open end; the first cast's poured
+  water set to gravel the tick its obsidian forms).
+  - On `e7e0b57`, without the fix: fails 3 of 3, the player blocked with "Cast outcome requires reconciliation: Obsidian
+    cast", as on 31102026.
+  - With the fix: passes 3 of 3, the cast completed, a bucket filled at the room's water and the next frame cell cast.
+- **The cast route's classes** (`NativeCastWaterLostGameTests`, `NativePortalCampaignGameTests`, `NativeBucketGameTests`,
+  `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`, `NativeObstructedPortalGameTests`,
+  `NativeRescueRecipesGameTests`, `NativeTeamPortalGameTests`): 105 of 105 in each of three runs.
 ## E-40, batch 25: a sword in the backpack taken to hand (F-25c4cv) — 9 November 2026 (`claude/backoff-1109`)
 
 - **The fixture** (F-25c4cv, [evidence](evidence/F-25c4cv.md)): `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`,
