@@ -16,6 +16,15 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Blocked high up its own scaffold (F-22c46) — 10 November 2026 (`claude/ci-green-1110-cabinstairs`)
+
+- **[F-22c46](evidence/F-22c46.md):** a plan blocked while the player stands high on its own scaffold, the ground more than a drop below,
+  takes the column down first (product; the cabin "No way to reach …_stairs" family: #123's run 42758107947, #113's, #117's, #119's).
+  - The staged fixture: 0 of 3 without the change, 3 of 3 with it.
+  - Build, house, life-first, seed-build and base classes, 3 runs: 22, 23 and 23 of 23; the new path fired only in its own fixture. The
+    one failure, the house cabin slid off its column onto the cabin four up, is a separate form, open in the handoff.
+  - `./gradlew build`: green, JUnit 1,117 tests, 0 failures, 7 skipped.
+
 ## Cover kept from a mob (F-25c4cy) — 9 November 2026 (`claude/cover-climb-1109`)
 
 - **[F-25c4cy](evidence/F-25c4cy.md):** its own cover from a mob, standing with a living hostile mob within six blocks, is
