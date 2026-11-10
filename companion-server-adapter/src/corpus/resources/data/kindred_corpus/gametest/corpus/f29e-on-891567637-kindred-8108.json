@@ -1,0 +1,229 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 8108,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  59,
+  10,
+  -161
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.03543845920791,
+  8.0,
+  16.21678449903422
+ ],
+ "yaw": 156.15677,
+ "pitch": 18.158958,
+ "health": 14.166668,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 109
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 22
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 15
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 52
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 21
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 2
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 9
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 29
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 18
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 15
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 64
+    }
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 8108,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: hurt and out of food - Climb toward the surface for food: back the way it came",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was doomed to fall by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[00:52:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore the cave toward iron]",
+  "[00:52:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore the cave toward iron]",
+  "[00:52:24] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[00:52:24] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[00:52:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore the cave toward iron]",
+  "[00:52:25] [Server thread/INFO]: Kindred native_swap COMPLETED [Ready a torch]",
+  "[00:52:25] [Server thread/INFO]: Kindred native_place COMPLETED [Place a torch at 52, 24, -155]",
+  "[00:52:25] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[00:52:26] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[00:52:26] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[00:52:27] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+  "[00:52:29] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+  "[00:52:31] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+  "[00:52:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[00:52:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[00:52:33] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from skeleton]",
+  "[00:52:34] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]",
+  "[00:52:34] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]",
+  "[00:52:34] [Server thread/INFO]: Kindred native_swap COMPLETED",
+  "[00:52:34] [Server thread/INFO]: Kindred native_eat CANCELLED: The player died"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "891567637",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/891567637/replays/world/Kindred-8108",
+  "source": "docs/evidence/eval/f29e-on/891567637/replays/world/Kindred-8108",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

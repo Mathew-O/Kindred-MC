@@ -1,0 +1,328 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 53904,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -386,
+  -11,
+  -173
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.60464293283485,
+  8.0,
+  16.8758152323866
+ ],
+ "yaw": 758.4884,
+ "pitch": 11.855427,
+ "health": 4.663337,
+ "food": 9,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:tuff",
+    "count": 16
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 49
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 4
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 15
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 16
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 21
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 4
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 16
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 3
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 12
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:spider_eye",
+    "count": 1
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 5
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 27
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 77
+    }
+   }
+  }
+ ],
+ "selected": 1,
+ "timeOfDay": 5904,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from spider the way it came (tried elsewhere 1 time)",
+ "task": "Back off from spider the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Sol was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[07:31:38] [Server thread/INFO]: Sol native_goto COMPLETED [try elsewhere, toward -346, -2, -158]",
+  "[07:31:39] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[07:31:41] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Head back up toward home]",
+  "[07:31:41] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight spider]",
+  "[07:31:42] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider the way it came]",
+  "[07:31:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[07:31:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[07:31:43] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[07:31:43] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[07:31:43] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[07:31:43] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+  "[07:31:44] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[07:31:44] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[07:31:44] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[07:31:45] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus cobbled deepslate]",
+  "[07:31:45] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[07:31:46] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider the way it came]",
+  "[07:31:46] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus cobblestone]",
+  "[07:31:46] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from spider the way it came]",
+  "[07:31:46] [Server thread/INFO]: Sol died at -370, -3, -157: Sol was slain by Spider (tick 53904, day, under cover, hunger 8, armour 6, holding stone_sword, a shield; doing \"Back off from spider the way it came\" in \"Wood: fight back - Back off from spider the way it came (tried elsewhere 1 time)\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "e40a17-7bc5b42",
+  "seed": "101",
+  "build": "7bc5b42",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a17-7bc5b42/101/replays/world/Sol-53904",
+  "class": "death: spider",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

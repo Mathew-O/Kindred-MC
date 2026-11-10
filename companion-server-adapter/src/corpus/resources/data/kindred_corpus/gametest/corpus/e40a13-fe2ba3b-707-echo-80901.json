@@ -1,0 +1,311 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 80901,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  47,
+  73,
+  135
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.13097867837822,
+  8.0,
+  16.43387929916804
+ ],
+ "yaw": 84.88309,
+ "pitch": 18.159048,
+ "health": 0.6666641,
+ "food": 10,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 10
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 19
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:spruce_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 3
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 29
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 17
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 9
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 38
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 8901,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from zombie the way it came",
+ "task": "Explore west for animals",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[02:48:37] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+  "[02:48:37] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+  "[02:48:37] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+  "[02:48:37] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for animals: clear 81, 76, 140]",
+  "[02:48:38] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for animals: advance]",
+  "[02:48:39] [Server thread/INFO]: Echo native_goto COMPLETED [Explore south for animals]",
+  "[02:48:42] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for animals]",
+  "[02:48:43] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+  "[02:48:44] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[02:48:44] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 68, 80, 148]",
+  "[02:48:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+  "[02:48:44] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 67, 81, 148]",
+  "[02:48:44] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 67, 80, 148]",
+  "[02:48:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+  "[02:48:45] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 67, 81, 149]",
+  "[02:48:45] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 67, 80, 149]",
+  "[02:48:45] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+  "[02:48:45] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 66, 81, 149]",
+  "[02:48:45] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+  "[02:48:46] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Explore west for animals]"
+ ],
+ "corpus": {
+  "run": "e40a13-fe2ba3b",
+  "seed": "707",
+  "build": "fe2ba3b",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a13-fe2ba3b/707/replays/world/Echo-80901",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

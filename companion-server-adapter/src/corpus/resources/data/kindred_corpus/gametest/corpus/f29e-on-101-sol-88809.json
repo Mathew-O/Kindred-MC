@@ -1,0 +1,331 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 88809,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -232,
+  -52,
+  -222
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.509335799500832,
+  8.001335979112149,
+  16.65730641172516
+ ],
+ "yaw": 361.40335,
+ "pitch": 1.3194497,
+ "health": 7.338334,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 60
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 133
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 3
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 43
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 33
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 29
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:tuff",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 11
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 19
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 13
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:spider_eye",
+    "count": 1
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:redstone",
+    "count": 3
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:raw_gold",
+    "count": 1
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 4
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 11
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 15
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 80
+    }
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 16809,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: outmatched - Hole up: back into the passage",
+ "task": "Hole up: back into the passage",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Sol was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[22:16:28] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[22:16:28] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[22:16:29] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[22:16:29] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[22:16:29] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[22:16:30] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[22:16:31] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[22:16:31] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[22:16:31] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -183, -40, -189 [Back off from zombie]",
+  "[22:16:32] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[22:16:34] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+  "[22:16:35] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[22:16:35] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[22:16:35] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+  "[22:16:35] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+  "[22:16:35] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+  "[22:16:35] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+  "[22:16:36] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[22:16:36] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus cobblestone]",
+  "[22:16:36] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Hole up: back into the passage]"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "101",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/101/replays/world/Sol-88809",
+  "source": "docs/evidence/eval/f29e-on/101/replays/world/Sol-88809",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
