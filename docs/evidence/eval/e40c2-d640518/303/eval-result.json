@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 660, "stone_tools": 1720, "iron_ingot": 10280, "iron_pickaxe": 58540, "obsidian": 166921},
+      "deaths": [
+        {"tick": 4628, "cause": "Kindred suffocated in a wall", "x": 24, "y": 58, "z": 38, "light": 0, "timeOfDay": 4790, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 24, 58, 38", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28620, "x": -31, "y": 39, "z": 5, "attempt": 1}, {"tick": 63640, "x": -104, "y": 45, "z": -11, "attempt": 1}, {"tick": 68020, "x": -104, "y": 45, "z": -11, "attempt": 1}, {"tick": 81460, "x": -40, "y": 11, "z": -38, "attempt": 1}, {"tick": 120340, "x": -37, "y": -54, "z": -13, "attempt": 2}, {"tick": 194900, "x": -118, "y": 17, "z": 17, "attempt": 1}, {"tick": 200500, "x": -120, "y": 17, "z": 17, "attempt": 2}, {"tick": 215540, "x": -120, "y": 17, "z": 16, "attempt": 1}, {"tick": 223420, "x": -116, "y": 19, "z": 18, "attempt": 2}, {"tick": 266920, "x": -204, "y": 68, "z": 57, "attempt": 3}, {"tick": 271020, "x": -203, "y": 72, "z": 58, "attempt": 1}, {"tick": 274700, "x": -223, "y": 71, "z": 54, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2960, "stone_tools": 3780, "iron_ingot": 11280, "iron_pickaxe": 24440, "obsidian": 103220},
+      "deaths": [
+        {"tick": 35526, "cause": "Sol was slain by Zombie", "x": 80, "y": -18, "z": -81, "light": 0, "timeOfDay": 11688, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: inventory full - Drop surplus sand", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 107280, "x": -204, "y": 71, "z": 59, "attempt": 1}, {"tick": 122920, "x": -199, "y": 68, "z": 80, "attempt": 2}, {"tick": 127620, "x": -197, "y": 68, "z": 59, "attempt": 3}, {"tick": 131440, "x": -188, "y": 71, "z": 56, "attempt": 4}, {"tick": 135400, "x": -166, "y": 64, "z": 40, "attempt": 5}, {"tick": 146920, "x": -181, "y": 69, "z": 41, "attempt": 6}, {"tick": 151840, "x": -14, "y": 63, "z": -2, "attempt": 7}, {"tick": 155660, "x": 7, "y": 63, "z": -8, "attempt": 8}, {"tick": 174100, "x": 14, "y": 64, "z": 31, "attempt": 9}, {"tick": 194920, "x": 0, "y": 98, "z": 54, "attempt": 10}, {"tick": 201140, "x": 7, "y": 107, "z": 76, "attempt": 1}, {"tick": 221200, "x": 7, "y": 108, "z": 98, "attempt": 2}, {"tick": 225760, "x": 30, "y": 111, "z": 99, "attempt": 3}, {"tick": 242940, "x": 15, "y": 108, "z": 92, "attempt": 4}, {"tick": 266920, "x": 43, "y": 107, "z": 84, "attempt": 5}, {"tick": 271080, "x": 43, "y": 107, "z": 80, "attempt": 6}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 10540, "stone_tools": 25520, "iron_ingot": 38460, "iron_pickaxe": 64420, "obsidian": 203854},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 91380, "x": -106, "y": 55, "z": 14, "attempt": 1}, {"tick": 98760, "x": -102, "y": 19, "z": 92, "attempt": 2}, {"tick": 105960, "x": -98, "y": 32, "z": 68, "attempt": 3}, {"tick": 208040, "x": -127, "y": -54, "z": -38, "attempt": 1}, {"tick": 218980, "x": -152, "y": -55, "z": -61, "attempt": 1}, {"tick": 231060, "x": -125, "y": -54, "z": -78, "attempt": 1}, {"tick": 243360, "x": -143, "y": -55, "z": -57, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
