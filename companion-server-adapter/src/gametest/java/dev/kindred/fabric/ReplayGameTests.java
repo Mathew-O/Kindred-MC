@@ -50,6 +50,30 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ReplayGameTests implements FabricGameTest {
     static final String REPLAYS = "data/kindred_gametest/gametest/replays";
+    /**
+     * Each replay's runtime, with the server tick past which its test is over. A test that times out never reaches its
+     * own stop, and its player lived on into later batches: it fell when its scene was cleared, respawned at the world's
+     * spawn and kept acting (12 or 13 a run in the corpus gate on 7ec519c). A server tick listener stops each one once
+     * its test's time is past, whatever way the test ended.
+     */
+    private static final java.util.Map<PlayerRuntime, Long> LIVE = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static final java.util.concurrent.atomic.AtomicBoolean WATCHING = new java.util.concurrent.atomic.AtomicBoolean();
+
+    /** Every server tick, any replay past its test's time is stopped: the finally of a test that timed out. */
+    private static void watch() {
+        if (WATCHING.compareAndSet(false, true))
+            net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> stopFinished(server.getTicks()));
+    }
+
+    private static void stopFinished(long tick) {
+        for (var it = LIVE.entrySet().iterator(); it.hasNext(); ) {
+            var live = it.next();
+            if (live.getValue() >= tick) continue;
+            it.remove();
+            if (live.getKey().running()) live.getKey().stop();
+        }
+    }
 
     /** Three tests for every replay in the suite's resources; none when there are none. */
     @CustomTestProvider
@@ -74,7 +98,12 @@ public final class ReplayGameTests implements FabricGameTest {
         return tests;
     }
 
-    /** One run of a replay: the player made from its state where it died, its goal given, the ticks run. */
+    /**
+     * One run of a replay: the player made from its state where it died, its goal given, the ticks run. Staged: the
+     * scene's mobs are held still (no AI) from the structure's placing until the player is in place, then all let go on
+     * the same tick, so each run starts from the recorded positions; no mob is moved and none given a target. The
+     * world's time of day, weather and difficulty are set to the record.
+     */
     static void play(TestContext context, JsonObject replay, int run, int ticks) {
         var world = context.getWorld();
         var server = world.getServer();
@@ -97,6 +126,12 @@ public final class ReplayGameTests implements FabricGameTest {
             throw new RuntimeException("Replay edit policy could not be saved", error);
         }
         runtime.start();
+        watch();
+        LIVE.put(runtime, (long) server.getTicks() + ticks + 600 + 20);
+        // The scene's mobs held still until the player is in it (below): with their AI on from the structure's placing,
+        // they moved for the 40 ticks the ground settles and the seconds the player takes to be made, different each
+        // run, and the player's first choice (fight this one, back off from that one) differed with them.
+        var held = new ArrayList<net.minecraft.entity.mob.MobEntity>();
         // A name of its own for each replay and run: with one name for every replay of a player, the next batch's clashed
         // with a player a failed run had left in the world.
         String name = "R" + Integer.toHexString(state.get("player").getAsString().hashCode() * 31 + (int) state.get("tick").getAsLong() & 0xfffffff) + "_" + run;
@@ -107,7 +142,14 @@ public final class ReplayGameTests implements FabricGameTest {
         long[] began = {-1};
         boolean stuck = "stuck".equals(state.get("kind").getAsString());
         context.createTimedTaskRunner()
-                .createAndAdd(() -> context.assertTrue(runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    context.assertTrue(runtime.isReady(), "Ready");
+                    var box = new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
+                    for (var mob : world.getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, m -> !m.isAiDisabled())) {
+                        mob.setAiDisabled(true);
+                        held.add(mob);
+                    }
+                })
                 // Its ground settled before a cell to make it in is chosen: a structure just placed settles for some
                 // ticks, its gravel falling and its water spreading. The cell chosen at once was checked again by the
                 // runtime as the player was made a few ticks on, no longer one to be made in by then, and the third
@@ -134,6 +176,16 @@ public final class ReplayGameTests implements FabricGameTest {
                     body.refreshPositionAndAngles(start.x, start.y, start.z, state.get("yaw").getAsFloat(), state.get("pitch").getAsFloat());
                     restore(body, state);
                     world.setTimeOfDay(state.get("timeOfDay").getAsLong());
+                    // Its weather and difficulty as recorded (the corpus batches scenes that share them, F-27a).
+                    if (state.has("raining")) {
+                        boolean raining = state.get("raining").getAsBoolean(), thundering = state.has("thundering") && state.get("thundering").getAsBoolean();
+                        world.setWeather(raining ? 0 : 24000, raining ? 24000 : 0, raining, thundering);
+                    }
+                    if (state.has("difficulty")) {
+                        var difficulty = net.minecraft.world.Difficulty.byName(state.get("difficulty").getAsString());
+                        if (difficulty != null) server.setDifficulty(difficulty, true);
+                    }
+                    for (var mob : held) if (mob.isAlive()) mob.setAiDisabled(false);
                     runtime.observeRun(new RunObserver() {
                         @Override public void died(String p, ServerPlayerEntity b, String cause, String stage, String stance, String habits, String task) { died[0] = true; }
                         @Override public void ended(String p, String skill, String result, String label) { if ("COMPLETED".equals(result)) completed[0]++; }

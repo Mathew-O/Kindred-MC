@@ -35,6 +35,25 @@ def outcomes(results):
     return out
 
 
+def leftover(log):
+    """Replay players (R<hex>_<run>) whose lines go on after their own batch ended: a test that ended without its stop."""
+    import re
+    batch, first, late = None, {}, set()
+    with open(log, encoding="utf-8", errors="replace") as lines:
+        for line in lines:
+            m = re.search(r"Running test batch '(corpus_\d+)", line)
+            if m:
+                batch = m.group(1)
+                continue
+            if batch is None:
+                continue
+            for name in set(re.findall(r"\bR[0-9a-f]{5,8}_\d\b", line)):
+                first.setdefault(name, batch)
+                if first[name] != batch:
+                    late.add(name)
+    return len(late)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("results", nargs="*", type=Path)
@@ -42,6 +61,7 @@ def main():
     parser.add_argument("--write-baseline", action="store_true")
     parser.add_argument("--sha", default="", help="the build the runs were on, for the report's heading")
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--logs", nargs="*", type=Path, default=[], help="the runs' logs, to count replay players left behind by their batch")
     parser.add_argument("--flagged-out", type=Path, help="write the flagged scenes' ids here, one a line")
     parser.add_argument("--confirm-branch", nargs="*", type=Path, default=[], help="the flagged scenes run alone on the branch")
     parser.add_argument("--confirm-main", nargs="*", type=Path, default=[], help="the flagged scenes run alone on main's tip")
@@ -66,6 +86,9 @@ def main():
         by_class.setdefault(c, Counter())[s] += 1
     for c, k in sorted(by_class.items(), key=lambda kv: -sum(kv[1].values())):
         lines.append(f"| {c} | {k['pass']} | {k['intermittent']} | {k['fail']} | {sum(k.values())} |")
+    if args.logs:
+        left = [leftover(log) for log in args.logs if log.is_file()]
+        lines += ["", f"Replay players still acting after their own batch, by run: {', '.join(str(n) for n in left)} (should be 0)"]
     if staged:
         lines += ["", "Staged scenes (contract fixtures run as scenes):"]
         lines += [f"- {sid}: {status[sid]} ({scenes[sid]['fixture']})" for sid in staged]
