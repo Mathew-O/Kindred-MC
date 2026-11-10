@@ -932,6 +932,13 @@ A replay that is to be kept as a test goes into the gametest resources (see the 
 alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
 of three; one that does not is left out.
 
+### The failure corpus (F-27a)
+
+`./gradlew :companion-server-adapter:runCorpus` plays every kept death again from its own ground and state, one test a
+scene. It takes about 25 minutes on four cores. `python3 tools/corpus/report.py <results.xml>...` prints the share that
+come through. `tools/corpus/gate.sh` runs it three times and compares the result with `tools/corpus/baseline.json`.
+Nothing in a world is touched: the corpus runs in its own GameTest server.
+
 ### The simulator (F-28)
 
 `companion-sim` plays the players' decisions and plans on a made-up world, with no Minecraft in it. A hundred games

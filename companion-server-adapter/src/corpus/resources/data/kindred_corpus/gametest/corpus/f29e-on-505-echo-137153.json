@@ -1,0 +1,310 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 137153,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  16,
+  24,
+  20
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.26370830026758,
+  8.024424088213685,
+  16.93011671179216
+ ],
+ "yaw": -42.940582,
+ "pitch": 18.159489,
+ "health": 8.4,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 53
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 23
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 3
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 29
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 47
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 17
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 4
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:wheat_seeds",
+    "count": 2
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 12
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 7
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 33
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 2
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 4
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 48
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:carrot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 9
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 22
+    }
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 17153,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from skeleton (tried elsewhere 1 time)",
+ "task": "Back off from skeleton",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[23:43:42] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[23:43:42] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+  "[23:43:42] [Server thread/INFO]: Echo native_place COMPLETED [Place a torch at 12, 25, -12]",
+  "[23:43:43] [Server thread/INFO]: Echo native_goto COMPLETED [Walk to iron ore at 15, 24, -16]",
+  "[23:43:43] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Mine iron ore at 15, 24, -16]",
+  "[23:43:45] [Server thread/INFO]: Echo native_fight COMPLETED [Fight skeleton]",
+  "[23:43:46] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:46] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:48] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+  "[23:43:48] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[23:43:48] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[23:43:49] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:49] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:50] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:50] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:50] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:51] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:52] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[23:43:52] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from skeleton]",
+  "[23:43:52] [Server thread/INFO]: Echo died at 32, 32, 36: Echo was shot by Skeleton (tick 137153, night, under cover, hunger 16, armour 0, holding stone_sword, a shield; doing \"Back off from skeleton\" in \"Iron: fight back - Back off from skeleton (tried elsewhere 1 time)\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "505",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/505/replays/world/Echo-137153",
+  "source": "docs/evidence/eval/f29e-on/505/replays/world/Echo-137153",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

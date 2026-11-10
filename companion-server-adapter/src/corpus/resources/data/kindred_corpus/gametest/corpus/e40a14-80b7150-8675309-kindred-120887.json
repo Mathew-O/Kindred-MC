@@ -1,0 +1,116 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 120887,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  89,
+  83,
+  218
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.375634054486966,
+  8.0,
+  16.501210968802894
+ ],
+ "yaw": -810.1495,
+ "pitch": 18.159489,
+ "health": 3.6666641,
+ "food": 5,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 5
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 3
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 24
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:egg",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 2
+   }
+  }
+ ],
+ "selected": 2,
+ "timeOfDay": 887,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Take cover from skeleton",
+ "task": "Take cover from skeleton",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Kindred was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[05:30:58] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through west for animals: clear 65, 98, 237]",
+  "[05:30:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through west for animals: advance]",
+  "[05:30:58] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through west for animals: clear 64, 99, 237]",
+  "[05:30:58] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through west for animals: clear 64, 98, 237]",
+  "[05:30:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through west for animals: advance]",
+  "[05:30:59] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through west for animals: clear 63, 99, 237]",
+  "[05:30:59] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through west for animals: clear 64, 99, 236]",
+  "[05:30:59] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through west for animals: clear 64, 98, 236]",
+  "[05:30:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through west for animals: advance]",
+  "[05:31:04] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 36, 98, 236 is blocked [Explore west for animals]",
+  "[05:31:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+  "[05:31:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+  "[05:31:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[05:31:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+  "[05:31:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+  "[05:31:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+  "[05:31:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+  "[05:31:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+  "[05:31:15] [Server thread/INFO]: Kindred native_place CANCELLED: The player died [Take cover from skeleton]",
+  "[05:31:15] [Server thread/INFO]: Kindred died at 105, 91, 234: Kindred was shot by Skeleton (tick 120887, day, under the sky, hunger 5, armour 0, holding dirt, no shield; doing \"Take cover from skeleton\" in \"Wood: fight back - Take cover from skeleton\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "e40a14-80b7150",
+  "seed": "8675309",
+  "build": "80b7150",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a14-80b7150/8675309/replays/world/Kindred-120887",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
