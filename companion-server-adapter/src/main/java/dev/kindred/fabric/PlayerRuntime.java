@@ -242,6 +242,7 @@ final class PlayerRuntime {
     private long startupGeneration = 0;
     private int nativeCreationsPending;
     private final Map<UUID, Entry> entries = new HashMap<>();
+    private final KindredHudSections hudSections = new KindredHudSections();
     private final Set<CompanionEntity> awaitingRegistry = new HashSet<>();
     private final Set<UUID> creating = new HashSet<>();
     private SqliteCompanionStore store;
@@ -511,7 +512,7 @@ final class PlayerRuntime {
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
         this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
-        this.hud = new FactionsHud(factions, market);
+        this.hud = new FactionsHud(factions, market, hudSections);
         factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
@@ -16144,6 +16145,9 @@ final class PlayerRuntime {
     }
 
     /** The Factions panel's server side (M-06l). */
+    /** The panel's section sources: Factions' and any integration's (mod-support decision 7). */
+    KindredHudSections hudSections() { return hudSections; }
+
     FactionsHud hud() {
         requireThread();
         return hud;
