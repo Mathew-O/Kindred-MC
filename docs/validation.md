@@ -3519,3 +3519,9 @@ After the block's first merge from main, CI on PR #25 found:
   and why (#96's run 42583930289: "no other in sight" with a sheep in sight behind the pen's far fence). A ranch walk
   ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
   `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
+
+- **[F-25c4db](evidence/F-25c4db.md):** a shield in the off hand is raised between swings against a mob (product; the kept
+  replay `kindred-43985-707`: three zombies fought with a shield that never came up).
+  - The new fixture (a zombie, a stone sword and a shield): 0 of 3 before (the shield up 0 of ~42 ticks); 3 of 3 after.
+  - The fight classes (combat, encounter, edge fight, water fight, duel benchmark), 1 run: 12 of 12.
+  - Side figure, 707 restored, 3 runs of `ReplayGameTests` on main: 7 of 9 before, 9 of 9 after.
