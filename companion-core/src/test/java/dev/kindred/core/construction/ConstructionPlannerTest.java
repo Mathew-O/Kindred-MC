@@ -79,6 +79,42 @@ class ConstructionPlannerTest {
         assertNotEquals(b.up(), second.stance(), "not from over the block now gone");
     }
 
+    /**
+     * As {@link #theLastTwoBlocksOfAFloorSideBySideAreBrokenNotWalkedBetween}, with a block higher up still in the way that
+     * it cannot reach from anywhere it can stand. F-22c8's "one it can break from where it stands first" looked only in
+     * the topmost layer still in the way, that block's, and found none. So the nearest came first again: the block
+     * underfoot, from on the other, and there the other was underfoot. On #121's CI (run 42798198875, the compound farm
+     * ward, the floor of its way under the wall with more of the build above) it walked between the two 1,961 and 1,960
+     * times and broke neither (F-22c54). The layer looked in first is now the topmost it can break any of.
+     */
+    @Test
+    void theLastTwoBlocksOfAFloorAreBrokenNotWalkedBetweenWithAHigherBlockOutOfReach() {
+        var cells = BuildTestSites.flat();
+        var clear = new ArrayList<Pos>();
+        for (int x = -10; x <= 10; x++) for (int z = -10; z <= 10; z++) cells.put(new Pos(x, 1, z), BuildTestSites.STONE);
+        for (int x = 0; x <= 3; x++) for (int z = 0; z <= 2; z++) {
+            clear.add(new Pos(x, 1, z));
+            cells.put(new Pos(x, 1, z), Cell.AIR);
+        }
+        Pos a = new Pos(1, 1, 1), b = new Pos(2, 1, 1);
+        cells.put(a, BuildTestSites.STONE);
+        cells.put(b, BuildTestSites.STONE);
+        // Higher up, in the way and out of reach from every spot it can stand on.
+        Pos high = new Pos(8, 12, 8);
+        cells.put(high, BuildTestSites.STONE);
+        clear.add(high);
+        Pos onA = a.up();
+        var first = ConstructionPlanner.next(List.of(), clear, new BuildSite(cells), onA, ALL, Set.of());
+        assertEquals(ConstructionPlanner.Kind.BREAK, first.kind(), first.toString());
+        assertEquals(b, first.target(), "the one it can break from where it stands: " + first);
+        assertEquals(onA, first.stance(), "from where it stands");
+        cells.put(b, Cell.AIR);
+        var second = ConstructionPlanner.next(List.of(), clear, new BuildSite(cells), onA, ALL, Set.of());
+        assertEquals(ConstructionPlanner.Kind.BREAK, second.kind());
+        assertEquals(a, second.target(), "then the one under it");
+        assertNotEquals(onA, second.stance(), "from beside it");
+    }
+
     @Test
     void aSpotWhereTheServerRefusedTheStepIsNotTriedAgain() {
         var blocks = List.of(block(3, 1, 0, "minecraft:cobblestone"));
