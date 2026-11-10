@@ -97,7 +97,6 @@
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
       "dev.kindred.fabric.NativeRescueRoundsGameTests",
-      "dev.kindred.fabric.NativeWalkSetAsideGameTests",
       "dev.kindred.fabric.NativeRescueRecipesGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",
       "dev.kindred.fabric.NativeTrustGameTests",
