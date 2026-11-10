@@ -23,7 +23,8 @@
   while a hostile is within six and 200 ticks after (product; the kept replay `kindred-43985-707`).
   - `NativePassageSealGameTests` (staged, as it says): two zombies, with a shield, 0 of 3 without the change and 3 of 3 with it;
     one zombie, fought and not sealed out, 3 of 3 both.
-  - Eleven classes that fight, take cover and climb, 3 runs: running; the result is to follow.
+  - Eleven classes that fight, take cover and climb (with `ReplayGameTests`), 3 runs: 129 of 129 each; the seal fired only in
+    its own fixture.
   - The ten-seed measure against e40a17 is to come (RUNNER 2's survival-1).
 
 ## Cover kept from a mob (F-25c4cy) — 9 November 2026 (`claude/cover-climb-1109`)
