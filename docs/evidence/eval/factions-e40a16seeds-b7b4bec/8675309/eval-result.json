@@ -1,0 +1,47 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144141,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 157, "factions": 3, "claims": 10, "captures": 0, "sales": 36, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 2, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 12.28, "tickMsWorst": 1496.21, "tickMsWorstAt": 5838, "ticksOver50ms": 666, "ticksOver200ms": 4, "heapMbMax": 1362, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 73340, "stone_tools": 74820, "iron_ingot": 90160},
+      "deaths": [
+        {"tick": 72619, "cause": "Kindred was slain by Drowned", "x": 277, "y": 61, "z": 474, "light": 13, "timeOfDay": 781, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Wood: fight back - Back off from drowned", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1020, "stone_tools": 6880, "iron_ingot": 12420, "iron_pickaxe": 32520, "obsidian": 89450},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30020, "x": 168, "y": 8, "z": 478, "attempt": 1}, {"tick": 58320, "x": 133, "y": 3, "z": 429, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 73840, "stone_tools": 77080, "iron_ingot": 116380, "iron_pickaxe": 139220},
+      "deaths": [
+        {"tick": 106560, "cause": "Echo was slain by Zombie", "x": 124, "y": 25, "z": 475, "light": 0, "timeOfDay": 10722, "dimension": "minecraft:overworld", "hunger": 0, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 51260, "x": 266, "y": 64, "z": 480, "attempt": 1}, {"tick": 55200, "x": 242, "y": 72, "z": 482, "attempt": 1}, {"tick": 58880, "x": 240, "y": 70, "z": 500, "attempt": 2}, {"tick": 88660, "x": 135, "y": 47, "z": 467, "attempt": 1}, {"tick": 93400, "x": 133, "y": 49, "z": 467, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

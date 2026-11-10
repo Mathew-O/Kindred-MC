@@ -1,0 +1,48 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 144000,
+  "ticksRun": 144209,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 88, "factions": 3, "claims": 4, "captures": 0, "sales": 17, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 3, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 11.11, "tickMsWorst": 2059.67, "tickMsWorstAt": 97227, "ticksOver50ms": 835, "ticksOver200ms": 10, "heapMbMax": 1133, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 2320, "stone_tools": 5500, "iron_ingot": 11460, "iron_pickaxe": 70740, "diamond": 83440, "obsidian": 93227, "portal_lit": 97225},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 23740, "x": -3, "y": 35, "z": -288, "attempt": 1}, {"tick": 69740, "x": 30, "y": 18, "z": -262, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3200, "stone_tools": 8040, "iron_ingot": 12480, "iron_pickaxe": 56520},
+      "deaths": [
+        {"tick": 80305, "cause": "Sol drowned", "x": 29, "y": 57, "z": -318, "light": 9, "timeOfDay": 8467, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 55360, "x": 46, "y": 36, "z": -229, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2440, "stone_tools": 10140, "iron_ingot": 16500},
+      "deaths": [
+        {"tick": 66745, "cause": "Echo suffocated in a wall", "x": 40, "y": 19, "z": -296, "light": 11, "timeOfDay": 18907, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 40, 19, -296", "stance": "PRESS_ON", "habits": "[]", "task": "Dig out of the wall: out from under the falling gravel to 40, 19, -296"},
+        {"tick": 67834, "cause": "Echo was shot by Skeleton", "x": 12, "y": 78, "z": -239, "light": 4, "timeOfDay": 19996, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Wood: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 26440, "x": 60, "y": 19, "z": -298, "attempt": 1}, {"tick": 51940, "x": 60, "y": 24, "z": -307, "attempt": 1}, {"tick": 98740, "x": 28, "y": 60, "z": -281, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
