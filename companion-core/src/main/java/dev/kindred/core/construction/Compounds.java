@@ -270,6 +270,9 @@ public final class Compounds {
         Pos door = wayInDoor(style);
         at.put(door, BlockSpec.parse("minecraft:" + wood + "_door[facing=east,half=lower,hinge=left,open=false]"));
         at.put(door.add(0, 1, 0), BlockSpec.parse("minecraft:" + wood + "_door[facing=east,half=upper,hinge=left,open=false]"));
+        // A lintel over it: a shut door's top, two up and a step below the lining's, was a way up onto the walls and over
+        // them into the hall (CompoundsTest, the hall reached only by its own way in).
+        at.put(door.add(0, 2, 0), BlockSpec.parse(planks));
         for (int x = door.x(); x < ward.east() - 1; x++) at.put(new Pos(x, 0, door.z() - 1), BlockSpec.parse("minecraft:" + wood + "_fence"));
         var pen = pen(style);
         for (var b : Generators.pen(7, 7, wood).blocks()) at.put(b.at().add(pen.x(), 0, pen.z()), b.spec());
