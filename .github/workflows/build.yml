@@ -24,6 +24,8 @@ jobs:
           python-version: '3.11'
       - name: Test offline validation tools
         run: python3 -m unittest discover -s tools/support-batch-01 -v
+      - name: Test the evaluation engine's scoring and comparison
+        run: python3 -m unittest discover -s tools/eval -v
       - name: Check pinned versions
         run: python3 tools/support-batch-01/support.py manifest
       - name: Check tracker IDs and evidence references

@@ -237,6 +237,11 @@ public final class Compounds {
         return pastureWall(style).south() - 2;
     }
 
+    /** The lower half of the door before the head of the pasture's way in, inside its east wall, on the yard (F-22c43). */
+    public static Pos wayInDoor(BuildStyle style) {
+        return new Pos(pastureWall(style).east() - 5, 0, pastureWayIn(style));
+    }
+
     /**
      * The pasture ward in a style's materials, built onto its farm ward ({@link #farmWard}): walled in stone and lined
      * as the other wards are, sharing the farm ward's south wall; its pen of the style's wood inside; the cattle's
@@ -257,6 +262,18 @@ public final class Compounds {
             else if (ward.lining(x, z)) for (int y = 0; y < HEIGHT; y++) at.put(new Pos(x, y, z), BlockSpec.parse(planks));
         }
         passage(at, open, ward.east() - 1, ward.east(), pastureWayIn(style), s);
+        // A door on the yard just before the way in's stair inside, two high, which a player opens and shuts behind it as
+        // it passes and cattle do not, and a fence along the stair's open side and the door's, so that none steps down
+        // into it past the door: loose in the pasture, a cow walked down the stair into the passage one wide and hemmed
+        // the player in under the wall (#98's CI). Its other side is the ward's lining. On the stair's head instead, the
+        // door's top a block over the yard, a cow jumped onto it and walked off into the stair (F-22c43).
+        Pos door = wayInDoor(style);
+        at.put(door, BlockSpec.parse("minecraft:" + wood + "_door[facing=east,half=lower,hinge=left,open=false]"));
+        at.put(door.add(0, 1, 0), BlockSpec.parse("minecraft:" + wood + "_door[facing=east,half=upper,hinge=left,open=false]"));
+        // A lintel over it: a shut door's top, two up and a step below the lining's, was a way up onto the walls and over
+        // them into the hall (CompoundsTest, the hall reached only by its own way in).
+        at.put(door.add(0, 2, 0), BlockSpec.parse(planks));
+        for (int x = door.x(); x < ward.east() - 1; x++) at.put(new Pos(x, 0, door.z() - 1), BlockSpec.parse("minecraft:" + wood + "_fence"));
         var pen = pen(style);
         for (var b : Generators.pen(7, 7, wood).blocks()) at.put(b.at().add(pen.x(), 0, pen.z()), b.spec());
         torches(at, open, ward);

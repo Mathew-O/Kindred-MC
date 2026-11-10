@@ -6878,7 +6878,10 @@ final class PortalRunCampaign {
         if (hoglin != null && !outOfReach(player, hoglin) && !running.label().startsWith("Fight hoglin") && !running.label().startsWith("Fight zoglin")) {
             return "A hoglin is after it; out of its reach first";
         }
-        return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
+        // Badly hurt, the goal starts no fight (threats() is empty below six health), but a mob on foot in reach still stops
+        // its work: defend() backs off from it, takes cover or, cornered, fights it. In ReplayGameTests' echo-73670 on main
+        // `335da88` the hungry climb went on digging by hand with a zombie on the player, and the zombie killed it (F-25c4dd).
+        return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null || onFootInReach(player) != null
                 ? "A hostile mob is attacking; fight back first" : null;
     }
 
