@@ -190,6 +190,11 @@ final class PortalRunCampaign {
     private final Set<Long> coverHeld = new HashSet<>();
     /** Cover is kept for at most two minutes, against a hostile mob within six blocks of it (F-25c4cy). */
     private static final int COVER_KEPT = 2400, COVER_MOB_NEAR = 6;
+    /** Of that cover, the cells of a passage sealed from mobs after it, by the tick a mob was last within six of them (F-25c4dc). */
+    private final Map<Long, Long> sealNear = new HashMap<>();
+    /** A sealed passage is let go only once no hostile mob has been within six blocks of it for this long (F-25c4dc). */
+    private static final int SEAL_RELEASE = 200;
+    private static final String SEAL_LABEL = ": seal the passage";
     /** Pillars beside the water refused where it stood, by the cell, and until when they count (F-25c4bf). */
     private final Map<Long, Integer> pillarMisses = new HashMap<>();
     private final Map<Long, Long> pillarMissesUntil = new HashMap<>();
@@ -724,6 +729,7 @@ final class PortalRunCampaign {
                 && position(task.args()) != null) {
             if (ownCover.size() > 32) ownCover.clear();
             ownCover.put(position(task.args()).asLong(), tick);
+            if (task.label().endsWith(SEAL_LABEL)) sealNear.put(position(task.args()).asLong(), tick);
         }
         if (task != null && !completed && task.label().startsWith(LEAD_LABEL)) leadFailedUntil = tick + 1200;
         // A pillar beside the water refused where it stood (F-25c4bf).
@@ -2117,10 +2123,69 @@ final class PortalRunCampaign {
     private void holdCover(ServerWorld world) {
         coverHeld.clear();
         ownCover.entrySet().removeIf(e -> lastTick - e.getValue() > COVER_KEPT || world.getBlockState(BlockPos.fromLong(e.getKey())).isAir());
+        sealNear.keySet().retainAll(ownCover.keySet());
         for (long key : ownCover.keySet()) {
             BlockPos cell = BlockPos.fromLong(key);
-            if (!world.getEntitiesByClass(HostileEntity.class, new Box(cell).expand(COVER_MOB_NEAR), HostileEntity::isAlive).isEmpty()) coverHeld.add(key);
+            boolean near = !world.getEntitiesByClass(HostileEntity.class, new Box(cell).expand(COVER_MOB_NEAR), HostileEntity::isAlive).isEmpty();
+            if (near && sealNear.containsKey(key)) sealNear.put(key, lastTick);
+            // A sealed passage is held a short while after the last mob went, as a player waits a moment before opening up
+            // rather than dig out the instant a zombie steps back (F-25c4dc).
+            if (near || sealNear.containsKey(key) && lastTick - sealNear.get(key) < SEAL_RELEASE) coverHeld.add(key);
         }
+    }
+
+    /**
+     * Underground in the dark with two or more mobs after it and none in reach yet, the player seals the passage it stands
+     * in on their side, feet and head both when it holds two blocks (feet only with one: a zombie cannot walk a gap one
+     * high), and waits behind it while they are about. A zombie needs two cells of height, so in a tunnel one wide two
+     * blocks stop it; fought one at a time as they came, three zombies killed the player in a dead end at 17.5 health in
+     * the kept replay kindred-43985-707 (F-25c4dc). The seal is cover ({@link #holdCover}): held from every dig while a
+     * hostile mob is within six of it and for {@link #SEAL_RELEASE} after, two minutes at most, and then the goal goes on.
+     * In the open, with mobs on more than one side, or with one alone after it, nothing changes: it fights as before.
+     */
+    private Optional<Task> sealPassage(NativePlayerBody body, HostileEntity close) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (close != null) return Optional.empty(); // One already in reach is past any seal: it is fought.
+        BlockPos feet = player.getBlockPos();
+        var hunters = world.getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(12, 6, 12),
+                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity));
+        int blocks = 0;
+        var inventory = player.getInventory();
+        for (int s = 0; s < 36; s++) if (SEALING.contains(inventory.getStack(s).getItem())) blocks += inventory.getStack(s).getCount();
+        String name = hunters.isEmpty() ? "mob" : Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath();
+        // Behind a seal still held: its head put in if a block is left for it, and then a wait there.
+        for (Direction side : Direction.Type.HORIZONTAL) {
+            BlockPos foot = feet.offset(side), head = foot.up();
+            if (sealNear.containsKey(foot.asLong()) && coverHeld.contains(foot.asLong()) || sealNear.containsKey(head.asLong()) && coverHeld.contains(head.asLong())) {
+                for (BlockPos cell : List.of(foot, head)) {
+                    if (blocks < 1 || !opening(world, cell) || occupied(world, cell)) continue;
+                    Optional<Task> place = placeBlock(body, cell, "Take cover from " + name + SEAL_LABEL);
+                    if (place.isPresent()) return place;
+                }
+                return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Take cover from " + name + ": wait behind the seal"));
+            }
+        }
+        if (hunters.size() < 2 || !underground(player) || world.getLightLevel(feet.up()) >= 8) return Optional.empty();
+        HostileEntity nearest = hunters.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        Vec3d to = nearest.getPos().subtract(player.getPos());
+        Direction side = Direction.getFacing(to.x, 0, to.z);
+        // All of them on that side, along the passage.
+        Vec3d along = Vec3d.of(side.getVector());
+        for (HostileEntity mob : hunters) if (mob.getPos().subtract(player.getPos()).dotProduct(along) <= 0.5) return Optional.empty();
+        // A passage one wide there: solid either side of the player's own cells, and of the cells to seal.
+        BlockPos foot = feet.offset(side), head = foot.up();
+        for (BlockPos cell : List.of(feet, feet.up(), foot, head)) {
+            if (passable(world, cell.offset(side.rotateYClockwise())) || passable(world, cell.offset(side.rotateYCounterclockwise()))) return Optional.empty();
+        }
+        String label = "Take cover from " + Registries.ENTITY_TYPE.getId(nearest.getType()).getPath() + SEAL_LABEL;
+        // The feet first, which stops the walk in; the head with a second block, which stops a baby zombie and an arrow.
+        for (BlockPos cell : blocks >= 2 ? List.of(foot, head) : List.of(foot)) {
+            if (!opening(world, cell) || occupied(world, cell)) continue;
+            Optional<Task> place = placeBlock(body, cell, label);
+            if (place.isPresent()) return place;
+        }
+        return Optional.empty();
     }
 
     /** A climb on a move elsewhere: its step up is a level the move never steps back down from. */
@@ -5946,6 +6011,9 @@ final class PortalRunCampaign {
             Task strike = strike(player, last, "Fight " + Registries.ENTITY_TYPE.getId(last.getType()).getPath());
             return Optional.of(new Task("native_fight", strike.args(), strike.label()));
         }
+        // Two or more after it down a passage in the dark, none in reach yet: seal it, rather than meet them one by one.
+        Optional<Task> seal = sealPassage(body, close);
+        if (seal.isPresent()) return seal;
         // Too hurt, or outnumbered and already hurt: get some distance first, rather than take them on one by one in the
         // dark. Cover only from none in reach; with no way off from one that is, it is fought.
         if (player.getHealth() < 6 || player.getHealth() < 14 && hunters(player) >= 3) {
