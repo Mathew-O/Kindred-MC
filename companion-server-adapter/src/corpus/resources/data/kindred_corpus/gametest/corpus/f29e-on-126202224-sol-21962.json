@@ -1,0 +1,310 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 21962,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -17,
+  26,
+  2
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.1310319026452,
+  8.0,
+  16.16385603303275
+ ],
+ "yaw": 99.76245,
+ "pitch": 18.159492,
+ "health": 2.5000029,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 6
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 3
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 47
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:jungle_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 61
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 6
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 19
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 48
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 4
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 59
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 52
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 12
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 32
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:smooth_basalt",
+    "count": 6
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:calcite",
+    "count": 5
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:amethyst_block",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:dripstone_block",
+    "count": 10
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 21
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 21962,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Take cover from skeleton",
+ "task": "Hole up: back into the passage",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:15] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:16] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:16] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:16] [Server thread/INFO]: Sol native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+  "[03:31:16] [Server thread/INFO]: Sol native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[03:31:18] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[03:31:18] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:31:19] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:31:20] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Hole up: back into the passage]",
+  "[03:31:20] [Server thread/INFO]: Sol died at -1, 34, 18: Sol was shot by Skeleton (tick 21962, night, under cover, hunger 17, armour 0, holding cobblestone, a shield; doing \"Hole up: back into the passage\" in \"Iron: fight back - Take cover from skeleton\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "126202224",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/126202224/replays/world/Sol-21962",
+  "source": "docs/evidence/eval/f29e-on/126202224/replays/world/Sol-21962",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

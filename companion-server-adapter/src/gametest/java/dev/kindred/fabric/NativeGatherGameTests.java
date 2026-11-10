@@ -65,6 +65,10 @@ public final class NativeGatherGameTests implements FabricGameTest {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos log1 = context.getAbsolutePos(new BlockPos(3, 2, 4));
         BlockPos log2 = context.getAbsolutePos(new BlockPos(3, 2, 5));
+        // Where its ticks go after "continue", named in the failure (F-22c48's diagnostics): the tick it was asked, the first
+        // tick its work read "Resuming" (the paid activity's acknowledgement pending), "Resumed" (acknowledged, the runner
+        // resumed) and "Completed".
+        long[] at = {-1, -1, -1, -1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Checkpointer"))
@@ -98,6 +102,15 @@ public final class NativeGatherGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.nativeLifecycle(f.source, "continue", f.id) == 1, "Resume gather from checkpoint");
+                    at[0] = context.getWorld().getTime();
+                    context.runAtEveryTick(() -> {
+                        if (at[0] < 0) return;
+                        String work = String.valueOf(f.runtime.nativeActivityStatus(Actor.console(), f.id).work());
+                        long now = context.getWorld().getTime();
+                        if (at[1] < 0 && work.startsWith("Resuming")) at[1] = now;
+                        if (at[2] < 0 && work.startsWith("Resumed")) at[2] = now;
+                        if (at[3] < 0 && work.startsWith("Completed")) at[3] = now;
+                    });
                 })
                 .createAndAdd(() -> {
                     var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
@@ -107,13 +120,22 @@ public final class NativeGatherGameTests implements FabricGameTest {
                     context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_gather"), "Gather completed: "
                             + activity + "; logs " + (player == null ? "no body" : ItemMoves.count(player.getInventory(), Items.OAK_LOG))
                             + "; log blocks left " + context.getWorld().getBlockState(log1).isOf(Blocks.OAK_LOG) + "/" + context.getWorld().getBlockState(log2).isOf(Blocks.OAK_LOG)
-                            + "; " + f.runtime.nativeLastResult(f.id) + "; said " + f.runtime.said(f.id));
+                            + "; " + f.runtime.nativeLastResult(f.id) + "; said " + f.runtime.said(f.id) + "; " + ticks(context, at)
+                            + "; action " + f.runtime.nativeActionStatus(Actor.console(), f.id).record());
                     context.assertTrue(player != null, "Player connected");
                     context.assertEquals(4, ItemMoves.count(player.getInventory(), Items.OAK_LOG), "Exactly 4 logs reached; did not gather 2 more to 5");
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** The ticks after "continue" until its work read "Resuming", "Resumed" and "Completed", and so far: where a slow resume spent them. */
+    private static String ticks(TestContext context, long[] at) {
+        long now = context.getWorld().getTime();
+        java.util.function.LongFunction<String> since = t -> t < 0 ? "not yet" : "+" + (t - at[0]);
+        return "after continue (" + (at[0] < 0 ? "not yet asked" : (now - at[0]) + " ticks ago") + "): pending " + since.apply(at[1])
+                + ", acknowledged " + since.apply(at[2]) + ", completed " + since.apply(at[3]);
     }
 
     @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 240)

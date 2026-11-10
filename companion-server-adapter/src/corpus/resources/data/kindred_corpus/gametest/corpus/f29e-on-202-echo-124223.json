@@ -1,0 +1,296 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 124223,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  15,
+  27,
+  -42
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.568667282647752,
+  8.0,
+  16.771777739601895
+ ],
+ "yaw": -355.97635,
+ "pitch": 18.159487,
+ "health": 6.5,
+ "food": 1,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 7
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 9
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 7
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 5
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 30
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 106
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 8
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 57
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 41
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 50
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 25
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 11
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:dripstone_block",
+    "count": 12
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 10
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 11
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:gunpowder",
+    "count": 2
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 41
+    }
+   }
+  }
+ ],
+ "selected": 1,
+ "timeOfDay": 4223,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from skeleton",
+ "task": "Back off from skeleton",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo hit the ground too hard while trying to escape Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[22:50:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 34, 61, -22]",
+  "[22:50:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 34, 62, -22]",
+  "[22:50:34] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[22:50:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 34, 63, -22]",
+  "[22:50:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 34, 62, -21]",
+  "[22:50:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 34, 63, -21]",
+  "[22:50:34] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[22:50:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 34, 64, -21]",
+  "[22:50:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 33, 63, -21]",
+  "[22:50:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 33, 64, -21]",
+  "[22:50:35] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[22:50:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 33, 65, -21]",
+  "[22:50:36] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 33, 64, -20]",
+  "[22:50:36] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 33, 65, -20]",
+  "[22:50:36] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[22:50:36] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 33, 66, -20]",
+  "[22:50:41] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore west for animals]",
+  "[22:50:42] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+  "[22:50:42] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[22:50:43] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from skeleton]"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "202",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/202/replays/world/Echo-124223",
+  "source": "docs/evidence/eval/f29e-on/202/replays/world/Echo-124223",
+  "class": "death: other",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
