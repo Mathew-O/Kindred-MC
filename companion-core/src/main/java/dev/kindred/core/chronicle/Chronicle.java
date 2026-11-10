@@ -117,6 +117,10 @@ public final class Chronicle {
 
     /** At most this many lines a day is told from; a plain page at most this many characters; a report quotes at most this much of a page. */
     public static final int MAX_LINES = 40, PLAIN_CHARS = 600, REPORT_CHARS = 360;
+    /** A week's or a month's plain list at most this long, each page below quoted in at most {@code EXCERPT_CHARS}. */
+    public static final int ABOVE_CHARS = 1_500, EXCERPT_CHARS = 100;
+    /** Citations kept with a page in the Record, at most. */
+    public static final int MAX_CITES = 600;
 
     /**
      * A day's events condensed to what is worth telling (measured: a player logs some 1,900 events a game day, most of
@@ -171,7 +175,10 @@ public final class Chronicle {
         d.put("until", String.valueOf(page.until()));
         d.put("through", String.valueOf(through));
         d.put("text", page.text());
-        d.put("cites", page.cites().stream().map(String::valueOf).reduce((a, b) -> a + "," + b).orElse(""));
+        // At most MAX_CITES kept with the page (a month of 8 players would pass the Record's 16,384 characters), the rest counted.
+        var kept = page.cites().subList(0, Math.min(page.cites().size(), MAX_CITES));
+        d.put("cites", kept.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).orElse(""));
+        if (page.cites().size() > MAX_CITES) d.put("cites_more", String.valueOf(page.cites().size() - MAX_CITES));
         d.put("model", page.model() ? "1" : "0");
         return d;
     }
@@ -223,18 +230,37 @@ public final class Chronicle {
         return new Summary(tier, scope, from, from + tier.span, text.toString(), cites, false);
     }
 
-    /** The plain list a tier above writes from the summaries below it: each in turn, its citations carried up. */
+    /**
+     * The plain list a tier above writes from the summaries below it, citations carried up: grouped by the scope each
+     * page is of (a member, a faction), in order, each scope's pages quoted in turn within an even share of
+     * {@code ABOVE_CHARS}, so every scope below is told however many there are (8 players' weeks are 56 pages).
+     */
     public static Summary plainFrom(Tier tier, String scope, long from, List<Summary> below) {
-        var text = new StringBuilder();
+        var byScope = new LinkedHashMap<String, List<Summary>>();
         var cites = new ArrayList<Long>();
         for (Summary s : below) {
             if (s.tier() != tier.below() || s.from() < from || s.until() > from + tier.span) continue;
-            if (text.length() > 0) text.append(' ');
-            text.append("Day ").append(s.from() / DAY + 1).append(" (").append(s.scope()).append("): ").append(s.text());
+            byScope.computeIfAbsent(s.scope(), k -> new ArrayList<>()).add(s);
             cites.addAll(s.cites());
         }
+        var text = new StringBuilder();
+        int share = byScope.isEmpty() ? ABOVE_CHARS : ABOVE_CHARS / byScope.size();
+        for (var en : byScope.entrySet()) {
+            var pages = en.getValue();
+            String head = en.getKey() + ": ";
+            int each = Math.max(12, Math.min(EXCERPT_CHARS, (share - head.length()) / pages.size() - 9));
+            var part = new StringBuilder(head);
+            for (int k = 0; k < pages.size(); k++) {
+                var s = pages.get(k);
+                String said = s.text().length() <= each ? s.text() : s.text().substring(0, each - 1) + "…";
+                part.append(k == 0 ? "" : " / ").append("day ").append(s.from() / DAY + 1).append(' ').append(said);
+            }
+            if (text.length() > 0) text.append(' ');
+            text.append(part).append('.');
+        }
         if (text.isEmpty()) text.append("Nothing recorded.");
-        return new Summary(tier, scope, from, from + tier.span, text.toString(), cites, false);
+        String told = text.length() <= ABOVE_CHARS ? text.toString() : text.substring(0, ABOVE_CHARS - 1) + "…";
+        return new Summary(tier, scope, from, from + tier.span, told, cites, false);
     }
 
     private static String plural(String kind, int n) {
