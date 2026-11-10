@@ -1,0 +1,227 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 60580,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  51,
+  -17,
+  55
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.92209197403662,
+  8.0,
+  16.11121547943354
+ ],
+ "yaw": 17.203932,
+ "pitch": 5.9408636,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 0.8000002,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 19
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:feather",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:chicken",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 55
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 3
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 59
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 9
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 6
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 49
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 19
+    }
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 12580,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Mine iron ore (6/18) - Branch mine for iron: clear 67, -8, 72",
+ "task": "Branch mine for iron: clear 67, -8, 72",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was doomed to fall by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[23:30:08] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up raw iron]",
+  "[23:30:08] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 62, 4, 59]",
+  "[23:30:09] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 63, 3, 59]",
+  "[23:30:09] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 62, 3, 59]",
+  "[23:30:09] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 63, 4, 60]",
+  "[23:30:09] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 59, 8, 63 [Walk to iron ore at 59, 8, 63]",
+  "[23:30:09] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 51, 16, 64 [Walk to iron ore at 51, 16, 64]",
+  "[23:30:10] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 70, 12, 74 [Walk to iron ore at 70, 12, 74]",
+  "[23:30:10] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 64, 4, 59]",
+  "[23:30:10] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 63, 3, 60]",
+  "[23:30:11] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 61, 38, 67]",
+  "[23:30:11] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[23:30:12] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[23:30:12] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[23:30:12] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 59, 15, 74]",
+  "[23:30:12] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 65, 8, 71 is blocked [Back off from skeleton the way it came]",
+  "[23:30:12] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[23:30:12] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 80, 2, 71 [Walk to iron ore at 80, 2, 71]",
+  "[23:30:12] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 72, 12, 75 [Walk to iron ore at 72, 12, 75]",
+  "[23:30:12] [Server thread/INFO]: Echo died at 67, -9, 71: Echo was doomed to fall by Skeleton (tick 60580, night, under cover, hunger 20, armour 0, holding cobblestone, a shield; doing \"Branch mine for iron: clear 67, -8, 72\" in \"Iron: Mine iron ore (6/18) - Branch mine for iron: clear 67, -8, 72\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "505",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/505/replays/world/Echo-60580",
+  "source": "docs/evidence/eval/f29e-on/505/replays/world/Echo-60580",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

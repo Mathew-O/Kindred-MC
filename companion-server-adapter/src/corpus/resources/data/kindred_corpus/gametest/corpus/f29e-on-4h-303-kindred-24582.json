@@ -1,0 +1,278 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 24582,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  105,
+  -7,
+  -2
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.929502993773283,
+  8.99166695227227,
+  16.546050496485115
+ ],
+ "yaw": 3617.0605,
+ "pitch": -4.9999995,
+ "health": 16.433334,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 23,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 86
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 21
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 11
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 56
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 3
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 61
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 2
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 11
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 18
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 7
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 16
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 7
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 39
+    }
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 582,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Get out of the water: up for air",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred drowned",
+ "ticks": 1200,
+ "log": [
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[05:54:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required"
+ ],
+ "corpus": {
+  "run": "f29e-on-4h",
+  "seed": "303",
+  "build": "4h",
+  "replay": "docs/evidence/eval/f29e-on-4h/303/replays/world/Kindred-24582",
+  "source": "docs/evidence/eval/f29e-on-4h/303/replays/world/Kindred-24582",
+  "class": "death: drowned",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

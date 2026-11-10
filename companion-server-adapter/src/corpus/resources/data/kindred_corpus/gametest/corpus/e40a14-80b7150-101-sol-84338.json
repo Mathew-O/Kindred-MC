@@ -1,0 +1,81 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 84338,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -365,
+  24,
+  -116
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.22279555225748,
+  8.0,
+  16.27490524429129
+ ],
+ "yaw": -128.39989,
+ "pitch": -6.0,
+ "health": 0.16666603,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 2
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 12338,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from skeleton",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO, SPARE_PICKAXE]",
+ "cause": "Sol was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[05:52:33] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch the way it came]",
+  "[05:52:33] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[05:52:34] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[05:52:34] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -332, 40, -93 [Back off from witch]",
+  "[05:52:37] [Server thread/INFO]: Sol native_fight BLOCKED: The fight broke off [Fight witch]",
+  "[05:52:38] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+  "[05:52:38] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[05:52:39] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[05:52:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[05:52:41] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:42] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:43] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:44] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:45] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:46] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:47] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:48] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:49] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:52:50] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]"
+ ],
+ "corpus": {
+  "run": "e40a14-80b7150",
+  "seed": "101",
+  "build": "80b7150",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a14-80b7150/101/replays/world/Sol-84338",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

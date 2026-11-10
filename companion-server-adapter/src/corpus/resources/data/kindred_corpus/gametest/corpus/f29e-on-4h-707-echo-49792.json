@@ -1,0 +1,311 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 49792,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  41,
+  -19,
+  130
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.658246192115257,
+  8.76636799395752,
+  16.41236421113669
+ ],
+ "yaw": -28.135965,
+ "pitch": 18.159489,
+ "health": 4.041669,
+ "food": 12,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:gunpowder",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 60
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 44
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 40
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 41
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 41
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 10
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 42
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:spruce_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 3
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:rabbit_foot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 4
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 4
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 7
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 18
+    }
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 1792,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from zombie_villager the way it came",
+ "task": "Climb toward the surface for food: back the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[07:17:09] [Server thread/INFO]: Echo native_fight COMPLETED [Fight spider]",
+  "[07:17:10] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from creeper]",
+  "[07:17:12] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[07:17:15] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[07:17:15] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:17:17] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:17:18] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+  "[07:17:19] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[07:17:19] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:17:20] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:17:23] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from skeleton]",
+  "[07:17:24] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[07:17:24] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[07:17:25] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[07:17:25] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[07:17:26] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[07:17:26] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[07:17:27] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[07:17:28] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie_villager]",
+  "[07:17:29] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]"
+ ],
+ "corpus": {
+  "run": "f29e-on-4h",
+  "seed": "707",
+  "build": "4h",
+  "replay": "docs/evidence/eval/f29e-on-4h/707/replays/world/Echo-49792",
+  "source": "docs/evidence/eval/f29e-on-4h/707/replays/world/Echo-49792",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
