@@ -3514,3 +3514,8 @@ After the block's first merge from main, CI on PR #25 found:
   - The staged fixture (the player put in the pit as its scaffold comes down): 1 of 3 before, the failures CI's; 3 of 3 after.
   - `:companion-core:test` 899 of 899; `NativeBuildGameTests`, 3 runs, 6 of 6 each; `NativeHouseGameTests`,
     `NativeBaseGameTests`, `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c41 (diagnostics, in progress):** the ranch's leaving and done lines name each animal by id, and what it gave up
+  and why (#96's run 42583930289: "no other in sight" with a sheep in sight behind the pen's far fence). A ranch walk
+  ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
+  `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
