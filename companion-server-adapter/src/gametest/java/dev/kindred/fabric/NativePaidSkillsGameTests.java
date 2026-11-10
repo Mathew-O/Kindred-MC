@@ -142,6 +142,11 @@ public final class NativePaidSkillsGameTests implements FabricGameTest {
             this(context, actionWriter, enableEdits, DEFAULT_STOP_AT_TICK);
         }
         Fixture(TestContext context, java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriter, boolean enableEdits, int stopAtTick) {
+            this(context, actionWriter, enableEdits, stopAtTick, "");
+        }
+        /** As above, with {@code extraEdits} (lines of edits.properties, such as {@code maxNativePlayers=8}) in the server's policy. */
+        Fixture(TestContext context, java.util.function.UnaryOperator<dev.kindred.core.ActionAdmission.Writer> actionWriter, boolean enableEdits, int stopAtTick,
+                String extraEdits) {
             for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
                 context.setBlockState(x, 1, z, Blocks.STONE);
                 for (int y = 2; y <= 5; y++) context.setBlockState(x, y, z, Blocks.AIR);
@@ -150,11 +155,11 @@ public final class NativePaidSkillsGameTests implements FabricGameTest {
             directory = server.getSavePath(WorldSavePath.ROOT).resolve("kindred-paid-fixture-" + UUID.randomUUID());
             source = server.getCommandSource().withWorld(context.getWorld()).withPosition(context.getAbsolute(new Vec3d(3.5, 2, 3.5)));
             runtime = new PlayerRuntime(server, directory, NativePlayerSaves::read, actionWriter);
-            if (enableEdits) {
+            if (enableEdits || !extraEdits.isEmpty()) {
                 try {
                     java.nio.file.Files.createDirectories(directory);
                     java.nio.file.Files.writeString(directory.resolve("edits.properties"),
-                            "autonomousEdits=true\nprotectionKnown=true\n");
+                            (enableEdits ? "autonomousEdits=true\nprotectionKnown=true\n" : "") + extraEdits);
                 } catch (java.io.IOException error) {
                     throw new RuntimeException("Fixture edit policy could not be saved", error);
                 }

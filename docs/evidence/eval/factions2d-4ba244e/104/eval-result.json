@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 104,
+  "ticks": 288000,
+  "ticksRun": 288150,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 631, "factions": 3, "claims": 10, "captures": 0, "sales": 199, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 0, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 7.36, "tickMsWorst": 1316.90, "tickMsWorstAt": 73239, "ticksOver50ms": 32, "ticksOver200ms": 5, "heapMbMax": 1227, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 320, "stone_tools": 3580, "iron_ingot": 6260, "iron_pickaxe": 58540},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 18940, "x": -547, "y": 19, "z": -163, "attempt": 1}, {"tick": 23240, "x": -546, "y": 20, "z": -145, "attempt": 1}, {"tick": 34020, "x": -504, "y": 29, "z": -153, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2140, "stone_tools": 3080, "iron_ingot": 12860, "iron_pickaxe": 51480, "obsidian": 68359, "portal_lit": 73235},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30540, "x": -509, "y": 17, "z": -128, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 480, "stone_tools": 12940, "iron_ingot": 17020, "iron_pickaxe": 46120, "obsidian": 58042, "portal_lit": 59302},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28640, "x": -648, "y": 36, "z": -156, "attempt": 1}, {"tick": 32420, "x": -649, "y": 36, "z": -156, "attempt": 2}, {"tick": 36180, "x": -649, "y": 36, "z": -156, "attempt": 3}, {"tick": 56660, "x": -551, "y": 64, "z": -65, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

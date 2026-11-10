@@ -115,12 +115,15 @@ final class EvalBootstrap implements RunObserver {
             }
             case 1 -> { // Each a few blocks from the last, on the ground at the world's spawn.
                 if (lastTick - phaseAt < SPAWN_GAP) return;
-                if (spawned < scenario.starters().size()) {
+                if (spawned < scenario.everyone().size()) {
                     var base = origin != null ? origin : server.getOverworld().getSpawnPos();
                     var ground = spawnSpot(server, runtime, base.add(3 * spawned, 0, 3 * spawned));
-                    String name = scenario.starters().get(spawned);
+                    String name = scenario.everyone().get(spawned);
                     KindredMod.LOGGER.info("Evaluation run: spawn {} at {}", name, ground.toShortString());
-                    runtime.spawnCanonicalRoster(server.getCommandSource().withPosition(net.minecraft.util.math.Vec3d.ofBottomCenter(ground)), name);
+                    var at = server.getCommandSource().withPosition(net.minecraft.util.math.Vec3d.ofBottomCenter(ground));
+                    // The starters from the canonical roster; any other player as a native player of that name, with no preset.
+                    if (spawned < scenario.starters().size()) runtime.spawnCanonicalRoster(at, name);
+                    else runtime.createNative(at, name);
                     spawned++;
                     phaseAt = lastTick;
                     return;
@@ -130,9 +133,30 @@ final class EvalBootstrap implements RunObserver {
             case 2 -> { // Every starter in the world before its goal is set; a starter that never comes is noted, and the run goes on.
                 var here = runtime.nativeStatuses(Actor.console()).stream()
                         .filter(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()).toList();
-                boolean all = scenario.starters().stream().allMatch(n -> here.stream().anyMatch(s -> s.name().equalsIgnoreCase(n)));
+                boolean all = scenario.everyone().stream().allMatch(n -> here.stream().anyMatch(s -> s.name().equalsIgnoreCase(n)));
                 if (!all && lastTick - phaseAt < ESTABLISH_WAIT) return;
                 if (!all) note = "not every starter came into the world: " + here.stream().map(PlayerRuntime.NativeStatus::name).toList();
+                if (scenario.mode() == EvalScenario.Mode.FACTIONS) {
+                    // A faction world the starters joined (M-06i), as an operator sets one up: the mode, then the spawn hub
+                    // a safe zone, its lighthouse not built. Its locked rules are audited from the World Record at the end.
+                    KindredMod.LOGGER.info("Evaluation run: a faction world");
+                    runtime.factionsWorldForEval();
+                    // Founders and joiners (founders=N): the first N players set, as their administrator may set a
+                    // personality, to found at once and to invite; the rest to wait to be asked and to join.
+                    if (scenario.founders() > 0) {
+                        var everyone = scenario.everyone();
+                        for (var status : here) {
+                            int i = -1;
+                            for (int k = 0; k < everyone.size(); k++) if (everyone.get(k).equalsIgnoreCase(status.name())) i = k;
+                            if (i < 0) continue;
+                            boolean founder = i < scenario.founders();
+                            runtime.personalityForEval(status.id(), Map.of(dev.kindred.core.Personality.Trait.INITIATIVE, founder ? 80 : 20,
+                                    dev.kindred.core.Personality.Trait.SOCIABILITY, founder ? 60 : 70));
+                            KindredMod.LOGGER.info("Evaluation run: {} {}", status.name(), founder ? "a founder" : "waits to be asked");
+                        }
+                    }
+                    if (runtime.factionsHub(server.getCommandSource(), false) != 1) note += (note.isEmpty() ? "" : "; ") + "the hub was not set";
+                }
                 if (scenario.goal() != EvalScenario.Goal.NONE) {
                     var goal = switch (scenario.goal()) {
                         case NETHER -> dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL;
@@ -141,7 +165,7 @@ final class EvalBootstrap implements RunObserver {
                         case NONE -> dev.kindred.core.survival.SurvivalGoal.NONE;
                     };
                     for (var status : here) {
-                        if (scenario.starters().stream().noneMatch(n -> n.equalsIgnoreCase(status.name()))) continue;
+                        if (scenario.everyone().stream().noneMatch(n -> n.equalsIgnoreCase(status.name()))) continue;
                         KindredMod.LOGGER.info("Evaluation run: goal {} for {}", goal, status.name());
                         // A goal the runtime refuses is said in the run's record: a run with none set measures nothing.
                         if (runtime.startGoal(server.getCommandSource(), status.id(), goal) != 1) {
@@ -160,9 +184,15 @@ final class EvalBootstrap implements RunObserver {
             }
             case 3 -> { // Running: a look once a second, the end when its ticks have run.
                 long run = lastTick - startTick;
-                if (run % LOOK == 0) look(server, runtime);
+                if (run % LOOK == 0) {
+                    look(server, runtime);
+                    measure(server);
+                }
                 if (run % ATTENTION_REPORT == 0) attention(runtime, run);
-                if (run >= scenario.ticks()) end(server, true);
+                if (run >= scenario.ticks()) {
+                    if (scenario.mode() == EvalScenario.Mode.FACTIONS) audit(server, runtime);
+                    else end(server, true);
+                }
             }
             default -> { }
         }
@@ -193,7 +223,64 @@ final class EvalBootstrap implements RunObserver {
 
     /** The server is stopping before the ticks have run: what there is, marked incomplete. */
     void stopping(MinecraftServer server) {
-        if (!finished && phase >= 3) end(server, false);
+        if (!finished && phase >= 3) {
+            if (scenario.mode() == EvalScenario.Mode.FACTIONS && !auditing) record.factions(java.util.Map.of(), List.of(), "not run: the server stopped first");
+            end(server, false);
+        }
+    }
+
+    private boolean auditing;
+    private double tickNanosSum;
+    private long worstTickNanos, worstTickAt, heapMax;
+    private int measured, over50, over200;
+    /** The last server tick whose time is counted: each tick of the run counted once. */
+    private long tallied = -1;
+    private static final long MS = 1_000_000L;
+
+    /**
+     * Once a game second: the server's mean tick over its last hundred, the heap in use, and each tick of the run since
+     * the last look counted once: its longest (and when, in ticks into the run), and how many took over 50 and over 200
+     * ms. The server keeps each tick's time at its count modulo a hundred once the tick ends (an autosave's included), so
+     * from within a tick the ninety-nine before it are there to read.
+     */
+    private void measure(MinecraftServer server) {
+        tickNanosSum += server.getAverageNanosPerTick();
+        long[] times = server.getTickTimes();
+        long now = server.getTicks();
+        for (long t = Math.max(Math.max(tallied + 1, now - (times.length - 1)), startTick + 1); t < now; t++) {
+            long took = times[(int) (t % times.length)];
+            if (took > worstTickNanos) {
+                worstTickNanos = took;
+                worstTickAt = t - startTick;
+            }
+            if (took > 50 * MS) over50++;
+            if (took > 200 * MS) over200++;
+        }
+        tallied = Math.max(tallied, now - 1);
+        var memory = Runtime.getRuntime();
+        heapMax = Math.max(heapMax, memory.totalMemory() - memory.freeMemory());
+        measured++;
+    }
+
+    /**
+     * A faction world's end (M-06i): its whole history read back from the World Record, off the server thread, and
+     * audited against the locked rules, then the result written. No further tick of the run counts meanwhile.
+     */
+    private void audit(MinecraftServer server, PlayerRuntime runtime) {
+        if (auditing) return;
+        auditing = true;
+        phase = 4;
+        runtime.factionsAudit().whenComplete((report, failure) -> server.execute(() -> {
+            if (finished) return;
+            if (failure != null || report == null) {
+                record.factions(java.util.Map.of(), List.of(), "the Record could not be read: " + (failure == null ? "no report" : failure.getMessage()));
+            } else {
+                record.factions(report.counts(), report.violations(), "");
+                KindredMod.LOGGER.info("Evaluation run: the faction world audited: {} {}", report.counts(),
+                        report.clean() ? "no rule broken" : report.violations().size() + " rules broken: " + report.violations());
+            }
+            end(server, true);
+        }));
     }
 
     /**
@@ -225,7 +312,7 @@ final class EvalBootstrap implements RunObserver {
     }
 
     private void look(MinecraftServer server, PlayerRuntime runtime) {
-        for (String name : scenario.starters()) {
+        for (String name : scenario.everyone()) {
             ServerPlayerEntity player = server.getPlayerManager().getPlayer(name);
             if (player == null || !player.isAlive()) continue;
             var inventory = player.getInventory();
@@ -300,6 +387,7 @@ final class EvalBootstrap implements RunObserver {
 
     private void end(MinecraftServer server, boolean complete) {
         finished = true;
+        if (measured > 0) record.server(tickNanosSum / measured / 1e6, worstTickNanos / 1e6, worstTickAt, over50, over200, heapMax / (1024 * 1024), measured);
         long run = startTick < 0 ? 0 : lastTick - startTick;
         String build = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("kindred")
                 .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown");
