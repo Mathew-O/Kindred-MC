@@ -1,6 +1,11 @@
 package dev.kindred.core.factions;
 
 import dev.kindred.core.record.EventData;
+import dev.kindred.core.ui.HudPanel;
+import dev.kindred.core.ui.HudPanel.Line;
+import dev.kindred.core.ui.HudPanel.Mode;
+import dev.kindred.core.ui.HudPanel.Role;
+import dev.kindred.core.ui.HudPanel.Section;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,15 +26,9 @@ import java.util.UUID;
 public final class Hud {
     private Hud() {}
 
-    /** Full, compact (faction, power, coins, here) or hidden: the H key's cycle. */
-    public enum Mode { FULL, COMPACT, HIDDEN;
-        public Mode next() { return values()[(ordinal() + 1) % values().length]; }
-    }
-
-    /** What a line is drawn in: the faction's own colour, the plain text, a dim one, or a state. */
-    public enum Role { FACTION, TEXT, DIM, AMBER, RED, GREEN }
-
-    public record Line(String text, Role role, String colour) {}
+    /** Factions' sections' ids and places on the panel (mod-support decision 7): an integration's go before, between or after. */
+    public static final String OWN = "factions.own", STANDINGS = "factions.standings", NOTICES = "factions.notices", MARKET = "factions.market";
+    public static final int OWN_ORDER = 100, STANDINGS_ORDER = 200, NOTICES_ORDER = 300, MARKET_ORDER = 400;
 
     /** The viewer's own faction as its members see it. */
     public record Own(String tag, String name, String colour, int online, int members, boolean leader, int power, int claims, int capacity, int exposed,
@@ -80,10 +79,16 @@ public final class Hud {
                 movers.subList(0, Math.min(5, movers.size())), hand);
     }
 
-    /** The panel's lines for {@code mode}: nothing when hidden; faction, power, coins and here when compact. */
-    public static List<Line> layout(State s, Mode mode) {
+    /** Factions' lines for {@code mode}: its sections laid out alone (nothing when hidden; faction, power, coins and here when compact). */
+    public static List<Line> layout(State s, Mode mode) { return HudPanel.layout(sections(s), mode); }
+
+    /**
+     * Factions' sections of the panel for state {@code s}: the viewer's own (faction, power, coins, the land here; all of it
+     * shown compact too), then the standings, the faction's notices and the market, each only when it has lines.
+     */
+    public static List<Section> sections(State s) {
+        var sections = new ArrayList<Section>();
         var out = new ArrayList<Line>();
-        if (mode == Mode.HIDDEN) return out;
         if (s.own().isPresent()) {
             var o = s.own().get();
             out.add(new Line("[" + o.tag() + "] " + o.name() + (o.leader() ? " ★" : ""), Role.FACTION, o.colour()));
@@ -101,24 +106,30 @@ public final class Hud {
         });
         out.add(new Line("Coins " + Coins.show(s.coins()) + (s.lastChange().isEmpty() ? "" : "  " + s.lastChange()), Role.TEXT, ""));
         out.add(new Line(s.here(), s.hereRole(), ""));
-        if (mode == Mode.COMPACT) return out;
+        sections.add(new Section(OWN, OWN_ORDER, out.size(), out));
         if (!s.standings().isEmpty()) {
-            out.add(new Line("Standings", Role.DIM, ""));
+            var rows = new ArrayList<Line>();
+            rows.add(new Line("Standings", Role.DIM, ""));
             for (var r : s.standings()) {
                 String arrow = r.trend() > 0 ? " ▲" : r.trend() < 0 ? " ▼" : "";
-                out.add(new Line((r.mine() ? "» " : "") + "[" + r.tag() + "] " + r.power() + " · " + r.claims() + " · " + r.members() + arrow, Role.FACTION, r.colour()));
+                rows.add(new Line((r.mine() ? "» " : "") + "[" + r.tag() + "] " + r.power() + " · " + r.claims() + " · " + r.members() + arrow, Role.FACTION, r.colour()));
             }
+            sections.add(new Section(STANDINGS, STANDINGS_ORDER, 0, rows));
         }
         if (!s.notices().isEmpty()) {
-            out.add(new Line("Notices", Role.DIM, ""));
-            for (String n : s.notices()) out.add(new Line(n, n.contains("captured") || n.contains("vulnerable") ? Role.AMBER : Role.TEXT, ""));
+            var notices = new ArrayList<Line>();
+            notices.add(new Line("Notices", Role.DIM, ""));
+            for (String n : s.notices()) notices.add(new Line(n, n.contains("captured") || n.contains("vulnerable") ? Role.AMBER : Role.TEXT, ""));
+            sections.add(new Section(NOTICES, NOTICES_ORDER, 0, notices));
         }
         if (!s.movers().isEmpty() || !s.hand().isEmpty()) {
-            out.add(new Line("Market", Role.DIM, ""));
-            for (String m : s.movers()) out.add(new Line(m, Role.TEXT, ""));
-            if (!s.hand().isEmpty()) out.add(new Line(s.hand(), Role.TEXT, ""));
+            var market = new ArrayList<Line>();
+            market.add(new Line("Market", Role.DIM, ""));
+            for (String m : s.movers()) market.add(new Line(m, Role.TEXT, ""));
+            if (!s.hand().isEmpty()) market.add(new Line(s.hand(), Role.TEXT, ""));
+            sections.add(new Section(MARKET, MARKET_ORDER, 0, market));
         }
-        return out;
+        return List.copyOf(sections);
     }
 
     private static String clock(long minutes) { return minutes >= 60 ? minutes / 60 + "h " + minutes % 60 + "m" : minutes + "m"; }

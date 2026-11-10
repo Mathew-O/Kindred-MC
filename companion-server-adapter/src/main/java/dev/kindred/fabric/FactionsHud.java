@@ -37,6 +37,10 @@ final class FactionsHud {
     private final FactionsService factions;
     private final MarketDesk market;
     private final Map<UUID, String> sent = new HashMap<>();
+    /** Each player's state as last built, the Factions sections' source for this second's panel; and its text, for fixtures. */
+    private final Map<UUID, Hud.State> current = new HashMap<>();
+    private final Map<UUID, String> stateSent = new HashMap<>();
+    private final KindredHudSections sections;
     private final Map<UUID, List<String>> sidebars = new HashMap<>();
     private final Map<UUID, String> hereSeen = new HashMap<>();
     private final Map<UUID, Long> coinsSeen = new HashMap<>();
@@ -48,9 +52,12 @@ final class FactionsHud {
     private long hourStarted;
     private final Scoreboard scratch = new Scoreboard();
 
-    FactionsHud(FactionsService factions, MarketDesk market) {
+    FactionsHud(FactionsService factions, MarketDesk market, KindredHudSections sections) {
         this.factions = factions;
         this.market = market;
+        this.sections = sections;
+        // Factions' sections, registered as any integration registers its own (mod-support decision 7).
+        sections.register("factions", viewer -> Hud.sections(current.computeIfAbsent(viewer.getUuid(), id -> state(viewer))));
     }
 
     /** A faction notice for its members' panels, shown for a minute. */
@@ -63,8 +70,11 @@ final class FactionsHud {
     /** How many land lines a player's action bar has been sent, for fixtures. */
     int actionBarLines(UUID player) { return actionBarLines.getOrDefault(player, 0); }
 
-    /** The state last sent to a player, for fixtures; empty before any. */
+    /** The panel last sent to a player ({@link dev.kindred.core.ui.HudPanel#encode}), for fixtures; empty before any. */
     Optional<String> lastSent(UUID player) { return Optional.ofNullable(sent.get(player)); }
+
+    /** The Factions state the last panel was built from ({@link Hud#encode}), for fixtures; empty before any. */
+    Optional<String> lastState(UUID player) { return Optional.ofNullable(stateSent.get(player)); }
 
     /** {@code viewer}'s state now. */
     Hud.State state(ServerPlayerEntity viewer) {
@@ -109,8 +119,9 @@ final class FactionsHud {
         }
         for (var player : players) {
             var state = state(player);
-            String text = Hud.encode(state);
             UUID id = player.getUuid();
+            current.put(id, state);
+            String text = dev.kindred.core.ui.HudPanel.encode(sections.panel(player));
             String before = hereSeen.put(id, state.here());
             boolean kindredClient = ServerPlayNetworking.canSend(player, KindredPanelPayloads.Hud.ID);
             if (before != null && !before.equals(state.here()) && !kindredClient) {
@@ -119,6 +130,7 @@ final class FactionsHud {
             }
             if (text.equals(sent.get(id))) continue;
             sent.put(id, text);
+            stateSent.put(id, Hud.encode(state));
             if (kindredClient) ServerPlayNetworking.send(player, new KindredPanelPayloads.Hud(text));
             else sidebar(player, state);
         }
@@ -154,6 +166,8 @@ final class FactionsHud {
     /** A player gone: nothing more is sent until they are back. */
     void left(UUID player) {
         sent.remove(player);
+        current.remove(player);
+        stateSent.remove(player);
         sidebars.remove(player);
         hereSeen.remove(player);
     }
