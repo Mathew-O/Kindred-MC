@@ -1,0 +1,253 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 76362,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    144,
+    60,
+    447
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.18013662089811,
+    8.0,
+    16.539130755591486
+  ],
+  "yaw": -93.12059,
+  "pitch": 18.159227,
+  "health": 2.949998,
+  "food": 1,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 58
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 38
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:dandelion",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 32
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 18
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 62
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 44
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 11
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 17
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 4
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 33
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 11
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 6,
+  "timeOfDay": 4362,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Stone: fight back - Back off from zombie the way it came (tried elsewhere 2 times)",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[12:53:13] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 161, 66, 463]",
+    "[12:53:14] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 161, 67, 463]",
+    "[12:53:14] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[12:53:14] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 161, 68, 463]",
+    "[12:53:14] [Server thread/INFO]: Sol native_faction COMPLETED [from factionCandidates:9241]",
+    "[12:53:14] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 160, 67, 463]",
+    "[12:53:14] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 160, 68, 463]",
+    "[12:53:15] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[12:53:15] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 160, 69, 463]",
+    "[12:53:15] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 159, 68, 463]",
+    "[12:53:16] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 159, 69, 463]",
+    "[12:53:16] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[12:53:16] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 159, 70, 463]",
+    "[12:53:16] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 159, 69, 462]",
+    "[12:53:17] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 159, 70, 462]",
+    "[12:53:17] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[12:53:17] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 159, 71, 462]",
+    "[12:53:18] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 158, 70, 462]",
+    "[12:53:18] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: clear 158, 71, 462]",
+    "[12:53:19] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie the way it came]"
+  ]
+}

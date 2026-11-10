@@ -1,0 +1,248 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 87219,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -425,
+    32,
+    -215
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.44369662245913,
+    8.200000047683716,
+    16.606737389217102
+  ],
+  "yaw": -146.84784,
+  "pitch": -82.831825,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 0,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dandelion",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 53
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cooked_porkchop",
+        "count": 5
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 34
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 24
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 56
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 6
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 5
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 5
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 16
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 9
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 61
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 19
+        }
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 15219,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: open the way up at -409, 42, -199",
+  "task": "Get out of the water: open the way up at -409, 42, -199",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Kindred drowned",
+  "ticks": 1200,
+  "log": [
+    "[12:24:07] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[12:24:07] [Server thread/INFO]: Kindred native_smelt COMPLETED [Take smelted iron]",
+    "[12:24:08] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[12:24:09] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[12:24:09] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[12:24:09] [Server thread/INFO]: Kindred native_smelt COMPLETED [Take smelted iron]",
+    "[12:24:09] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft bucket]",
+    "[12:24:11] [Server thread/INFO]: Kindred native_break COMPLETED [Pick up the crafting table]",
+    "[12:24:11] [Server thread/INFO]: Kindred native_break COMPLETED [Pick up the furnace]",
+    "[12:24:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Pick up raw iron]",
+    "[12:24:12] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -410, 32, -191 [Pick up raw iron]",
+    "[12:24:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to iron ore at -404, 30, -189]",
+    "[12:24:13] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -404, 30, -189]",
+    "[12:24:13] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -403, 41, -184 [Walk to iron ore at -403, 41, -184]",
+    "[12:24:14] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to iron ore at -409, 39, -199]",
+    "[12:24:15] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -409, 39, -200]",
+    "[12:24:15] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -409, 38, -200 [Pick up raw iron]",
+    "[12:24:15] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -409, 39, -199]",
+    "[12:24:17] [Server thread/INFO]: Kindred native_break COMPLETED [Mine coal ore at -409, 40, -199]",
+    "[12:24:20] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -407, 35, -199 is blocked [Get out of the water: to dry ground]"
+  ]
+}

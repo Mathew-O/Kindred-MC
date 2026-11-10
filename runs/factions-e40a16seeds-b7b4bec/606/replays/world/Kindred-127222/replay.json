@@ -1,0 +1,305 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 127222,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    496,
+    21,
+    -176
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.68514732490621,
+    8.200000047683716,
+    16.402575722715767
+  ],
+  "yaw": 82.19624,
+  "pitch": 15.655526,
+  "health": 0.90500116,
+  "food": 5,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 5
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 60
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 46
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 11
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:flint_and_steel",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 11
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 9
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 20
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 4
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 9
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 29
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 9
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:poppy",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 19
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 4
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:gunpowder",
+        "count": 2
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 28
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 7222,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Done: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[13:56:47] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:47] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 511, 29, -160 [Climb toward the surface for food: back the way it came]",
+    "[13:56:48] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:50] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:51] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:52] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:53] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 523, 64, -112 [from factionCandidates:9263]",
+    "[13:56:53] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:54] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 513, 28, -160 [Climb toward the surface for food: back the way it came]",
+    "[13:56:54] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:55] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:57] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:58] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:56:59] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:57:00] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:57:05] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear 512, 27, -159 by hand]",
+    "[13:57:05] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 505, 25, -166 [Back off from zombie]",
+    "[13:57:06] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[13:57:06] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from zombie]",
+    "[13:57:06] [Server thread/INFO]: Kindred native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:3219]"
+  ]
+}

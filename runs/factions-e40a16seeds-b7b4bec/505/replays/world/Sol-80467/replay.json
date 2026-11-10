@@ -1,0 +1,325 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 80467,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    13,
+    49,
+    -334
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.483739976031355,
+    8.090749151391641,
+    16.49950812439556
+  ],
+  "yaw": -2141.4937,
+  "pitch": -4.9999995,
+  "health": 20.0,
+  "food": 19,
+  "saturation": 0.0,
+  "air": -12,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 36
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 15
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 98
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 60
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 47
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 7
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 25
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 47
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 43
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:jungle_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 3
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 39
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 8467,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: up for air",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol drowned",
+  "ticks": 1200,
+  "log": [
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:18] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:19] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[13:33:19] [Server thread/INFO]: Sol died at 29, 57, -318: Sol drowned (tick 80467, day, under cover, hunger 16, armour 6, holding torch, a shield; doing \"native_goto\" in \"Iron: Get out of the water: up for air\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

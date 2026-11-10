@@ -1,0 +1,79 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 17463,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -4,
+    54,
+    463
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.535887482070343,
+    8.091029845654539,
+    16.54237212557132
+  ],
+  "yaw": 361.98868,
+  "pitch": 18.159489,
+  "health": 2.0,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 17463,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Interrupted: Get out of the water: to dry ground",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Spider",
+  "ticks": 1200,
+  "log": [
+    "[12:48:39] [Server thread/INFO]: Kindred native_goto COMPLETED [from factionCandidates:9263]",
+    "[12:48:39] [Server thread/INFO]: Kindred native_faction COMPLETED [from factionCandidates:9241]",
+    "[12:48:39] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Dig in for the night: clear 21, 68, 515]",
+    "[12:48:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[12:48:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[12:48:40] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 17, 66, 508]",
+    "[12:48:40] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 17, 65, 508]",
+    "[12:48:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[12:48:41] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 14, 65, 501]",
+    "[12:48:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[12:48:41] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Dig in for the night: clear 15, 65, 501]",
+    "[12:48:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[12:48:41] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Dig in for the night: clear 14, 65, 494]",
+    "[12:48:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider the way it came]",
+    "[12:48:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk the way it came]",
+    "[12:48:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[12:48:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[12:48:45] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from husk]",
+    "[12:48:45] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[12:48:45] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [from factionCandidates:9263]"
+  ]
+}

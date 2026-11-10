@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 43234,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    70,
+    65,
+    90
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.377257963640787,
+    8.0,
+    16.91343925517434
+  ],
+  "yaw": -816.9142,
+  "pitch": 13.545357,
+  "health": 11.833332,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 5
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 19234,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Spider",
+  "ticks": 1200,
+  "log": [
+    "[12:16:01] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[12:16:01] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear 54, 76, 57]",
+    "[12:16:02] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear 54, 75, 57]",
+    "[12:16:02] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear 54, 74, 57]",
+    "[12:16:02] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[12:16:03] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear 55, 75, 57]",
+    "[12:16:04] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[12:16:05] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[12:16:06] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+    "[12:16:07] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[12:16:07] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[12:16:11] [Server thread/INFO]: Echo native_goto COMPLETED [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+    "[12:16:13] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]"
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 72781,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    261,
+    53,
+    458
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.305477481436412,
+    8.36683587509112,
+    16.27135953362557
+  ],
+  "yaw": 369.6687,
+  "pitch": 1.3601749,
+  "health": 7.5,
+  "food": 9,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 9
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 6
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 781,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from drowned",
+  "task": "Get out of the water: to dry ground",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Drowned",
+  "ticks": 1200,
+  "log": [
+    "[14:00:11] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[14:00:11] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[14:00:12] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[14:00:14] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 270, 63, 482 is blocked [Back off from zombie]",
+    "[14:00:15] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:00:15] [Server thread/INFO]: Kindred native_fight BLOCKED: Lost sight of the target [Fight zombie]",
+    "[14:00:16] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:00:16] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:00:16] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:00:16] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:00:19] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 271, 63, 482 is blocked [Back off from zombie]",
+    "[14:00:20] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:00:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:00:21] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:00:23] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 285, 63, 471 is blocked [Back off from zombie]",
+    "[14:00:24] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:00:25] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight drowned]",
+    "[14:00:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[14:00:26] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from drowned the way it came]",
+    "[14:00:27] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Get out of the water: to dry ground]"
+  ]
+}
