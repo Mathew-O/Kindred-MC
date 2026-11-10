@@ -23,13 +23,6 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
-## The toss-cap staging never sets the server's tick back (F-22c55) — 10 November 2026 (`claude/ci-green-1110-tossback`)
-
-- **[F-22c55](evidence/F-22c55.md):** the day-end staging moves the tick only forward (fixture only; #139's run 42827017264: set
-  behind the tick in a day's last 55, a live runtime refused it and the whole GameTest server stopped).
-  - The copy begun in those ticks: with the old staging the server stops, "Backward tick: 23946 < 23971"; with the fix 3 of 3.
-  - `NativeTrustGameTests`, 3 runs: 9 of 9 each. No product code changed.
-
 ## The autonomous log mine read as it happens (F-22c52) — 10 November 2026 (`claude/ci-green-1110-minelatch`)
 
 - **[F-22c52](evidence/F-22c52.md):** the fixture takes the mine's completion, charged, and its one verified record on the tick
