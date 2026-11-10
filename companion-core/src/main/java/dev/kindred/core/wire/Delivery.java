@@ -34,7 +34,9 @@ public record Delivery(Message message, Optional<Refusal> refused, List<Told> to
         /** The same message on the same scope within its dedupe window. */
         DUPLICATE,
         /** The channel's lines for this minute are spent. */
-        BUDGET
+        BUDGET,
+        /** A state kind that is not a player's own record of itself (a person's, the server's, or words). */
+        NOT_STATE
     }
 
     /** What an AI receiver now knows, and how. */
