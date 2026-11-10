@@ -45,6 +45,9 @@ public final class NativeDeepPortalGameTests implements FabricGameTest {
                     // Raised clear of the world's floor, so fifty down is still above it.
                     BlockPos o = origin[0] = f.player().getBlockPos().up(105).toImmutable();
                     int floor = o.getY() - 100; // the stair's foot, the tunnel and the chamber
+                    // Put back as the test ends, passed or failed: left standing, the block shut the tests placed under
+                    // it from the sky (the pit climb's "back up under open sky" failed after it, 2 of 2).
+                    FixtureGround.keep(context, new BlockPos(o.getX() - 3, floor - 1, o.getZ() - 3), new BlockPos(o.getX() + 136, o.getY() + 3, o.getZ() + 3));
                     for (int x = -3; x <= 136; x++) for (int z = -3; z <= 3; z++) {
                         for (int y = floor - 1; y <= o.getY() - 1; y++) world.setBlockState(new BlockPos(o.getX() + x, y, o.getZ() + z), Blocks.STONE.getDefaultState());
                         for (int y = o.getY(); y <= o.getY() + 3; y++) world.setBlockState(new BlockPos(o.getX() + x, y, o.getZ() + z), Blocks.AIR.getDefaultState());
