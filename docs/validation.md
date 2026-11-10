@@ -3561,6 +3561,12 @@ After the block's first merge from main, CI on PR #25 found:
   ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
   `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
 
+- **[F-22c43](evidence/F-22c43.md):** cattle loose in the pasture keep out of its way in, behind a door and a fence; the
+  pen's gate shut while the next is fetched (product; #98's run 42574813864: the player hemmed in under the pasture's
+  east wall by its own cows, "Both cows penned: 0").
+  - The new fixture (a cow following wheat toward the way in): 0 of 3 before, as CI; 3 of 3 after. `CompoundsTest`,
+    `ConstructionPlanner*`, `Ranch*` pass. `NativeCompoundGameTests` 7 of 7 (the pasture build 3 of 3);
+    `NativeRanchGameTests`, 3 runs, 3 of 3 each.
 - **[F-22c44](evidence/F-22c44.md):** a pasture doorway left a block short is shut from the block's own drop, picked up
   where it lies (product; #101's run 42584569435: "Nothing in hand to place", a plank short, for good).
   - The staged fixture (a doorway plank left lying): 0 of 3 before, as CI; 3 of 3 after.
