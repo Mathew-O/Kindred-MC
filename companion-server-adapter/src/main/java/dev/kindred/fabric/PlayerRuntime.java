@@ -551,6 +551,12 @@ final class PlayerRuntime {
         setFactionOf(this::factionKey);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         wire.onState(peerRadio::teamState); // F-34c: a teammate's update into the receiver's ledger, and nowhere else.
+        // F-34c: a match's titles to an AI player in it as the server's word to it alone; a person has them on screen.
+        presenter.onShown((bodyId, title) -> {
+            var body = server.getPlayerManager().getPlayer(bodyId);
+            UUID ai = body == null ? null : aiPlayerOf(body);
+            if (ai != null) dev.kindred.core.wire.MatchTitles.of(ai, title).ifPresent(wire::send);
+        });
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
         outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
