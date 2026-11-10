@@ -1,0 +1,276 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 93116,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -73,
+    33,
+    -51
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.400576615229326,
+    8.0,
+    16.624960772058046
+  ],
+  "yaw": 269.55646,
+  "pitch": 14.41331,
+  "health": 5.333332,
+  "food": 8,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 12
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 11
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 56
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 31
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 57
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 28
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 17
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 4
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 3
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:spider_eye",
+        "count": 1
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 2
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 21116,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: outmatched - Hole up: back into the passage",
+  "task": "Hole up: back into the passage",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE, TORCH_AS_YOU_GO]",
+  "cause": "Echo was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[02:54:59] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -50, 36, -21 [Walk to coal ore at -50, 36, -21]",
+    "[02:54:59] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at -56, 37, -8]",
+    "[02:55:00] [Server thread/INFO]: Echo native_fight COMPLETED [Fight spider]",
+    "[02:55:00] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -75, 44, -18 [Walk to iron ore at -75, 44, -18]",
+    "[02:55:00] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[02:55:02] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 26, 34, -167]",
+    "[02:55:03] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+    "[02:55:03] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[02:55:03] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[02:55:03] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+    "[02:55:04] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[02:55:04] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[02:55:04] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[02:55:04] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:55:05] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:55:06] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+    "[02:55:07] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:55:08] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+    "[02:55:08] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:55:08] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Hole up: back into the passage]"
+  ]
+}

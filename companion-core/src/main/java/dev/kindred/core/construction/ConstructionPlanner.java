@@ -205,6 +205,14 @@ public final class ConstructionPlanner {
             var tops = scaffoldTops(site, scaffold, feet);
             var down = takeDown(site, tops, feet, wanted, box, walk, "Scaffolding down");
             if (down.isPresent()) return down.get();
+            // A column left too high to take down from the ground, its taking down cut short (a fall off it), is reached
+            // as a block to place is: from the top of a scaffold beside it. A builder fallen off its column three blocks
+            // into a hollow climbed back out to a column four high, and its top was "out of reach to take down" eight
+            // times, the build stopped (#86's CI, run 42566156809; #78's) (F-22c40).
+            for (Pos high : tops) {
+                var up = scaffoldToBreak(site, high, feet, wanted, box, walk);
+                if (up.isPresent()) return up.get();
+            }
             if (!tops.isEmpty()) return Step.blockedAt(tops.getFirst(), "Scaffolding at " + tops.getFirst() + " is out of reach to take down");
             return Step.done();
         }
@@ -352,6 +360,45 @@ public final class ConstructionPlanner {
             if ((dy == 0 || dy == 1) && Math.abs(door.x() - ground.x()) + Math.abs(door.z() - ground.z()) == 1) return true;
         }
         return false;
+    }
+
+    /**
+     * A scaffold column to stand on to break {@code target}, a block of its scaffold out of reach from the ground: as
+     * {@link #scaffold} finds one to place from, just high enough that from its top the block is in reach and in sight.
+     */
+    private static Optional<Step> scaffoldToBreak(BuildSite site, Pos target, Pos feet, Map<Pos, BlockSpec> wanted, Box box, Set<Pos> walk) {
+        Step best = null;
+        double bestCost = Double.MAX_VALUE;
+        for (int dx = -SCAFFOLD_RADIUS; dx <= SCAFFOLD_RADIUS; dx++) for (int dz = -SCAFFOLD_RADIUS; dz <= SCAFFOLD_RADIUS; dz++) {
+            if (dx == 0 && dz == 0) continue;
+            Pos column = new Pos(target.x() + dx, target.y(), target.z() + dz);
+            Pos ground = null;
+            for (int down = 0; down <= MAX_SCAFFOLD + 4; down++) {
+                Pos at = column.add(0, -down, 0);
+                if (site.standable(at)) { ground = at; break; }
+                if (site.cell(at).map(c -> !c.passable()).orElse(true)) break;
+            }
+            if (ground == null || !walk.contains(ground) || doorStep(ground, wanted)) continue;
+            for (int height = 1; height <= Math.min(MAX_SCAFFOLD, target.y() - ground.y()); height++) {
+                boolean free = true;
+                var raised = new HashMap<Pos, Cell>();
+                for (int h = 0; h <= height + 1 && free; h++) {
+                    Pos at = ground.add(0, h, 0);
+                    free = !wanted.containsKey(at) && site.cell(at).map(Cell::passable).orElse(false);
+                    if (h < height) raised.put(at, SCAFFOLD_CELL);
+                }
+                if (!free) break;
+                double cost = Math.sqrt(ground.distanceSquared(feet)) + (box.inside(ground) ? 6 : 0) + height;
+                if (cost >= bestCost) break;
+                Pos top = ground.add(0, height, 0);
+                if (stanceToBreak(site.with(raised), target, top, wanted, box, Set.of(top)).isEmpty()) continue;
+                bestCost = cost;
+                best = new Step(Kind.SCAFFOLD, target, null, null, ground, null, null, null, 0, 0, height,
+                        "Scaffold " + height + " up to take down " + target);
+                break;
+            }
+        }
+        return Optional.ofNullable(best);
     }
 
     /**
