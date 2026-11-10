@@ -14,10 +14,14 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
   `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
   `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
-  touches what a player decides runs `tools/corpus/gate.sh` (three runs) in its own container. It fails when a scene that
-  passed 3 of 3 in `tools/corpus/baseline.json` (the last three runs on main) fails 2 of 3. The daily number is the
-  report's pass rate over three runs on main: passing, failing and intermittent, an intermittent scene never a pass,
-  and staged scenes listed apart. A scene is never removed or loosened to pass the gate.
+  touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
+  flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
+  run alone ×3 on the branch and ×3 on main's tip (`KINDRED_CORPUS_ONLY`). It blocks only if the branch fails it 2 of 3
+  or more and main passes it 2 of 3 or more; otherwise it is cleared, and the report lists both. The baseline is six
+  runs on main's tip, recorded with its sha: pass is 6 of 6, fail is 0 of 6, anything else intermittent. It is renewed
+  at least once a day. The daily number is the baseline's pass rate: passing, failing and intermittent, an intermittent
+  scene never a pass, and staged scenes and each game mode listed apart. A scene is never removed or loosened to pass
+  the gate.
 - **Death replays (F-27).** A death captured in a run (`replay.snbt` and `replay.json` under
   `kindred/replays/<world>/<player>-<tick>/`, or a seed's `replays/` folder from `run.py`) becomes a test under the
   gametest resources: the structure as `data/kindred_gametest/gametest/structure/replays/<id>.snbt` and the state as
@@ -30,6 +34,16 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 ## Entries by ID
 
 - (none yet)
+
+## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
+
+- **[F-22c45](evidence/F-22c45.md):** taking its scaffold down, the last block down a hollow is taken down from the hollow's floor when a
+  scaffold of its own blocks takes it back out (product; #121's run 42750254641: "out of reach to take down" until the build stopped).
+  - `ConstructionPlannerTest`'s new case, CI's end state staged: fails without the change with CI's message, passes with it; none to
+    spare and water in the way stay refused. `neverABreakFromWhereItCouldNotWalkBackToTheBuild` unchanged. 21 of 21.
+  - Build, house, life-first, seed-build and base classes, 3 runs: 21, 22 and 22 of 22, the new path firing in none (the one failure
+    the life-first cabin's door, another intermittent).
+  - `./gradlew build`: green, JUnit 1,113 tests, 0 failures, 7 skipped.
 
 ## The autonomous log mine read as it happens (F-22c52) — 10 November 2026 (`claude/ci-green-1110-minelatch`)
 
