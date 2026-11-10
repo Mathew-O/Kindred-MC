@@ -16,6 +16,16 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## A mob in reach stops the badly hurt goal's work (F-25c4dd) — 10 November 2026 (`claude/survival-1110-cornered`)
+
+- **[F-25c4dd](evidence/F-25c4dd.md):** a mob on foot in reach stops the goal's running work whatever the player's health (product;
+  `ReplayGameTests`' `echo-73670` on main `335da88`: the hungry climb dug on by hand with a zombie on the player).
+  - The new fixture in `NativePortalCampaignGameTests` (staged, as it says): 0 of 3 without the fix, 3 of 3 with it.
+  - Thirteen classes that fight, take cover, shelter and climb, with `ReplayGameTests`, 3 runs: 131 of 131 each.
+  - `ReplayGameTests`, 6 runs alone and in the 3 class runs: `echo-73670` lived 27 of 27 with the fix; on main, 11 of 12 in 4 runs (the
+    replay's figure), 100 of 102 over every run here. Too few deaths to tell the two apart.
+  - `./gradlew build`: green, JUnit 1,109 tests, 0 failures, 7 skipped.
+
 ## Cover kept from a mob (F-25c4cy) — 9 November 2026 (`claude/cover-climb-1109`)
 
 - **[F-25c4cy](evidence/F-25c4cy.md):** its own cover from a mob, standing with a living hostile mob within six blocks, is
