@@ -1,0 +1,135 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 114087,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    1,
+    65,
+    18
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.984157297200653,
+    8.0,
+    16.716572806483015
+  ],
+  "yaw": 464.46207,
+  "pitch": 18.159489,
+  "health": 9.0,
+  "food": 3,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:pumpkin",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 11
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 4
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 31
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 2
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 4
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 18087,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "STRONGHOLD",
+  "stage": "Wood: fight back - Back off from zombie the way it came (tried elsewhere 6 times)",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[07:16:25] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:16:26] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:16:27] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[07:16:27] [Server thread/INFO]: Kindred native_place BLOCKED: Another faction\u0027s land, or a safe zone [Take cover from skeleton]",
+    "[07:16:27] [Server thread/INFO]: Kindred native_place BLOCKED: Another faction\u0027s land, or a safe zone [Take cover from skeleton]",
+    "[07:16:29] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[07:16:30] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from skeleton]",
+    "[07:16:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+    "[07:16:32] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:16:32] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[07:16:34] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from spider the way it came]",
+    "[07:16:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+    "[07:16:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from creeper]",
+    "[07:16:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[07:16:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[07:16:39] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[07:16:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[07:16:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[07:16:42] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[07:16:42] [Server thread/INFO]: Kindred died at 17, 73, 34: Kindred was slain by Zombie (tick 114087, night, under cover, hunger 3, armour 0, holding dirt, no shield; doing \"Back off from zombie the way it came\" in \"Wood: fight back - Back off from zombie the way it came (tried elsewhere 6 times)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

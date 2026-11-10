@@ -1,0 +1,93 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 13799,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    95,
+    44,
+    -23
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.487462362297336,
+    8.654236926055404,
+    16.14302988680887
+  ],
+  "yaw": 318.5842,
+  "pitch": -4.9982266,
+  "health": 17.5,
+  "food": 18,
+  "saturation": 0.0,
+  "air": 20,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 54
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 4
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 13799,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "STRONGHOLD",
+  "stage": "Wood: Get out of the water: up for air",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol drowned",
+  "ticks": 1200,
+  "log": [
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:03] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[06:54:04] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required"
+  ]
+}

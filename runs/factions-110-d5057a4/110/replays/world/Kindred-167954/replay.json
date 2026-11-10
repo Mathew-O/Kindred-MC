@@ -1,0 +1,100 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 167954,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -89,
+    65,
+    -24
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.327086558910764,
+    8.753199980521202,
+    16.968743429848363
+  ],
+  "yaw": 345.5738,
+  "pitch": 17.966305,
+  "health": 10.5,
+  "food": 1,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 29
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 53
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 23954,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "STRONGHOLD",
+  "stage": "Wood: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[07:27:33] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:34] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:35] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:35] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:36] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:37] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:37] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:38] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:39] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:27:39] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -83, 92, -4 [Climb toward the surface for logs: back the way it came]",
+    "[07:27:39] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -86, 76, -6]",
+    "[07:27:39] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+    "[07:27:39] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -83, 92, -3 [Climb toward the surface for logs: back the way it came]",
+    "[07:27:39] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -86, 77, -6]",
+    "[07:27:39] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:27:40] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for logs: back the way it came]",
+    "[07:27:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[07:27:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[07:27:43] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[07:27:43] [Server thread/INFO]: Kindred died at -73, 73, -8: Kindred was slain by Zombie (tick 167954, day, under the sky, hunger 0, armour 0, holding dirt, no shield; doing \"Back off from zombie the way it came\" in \"Wood: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

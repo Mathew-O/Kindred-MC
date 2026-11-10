@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 187246,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    62,
+    55,
+    -189
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.384162437774023,
+    8.49520087700592,
+    16.68521212992607
+  ],
+  "yaw": -470.34937,
+  "pitch": 18.159483,
+  "health": 6.2499914,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 19246,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "STRONGHOLD",
+  "stage": "Wood: fight back - Back off from skeleton the way it came",
+  "task": "Back off from skeleton the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[SHELTER_EARLY]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+    "[07:31:39] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 60, 94, -220",
+    "[07:31:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[07:31:41] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+    "[07:31:41] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[07:31:41] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[07:31:42] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[07:31:42] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 88, 65, -219",
+    "[07:31:42] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+    "[07:31:42] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 89, 69, -165 [Back off from skeleton]",
+    "[07:31:44] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+    "[07:31:44] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[07:31:45] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from skeleton the way it came]"
+  ]
+}
