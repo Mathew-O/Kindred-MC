@@ -1,0 +1,205 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 88974,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -24,
+    19,
+    -38
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.373690381617163,
+    8.0,
+    16.477917350461723
+  ],
+  "yaw": -78.21444,
+  "pitch": 4.163606,
+  "health": 20.0,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [
+    {
+      "id": "minecraft:hunger",
+      "amplifier": 0,
+      "duration": 547
+    }
+  ],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 38
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 36
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 23
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 18
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 9
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 31
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 7
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 16974,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Take cover from skeleton",
+  "task": "Rest to heal",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[04:49:10] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -68, 31, -35]",
+    "[04:49:10] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -67, 31, -36]",
+    "[04:49:11] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -68, 31, -36]",
+    "[04:49:11] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -67, 32, -36]",
+    "[04:49:13] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -68, 32, -36]",
+    "[04:49:13] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -68, 32, -35]",
+    "[04:49:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Back to where it saw iron ore at -67, 29, -11]",
+    "[04:49:16] [Server thread/INFO]: Kindred native_goto COMPLETED [Back to where it saw iron ore at -47, 31, -22]",
+    "[04:49:21] [Server thread/INFO]: Kindred native_goto CANCELLED: In deep water; up for air first [Back to where it saw iron ore at -16, 44, -19]",
+    "[04:49:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[04:49:22] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -16, 44, -19 [Walk to iron ore at -16, 44, -19]",
+    "[04:49:22] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -22, 41, -18 [Walk to iron ore at -22, 41, -18]",
+    "[04:49:26] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -13, 28, -32 is blocked [Explore the cave toward iron]",
+    "[04:49:26] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[04:49:29] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -7, 26, -2 is blocked [Back to where it saw iron ore at -7, 26, -2]",
+    "[04:49:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore the cave toward iron]",
+    "[04:49:31] [Server thread/INFO]: Kindred native_swap COMPLETED",
+    "[04:49:31] [Server thread/INFO]: Kindred native_eat COMPLETED",
+    "[04:49:32] [Server thread/INFO]: Kindred native_wait CANCELLED: The player died [Rest to heal]",
+    "[04:49:32] [Server thread/INFO]: Kindred died at -8, 27, -22: Kindred was shot by Skeleton (tick 88974, night, under cover, hunger 19, armour 0, holding rotten_flesh, a shield; doing \"Rest to heal\" in \"Iron: fight back - Take cover from skeleton\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

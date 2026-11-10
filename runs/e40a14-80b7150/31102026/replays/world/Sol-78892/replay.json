@@ -1,0 +1,271 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 78892,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    129,
+    3,
+    271
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.128803512665883,
+    8.0625,
+    16.74414727559156
+  ],
+  "yaw": 1655.4253,
+  "pitch": 18.159489,
+  "health": 3.4766655,
+  "food": 12,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 4
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 33
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:rooted_dirt",
+        "count": 9
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 50
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 2
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 54
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 39
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 32
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 19
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 49
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 9
+        }
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 6892,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[05:50:35] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[05:50:35] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 120, 32, 255]",
+    "[05:50:36] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: clear 120, 31, 254 by hand]",
+    "[05:50:36] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[05:50:37] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:50:37] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[05:50:37] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:50:37] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[05:50:38] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[05:50:38] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:50:38] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[05:50:38] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:50:39] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:50:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:50:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[05:50:43] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 151, 29, 257 is blocked [Back off from zombie the way it came]",
+    "[05:50:43] [Server thread/INFO]: Sol native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from zombie]",
+    "[05:50:44] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[05:50:44] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[05:50:44] [Server thread/INFO]: Sol died at 145, 11, 287: Sol was slain by Zombie (tick 78892, day, under cover, hunger 11, armour 6, holding dirt, no shield; doing \"Back off from zombie the way it came\" in \"Wood: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+  ]
+}

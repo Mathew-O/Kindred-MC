@@ -1,0 +1,284 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 26778,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -95,
+    53,
+    -85
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.471019194151552,
+    8.081177804730714,
+    16.534862376857646
+  ],
+  "yaw": 2288.259,
+  "pitch": -4.9999995,
+  "health": 18.0,
+  "food": 20,
+  "saturation": 1.0,
+  "air": -1,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 18
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 44
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 31
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 6
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cooked_porkchop",
+        "count": 5
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 16
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 61
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 50
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 10
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 2
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 59
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 2778,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: up for air",
+  "task": "Get out of the water: up for air",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred drowned",
+  "ticks": 1200,
+  "log": [
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:09:50] [Server thread/INFO]: Kindred died at -79, 61, -69: Kindred drowned (tick 26778, day, under cover, hunger 17, armour 6, holding bucket, a shield; doing \"Get out of the water: up for air\" in \"Iron: Get out of the water: up for air\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

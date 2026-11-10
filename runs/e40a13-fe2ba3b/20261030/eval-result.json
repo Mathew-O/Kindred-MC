@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1720, "iron_ingot": 4120, "iron_pickaxe": 31260, "obsidian": 87195, "portal_lit": 99149},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 53740, "x": 26, "y": 97, "z": -23, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 480, "stone_tools": 1840, "iron_ingot": 8840, "iron_pickaxe": 26020, "diamond": 29560},
+      "deaths": [
+        {"tick": 106547, "cause": "Sol was shot by Skeleton", "x": 69, "y": -54, "z": -7, "light": 0, "timeOfDay": 10709, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Wood: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 63560, "x": 51, "y": -54, "z": -27, "attempt": 1}, {"tick": 136820, "x": 53, "y": 6, "z": -17, "attempt": 1}, {"tick": 141420, "x": 32, "y": 6, "z": -17, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1020, "stone_tools": 2160, "iron_ingot": 20420, "iron_pickaxe": 33180},
+      "deaths": [
+        {"tick": 60030, "cause": "Echo drowned", "x": 20, "y": 61, "z": 140, "light": 12, "timeOfDay": 12192, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: Get out of the water: up for air (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "Get out of the water: up for air"},
+        {"tick": 130777, "cause": "Echo was blown up by Creeper", "x": 60, "y": 58, "z": 64, "light": 0, "timeOfDay": 10939, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Iron: fight back - Fight creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 55380, "x": 33, "y": 62, "z": 119, "attempt": 1}, {"tick": 59280, "x": 41, "y": 63, "z": 140, "attempt": 2}, {"tick": 79220, "x": -8, "y": 124, "z": -1, "attempt": 1}, {"tick": 83060, "x": -8, "y": 124, "z": 0, "attempt": 2}, {"tick": 99440, "x": -5, "y": 121, "z": -4, "attempt": 3}, {"tick": 103720, "x": -4, "y": 121, "z": -3, "attempt": 4}, {"tick": 107520, "x": -3, "y": 124, "z": -26, "attempt": 5}, {"tick": 123060, "x": -27, "y": 121, "z": -18, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

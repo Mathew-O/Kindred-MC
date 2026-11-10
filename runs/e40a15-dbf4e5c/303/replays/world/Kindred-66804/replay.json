@@ -1,0 +1,267 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 66804,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    71,
+    -19,
+    44
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.0,
+    16.229743741583455
+  ],
+  "yaw": 54.297928,
+  "pitch": -83.977974,
+  "health": 2.5,
+  "food": 12,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 56
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 146
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 12
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 7
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:light_gray_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 48
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 4
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 2
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 12
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 21
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 18804,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from zombie (tried elsewhere 3 times)",
+  "task": "Hole up: recover behind the wall",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[14:26:37] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 135, 17, 13 [Explore the cave toward iron]",
+    "[14:26:37] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 134, 18, 11 [Explore the cave toward iron]",
+    "[14:26:37] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 132, 22, 10 [Explore the cave toward iron]",
+    "[14:26:51] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 40, 69, 36 is blocked [try elsewhere, toward 1, 99, 48]",
+    "[14:26:51] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:26:53] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[14:26:53] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]",
+    "[14:26:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+    "[14:26:55] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[14:26:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:26:55] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 93, -9, 68 is blocked [Back off from zombie]",
+    "[14:26:56] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from zombie]",
+    "[14:26:56] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 22, 78, 44 [try elsewhere, toward 1, 99, 48]",
+    "[14:26:56] [Server thread/INFO]: Kindred native_break COMPLETED [dig toward elsewhere: clear 86, -10, 60]",
+    "[14:26:56] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from zombie]",
+    "[14:26:56] [Server thread/INFO]: Kindred native_break COMPLETED [dig toward elsewhere: clear 86, -10, 60]",
+    "[14:26:56] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from zombie]",
+    "[14:26:56] [Server thread/INFO]: Kindred native_break COMPLETED [dig toward elsewhere: clear 86, -10, 60]",
+    "[14:26:57] [Server thread/INFO]: Kindred native_wait CANCELLED: The player died [Hole up: recover behind the wall]",
+    "[14:26:57] [Server thread/INFO]: Kindred died at 87, -11, 60: Kindred was slain by Zombie (tick 66804, night, under cover, hunger 12, armour 0, holding dirt, no shield; doing \"Hole up: recover behind the wall\" in \"Iron: fight back - Back off from zombie (tried elsewhere 3 times)\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

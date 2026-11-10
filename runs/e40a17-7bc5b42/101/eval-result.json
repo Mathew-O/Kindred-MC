@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 780, "stone_tools": 1460, "iron_ingot": 12840},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2400, "stone_tools": 3040, "iron_ingot": 12020, "iron_pickaxe": 26960},
+      "deaths": [
+        {"tick": 53742, "cause": "Sol was slain by Spider", "x": -370, "y": -3, "z": -157, "light": 0, "timeOfDay": 5904, "dimension": "minecraft:overworld", "hunger": 8, "underSky": false, "stage": "Wood: fight back - Back off from spider the way it came (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 53020, "x": -370, "y": -2, "z": -159, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1580, "stone_tools": 2760, "iron_ingot": 40520, "iron_pickaxe": 102260},
+      "deaths": [
+        {"tick": 5579, "cause": "Echo was slain by Zombie", "x": -366, "y": 39, "z": -107, "light": 0, "timeOfDay": 5741, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 32680, "x": -366, "y": 68, "z": -153, "attempt": 1}, {"tick": 128560, "x": -454, "y": 65, "z": -527, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

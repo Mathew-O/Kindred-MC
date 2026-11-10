@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 40364,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -38,
+    61,
+    -13
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.67486326163811,
+    8.0,
+    16.432118726995036
+  ],
+  "yaw": 54.939606,
+  "pitch": 32.55161,
+  "health": 6.166669,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 16364,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[08:53:38] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:38] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:39] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:39] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:40] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:40] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:40] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:40] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[08:53:40] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -19, 71, -10 [Back off from zombie]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:40] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[08:53:41] [Server thread/INFO]: Echo native_fight CANCELLED: The player died [Fight zombie]",
+    "[08:53:41] [Server thread/INFO]: Echo died at -22, 69, 3: Echo was slain by Zombie (tick 40364, night, under cover, hunger 15, armour 0, holding dirt, no shield; doing \"Fight zombie\" in \"Wood: fight back - Fight zombie\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

@@ -1,0 +1,292 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 38374,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -33,
+    20,
+    -43
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.591911403886954,
+    8.0,
+    16.436709131309563
+  ],
+  "yaw": -127.43034,
+  "pitch": 18.159489,
+  "health": 10.75,
+  "food": 19,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [
+    {
+      "id": "minecraft:hunger",
+      "amplifier": 0,
+      "duration": 240
+    }
+  ],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 43
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 28
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 49
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 22
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 25
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 13
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 37
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 3
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 50
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 20
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 14
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 1
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 8
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:spider_eye",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 16
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 29
+        }
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 14374,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from spider",
+  "task": "Fight spider",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred fell from a high place",
+  "ticks": 1200,
+  "log": [
+    "[14:52:02] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -7, 57, -34 is blocked [Get out of the water: to dry ground]",
+    "[14:52:05] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -2, 57, -37 is blocked [Get out of the water: to dry ground]",
+    "[14:52:08] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -1, 57, -38 is blocked [Get out of the water: to dry ground]",
+    "[14:52:11] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:11] [Server thread/INFO]: Kindred native_fight BLOCKED: The way to the target is unsafe [Fight zombie]",
+    "[14:52:14] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -19, 49, -26 is blocked [Get out of the water: to dry ground]",
+    "[14:52:16] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -21, 50, -29 is blocked [Get out of the water: to dry ground]",
+    "[14:52:18] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -21, 50, -28 is blocked [Get out of the water: to dry ground]",
+    "[14:52:19] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:21] [Server thread/INFO]: Kindred native_fight BLOCKED: The way to the target is unsafe [Fight spider]",
+    "[14:52:22] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:23] [Server thread/INFO]: Kindred native_fight CANCELLED: In deep water; up for air first [Fight zombie]",
+    "[14:52:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[14:52:24] [Server thread/INFO]: Kindred native_swap COMPLETED",
+    "[14:52:25] [Server thread/INFO]: Kindred native_eat COMPLETED",
+    "[14:52:25] [Server thread/INFO]: Kindred native_wait COMPLETED [Rest to heal]",
+    "[14:52:26] [Server thread/INFO]: Kindred native_wait COMPLETED [Rest to heal]",
+    "[14:52:26] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -22, 42, -17 [Walk to coal ore at -22, 42, -17]",
+    "[14:52:27] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to coal ore at -21, 28, -18]",
+    "[14:52:28] [Server thread/INFO]: Kindred native_eat COMPLETED"
+  ]
+}

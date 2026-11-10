@@ -1,0 +1,305 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 108773,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    125,
+    23,
+    138
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.872293792970652,
+    8.0,
+    16.618042139953445
+  ],
+  "yaw": 105.94357,
+  "pitch": 17.02416,
+  "health": 17.975,
+  "food": 6,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 56
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 8
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 5
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 39
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 23
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 45
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:rooted_dirt",
+        "count": 5
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 39
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:gunpowder",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 26
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 62
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 14
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 12
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 7
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 7
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 12773,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Take cover from skeleton (tried elsewhere 5 times)",
+  "task": "Back off from skeleton",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[14:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[14:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[14:04:56] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for logs]",
+    "[14:04:59] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for logs]",
+    "[14:04:59] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[14:04:59] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[14:04:59] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[14:04:59] [Server thread/INFO]: Sol native_break COMPLETED [Cut through east for logs: clear 135, 46, 141]",
+    "[14:05:00] [Server thread/INFO]: Sol native_break COMPLETED [Cut through east for logs: clear 135, 45, 141]",
+    "[14:05:00] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[14:05:01] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for logs]",
+    "[14:05:03] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[14:05:06] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for logs]",
+    "[14:05:07] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[14:05:08] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[14:05:09] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[14:05:09] [Server thread/INFO]: Sol native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[14:05:10] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+    "[14:05:10] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from skeleton]",
+    "[14:05:10] [Server thread/INFO]: Sol died at 141, 31, 154: Sol was shot by Skeleton (tick 108773, night, under cover, hunger 6, armour 6, holding stone_sword, no shield; doing \"Back off from skeleton\" in \"Iron: fight back - Take cover from skeleton (tried elsewhere 5 times)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

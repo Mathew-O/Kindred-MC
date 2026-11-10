@@ -1,0 +1,47 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1720, "stone_tools": 2140, "iron_ingot": 8400, "iron_pickaxe": 60600},
+      "deaths": [
+        {"tick": 79210, "cause": "Kindred was shot by Skeleton", "x": 84, "y": 49, "z": 366, "light": 4, "timeOfDay": 7372, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 27440, "x": 56, "y": 44, "z": 203, "attempt": 1}, {"tick": 131180, "x": 16, "y": 70, "z": 403, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 7120, "stone_tools": 8900, "iron_ingot": 18080},
+      "deaths": [
+        {"tick": 78730, "cause": "Sol was slain by Zombie", "x": 145, "y": 11, "z": 287, "light": 8, "timeOfDay": 6892, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3560, "stone_tools": 5060, "iron_ingot": 19600, "iron_pickaxe": 56720, "obsidian": 70607},
+      "deaths": [
+        {"tick": 120290, "cause": "Echo suffocated in a wall", "x": 163, "y": 65, "z": 242, "light": 0, "timeOfDay": 452, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall at 163, 66, 243 (tried elsewhere 6 times)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 74700, "x": 178, "y": -54, "z": 259, "attempt": 1}, {"tick": 79040, "x": 178, "y": -53, "z": 263, "attempt": 2}, {"tick": 82740, "x": 178, "y": -53, "z": 262, "attempt": 3}, {"tick": 90700, "x": 178, "y": -54, "z": 259, "attempt": 4}, {"tick": 94380, "x": 178, "y": -54, "z": 262, "attempt": 5}, {"tick": 99440, "x": 178, "y": -54, "z": 262, "attempt": 6}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

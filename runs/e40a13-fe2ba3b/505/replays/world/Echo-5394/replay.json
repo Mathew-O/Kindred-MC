@@ -1,0 +1,169 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 5394,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -32,
+    20,
+    -41
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.146829031490064,
+    8.0,
+    16.570444751898787
+  ],
+  "yaw": 95.37698,
+  "pitch": -4.3131533,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 2.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 5
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 20
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 6
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 56
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 40
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 6
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 5394,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: outmatched - Hole up: recover behind the wall",
+  "task": "Hole up: recover behind the wall",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was doomed to fall by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[02:11:33] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a block]",
+    "[02:11:33] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[02:11:34] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward iron: step down]",
+    "[02:11:34] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -10, 55, -22 [Back off from skeleton]",
+    "[02:11:36] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight zombie]",
+    "[02:11:37] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -18, 57, -20]",
+    "[02:11:37] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: step down]",
+    "[02:11:37] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -17, 55, -20]",
+    "[02:11:37] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+    "[02:11:37] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -17, 58, -20 [Hole up: back into the passage]",
+    "[02:11:37] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[02:11:37] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: step down]",
+    "[02:11:37] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward iron: clear -16, 54, -20]",
+    "[02:11:37] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[02:11:37] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -16, 54, -20]",
+    "[02:11:38] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at -31, 55, -14]",
+    "[02:11:38] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -14, 52, -27 is blocked [Back off from zombie]",
+    "[02:11:38] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -31, 55, -14 [Back to where it saw iron ore at -31, 55, -14]",
+    "[02:11:38] [Server thread/INFO]: Echo native_wait CANCELLED: The player died [Hole up: recover behind the wall]",
+    "[02:11:38] [Server thread/INFO]: Echo died at -16, 28, -25: Echo was doomed to fall by Skeleton (tick 5394, day, under cover, hunger 20, armour 0, holding stone_pickaxe, no shield; doing \"Hole up: recover behind the wall\" in \"Iron: outmatched - Hole up: recover behind the wall\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 66039,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    40,
+    30,
+    -16
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.0,
+    16.817060933215537
+  ],
+  "yaw": 27.999664,
+  "pitch": 27.272825,
+  "health": 2.2666645,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [
+    {
+      "id": "minecraft:hunger",
+      "amplifier": 0,
+      "duration": 37
+    }
+  ],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 36
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 113
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 51
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 12
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 5
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 6
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 10
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 24
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 4
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 38
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 32
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 5
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 25
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 7
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 25
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 18039,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight spider",
+  "task": "Rest to heal",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Sol was slain by Spider",
+  "ticks": 1200,
+  "log": [
+    "[08:17:35] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[08:17:36] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[08:17:36] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to iron ore at 28, 25, 17]",
+    "[08:17:37] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at 28, 25, 17]",
+    "[08:17:37] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at 28, 25, 18]",
+    "[08:17:38] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Mine iron ore at 27, 25, 18]",
+    "[08:17:39] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[08:17:39] [Server thread/INFO]: Sol native_swap COMPLETED",
+    "[08:17:39] [Server thread/INFO]: Sol native_eat COMPLETED",
+    "[08:17:41] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[08:17:41] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[08:17:42] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider the way it came]",
+    "[08:17:43] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[08:17:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+    "[08:17:44] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+    "[08:17:44] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+    "[08:17:45] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 55, 31, 3 is blocked [Back off from spider]",
+    "[08:17:45] [Server thread/INFO]: Sol native_swap COMPLETED",
+    "[08:17:45] [Server thread/INFO]: Sol native_eat COMPLETED",
+    "[08:17:46] [Server thread/INFO]: Sol native_wait CANCELLED: The player died [Rest to heal]"
+  ]
+}

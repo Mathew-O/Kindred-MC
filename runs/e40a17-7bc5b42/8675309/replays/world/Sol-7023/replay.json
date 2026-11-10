@@ -1,0 +1,186 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 7023,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    0,
+    31,
+    48
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": -90.0,
+  "pitch": 0.16973405,
+  "health": 17.73465,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 51
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 13
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 13
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 4
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 45
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 5
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 7023,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[06:50:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 14, 44, 64]",
+    "[06:50:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 14, 43, 64]",
+    "[06:50:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 14, 42, 64]",
+    "[06:50:13] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:50:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 15, 43, 64]",
+    "[06:50:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 15, 42, 64]",
+    "[06:50:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 15, 41, 64]",
+    "[06:50:13] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:50:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 16, 41, 64]",
+    "[06:50:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 16, 40, 64]",
+    "[06:50:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 16, 39, 64]",
+    "[06:50:14] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:50:14] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Dig down toward iron: clear 17, 38, 64]",
+    "[06:50:14] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal 16, 41, 64]",
+    "[06:50:14] [Server thread/INFO]: Sol native_place COMPLETED [Hole up: seal 15, 40, 64]",
+    "[06:50:16] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[06:50:18] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[06:50:19] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[06:50:19] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 14, 39, 54 [Back off from zombie]",
+    "[06:50:20] [Server thread/INFO]: Sol native_eat COMPLETED"
+  ]
+}

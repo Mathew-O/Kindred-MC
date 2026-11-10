@@ -1,0 +1,325 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 72386,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    167,
+    58,
+    377
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.0,
+    16.69999998807907
+  ],
+  "yaw": -0.002766076,
+  "pitch": 45.121735,
+  "health": 18.108334,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 11
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 38
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 51
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 3
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 3
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:netherrack",
+        "count": 5
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 42
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 27
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 63
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 22
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 41
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 4
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:moss_carpet",
+        "count": 3
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 16
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 18
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 16
+        }
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 386,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from husk the way it came",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was slain by Husk",
+  "ticks": 1200,
+  "log": [
+    "[07:04:54] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:54] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:54] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:54] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel for water: clear 183, 66, 384]",
+    "[07:04:54] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:55] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel for water: clear 183, 66, 385]",
+    "[07:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:55] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel for water: clear 183, 66, 390]",
+    "[07:04:55] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:56] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel for water: clear 183, 66, 391]",
+    "[07:04:56] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:56] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel for water: clear 183, 66, 392]",
+    "[07:04:56] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:56] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel for water: clear 183, 66, 393]",
+    "[07:04:56] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[07:04:56] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Tunnel for water: clear 183, 66, 394]"
+  ]
+}

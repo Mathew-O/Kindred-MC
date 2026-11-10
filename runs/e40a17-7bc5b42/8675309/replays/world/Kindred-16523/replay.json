@@ -1,0 +1,231 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 16523,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    6,
+    32,
+    57
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.249187078744683,
+    16.69940872035197
+  ],
+  "yaw": -268.5202,
+  "pitch": 11.060944,
+  "health": 3.7666721,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:brown_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 50
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 9
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 22
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 68
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 12
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 17
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 32
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 46
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 7
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 26
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 5
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 16523,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: outmatched - Hole up: back into the passage",
+  "task": "Hole up: back into the passage",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[06:51:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 19, 44, 74]",
+    "[06:51:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:51:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 20, 45, 74]",
+    "[06:51:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 20, 44, 74]",
+    "[06:51:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 20, 43, 74]",
+    "[06:51:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:51:54] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 21, 43, 74]",
+    "[06:51:54] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward iron: clear 21, 42, 74]",
+    "[06:51:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward iron: step down]",
+    "[06:51:54] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+    "[06:51:57] [Server thread/INFO]: Kindred native_fight BLOCKED: The fight broke off [Fight skeleton]",
+    "[06:51:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[06:51:58] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[06:51:58] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[06:51:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[06:51:58] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[06:51:59] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[06:51:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+    "[06:52:00] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Hole up: back into the passage]",
+    "[06:52:00] [Server thread/INFO]: Kindred died at 22, 40, 73: Kindred was shot by Skeleton (tick 16523, night, under cover, hunger 15, armour 0, holding dirt, a shield; doing \"Hole up: back into the passage\" in \"Iron: outmatched - Hole up: back into the passage\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 48414,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    13,
+    19,
+    -184
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.510044988084378,
+    8.823123797363412,
+    16.493742842487677
+  ],
+  "yaw": -690.58875,
+  "pitch": 18.159489,
+  "health": 10.139998,
+  "food": 6,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 122
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 6
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:spruce_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 2
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 18
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 24
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 7
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 13
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 51
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:spider_eye",
+        "count": 2
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 3
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 414,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: to dry ground",
+  "task": "Back off from cave_spider",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Cave Spider",
+  "ticks": 1200,
+  "log": [
+    "[02:43:38] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+    "[02:43:39] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+    "[02:43:39] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]",
+    "[02:43:39] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+    "[02:43:40] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+    "[02:43:40] [Server thread/INFO]: Sol native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait by the furnace]",
+    "[02:43:41] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[02:43:41] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to the workstation]",
+    "[02:43:41] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]",
+    "[02:43:42] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]",
+    "[02:43:42] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]",
+    "[02:43:42] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[02:43:42] [Server thread/INFO]: Sol native_craft COMPLETED [Craft iron pickaxe]",
+    "[02:43:42] [Server thread/INFO]: Sol native_craft COMPLETED [Craft stick]",
+    "[02:43:42] [Server thread/INFO]: Sol native_craft COMPLETED [Craft bucket]",
+    "[02:43:42] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for water: step up]",
+    "[02:43:43] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for water: back the way it came]",
+    "[02:43:44] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight cave_spider]",
+    "[02:43:45] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from cave_spider]",
+    "[02:43:45] [Server thread/INFO]: Sol died at 29, 27, -168: Sol was slain by Cave Spider (tick 48414, day, under cover, hunger 6, armour 6, holding stone_sword, a shield; doing \"Back off from cave_spider\" in \"Iron: Get out of the water: to dry ground\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

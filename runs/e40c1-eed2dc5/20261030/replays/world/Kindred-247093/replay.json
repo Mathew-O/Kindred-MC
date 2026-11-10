@@ -1,0 +1,236 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 247093,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    7,
+    77,
+    19
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.209803888633544,
+    8.0,
+    16.656740618153954
+  ],
+  "yaw": -157.60153,
+  "pitch": 18.159489,
+  "health": 0.19999981,
+  "food": 0,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 15
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 11
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 22
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 38
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 7
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 9
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:coarse_dirt",
+        "count": 20
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 8
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 19
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 16
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 7093,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "End: Prepare: hurt and out of food - Cut through north for animals: clear 23, 87, 34",
+  "task": "Climb toward the surface for food: back the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred hit the ground too hard",
+  "ticks": 1200,
+  "log": [
+    "[15:05:39] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[15:05:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore south for animals]",
+    "[15:05:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore south for animals]",
+    "[15:05:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[15:05:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[15:05:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[15:05:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[15:05:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[15:05:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[15:05:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[15:05:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[15:05:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[15:05:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[15:05:45] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[15:05:46] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[15:05:47] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through north for animals: clear 64, 85, 43]",
+    "[15:05:47] [Server thread/INFO]: Kindred native_break COMPLETED [Cut through north for animals: clear 62, 85, 43]",
+    "[15:05:49] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 63, 84, 15 is blocked [Explore north for animals]",
+    "[15:05:51] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]",
+    "[15:05:51] [Server thread/INFO]: Kindred died at 23, 85, 35: Kindred hit the ground too hard (tick 247093, day, under the sky, hunger 0, armour 0, holding dirt, no shield; doing \"Climb toward the surface for food: back the way it came\" in \"End: Prepare: hurt and out of food - Cut through north for animals: clear 23, 87, 34\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

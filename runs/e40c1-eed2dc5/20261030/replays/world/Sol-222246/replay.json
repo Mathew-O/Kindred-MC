@@ -1,0 +1,322 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 222246,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -10,
+    90,
+    -11
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.58450350417353,
+    8.0,
+    16.184813425198627
+  ],
+  "yaw": -162.10301,
+  "pitch": 18.159489,
+  "health": 1.2750006,
+  "food": 6,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 8
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:flint_and_steel",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 24
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 61
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 5
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:brown_mushroom",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:lead",
+        "count": 2
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:coarse_dirt",
+        "count": 5
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 9
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:white_bed",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 19
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 50
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 35
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 6246,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "End: Prepare: fight back - Back off from creeper",
+  "task": "Explore north for animals",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[15:02:14] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus cobblestone]",
+    "[15:02:15] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus coarse dirt]",
+    "[15:02:15] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 3, 111, 16 [Climb toward the surface for food: back the way it came]",
+    "[15:02:19] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 4, 111, 16 [Climb toward the surface for food: back the way it came]",
+    "[15:02:23] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus cobblestone]",
+    "[15:02:25] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 0, 99, 7 by hand]",
+    "[15:02:25] [Server thread/INFO]: Sol native_pillar COMPLETED [Climb toward the surface for food: pillar up]",
+    "[15:02:25] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[15:02:25] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[15:02:26] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+    "[15:02:26] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -14, 103, 5 [Run from creeper]",
+    "[15:02:27] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[15:02:27] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus wheat seeds]",
+    "[15:02:27] [Server thread/INFO]: Sol native_goto CANCELLED: Falling: the fall to be broken with water [Back off from skeleton the way it came]",
+    "[15:02:27] [Server thread/INFO]: Sol native_clutch COMPLETED",
+    "[15:02:27] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[15:02:27] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[15:02:28] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[15:02:28] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Explore north for animals]",
+    "[15:02:28] [Server thread/INFO]: Sol died at 6, 98, 5: Sol was shot by Skeleton (tick 222246, day, under the sky, hunger 6, armour 6, holding cobblestone, a shield; doing \"Explore north for animals\" in \"End: Prepare: fight back - Back off from creeper\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

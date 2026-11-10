@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 880, "stone_tools": 1700, "iron_ingot": 3500, "iron_pickaxe": 26620},
+      "deaths": [
+        {"tick": 35604, "cause": "Kindred was slain by Zombie", "x": 27, "y": 6, "z": -16, "light": 0, "timeOfDay": 11766, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 14400, "x": 33, "y": 19, "z": -44, "attempt": 1}, {"tick": 18620, "x": 33, "y": 20, "z": -46, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1800, "stone_tools": 2640, "iron_ingot": 6280, "iron_pickaxe": 48320, "obsidian": 141482},
+      "deaths": [
+        {"tick": 100980, "cause": "Sol was slain by Zombie", "x": 8, "y": -15, "z": -116, "light": 0, "timeOfDay": 5142, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Wood: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 87520, "x": -23, "y": -43, "z": -152, "attempt": 1}, {"tick": 113320, "x": -129, "y": 17, "z": 92, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 5940, "stone_tools": 7300, "iron_ingot": 8960, "iron_pickaxe": 19340, "obsidian": 87192, "portal_lit": 109724},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 59620, "x": -256, "y": 64, "z": -241, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

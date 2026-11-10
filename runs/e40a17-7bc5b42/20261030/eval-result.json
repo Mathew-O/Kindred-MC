@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2020, "iron_ingot": 9020, "iron_pickaxe": 40340, "obsidian": 84504, "portal_lit": 86507},
+      "deaths": [
+        {"tick": 72233, "cause": "Kindred was blown up by Creeper", "x": 84, "y": 117, "z": 13, "light": 15, "timeOfDay": 395, "dimension": "minecraft:overworld", "hunger": 7, "underSky": true, "stage": "Iron: fight back - Fight creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 34920, "x": 52, "y": 18, "z": -66, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 680, "stone_tools": 2280, "iron_ingot": 10420, "iron_pickaxe": 18880, "obsidian": 90565},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 119680, "x": 54, "y": -56, "z": 195, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 2520, "iron_ingot": 9040, "iron_pickaxe": 32720},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 97960, "x": 90, "y": -54, "z": 150, "attempt": 1}, {"tick": 122440, "x": 104, "y": -54, "z": 124, "attempt": 1}, {"tick": 130580, "x": 110, "y": -54, "z": 165, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

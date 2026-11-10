@@ -1,0 +1,51 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 320, "stone_tools": 1100, "iron_ingot": 3920, "iron_pickaxe": 68380},
+      "deaths": [
+        {"tick": 102828, "cause": "Kindred was slain by Spider", "x": 44, "y": 93, "z": -41, "light": 14, "timeOfDay": 6990, "dimension": "minecraft:overworld", "hunger": 0, "underSky": false, "stage": "Iron: fight back - Back off from spider the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 113772, "cause": "Kindred was slain by Spider", "x": 22, "y": 77, "z": 39, "light": 4, "timeOfDay": 17934, "dimension": "minecraft:overworld", "hunger": 10, "underSky": true, "stage": "Iron: fight back - Back off from spider", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 246931, "cause": "Kindred hit the ground too hard", "x": 23, "y": 85, "z": 35, "light": 15, "timeOfDay": 7093, "dimension": "minecraft:overworld", "hunger": 0, "underSky": true, "stage": "End: Prepare: hurt and out of food - Cut through north for animals: clear 23, 87, 34", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 99600, "x": 36, "y": 115, "z": -4, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 860, "stone_tools": 1860, "iron_ingot": 23000, "iron_pickaxe": 48760, "obsidian": 86177, "portal_lit": 87227},
+      "deaths": [
+        {"tick": 222084, "cause": "Sol was shot by Skeleton", "x": 6, "y": 98, "z": 5, "light": 15, "timeOfDay": 6246, "dimension": "minecraft:overworld", "hunger": 6, "underSky": true, "stage": "End: Prepare: fight back - Back off from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 223589, "cause": "Sol hit the ground too hard", "x": -2, "y": 98, "z": 15, "light": 6, "timeOfDay": 7751, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "End: Prepare: hurt and out of food - Climb toward the surface for food: back the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 7380, "x": 24, "y": 97, "z": -21, "attempt": 1}, {"tick": 11460, "x": 24, "y": 97, "z": -20, "attempt": 1}, {"tick": 74040, "x": 196, "y": 68, "z": 45, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 4380, "stone_tools": 5380, "iron_ingot": 16440, "iron_pickaxe": 44940},
+      "deaths": [
+        {"tick": 8858, "cause": "Echo was slain by Zombie", "x": 40, "y": 83, "z": 48, "light": 15, "timeOfDay": 9020, "dimension": "minecraft:overworld", "hunger": 14, "underSky": true, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 238973, "cause": "Echo was slain by Zombie", "x": 91, "y": 90, "z": 56, "light": 10, "timeOfDay": 23135, "dimension": "minecraft:overworld", "hunger": 1, "underSky": false, "stage": "End: Prepare: outmatched - Hole up: back into the passage", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 201600, "x": 25, "y": 88, "z": -7, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

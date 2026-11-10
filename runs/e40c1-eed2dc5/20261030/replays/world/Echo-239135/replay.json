@@ -1,0 +1,312 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 239135,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    75,
+    82,
+    40
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.47723628544979,
+    8.0,
+    16.41516718703071
+  ],
+  "yaw": 257.2428,
+  "pitch": 17.9302,
+  "health": 7.54,
+  "food": 1,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 10
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:flowering_azalea",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:moss_carpet",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 14
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:spruce_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 30
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 25
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:azalea",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 50
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:raw_iron_block",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 7
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 28
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 8
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 11
+        }
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 23135,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "End: Prepare: outmatched - Hole up: back into the passage",
+  "task": "Hole up: back into the passage",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[15:03:26] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:03:26] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 91, 86, 54]",
+    "[15:03:26] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 91, 87, 54]",
+    "[15:03:26] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:03:27] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 91, 87, 55 by hand]",
+    "[15:03:27] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 91, 88, 55]",
+    "[15:03:27] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:03:29] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 92, 88, 55 by hand]",
+    "[15:03:30] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 92, 89, 55 by hand]",
+    "[15:03:30] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:03:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 93, 89, 55 by hand]",
+    "[15:03:31] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:03:31] [Server thread/INFO]: Echo native_place COMPLETED [Place a torch at 93, 90, 54]",
+    "[15:03:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb to find another way: clear 93, 90, 56 by hand]",
+    "[15:03:33] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:04:46] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[15:04:47] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: to the wall]",
+    "[15:04:47] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[15:04:48] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Hole up: back into the passage]",
+    "[15:04:48] [Server thread/INFO]: Echo died at 91, 90, 56: Echo was slain by Zombie (tick 239135, night, under cover, hunger 1, armour 6, holding stone_sword, a shield; doing \"Hole up: back into the passage\" in \"End: Prepare: outmatched - Hole up: back into the passage\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+  ]
+}

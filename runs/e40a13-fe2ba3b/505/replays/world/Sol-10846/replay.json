@@ -1,0 +1,193 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 10846,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -12,
+    17,
+    -43
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.483571568183905,
+    8.410814201626195,
+    16.940845413891118
+  ],
+  "yaw": -359.2187,
+  "pitch": 18.154139,
+  "health": 18.333334,
+  "food": 20,
+  "saturation": 1.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 20
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 20
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 129
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 2
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 9
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 32
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 10846,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from skeleton",
+  "task": "Back off from zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[02:12:20] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_break COMPLETED [Dig for stone: clear 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_break COMPLETED [Dig for stone: clear 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:20] [Server thread/INFO]: Sol native_break COMPLETED [Dig for stone: clear 10, 42, -34]",
+    "[02:12:21] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:21] [Server thread/INFO]: Sol native_break COMPLETED [Dig for stone: clear 10, 42, -34]",
+    "[02:12:21] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:21] [Server thread/INFO]: Sol native_break COMPLETED [Dig for stone: clear 10, 42, -34]",
+    "[02:12:21] [Server thread/INFO]: Sol native_place COMPLETED [Tunnel past liquid toward iron: fill 10, 42, -34]",
+    "[02:12:21] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Dig down toward iron: clear 10, 42, -34]",
+    "[02:12:21] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[02:12:23] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+    "[02:12:24] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie]",
+    "[02:12:24] [Server thread/INFO]: Sol died at 4, 25, -27: Sol was shot by Skeleton (tick 10846, day, under cover, hunger 17, armour 0, holding stone_sword, no shield; doing \"Back off from zombie\" in \"Iron: fight back - Back off from skeleton\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

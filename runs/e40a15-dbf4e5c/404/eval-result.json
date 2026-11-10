@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 500, "stone_tools": 1700, "iron_ingot": 8380, "iron_pickaxe": 110200},
+      "deaths": [
+        {"tick": 35860, "cause": "Kindred was slain by Zombie", "x": 27, "y": 44, "z": -81, "light": 0, "timeOfDay": 12022, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Stone: inventory full - Drop surplus cobblestone", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 20320, "x": 25, "y": 17, "z": -75, "attempt": 1}, {"tick": 64100, "x": 110, "y": 18, "z": -92, "attempt": 1}, {"tick": 97760, "x": 100, "y": 17, "z": -82, "attempt": 1}, {"tick": 122200, "x": 26, "y": 62, "z": -58, "attempt": 1}, {"tick": 136420, "x": 11, "y": 29, "z": -86, "attempt": 2}, {"tick": 143620, "x": 12, "y": 46, "z": -90, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 620, "stone_tools": 2260, "iron_ingot": 9940, "iron_pickaxe": 27480},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 32020, "x": 15, "y": 28, "z": -98, "attempt": 1}, {"tick": 35660, "x": 15, "y": 29, "z": -98, "attempt": 2}, {"tick": 56340, "x": 7, "y": 57, "z": -85, "attempt": 1}, {"tick": 81540, "x": 13, "y": 64, "z": -148, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 580, "stone_tools": 3480, "iron_ingot": 10160, "iron_pickaxe": 24960, "obsidian": 81713, "portal_lit": 83721},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 48640, "x": 17, "y": 47, "z": -55, "attempt": 1}, {"tick": 61000, "x": 46, "y": 46, "z": -64, "attempt": 2}, {"tick": 65460, "x": 37, "y": 33, "z": -66, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

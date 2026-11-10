@@ -1,0 +1,298 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 59004,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -393,
+    24,
+    -183
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.753402417240693,
+    8.176759275064242,
+    16.988106058782932
+  ],
+  "yaw": -196.8335,
+  "pitch": 15.143596,
+  "health": 2.0,
+  "food": 14,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 49
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 81
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 22
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 22
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:dandelion",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 33
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 15
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 9
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 32
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 12
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 47
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 11004,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Fight creeper",
+  "task": "Run from creeper",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Echo was blown up by Creeper",
+  "ticks": 1200,
+  "log": [
+    "[14:37:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 28, -155]",
+    "[14:37:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 29, -155]",
+    "[14:37:33] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[14:37:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 30, -155]",
+    "[14:37:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 29, -154]",
+    "[14:37:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 30, -154]",
+    "[14:37:34] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[14:37:34] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -381, 29, -145 [Back off from zombie]",
+    "[14:37:34] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:37:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 31, -154]",
+    "[14:37:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 30, -153]",
+    "[14:37:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 31, -153]",
+    "[14:37:34] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[14:37:34] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:37:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 32, -153]",
+    "[14:37:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -379, 31, -152]",
+    "[14:37:35] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+    "[14:37:35] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[14:37:36] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Run from creeper]",
+    "[14:37:36] [Server thread/INFO]: Echo died at -377, 32, -167: Echo was blown up by Creeper (tick 59004, day, under cover, hunger 14, armour 0, holding stone_pickaxe, a shield; doing \"Run from creeper\" in \"Iron: fight back - Fight creeper\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

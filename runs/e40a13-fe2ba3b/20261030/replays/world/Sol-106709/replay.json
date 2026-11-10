@@ -1,0 +1,323 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 106709,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    53,
+    -62,
+    -23
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.262279692619742,
+    8.0,
+    16.544077302570706
+  ],
+  "yaw": -91.80984,
+  "pitch": 14.3361225,
+  "health": 2.9249997,
+  "food": 10,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 63
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 7
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 30
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:diamond",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 9
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 32
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:rail",
+        "count": 11
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:enchanted_book",
+        "count": 1,
+        "components": {
+          "minecraft:stored_enchantments": {
+            "levels": {
+              "minecraft:blast_protection": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 10709,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Take cover from skeleton",
+  "task": "Climb toward the surface for food: back the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[00:42:53] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 2, -44, -52 by hand]",
+    "[00:42:54] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[00:42:57] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 2, -43, -52 by hand]",
+    "[00:43:00] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 2, -44, -51 by hand]",
+    "[00:43:03] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 2, -43, -51 by hand]",
+    "[00:43:03] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[00:43:06] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 3, 47, -22 is blocked [Head back up toward home]",
+    "[00:43:07] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[00:43:10] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 40, -52, -42 by hand]",
+    "[00:43:13] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 40, -53, -43 by hand]",
+    "[00:43:14] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[00:43:17] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 56, -52, -31 by hand]",
+    "[00:43:20] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 56, -53, -32 by hand]",
+    "[00:43:21] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[00:43:24] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 67, -52, -15 by hand]",
+    "[00:43:27] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 68, -53, -15 by hand]",
+    "[00:43:28] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[00:43:30] [Server thread/INFO]: Sol native_goto COMPLETED [Head back up toward home]",
+    "[00:43:31] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[00:43:32] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]"
+  ]
+}

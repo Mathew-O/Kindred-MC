@@ -1,0 +1,155 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 53586,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -368,
+    -17,
+    -150
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.308428182429907,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": -165.58289,
+  "pitch": 10.0,
+  "health": 20.0,
+  "food": 19,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 35
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 8
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 5586,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Echo fell from a high place",
+  "ticks": 1200,
+  "log": [
+    "[03:52:39] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear -348, 62, -75]",
+    "[03:52:39] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear -348, 61, -75]",
+    "[03:52:40] [Server thread/INFO]: Echo native_goto COMPLETED [Dig for stone: step down]",
+    "[03:52:40] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear -348, 62, -76]",
+    "[03:52:41] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear -348, 61, -76]",
+    "[03:52:41] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear -348, 60, -76]",
+    "[03:52:41] [Server thread/INFO]: Echo native_goto COMPLETED [Dig for stone: step down]",
+    "[03:52:41] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear -348, 61, -77]",
+    "[03:52:42] [Server thread/INFO]: Echo native_break COMPLETED [Mine coal ore at -349, 61, -76]",
+    "[03:52:43] [Server thread/INFO]: Echo native_break COMPLETED [Mine coal ore at -349, 62, -76]",
+    "[03:52:49] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -352, -1, -104 is blocked [Recover dropped items near -345, -5, -108]",
+    "[03:52:54] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Recover dropped items near -345, -5, -108]",
+    "[03:52:55] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+    "[03:52:55] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -353, 59, -140 [Hole up: back into the passage]",
+    "[03:52:57] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+    "[03:52:57] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -352, 51, -137 is blocked [To where it last saw game at -344, 81, -123: walk on]",
+    "[03:52:57] [Server thread/INFO]: Echo native_wait COMPLETED [Land, then back to where it saw game]",
+    "[03:52:58] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Land, then back to where it saw game]",
+    "[03:52:58] [Server thread/INFO]: Echo native_fight CANCELLED: The player died [Fight zombie]",
+    "[03:52:58] [Server thread/INFO]: Echo died at -352, -9, -134: Echo fell from a high place (tick 53586, day, under cover, hunger 19, armour 0, holding stone_sword, no shield; doing \"Fight zombie\" in \"Iron: fight back - Fight zombie\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

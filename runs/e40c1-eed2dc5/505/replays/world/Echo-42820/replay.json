@@ -1,0 +1,207 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 42820,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -16,
+    24,
+    -94
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.41044664066348,
+    8.0,
+    16.02579747804144
+  ],
+  "yaw": 21.303455,
+  "pitch": 13.003959,
+  "health": 5.366665,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 18
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 20
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 7
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 23
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 12
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 87
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 5
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 3
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 9
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 55
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 18820,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[15:17:02] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal 1, 32, -78]",
+    "[15:17:02] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 2, 32, -89 [Back off from zombie]",
+    "[15:17:02] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[15:17:02] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: wait behind the wall]",
+    "[15:17:02] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from zombie]",
+    "[15:17:02] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from zombie]",
+    "[15:17:02] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for coal: clear 1, 33, -78]",
+    "[15:17:02] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[15:17:02] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -4, 32, -88 [Back off from zombie]",
+    "[15:17:02] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[15:17:03] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for coal: clear 1, 33, -78]",
+    "[15:17:03] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[15:17:03] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal 1, 33, -78]",
+    "[15:17:03] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for coal: clear 0, 33, -79]",
+    "[15:17:03] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for coal: clear 0, 32, -79]",
+    "[15:17:03] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 1, 32, -89 [Back off from zombie]",
+    "[15:17:03] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward coal: to the wall]",
+    "[15:17:03] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+    "[15:17:03] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[15:17:04] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward coal: to the wall]"
+  ]
+}

@@ -1,0 +1,322 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 87839,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    52,
+    29,
+    -21
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.499888685439018,
+    8.0,
+    16.72438471701735
+  ],
+  "yaw": -179.97157,
+  "pitch": 28.137682,
+  "health": 4.9350004,
+  "food": 13,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:brown_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 33
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 22
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 27
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 17
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 50
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 19
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 3
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 13
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 10
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 11
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 15
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 15839,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: stuck in a wall - Dig out of the wall at 68, 38, -5",
+  "task": "Dig out of the wall at 68, 38, -5",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo suffocated in a wall",
+  "ticks": 1200,
+  "log": [
+    "[13:37:16] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 68, 37, 1]",
+    "[13:37:16] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[13:37:17] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 68, 37, 0]",
+    "[13:37:17] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[13:37:17] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 68, 37, -1]",
+    "[13:37:17] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[13:37:17] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 68, 37, -2]",
+    "[13:37:17] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[13:37:17] [Server thread/INFO]: Echo native_discard COMPLETED [Drop surplus cobblestone]",
+    "[13:37:17] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 68, 37, -3]",
+    "[13:37:17] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[13:37:18] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 68, 37, -4]",
+    "[13:37:18] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[13:37:18] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 68, 37, -5]",
+    "[13:37:18] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[13:37:18] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward lava: clear 67, 38, -5]",
+    "[13:37:18] [Server thread/INFO]: Echo native_break CANCELLED: authority lost [Tunnel past liquid toward lava: clear 67, 37, -5]",
+    "[13:37:18] [Server thread/INFO]: Echo native_break COMPLETED [Dig out of the wall at 68, 38, -5]",
+    "[13:37:18] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 68, 38, -5 [Pick up flint]",
+    "[13:37:18] [Server thread/INFO]: Echo native_break CANCELLED: Stuck in a wall; dig out first [Tunnel past liquid toward lava: clear 68, 38, -6]"
+  ]
+}

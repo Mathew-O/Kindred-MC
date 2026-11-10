@@ -1,0 +1,41 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2200, "iron_ingot": 9700, "iron_pickaxe": 16440, "obsidian": 36574, "portal_lit": 38646},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 620, "stone_tools": 2140, "iron_ingot": 10060, "iron_pickaxe": 33820},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 62960, "x": 49, "y": -8, "z": 193, "attempt": 1}, {"tick": 141800, "x": 165, "y": 23, "z": 100, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 2560, "iron_ingot": 10180, "iron_pickaxe": 37180},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 41040, "x": 11, "y": 24, "z": 55, "attempt": 1}, {"tick": 45560, "x": 11, "y": 24, "z": 34, "attempt": 2}, {"tick": 120760, "x": 39, "y": 54, "z": 95, "attempt": 1}, {"tick": 126820, "x": 39, "y": 54, "z": 95, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

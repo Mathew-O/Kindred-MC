@@ -1,0 +1,332 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 69866,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    65,
+    13,
+    145
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.383483954676194,
+    8.0,
+    16.474020368358623
+  ],
+  "yaw": -77.43035,
+  "pitch": 45.149055,
+  "health": 3.6333342,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 22
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 9
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 4
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 8
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 5
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 2
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 25
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:brown_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 4
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 11
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 4
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 9
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 13
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 43
+        }
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:raw_gold",
+        "count": 3
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 22
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 32
+        }
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 21866,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: stuck in a wall - Dig out of the wall at 81, 22, 161",
+  "task": "Dig out of the wall at 81, 22, 161",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Kindred suffocated in a wall",
+  "ticks": 1200,
+  "log": [
+    "[05:20:42] [Server thread/INFO]: Kindred native_place COMPLETED [Place a crafting table]",
+    "[05:20:42] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stone pickaxe]",
+    "[05:20:42] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft oak planks]",
+    "[05:20:42] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stick]",
+    "[05:20:43] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 23, 162]",
+    "[05:20:43] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 80, 23, 162 [Pick up crafting table]",
+    "[05:20:43] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 22, 162]",
+    "[05:20:44] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 21, 162]",
+    "[05:20:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+    "[05:20:44] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 22, 161]",
+    "[05:20:44] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 21, 161]",
+    "[05:20:45] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 20, 161]",
+    "[05:20:45] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+    "[05:20:45] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 21, 160]",
+    "[05:20:45] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 80, 20, 160]",
+    "[05:20:45] [Server thread/INFO]: Kindred native_break CANCELLED: authority lost [Dig down toward lava: clear 80, 19, 160]",
+    "[05:20:45] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 81, 21, 161]",
+    "[05:20:45] [Server thread/INFO]: Kindred native_goto CANCELLED: Stuck in a wall; dig out first [Pick up flint]",
+    "[05:20:46] [Server thread/INFO]: Kindred native_break COMPLETED [Dig out of the wall at 81, 22, 161]",
+    "[05:20:46] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft torch]"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 29848,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -346,
+    34,
+    -123
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.714930155182003,
+    8.921599998474122,
+    16.352140211504206
+  ],
+  "yaw": 116.82353,
+  "pitch": 18.159492,
+  "health": 6.362917,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 5848,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Wood: fight back - Fight spider",
+  "task": "Climb toward the surface for food: back the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Spider",
+  "ticks": 1200,
+  "log": [
+    "[14:33:53] [Server thread/INFO]: Sol native_place COMPLETED [Set down gravel to dig for flint]",
+    "[14:33:54] [Server thread/INFO]: Sol native_break COMPLETED [Dig gravel for flint]",
+    "[14:33:54] [Server thread/INFO]: Sol native_place COMPLETED [Set down gravel to dig for flint]",
+    "[14:33:54] [Server thread/INFO]: Sol native_break COMPLETED [Dig gravel for flint]",
+    "[14:33:56] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to room for a workstation]",
+    "[14:33:56] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+    "[14:33:57] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[14:33:57] [Server thread/INFO]: Sol native_place COMPLETED [Set down gravel to dig for flint]",
+    "[14:33:57] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to room for a workstation]",
+    "[14:33:58] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]",
+    "[14:34:00] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+    "[14:34:00] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[14:34:00] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[14:34:00] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -327, 48, -94 [Back off from spider]",
+    "[14:34:00] [Server thread/INFO]: Sol native_fight BLOCKED: Lost sight of the target [Fight spider]",
+    "[14:34:01] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[14:34:01] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight spider]",
+    "[14:34:01] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -326, 44, -96 [Back off from zombie]",
+    "[14:34:01] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight spider]",
+    "[14:34:02] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]"
+  ]
+}

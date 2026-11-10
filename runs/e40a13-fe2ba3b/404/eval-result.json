@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1500, "stone_tools": 3280, "iron_ingot": 6780, "iron_pickaxe": 48460},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 19760, "x": 19, "y": 17, "z": -60, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 460, "stone_tools": 1420, "iron_ingot": 4860, "iron_pickaxe": 42200, "diamond": 58360},
+      "deaths": [
+        {"tick": 112067, "cause": "Sol was slain by Zombie", "x": 236, "y": 41, "z": -178, "light": 0, "timeOfDay": 16229, "dimension": "minecraft:overworld", "hunger": 3, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 32120, "x": 95, "y": 19, "z": -39, "attempt": 1}, {"tick": 65080, "x": 61, "y": -54, "z": -112, "attempt": 1}, {"tick": 99840, "x": 226, "y": -43, "z": -95, "attempt": 1}, {"tick": 122920, "x": 39, "y": 56, "z": -48, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 460, "stone_tools": 1800, "iron_ingot": 4000, "iron_pickaxe": 22960, "obsidian": 72734},
+      "deaths": [
+        {"tick": 73555, "cause": "Echo tried to swim in lava", "x": 116, "y": -56, "z": -114, "light": 15, "timeOfDay": 1717, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Rest to heal"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30080, "x": 36, "y": 60, "z": -84, "attempt": 1}, {"tick": 77240, "x": 35, "y": 76, "z": -45, "attempt": 1}, {"tick": 80880, "x": 37, "y": 76, "z": -47, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 130939,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    44,
+    50,
+    48
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.231523797587016,
+    16.672904883711723
+  ],
+  "yaw": 171.69157,
+  "pitch": 18.159489,
+  "health": 14.0,
+  "food": 12,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 93
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 19
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:coarse_dirt",
+        "count": 3
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 4
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:spruce_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 4
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 56
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 15
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:brown_mushroom",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 33
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 2
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 24
+        }
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 10939,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight creeper",
+  "task": "Run from creeper",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was blown up by Creeper",
+  "ticks": 1200,
+  "log": [
+    "[00:47:45] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 35, 70, 24 [Explore the cave toward iron]",
+    "[00:47:46] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 17, 101, 16]",
+    "[00:47:46] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 17, 101, 18]",
+    "[00:47:46] [Server thread/INFO]: Echo native_craft COMPLETED [Craft torch]",
+    "[00:47:46] [Server thread/INFO]: Echo native_swap BLOCKED: Owned inventory changed before swap dispatch; no transfer issued [Ready a torch]",
+    "[00:47:46] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[00:47:46] [Server thread/INFO]: Echo native_place COMPLETED [Place a torch at 18, 102, 17]",
+    "[00:47:46] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+    "[00:47:46] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 17, 101, 19]",
+    "[00:47:47] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 17, 100, 19]",
+    "[00:47:48] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 18, 102, 16]",
+    "[00:47:48] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+    "[00:47:49] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+    "[00:47:50] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 18, 101, 16]",
+    "[00:47:51] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+    "[00:47:51] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+    "[00:47:55] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 45, 27, 15 is blocked [Back to where it saw iron ore at 45, 27, 15]",
+    "[00:47:58] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+    "[00:47:58] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Run from creeper]",
+    "[00:47:58] [Server thread/INFO]: Echo died at 60, 58, 64: Echo was blown up by Creeper (tick 130939, day, under cover, hunger 11, armour 0, holding stone_pickaxe, a shield; doing \"Run from creeper\" in \"Iron: fight back - Fight creeper\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

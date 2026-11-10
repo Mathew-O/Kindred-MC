@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 640, "stone_tools": 1380, "iron_ingot": 8880, "iron_pickaxe": 90500},
+      "deaths": [
+        {"tick": 107928, "cause": "Kindred was slain by Warden", "x": 147, "y": -54, "z": 110, "light": 7, "timeOfDay": 12090, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Fight warden", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 121613, "cause": "Kindred was doomed to fall by Skeleton", "x": -4, "y": 90, "z": 42, "light": 12, "timeOfDay": 1775, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Wood: hurt and out of food - Explore south for animals", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3440, "stone_tools": 5600, "iron_ingot": 8600, "iron_pickaxe": 35780, "obsidian": 54291, "portal_lit": 55074},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 39960, "x": -209, "y": 18, "z": 71, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2860, "stone_tools": 3860, "iron_ingot": 16720},
+      "deaths": [
+        {"tick": 67485, "cause": "Echo was doomed to fall by Slime", "x": 73, "y": -5, "z": 35, "light": 0, "timeOfDay": 19647, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Iron: fight back - Fight zombie (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 56660, "x": 118, "y": 14, "z": 22, "attempt": 1}, {"tick": 62900, "x": 124, "y": 14, "z": 32, "attempt": 2}, {"tick": 67000, "x": 126, "y": 14, "z": 41, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

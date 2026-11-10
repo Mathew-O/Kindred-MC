@@ -1,0 +1,256 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 55002,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    6,
+    28,
+    -32
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": 45.0,
+  "pitch": -76.11454,
+  "health": 5.8500013,
+  "food": 4,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 42
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 9
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 34
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 44
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 10
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 16
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 2
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 20
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 57
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:dripstone_block",
+        "count": 11
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 7002,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo fell from a high place",
+  "ticks": 1200,
+  "log": [
+    "[03:53:46] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 15, 65, -13]",
+    "[03:53:46] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:53:47] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 15, 66, -13]",
+    "[03:53:48] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 15, 65, -14]",
+    "[03:53:48] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 15, 64, -14]",
+    "[03:53:48] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+    "[03:53:49] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 14, 65, -14]",
+    "[03:53:49] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 14, 64, -14]",
+    "[03:53:49] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+    "[03:53:50] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 13, 65, -14]",
+    "[03:53:51] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 13, 64, -14]",
+    "[03:53:51] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+    "[03:53:52] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 12, 65, -14]",
+    "[03:53:52] [Server thread/INFO]: Echo native_break BLOCKED: The block changed before an attributable break; nothing was broken [Cut through west for animals: clear 12, 64, -14]",
+    "[03:53:52] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -15, 67, -14 [Explore west for animals]",
+    "[03:53:58] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 13, 67, -42 is blocked [Explore north for animals]",
+    "[03:54:01] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[03:54:06] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Explore east for animals]",
+    "[03:54:06] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+    "[03:54:07] [Server thread/INFO]: Echo native_break CANCELLED: authority lost [Climb toward the surface for food: clear 22, 47, -16]"
+  ]
+}

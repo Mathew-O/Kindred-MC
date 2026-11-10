@@ -1,0 +1,196 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 23946,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -357,
+    30,
+    -169
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.200000047683716,
+    16.14188591527062
+  ],
+  "yaw": 29.82558,
+  "pitch": -73.14028,
+  "health": 6.499998,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 51
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 10
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 16
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 7
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:bow",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 326
+        }
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 6
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 3
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 23946,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[14:33:16] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:33:16] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: clear -341, 39, -154]",
+    "[14:33:16] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:33:16] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -341, 39, -154]",
+    "[14:33:16] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:33:17] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -341, 39, -154]",
+    "[14:33:17] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:33:17] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -341, 39, -154]",
+    "[14:33:17] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:33:17] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -335, 37, -160 [Back off from zombie]",
+    "[14:33:17] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -341, 38, -153]",
+    "[14:33:17] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:33:17] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -341, 38, -153]",
+    "[14:33:17] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[14:33:17] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -341, 38, -153]",
+    "[14:33:17] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[14:33:17] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: clear -341, 39, -152]",
+    "[14:33:18] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[14:33:18] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -341, 41, -153]",
+    "[14:33:18] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -333, 38, -159 [Back off from zombie]"
+  ]
+}

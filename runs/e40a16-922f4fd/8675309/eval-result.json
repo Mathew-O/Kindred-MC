@@ -1,0 +1,41 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1340, "stone_tools": 3160, "iron_ingot": 5900, "iron_pickaxe": 23660, "obsidian": 43363, "portal_lit": 74029},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 47680, "x": 23, "y": -54, "z": 242, "attempt": 1}, {"tick": 56500, "x": 37, "y": -54, "z": 245, "attempt": 1}, {"tick": 61340, "x": 23, "y": -54, "z": 242, "attempt": 2}, {"tick": 65080, "x": 22, "y": -54, "z": 222, "attempt": 3}, {"tick": 71500, "x": 30, "y": -54, "z": 222, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1100, "stone_tools": 2680, "iron_ingot": 8740, "iron_pickaxe": 53140, "obsidian": 73508, "portal_lit": 81164},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2440, "stone_tools": 4040, "iron_ingot": 7120, "iron_pickaxe": 24280, "obsidian": 41806},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 74920, "x": -118, "y": 60, "z": 10, "attempt": 1}, {"tick": 78680, "x": -115, "y": 63, "z": 32, "attempt": 2}, {"tick": 83260, "x": -212, "y": 71, "z": 32, "attempt": 3}, {"tick": 98920, "x": 13, "y": 61, "z": 81, "attempt": 4}, {"tick": 102640, "x": -11, "y": 64, "z": 80, "attempt": 5}, {"tick": 106340, "x": -11, "y": 64, "z": 62, "attempt": 6}, {"tick": 122920, "x": 18, "y": 61, "z": 87, "attempt": 7}, {"tick": 126680, "x": -6, "y": 65, "z": 87, "attempt": 8}, {"tick": 130400, "x": -4, "y": 63, "z": 65, "attempt": 9}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

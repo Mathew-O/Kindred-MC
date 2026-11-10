@@ -1,0 +1,196 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 113934,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    6,
+    69,
+    23
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.516679728399904,
+    8.535840625044557,
+    16.30000001192093
+  ],
+  "yaw": -1072.4391,
+  "pitch": 18.159338,
+  "health": 1.4999981,
+  "food": 11,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 27
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 21
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 22
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 6
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 19
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 17934,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Back off from spider",
+  "task": "Back off from spider",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Kindred was slain by Spider",
+  "ticks": 1200,
+  "log": [
+    "[14:46:53] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 23, 85, -4 is blocked [Back to where it saw iron ore at 23, 85, -4]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 33, 89, 47]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 32, 85, 47]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 31, 84, 47]",
+    "[14:46:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]",
+    "[14:46:54] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Dig in for the night: step down]",
+    "[14:46:55] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[14:46:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider the way it came]",
+    "[14:46:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:46:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:46:58] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from spider]"
+  ]
+}

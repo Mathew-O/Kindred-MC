@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1260, "stone_tools": 1820, "iron_ingot": 6220, "iron_pickaxe": 14980, "obsidian": 51332, "portal_lit": 60355},
+      "deaths": [
+        {"tick": 140743, "cause": "Kindred was slain by Phantom", "x": 266, "y": 63, "z": -74, "light": 4, "timeOfDay": 20905, "dimension": "minecraft:overworld", "hunger": 10, "underSky": true, "stage": "Done: The Nether portal is built and lit", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 56920, "x": 66, "y": 63, "z": 51, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1200, "stone_tools": 1960, "iron_ingot": 29620, "iron_pickaxe": 38780},
+      "deaths": [
+        {"tick": 10407, "cause": "Sol was shot by Skeleton", "x": 8, "y": 44, "z": 10, "light": 11, "timeOfDay": 10569, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 130340, "x": -123, "y": 63, "z": 169, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 980, "stone_tools": 1820},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31160, "x": 28, "y": 55, "z": -132, "attempt": 1}, {"tick": 34800, "x": 29, "y": 55, "z": -132, "attempt": 2}, {"tick": 51520, "x": 29, "y": 55, "z": -131, "attempt": 3}, {"tick": 58720, "x": 29, "y": 55, "z": -132, "attempt": 4}, {"tick": 75000, "x": 32, "y": 56, "z": -140, "attempt": 5}, {"tick": 78820, "x": 31, "y": 56, "z": -140, "attempt": 6}, {"tick": 103960, "x": 32, "y": 55, "z": -141, "attempt": 7}, {"tick": 107760, "x": 31, "y": 56, "z": -140, "attempt": 8}, {"tick": 122320, "x": 32, "y": 56, "z": -140, "attempt": 9}, {"tick": 129520, "x": 31, "y": 56, "z": -140, "attempt": 10}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

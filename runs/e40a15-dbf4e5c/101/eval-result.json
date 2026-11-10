@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 820, "stone_tools": 1840, "iron_ingot": 3360, "iron_pickaxe": 35780, "obsidian": 62906, "portal_lit": 65437},
+      "deaths": [
+        {"tick": 7564, "cause": "Kindred was slain by Spider", "x": -365, "y": 40, "z": -106, "light": 0, "timeOfDay": 7726, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Fight spider", "stance": "PRESS_ON", "habits": "[]", "task": "Fight spider"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1480, "stone_tools": 1800, "iron_ingot": 56040, "iron_pickaxe": 102800},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 71660, "x": -296, "y": 21, "z": -134, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1500, "stone_tools": 2180, "iron_ingot": 33680},
+      "deaths": [
+        {"tick": 11124, "cause": "Echo was slain by Spider", "x": -367, "y": 35, "z": -85, "light": 0, "timeOfDay": 11286, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Fight spider", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 121660, "x": -231, "y": 47, "z": -92, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

@@ -1,0 +1,319 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 50911,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    360,
+    -62,
+    -118
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.780225049156456,
+    8.0,
+    16.560017850712
+  ],
+  "yaw": -94.76653,
+  "pitch": 72.892235,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.2000003,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 5
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 8
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 61
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 23
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:diamond_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 5
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:smooth_basalt",
+        "count": 3
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 21
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 26
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 3
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 41
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:diamond",
+        "count": 2
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 222
+        }
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 36
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 2911,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Obsidian: heal before going on (tried elsewhere 1 time)",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo tried to swim in lava",
+  "ticks": 1200,
+  "log": [
+    "[07:03:15] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 376, -53, -98]",
+    "[07:03:15] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 376, -54, -98]",
+    "[07:03:15] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[07:03:15] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 376, -53, -99]",
+    "[07:03:15] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 376, -54, -99]",
+    "[07:03:15] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[07:03:16] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 376, -53, -100]",
+    "[07:03:16] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 376, -54, -100]",
+    "[07:03:16] [Server thread/INFO]: Echo native_bucket COMPLETED [Obsidian: pour water beside lava]",
+    "[07:03:16] [Server thread/INFO]: Echo native_wait COMPLETED [Obsidian: let the water reach the lava]",
+    "[07:03:16] [Server thread/INFO]: Echo native_goto COMPLETED [Obsidian: step onto the shore]",
+    "[07:03:16] [Server thread/INFO]: Echo native_break CANCELLED: authority lost [Obsidian: mine 376, -55, -101]",
+    "[07:03:17] [Server thread/INFO]: Echo native_bucket COMPLETED [Fill a bucket at 376, -54, -100]",
+    "[07:03:17] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 377, -53, -101]",
+    "[07:03:18] [Server thread/INFO]: Echo native_break CANCELLED: Hazard/threat detected: urgent retreat required [Mine obsidian at 375, -55, -101]",
+    "[07:03:18] [Server thread/INFO]: Echo native_retreat COMPLETED",
+    "[07:03:19] [Server thread/INFO]: Echo native_retreat COMPLETED",
+    "[07:03:19] [Server thread/INFO]: Echo native_retreat COMPLETED",
+    "[07:03:19] [Server thread/INFO]: Echo native_retreat CANCELLED: The player died",
+    "[07:03:19] [Server thread/INFO]: Echo died at 376, -54, -102: Echo tried to swim in lava (tick 50911, day, under cover, hunger 20, armour 6, holding diamond_pickaxe, a shield; doing \"native_retreat\" in \"Obsidian: heal before going on (tried elsewhere 1 time)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

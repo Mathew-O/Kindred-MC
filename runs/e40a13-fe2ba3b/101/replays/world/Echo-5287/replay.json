@@ -1,0 +1,158 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 5287,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -370,
+    21,
+    -168
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.340273931887623,
+    8.753199980521202,
+    16.411703054681993
+  ],
+  "yaw": -304.9082,
+  "pitch": 18.159489,
+  "health": 14.833332,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 6
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 15
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 50
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 21
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 58
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 5287,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Run from creeper",
+  "task": "Back off from creeper",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[00:51:37] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+    "[00:51:37] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 45, -94]",
+    "[00:51:37] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 44, -94]",
+    "[00:51:37] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 43, -94]",
+    "[00:51:38] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+    "[00:51:38] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 44, -95]",
+    "[00:51:38] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 43, -95]",
+    "[00:51:38] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 42, -95]",
+    "[00:51:38] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+    "[00:51:38] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 43, -96]",
+    "[00:51:38] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -347, 42, -96]",
+    "[00:51:38] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]",
+    "[00:51:38] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Tunnel past liquid toward iron: step down]",
+    "[00:51:39] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+    "[00:51:41] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+    "[00:51:41] [Server thread/INFO]: Echo native_goto COMPLETED [Walk to coal ore at -353, 34, -123]",
+    "[00:51:41] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Mine coal ore at -353, 34, -123]",
+    "[00:51:43] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[00:51:43] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+    "[00:51:43] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 840, "stone_tools": 1480, "iron_ingot": 7500},
+      "deaths": [
+        {"tick": 21771, "cause": "Kindred was slain by Zombie", "x": -348, "y": 32, "z": -143, "light": 3, "timeOfDay": 21933, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 4160, "stone_tools": 6280, "iron_ingot": 9480, "iron_pickaxe": 34360},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 101140, "x": -344, "y": -6, "z": -61, "attempt": 1}, {"tick": 104760, "x": -344, "y": -6, "z": -61, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1420, "stone_tools": 2560, "iron_ingot": 66500, "iron_pickaxe": 140560},
+      "deaths": [
+        {"tick": 5125, "cause": "Echo was slain by Zombie", "x": -354, "y": 29, "z": -152, "light": 0, "timeOfDay": 5287, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

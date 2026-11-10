@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 600, "stone_tools": 3440, "iron_ingot": 13300, "iron_pickaxe": 25600, "obsidian": 52361, "portal_lit": 62741},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 56060, "x": -90, "y": -54, "z": -19, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 520, "stone_tools": 2320, "iron_ingot": 11480, "iron_pickaxe": 22140, "diamond": 36800, "obsidian": 56920, "portal_lit": 62654},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 380, "stone_tools": 1760, "iron_ingot": 6060, "iron_pickaxe": 24940, "obsidian": 108924},
+      "deaths": [
+        {"tick": 42540, "cause": "Echo was shot by Skeleton", "x": 121, "y": -53, "z": 19, "light": 0, "timeOfDay": 18702, "dimension": "minecraft:overworld", "hunger": 8, "underSky": false, "stage": "Iron: outmatched - Hole up: back into the passage", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 74380, "x": 26, "y": 16, "z": -69, "attempt": 1}, {"tick": 113880, "x": 109, "y": -48, "z": 9, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 880, "stone_tools": 2640, "iron_ingot": 9520, "iron_pickaxe": 22940},
+      "deaths": [
+        {"tick": 47843, "cause": "Kindred suffocated in a wall", "x": 80, "y": 60, "z": 60, "light": 0, "timeOfDay": 5, "dimension": "minecraft:overworld", "hunger": 8, "underSky": false, "stage": "Portal: stuck in a wall - Dig out of the wall at 80, 61, 60", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 69704, "cause": "Kindred suffocated in a wall", "x": 81, "y": 21, "z": 161, "light": 0, "timeOfDay": 21866, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall at 81, 22, 161", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Dig out of the wall at 81, 22, 161"},
+        {"tick": 120725, "cause": "Kindred was shot by Skeleton", "x": 105, "y": 91, "z": 234, "light": 15, "timeOfDay": 887, "dimension": "minecraft:overworld", "hunger": 5, "underSky": true, "stage": "Wood: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 124067, "cause": "Kindred was shot by Skeleton", "x": -5, "y": 39, "z": 81, "light": 1, "timeOfDay": 4229, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from spider", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 128238, "cause": "Kindred was slain by Spider", "x": 16, "y": 38, "z": 79, "light": 0, "timeOfDay": 8400, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "Back off from spider"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 34900, "x": 17, "y": 61, "z": 81, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1100, "stone_tools": 2240, "iron_ingot": 14060, "iron_pickaxe": 47460},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 108140, "x": -4, "y": -48, "z": 52, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1300, "stone_tools": 3060, "iron_ingot": 6920, "iron_pickaxe": 119000},
+      "deaths": [
+        {"tick": 13936, "cause": "Echo discovered the floor was lava", "x": 20, "y": 1, "z": 37, "light": 2, "timeOfDay": 14098, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 127102, "cause": "Echo was shot by Skeleton", "x": 13, "y": 40, "z": 113, "light": 0, "timeOfDay": 7264, "dimension": "minecraft:overworld", "hunger": 3, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 51900, "x": 18, "y": 19, "z": 119, "attempt": 1}, {"tick": 58980, "x": 14, "y": 19, "z": 138, "attempt": 1}, {"tick": 110260, "x": 78, "y": 18, "z": 58, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

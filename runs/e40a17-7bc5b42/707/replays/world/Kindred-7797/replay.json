@@ -1,0 +1,193 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 7797,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -1,
+    15,
+    -148
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.0,
+    16.279621907468822
+  ],
+  "yaw": 77.99705,
+  "pitch": 18.043758,
+  "health": 11.861982,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 23
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 9
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 28
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 9
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 11
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 3
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 8
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 34
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 10
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 26
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 7797,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from spider",
+  "task": "Back off from spider",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[08:48:19] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -15, 28, -116]",
+    "[08:48:20] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -16, 28, -115]",
+    "[08:48:20] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -15, 29, -115]",
+    "[08:48:21] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -15, 29, -116]",
+    "[08:48:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to logs for fuel at -19, 23, -107]",
+    "[08:48:22] [Server thread/INFO]: Kindred native_break COMPLETED [Mine logs for fuel at -19, 23, -107]",
+    "[08:48:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to logs for fuel at -4, 23, -107]",
+    "[08:48:23] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Mine logs for fuel at -4, 23, -107]",
+    "[08:48:23] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+    "[08:48:24] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to logs for fuel at 6, 19, -114]",
+    "[08:48:26] [Server thread/INFO]: Kindred native_fight BLOCKED: Lost sight of the target [Fight skeleton]",
+    "[08:48:26] [Server thread/INFO]: Kindred native_fight BLOCKED: The target is gone; nothing to fight [Fight creeper]",
+    "[08:48:26] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to logs for fuel at 14, 23, -133]",
+    "[08:48:26] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+    "[08:48:27] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[08:48:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[08:48:28] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[08:48:28] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[08:48:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[08:48:29] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from spider]"
+  ]
+}

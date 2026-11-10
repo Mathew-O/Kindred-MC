@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 90372,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    150,
+    56,
+    55
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.479561774752028,
+    8.0,
+    16.525930815603402
+  ],
+  "yaw": 301.40436,
+  "pitch": 17.114208,
+  "health": 5.666666,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 18372,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Take cover from skeleton",
+  "task": "Back off from skeleton",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Echo was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[04:05:36] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[04:05:37] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from drowned]",
+    "[04:05:37] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from drowned]",
+    "[04:05:38] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from drowned]",
+    "[04:05:38] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[04:05:39] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[04:05:39] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[04:05:42] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[04:05:43] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[04:05:45] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[04:05:46] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[04:05:46] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[04:05:47] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[04:05:48] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[04:05:48] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[04:05:49] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+    "[04:05:49] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[04:05:50] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear 164, 62, 70]",
+    "[04:05:50] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[04:05:50] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]"
+  ]
+}

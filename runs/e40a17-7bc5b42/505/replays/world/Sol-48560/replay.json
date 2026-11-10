@@ -1,0 +1,227 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 48560,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    11,
+    20,
+    -42
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.50991499715993,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": -180.69936,
+  "pitch": -2.1354313,
+  "health": 17.5,
+  "food": 18,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:cooked_porkchop",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 106
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 11
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 24
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 54
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 20
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 56
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cooked_beef",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:acacia_sapling",
+        "count": 3
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 2
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 3
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 8
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 35
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 22
+        }
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 560,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from enderman",
+  "task": "Back off from enderman",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Enderman",
+  "ticks": 1200,
+  "log": [
+    "[08:14:27] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+    "[08:14:27] [Server thread/INFO]: Sol native_place COMPLETED [Place a torch at -11, 50, 3]",
+    "[08:14:29] [Server thread/INFO]: Sol native_goto COMPLETED [Explore the cave toward iron]",
+    "[08:14:30] [Server thread/INFO]: Sol native_goto COMPLETED [Explore the cave toward iron]",
+    "[08:14:30] [Server thread/INFO]: Sol native_goto COMPLETED [Explore the cave toward iron]",
+    "[08:14:31] [Server thread/INFO]: Sol native_goto COMPLETED [Explore the cave toward iron]",
+    "[08:14:31] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -16, 54, -21 [Explore the cave toward iron]",
+    "[08:14:31] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -16, 54, -19 [Explore the cave toward iron]",
+    "[08:14:36] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 2, 45, -34 is blocked [Explore the cave toward iron]",
+    "[08:14:38] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[08:14:39] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[08:14:39] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[08:14:39] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[08:14:39] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[08:14:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[08:14:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[08:14:41] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[08:14:41] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[08:14:41] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from enderman]",
+    "[08:14:42] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from enderman]"
+  ]
+}

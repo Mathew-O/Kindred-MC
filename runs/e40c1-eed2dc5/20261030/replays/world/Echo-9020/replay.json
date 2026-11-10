@@ -1,0 +1,179 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 9020,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    24,
+    75,
+    32
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.525307776860622,
+    8.419999986886978,
+    16.545114587051252
+  ],
+  "yaw": 91.942116,
+  "pitch": 3.7287583,
+  "health": 15.333334,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:coarse_dirt",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 22
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:spruce_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 18
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 9020,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[14:31:48] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]",
+    "[14:31:48] [Server thread/INFO]: Echo native_craft COMPLETED [Craft stone pickaxe]",
+    "[14:31:48] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the crafting table]",
+    "[14:31:49] [Server thread/INFO]: Echo native_goto COMPLETED [Dig for stone: step down]",
+    "[14:31:49] [Server thread/INFO]: Echo native_goto COMPLETED [Dig for stone: step down]",
+    "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 43, 91, 28]",
+    "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 43, 90, 28]",
+    "[14:31:49] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 43, 89, 28]",
+    "[14:31:51] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 18, 102, 17 is blocked [Back to where it saw iron ore at 18, 102, 17]",
+    "[14:31:53] [Server thread/INFO]: Echo native_goto COMPLETED [Walk to logs at 43, 101, 38]",
+    "[14:31:55] [Server thread/INFO]: Echo native_break COMPLETED [Mine logs at 43, 101, 38]",
+    "[14:31:58] [Server thread/INFO]: Echo native_craft COMPLETED [Craft spruce planks]",
+    "[14:31:58] [Server thread/INFO]: Echo native_craft COMPLETED [Craft stick]",
+    "[14:31:59] [Server thread/INFO]: Echo native_break COMPLETED [Mine logs at 43, 102, 38]",
+    "[14:32:00] [Server thread/INFO]: Echo native_break COMPLETED [Mine logs at 43, 103, 38]",
+    "[14:32:00] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 17, 102, 16 [Walk to iron ore at 17, 102, 16]",
+    "[14:32:01] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 9, 97, -13]",
+    "[14:32:02] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[14:32:02] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[14:32:02] [Server thread/INFO]: Echo died at 40, 83, 48: Echo was slain by Zombie (tick 9020, day, under the sky, hunger 14, armour 0, holding stone_pickaxe, no shield; doing \"Back off from zombie the way it came\" in \"Iron: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

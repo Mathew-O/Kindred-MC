@@ -1,0 +1,207 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 82476,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -420,
+    22,
+    -147
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": -10.543172,
+  "pitch": -60.207615,
+  "health": 2.999999,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 49
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 36
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 5
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 2
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 21
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 5
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:gunpowder",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 10476,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from zombie",
+  "task": "Hole up: recover behind the wall",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO, NO_CAVES]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[04:00:32] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+    "[04:00:33] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[04:00:34] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[04:00:37] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+    "[04:00:37] [Server thread/INFO]: Echo native_place COMPLETED [Hole up: seal -404, 31, -132]",
+    "[04:00:38] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:39] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:40] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:41] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:42] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:43] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:43] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:45] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:46] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:47] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:48] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:49] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:50] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[04:00:50] [Server thread/INFO]: Echo native_wait CANCELLED: The player died [Hole up: recover behind the wall]",
+    "[04:00:50] [Server thread/INFO]: Echo died at -404, 30, -131: Echo was slain by Zombie (tick 82476, day, under cover, hunger 16, armour 0, holding dirt, no shield; doing \"Hole up: recover behind the wall\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO, NO_CAVES])"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1480, "stone_tools": 1920, "iron_ingot": 11560, "iron_pickaxe": 23620},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29200, "x": -46, "y": 27, "z": -74, "attempt": 1}, {"tick": 57820, "x": -62, "y": 29, "z": -129, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1500, "stone_tools": 2400, "iron_ingot": 5620, "iron_pickaxe": 19200, "obsidian": 136861},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3240, "stone_tools": 4000, "iron_ingot": 17420, "iron_pickaxe": 36300},
+      "deaths": [
+        {"tick": 77149, "cause": "Echo was shot by Skeleton", "x": 1, "y": -48, "z": -76, "light": 0, "timeOfDay": 5311, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Wood: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 104360, "x": -158, "y": 45, "z": 41, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

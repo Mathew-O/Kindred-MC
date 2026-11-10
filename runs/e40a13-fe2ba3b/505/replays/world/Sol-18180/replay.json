@@ -1,0 +1,138 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 18180,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -219,
+    54,
+    9
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.017325225554202,
+    8.809523831818439,
+    16.51050886088014
+  ],
+  "yaw": -2251.0237,
+  "pitch": 18.159489,
+  "health": 15.5,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 55,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:acacia_sapling",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 18180,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Stone: fight back - Back off from drowned",
+  "task": "Get out of the water: up for air",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Drowned",
+  "ticks": 1200,
+  "log": [
+    "[02:13:44] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto CANCELLED: In deep water; up for air first [Back off from drowned]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto CANCELLED: In deep water; up for air first [Back off from drowned]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto CANCELLED: In deep water; up for air first [Back off from drowned]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:44] [Server thread/INFO]: Sol native_goto CANCELLED: In deep water; up for air first [Back off from drowned]",
+    "[02:13:45] [Server thread/INFO]: Sol native_goto CANCELLED: In deep water; up for air first [Back off from drowned]",
+    "[02:13:45] [Server thread/INFO]: Sol native_goto CANCELLED: In deep water; up for air first [Back off from drowned]",
+    "[02:13:45] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:45] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:46] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: up for air]",
+    "[02:13:46] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:46] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:46] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:46] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[02:13:48] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Get out of the water: up for air]",
+    "[02:13:48] [Server thread/INFO]: Sol died at -203, 62, 25: Sol was slain by Drowned (tick 18180, night, under the sky, hunger 17, armour 0, holding nothing, no shield; doing \"Get out of the water: up for air\" in \"Stone: fight back - Back off from drowned\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

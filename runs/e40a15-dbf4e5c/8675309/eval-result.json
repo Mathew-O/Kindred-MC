@@ -1,0 +1,49 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 440, "stone_tools": 2660, "iron_ingot": 7580, "iron_pickaxe": 27220, "obsidian": 117703, "portal_lit": 118916},
+      "deaths": [
+        {"tick": 37103, "cause": "Kindred was slain by Spider", "x": -5, "y": 39, "z": 83, "light": 0, "timeOfDay": 13265, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 52119, "cause": "Kindred was slain by Zombie", "x": -2, "y": 28, "z": 71, "light": 9, "timeOfDay": 4281, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 69146, "cause": "Kindred was slain by Zombie", "x": 44, "y": 33, "z": 59, "light": 0, "timeOfDay": 21308, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 73002, "cause": "Kindred was slain by Zombie", "x": -15, "y": 39, "z": 114, "light": 0, "timeOfDay": 1164, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 76271, "cause": "Kindred tried to swim in lava", "x": 45, "y": 57, "z": 101, "light": 15, "timeOfDay": 4433, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO, NO_CAVES]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 113920, "x": 44, "y": 58, "z": 96, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 640, "stone_tools": 2320, "iron_ingot": 11980, "iron_pickaxe": 44660, "diamond": 62160, "obsidian": 116556},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1440, "stone_tools": 3160, "iron_ingot": 11980, "iron_pickaxe": 48020, "obsidian": 140997},
+      "deaths": [
+        {"tick": 87677, "cause": "Echo suffocated in a wall", "x": 68, "y": 37, "z": -5, "light": 0, "timeOfDay": 15839, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall at 68, 38, -5", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 125080, "x": 45, "y": 25, "z": 35, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

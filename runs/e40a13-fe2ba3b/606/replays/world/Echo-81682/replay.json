@@ -1,0 +1,159 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 81682,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    279,
+    17,
+    -15
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.866651243843307,
+    8.054893347032074,
+    16.166407965552448
+  ],
+  "yaw": -160.5806,
+  "pitch": 17.335941,
+  "health": 9.833332,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 6
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 20
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 9
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 6
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 6
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 9
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 9682,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Stone: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[02:45:09] [Server thread/INFO]: Echo native_craft COMPLETED [Craft crafting table]",
+    "[02:45:09] [Server thread/INFO]: Echo native_craft COMPLETED [Craft birch planks]",
+    "[02:45:10] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]",
+    "[02:45:10] [Server thread/INFO]: Echo native_craft COMPLETED [Craft wooden pickaxe]",
+    "[02:45:10] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the crafting table]",
+    "[02:45:11] [Server thread/INFO]: Echo native_break COMPLETED [Mine logs at 187, 73, -25]",
+    "[02:45:14] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 281, 26, 3 is blocked [Recover dropped items near 286, 25, 3]",
+    "[02:45:16] [Server thread/INFO]: Echo native_goto COMPLETED [Recover dropped items near 286, 25, 3]",
+    "[02:45:18] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+    "[02:45:18] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 270, 23, 15 [Back off from zombie]",
+    "[02:45:18] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+    "[02:45:19] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:45:20] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[02:45:20] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:45:21] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:45:23] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:45:24] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[02:45:24] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[02:45:25] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[02:45:25] [Server thread/INFO]: Echo died at 295, 25, 1: Echo was slain by Zombie (tick 81682, day, under cover, hunger 15, armour 0, holding wooden_pickaxe, no shield; doing \"Back off from zombie the way it came\" in \"Stone: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

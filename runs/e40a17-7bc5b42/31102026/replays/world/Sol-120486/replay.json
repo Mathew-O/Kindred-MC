@@ -1,0 +1,100 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 120486,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    72,
+    46,
+    356
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.099885728585335,
+    8.0,
+    16.939191178552903
+  ],
+  "yaw": 402.7052,
+  "pitch": 18.12922,
+  "health": 18.5,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 5
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 36
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 486,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: heal before going on",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was doomed to fall by Husk",
+  "ticks": 1200,
+  "log": [
+    "[07:15:57] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[07:15:59] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[07:15:59] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[07:16:00] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[07:16:01] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[07:16:02] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[07:16:02] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 91, 69, 325 [Climb toward the surface for logs: back the way it came]",
+    "[07:16:02] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 94, 64, 326]",
+    "[07:16:03] [Server thread/INFO]: Sol native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+    "[07:16:03] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 92, 69, 323 [Climb toward the surface for logs: back the way it came]",
+    "[07:16:04] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 94, 65, 326 by hand]",
+    "[07:16:04] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:16:04] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[07:16:05] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 98, 66, 326]",
+    "[07:16:05] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:16:07] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from husk the way it came]",
+    "[07:16:08] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from husk]",
+    "[07:16:08] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[07:16:09] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[07:16:09] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]"
+  ]
+}

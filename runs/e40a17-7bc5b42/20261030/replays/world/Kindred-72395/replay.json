@@ -1,0 +1,315 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 72395,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    68,
+    109,
+    -3
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.501477543447905,
+    8.0,
+    16.390379850282645
+  ],
+  "yaw": 0.17431916,
+  "pitch": 18.110641,
+  "health": 9.900002,
+  "food": 7,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 15
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:coarse_dirt",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 35
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 11
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 39
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 32
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 13
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 2
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 9
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 3
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 395,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight creeper",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was blown up by Creeper",
+  "ticks": 1200,
+  "log": [
+    "[07:04:22] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:22] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:23] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:25] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:26] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:27] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:28] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:29] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:30] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[07:04:30] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear 76, 120, -48]",
+    "[07:04:31] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear 76, 119, -49]",
+    "[07:04:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[07:04:31] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for animals]",
+    "[07:04:34] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+    "[07:04:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore south for animals]",
+    "[07:04:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[07:04:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[07:04:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[07:04:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through south for animals: advance]",
+    "[07:04:39] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore south for animals]"
+  ]
+}

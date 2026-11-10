@@ -1,0 +1,155 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 3787,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -30,
+    19,
+    -27
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.0,
+    16.156528265916446
+  ],
+  "yaw": -69.33193,
+  "pitch": -24.802048,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 3.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 6
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 16
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 13
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 21
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 35
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 11
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 3787,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: step down",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred fell from a high place",
+  "ticks": 1200,
+  "log": [
+    "[02:11:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to stone at -13, 58, -9]",
+    "[02:11:19] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -13, 58, -9 [Walk to stone at -13, 58, -9]",
+    "[02:11:19] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -11]",
+    "[02:11:19] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -11]",
+    "[02:11:19] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -11]",
+    "[02:11:20] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -11]",
+    "[02:11:20] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -11]",
+    "[02:11:20] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -11]",
+    "[02:11:21] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at -14, 58, -11]",
+    "[02:11:21] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at -13, 58, -11]",
+    "[02:11:22] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at -14, 58, -12]",
+    "[02:11:22] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -13, 58, -12]",
+    "[02:11:22] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -13, 58, -12]",
+    "[02:11:22] [Server thread/INFO]: Kindred native_swap COMPLETED [Ready crafting table]",
+    "[02:11:22] [Server thread/INFO]: Kindred native_place COMPLETED [Place a crafting table]",
+    "[02:11:22] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stone pickaxe]",
+    "[02:11:23] [Server thread/INFO]: Kindred native_break COMPLETED [Pick up the crafting table]",
+    "[02:11:23] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Clear the way to stone at -13, 58, -12]",
+    "[02:11:23] [Server thread/INFO]: Kindred native_fight BLOCKED: The fight broke off [Fight zombie]",
+    "[02:11:23] [Server thread/INFO]: Kindred died at -14, 27, -11: Kindred fell from a high place (tick 3787, day, under cover, hunger 20, armour 0, holding stone_sword, no shield; doing \"native_fight\" in \"Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: step down\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

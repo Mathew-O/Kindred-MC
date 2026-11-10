@@ -1,0 +1,322 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 36448,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    212,
+    -40,
+    47
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.200000047683716,
+    16.30000001192093
+  ],
+  "yaw": 68.39685,
+  "pitch": -8.625444,
+  "health": 1.9166698,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 8
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cooked_chicken",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 29
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 72
+        }
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 32
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 14
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 32
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:amethyst_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:smooth_basalt",
+        "count": 3
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 8
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 8
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 3
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 16
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 12448,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[02:38:21] [Server thread/INFO]: Echo native_eat COMPLETED",
+    "[02:38:21] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[02:38:22] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+    "[02:38:22] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:38:22] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:38:23] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:38:24] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:38:25] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+    "[02:38:25] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:38:25] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:38:26] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[02:38:26] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 234, -32, 55 [Back off from zombie]",
+    "[02:38:26] [Server thread/INFO]: Echo native_swap COMPLETED",
+    "[02:38:26] [Server thread/INFO]: Echo native_eat COMPLETED",
+    "[02:38:26] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a block]",
+    "[02:38:26] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from zombie]",
+    "[02:38:27] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]",
+    "[02:38:27] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 237, -32, 59 [Back off from zombie]",
+    "[02:38:27] [Server thread/INFO]: Echo native_fight CANCELLED: The player died [Fight zombie]",
+    "[02:38:27] [Server thread/INFO]: Echo died at 228, -32, 63: Echo was slain by Zombie (tick 36448, day, under cover, hunger 20, armour 6, holding iron_pickaxe, a shield; doing \"Fight zombie\" in \"Iron: fight back - Fight zombie\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

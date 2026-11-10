@@ -1,0 +1,141 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 34440,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -3,
+    -13,
+    -71
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.323815333441242,
+    8.0,
+    16.69999998807907
+  ],
+  "yaw": -99.650345,
+  "pitch": 14.110428,
+  "health": 20.0,
+  "food": 18,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 6
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 17
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 23
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 4
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 10440,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 14, -1, -55",
+  "task": "Dig for stone: clear 14, -1, -55",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol fell from a high place",
+  "ticks": 1200,
+  "log": [
+    "[06:36:19] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 15, 48, -55]",
+    "[06:36:19] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 15, 47, -55]",
+    "[06:36:20] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 15, 46, -55]",
+    "[06:36:20] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 15, 45, -55]",
+    "[06:36:21] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 15, 49, -55]",
+    "[06:36:21] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 14, 45, -55]",
+    "[06:36:21] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 14, 44, -55]",
+    "[06:36:21] [Server thread/INFO]: Sol native_break CANCELLED: authority lost [Mine stone at 15, 44, -55]",
+    "[06:36:21] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to stone at 15, 43, -55]",
+    "[06:36:22] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 15, 43, -55 [Walk to stone at 15, 43, -55]",
+    "[06:36:22] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to stone at 13, 45, -54]",
+    "[06:36:22] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 13, 44, -54]",
+    "[06:36:23] [Server thread/INFO]: Sol native_break COMPLETED [Mine stone at 13, 43, -54]",
+    "[06:36:23] [Server thread/INFO]: Sol native_break CANCELLED: authority lost [Mine stone at 13, 42, -54]",
+    "[06:36:23] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 15, 29, -55 [Walk to coal ore at 15, 29, -55]",
+    "[06:36:23] [Server thread/INFO]: Sol native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Mine stone at 13, 32, -53]",
+    "[06:36:23] [Server thread/INFO]: Sol native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Dig for stone: clear 14, 23, -55]",
+    "[06:36:23] [Server thread/INFO]: Sol native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Dig for stone: clear 14, 13, -55]",
+    "[06:36:23] [Server thread/INFO]: Sol native_break dropped before it ran: paid\u003dfalse/false generation\u003dtrue stop\u003dfalse cancelling\u003dfalse hazard\u003dfalse connected\u003dtrue ledger\u003dKNOWN_LEDGER_CLEAR blocker\u003d",
+    "[06:36:23] [Server thread/INFO]: Sol died at 13, -5, -55: Sol fell from a high place (tick 34440, day, under cover, hunger 18, armour 0, holding stone_pickaxe, no shield; doing \"Dig for stone: clear 14, -1, -55\" in \"Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 14, -1, -55\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

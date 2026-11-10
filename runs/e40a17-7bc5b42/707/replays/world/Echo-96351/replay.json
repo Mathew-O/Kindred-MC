@@ -1,0 +1,241 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 96351,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -62,
+    8,
+    -10
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.0,
+    16.69999998807907
+  ],
+  "yaw": 43.766205,
+  "pitch": 7.269562,
+  "health": 15.183332,
+  "food": 9,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 48
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 16
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 47
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 65
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 39
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 57
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:gunpowder",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 2
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:spider_eye",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 16
+        }
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 351,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from zombie the way it came",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[09:02:39] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+    "[09:02:39] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+    "[09:02:40] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+    "[09:02:40] [Server thread/INFO]: Echo native_smelt COMPLETED [Take smelted iron]",
+    "[09:02:40] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]",
+    "[09:02:40] [Server thread/INFO]: Echo native_craft COMPLETED [Craft bucket]",
+    "[09:02:41] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the crafting table]",
+    "[09:02:41] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the furnace]",
+    "[09:02:42] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at -47, 15, 5]",
+    "[09:02:42] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+    "[09:02:43] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+    "[09:02:43] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Mine iron ore at -47, 15, 4]",
+    "[09:02:44] [Server thread/INFO]: Echo native_fight COMPLETED [Fight spider]",
+    "[09:02:44] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up string]",
+    "[09:02:44] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[09:02:44] [Server thread/INFO]: Echo native_place COMPLETED [Place a torch at -38, 14, 7]",
+    "[09:02:44] [Server thread/INFO]: Echo native_goto COMPLETED [Walk to iron ore at -48, 16, 5]",
+    "[09:02:44] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -47, 15, 4 [Pick up raw iron]",
+    "[09:02:45] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Clear the way to iron ore at -48, 16, 5]",
+    "[09:02:48] [Server thread/INFO]: Echo died at -46, 16, 6: Echo was slain by Zombie (tick 96351, day, under cover, hunger 8, armour 6, holding stone_pickaxe, a shield; doing \"native_break\" in \"Iron: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+  ]
+}

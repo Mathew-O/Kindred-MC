@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 18586,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -339,
+    69,
+    -172
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.0,
+    16.30000001192093
+  ],
+  "yaw": -171.37633,
+  "pitch": 23.970993,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 4.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 9
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 18586,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie the way it came",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[03:39:56] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[03:40:08] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[03:40:21] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[03:40:23] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[03:40:24] [Server thread/INFO]: Echo native_goto COMPLETED [Approach cow]",
+    "[03:40:26] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 80, -153]",
+    "[03:40:29] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[03:40:32] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 80, -154]",
+    "[03:40:36] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 79, -154]",
+    "[03:40:38] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[03:40:42] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 80, -155]",
+    "[03:40:44] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 79, -155]",
+    "[03:40:48] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 78, -155]",
+    "[03:40:52] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[03:40:58] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 79, -156]",
+    "[03:41:01] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 78, -156]",
+    "[03:41:05] [Server thread/INFO]: Echo native_break COMPLETED [Dig in for the night: clear -323, 77, -156]",
+    "[03:41:09] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[03:41:10] [Server thread/INFO]: Echo native_place CANCELLED: A hostile mob is attacking; fight back first [Seal the shelter at -323, 78, -155]",
+    "[03:41:11] [Server thread/INFO]: Echo died at -323, 77, -156: Echo was slain by Zombie (tick 18586, night, under cover, hunger 19, armour 0, holding dirt, no shield; doing \"native_place\" in \"Wood: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}
