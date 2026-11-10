@@ -9,10 +9,12 @@ on:
   pull_request:
 permissions:
   contents: read
-# A newer push to the same branch or pull request stops the run it supersedes: the whole run takes about an hour.
+# A newer push to the same pull request stops the run it supersedes: the whole run takes about an hour. On main a
+# run is never stopped: a newer push waits for it, and of those waiting only the newest runs, so main always has a
+# finished run to compare against (a day of cancelled main runs left a regression and an intermittent looking alike).
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   support:
     runs-on: ubuntu-latest
