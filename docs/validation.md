@@ -16,6 +16,18 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## Cover kept from a mob (F-25c4cy) — 9 November 2026 (`claude/cover-climb-1109`)
+
+- **[F-25c4cy](evidence/F-25c4cy.md):** its own cover from a mob, standing with a living hostile mob within six blocks, is
+  held from every dig for up to two minutes (product; `ReplayGameTests`' `echo-73670` on #83's run 42583923691: the
+  hungry climb dug the cover out three times in a second, and the zombie killed it).
+  - `NativeCoverClimbGameTests` (staged, as it says): on `4361a52` without the fix, 0 of 3; with it, 3 of 3; on main
+    with it, 3 of 3.
+  - `ReplayGameTests` with the fix, 4 runs alone plus the 3 class runs: `echo-73670` lived 20 of 21, and
+    `kindred-43985-707` 18 of 21. Without the fix on `4361a52`, 3 runs: 8 of 9 and 9 of 9. Every death left with the fix
+    was a back-off "the way it came" while badly hurt, with no cover taken. That cause is open.
+  - Nineteen classes that fight, take cover and climb, 3 runs: 138, 139 and 138 of 139. Both failures were
+    `kindred-43985-707`, as above.
 ## A pocket of lava followed (F-25c4cz) — 9 November 2026 (`claude/lava-pocket-1109`)
 
 - **[F-25c4cz](evidence/F-25c4cz.md):** looking for its cast's lava, the pocket under the rock its bucket was filled from
