@@ -15940,6 +15940,12 @@ final class PlayerRuntime {
 
     /** Once a game day, at night: the ledgers checked against the Record (F-31). */
     static final int LEDGER_CHECK_TICKS = 24_000;
+    /** How old a settled action's last event is before its history is folded: three game days of real time at 20 ticks a second. */
+    static final long ACTION_FOLD_AGE_MS = 3L * 24_000 / 20 * 1_000;
+    /** The most actions one fold takes, so a pass keeps the writer busy for a bounded time. */
+    static final int ACTION_FOLD_MAX = 5_000;
+    /** The most passes after one check: 50,000 actions, about 3.6 s of the writer's time, in jobs of about 0.36 s each. */
+    static final int ACTION_FOLD_PASSES = 10;
 
     /**
      * The agreement check (F-31): every ledger kept here, and the action ledger's own table, against the same rebuilt from
@@ -15973,9 +15979,34 @@ final class PlayerRuntime {
                             check.ledger(), check.kept(), check.fromRecord());
                     if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
                             agree ? "agrees" : "differs", "", data));
+                    // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
+                    // three game days compacted on the writer, a batch at a time, never on the tick.
+                    if (agree && running) foldActions(database, System.currentTimeMillis() - ACTION_FOLD_AGE_MS, ACTION_FOLD_PASSES, new long[3]);
                     result.complete(agree);
                 }));
         return result;
+    }
+
+    /**
+     * The action fold's passes (F-31): each a separate job on the writer, so other writes run between them; another
+     * while the last took its full share, at most {@code passes}; the totals logged once at the end.
+     */
+    private static void foldActions(SqliteCompanionStore database, long olderThanMs, int passes, long[] totals) {
+        database.foldSettledActions(olderThanMs, ACTION_FOLD_MAX).whenComplete((fold, unfolded) -> {
+            if (unfolded != null) {
+                KindredMod.LOGGER.warn("Action fold could not run: {}", unfolded.toString());
+                return;
+            }
+            totals[0] += fold.actions();
+            totals[1] += fold.eventsRemoved();
+            totals[2] += fold.millis();
+            if (fold.actions() == ACTION_FOLD_MAX && passes > 1) {
+                foldActions(database, olderThanMs, passes - 1, totals);
+                return;
+            }
+            if (totals[0] > 0) KindredMod.LOGGER.info("Kindred action fold: {} settled actions, {} events, folded in {} ms on the writer",
+                    totals[0], totals[1], totals[2]);
+        });
     }
 
     /** Each match changed since the last flush written to the World Record as it now stands (F-31). */
