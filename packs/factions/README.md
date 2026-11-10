@@ -72,6 +72,16 @@ since AI players play with no person online). Kindred's own records are inside t
 Record), so a world backup carries them; take backups while the server runs (Textile Backup flushes saves first), never
 by copying the folder under a running server.
 
+## What the AI players do
+
+In a faction world an AI player plays the mode on its own: it founds or joins a faction, claims, sells, scouts and
+defends by the same rules and commands as people (M-06i). Without a goal set for it, it also plays the survival
+progression, earned from an empty inventory: toward the Ender Dragon where the server allows the fight
+(`/aiplayer dragonfight on`), the End portal otherwise. A goal an operator sets wins, `none` included; the default is
+not saved and applies only while the world is in Factions mode. What keeps it alive (its bed at night, food when it is
+hungry) comes first, then the faction world, then its goal. AI players need world edits on (`autonomousEdits`) to
+gather and build; set `bases=true` in `edits.properties` for them to build bases of their own.
+
 ## The admin checklist (the rulebook's section 10, for Kindred)
 
 Prelaunch:

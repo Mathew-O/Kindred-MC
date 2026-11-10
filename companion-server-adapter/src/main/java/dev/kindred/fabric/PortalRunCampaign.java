@@ -1106,7 +1106,7 @@ final class PortalRunCampaign {
         // in, was sent out by its cast's next steps (a cave open to the sky, coal in view) and dug in again, and on 707
         // Echo was stepped out by the watchdog's move and back in by the dig-in: 56 of the watchdog's lines (F-25c4cd).
         var dweller = body.entity();
-        boolean nightIn = night(dweller.getServerWorld()) && nightShelterAt != null && sheltered(dweller) && inNightShelter(dweller);
+        boolean nightIn = dugInForTheNight(dweller);
         // Its work only: a walk up for air, a back-off, a run from a creeper or any other safety step goes as before.
         if (nightIn && planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get())
                 && outUnderTheSky(dweller.getServerWorld(), planned.get())) {
@@ -6040,6 +6040,11 @@ final class PortalRunCampaign {
      * Dug in for the night, not down in a mine or a cave: within a night shelter's depth of the ground's top over it,
      * or by where it dug in tonight (under a hillside the ground's top is the hill's).
      */
+    /** Whether it is dug in for the night: night, its shelter sealed, and it inside it. */
+    boolean dugInForTheNight(ServerPlayerEntity player) {
+        return night(player.getServerWorld()) && nightShelterAt != null && sheltered(player) && inNightShelter(player);
+    }
+
     private boolean inNightShelter(ServerPlayerEntity player) {
         BlockPos feet = player.getBlockPos();
         if (player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - feet.getY() <= NIGHT_SHELTER_DEPTH) return true;

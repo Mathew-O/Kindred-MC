@@ -32,6 +32,7 @@
   "sqliteJdbc": "3.50.3.0",
   "anthropicJavaSdk": "2.75.0 (companion-model; development classpath only, not bundled in the release jar)",
   "persistenceSchema": 12,
+  "maxNativePlayers": "Server policy in <world>/kindred/edits.properties (maxNativePlayers=N): default 3, clamped to 1..12, logged at startup and named in the refusal; the attention scheduler takes up to 12 in a tick's batch with the same per-tick budget. Qualification at 8 (tick time mean and worst per seed, heap) pending the engine run; docs/evidence/M-06i.md",
   "junit": "5.11.4",
   "modelConfiguration": {
     "provider": "Optional, operator key (F-19d): Anthropic (claude-haiku-5-5), OpenAI (gpt-4o-mini), Gemini (gemini-3.5-flash-lite), Groq (openai/gpt-oss-20b), Mistral (mistral-small-latest), DeepSeek (deepseek-chat), xAI (model named), OpenRouter (openai/gpt-4o-mini) or any OpenAI-compatible server (KINDRED_STRATEGIST_BASE_URL)",

@@ -39,6 +39,9 @@ operator guide.
 | `atlas` | `on`, `off` (the players' atlas of the world, F-30) | `on` |
 | `rescue` | `on`, `off` (a stuck player asks the strategist for a way out, F-29; only with `strategist=on`) | `on` |
 | `advice` | `on`, `off` (the strategist's advice; with `strategist=on`, `advice=off` asks it for rescue plans alone) | `on` |
+| `mode` | `survival`, `factions` (a faction world the starters joined, M-06i; its locked rules audited from the World Record at the end) | `survival` |
+| `players` | more AI players by name beside the starters, comma-separated (3 to 16 letters, digits or `_`; native players with no preset) | none |
+| `founders` | with `mode=factions`, how many of the players (the starters first, in order) are set to found a faction and invite, the others to wait to be asked | 0 |
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says
@@ -70,6 +73,50 @@ gave a spot up), every rescue plan (F-29: when, and its line, `rescue: <steps> -
 `-> refused: <why>`), and the model tokens it used; and the scenario, earned or staged, the seed, the ticks run, and whether
 the run ran all its ticks. Stages are seen once a game second from the player's inventory and dimension, and from the
 cast and the portal's lighting as they complete; a frame's obsidian is cast where it stands and never held.
+
+## A faction world (M-06i)
+
+`mode=factions` plays the run in a faction world, under the settings in the server's
+`config/kindred/factions.properties` (the defaults when it is not there).
+- The world's mode is set to Factions once every starter is in the world, as an operator's choice would set it: each
+  starter's playstyle, the territory guard and the borders. The spawn hub is made a safe zone, its lighthouse not
+  built.
+- The starters then play it on their own, with nothing staged. A starter with a goal (`goal=nether` and so on) works
+  at that too. `goal=none` leaves them to the faction world alone.
+- At the end, the run reads the World Record back and audits it against the locked rules:
+  - every claim and capture is decided again by the same rules from the state just before it;
+  - no player is killed inside a safe zone;
+  - every coin balance follows from the one before and never goes below zero;
+  - coins come into being only as starting coins or a market sale;
+  - the auction house only moves or destroys coins;
+  - every sale has its seller's intent, not cancelled;
+  - nothing from the auction house is handed over twice.
+- The result is written into `eval-result.json` as `factions`: `audited`, a `note` when it could not run, `counts`
+  (events, factions, claims, captures, sales, purchases, listings, deliveries, deaths, kills) and `violations` (each
+  rule broken, with its event). `score.py` adds the audit's table to `summary.md`.
+- `founders=N` sets each player's bounded traits as its administrator may set them: the first N to found at once and to
+  invite the players they meet (initiative 80, sociability 60), the others to wait to be asked and to join (20, 70).
+  Everything else is the players' own: who meets whom, who asks, and who joins whom (an invited player joins the faction
+  with the fewest members that asked it).
+- A run with more than three players in all needs the server to allow them: `--policy maxNativePlayers=8` writes that
+  line into each server's `world/kindred/edits.properties` before it starts (the server's own policy; default 3, at
+  most 12). Without it the first three are made and the run notes that the others did not come.
+- The mode is not yet an operator's choice (`GameModes` keeps it unplayable until M-06i is complete). The run sets it
+  for itself.
+
+```
+tools/eval/run.py --ref HEAD --seeds 101,102,103,104,105,106,107,108,109,110 --scenario "goal=none; mode=factions; ticks=288000" --parallel 2
+tools/eval/run.py --ref HEAD --seeds 101,102,103 --policy maxNativePlayers=8 --parallel 1 \
+    --scenario "starters=Kindred,Sol,Echo; players=Ada,Bram,Cleo,Dara,Eli; founders=3; goal=none; mode=factions; ticks=72000"
+```
+
+Every run's result now also carries the server's load (`server`: the mean tick over the run from the server's own
+last-hundred mean, taken once a game second; the worst tick and when it fell, in ticks into the run (`tickMsWorstAt`);
+how many of the run's ticks took over 50 and over 200 ms (`ticksOver50ms`, `ticksOver200ms`), each tick counted once
+and the set-up before the run's start not counted; the heap at most), and `score.py` adds a table of it. An autosave
+falls every 6,000 ticks and its time counts in its tick, so a worst tick at a multiple of 6,000 is the save. That
+is the measurement a larger run is qualified by. Run such a run one server at a time (`--parallel 1`), so no other
+server shares its cores.
 
 ## Conventions
 
