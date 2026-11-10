@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -56,8 +58,8 @@ public final class Compounds {
     public static Blueprint keep(BuildStyle style) {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
-        String s = stone.contains(":") ? stone : "minecraft:" + stone;
-        String planks = "minecraft:" + wood + "_planks";
+        String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
+        String planks = VanillaIds.NAMESPACE + wood + "_planks";
         var wall = wall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var open = new LinkedHashSet<Pos>();
@@ -150,8 +152,8 @@ public final class Compounds {
     public static Blueprint farmWard(BuildStyle style) {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
-        String s = stone.contains(":") ? stone : "minecraft:" + stone;
-        String planks = "minecraft:" + wood + "_planks";
+        String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
+        String planks = VanillaIds.NAMESPACE + wood + "_planks";
         var keep = wall(style);
         var ward = farmWall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();
@@ -251,8 +253,8 @@ public final class Compounds {
     public static Blueprint pastureWard(BuildStyle style) {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
-        String s = stone.contains(":") ? stone : "minecraft:" + stone;
-        String planks = "minecraft:" + wood + "_planks";
+        String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
+        String planks = VanillaIds.NAMESPACE + wood + "_planks";
         var ward = pastureWall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var open = new LinkedHashSet<Pos>();
@@ -268,12 +270,12 @@ public final class Compounds {
         // the player in under the wall (#98's CI). Its other side is the ward's lining. On the stair's head instead, the
         // door's top a block over the yard, a cow jumped onto it and walked off into the stair (F-22c43).
         Pos door = wayInDoor(style);
-        at.put(door, BlockSpec.parse("minecraft:" + wood + "_door[facing=east,half=lower,hinge=left,open=false]"));
-        at.put(door.add(0, 1, 0), BlockSpec.parse("minecraft:" + wood + "_door[facing=east,half=upper,hinge=left,open=false]"));
+        at.put(door, BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_door[facing=east,half=lower,hinge=left,open=false]"));
+        at.put(door.add(0, 1, 0), BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_door[facing=east,half=upper,hinge=left,open=false]"));
         // A lintel over it: a shut door's top, two up and a step below the lining's, was a way up onto the walls and over
         // them into the hall (CompoundsTest, the hall reached only by its own way in).
         at.put(door.add(0, 2, 0), BlockSpec.parse(planks));
-        for (int x = door.x(); x < ward.east() - 1; x++) at.put(new Pos(x, 0, door.z() - 1), BlockSpec.parse("minecraft:" + wood + "_fence"));
+        for (int x = door.x(); x < ward.east() - 1; x++) at.put(new Pos(x, 0, door.z() - 1), BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_fence"));
         var pen = pen(style);
         for (var b : Generators.pen(7, 7, wood).blocks()) at.put(b.at().add(pen.x(), 0, pen.z()), b.spec());
         torches(at, open, ward);
@@ -316,8 +318,8 @@ public final class Compounds {
     public static Blueprint hall(BuildStyle style) {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
-        String s = stone.contains(":") ? stone : "minecraft:" + stone;
-        String planks = "minecraft:" + wood + "_planks";
+        String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
+        String planks = VanillaIds.NAMESPACE + wood + "_planks";
         var ward = hallWall(style);
         var pasture = pastureWall(style);
         var at = new LinkedHashMap<Pos, BlockSpec>();
@@ -358,7 +360,7 @@ public final class Compounds {
     public static List<Blueprint> towers(BuildStyle style) {
         String stone = style.stone();
         if (!stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a stone");
-        String s = stone.contains(":") ? stone : "minecraft:" + stone;
+        String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
         var keep = wall(style);
         var farm = farmWall(style);
         var pasture = pastureWall(style);
@@ -405,6 +407,6 @@ public final class Compounds {
 
     private static void torch(Map<Pos, BlockSpec> at, Pos p, String facing) {
         if (at.containsKey(p)) return;
-        at.put(p, BlockSpec.parse("minecraft:wall_torch[facing=" + facing + "]"));
+        at.put(p, BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=" + facing + "]"));
     }
 }

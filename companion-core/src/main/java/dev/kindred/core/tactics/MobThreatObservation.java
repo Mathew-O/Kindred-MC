@@ -1,5 +1,7 @@
 package dev.kindred.core.tactics;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.Objects;
 import java.util.UUID;
 
@@ -55,7 +57,7 @@ public record MobThreatObservation(
 
     /** Whether the mob is a creeper. */
     public boolean isCreeper() {
-        return "minecraft:creeper".equalsIgnoreCase(entityType);
+        return VanillaIds.CREEPER.equalsIgnoreCase(entityType);
     }
 
     /** Whether the mob is a zombie. */
@@ -70,6 +72,6 @@ public record MobThreatObservation(
 
     /** Whether the mob is a cow. */
     public boolean isCow() {
-        return "minecraft:cow".equalsIgnoreCase(entityType);
+        return VanillaIds.COW.equalsIgnoreCase(entityType);
     }
 }

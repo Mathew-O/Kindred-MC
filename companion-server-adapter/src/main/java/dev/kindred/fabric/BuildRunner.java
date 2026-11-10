@@ -508,7 +508,7 @@ final class BuildRunner {
             breakTarget = breakStance = null;
         }
         var walkedTo = placeWalkedTo(player, site);
-        var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned);
+        var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned, spareScaffold(player, wanted, site));
         // Blocked high up its own scaffold, the ground beneath more than a drop down: down the column first, the block
         // underfoot dug out, before any walk off (a walk round, or one out to fetch what it lacks) that the navigator cannot
         // take from up there. In #123's CI (run 42758107947, the life-first cabin; and #113's, #117's and #119's) the builder,
@@ -1126,6 +1126,17 @@ final class BuildRunner {
         if (!scaffold.contains(at) || !site.cell(at).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false)) return false;
         while (scaffold.contains(at)) at = at.down();
         return feet.y() - (at.y() + 1) > ConstructionPlanner.MAX_DROP;
+    }
+
+    /** How many blocks it holds that it can spare for scaffolding, beyond what the build still needs of them (F-22c45). */
+    private static int spareScaffold(ServerPlayerEntity player, List<Blueprint.Block> wanted, BuildSite site) {
+        var bill = dev.kindred.core.construction.BillOfMaterials.of(wanted, site, Map.of());
+        int spare = 0;
+        for (Item item : SCAFFOLD) {
+            int need = bill.needed().getOrDefault(Registries.ITEM.getId(item).toString(), 0);
+            spare += Math.max(0, player.getInventory().count(item) - need);
+        }
+        return spare;
     }
 
     /** A slot holding a block it can spare for scaffolding: one the build needs no more of. */

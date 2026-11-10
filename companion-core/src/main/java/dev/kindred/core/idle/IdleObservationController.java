@@ -1,8 +1,10 @@
 package dev.kindred.core.idle;
 
+import dev.kindred.core.Capabilities;
+import dev.kindred.core.VanillaIds;
+
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -22,16 +24,11 @@ public final class IdleObservationController {
     public static final double EYE_CONTACT_DOT_THRESHOLD = 0.985;
     public static final double EYE_CONTACT_MAX_DISTANCE_SQ = 16.0 * 16.0;
 
-    public static final Set<String> SCAVENGEABLE_TRINKETS = Set.of(
-            "minecraft:stick",
-            "minecraft:oak_sapling", "minecraft:spruce_sapling", "minecraft:birch_sapling",
-            "minecraft:cherry_sapling", "minecraft:dark_oak_sapling", "minecraft:acacia_sapling",
-            "minecraft:feather", "minecraft:flint", "minecraft:wheat_seeds",
-            "minecraft:pumpkin_seeds", "minecraft:melon_seeds", "minecraft:beetroot_seeds",
-            "minecraft:sweet_berries", "minecraft:apple", "minecraft:bone",
-            "minecraft:string", "minecraft:nautilus_shell", "minecraft:dandelion",
-            "minecraft:poppy", "minecraft:cornflower", "minecraft:lily_of_the_valley"
-    );
+    /** Whether an idle player picks this up: a sapling, or a small thing named in {@link VanillaIds#TRINKETS}. */
+    public static boolean isScavengeableTrinket(String itemId) {
+        Capabilities facts = Capabilities.current();
+        return facts.isAny(itemId, VanillaIds.SAPLINGS, VanillaIds.TRINKETS);
+    }
 
     public enum IdleSubState {
         EYE_CONTACT_LOCKED,
@@ -131,7 +128,7 @@ public final class IdleObservationController {
 
         if (input.nearbyTrinket().isPresent()) {
             GroundTrinketObservation trinket = input.nearbyTrinket().get();
-            if (SCAVENGEABLE_TRINKETS.contains(trinket.itemId())) {
+            if (isScavengeableTrinket(trinket.itemId())) {
                 double tx = trinket.x() - input.anchorX();
                 double tz = trinket.z() - input.anchorZ();
                 if (tx * tx + tz * tz <= (double) (radius * radius)) {
