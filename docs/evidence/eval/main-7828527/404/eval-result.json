@@ -1,0 +1,42 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 10.36, "tickMsWorst": 2423.02, "tickMsWorstAt": 47689, "ticksOver50ms": 135, "ticksOver200ms": 8, "heapMbMax": 1221, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1460, "stone_tools": 2700, "iron_ingot": 4980, "iron_pickaxe": 35340},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 480, "stone_tools": 2160, "iron_ingot": 13860, "iron_pickaxe": 28020, "obsidian": 45193, "portal_lit": 46561},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 380, "stone_tools": 3300, "iron_ingot": 7740, "iron_pickaxe": 19000, "obsidian": 52018},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 56460, "x": 162, "y": -54, "z": -87, "attempt": 1}, {"tick": 75100, "x": 169, "y": 58, "z": -97, "attempt": 2}, {"tick": 79400, "x": 170, "y": 63, "z": -95, "attempt": 3}, {"tick": 84340, "x": 38, "y": 61, "z": -48, "attempt": 4}, {"tick": 98920, "x": 17, "y": 60, "z": -43, "attempt": 5}, {"tick": 102920, "x": 21, "y": 63, "z": -75, "attempt": 6}, {"tick": 106800, "x": 35, "y": 60, "z": -48, "attempt": 7}, {"tick": 123000, "x": 64, "y": 62, "z": -47, "attempt": 8}, {"tick": 127940, "x": 56, "y": 63, "z": -17, "attempt": 9}, {"tick": 131680, "x": 39, "y": 62, "z": -46, "attempt": 10}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

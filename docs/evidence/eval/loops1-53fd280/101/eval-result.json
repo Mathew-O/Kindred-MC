@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 11.99, "tickMsWorst": 2026.29, "tickMsWorstAt": 248, "ticksOver50ms": 682, "ticksOver200ms": 15, "heapMbMax": 1133, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 760, "stone_tools": 1620, "iron_ingot": 6800, "iron_pickaxe": 25000},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1740, "stone_tools": 3060, "iron_ingot": 12500, "iron_pickaxe": 22900},
+      "deaths": [
+        {"tick": 35761, "cause": "Sol was shot by Skeleton", "x": -374, "y": 35, "z": -108, "light": 9, "timeOfDay": 11923, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 131700, "x": -430, "y": 65, "z": -306, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1860, "stone_tools": 2520, "iron_ingot": 7880, "iron_pickaxe": 86560},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 48480, "x": -217, "y": 60, "z": -211, "attempt": 1}, {"tick": 52080, "x": -217, "y": 60, "z": -211, "attempt": 2}, {"tick": 55680, "x": -217, "y": 60, "z": -211, "attempt": 3}, {"tick": 71400, "x": -217, "y": 60, "z": -211, "attempt": 4}, {"tick": 75020, "x": -217, "y": 60, "z": -211, "attempt": 5}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

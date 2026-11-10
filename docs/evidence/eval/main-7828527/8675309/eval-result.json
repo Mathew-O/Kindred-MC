@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 14.45, "tickMsWorst": 1592.37, "tickMsWorstAt": 65053, "ticksOver50ms": 137, "ticksOver200ms": 8, "heapMbMax": 1000, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1060, "stone_tools": 2580, "iron_ingot": 11120, "iron_pickaxe": 49820, "obsidian": 70410, "portal_lit": 71588},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1140, "stone_tools": 3440, "iron_ingot": 12900, "iron_pickaxe": 24440, "obsidian": 62371, "portal_lit": 65052},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1100, "stone_tools": 2600, "iron_ingot": 4820, "iron_pickaxe": 19900, "obsidian": 53065, "portal_lit": 126176},
+      "deaths": [
+        {"tick": 71165, "cause": "Echo was slain by Zombie", "x": -143, "y": 37, "z": -31, "light": 0, "timeOfDay": 23327, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: inventory full - Drop surplus raw copper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 13120, "x": -16, "y": 36, "z": 49, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

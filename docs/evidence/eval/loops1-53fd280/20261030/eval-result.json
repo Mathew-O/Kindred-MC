@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 13.64, "tickMsWorst": 4574.01, "tickMsWorstAt": 1, "ticksOver50ms": 1197, "ticksOver200ms": 16, "heapMbMax": 1385, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2780, "iron_ingot": 6700, "iron_pickaxe": 13780},
+      "deaths": [
+        {"tick": 44743, "cause": "Kindred was slain by Zombie", "x": -39, "y": -9, "z": -43, "light": 0, "timeOfDay": 20905, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Iron: fight back - Back off from zombie (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 39980, "x": -81, "y": 50, "z": -12, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 620, "stone_tools": 2040, "iron_ingot": 8180, "iron_pickaxe": 28240, "diamond": 60180, "obsidian": 75760},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 50920, "x": 85, "y": 94, "z": 49, "attempt": 1}, {"tick": 98840, "x": -7, "y": -50, "z": 93, "attempt": 1}, {"tick": 102560, "x": 4, "y": -51, "z": 95, "attempt": 2}, {"tick": 106380, "x": -6, "y": -53, "z": 95, "attempt": 3}, {"tick": 113580, "x": -5, "y": 3, "z": 12, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 980, "stone_tools": 2440, "iron_ingot": 14420, "iron_pickaxe": 39220},
+      "deaths": [
+        {"tick": 130338, "cause": "Echo was shot by Skeleton", "x": -114, "y": 105, "z": -107, "light": 0, "timeOfDay": 10500, "dimension": "minecraft:overworld", "hunger": 0, "underSky": false, "stage": "Iron: fight back - Back off from skeleton the way it came (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 35460, "x": -16, "y": 17, "z": 86, "attempt": 1}, {"tick": 53260, "x": -26, "y": 19, "z": 79, "attempt": 1}, {"tick": 57200, "x": -22, "y": 21, "z": 80, "attempt": 2}, {"tick": 72080, "x": -26, "y": 19, "z": 79, "attempt": 3}, {"tick": 125800, "x": -123, "y": 112, "z": -104, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

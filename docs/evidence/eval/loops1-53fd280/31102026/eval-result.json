@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 13.67, "tickMsWorst": 2575.78, "tickMsWorstAt": 1, "ticksOver50ms": 588, "ticksOver200ms": 12, "heapMbMax": 1152, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 7060, "stone_tools": 9660, "iron_ingot": 13580, "iron_pickaxe": 26940},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3920, "stone_tools": 5520, "iron_ingot": 14900, "iron_pickaxe": 23940, "obsidian": 35487},
+      "deaths": [
+        {"tick": 1705, "cause": "Sol discovered the floor was lava", "x": 22, "y": 38, "z": 171, "light": 2, "timeOfDay": 1867, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Wood: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 23340, "x": -19, "y": 10, "z": 274, "attempt": 1}, {"tick": 103740, "x": -34, "y": 18, "z": 181, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 5440, "stone_tools": 7500, "iron_ingot": 10920, "iron_pickaxe": 19060, "obsidian": 66006, "portal_lit": 74934},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 72220, "x": 100, "y": -54, "z": 263, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

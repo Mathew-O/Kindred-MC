@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 14.01, "tickMsWorst": 2031.35, "tickMsWorstAt": 64783, "ticksOver50ms": 835, "ticksOver200ms": 12, "heapMbMax": 1759, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2140, "iron_ingot": 6560, "iron_pickaxe": 23760, "obsidian": 47187},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 90380, "x": -182, "y": -52, "z": 102, "attempt": 1}, {"tick": 95400, "x": -195, "y": -54, "z": 101, "attempt": 2}, {"tick": 105500, "x": -223, "y": 3, "z": 107, "attempt": 3}, {"tick": 118480, "x": -171, "y": -40, "z": 102, "attempt": 1}, {"tick": 137400, "x": -176, "y": 40, "z": 95, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 660, "stone_tools": 2060, "iron_ingot": 9480, "iron_pickaxe": 19820, "obsidian": 61416, "portal_lit": 63650},
+      "deaths": [
+        {"tick": 132242, "cause": "Sol was slain by Zombie", "x": -3, "y": -52, "z": 86, "light": 11, "timeOfDay": 12404, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Done: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 142574, "cause": "Sol was doomed to fall by Zombie", "x": -34, "y": 104, "z": 12, "light": 7, "timeOfDay": 22736, "dimension": "minecraft:overworld", "hunger": 11, "underSky": true, "stage": "Done: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 16080, "x": 25, "y": 22, "z": -89, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 2740, "iron_ingot": 7960, "iron_pickaxe": 20640},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31300, "x": 5, "y": 104, "z": 14, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

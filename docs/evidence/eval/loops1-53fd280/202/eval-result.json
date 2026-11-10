@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 13.16, "tickMsWorst": 1297.72, "tickMsWorstAt": 5838, "ticksOver50ms": 802, "ticksOver200ms": 12, "heapMbMax": 1129, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1820, "stone_tools": 2560, "iron_ingot": 6140, "iron_pickaxe": 13260, "obsidian": 56772, "portal_lit": 64341},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 62100, "x": 155, "y": -54, "z": -185, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1760, "stone_tools": 2680},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 23500, "x": 28, "y": -1, "z": -30, "attempt": 1}, {"tick": 31060, "x": 28, "y": -1, "z": -27, "attempt": 2}, {"tick": 85400, "x": 29, "y": -1, "z": -27, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1940, "stone_tools": 3020, "iron_ingot": 9180, "iron_pickaxe": 22700, "obsidian": 47301},
+      "deaths": [
+        {"tick": 101149, "cause": "Echo was slain by Zombie", "x": 63, "y": 5, "z": -23, "light": 0, "timeOfDay": 5311, "dimension": "minecraft:overworld", "hunger": 8, "underSky": false, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 106094, "cause": "Echo fell from a high place", "x": -108, "y": 48, "z": -34, "light": 15, "timeOfDay": 10256, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Iron: Take the coal in view - Walk to coal ore at -104, 49, -29", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE, TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

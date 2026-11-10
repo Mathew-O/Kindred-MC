@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 14.09, "tickMsWorst": 2252.70, "tickMsWorstAt": 132897, "ticksOver50ms": 713, "ticksOver200ms": 11, "heapMbMax": 1060, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1060, "stone_tools": 2660, "iron_ingot": 8800, "iron_pickaxe": 34520, "obsidian": 69767},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 83380, "x": 71, "y": 68, "z": 9, "attempt": 1}, {"tick": 99160, "x": 96, "y": 72, "z": 16, "attempt": 2}, {"tick": 103740, "x": 96, "y": 73, "z": -6, "attempt": 3}, {"tick": 122920, "x": 74, "y": 71, "z": -36, "attempt": 4}, {"tick": 126640, "x": 98, "y": 74, "z": -37, "attempt": 5}, {"tick": 130480, "x": 102, "y": 68, "z": -17, "attempt": 6}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1380, "stone_tools": 3040, "iron_ingot": 6100, "iron_pickaxe": 14540, "obsidian": 128976},
+      "deaths": [
+        {"tick": 141428, "cause": "Sol was slain by Zombie", "x": -89, "y": -54, "z": 35, "light": 10, "timeOfDay": 21590, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 38140, "x": -26, "y": 13, "z": 47, "attempt": 1}, {"tick": 45360, "x": -22, "y": 18, "z": 23, "attempt": 2}, {"tick": 53780, "x": -36, "y": 59, "z": 48, "attempt": 1}, {"tick": 111620, "x": -139, "y": -54, "z": 54, "attempt": 1}, {"tick": 117100, "x": -136, "y": -54, "z": 60, "attempt": 2}, {"tick": 121180, "x": -138, "y": -54, "z": 85, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1640, "stone_tools": 3260, "iron_ingot": 6180, "iron_pickaxe": 28420, "obsidian": 131712, "portal_lit": 132893},
+      "deaths": [
+        {"tick": 40438, "cause": "Echo was slain by Zombie", "x": 73, "y": 2, "z": 73, "light": 0, "timeOfDay": 16600, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 57960, "x": 88, "y": 48, "z": 16, "attempt": 1}, {"tick": 64260, "x": 87, "y": 51, "z": 21, "attempt": 1}, {"tick": 71460, "x": 88, "y": 49, "z": 17, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
