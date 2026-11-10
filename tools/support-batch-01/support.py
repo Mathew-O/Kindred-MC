@@ -212,6 +212,55 @@ def links(root: Path, inputs: list[str]) -> dict:
             'scope': 'Inline relative Markdown links/headings only; reference links and external URLs are not checked.'}
 
 
+TRACKER_ROW = re.compile(r'^\| ([A-Z][A-Za-z0-9–-]*) \|')
+TRACKER_ITEM = re.compile(r'^( *)- \[[ x]\] ([A-Z][A-Za-z0-9–-]*)\s')
+GAMETESTS = 'companion-server-adapter/src/gametest/resources/fabric.mod.json'
+
+
+def id_order(feature_id: str) -> list:
+    """A tracker ID's place: its numbers compared as numbers, so F-22c4 comes before F-22c40, and its letters as letters."""
+    return [(0, int(t), '') if t.isdigit() else (1, 0, t) for t in re.findall(r'\d+|[A-Za-z]+|[–-]', feature_id)]
+
+
+def out_of_order(text: str) -> list:
+    """Each tracker table row and each checklist item placed before an ID that should come ahead of it, as 'line: previous > this'.
+
+    Rows are compared within each table; checklist items with their siblings under the same parent, the indented ones
+    under the item above them. New rows and items go at their ID's place, so that PRs adding them touch different lines."""
+    lines = text.split('\n')
+    found = []
+    previous_row = None
+    siblings = {}
+    for number, line in enumerate(lines, 1):
+        row = TRACKER_ROW.match(line)
+        if row:
+            if previous_row and id_order(row.group(1)) < id_order(previous_row):
+                found.append(f'{number}: {previous_row} > {row.group(1)}')
+            previous_row = row.group(1)
+        else:
+            previous_row = None
+        item = TRACKER_ITEM.match(line)
+        if item:
+            indent, key = len(item.group(1)), item.group(2)
+            for deeper in [level for level in siblings if level > indent]:
+                del siblings[deeper]
+            if indent in siblings and id_order(key) < id_order(siblings[indent]):
+                found.append(f'{number}: {siblings[indent]} > {key}')
+            siblings[indent] = key
+        else:
+            siblings = {}
+    return found
+
+
+def unsorted_gametests(root: Path) -> list:
+    """The GameTest entrypoints that break the list's sorted order: new classes go at their sorted place, not the end."""
+    path = root / GAMETESTS
+    if not path.exists():
+        return []
+    names = json.loads(read_bytes(path)).get('entrypoints', {}).get('fabric-gametest', [])
+    return [f'{a} > {b}' for a, b in zip(names, names[1:]) if b < a]
+
+
 def tracker(root: Path) -> dict:
     text = read_bytes(root / 'docs/feature-spec.md').decode()
     complete = re.findall(r'^- \[x\] ([A-Z][A-Z0-9-]*[a-z0-9]*)\s+[—-]\s+(.+)$', text, re.M)
@@ -219,7 +268,8 @@ def tracker(root: Path) -> dict:
     duplicates = sorted({key for key in ids if ids.count(key) > 1})
     undocumented = [key for key, line in complete if not re.search(r'\d{4}-\d{2}-\d{2}', line) or '](' not in line]
     return {'completed': len(complete), 'duplicate_ids': duplicates, 'missing_dated_evidence': undocumented,
-            'scope': 'Checks tracker syntax and dated links; does not certify evidence or acceptance criteria.'}
+            'out_of_order': out_of_order(text), 'unsorted_gametests': unsorted_gametests(root),
+            'scope': 'Checks tracker syntax, ID order, dated links and the GameTest list order; does not certify evidence or acceptance criteria.'}
 
 
 def manifest(root: Path) -> dict:
@@ -304,7 +354,7 @@ def main(argv=None) -> int:
         elif args.command == 'jar': result = jar(args.file)
         else: result = preflight(root)
         print(json.dumps(result, indent=2, sort_keys=True))
-        failed = any(result.get(key) for key in ('problems', 'regressed', 'missing', 'newly_skipped', 'flaky', 'incomplete', 'always_failed', 'duplicate_ids', 'missing_dated_evidence', 'live_edit_markers'))
+        failed = any(result.get(key) for key in ('problems', 'regressed', 'missing', 'newly_skipped', 'flaky', 'incomplete', 'always_failed', 'duplicate_ids', 'missing_dated_evidence', 'live_edit_markers', 'out_of_order', 'unsorted_gametests'))
         if args.command == 'summary': failed |= bool(result['totals']['failure'] + result['totals']['error'])
         if args.command == 'preflight': failed |= bool(result['manifest']['problems'])
         return 1 if failed else 0

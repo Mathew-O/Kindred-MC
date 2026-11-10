@@ -1,7 +1,11 @@
 # AI-player development validation
 
+New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entries-by-id), in ID order; the entries below it are kept as written.
+
 ## Conventions for evaluation runs and death replays
 
+- **Validation entries (from 2026-11-10).** A feature's validation is one line in [Entries by ID](#entries-by-id), at its ID's place: the ID, the
+  date, its evidence file, which holds the detail, and the outcome in a few words. Entries before that date are not rewritten.
 - **Evaluation summaries (F-26).** A build is scored with `tools/eval/` on at least ten seeds
   (`tools/eval/seeds-10.txt`); a summary prints medians and ranges, never one number, and says whether the runs were
   earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
@@ -15,6 +19,10 @@
   A replay is committed only if it played its death again in at least two of three runs before its fix, and only
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
+
+## Entries by ID
+
+- (none yet)
 
 ## A mob in reach stops the badly hurt goal's work (F-25c4dd) — 10 November 2026 (`claude/survival-1110-cornered`)
 
