@@ -1,5 +1,7 @@
 package dev.kindred.core.survival;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Pos;
 
 import java.util.Comparator;
@@ -21,11 +23,11 @@ import java.util.UUID;
 public final class Ranch {
     /** The animals a pen is for, each with the food it follows and is bred with, as vanilla has them. */
     public enum Kind {
-        COW("minecraft:cow", List.of("minecraft:wheat")),
-        SHEEP("minecraft:sheep", List.of("minecraft:wheat")),
-        PIG("minecraft:pig", List.of("minecraft:carrot", "minecraft:potato", "minecraft:beetroot")),
-        CHICKEN("minecraft:chicken", List.of("minecraft:wheat_seeds", "minecraft:melon_seeds", "minecraft:pumpkin_seeds",
-                "minecraft:beetroot_seeds", "minecraft:torchflower_seeds"));
+        COW(VanillaIds.COW, List.of(VanillaIds.WHEAT)),
+        SHEEP(VanillaIds.SHEEP, List.of(VanillaIds.WHEAT)),
+        PIG(VanillaIds.PIG, List.of(VanillaIds.CARROT, VanillaIds.POTATO, VanillaIds.BEETROOT)),
+        CHICKEN(VanillaIds.CHICKEN, List.of(VanillaIds.WHEAT_SEEDS, VanillaIds.MELON_SEEDS, VanillaIds.PUMPKIN_SEEDS,
+                VanillaIds.BEETROOT_SEEDS, VanillaIds.TORCHFLOWER_SEEDS));
 
         public final String entity;
         public final List<String> food;
@@ -587,6 +589,6 @@ public final class Ranch {
     }
 
     private String foodName() {
-        return kind.food.getFirst().substring("minecraft:".length()).replace('_', ' ');
+        return kind.food.getFirst().substring(VanillaIds.NAMESPACE.length()).replace('_', ' ');
     }
 }

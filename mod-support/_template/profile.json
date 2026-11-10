@@ -1,0 +1,20 @@
+{
+  "mod": "examplemod",
+  "versions": ">=1.0 <2.0",
+  "status": "partial",
+  "capabilities": {
+    "edible": [],
+    "sittable": [],
+    "climbable": [],
+    "hazard": { "blocks": [], "entities": [] },
+    "logs": [],
+    "planks": [],
+    "ores": {}
+  },
+  "stations": [],
+  "needs": [],
+  "mobs": [],
+  "policy": { "teleport": "forbid", "freeItems": "forbid" },
+  "names": {},
+  "notes": "What works, what does not, in one or two sentences."
+}
