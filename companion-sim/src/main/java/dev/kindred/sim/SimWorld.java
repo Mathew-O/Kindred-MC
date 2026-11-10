@@ -2,6 +2,7 @@ package dev.kindred.sim;
 
 import dev.kindred.core.atlas.Atlas;
 import dev.kindred.core.atlas.Priors;
+import dev.kindred.core.route.Terrain;
 
 import java.util.SplittableRandom;
 
@@ -12,9 +13,10 @@ import java.util.SplittableRandom;
  * Technical: F-28. Cells in one array over a seeded terrain, 128 blocks square and from y −64 to 127. Ores are placed by
  * the atlas's priors for 1.21.1 ({@link Priors#atHeight}), so the simulator and the atlas agree on where things are. Sky
  * light is by column (open to the sky or not), block light by radius from torches and lava; light is never propagated.
- * No Minecraft code: what a block does is what the simulator's skills say.
+ * No Minecraft code: what a block does is what the simulator's skills say, and what the route planners ask of a cell
+ * ({@link Terrain}) is answered as the server adapter answers it for the matching vanilla block (F-35d).
  */
-public final class SimWorld {
+public final class SimWorld implements Terrain {
     public static final int SIZE = 128, MIN_Y = -64, HEIGHT = 192, SEA = 62;
 
     public enum Block {
@@ -37,6 +39,9 @@ public final class SimWorld {
     public long tick;
 
     private SimWorld(long seed) { this.seed = seed; }
+
+    /** An empty world of air, for a staged scene to fill: nothing generated in it, and the clock at dawn. */
+    static SimWorld staged(long seed) { return new SimWorld(seed); }
 
     private static int index(int x, int y, int z) { return ((y - MIN_Y) * SIZE + z) * SIZE + x; }
 
@@ -178,6 +183,91 @@ public final class SimWorld {
                 if (world.at(px, py, pz) == Block.STONE) world.set(px, py, pz, ore);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ the route planners' terrain (F-35d)
+    //
+    // Each fact as the adapter's WorldTerrain reads it from the matching vanilla block's state: its collision shape, its
+    // fluid, whether a placed block replaces it, and its hardness. Every simulator block but air, the torch, water and
+    // lava is a full cube to collide with (leaves too: the adapter reads their full collision box, so a route walks on a
+    // tree's crown, though the simulator's own Block.solid() keeps mobs and its skills off it).
+
+    /** Inside the 128 square and the height range: the whole simulated world is loaded, and nothing outside it is. */
+    @Override
+    public boolean loaded(int x, int y, int z) { return inside(x, y, z); }
+
+    @Override
+    public Fluid fluid(int x, int y, int z) {
+        if (!inside(x, y, z)) return Fluid.NONE;
+        return switch (at(x, y, z)) {
+            case WATER -> Fluid.WATER;
+            case LAVA -> Fluid.LAVA;
+            default -> Fluid.NONE;
+        };
+    }
+
+    /** Of the adapter's hazards (lava, fire, cactus, cobweb, magma and the rest), the simulator has only lava. */
+    @Override
+    public boolean harms(int x, int y, int z) { return at(x, y, z) == Block.LAVA; }
+
+    /** No collision: air and the torch, and water and lava, whose blocks have no collision box (lava is refused as a hazard). */
+    @Override
+    public boolean passThrough(int x, int y, int z) { return !cube(at(x, y, z)); }
+
+    /** A full cube's top, 1.0 high: every block with a collision box, the leaves included. */
+    @Override
+    public boolean supports(int x, int y, int z) { return cube(at(x, y, z)); }
+
+    /** As {@link #supports}: the simulator has no fence or wall with a taller top. */
+    @Override
+    public boolean bears(int x, int y, int z) { return cube(at(x, y, z)); }
+
+    /** Magma or fire: none in the simulator. */
+    @Override
+    public boolean scorches(int x, int y, int z) { return false; }
+
+    /** A bottom slab or stair: none in the simulator. */
+    @Override
+    public boolean bottomHalf(int x, int y, int z) { return false; }
+
+    /** A portal's own block: none in the simulator, whose lit portal is a flag on the player. */
+    @Override
+    public boolean portal(int x, int y, int z) { return false; }
+
+    /** Air, water and lava, as vanilla's {@code isReplaceable}; a torch is not. */
+    @Override
+    public boolean replaceable(int x, int y, int z) {
+        Block b = at(x, y, z);
+        return b == Block.AIR || b == Block.WATER || b == Block.LAVA;
+    }
+
+    /** Vanilla 1.21.1's hardness for the matching block; bedrock's -1, and outside the world, as the void's air, 0. */
+    @Override
+    public float hardness(int x, int y, int z) {
+        if (!inside(x, y, z)) return 0;
+        return switch (at(x, y, z)) {
+            case AIR, TORCH -> 0;
+            case STONE -> 1.5f;
+            case DIRT, SAND -> 0.5f;
+            case GRASS, GRAVEL -> 0.6f;
+            case LOG, PLANKS, COBBLE -> 2;
+            case LEAVES -> 0.2f;
+            case WATER, LAVA -> 100;
+            case COAL_ORE, IRON_ORE, DIAMOND_ORE -> 3;
+            case BEDROCK -> -1;
+            case OBSIDIAN -> 50;
+            case TABLE -> 2.5f;
+            case FURNACE -> 3.5f;
+        };
+    }
+
+    /** As the adapter's {@code NativeStairAction.solid}: loaded, not replaceable, no fluid, and a collision box. */
+    @Override
+    public boolean placeAgainst(int x, int y, int z) { return inside(x, y, z) && cube(at(x, y, z)); }
+
+    /** Whether the block has a collision box, a full cube's: all but air, the torch, water and lava. */
+    private static boolean cube(Block b) {
+        return b != Block.AIR && b != Block.TORCH && b != Block.WATER && b != Block.LAVA;
     }
 
     private static double[] noise(long seed, int cells) {

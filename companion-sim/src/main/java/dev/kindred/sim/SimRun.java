@@ -9,6 +9,9 @@ import dev.kindred.core.atlas.Atlas;
 import dev.kindred.core.atlas.Priors;
 import dev.kindred.core.eval.EvalRecord;
 import dev.kindred.core.eval.EvalScenario;
+import dev.kindred.core.route.Cell;
+import dev.kindred.core.route.Navigator;
+import dev.kindred.core.route.RoutePlanner;
 import dev.kindred.core.survival.Lessons;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
@@ -38,9 +41,10 @@ import java.util.UUID;
  * {@link PortalRunSnapshot} and {@link WorldFacts} counted from what the player holds and has seen; {@link Lessons}
  * turns its deaths into habits; the {@link Atlas} keeps what it saw and where it was hurt. What each step does is the
  * simulator's: a skill's outcome and its duration by vanilla's rules where they matter (breaking by tool and block,
- * walking speed, smelting, hunger, fall damage), roughly elsewhere (mobs walk straight at the player; a walk is paid
- * for and then made). It tests decisions and plans, not execution: the adapter's actions are not run. Its log lines
- * are the server's, in the form RunMetrics reads, and its result is an {@link EvalRecord}.
+ * walking speed, smelting, hunger, fall damage), roughly elsewhere (mobs walk straight at the player). A walk is
+ * planned by the core's own route planners over the simulator's world, as the adapter plans over the live one (F-35d),
+ * and paid for a leg at a time. It tests decisions and plans, not execution: the adapter's actions are not run. Its log
+ * lines are the server's, in the form RunMetrics reads, and its result is an {@link EvalRecord}.
  */
 public final class SimRun {
     /** How a run begins. */
@@ -171,8 +175,16 @@ public final class SimRun {
     }
 
     public SimRun(Config config, Priors priors) {
+        this(config, priors, SimWorld.generate(config.seed(), priors), null, Map.of());
+    }
+
+    /**
+     * A staged scene (F-35d): the run on {@code world} as it is given, the player standing at {@code at} with {@code kit}
+     * and nothing else, at the world's own time; the config's start is not used. With {@code at} null, the config's start.
+     */
+    SimRun(Config config, Priors priors, SimWorld world, int[] at, Map<String, Integer> kit) {
         this.name = config.name();
-        this.world = SimWorld.generate(config.seed(), priors);
+        this.world = world;
         this.random = new SplittableRandom(config.seed() * 31 + 7);
         this.atlas = new Atlas(priors);
         this.mind = new PlayerDecisionLoop(new PlayerIdentity(UUID.nameUUIDFromBytes(name.getBytes()), UUID.nameUUIDFromBytes(("sim" + config.seed()).getBytes()), name));
@@ -183,7 +195,18 @@ public final class SimRun {
             int ax = random.nextInt(SimWorld.SIZE), az = random.nextInt(SimWorld.SIZE), ay = world.top(ax, az);
             if (world.at(ax, ay, az) == Block.GRASS) animals.add(new int[] {ax, ay + 1, az});
         }
-        place(config.start());
+        if (at == null) {
+            place(config.start());
+        } else {
+            x = at[0];
+            y = at[1];
+            z = at[2];
+            kit.forEach(this::give);
+            refreshTools();
+            keptX = x;
+            keptY = y;
+            keptZ = z;
+        }
         this.start = world.tick;
         this.end = world.tick + config.ticks();
         this.watchedAt = world.tick;
@@ -279,6 +302,12 @@ public final class SimRun {
     }
 
     public record Result(String json, String log, List<String> anomalies, int deaths, int stuck) { }
+
+    /** Where the player stands now: its feet's cell. */
+    int[] at() { return new int[] {x, y, z}; }
+
+    /** How many of {@code item} it holds now. */
+    int holding(String item) { return count(item); }
 
     private record Choice(String kind, String label, PortalRunPlanner.Step step, Mob mob) { }
 
@@ -614,7 +643,7 @@ public final class SimRun {
         stuckClock = 0;
         // As the watchdog does: somewhere else, a little way off.
         int nx = Math.clamp(x + random.nextInt(-24, 25), 2, SimWorld.SIZE - 3), nz = Math.clamp(z + random.nextInt(-24, 25), 2, SimWorld.SIZE - 3);
-        walkTo(nx, ground(nx, nz), nz, "native_goto");
+        walkTo(nx, ground(nx, nz), nz, "native_goto", WALK, Way.PARTIAL, 3);
     }
 
     /** A new best in a counter the route needs, as the campaign's {@code gainedSomething} reads them from the snapshot. */
@@ -724,8 +753,10 @@ public final class SimRun {
             }
         }
         int nx = Math.clamp(x + random.nextInt(-20, 21), 2, SimWorld.SIZE - 3), nz = Math.clamp(z + random.nextInt(-20, 21), 2, SimWorld.SIZE - 3);
-        int ny = below ? Math.max(SimWorld.MIN_Y + 6, target(source)) : ground(nx, nz);
-        var walked = walkTo(nx, ny, nz, "native_goto");
+        // Below ground, the campaign's dig down and tunnel toward the height the ore is likeliest at; over it, its
+        // explore, a walk as far toward the place as the way goes.
+        var walked = below ? tunnelTo(nx, Math.max(SimWorld.MIN_Y + 6, target(source)), nz, "native_goto")
+                : walkTo(nx, ground(nx, nz), nz, "native_goto", WALK, Way.PARTIAL, 3);
         return walked != null ? walked : Outcome.done("native_goto");
     }
 
@@ -857,14 +888,10 @@ public final class SimRun {
     }
 
     /**
-     * The walk to {@code tx, ty, tz}, paid for in time as it goes: four and a third blocks a second over open ground, and
-     * the stone dug on the way when the place is under ground, a block at a time by the pickaxe it has. Mobs and hunger go
-     * on meanwhile; a hit cuts it short where it got to. Null when it got there.
-     */
-    /**
      * The walk to where it can reach the block at {@code tx, ty, tz}, as a player mines or fills from beside a block: an
      * open cell beside it (or below it, for a log) with ground to stand on and the block within four and a half blocks of
-     * its eyes, the nearest to it; with none, a tunnel dug to the cell beside it on its own side. Null when it got there.
+     * its eyes, the nearest to it; with none, the cell beside it on its own side, a way dug to it. A walk if there is one,
+     * else a made way, as the campaign's route (F-35d). Null when it got there.
      */
     private Outcome reach(int tx, int ty, int tz, String skill) {
         int[] best = null;
@@ -887,20 +914,196 @@ public final class SimRun {
             int dx = Integer.signum(x - tx), dz = dx == 0 ? (z >= tz ? 1 : -1) : 0;
             best = new int[] {tx + dx, ty, tz + dz};
         }
-        return walkTo(best[0], best[1], best[2], skill);
+        return walkTo(best[0], best[1], best[2], skill, WALK, Way.MAKE, RANGE);
     }
 
     private Outcome walkTo(int tx, int ty, int tz, String skill) { return walkTo(tx, ty, tz, skill, WALK); }
 
+    private Outcome walkTo(int tx, int ty, int tz, String skill, double pace) { return walkTo(tx, ty, tz, skill, pace, Way.WALK, RANGE); }
+
     /** Ticks a block, walking and sprinting: vanilla's 4.317 and 5.612 blocks a second. */
     private static final double WALK = 4.63, SPRINT = 3.56;
+    /** The adapter's goto: its default range, the navigator's node budget, and the goto's search radius. */
+    private static final double RANGE = 1.5;
+    private static final int WALK_NODES = Navigator.DEFAULT_MAX_NODES, WALK_RADIUS = 96;
+    /** The campaign's made way ({@code buildRoute}): its node budget ({@code ROUTE_NODES}) and its search radius. */
+    private static final int ROUTE_NODES = 2_500, ROUTE_RADIUS = 48;
+    /** Ticks to put a block down on a made way, as a placing takes the adapter. */
+    private static final int PLACE_TICKS = 5;
 
-    private Outcome walkTo(int tx, int ty, int tz, String skill, double pace) {
+    /**
+     * How a walk may go, as the adapter's callers ask: a walk ({@code native_goto}); a walk that, finding no whole way,
+     * goes as far as the navigator's way toward it does ({@code partial}, as the campaign explores and moves elsewhere);
+     * or a walk that, finding none, makes a way, digging, bridging, pillaring or building stairs (the campaign's
+     * {@code buildRoute}, with edits on and the blocks it holds).
+     */
+    private enum Way { WALK, PARTIAL, MAKE }
+
+    /** One leg of a way: where the body ends, the cells it digs and places first, and the ticks it all takes. */
+    private record Leg(Cell to, List<Cell> dig, List<Cell> place, long ticks) { }
+
+    /**
+     * The walk to within {@code range} of {@code tx, ty, tz}, planned by the core's own planners over this world as the
+     * adapter plans over the live one (F-35d): {@link Navigator#find} for the walk, with the goto's budget and radius;
+     * and with {@link Way#MAKE}, where that finds none, {@link RoutePlanner#find} with the campaign's. Paid for in time
+     * as it goes, a leg at a time: four and a third blocks a second, two ticks a block up or down, each block dug by the
+     * pickaxe it has, and each placed from its dirt or cobblestone. Mobs and hunger go on meanwhile; a hit cuts it short
+     * where it got to. No way, or one that does not get there, is the goto's refusal. Null when it got there.
+     */
+    private Outcome walkTo(int tx, int ty, int tz, String skill, double pace, Way way, double range) {
+        Cell from = new Cell(x, y, z), target = new Cell(tx, ty, tz);
+        java.util.function.Predicate<Cell> goal = cell -> Math.sqrt(cell.squaredDistance(target)) <= range + 0.01;
+        if (goal.test(from)) return null;
+        var navigator = new Navigator(world);
+        var path = navigator.find(from, target, goal, WALK_NODES, WALK_RADIUS);
+        List<Leg> legs = null;
+        if (path.complete() || way == Way.PARTIAL && path.nodes().size() >= 2) legs = walked(from, path.nodes(), pace);
+        if (legs == null && way == Way.MAKE) {
+            var route = new RoutePlanner(navigator, allowance()).find(from, target, goal, ROUTE_NODES, ROUTE_RADIUS);
+            if (route.complete() && !route.steps().isEmpty()) legs = made(from, route.steps(), pace);
+        }
+        if (legs == null) return Outcome.blocked(skill, "No walkable route toward " + tx + ", " + ty + ", " + tz);
+        return follow(legs, target, skill);
+    }
+
+    /** What the campaign lets a made way do: dig what its tools harvest with no liquid by it, and place its dirt and cobblestone. */
+    private RoutePlanner.Allowance allowance() {
+        return new RoutePlanner.Allowance(cell -> harvestable(world.at(cell.x(), cell.y(), cell.z())) && !liquidNear(cell.x(), cell.y(), cell.z()),
+                cell -> false, count("dirt") + count("cobblestone"));
+    }
+
+    /** A block its tools can harvest, as the adapter's {@code bestTool} finds one: a pickaxe of the tier it takes for rock and ore. */
+    private boolean harvestable(Block b) {
+        int tier = switch (b) {
+            case STONE, COBBLE, COAL_ORE, FURNACE -> 1;
+            case IRON_ORE -> 2;
+            case DIAMOND_ORE -> 3;
+            case OBSIDIAN -> 4;
+            default -> 0;
+        };
+        return pickaxeTier >= tier;
+    }
+
+    /**
+     * As the campaign's {@code liquidNear}: lava on any side or in it, or water above or beside, which would pour into the
+     * opening; or a liquid beside a column of sand or gravel resting on it, which comes down once the block is dug.
+     */
+    private boolean liquidNear(int cx, int cy, int cz) {
+        if (world.at(cx, cy, cz) == Block.LAVA) return true;
+        for (int[] d : SIX) {
+            Block b = world.at(cx + d[0], cy + d[1], cz + d[2]);
+            if (b == Block.LAVA || d[1] != -1 && b == Block.WATER) return true;
+        }
+        for (int up = 1; up <= 16; up++) {
+            Block b = world.at(cx, cy + up, cz);
+            if (b != Block.SAND && b != Block.GRAVEL) break;
+            for (int[] d : SIX) {
+                if (d[1] == -1) continue;
+                Block beside = world.at(cx + d[0], cy + up + d[1], cz + d[2]);
+                if (beside == Block.WATER || beside == Block.LAVA) return true;
+            }
+        }
+        return false;
+    }
+
+    private static final int[][] SIX = {{0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
+
+    /** The navigator's way as legs: each cell walked to in turn. */
+    private List<Leg> walked(Cell from, List<Cell> nodes, double pace) {
+        var legs = new ArrayList<Leg>(nodes.size());
+        Cell at = from;
+        for (Cell node : nodes) {
+            if (node.equals(at)) continue;
+            legs.add(new Leg(node, List.of(), List.of(), moveTicks(at, node, pace)));
+            at = node;
+        }
+        return legs;
+    }
+
+    /** The planner's route as legs: a walk, a dig of the cells in the way, or a block placed under or ahead, then the step. */
+    private List<Leg> made(Cell from, List<RoutePlanner.Step> steps, double pace) {
+        var legs = new ArrayList<Leg>(steps.size());
+        Cell at = from;
+        for (var step : steps) {
+            long ticks = moveTicks(at, step.to(), pace);
+            if (step.kind() == RoutePlanner.Kind.DIG) {
+                for (Cell cell : step.cells()) ticks += breakTicks(world.at(cell.x(), cell.y(), cell.z()));
+                legs.add(new Leg(step.to(), step.cells(), List.of(), ticks));
+            } else if (step.kind() == RoutePlanner.Kind.WALK) {
+                legs.add(new Leg(step.to(), List.of(), List.of(), ticks));
+            } else {
+                legs.add(new Leg(step.to(), List.of(), step.cells(), ticks + (long) PLACE_TICKS * step.cells().size()));
+            }
+            at = step.to();
+        }
+        return legs;
+    }
+
+    /** A step's time: the walking pace a block across (a diagonal's 1.41), and two ticks a block up or down. */
+    private static long moveTicks(Cell a, Cell b, double pace) {
+        double across = Math.sqrt(sq(b.x() - a.x()) + sq(b.z() - a.z()));
+        return (long) Math.ceil(across * pace) + 2L * Math.abs(b.y() - a.y());
+    }
+
+    /**
+     * The legs walked as the time goes, each done once its share of the time has gone by: its cells dug (each block's
+     * drop in hand) or its blocks placed (dirt first, then cobblestone), then the body where the leg ends, so that what
+     * comes at it meets it where it has got to. A block it no longer has to place stops the way there.
+     */
+    private Outcome follow(List<Leg> legs, Cell target, String skill) {
+        long[] ends = new long[legs.size()];
+        long total = 0;
+        for (int i = 0; i < legs.size(); i++) ends[i] = total += legs.get(i).ticks();
+        int[] next = {0};
+        boolean[] short_ = {false};
+        long all = total;
+        Along along = share -> {
+            double elapsed = share * all;
+            while (!short_[0] && next[0] < legs.size() && ends[next[0]] <= elapsed + 1e-9) {
+                if (!carryOut(legs.get(next[0]))) short_[0] = true;
+                else next[0]++;
+            }
+        };
+        long done = all == 0 ? 0 : pass(all, true, along);
+        if (done >= all) along.at(1);
+        if (short_[0]) {
+            land();
+            return Outcome.blocked(skill, "Route to " + target.x() + ", " + target.y() + ", " + target.z() + " is blocked");
+        }
+        land();
+        if (next[0] < legs.size()) return Outcome.cut(skill, hissingCreeper() != null ? "A creeper is about to explode" : "A hostile mob is attacking; fight back first");
+        return null;
+    }
+
+    /** One leg done: its cells dug, its blocks placed, and the body where it ends; false with no block left to place. */
+    private boolean carryOut(Leg leg) {
+        for (Cell cell : leg.dig()) {
+            Block b = world.at(cell.x(), cell.y(), cell.z());
+            if (!b.open() && b != Block.WATER && b != Block.LAVA && b != Block.BEDROCK) dug(b, cell.x(), cell.y(), cell.z());
+        }
+        for (Cell cell : leg.place()) {
+            String block = count("dirt") > 0 ? "dirt" : count("cobblestone") > 0 ? "cobblestone" : null;
+            if (block == null) return false;
+            take(block, 1);
+            world.set(cell.x(), cell.y(), cell.z(), block.equals("dirt") ? Block.DIRT : Block.COBBLE);
+        }
+        x = leg.to().x();
+        y = leg.to().y();
+        z = leg.to().z();
+        return true;
+    }
+
+    /**
+     * A tunnel to {@code tx, ty, tz}, as the campaign digs down or branch mines toward an ore it has not seen: over open
+     * ground by the lie of the land, below it on the straight line between the two ends, with every block of rock on that
+     * line dug out two high, a block at a time by the pickaxe it has. Water, lava and bedrock on the line are left be and
+     * walked through: the campaign's own tunnel, which turns from liquid, is the adapter's, not the core's. Null when it
+     * got there.
+     */
+    private Outcome tunnelTo(int tx, int ty, int tz, String skill) {
         int sx = x, sy = y, sz = z;
+        double pace = WALK;
         double flat = Math.sqrt(sq(tx - sx) + sq(tz - sz));
-        // Along the way as the time goes, so that what comes at it meets it where it has got to: over open ground by the
-        // lie of the land, below it on the straight line between the two ends, with every block of rock on that line
-        // dug out two high, a block at a time by the pickaxe it has, as a tunnel or a staircase is.
         boolean overGround = sy >= ground(sx, sz) && ty >= ground(tx, tz);
         int dig = 0;
         long digTicks = 0;
@@ -933,7 +1136,6 @@ public final class SimRun {
         }
         // The tunnel itself, two high along the way dug, so that the ore in its walls is seen as a branch mine shows it.
         if (dig > 0) carve(sx, sy, sz, tx, ty, tz);
-        // The way there is the navigator's, which never drops more than three blocks: no fall is taken on a walk.
         x = tx;
         y = overGround && !world.at(tx, ty, tz).open() ? ground(tx, tz) : ty;
         z = tz;
@@ -1246,7 +1448,7 @@ public final class SimRun {
             var filled = fill(WorldFacts.Source.LAVA, "lava_bucket");
             if (!filled.state().equals("COMPLETED") || count("lava_bucket") == 0) return filled;
         }
-        var back = walkTo(frameAt[0], frameAt[1], frameAt[2], "native_cast");
+        var back = walkTo(frameAt[0], frameAt[1], frameAt[2], "native_cast", WALK, Way.MAKE, RANGE);
         if (back != null) return back;
         pass(60, true);
         take("lava_bucket", 1);
