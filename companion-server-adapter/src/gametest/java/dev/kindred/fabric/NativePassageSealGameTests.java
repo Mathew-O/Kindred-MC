@@ -35,7 +35,10 @@ public final class NativePassageSealGameTests implements FabricGameTest {
         run(context, 2);
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "passageSeal", tickLimit = 2400)
+    // A batch of its own: run beside the two-zombie case, its player walked up its tunnel to within twelve blocks of the other's
+    // zombies, sealed out next door, which then took it for their target through the stone, and it sealed against two (#121's
+    // CI, run 42776825206, attempt 2).
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "passageSealOne", tickLimit = 2400)
     public void oneZombieDownADarkTunnelIsFoughtNotSealedOut(TestContext context) {
         run(context, 1);
     }
