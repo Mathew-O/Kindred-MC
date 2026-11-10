@@ -61,6 +61,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 - Files that are not usable skins are named in the server log with the reason.
 - After adding files, press Reload in the selector.
 
+How many native AI players the server allows is its own policy too: `maxNativePlayers=N` in `<world>/kindred/edits.properties` (3 when absent, at most 12; the server logs the value at startup, and a refused creation names the setting). It is kept when an operator's command rewrites the file. Raising it is a capacity decision: the month run's eight wait on an engine run at eight that measures tick time and heap (M-06i, M-06k).
+
 World edits stay off until an operator turns them on; a fresh world has no `edits.properties`, which means off (decision D4). With edits on and no assigned work area, the player follows the roaming policy: it may break and place where a survival player could, never containers or block entities other than its own empty furnace, never in spawn protection, never the block under its own feet, and never a break that would let lava out (obsidian guarded by water is the one exception).
 
 Every walk moves as a player does (F-10d): straight across open ground to the furthest point it can reach in a line, sprinting when its food allows (7 or more) and sprint-jumping along clear straight stretches (10 or more, as a sprint-jump costs twice the hunger), turning smoothly with its head, slowing for sharp turns, steps and drops, and easing to a walk near where it is going.

@@ -297,7 +297,7 @@ public final class NativeLifeFirstGameTests implements FabricGameTest {
     }
 
     /** Its hunger and the food points it carries, as the life list counts them (chicken and the like aside). */
-    private static int stock(net.minecraft.server.network.ServerPlayerEntity player) {
+    static int stock(net.minecraft.server.network.ServerPlayerEntity player) {
         int points = player.getHungerManager().getFoodLevel();
         var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.size(); slot++) {

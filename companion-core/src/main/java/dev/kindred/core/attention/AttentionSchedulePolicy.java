@@ -20,9 +20,21 @@ public final class AttentionSchedulePolicy {
     private final int maxDetailedScansPerTick;
     private final long softTimeLimitNanos;
     private final boolean learningReviewEnabled;
+    private final int maxPlayers;
 
     public AttentionSchedulePolicy(int maxSlicesPerTick, int maxDetailedScansPerTick,
                                    long softTimeLimitNanos, boolean learningReviewEnabled) {
+        this(maxSlicesPerTick, maxDetailedScansPerTick, softTimeLimitNanos, learningReviewEnabled, MAX_PLAYERS);
+    }
+
+    /**
+     * As above, for {@code maxPlayers} players at most in one tick's batch: the same per-tick budget shared among more
+     * players (a server that allows more native players, M-06i).
+     */
+    public AttentionSchedulePolicy(int maxSlicesPerTick, int maxDetailedScansPerTick,
+                                   long softTimeLimitNanos, boolean learningReviewEnabled, int maxPlayers) {
+        if (maxPlayers < 1) throw new IllegalArgumentException("maxPlayers must be positive: " + maxPlayers);
+        this.maxPlayers = maxPlayers;
         if (maxSlicesPerTick < 0) throw new IllegalArgumentException("maxSlicesPerTick cannot be negative: " + maxSlicesPerTick);
         if (maxDetailedScansPerTick < 0) throw new IllegalArgumentException("maxDetailedScansPerTick cannot be negative: " + maxDetailedScansPerTick);
         if (softTimeLimitNanos < 0) throw new IllegalArgumentException("softTimeLimitNanos cannot be negative: " + softTimeLimitNanos);
@@ -45,7 +57,12 @@ public final class AttentionSchedulePolicy {
     public int maxSlicesPerTick() { return maxSlicesPerTick; }
     public int maxDetailedScansPerTick() { return maxDetailedScansPerTick; }
     public long softTimeLimitNanos() { return softTimeLimitNanos; }
-    public int maxPlayers() { return MAX_PLAYERS; }
+    public int maxPlayers() { return maxPlayers; }
+
+    /** The same limits and timings for at most {@code players} players in a batch. */
+    public AttentionSchedulePolicy withMaxPlayers(int players) {
+        return new AttentionSchedulePolicy(maxSlicesPerTick, maxDetailedScansPerTick, softTimeLimitNanos, learningReviewEnabled, players);
+    }
     public boolean learningReviewEnabled() { return learningReviewEnabled; }
 
     /**
