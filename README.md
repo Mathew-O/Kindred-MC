@@ -2,186 +2,102 @@
   <img src="assets/banner.png" alt="Kindred MC" width="100%">
 </p>
 
-<p align="center">
-  <b>Make a Minecraft player of your own.</b><br>
-  It joins your server like a real person and plays survival by your rules: punching trees, crafting, mining, building and fighting its way to the Ender Dragon.
-</p>
+Kindred adds a player to your Minecraft server that plays survival on its own. It joins like anyone else, with its own skin and inventory, and works its way from punching trees toward the Ender Dragon. It doesn't get free items, teleport, or see through walls. If it has something, it found it, mined it, or crafted it.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-1.21.1-62B47A?style=for-the-badge" alt="Minecraft 1.21.1">
-  <img src="https://img.shields.io/badge/Mod%20loader-Fabric-DBD0B4?style=for-the-badge" alt="Fabric">
-  <img src="https://img.shields.io/badge/Java-21-E76F00?style=for-the-badge" alt="Java 21">
-  <img src="https://img.shields.io/badge/Status-In%20development-F2C94C?style=for-the-badge" alt="Status: in development">
-</p>
+Minecraft 1.21.1 · Fabric · Java 21 · still in development
 
----
+## Getting started
 
-## 🎮 What is this?
+There's no download yet. Build it, drop it in, start the server.
 
-**Kindred MC** is a mod for Minecraft Java servers. It lets you add a player of your own to your world. Your player shows up in the player list, has its own skin and inventory, gets hungry, takes fall damage and respawns when it dies.
+1. Install [Java 21](https://adoptium.net/) and set up a 1.21.1 server with Fabric Loader 0.19.5 and Fabric API 0.116.17+1.21.1.
+2. Run `./gradlew build` here (`gradlew.bat build` on Windows).
+3. Copy `companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar` into the server's `mods` folder.
+4. Optionally put the same jar in your own client's `mods` folder for the K menu and the players' skins. Plain vanilla clients should be able to join too, but nobody has tested that properly yet.
 
-**No cheats. Ever.** It doesn't get free items, teleport or see through walls. Everything it has, it found, mined, crafted or smelted itself, by the same rules you play by.
+Then, in game, as an operator:
 
-The big goal: **start with an empty inventory and beat the Ender Dragon**, while you play alongside it or just watch.
-
----
-
-## 🛠️ Make your own
-
-Give it a name, dress it in any skin you like and shape its personality. In game, as an operator:
-
-```text
-/aiplayer native create Ada                 make a player called Ada; it appears beside you
-/aiplayer skin <skin> Ada                   dress Ada in a skin from the server's config/kindred/skins folder
-/aiplayer personality curiosity 90 Ada      tune a trait from 0 to 100
+```
+/aiplayer edits on              lets your players break and place blocks (off by default)
+/aiplayer native create Ada     makes a player called Ada next to you
+/aiplayer goal nether Ada       sends Ada off to earn a Nether portal
 ```
 
-The traits are **initiative, caution, curiosity, sociability, humor, combativeness, helpfulness, farming** and **mining**. Right now they change how your player moves and looks around, how it chats and the names it gives its gear. More of its choices will follow them as the project grows.
+Use a throwaway world. This is a dev build and it will do dumb things sometimes.
 
-A server can have up to three of these players at once.
+## Talking to it
 
-Talk to it by name in chat: `Ada, what are you doing?`. Whoever made it (and any operator) can talk with it at any time; anyone else only once you let it talk in public: `/aiplayer social public true Ada`.
+Most of what you'd want is just said in chat, by name.
 
-### ⚡ In a hurry? Use a starter
-
-Three ready-made players come with the mod, each with its own name, skin and personality: **Kindred** (helpful and sociable, loves farming), **Sol** (bold and quick to fight) and **Echo** (careful and curious, loves mining). Spawn one and get going:
-
-```text
-/aiplayer roster spawn Kindred
+```
+Ada, what are you doing?
+Ada, go for the Nether
+Ada, come here
+Ada, build a cabin here
+Ada, race me          (then "Ada, I'm in")
+Ada, toss me some bread
+Ada, keep it down
 ```
 
-A starter takes its personality when it is first made; after that it is its own, and only you change it. Starters made before this version keep the one they have: set it with `/aiplayer personality`.
+It answers either way: what it did, or why it won't. Only the person who made it (and operators) can tell it what to do; anyone else can chat, race it, or ask what it knows. If you want other people to be able to talk to it at all, run `/aiplayer social public true Ada`.
 
----
+Personality is nine numbers from 0 to 100 (initiative, caution, curiosity, sociability, humor, combativeness, helpfulness, farming, mining). Right now they mostly change how it moves, chats, and names its gear. `/aiplayer personality curiosity 90 Ada` sets one.
 
-## ⛏️ What it can do
+Three starters come with the mod if you'd rather not set one up: Kindred, Sol and Echo. `/aiplayer roster spawn Kindred`. A server can run three players at once.
 
-> 🚧 **Work in progress.** Most of this works in the automated tests and in test worlds, and is still being proven in long real games. Use a test world and keep backups.
+## What it does
 
-- 🪵 **Start from nothing:** logs, a crafting table and wooden tools, then stone, then iron smelted in its own furnace, then diamonds.
-- 🔥 **Get to the Nether:** obsidian made from lava and water, flint and steel, and a lit portal, all earned.
-- 🟣 **Head for the End:** blaze rods, ender pearls and eyes of ender. It throws the eyes to triangulate and digs down to the stronghold.
-- 🐉 **Fight the dragon:** shoot the crystals with its own bow, open the caged ones and fight the dragon at its perch. This only happens if the server owner allows it.
-- 🏠 **Build:** huts, cabins, houses, manors, walled keeps, farms with fields, animal ranches and villager trading halls, all from blocks it gathered.
-- 🍖 **Look after itself:** eat when hungry, sleep at night, run from creepers and lava, break long falls with a water bucket, and go back for its stuff after dying.
-- ⚔️ **Play games with you:** duels, speedrun races, manhunts and build battles.
+- Starts from nothing: wood tools, stone, a furnace, iron, diamonds.
+- Makes obsidian from lava and water and lights a portal.
+- Goes through the Nether for blaze rods and pearls, throws eyes of ender, finds the stronghold.
+- Fights the dragon, if the server owner turns that on (`/aiplayer dragonfight on`).
+- Builds huts, houses, keeps, farms, ranches and trading halls out of blocks it gathered.
+- Eats, sleeps, runs from creepers, catches long falls with a water bucket, and goes back for its stuff when it dies.
+- Plays duels, speedrun races, manhunts and build battles with you.
 
----
+Honest status: all of this works in test worlds and the automated suite. In long real games it still dies more than it should and gets stuck more than it should. We measure both every day and it's getting better. Don't run it unattended on a world you care about.
 
-## 🗺️ Game modes (where it's heading)
+## Modes
 
-| Mode | The idea |
+| | |
 | --- | --- |
-| **Co-op Survival** | Play a normal survival world together: bases that grow, farms, enchanting, and boss fights when you're ready. |
-| **Manhunt** | Runners race to beat the game while hunters gear up and chase them. People and players you made can be on either side. |
-| **Speedrun** | A random seed, and a race to the dragon using the tricks real speedrunners use. |
-| **Builder** | A creative build battle on a random theme, judged by votes, minigame-server style. |
-| **Factions** *(optional)* | Everyone for themselves: hidden bunkers, walled bases, scouting, and only players who joined are fair game. |
+| Co-op survival | A normal world you play together. Bases, farms, bosses when you're ready. |
+| Manhunt | Runners vs hunters. People and AI players on either side. |
+| Speedrun | Random seed, race to the dragon. |
+| Builder | Creative build battle, random theme, vote at the end. Done. |
+| Factions | Power, claims, raids, an economy. Being built now for a month-long test server. |
 
----
+## How it works, briefly
 
-## 🚀 Install (for server owners)
+The player is a real server-side player, not a mob, so hunger, mining speed and tool wear are all vanilla. Its decisions are plain code: a to-do list ordered by staying alive, then its goal, then whatever it was building. It only knows about things it has actually seen. Every action that moves blocks or items is written down before it happens, so a crash can't duplicate or lose anything.
 
-There's no download yet, so you build the mod yourself (it takes a couple of minutes):
+There's an optional hook for a Claude or OpenAI key. With one, the player gets occasional planning advice, talks back in its own voice, and can ask for a way out when it's stuck. Without one, everything above still works.
 
-1. **Get the tools:** [Java 21](https://adoptium.net/) and a Minecraft **1.21.1** server running **Fabric Loader 0.19.5** with **Fabric API 0.116.17+1.21.1**.
-2. **Build it:** in this folder, run `./gradlew build` (on Windows: `gradlew.bat build`).
-3. **Install it:** copy `companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar` into your server's `mods` folder and start the server.
-4. **Optional:** put the same JAR in your own game's `mods` folder too. That adds the **K** menu and shows your players' skins. The mod is built so that friends with plain vanilla Minecraft should be able to join too, but nobody has tried that with a real vanilla client yet.
-5. **Say hi:** in game, as an operator:
+## Repo layout
 
-```text
-/aiplayer edits on                  let your players break and place blocks (off until you say so)
-/aiplayer native create Ada         make your player
-/aiplayer goal nether Ada           watch Ada earn its way to a lit Nether portal
+| | |
+| --- | --- |
+| `companion-core/` | The decision-making. No Minecraft code in here, so it's easy to test. |
+| `companion-server-adapter/` | The Fabric mod: player bodies, commands, the K menu, in-game tests. |
+| `companion-scheduler/` | Daily play limits and time zones. |
+| `companion-persistence/` | Saves everything to SQLite. |
+| `companion-model/` | The optional Claude/OpenAI bits. |
+| `companion-testkit/` | Demos and test helpers. |
+| `docs/` | Guides, design notes, the feature tracker. Start at [docs/README.md](docs/README.md). |
+| `tools/` | Scripts, including the evaluation harness that scores builds overnight. |
+
+The folders say "companion" because that's what the project was called before it became about players. Renaming them would break old saves.
+
+## For developers
+
+```
+./gradlew build                                   # compile and unit tests
+./gradlew :companion-server-adapter:runGametest   # in-game tests on a real test server, about an hour
+./gradlew :companion-testkit:run                  # quick demo without Minecraft
 ```
 
-> 💾 This is a development build. Use a world you don't mind losing, and back up your saves.
-
----
-
-## ⌨️ Cheat sheet
-
-Most things you just **ask in chat**, by its name. Whoever made it (and any operator) may ask anything here; anyone else can race or duel it, ask what it knows, and tell it how to talk to them. It answers either way: done, or why not.
-
-| Say | What happens |
-| --- | --- |
-| `Echo, go for the Nether` (or `find the End portal`, `beat the dragon`, `drop your goal`) | Sets its goal |
-| `Echo, play it safe` (or `take it easy`, `speed it up`) · `Echo, work together` (or `go solo`) | How it plays, and whether it teams up |
-| `Echo, build a cabin here` (`hut`, `house`, `manor`) · `make a cow ranch here` · `plant a field here` | Builds where you stand |
-| `Echo, race me` or `duel me`, then `Echo, I'm in` | It says yes or no for itself; nothing starts until you say "I'm in". `count me out` to leave |
-| `Echo, come here` · `wait` · `stop` · `toss me some bread` · `wear the knight skin` | The everyday asks |
-| `Echo, what does Sol need?` · `where is Sol?` | What it knows of the others |
-| `Echo, keep it down` (or `you can talk more`) · `forget that` | Fewer or more lines to you; take back what you told it |
-
-These stay commands. Press **K** in game (with the mod on your client) for the player menu, or:
-
-| Command | What it does |
-| --- | --- |
-| `/aiplayer native create <name>` · `/aiplayer roster spawn <name>` | Make a player of your own, or spawn a starter (Kindred, Sol or Echo) |
-| `/aiplayer edits on` / `off` · `/aiplayer dragonfight on` | Allow or stop block breaking and placing by your players; allow the dragon fight |
-| `/aiplayer personality <trait> <0-100> [player]` · `/aiplayer expression plain\|dry\|playful\|rough [player]` · `/aiplayer chatstyle proper\|casual\|gamer\|chaotic [player]` | Tune a trait; how it sounds; how it types |
-| `/aiplayer limit cap <hours> [player]` · `/aiplayer limit window 18.00 23.00 [player]` | How long, and when, a player may be active |
-| `/aiplayer prefs` · `/aiplayer prefs swearing\|dark\|flirting on` · `/aiplayer watch on` / `off` | Your own: how AI players speak to you, and whether you hear swearing, dark jokes or flirting (off unless you say yes); whether they may learn how deep you mine |
-| `/aiplayer rapport [player [peer [strike <n>]]]` | How a player stands with those it knows (from gifts picked up, outings together and blows taken), and striking a wrong one out |
-| `/aiplayer build cabin <x y z> [player]` (and anything else with coordinates) | Anything at a place you name, rather than where you stand |
-
-The full list, with every option, is in the [operator guide](docs/operator-guide.md).
-
----
-
-## 🧠 How it works (no jargon)
-
-- **A real player, not a mob.** Your player joins the server as an actual player. Same hunger, same mining speed, same tool wear, same everything.
-- **A to-do list.** It keeps one list of things it could do and picks the most important: staying alive first (food, sleep, escaping danger), then its goal, then building.
-- **Plans from what it has seen.** It only knows about the ores, trees and structures it has actually spotted, like you.
-- **A notebook for every important action.** Before it breaks, crafts or moves items, the mod writes down what it's about to do. If the server crashes halfway, nothing gets duplicated and nothing silently vanishes.
-- **Off-switches everywhere.** Server owners decide whether players may edit the world, fight the dragon or build their own bases, how long they play each day and at what hours.
-- **Runs on your server.** Everything above works on its own. A server owner can optionally plug in a Claude or OpenAI key for extra planning advice on long goals; it's off by default.
-- **Talks back in its own words.** With that key plugged in, a player you speak to answers in its own voice from what it actually knows, and only tells you what you're allowed to know; anything goes wrong and it says its usual line. If you're allowed to command it, you can also ask it in chat to come over, wait, stop or toss you something, and it does exactly what the matching command would. Nobody else's chat makes it do anything.
-
-New here? The [**start-here guide**](docs/README.md) explains the project, the folders and the words we use, in plain language.
-
----
-
-## 📦 What's in this repo
-
-| Folder | What's inside |
-| --- | --- |
-| [`companion-core/`](companion-core) | 🧠 **The brains.** Decisions, plans, recipes and build plans. It contains no Minecraft code, so it's easy to test. |
-| [`companion-server-adapter/`](companion-server-adapter) | ✋ **The hands.** The actual Fabric mod: the players' bodies, the commands, the K menu, and the in-game tests. |
-| [`companion-scheduler/`](companion-scheduler) | ⏰ **The clock.** Daily play limits, hours and time zones. |
-| [`companion-persistence/`](companion-persistence) | 💾 **The memory.** Saves everything to a small database file. |
-| [`companion-model/`](companion-model) | 💡 **The optional planning helper.** Talks to Claude or OpenAI when a key is set. |
-| [`companion-testkit/`](companion-testkit) | 🧪 **Demos and test helpers.** |
-| [`docs/`](docs) | 📚 **Guides and design notes.** Start with [docs/README.md](docs/README.md). |
-| [`assets/`](assets) | 🎨 **Art.** The logo banner, the starter skins and the script that draws the banner. |
-| [`tools/`](tools) | 🔧 Helper scripts for checking test reports. |
-
-*Why "companion" in the folder names? That's left over from an earlier version of the project, when these were pet-like companions. The names stay so old saves keep working.*
-
----
-
-## 🧪 Is it finished?
-
-Not yet. It works in automated tests: hundreds of little test worlds the game builds to check one thing at a time. It's being proven in longer real games, and it isn't ready to run a survival server unattended. Progress is tracked feature by feature in the [tracker](docs/feature-spec.md).
-
----
-
-## 🛠️ For developers
-
-You'll need Java 21. The Gradle wrapper fetches everything else at the exact versions in [`release-manifest.json`](release-manifest.json).
-
-```bash
-./gradlew build                                   # compile everything and run the unit tests
-./gradlew :companion-server-adapter:runGametest   # run the in-game tests (starts a real test server)
-./gradlew :companion-testkit:run                  # a quick demo of the core pieces
-```
-
-The technical documents:
-- [The player contract](minecraft_player_spec.md): what a player must do and must never do.
-- [Architecture](docs/player-architecture.md): how the pieces fit together.
-- [Tracker](docs/feature-spec.md): every feature, its status and its evidence.
-- [Operator guide](docs/operator-guide.md): everything a server owner can set.
-- [Validation](docs/validation.md): test results, run by run.
-- [AGENTS.md](AGENTS.md): the rules for anyone working on the code.
+- [Operator guide](docs/operator-guide.md): every command and setting.
+- [Feature tracker](docs/feature-spec.md): what's done, what isn't, and the evidence.
+- [Player contract](minecraft_player_spec.md): the rules the player always follows.
+- [Architecture](docs/player-architecture.md) and [validation](docs/validation.md).
+- [AGENTS.md](AGENTS.md): how we work on this, for people and for AI sessions.

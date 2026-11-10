@@ -1,5 +1,7 @@
 package dev.kindred.core.expedition;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.Objects;
 
 /**
@@ -51,22 +53,22 @@ public record Waypoint(
 
     /** Where this place lines up in the Nether. */
     public Waypoint toNetherCoordinates(String newName) {
-        if ("minecraft:the_nether".equals(dimension)) {
+        if (VanillaIds.THE_NETHER.equals(dimension)) {
             return this;
         }
         return new Waypoint(newName != null ? newName : name + " (Nether)",
                 overworldToNether(x), y, overworldToNether(z),
-                "minecraft:the_nether", kind, recordedTick);
+                VanillaIds.THE_NETHER, kind, recordedTick);
     }
 
     /** Where this place lines up in the Overworld. */
     public Waypoint toOverworldCoordinates(String newName) {
-        if ("minecraft:overworld".equals(dimension)) {
+        if (VanillaIds.OVERWORLD.equals(dimension)) {
             return this;
         }
         return new Waypoint(newName != null ? newName : name + " (Overworld)",
                 netherToOverworld(x), y, netherToOverworld(z),
-                "minecraft:overworld", kind, recordedTick);
+                VanillaIds.OVERWORLD, kind, recordedTick);
     }
 
     /** A new remembered place. */
