@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144583,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 1079, "factions": 3, "claims": 10, "captures": 0, "sales": 347, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 1, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 15.94, "tickMsWorst": 1563.94, "tickMsWorstAt": 5838, "ticksOver50ms": 1542, "ticksOver200ms": 11, "heapMbMax": 1647, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1720, "stone_tools": 7780, "iron_ingot": 13700, "iron_pickaxe": 29440},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52760, "x": -586, "y": 107, "z": -156, "attempt": 1}, {"tick": 58900, "x": -409, "y": 106, "z": -224, "attempt": 2}, {"tick": 75080, "x": -479, "y": 107, "z": -212, "attempt": 3}, {"tick": 83520, "x": -208, "y": 94, "z": 3, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2620, "stone_tools": 9240, "iron_ingot": 30880, "iron_pickaxe": 50800, "obsidian": 132248},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 14400, "x": -492, "y": 56, "z": -10, "attempt": 1}, {"tick": 18000, "x": -492, "y": 56, "z": -9, "attempt": 2}, {"tick": 21660, "x": -492, "y": 56, "z": -10, "attempt": 3}, {"tick": 135960, "x": -510, "y": -54, "z": -110, "attempt": 1}, {"tick": 143180, "x": -500, "y": -54, "z": -108, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 6260, "stone_tools": 10400, "iron_ingot": 29980, "iron_pickaxe": 46460},
+      "deaths": [
+        {"tick": 91551, "cause": "Echo was shot by Skeleton", "x": -581, "y": -27, "z": 16, "light": 2, "timeOfDay": 19713, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 27520, "x": -510, "y": 17, "z": 44, "attempt": 1}, {"tick": 50080, "x": -516, "y": 17, "z": 39, "attempt": 1}, {"tick": 143320, "x": -319, "y": 16, "z": -24, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
