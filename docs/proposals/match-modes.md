@@ -35,7 +35,8 @@ missing is what makes manhunt a *game*: prediction, deception, teamwork and talk
   it reads the Wire's `side` channel for what its teammates saw, else infers from being chased).
 - **Deception.** Doubling back along water (the compass lags), a decoy portal lit in the wrong place, leaving a trail
   the hunters follow into a dead end, a tower pillared and the blocks taken, a bed trap in the Nether, a nether
-  portal lit and left while it travels by another, a pearl at the right moment. Each a `Ruse` with a cost and a
+  portal lit and left while it travels by another, a pearl at the right moment, an invisibility potion at a chokepoint,
+  a spyglass to watch the hunters from a ridge, an ice-boat run, chorus fruit when cornered. Each a `Ruse` with a cost and a
   chance, chosen by personality (a cautious runner hides; a bold one taunts).
 - **Nether skipping.** Enter the Nether early to lose the overworld compass, travel eight to one, come out behind.
 - **Resource denial.** Taking the only boat, the village's beds, the obvious lava pool.
@@ -104,7 +105,8 @@ tour, results. What is missing is taste, variety and people.
 
 Not only schematics: a design generated for the theme from the building grammar (E-29a's `BuildStyle` grown:
 massing, roof, materials, details), varied by personality so three AI builders give three builds, scaled to the plot
-and the clock. The schematic library stays as inspiration and as the fallback.
+and the clock, with concrete, terracotta and glazed terracotta palettes (concrete powder set with water on the plot),
+paintings, and copper weathered on purpose. The schematic library stays as inspiration and as the fallback.
 
 ### M-04c Judging with taste
 

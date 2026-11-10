@@ -66,11 +66,11 @@ with screenshots.
 
 | Slice | What the player does | Rule |
 | --- | --- | --- |
-| **E-60a Ocean monument** | Found by boat and the atlas's frontier; cleared with water breathing it brewed and a depth plan; the elders killed; sponges and prismarine taken; the gold mined. | Guardians as profiled threats; Mining Fatigue handled (it waits it out or drinks milk it earned from its cow). |
+| **E-60a Ocean monument** | Found by boat and the atlas's frontier; cleared with water breathing it brewed and a depth plan; the elders killed; sponges and prismarine taken; the gold mined; the sponges dried and used to drain an underwater build site. | Guardians as profiled threats; Mining Fatigue handled (it waits it out or drinks milk it earned from its cow). |
 | **E-60b Shipwrecks, ruins, buried treasure** | Looted on the way; treasure maps followed with the atlas; the heart of the sea kept for E-58c. | E-42's worth rules. |
 | **E-60c Woodland mansion** | Found by a cartographer's map it traded for (E-45); cleared room by room with the mansion's layout read as it goes; the totem of undying taken and kept in the offhand under the hot-swap rule (E-07c). | Evokers and vindicators profiled; the totem a swap rule it already has. |
 | **E-60d Raids** | A Bad Omen from an outpost captain it fought; a raid at its village deliberately or by accident: it defends the villagers with the hall's layout (E-45d), the bell rung, the Hero of the Village trade discounts taken afterward. | Villagers protected first (the team rules read them as wards). |
-| **E-60e Trial chambers** | Found by the trial explorer map or the atlas; trial spawners fought wave by wave with the shield and a bow, vaults opened with the keys, the mace made from a heavy core and a breeze rod (its combat model already knows the mace). | Breezes profiled (ranged, flies). |
+| **E-60e Trial chambers** | Found by the trial explorer map or the atlas; trial spawners fought wave by wave with the shield and a bow, vaults opened with the keys, an ominous trial taken on purpose with an ominous bottle for the ominous vault, the mace made from a heavy core and a breeze rod (its combat model already knows the mace), wind charges kept as a jump and an escape. | Breezes profiled (ranged, flies). |
 | **E-60f Ancient cities** | Stays **blocked** under PROG-03 until a qualification slice shows sneaking in and out without waking the Warden; then looting by sneak, wool-lined, no fighting. | A later slice, its own switch. |
 | **E-60g Bastions and bartering** | Gold armour on (it has the rule, E-07e); bartering gold for pearls, string, fire resistance; a bastion's treasure room approached by the bridge rule. | F-25c8's playbook way. |
 
@@ -82,8 +82,8 @@ deaths and time reported.
 
 | Slice | What the player does |
 | --- | --- |
-| **E-61a Horses, donkeys, camels** | Tamed by riding, saddled from a saddle it found, bred with golden apples and carrots it made; ridden on roads (E-62) when the trip is long; a donkey with chests as a pack animal for a hauling trip; stabled at the base (a build). |
-| **E-61b Parrots, cats, more wolves** | E-37's remaining: cats from a village, parrots from the jungle with seeds, several wolves as a pack that follows on an expedition and is told to sit at home. |
+| **E-61a Horses, donkeys, camels** | Tamed by riding, saddled from a saddle it found, bred with golden apples and carrots it made; ridden on roads (E-62) when the trip is long; a donkey with chests as a pack animal for a hauling trip; a llama caravan carpeted; a chest boat for a river haul; stabled at the base (a build). |
+| **E-61b Parrots, cats, more wolves** | E-37's remaining: cats from a village, parrots from the jungle with seeds, several wolves as a pack that follows on an expedition and is told to sit at home; wolf armour from armadillo scutes it brushed off, dyed to its colour, repaired with scutes. |
 | **E-61c Bees** | A hive found and bottled with a campfire under it (the campfire rule); an apiary of hives by its crops; honey and honeycomb; waxed copper. |
 | **E-61d Axolotls, frogs, allays** | An axolotl in a bucket for the monument fight (they help); frogs and froglights from the Nether for lighting; an allay found at an outpost or mansion, given an item, collecting it: a helper, not a slave (the allay's own rules). |
 | **E-61e Livestock beyond the pen** | Sheep by colour for banners and beds (dyed, sheared), mooshrooms, goats for horns (a horn blown at a match's start), turtles left alone and their eggs protected (scutes only from shed ones), a fish tank. |
@@ -95,13 +95,14 @@ voice's talk (E-37, E-38).
 
 | Slice | What the player does |
 | --- | --- |
-| **E-62a Roads** | The paths it walks most (the atlas keeps the heat) paved in its palette: dirt paths and gravel first, stone and slabs later; lanterns every few blocks; a road laid is a road routed on (the planner prefers it). |
+| **E-62a Roads** | The paths it walks most (the atlas keeps the heat) paved in its palette: dirt paths and gravel first, stone and slabs later; lanterns every few blocks; a road laid is a road routed on (the planner prefers it). For the long haul, an ice road of packed or blue ice (from the peaks, or Silk Touch) and a boat on it, the fastest travel the Overworld has. |
 | **E-62b Bridges and tunnels as builds** | Where a road crosses water or a gorge, a bridge from a blueprint rather than a one-block line; where it crosses a hill, a lit tunnel with a proper mouth. |
 | **E-62c Rail lines** | E-45e's rails grown into a network: base to mine, base to farm, base to the village; powered rails from gold it mined; a station a build. |
 | **E-62d Nether highways** | A tunnel in the Nether roof or at a safe level between its portals, bridged over lava, lit, with the eight-to-one mapping in the atlas; its portals paired on purpose. |
 | **E-62e Farms of every kind** | Crops it eats and crops it needs (sugar cane for paper and books, cactus for dye, bamboo for scaffolding, pumpkins and melons, cocoa in the jungle, nether wart in soul sand); an automatic crop farm with water and pistons (M-01d); a tree farm; a kelp farm for fuel. |
 | **E-62f Mob, iron and experience farms** | A dark room mob farm with a drop; an iron farm from villagers and a zombie as players build them (a village it founded, E-45d); a skeleton or zombie spawner farm when it finds a spawner; experience for enchanting and mending. Each a blueprint with a bill of materials, built where its base plan says, and *used*: the drops picked up on a schedule. |
 | **E-62g Storage** | A storage room with sorted chests by item group (the chest-organisation policy it has), item frames as labels, a shulker shelf later; the team's shared stock (E-11) in it. |
+| **E-62i Nether travel** | Striders ridden across lava with a warped fungus on a stick for the trips a bridge is not worth; a respawn anchor at the Nether base charged with glowstone it mined, so a death there is not a walk from the Overworld. |
 | **E-62h Lighting and safety** | Its land lit to spawn-proof it (light level read; torches then lanterns), fences and gates round the farms, a wall round the village (M-06a's compound for the co-op base). |
 
 Acceptance: a fixture per slice; the evaluation engine with "routine work" scenarios (a day at the base) counting
