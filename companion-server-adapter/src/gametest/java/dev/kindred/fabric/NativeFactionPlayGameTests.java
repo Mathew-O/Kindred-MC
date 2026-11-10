@@ -192,6 +192,87 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Its goal begun in a safe zone, with a tree inside the zone beside it and another outside it: it fells the one
+     * outside and puts its crafting table down outside, never working the zone's tree. A safe zone takes no edit, and
+     * the goal's choice of what to gather and where to work reads the same rule (TerritoryGuard) as the edit itself.
+     * Before, it walked to the zone's logs, could not cut them, and wandered off (the e40a16 seeds in a faction world:
+     * its first wooden tool at 14.5 game minutes, against 0.85 without the hub).
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "factionPlaySafeTrees", tickLimit = 2400)
+    public void startingInASafeZoneItFellsATreeOutsideItAndWorksThere(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        var server = context.getWorld().getServer();
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos inside = o.add(20, 7, 16), outside = o.add(40, 7, 40);
+        BlockPos[] trunks = {inside, outside};
+        BlockPos home = o.add(16, 7, 16);
+        var zone = new java.util.TreeSet<String>();
+        var tools = java.util.Set.of(net.minecraft.item.Items.WOODEN_PICKAXE, net.minecraft.item.Items.WOODEN_AXE,
+                net.minecraft.item.Items.WOODEN_SWORD, net.minecraft.item.Items.WOODEN_SHOVEL, net.minecraft.item.Items.WOODEN_HOE);
+        // Every goal step it takes about logs in the zone (a walk to them or a cut), watched each tick.
+        var zoneSteps = new java.util.ArrayList<String>();
+        var logsAt = java.util.regex.Pattern.compile("logs at (-?\\d+), (-?\\d+), (-?\\d+)");
+        context.runAtEveryTick(() -> {
+            if (zone.isEmpty() || !f.runtime.isReady()) return;
+            String step = f.runtime.goalStepForTest(f.id);
+            if (step == null) return;
+            var m = logsAt.matcher(step);
+            if (m.find() && zone.contains(dev.kindred.core.factions.SafeZones.chunkAt(W, Integer.parseInt(m.group(1)), Integer.parseInt(m.group(3))))
+                    && (zoneSteps.isEmpty() || !zoneSteps.getLast().equals(step))) zoneSteps.add(step);
+        });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    NativeBaseGameTests.ground(context, trunks);
+                    context.getWorld().setTimeOfDay(1000);
+                    f.runtime.factionsWorldForTest(WIDE);
+                    // The safe zone: every chunk the field's near part touches, the player's start and the near tree among
+                    // them; the far tree, sixteen blocks beyond its edge, is in another chunk.
+                    for (int x = -12; x <= 24; x += 4) for (int z = -12; z <= 24; z += 4) {
+                        var at = o.add(x, 0, z);
+                        zone.add(dev.kindred.core.factions.SafeZones.chunkAt(W, at.getX(), at.getZ()));
+                    }
+                    context.assertTrue(zone.contains(dev.kindred.core.factions.SafeZones.chunkAt(W, inside.getX(), inside.getZ()))
+                            && !zone.contains(dev.kindred.core.factions.SafeZones.chunkAt(W, outside.getX(), outside.getZ())), "One tree in the zone, one out");
+                    f.runtime.record(dev.kindred.core.factions.SafeZones.zone("fixture", zone, null, server.getTicks(), System.currentTimeMillis()));
+                    var player = f.player();
+                    player.getInventory().clear();
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.recordWritten(), "The zone written"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    var inventory = player.getInventory();
+                    boolean holds = false;
+                    for (int slot = 0; slot < inventory.size() && !holds; slot++) holds = tools.contains(inventory.getStack(slot).getItem());
+                    context.assertTrue(holds, "A wooden tool earned: " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    context.assertTrue(zoneSteps.isEmpty(), "No goal step about the zone's logs: " + zoneSteps);
+                    for (int y = 0; y < 6; y++) context.assertTrue(world.getBlockState(inside.up(y)).isOf(net.minecraft.block.Blocks.OAK_LOG),
+                            "The zone's tree whole: " + inside.up(y).toShortString());
+                    for (var cell : BlockPos.iterate(o.add(-12, 6, -12), o.add(24, 12, 24))) {
+                        context.assertTrue(!world.getBlockState(cell).isOf(net.minecraft.block.Blocks.CRAFTING_TABLE), "No crafting table in the zone: " + cell.toShortString());
+                    }
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "factionPlayRaid", tickLimit = 2400)
     public void aFiercePlayerScoutsTheExposedBorderItSawAndCapturesItThere(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
