@@ -486,6 +486,9 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     context.assertTrue(seals.isEmpty(), "No seal of the zone's cells: " + seals);
                     for (int y = 3; y <= 4; y++) context.assertTrue(world.getBlockState(o.add(1, y, 0)).isAir(), "Its way in left as it was");
+                    // Ending the night covered: still in its pocket, under the stone over it, not climbed out to find another way.
+                    BlockPos at = f.player().getBlockPos();
+                    context.assertTrue(at.equals(feet) && !world.isSkyVisible(at.up()), "Covered through the night: at " + at.toShortString());
                     context.assertTrue(waited[0], "Waiting for daylight: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                     f.runtime.stop();
                 })
