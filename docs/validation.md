@@ -7,6 +7,13 @@
   earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
   ranges do not overlap. Summaries go under `docs/evidence/eval/<name>/summary.md`; logs and worlds are never
   committed.
+- **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
+  `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
+  touches what a player decides runs `tools/corpus/gate.sh` (three runs) in its own container. It fails when a scene that
+  passed 3 of 3 in `tools/corpus/baseline.json` (the last three runs on main) fails 2 of 3. The daily number is the
+  report's pass rate over three runs on main: passing, failing and intermittent, an intermittent scene never a pass,
+  and staged scenes listed apart. A scene is never removed or loosened to pass the gate.
 - **Death replays (F-27).** A death captured in a run (`replay.snbt` and `replay.json` under
   `kindred/replays/<world>/<player>-<tick>/`, or a seed's `replays/` folder from `run.py`) becomes a test under the
   gametest resources: the structure as `data/kindred_gametest/gametest/structure/replays/<id>.snbt` and the state as
@@ -16,14 +23,13 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
-## Blocked high up its own scaffold (F-22c46) — 10 November 2026 (`claude/ci-green-1110-cabinstairs`)
+## The autonomous log mine read as it happens (F-22c52) — 10 November 2026 (`claude/ci-green-1110-minelatch`)
 
-- **[F-22c46](evidence/F-22c46.md):** a plan blocked while the player stands high on its own scaffold, the ground more than a drop below,
-  takes the column down first (product; the cabin "No way to reach …_stairs" family: #123's run 42758107947, #113's, #117's, #119's).
-  - The staged fixture: 0 of 3 without the change, 3 of 3 with it.
-  - Build, house, life-first, seed-build and base classes, 3 runs: 22, 23 and 23 of 23; the new path fired only in its own fixture. The
-    one failure, the house cabin slid off its column onto the cabin four up, is a separate form, open in the handoff.
-  - `./gradlew build`: green, JUnit 1,117 tests, 0 failures, 7 skipped.
+- **[F-22c52](evidence/F-22c52.md):** the fixture takes the mine's completion, charged, and its one verified record on the tick
+  each shows (fixture only; #139's run 42793316263 and #137's run 42793187025: a routine's craft followed within the second,
+  and the latest work and record were the craft's for good).
+  - The copy that reads after the next task: 0 of 3 with the old read (throwaway edit, reverted), 9 of 9 in each of 6 runs latched.
+  - No product code changed. `./gradlew build`: green, JUnit 1,121 tests, 0 failures, 7 skipped.
 
 ## A mob in reach stops the badly hurt goal's work (F-25c4dd) — 10 November 2026 (`claude/survival-1110-cornered`)
 

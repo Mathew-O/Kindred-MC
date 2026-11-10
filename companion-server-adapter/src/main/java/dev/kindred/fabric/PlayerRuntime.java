@@ -242,6 +242,7 @@ final class PlayerRuntime {
     private long startupGeneration = 0;
     private int nativeCreationsPending;
     private final Map<UUID, Entry> entries = new HashMap<>();
+    private final KindredHudSections hudSections = new KindredHudSections();
     private final Set<CompanionEntity> awaitingRegistry = new HashSet<>();
     private final Set<UUID> creating = new HashSet<>();
     private SqliteCompanionStore store;
@@ -511,7 +512,7 @@ final class PlayerRuntime {
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
         this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
-        this.hud = new FactionsHud(factions, market);
+        this.hud = new FactionsHud(factions, market, hudSections);
         factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
         this.memory = strategist.orElseGet(() -> StrategistBridge.memoryOnly(metadataDirectory));
@@ -2659,6 +2660,7 @@ final class PlayerRuntime {
         }
         attentionScheduler.synchronizeEntries(batch);
         if (tick % 20 == 3) peerRadio.tick(tick, peerMembers()); // E-50: who each sees; teammates' updates; the save.
+        if (tick % 20 == 5) readOldMemories(); // F-32b: each AI player's old files into its web, once a start.
         if (tick % 20 == 11) initiative.tick(); // E-53: speaking first, within each person's budget.
         if (tick % 20 == 15) peerTalk.tick(); // E-51: AI players talking when they meet again.
         if (tick % 20 == 17) gifts.tick(); // E-22a: tosses picked up, or left.
@@ -6741,16 +6743,6 @@ final class PlayerRuntime {
 
         // 2. Scheduled routine candidates (cached from scheduler slices)
         List<NativeTaskCandidate> routineCandidates = autonomyAdmitted ? entry.cachedRoutineCandidates : List.of();
-        if (autonomyAdmitted && extraCandidatesForTest != null) {
-            var extra = extraCandidatesForTest.apply(entry.data.id());
-            if (extra != null && !extra.isEmpty()) {
-                var with = new ArrayList<NativeTaskCandidate>(routineCandidates);
-                with.addAll(extra);
-                routineCandidates = with;
-            }
-        }
-        // A walk let be for now (LOOPS 1): its routine's work only, never a reflex or a life need.
-        routineCandidates = withoutWalksSetAside(entry, body, routineCandidates);
 
         // Not admitted to its work, its reflexes are all it has to choose from.
         List<NativeTaskCandidate> taskCandidates;
@@ -7717,7 +7709,6 @@ final class PlayerRuntime {
                 entry.walksFailed++;
                 entry.walkFailedAt = server.getTicks();
             }
-            walkOutcome(entry, state, lifeLabel);
             // A faction walk (M-06i): a refusal backs it off and, after three, sets the place aside; a walk that went
             // somewhere forgets its refusals.
             var factionMove = entry.factionPlay.move;
@@ -13141,6 +13132,31 @@ final class PlayerRuntime {
                 memory.remembered(id), entry.trust.why(who, server.getTicks()).map(event -> event.words).orElse(""), voicePeers(id, speaker));
     }
 
+    /**
+     * F-32b: each AI player's old memory files (its peer ledger and atlas, E-50 and F-30) read into its knowledge web
+     * once a start, after the webs are rebuilt from the Record; read off the thread, put in on it. The files stay as
+     * they are, and so does everything that reads them.
+     */
+    private record OldFiles(dev.kindred.core.social.PeerLedger.Snapshot peers, dev.kindred.core.atlas.Atlas.Snapshot atlas) { }
+
+    private void readOldMemories() {
+        for (Entry entry : entries.values()) {
+            if (entry.nativeState == null || entry.snapshot().lifecycle() == LifecycleState.REMOVED) continue;
+            UUID id = entry.data.id();
+            if (!webs.readOldOnce(id)) continue;
+            String name = entry.data.displayName();
+            String faction = factionOf.apply(id);
+            String team = faction == null || faction.isEmpty() ? KindredWire.TEAM : KindredWire.TEAM + ":" + faction;
+            memories.loadPeers(id, name).thenCombine(memories.loadAtlas(id, name), OldFiles::new)
+                    .whenComplete((files, failure) -> handBack(() -> {
+                        if (!running || failure != null || files == null) return;
+                        var read = webs.readOld(id, files.peers(), files.atlas(), team);
+                        if (read.added() > 0) KindredMod.LOGGER.info("Kindred knowledge: {}'s old memory files read into its web: {} facts added, {} already held",
+                                name, read.added(), read.kept());
+                    }));
+        }
+    }
+
     /** The AI players for the ledger's turn (E-50): each with its body, whether it is in a match, and its own update to the team. */
     private List<PeerRadio.Member> peerMembers() {
         var out = new ArrayList<PeerRadio.Member>();
@@ -14139,81 +14155,6 @@ final class PlayerRuntime {
      * What an ended task is called in its outcome line: its campaign or build step's label, its life task's, or else
      * "from" the routine that proposed it (M-01); empty for a task asked for by a command.
      */
-    /**
-     * The four-block cell a walk's target is in, as the set-aside keys it: a refused patch of gravel or a border is walked
-     * for block by neighbouring block (seed 109's trace: 99 refusals over a few gravel blocks, three each).
-     */
-    private static long walkCell(BlockPos target) {
-        return BlockPos.asLong(target.getX() >> 2, target.getY() >> 2, target.getZ() >> 2);
-    }
-
-    /** A walk's target, as its arguments name it; null when they name none. */
-    private static BlockPos walkTarget(Map<String, String> arguments) {
-        try {
-            if (arguments.containsKey("x") && arguments.containsKey("y") && arguments.containsKey("z"))
-                return new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z")));
-        } catch (NumberFormatException malformed) {
-            return null;
-        }
-        return null;
-    }
-
-    /**
-     * A walk refused for want of a route (the planner's "No walkable route", or a route found blocked) counts against its
-     * target from where the player stands; one that arrived forgets its refusals; its own breaks and placements change
-     * the ground, and every place gets another try (LOOPS 1, M-01f slice 2).
-     */
-    private void walkOutcome(Entry entry, SkillRunner.State state, String lifeLabel) {
-        if (entry.nativeBody == null || !entry.nativeBody.connected() || entry.skillId == null) return;
-        if (state == SkillRunner.State.COMPLETED && ("native_break".equals(entry.skillId) || "native_place".equals(entry.skillId))) {
-            entry.walksAside.groundChanged();
-            return;
-        }
-        if (!"native_goto".equals(entry.skillId)) return;
-        BlockPos target = walkTarget(entry.skillArgs);
-        if (target == null) return;
-        if (state == SkillRunner.State.COMPLETED) {
-            entry.walksAside.walked(walkCell(target));
-            return;
-        }
-        if (state != SkillRunner.State.BLOCKED) return;
-        String reason = entry.runner.reason().orElse("");
-        if (!reason.startsWith("No walkable route") && !reason.contains(" is blocked")) return;
-        if (!walksMayBeSetAside(entry.nativeBody.entity())) return;
-        BlockPos feet = entry.nativeBody.entity().getBlockPos();
-        if (entry.walksAside.refused(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), server.getTicks())) {
-            String label = outcomeLabel(entry, lifeLabel);
-            KindredMod.LOGGER.info("{} lets its walks to around {} be for ten minutes: refused {} times from around {}{}", entry.data.displayName(),
-                    target.toShortString(), dev.kindred.core.WalkSetAside.REFUSALS, feet.toShortString(), label.isEmpty() ? "" : " [" + label + "]");
-        }
-    }
-
-    /**
-     * Whether the set-aside may count or hold back a walk now: not while anything about the player is a danger, in water
-     * or lava, burning, short of air or under half its health. A walk then is very likely its way out (the replays'
-     * "Get out of the water: up for air", refused three times while it sank).
-     */
-    private static boolean walksMayBeSetAside(net.minecraft.server.network.ServerPlayerEntity player) {
-        return !player.isTouchingWater() && !player.isInLava() && !player.isOnFire() && player.getAir() >= player.getMaxAir()
-                && player.getHealth() >= player.getMaxHealth() / 2;
-    }
-
-    /** The candidates, less any walk to a place set aside for this player where it stands (LOOPS 1, M-01f slice 2). */
-    private List<NativeTaskCandidate> withoutWalksSetAside(Entry entry, NativePlayerBody body, List<NativeTaskCandidate> candidates) {
-        if (candidates.isEmpty() || entry.walksAside.size() == 0 || body == null || !body.connected() || !walksMayBeSetAside(body.entity())) return candidates;
-        BlockPos feet = body.entity().getBlockPos();
-        long tick = server.getTicks();
-        List<NativeTaskCandidate> kept = null;
-        for (int i = 0; i < candidates.size(); i++) {
-            var candidate = candidates.get(i);
-            BlockPos target = "native_goto".equals(candidate.skill()) ? walkTarget(candidate.arguments()) : null;
-            boolean aside = target != null && entry.walksAside.aside(walkCell(target), feet.getX(), feet.getY(), feet.getZ(), tick);
-            if (aside && kept == null) kept = new ArrayList<>(candidates.subList(0, i));
-            else if (!aside && kept != null) kept.add(candidate);
-        }
-        return kept == null ? candidates : kept;
-    }
-
     private static String outcomeLabel(Entry entry, String lifeLabel) {
         if (entry.activeCampaignTask != null) return entry.activeCampaignTask.label();
         if (entry.activeBuildTask != null) return entry.activeBuildTask.label();
@@ -16026,6 +15967,12 @@ final class PlayerRuntime {
 
     /** Once a game day, at night: the ledgers checked against the Record (F-31). */
     static final int LEDGER_CHECK_TICKS = 24_000;
+    /** How old a settled action's last event is before its history is folded: three game days of real time at 20 ticks a second. */
+    static final long ACTION_FOLD_AGE_MS = 3L * 24_000 / 20 * 1_000;
+    /** The most actions one fold takes, so a pass keeps the writer busy for a bounded time. */
+    static final int ACTION_FOLD_MAX = 5_000;
+    /** The most passes after one check: 50,000 actions, about 3.6 s of the writer's time, in jobs of about 0.36 s each. */
+    static final int ACTION_FOLD_PASSES = 10;
 
     /**
      * The agreement check (F-31): every ledger kept here, and the action ledger's own table, against the same rebuilt from
@@ -16059,9 +16006,34 @@ final class PlayerRuntime {
                             check.ledger(), check.kept(), check.fromRecord());
                     if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
                             agree ? "agrees" : "differs", "", data));
+                    // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
+                    // three game days compacted on the writer, a batch at a time, never on the tick.
+                    if (agree && running) foldActions(database, System.currentTimeMillis() - ACTION_FOLD_AGE_MS, ACTION_FOLD_PASSES, new long[3]);
                     result.complete(agree);
                 }));
         return result;
+    }
+
+    /**
+     * The action fold's passes (F-31): each a separate job on the writer, so other writes run between them; another
+     * while the last took its full share, at most {@code passes}; the totals logged once at the end.
+     */
+    private static void foldActions(SqliteCompanionStore database, long olderThanMs, int passes, long[] totals) {
+        database.foldSettledActions(olderThanMs, ACTION_FOLD_MAX).whenComplete((fold, unfolded) -> {
+            if (unfolded != null) {
+                KindredMod.LOGGER.warn("Action fold could not run: {}", unfolded.toString());
+                return;
+            }
+            totals[0] += fold.actions();
+            totals[1] += fold.eventsRemoved();
+            totals[2] += fold.millis();
+            if (fold.actions() == ACTION_FOLD_MAX && passes > 1) {
+                foldActions(database, olderThanMs, passes - 1, totals);
+                return;
+            }
+            if (totals[0] > 0) KindredMod.LOGGER.info("Kindred action fold: {} settled actions, {} events, folded in {} ms on the writer",
+                    totals[0], totals[1], totals[2]);
+        });
     }
 
     /** Each match changed since the last flush written to the World Record as it now stands (F-31). */
@@ -16144,6 +16116,9 @@ final class PlayerRuntime {
     }
 
     /** The Factions panel's server side (M-06l). */
+    /** The panel's section sources: Factions' and any integration's (mod-support decision 7). */
+    KindredHudSections hudSections() { return hudSections; }
+
     FactionsHud hud() {
         requireThread();
         return hud;
@@ -16433,13 +16408,6 @@ final class PlayerRuntime {
     }
 
     /** The faction world's once-a-second step, for a fixture whose runtime has no AI body to tick it. */
-    /** A routine of the fixture's own, its candidates weighed with the routine ones at each decision; null for none. */
-    private java.util.function.Function<UUID, List<NativeTaskCandidate>> extraCandidatesForTest;
-
-    void extraCandidatesForTest(java.util.function.Function<UUID, List<NativeTaskCandidate>> routine) {
-        extraCandidatesForTest = routine;
-    }
-
     void factionsTickForTest() {
         requireThread();
         factions.tick(server.getPlayerManager().getPlayerList());
@@ -16452,6 +16420,13 @@ final class PlayerRuntime {
     CompletableFuture<List<dev.kindred.core.record.WorldEvent>> worldEventsForTest(Set<String> kinds) {
         requireThread();
         return store.allWorldEvents(kinds);
+    }
+
+    /** Test-only and read-only: the label of the goal step a player is on now, or null. */
+    String goalStepForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.activeCampaignTask == null ? null : entry.activeCampaignTask.label();
     }
 
     /** A player's own goal and the goal it works toward, for a fixture; null for none. */
@@ -16949,8 +16924,6 @@ final class PlayerRuntime {
         private String skillId;
         /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
         private String dispatchSource = "", pendingSource;
-        /** Walks refused again and again from about one place, let be for ten minutes whatever asks for them (LOOPS 1, M-01f). */
-        private final dev.kindred.core.WalkSetAside walksAside = new dev.kindred.core.WalkSetAside();
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;

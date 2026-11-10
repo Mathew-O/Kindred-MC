@@ -1,0 +1,209 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 11286,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -383,
+  27,
+  -101
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.313214581047248,
+  8.419999986886978,
+  16.203913187184682
+ ],
+ "yaw": 86.59094,
+ "pitch": 2.104802,
+ "health": 15.0,
+ "food": 20,
+ "saturation": 1.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 3
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 6
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 47
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 10
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 29
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 7
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 36
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 38
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 37
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 12
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 3
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 11286,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Fight spider",
+ "task": "Fight spider",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[13:50:26] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward coal: clear -363, 33, -84]",
+  "[13:50:26] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward coal: clear -363, 34, -84]",
+  "[13:50:26] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward coal: step up]",
+  "[13:50:27] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:27] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:27] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:27] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:27] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:27] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:28] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:28] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:28] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:28] [Server thread/INFO]: Echo native_wait COMPLETED [Hold the passage against spider]",
+  "[13:50:31] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight spider]",
+  "[13:50:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward coal: clear -365, 34, -84]",
+  "[13:50:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward coal: clear -365, 33, -84]",
+  "[13:50:31] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward coal: step up]",
+  "[13:50:32] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward coal: clear -365, 34, -85]",
+  "[13:50:32] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward coal: step up]",
+  "[13:50:32] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward coal: step up]"
+ ],
+ "corpus": {
+  "run": "e40a15-dbf4e5c",
+  "seed": "101",
+  "build": "dbf4e5c",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a15-dbf4e5c/101/replays/world/Echo-11286",
+  "class": "death: spider",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}
