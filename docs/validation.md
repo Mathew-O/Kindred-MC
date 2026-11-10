@@ -16,6 +16,19 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## A pocket of lava followed (F-25c4cz) — 9 November 2026 (`claude/lava-pocket-1109`)
+
+- **[F-25c4cz](evidence/F-25c4cz.md):** looking for its cast's lava, the pocket under the rock its bucket was filled from
+  is followed a source at a time (product; E-40's iteration 17, `e40a17-7bc5b42`, 707: 2 of a pocket of 208 taken, then
+  branch mining on for half an hour; the kept world read offline for diagnosis only).
+  - `NativePortalCampaignGameTests.aPocketOfLavaUnderTheRockIsFollowedOnceTheLavaItSawIsTaken` (staged, as it says): on main
+    without the fix, 0 of 3 (1, 1 and 3 of 9 sources taken); with it, 3 of 3.
+  - The classes that cast and make obsidian (`NativePortalCampaignGameTests`, `NativeCastRefusalGameTests`,
+    `NativeObsidianPickupGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+    `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
+    107 of 107 in each of three runs.
+  - **Build:** `./gradlew build` successful; JUnit 1,081 tests, 0 failures, 7 skipped.
+
 ## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `7bc5b42`. `python3 tools/eval/run.py --ref
