@@ -1,0 +1,155 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 4037,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -30,
+    19,
+    -28
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.0,
+    16.415500530263415
+  ],
+  "yaw": -141.32759,
+  "pitch": -53.707287,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 4.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 5
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 5
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 15
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 51
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 18
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 11
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 4037,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred fell from a high place",
+  "ticks": 1200,
+  "log": [
+    "[23:22:53] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -12]",
+    "[23:22:53] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -12]",
+    "[23:22:54] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -12]",
+    "[23:22:54] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -12]",
+    "[23:22:54] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -12]",
+    "[23:22:55] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at -14, 58, -12]",
+    "[23:22:55] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at -13, 58, -12]",
+    "[23:22:55] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -14, 58, -13]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at -14, 58, -13]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -15, 58, -13]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -15, 58, -13]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_break COMPLETED [Mine stone at -15, 58, -13]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to stone at -13, 58, -13]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_break CANCELLED: authority lost [Mine stone at -13, 58, -13]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -42, 49, -12 [Explore west for stone]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -14, 45, -40 [Explore north for stone]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 14, 41, -12 [Explore east for stone]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for stone]",
+    "[23:22:56] [Server thread/INFO]: Kindred native_fight CANCELLED: The player died [Fight zombie]",
+    "[23:22:56] [Server thread/INFO]: Kindred died at -14, 27, -12: Kindred fell from a high place (tick 4037, day, under cover, hunger 20, armour 0, holding stone_pickaxe, no shield; doing \"Fight zombie\" in \"Iron: fight back - Fight zombie\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

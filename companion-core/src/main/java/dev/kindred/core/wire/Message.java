@@ -16,10 +16,10 @@ import java.util.UUID;
  * Technical: F-34's {@code Message(kind, from, channel, data, event ids)}. {@code from} is null for the server.
  * {@code origin} says what the message was built from: a record (the sender's own state or the World Record's events),
  * a person's words, or an AI player's words; the last never enters the Wire (the echo rule). Event ids are F-31's,
- * staged as plain numbers until the Record is on main. Bounded: sixteen facts, sixteen event ids.
+ * staged as plain numbers until the Record is on main. Bounded: twenty facts, sixteen event ids.
  */
 public record Message(String kind, UUID from, Scope scope, Map<String, Fact> facts, List<Long> eventIds, Origin origin) {
-    public static final int MAX_FACTS = 16;
+    public static final int MAX_FACTS = 20;
     public static final int MAX_EVENTS = 16;
 
     /** What a message was built from. */

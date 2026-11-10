@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 105,
+  "ticks": 288000,
+  "ticksRun": 288255,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 965, "factions": 3, "claims": 11, "captures": 0, "sales": 324, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 1, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 12.34, "tickMsWorst": 1094.09, "tickMsWorstAt": 5838, "ticksOver50ms": 466, "ticksOver200ms": 4, "heapMbMax": 1330, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 240, "stone_tools": 17760, "iron_ingot": 21760, "iron_pickaxe": 68240},
+      "deaths": [
+        {"tick": 100461, "cause": "Kindred was blown up by Creeper", "x": -452, "y": -34, "z": 78, "light": 0, "timeOfDay": 4623, "dimension": "minecraft:overworld", "hunger": 7, "underSky": false, "stage": "Iron: fight back - Fight creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 16420, "x": -482, "y": 63, "z": 166, "attempt": 1}, {"tick": 55440, "x": -429, "y": 59, "z": 156, "attempt": 1}, {"tick": 80340, "x": -455, "y": 63, "z": 150, "attempt": 1}, {"tick": 84020, "x": -455, "y": 63, "z": 150, "attempt": 2}, {"tick": 110440, "x": -488, "y": 62, "z": 163, "attempt": 1}, {"tick": 122920, "x": -592, "y": 62, "z": 488, "attempt": 2}, {"tick": 173400, "x": -578, "y": 55, "z": 342, "attempt": 1}, {"tick": 177060, "x": -578, "y": 55, "z": 341, "attempt": 2}, {"tick": 256240, "x": -671, "y": 63, "z": 336, "attempt": 3}, {"tick": 272880, "x": -502, "y": 63, "z": 166, "attempt": 4}, {"tick": 286160, "x": -477, "y": -11, "z": 207, "attempt": 5}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2400, "stone_tools": 8120, "iron_ingot": 15900, "iron_pickaxe": 173280, "obsidian": 189701},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 26700, "x": -355, "y": 19, "z": 82, "attempt": 1}, {"tick": 33160, "x": -313, "y": 18, "z": 91, "attempt": 2}, {"tick": 105000, "x": -514, "y": 19, "z": 74, "attempt": 1}, {"tick": 155800, "x": -495, "y": 69, "z": 57, "attempt": 2}, {"tick": 170920, "x": -554, "y": 63, "z": 39, "attempt": 3}, {"tick": 219340, "x": -376, "y": 57, "z": 117, "attempt": 1}, {"tick": 224220, "x": -376, "y": 69, "z": 99, "attempt": 2}, {"tick": 242920, "x": -360, "y": 61, "z": 99, "attempt": 3}, {"tick": 251500, "x": -245, "y": 82, "z": 121, "attempt": 4}, {"tick": 266920, "x": -245, "y": 82, "z": 104, "attempt": 5}, {"tick": 270800, "x": -245, "y": 82, "z": 123, "attempt": 6}, {"tick": 277180, "x": -58, "y": 64, "z": 19, "attempt": 7}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 500},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 9860, "x": -408, "y": 63, "z": 365, "attempt": 1}, {"tick": 13740, "x": -425, "y": 63, "z": 370, "attempt": 2}, {"tick": 26920, "x": -424, "y": 60, "z": 355, "attempt": 3}, {"tick": 30520, "x": -424, "y": 60, "z": 355, "attempt": 4}, {"tick": 34120, "x": -424, "y": 60, "z": 355, "attempt": 5}, {"tick": 37720, "x": -424, "y": 60, "z": 355, "attempt": 6}, {"tick": 41320, "x": -424, "y": 60, "z": 355, "attempt": 7}, {"tick": 44980, "x": -424, "y": 60, "z": 355, "attempt": 8}, {"tick": 48580, "x": -424, "y": 60, "z": 354, "attempt": 9}, {"tick": 52240, "x": -424, "y": 60, "z": 355, "attempt": 10}, {"tick": 55880, "x": -424, "y": 60, "z": 355, "attempt": 11}, {"tick": 59540, "x": -424, "y": 60, "z": 354, "attempt": 12}, {"tick": 63200, "x": -424, "y": 60, "z": 355, "attempt": 13}, {"tick": 66820, "x": -424, "y": 60, "z": 355, "attempt": 14}, {"tick": 70460, "x": -424, "y": 61, "z": 355, "attempt": 15}, {"tick": 74160, "x": -425, "y": 59, "z": 355, "attempt": 16}, {"tick": 77820, "x": -424, "y": 60, "z": 355, "attempt": 17}, {"tick": 81420, "x": -424, "y": 60, "z": 354, "attempt": 18}, {"tick": 85080, "x": -424, "y": 59, "z": 354, "attempt": 19}, {"tick": 88740, "x": -424, "y": 60, "z": 355, "attempt": 20}, {"tick": 92340, "x": -424, "y": 60, "z": 355, "attempt": 21}, {"tick": 96000, "x": -424, "y": 60, "z": 355, "attempt": 22}, {"tick": 99840, "x": -424, "y": 60, "z": 355, "attempt": 23}, {"tick": 103500, "x": -424, "y": 61, "z": 355, "attempt": 24}, {"tick": 107180, "x": -424, "y": 60, "z": 355, "attempt": 25}, {"tick": 110780, "x": -424, "y": 60, "z": 355, "attempt": 26}, {"tick": 114420, "x": -424, "y": 61, "z": 355, "attempt": 27}, {"tick": 118120, "x": -425, "y": 60, "z": 355, "attempt": 28}, {"tick": 121740, "x": -424, "y": 60, "z": 355, "attempt": 29}, {"tick": 125340, "x": -424, "y": 61, "z": 355, "attempt": 30}, {"tick": 129040, "x": -424, "y": 60, "z": 355, "attempt": 31}, {"tick": 132720, "x": -424, "y": 60, "z": 355, "attempt": 32}, {"tick": 136320, "x": -424, "y": 59, "z": 354, "attempt": 33}, {"tick": 139980, "x": -425, "y": 60, "z": 355, "attempt": 34}, {"tick": 143620, "x": -424, "y": 60, "z": 354, "attempt": 35}, {"tick": 147280, "x": -424, "y": 59, "z": 354, "attempt": 36}, {"tick": 150940, "x": -424, "y": 60, "z": 355, "attempt": 37}, {"tick": 154540, "x": -424, "y": 60, "z": 355, "attempt": 38}, {"tick": 158200, "x": -424, "y": 60, "z": 355, "attempt": 39}, {"tick": 161880, "x": -425, "y": 59, "z": 355, "attempt": 40}, {"tick": 165520, "x": -424, "y": 60, "z": 355, "attempt": 41}, {"tick": 169120, "x": -424, "y": 61, "z": 355, "attempt": 42}, {"tick": 172800, "x": -424, "y": 60, "z": 354, "attempt": 43}, {"tick": 176460, "x": -424, "y": 60, "z": 355, "attempt": 44}, {"tick": 180080, "x": -424, "y": 59, "z": 354, "attempt": 45}, {"tick": 183720, "x": -424, "y": 60, "z": 355, "attempt": 46}, {"tick": 187380, "x": -424, "y": 59, "z": 354, "attempt": 47}, {"tick": 191020, "x": -424, "y": 60, "z": 355, "attempt": 48}, {"tick": 194700, "x": -424, "y": 60, "z": 355, "attempt": 49}, {"tick": 198300, "x": -424, "y": 61, "z": 355, "attempt": 50}, {"tick": 201960, "x": -424, "y": 60, "z": 354, "attempt": 51}, {"tick": 205640, "x": -425, "y": 59, "z": 355, "attempt": 52}, {"tick": 209300, "x": -424, "y": 60, "z": 355, "attempt": 53}, {"tick": 212900, "x": -424, "y": 60, "z": 355, "attempt": 54}, {"tick": 216560, "x": -424, "y": 60, "z": 355, "attempt": 55}, {"tick": 220260, "x": -424, "y": 60, "z": 355, "attempt": 56}, {"tick": 223860, "x": -424, "y": 60, "z": 355, "attempt": 57}, {"tick": 227520, "x": -424, "y": 61, "z": 355, "attempt": 58}, {"tick": 231180, "x": -424, "y": 59, "z": 354, "attempt": 59}, {"tick": 234860, "x": -425, "y": 60, "z": 355, "attempt": 60}, {"tick": 238640, "x": -424, "y": 60, "z": 355, "attempt": 61}, {"tick": 242240, "x": -424, "y": 61, "z": 355, "attempt": 62}, {"tick": 245900, "x": -424, "y": 59, "z": 354, "attempt": 63}, {"tick": 249560, "x": -424, "y": 61, "z": 355, "attempt": 64}, {"tick": 253200, "x": -424, "y": 60, "z": 355, "attempt": 65}, {"tick": 256800, "x": -424, "y": 60, "z": 355, "attempt": 66}, {"tick": 260480, "x": -424, "y": 61, "z": 355, "attempt": 67}, {"tick": 264160, "x": -424, "y": 60, "z": 355, "attempt": 68}, {"tick": 267760, "x": -424, "y": 60, "z": 354, "attempt": 69}, {"tick": 271420, "x": -424, "y": 60, "z": 355, "attempt": 70}, {"tick": 275060, "x": -424, "y": 61, "z": 355, "attempt": 71}, {"tick": 278720, "x": -424, "y": 60, "z": 355, "attempt": 72}, {"tick": 282380, "x": -424, "y": 60, "z": 355, "attempt": 73}, {"tick": 286000, "x": -424, "y": 60, "z": 355, "attempt": 74}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

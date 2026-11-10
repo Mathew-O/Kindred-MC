@@ -1,0 +1,196 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 31280,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    23,
+    25,
+    48
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.25979225200789,
+    8.166109260938214,
+    16.69999998807907
+  ],
+  "yaw": 44.49938,
+  "pitch": -4.5543146,
+  "health": 12.0,
+  "food": 10,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 51
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 35
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 23
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 44
+        }
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 7280,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from skeleton",
+  "task": "Back off from skeleton the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[04:53:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[04:53:31] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]",
+    "[04:53:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[04:53:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[04:53:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[04:53:34] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie]",
+    "[04:53:34] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie]",
+    "[04:53:35] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie]",
+    "[04:53:35] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie]",
+    "[04:53:35] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 36, 32, 97 [Back off from skeleton]",
+    "[04:53:37] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+    "[04:53:37] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[04:53:37] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[04:53:39] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]",
+    "[04:53:39] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]",
+    "[04:53:40] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+    "[04:53:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[04:53:41] [Server thread/INFO]: Kindred native_swap COMPLETED [Ready a block]",
+    "[04:53:41] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from skeleton the way it came]",
+    "[04:53:41] [Server thread/INFO]: Kindred died at 39, 33, 64: Kindred was slain by Zombie (tick 31280, day, under cover, hunger 10, armour 0, holding stone_sword, a shield; doing \"Back off from skeleton the way it came\" in \"Iron: fight back - Back off from skeleton\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

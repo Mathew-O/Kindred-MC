@@ -44,7 +44,7 @@ public final class EvalRecord {
 
     public EvalRecord(EvalScenario scenario) {
         this.scenario = scenario;
-        for (String name : scenario.starters()) players.put(name, new Player());
+        for (String name : scenario.everyone()) players.put(name, new Player());
     }
 
     public EvalScenario scenario() { return scenario; }
@@ -85,6 +85,43 @@ public final class EvalRecord {
         if (p != null) p.tokens = Math.max(p.tokens, tokens);
     }
 
+    /**
+     * The server's load over the run: its mean and worst tick in milliseconds, when the worst fell (ticks into the run),
+     * how many ticks took over 50 and over 200 ms, and its heap at most in megabytes; null until set.
+     */
+    private String server;
+
+    /** The server's load over the run, as the file will hold it (the measurement a larger run is qualified by). */
+    public void server(double tickMsMean, double tickMsWorst, long worstAtTick, int ticksOver50ms, int ticksOver200ms, long heapMbMax, int samples) {
+        server = String.format(java.util.Locale.ROOT, ",\n  \"server\": {\"tickMsMean\": %.2f, \"tickMsWorst\": %.2f, \"tickMsWorstAt\": %d, "
+                        + "\"ticksOver50ms\": %d, \"ticksOver200ms\": %d, \"heapMbMax\": %d, \"samples\": %d}",
+                tickMsMean, tickMsWorst, worstAtTick, ticksOver50ms, ticksOver200ms, heapMbMax, samples);
+    }
+
+    /** A faction world's audit (M-06i), written into the file; null in any other run. */
+    private String factions;
+
+    /**
+     * A faction world's audit against its locked rules, as the file will hold it: what the World Record holds, every rule
+     * it shows broken, and why it could not be run if it could not ({@code note}, else empty).
+     */
+    public void factions(java.util.Map<String, Integer> counts, java.util.List<String> violations, String note) {
+        var out = new StringBuilder(",\n  \"factions\": {\"audited\": ").append(note.isEmpty()).append(", \"note\": ").append(Json.string(note))
+                .append(", \"counts\": {");
+        boolean first = true;
+        for (var c : counts.entrySet()) {
+            out.append(first ? "" : ", ").append(Json.string(c.getKey())).append(": ").append(c.getValue());
+            first = false;
+        }
+        out.append("}, \"violations\": [");
+        first = true;
+        for (String v : violations) {
+            out.append(first ? "" : ", ").append(Json.string(v));
+            first = false;
+        }
+        factions = out.append("]}").toString();
+    }
+
     public int deaths(String player) {
         var p = players.get(player);
         return p == null ? 0 : p.deaths.size() + p.deathsDropped;
@@ -104,6 +141,8 @@ public final class EvalRecord {
                 .append(",\n  \"ticks\": ").append(scenario.ticks())
                 .append(",\n  \"ticksRun\": ").append(ticksRun)
                 .append(",\n  \"complete\": ").append(complete)
+                .append(factions == null ? "" : factions)
+                .append(server == null ? "" : server)
                 .append(",\n  \"players\": {");
         boolean firstPlayer = true;
         for (var entry : players.entrySet()) {
