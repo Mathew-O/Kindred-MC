@@ -116,7 +116,7 @@ def free_port():
         return probe.getsockname()[1]
 
 
-def prepare(folder, seed, jar, api, vanilla, recipes=None):
+def prepare(folder, seed, jar, api, vanilla, recipes=None, policy=()):
     if folder.exists():
         shutil.rmtree(folder)
     (folder / "mods").mkdir(parents=True)
@@ -126,12 +126,20 @@ def prepare(folder, seed, jar, api, vanilla, recipes=None):
     (folder / "fabric-server-launcher.properties").write_text("serverJar=%s\n" % vanilla, encoding="utf-8")
     (folder / "server.properties").write_text("\n".join([
         "level-seed=%s" % seed, "level-name=world", "server-port=%d" % free_port(), "online-mode=false", "view-distance=8", "simulation-distance=8",
-        "spawn-protection=0", "max-players=8", "motd=Kindred evaluation", "enable-command-block=false", "sync-chunk-writes=false", ""]),
+        "spawn-protection=0", "max-players=16", "motd=Kindred evaluation", "enable-command-block=false", "sync-chunk-writes=false", ""]),
         encoding="utf-8")
     # A server's rescue recipes carried over from another run (F-29d): the new world starts with them.
     if recipes:
         (folder / "world" / "kindred").mkdir(parents=True, exist_ok=True)
         shutil.copy2(recipes, folder / "world" / "kindred" / "rescue-recipes.json")
+    # The server's own policy lines the run asks for (maxNativePlayers=8 for a larger faction world), as its operator
+    # would write them; the run's edits setting is written beside them at its start, and keeps them.
+    if policy:
+        for line in policy:
+            if "=" not in line or not line.split("=", 1)[0].strip().isidentifier():
+                sys.exit("Not a policy line: %r" % line)
+        (folder / "world" / "kindred").mkdir(parents=True, exist_ok=True)
+        (folder / "world" / "kindred" / "edits.properties").write_text("\n".join(policy) + "\n", encoding="utf-8")
 
 
 def environment(scenario):
@@ -208,6 +216,8 @@ def main():
     parser.add_argument("--recipes", help="F-29d: a rescue-recipes.json each world starts with, or a run folder whose seeds' kept files "
                         "each world of the same seed starts with")
     parser.add_argument("--keep-world", action="store_true", help="keep each run's region files (world-kept/) for diagnosis")
+    parser.add_argument("--policy", action="append", default=[], metavar="KEY=VALUE",
+                        help="a line of the server's own policy (world/kindred/edits.properties), e.g. maxNativePlayers=8; repeatable")
     args = parser.parse_args()
 
     out = Path(args.out).resolve()
@@ -226,14 +236,14 @@ def main():
     vanilla = vanilla_server(cache, minecraft)
     (out / name).mkdir(parents=True, exist_ok=True)
     (out / name / "build.json").write_text(json.dumps({"build": name, "jar": jar.name, "scenario": args.scenario, "minecraft": minecraft,
-                                                       "loader": loader, "fabricApi": fabric, "launcher": start.name}, indent=1) + "\n", encoding="utf-8")
+                                                       "loader": loader, "fabricApi": fabric, "launcher": start.name, "policy": args.policy}, indent=1) + "\n", encoding="utf-8")
     print("build %s, %d seeds, scenario: %s, parallel %d" % (name, len(seed_list), args.scenario, args.parallel), flush=True)
     pending, running = list(seed_list), []
     while pending or running:
         while pending and len(running) < args.parallel:
             seed = pending.pop(0)
             folder = out / name / seed
-            prepare(folder, seed, jar, api, vanilla, recipes_for(args.recipes, seed))
+            prepare(folder, seed, jar, api, vanilla, recipes_for(args.recipes, seed), args.policy)
             console = open(folder / "console.txt", "w", encoding="utf-8")
             process = subprocess.Popen(["java", "-Xmx" + args.memory, "-jar", str(start), "nogui"], cwd=folder, env=environment(args.scenario),
                                        stdin=subprocess.DEVNULL, stdout=console, stderr=subprocess.STDOUT)

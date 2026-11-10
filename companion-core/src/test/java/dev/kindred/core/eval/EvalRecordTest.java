@@ -59,6 +59,15 @@ class EvalRecordTest {
     }
 
     @Test
+    void theServersLoadSaysWhenItsWorstTickFellAndHowManyRanLong() {
+        var record = new EvalRecord(EvalScenario.parse("starters=Echo"));
+        record.server(4.494, 1326.95, 6001, 41, 3, 1211, 14400);
+        String json = record.toJson("b", 1, 1, true);
+        assertTrue(json.contains("\"server\": {\"tickMsMean\": 4.49, \"tickMsWorst\": 1326.95, \"tickMsWorstAt\": 6001, "
+                + "\"ticksOver50ms\": 41, \"ticksOver200ms\": 3, \"heapMbMax\": 1211, \"samples\": 14400}"), json);
+    }
+
+    @Test
     void controlCharactersAreEscaped() {
         assertEquals("\"a\\nb\\tc\\u0001\\\\\"", Json.string("a\nb\tc\u0001\\"));
         assertEquals("null", Json.string(null));
