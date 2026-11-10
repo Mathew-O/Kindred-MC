@@ -1,0 +1,48 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=on; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=off",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT (strategist asked for, the strategist not configured)",
+  "seed": 20261030,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1820, "iron_ingot": 4940, "iron_pickaxe": 28300, "obsidian": 82423},
+      "deaths": [
+        {"tick": 197733, "cause": "Kindred was shot by Skeleton", "x": 84, "y": 77, "z": 51, "light": 0, "timeOfDay": 5895, "dimension": "minecraft:overworld", "hunger": 3, "underSky": false, "stage": "Wood: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Take cover from skeleton"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 25380, "x": -14, "y": 19, "z": -26, "attempt": 1}, {"tick": 94360, "x": 183, "y": -54, "z": 89, "attempt": 1}, {"tick": 210360, "x": 103, "y": 40, "z": -9, "attempt": 1}, {"tick": 257120, "x": 53, "y": 110, "z": 29, "attempt": 1}, {"tick": 267640, "x": 44, "y": 100, "z": 37, "attempt": 1}, {"tick": 273780, "x": 49, "y": 118, "z": 20, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 640, "stone_tools": 2280, "iron_ingot": 9020, "iron_pickaxe": 33240, "diamond": 37040},
+      "deaths": [
+        {"tick": 129418, "cause": "Sol suffocated in a wall", "x": 37, "y": 55, "z": 179, "light": 0, "timeOfDay": 9580, "dimension": "minecraft:overworld", "hunger": 4, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall: out from under the falling sand to 37, 55, 179", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Dig out of the wall: out from under the falling sand to 37, 55, 179"},
+        {"tick": 150130, "cause": "Sol was slain by Zombie Villager", "x": 35, "y": 84, "z": 33, "light": 2, "timeOfDay": 6292, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: fight back - Back off from zombie_villager the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30740, "x": 124, "y": 20, "z": 8, "attempt": 1}, {"tick": 220260, "x": -33, "y": 48, "z": 104, "attempt": 1}, {"tick": 249440, "x": -60, "y": 60, "z": 64, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 2500, "iron_ingot": 8080, "iron_pickaxe": 38680, "obsidian": 101425},
+      "deaths": [
+        {"tick": 242649, "cause": "Echo was shot by Skeleton", "x": 93, "y": 52, "z": -143, "light": 1, "timeOfDay": 2811, "dimension": "minecraft:overworld", "hunger": 0, "underSky": false, "stage": "Wood: inventory full - Drop surplus cobblestone (tried elsewhere 6 times)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 57180, "x": -17, "y": 91, "z": 18, "attempt": 1}, {"tick": 78100, "x": -15, "y": 86, "z": 19, "attempt": 1}, {"tick": 147020, "x": 37, "y": 70, "z": 72, "attempt": 1}, {"tick": 155340, "x": 31, "y": 63, "z": 112, "attempt": 1}, {"tick": 170920, "x": 46, "y": 61, "z": 116, "attempt": 2}, {"tick": 174700, "x": 48, "y": 63, "z": 137, "attempt": 3}, {"tick": 195020, "x": 42, "y": 112, "z": 31, "attempt": 4}, {"tick": 198940, "x": 16, "y": 90, "z": 24, "attempt": 5}, {"tick": 207900, "x": 34, "y": 105, "z": 19, "attempt": 6}, {"tick": 262760, "x": 58, "y": 88, "z": -75, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 2245,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    6,
+    30,
+    155
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.501272498231362,
+    8.0,
+    16.535907074147275
+  ],
+  "yaw": -9107.067,
+  "pitch": -4.9999995,
+  "health": 17.833334,
+  "food": 20,
+  "saturation": 1.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 7
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 2245,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: to dry ground",
+  "task": "Get out of the water: to dry ground",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol discovered the floor was lava",
+  "ticks": 1200,
+  "log": [
+    "[22:00:32] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for logs: advance]",
+    "[22:00:32] [Server thread/INFO]: Sol native_break COMPLETED [Cut through west for logs: clear 82, 69, 58]",
+    "[22:00:33] [Server thread/INFO]: Sol native_break COMPLETED [Cut through west for logs: clear 82, 68, 58]",
+    "[22:00:33] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for logs: advance]",
+    "[22:00:35] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for logs]",
+    "[22:00:36] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for logs]",
+    "[22:00:37] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for logs: advance]",
+    "[22:00:37] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for logs: advance]",
+    "[22:00:37] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for logs: advance]",
+    "[22:00:37] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for logs: advance]",
+    "[22:00:38] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for logs]",
+    "[22:00:40] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to the trees Echo found at 28, 66, 197]",
+    "[22:00:42] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to the trees Echo found at 28, 66, 197]",
+    "[22:00:45] [Server thread/INFO]: Sol native_goto COMPLETED [Walk toward the trees seen at 28, 69, 197]",
+    "[22:00:45] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 21, 63, 171 is blocked [Get out of the water: to dry ground]",
+    "[22:00:46] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 21, 63, 172 is blocked [Get out of the water: to dry ground]",
+    "[22:00:46] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 20, 63, 171 is blocked [Get out of the water: to dry ground]",
+    "[22:00:47] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 20, 63, 170 is blocked [Get out of the water: to dry ground]",
+    "[22:00:49] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 22, 63, 173 is blocked [Get out of the water: to dry ground]",
+    "[22:00:49] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Get out of the water: to dry ground]"
+  ]
+}

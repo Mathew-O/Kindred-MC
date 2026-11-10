@@ -1,0 +1,287 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 36049,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -5,
+    17,
+    79
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.491311545291317,
+    8.166109260938214,
+    16.75703221486063
+  ],
+  "yaw": -0.6542808,
+  "pitch": 4.118368,
+  "health": 3.7499995,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 62
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 13
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 24
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 23
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:brown_mushroom",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 47
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 39
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 13
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 15
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 4
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 37
+        }
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 12049,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Take cover from skeleton",
+  "task": "Climb toward the surface for food: back the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[04:02:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+    "[04:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 11, 23, 92]",
+    "[04:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 11, 22, 92]",
+    "[04:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 11, 21, 92]",
+    "[04:02:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]",
+    "[04:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 11, 22, 91]",
+    "[04:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 11, 21, 91]",
+    "[04:02:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[04:02:33] [Server thread/INFO]: Kindred native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Place a torch at 11, 21, 92]",
+    "[04:02:33] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 11, 21, 90]",
+    "[04:02:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    "[04:02:33] [Server thread/INFO]: Kindred native_place CANCELLED: A hostile mob is attacking; fight back first [Place a torch at 11, 21, 91]",
+    "[04:02:34] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[04:02:34] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+    "[04:02:34] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+    "[04:02:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[04:02:34] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[04:02:34] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[04:02:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[04:02:36] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]"
+  ]
+}

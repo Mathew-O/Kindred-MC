@@ -26,22 +26,28 @@ import java.util.UUID;
  * order: the echo rule, the world's mode, the sender, the whole-server announcements, the facts against the channel,
  * dedupe, the channel's budget; then the audience and each receiver's visibility, then each person's line budget and
  * own dedupe. Announcements registered in {@link Config#announcements} bypass the channel's budget, never dedupe.
+ * State kinds registered in {@link Config#state} (a teammate's own update, every few seconds) bypass the channel's
+ * budget and dedupe, keep every other check, reach AI receivers only and are never put into words.
  */
 public final class Wire {
     /**
      * The Wire's settings: the mode's announcements (few and fixed), the lines a minute a person hears from the Wire at
-     * the usual setting (half for fewer, half again more for more), and the earshot of public words.
+     * the usual setting (half for fewer, half again more for more), the earshot of public words, and the state kinds:
+     * a player's own current state for its group's AI players, sent as often as it changes, never words.
      */
-    public record Config(Set<String> announcements, int personPerMinute, int earshot) {
+    public record Config(Set<String> announcements, int personPerMinute, int earshot, Set<String> state) {
         public Config {
             announcements = announcements == null ? Set.of() : Set.copyOf(announcements);
+            state = state == null ? Set.of() : Set.copyOf(state);
             if (personPerMinute < 1) throw new IllegalArgumentException("A person needs at least a line a minute");
             if (earshot < 1) throw new IllegalArgumentException("Earshot must be positive");
         }
 
-        public static Config defaults() { return new Config(Set.of(), 4, 32); }
+        public static Config defaults() { return new Config(Set.of(), 4, 32, Set.of()); }
 
-        public Config withAnnouncements(Set<String> kinds) { return new Config(kinds, personPerMinute, earshot); }
+        public Config withAnnouncements(Set<String> kinds) { return new Config(kinds, personPerMinute, earshot, state); }
+
+        public Config withState(Set<String> kinds) { return new Config(announcements, personPerMinute, earshot, kinds); }
 
         int linesFor(ListenerPreferences.Unasked unasked) {
             return switch (unasked == null ? ListenerPreferences.Unasked.USUAL : unasked) {
@@ -102,16 +108,23 @@ public final class Wire {
         for (Fact fact : message.facts().values()) {
             if (!carries(channel, fact.visibility(), message.fromServer())) return Delivery.refused(message, Delivery.Refusal.NARROWER_FACT);
         }
+        // A state kind is a player's own record of itself: never a person's words, never the server's.
+        boolean state = config.state().contains(message.kind());
+        if (state && (message.origin() != Message.Origin.RECORD || message.fromServer() || sender.person())) {
+            return Delivery.refused(message, Delivery.Refusal.NOT_STATE);
+        }
 
         String budgetKey = scope.budgetKey() + (scope.earshot() != null ? "|" + message.from() : "");
         String sameKey = budgetKey + "|" + message.sameness();
-        Long last = lastSame.get(sameKey);
-        if (last != null && now - last < channel.dedupeMillis) return Delivery.refused(message, Delivery.Refusal.DUPLICATE);
-        var times = sentOn.computeIfAbsent(budgetKey, k -> new ArrayDeque<>());
-        trim(times, now);
-        if (!announcement && times.size() >= channel.perMinute) return Delivery.refused(message, Delivery.Refusal.BUDGET);
-        times.addLast(now);
-        lastSame.put(sameKey, now);
+        if (!state) {
+            Long last = lastSame.get(sameKey);
+            if (last != null && now - last < channel.dedupeMillis) return Delivery.refused(message, Delivery.Refusal.DUPLICATE);
+            var times = sentOn.computeIfAbsent(budgetKey, k -> new ArrayDeque<>());
+            trim(times, now);
+            if (!announcement && times.size() >= channel.perMinute) return Delivery.refused(message, Delivery.Refusal.BUDGET);
+            times.addLast(now);
+            lastSame.put(sameKey, now);
+        }
 
         var told = new ArrayList<Delivery.Told>();
         var phrase = new ArrayList<Delivery.Phrase>();
@@ -129,6 +142,7 @@ public final class Wire {
                 told.add(new Delivery.Told(receiver.id(), message, how));
                 continue;
             }
+            if (state) continue; // Never words: a person in the group hears nothing of it.
             String heardKey = receiver.id() + "|" + message.sameness();
             Long heard = heardSame.get(heardKey);
             var lines = heardBy.computeIfAbsent(receiver.id(), k -> new ArrayDeque<>());

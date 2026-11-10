@@ -307,10 +307,15 @@ def markdown(summary):
                                                      s["teamDeathsPerHour"], "; ".join(cells)))
     loads = {seed: s["server"] for seed, s in summary["perSeed"].items() if s.get("server")}
     if loads:
-        lines += ["", "## The server's load", "", "Each seed's mean tick (over the run, from the server's own last-hundred mean once a game second), its worst tick, and its heap at most.", "",
-                  "| Seed | Mean tick, ms | Worst tick, ms | Heap at most, MB |", "| --- | --- | --- | --- |"]
+        lines += ["", "## The server's load", "",
+                  "Each seed's mean tick (over the run, from the server's own last-hundred mean once a game second), its worst tick "
+                  "and when it fell (ticks into the run), the ticks that took over 50 and over 200 ms, and its heap at most. A run "
+                  "from before these were kept shows a dash for them.", "",
+                  "| Seed | Mean tick, ms | Worst tick, ms | Worst at tick | Over 50 ms | Over 200 ms | Heap at most, MB |",
+                  "| --- | --- | --- | --- | --- | --- | --- |"]
         for seed, l in loads.items():
-            lines.append("| %s | %.2f | %.2f | %d |" % (seed, l["tickMsMean"], l["tickMsWorst"], l["heapMbMax"]))
+            lines.append("| %s | %.2f | %.2f | %s | %s | %s | %d |" % (seed, l["tickMsMean"], l["tickMsWorst"], l.get("tickMsWorstAt", "-"),
+                                                                    l.get("ticksOver50ms", "-"), l.get("ticksOver200ms", "-"), l["heapMbMax"]))
     audited = {seed: s["factions"] for seed, s in summary["perSeed"].items() if s.get("factions")}
     if audited:
         lines += ["", "## The faction world's audit (M-06i)", "",

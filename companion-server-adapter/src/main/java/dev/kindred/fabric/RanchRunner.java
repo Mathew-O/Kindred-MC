@@ -142,9 +142,12 @@ final class RanchRunner {
         // What it saw as it gave up fetching, as well as at the end: the ranch fixture once left with cows at the gate
         // that the look at its end saw.
         if (step instanceof Ranch.Step.Done || !before.equals(ranch.phase()) && ranch.phase().equals("leaving the pen")) {
-            KindredMod.LOGGER.info("Ranch {} at {}: {}; standing at {}, it saw {}", step instanceof Ranch.Step.Done ? "done" : "leaving", origin.toShortString(),
+            // Each with its id's first eight characters, and what it gave up and tried: the own-ranch fixture in CI left
+            // with "no other in sight", one sheep in sight behind the pen's far fence, and nothing logged said why.
+            KindredMod.LOGGER.info("Ranch {} at {}: {}; standing at {}, it saw {}; {}", step instanceof Ranch.Step.Done ? "done" : "leaving", origin.toShortString(),
                     ranch.phase(), seen.feet(), seen.animals().stream()
-                    .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList());
+                    .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " " + a.id().toString().substring(0, 8) + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList(),
+                    ranch.diagnosis());
         }
         progress = ranch.phase();
         return switch (step) {
@@ -199,7 +202,11 @@ final class RanchRunner {
         // Told before the pen's build, whose runner is never marked done once the pen stands.
         if (ranchWalk && task.skill().equals("native_goto")) {
             ranchWalk = false;
-            if (!completed) ranch.refused();
+            if (!completed) {
+                KindredMod.LOGGER.info("Ranch at {}: its walk not completed, the one it went for given up or its spot crossed off: {} [{}]",
+                        origin.toShortString(), reason, task.label());
+                ranch.refused();
+            }
             return;
         }
         if (shutting != null && !shutting.done()) shutting.finished(task, completed, reason, world);

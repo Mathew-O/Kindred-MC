@@ -59,6 +59,8 @@ final class NativeBoatAction extends NativeRecordedAction {
     private BlockPos boatAt;
     private int waited;
     private boolean started, halted, unknown, left;
+    /** A break of a boat only while it is empty (F-22c32): one a villager has stepped into since is not broken. */
+    private boolean emptyOnly;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
@@ -91,6 +93,16 @@ final class NativeBoatAction extends NativeRecordedAction {
         this.target = target;
         if ((mode == Mode.LAUNCH || mode == Mode.PLACE) && (slot < 0 || slot > 8 || water == null)) throw new IllegalArgumentException("A launch or a place needs an owned hotbar slot 0..8 and a block");
         if (mode == Mode.BREAK && target == null) throw new IllegalArgumentException("A break needs its boat");
+    }
+
+    /**
+     * A break only of an empty boat: refused, blocked, if anything sits in it when the strike would land. A boat put down
+     * for a strolling villager, judged not taken and to be broken again, was stepped into while the break went on, and
+     * the break broke the boat that held it and let it go (the lake fixture in CI on #72, a2c7baa) (F-22c32).
+     */
+    NativeBoatAction onlyEmpty() {
+        emptyOnly = true;
+        return this;
     }
 
     /** Moves the boat work on by one tick. */
@@ -189,8 +201,21 @@ final class NativeBoatAction extends NativeRecordedAction {
                 b -> b.isAlive() && b.age <= 2);
         if (placed.isEmpty()) {
             var look = body.entity().raycast(5.0, 1.0f, true);
+            // With what vanilla refuses a boat for besides a block: an entity it would collide with where it goes, or the eye
+            // inside an entity's box. A strolling librarian's twelve boats, all to one spot within a second, were refused and
+            // the reason could not be told (PR #51's CI, run 42527742264) (F-22c29's diagnostics).
+            var player = body.entity();
+            net.minecraft.util.math.Vec3d hit = look.getPos();
+            var boatBox = new Box(hit.x - 0.6875, hit.y, hit.z - 0.6875, hit.x + 0.6875, hit.y + 0.5625, hit.z + 0.6875);
+            var inTheWay = player.getServerWorld().getOtherEntities(player, boatBox, e -> !e.isSpectator() && (e.isPushable() || e.isCollidable()))
+                    .stream().map(e -> e.getType().getUntranslatedName() + "@" + String.format(java.util.Locale.ROOT, "%.2f,%.2f,%.2f", e.getX(), e.getY(), e.getZ())).toList();
+            var eyeIn = player.getServerWorld().getOtherEntities(player, player.getBoundingBox().expand(2.0),
+                    e -> !e.isSpectator() && e.canHit() && e.getBoundingBox().expand(e.getTargetingMargin()).contains(player.getEyePos()))
+                    .stream().map(e -> e.getType().getUntranslatedName()).toList();
             return settle("The boat was not put down (the look met " + (look instanceof net.minecraft.util.hit.BlockHitResult block
-                    ? block.getBlockPos().toShortString() + " " + block.getSide() : look.getType()) + ", for " + water.toShortString() + ")", null);
+                    ? block.getBlockPos().toShortString() + " " + block.getSide() : look.getType()) + ", for " + water.toShortString()
+                    + (inTheWay.isEmpty() ? "" : "; in its way " + String.join(", ", inTheWay))
+                    + (eyeIn.isEmpty() ? "" : "; its eye inside " + String.join(", ", eyeIn)) + ")", null);
         }
         boat = placed.getFirst().getUuid();
         boatAt = placed.getFirst().getBlockPos();
@@ -220,6 +245,7 @@ final class NativeBoatAction extends NativeRecordedAction {
             return settle(null, Map.of("picked", "true"));
         }
         boatAt = target.getBlockPos();
+        if (emptyOnly && target.hasPassengers()) return settle("The boat is no longer empty: " + target.getFirstPassenger().getName().getString() + " sits in it", null);
         if (++waited > BREAK_TICKS || !player.canInteractWithEntity(target, 0)) return settle("Could not break the boat", null);
         if (player.getAttackCooldownProgress(0.5f) >= 1f) body.strikeBoat(lease.get(), target, true);
         return waiting();

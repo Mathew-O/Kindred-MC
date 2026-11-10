@@ -162,6 +162,68 @@ public final class NativePeerLedgerGameTests implements FabricGameTest {
     }
 
     /**
+     * F-34c: a teammate's update travels on the Wire. Sol of oak and Echo of birch: no update of Sol's reaches Echo, through
+     * all the seconds it is sent; both of oak, Echo has Sol's update from the team, by Sol. Never in Echo's inbox, never
+     * a word to anyone, never a message in the World Record (the cost gauge's count of what it wrote): the receiver's ledger alone keeps it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "peers-wire", tickLimit = 1600)
+    public void aTeammatesUpdateTravelsOnTheWireAndCrossesNoFaction(TestContext context) {
+        var two = new Two(context, false);
+        var t = two.t;
+        var f = t.f;
+        long[] at = new long[3];
+        String[] oakOf = {""};
+        @SuppressWarnings("unchecked") java.util.concurrent.CompletableFuture<String>[] cost = new java.util.concurrent.CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> two.makeSol(context))
+                .createAndAdd(() -> two.established(context))
+                .createAndAdd(() -> {
+                    if (at[0] != 0) return;
+                    t.listen();
+                    // Twenty blocks apart, out of each other's sight: what Echo knows of Sol can come only through the team.
+                    Two.place(two.solBody, context, new Vec3d(1.5, 2, 1.5), 180);
+                    Two.place(two.echoBody, context, new Vec3d(1.5, 2, 21.5), 0);
+                    f.runtime.setFactionOf(id -> id.equals(two.sol) ? "oak" : id.equals(two.echo) ? oakOf[0].isEmpty() ? "birch" : "oak" : "");
+                    at[0] = context.getWorld().getServer().getTicks();
+                    at[1] = f.runtime.wire().stateTold();
+                })
+                .createAndAdd(() -> {
+                    long now = context.getWorld().getServer().getTicks();
+                    context.assertTrue(now - at[0] >= 3 * PeerRadio.UPDATE_TICKS, "Three updates' worth of seconds: " + (now - at[0]));
+                    var doing = two.echoKnows(context).best(two.sol, PeerLedger.Topic.DOING, now);
+                    context.assertTrue(doing.isEmpty() || doing.get().source() != PeerLedger.Source.TEAM || doing.get().at() < at[0],
+                            "Nothing of Sol's, of oak, reaches Echo, of birch: " + doing);
+                })
+                .createAndAdd(() -> {
+                    if (at[2] == 0) {
+                        oakOf[0] = "oak";
+                        at[2] = context.getWorld().getServer().getTicks();
+                    }
+                    long now = context.getWorld().getServer().getTicks();
+                    var doing = two.echoKnows(context).best(two.sol, PeerLedger.Topic.DOING, now);
+                    context.assertTrue(doing.isPresent() && doing.get().source() == PeerLedger.Source.TEAM && two.sol.equals(doing.get().by())
+                            && doing.get().at() >= at[2], "Both of oak: Sol's update in Echo's ledger, from the team: " + doing);
+                    context.assertTrue(f.runtime.wire().stateTold() > at[1], "Told through the Wire: " + f.runtime.wire().stateTold());
+                    context.assertTrue(f.runtime.wire().inbox(two.echo, dev.kindred.core.wire.TeamState.KIND).isEmpty(), "Never in Echo's inbox");
+                    context.assertTrue(t.heard.stream().noneMatch(h -> h.to().equals(two.echoBody.getUuid()) || h.to().equals(two.solBody.getUuid())), "No word to either: " + t.heard);
+                })
+                .createAndAdd(() -> {
+                    if (cost[0] == null) cost[0] = f.runtime.logCost(1);
+                    context.assertTrue(cost[0].isDone(), "The cost line measured");
+                    String line = cost[0].join();
+                    var told = java.util.regex.Pattern.compile("team\\.state\\) (\\d+) told").matcher(line);
+                    context.assertTrue(told.find() && Long.parseLong(told.group(1)) > 0, "The gauge counts what was told: " + line);
+                    context.assertTrue(!line.contains("team.state=") && !line.contains("message="), "Nothing of it written to the World Record: " + line);
+                    f.runtime.setFactionOf(id -> "");
+                    t.cleanup(context);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Its owner tells Echo "I'm off to the Nether": a claim, by them, never a fact, and the voice is told it only as what
      * they said. "Forget that" takes it back, answered in Echo's own words without the model; the voice is not told it
      * again; and who said it and when are kept with the correction.

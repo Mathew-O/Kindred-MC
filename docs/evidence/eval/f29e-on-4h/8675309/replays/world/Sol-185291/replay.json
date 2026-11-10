@@ -1,0 +1,312 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 185291,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -7,
+    30,
+    83
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.497608353680256,
+    8.0,
+    16.445688111895805
+  ],
+  "yaw": -170.28212,
+  "pitch": -0.5345264,
+  "health": 0.009999275,
+  "food": 11,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 30
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 40
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 18
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 55
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 4
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 33
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 16
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 23
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 31
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:gunpowder",
+        "count": 2
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:spider_eye",
+        "count": 1
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 38
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 53
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 58
+        }
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 17291,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: outmatched - Hole up: recover behind the wall (tried elsewhere 1 time)",
+  "task": "Hole up: recover behind the wall",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO, SPARE_PICKAXE]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[05:17:01] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:01] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:02] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:03] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:04] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:04] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:05] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:06] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:06] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:07] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[05:17:07] [Server thread/INFO]: Sol native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[05:17:08] [Server thread/INFO]: Sol native_fight COMPLETED [Fight creeper]",
+    "[05:17:08] [Server thread/INFO]: Sol native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[05:17:09] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[05:17:09] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[05:17:09] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[05:17:10] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton]",
+    "[05:17:10] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[05:17:11] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[05:17:12] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]"
+  ]
+}

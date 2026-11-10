@@ -16,6 +16,84 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## A pocket of lava followed (F-25c4cz) — 9 November 2026 (`claude/lava-pocket-1109`)
+
+- **[F-25c4cz](evidence/F-25c4cz.md):** looking for its cast's lava, the pocket under the rock its bucket was filled from
+  is followed a source at a time (product; E-40's iteration 17, `e40a17-7bc5b42`, 707: 2 of a pocket of 208 taken, then
+  branch mining on for half an hour; the kept world read offline for diagnosis only).
+  - `NativePortalCampaignGameTests.aPocketOfLavaUnderTheRockIsFollowedOnceTheLavaItSawIsTaken` (staged, as it says): on main
+    without the fix, 0 of 3 (1, 1 and 3 of 9 sources taken); with it, 3 of 3.
+  - The classes that cast and make obsidian (`NativePortalCampaignGameTests`, `NativeCastRefusalGameTests`,
+    `NativeObsidianPickupGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+    `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
+    107 of 107 in each of three runs.
+  - **Build:** `./gradlew build` successful; JUnit 1,081 tests, 0 failures, 7 skipped.
+
+## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `7bc5b42`. `python3 tools/eval/run.py --ref
+  7bc5b42 --name e40a17-7bc5b42 --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 3
+  --keep-world`; 707, stopped short by the launcher's time limit, again alone with `--seeds 707 --parallel 1`;
+  `score.py`; `compare.py` against `e40a16-922f4fd` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 8 of 10 (8); a portal lit on 7 of 10 (6), median 60.05
+    minutes (95.15); stuck time under a tenth on 3 of 10 (3).
+  - Deaths 1.0 a game hour [0 to 3.0] (22, against 23); 4 while backing off from a zombie (10). Stuck spells 4 [3 to
+    21] (64, against 65); stuck minutes 12 [9 to 63] (21 [3 to 42]).
+  - Every range overlaps both: no difference worth noting.
+  - No player stopped for reconciliation (2 in iteration 16).
+  - [Summary](evidence/eval/e40a17-7bc5b42/summary.md), [deaths](evidence/eval/e40a17-7bc5b42/deaths.md),
+    [against iteration 16](evidence/eval/compare-e40a17.md), [against the start](evidence/eval/compare-e40a17-base.md),
+    [E-40](evidence/E-40.md).
+
+## The lake-bed fixture's intermittent (F-25c4cu) — 9 November 2026 (`claude/lakebed-memory-1109`)
+
+- **[F-25c4cu](evidence/F-25c4cu.md):** `NativeLakeBedClimbGameTests`' fixture in copies of eight (a scratch class, not
+  committed).
+  - On `feb4f82`, without the fix: 14 of 16 out from under the lake (median 6,674 ticks, at most 7,628), and 2 still under it
+    at the end.
+  - With the fix: 24 of 24 out (median 6,861 ticks, at most 6,875).
+  - Scratch logging, never committed, counted "back the way it came" chosen with the under-water order run out: 544 times in
+    eight copies without the fix, none in 24 with it.
+- **The climb's classes**, batch 23's 26 (`NativeLakeBedClimbGameTests`, `NativePortalCampaignGameTests`,
+  `NativeUnderLakeKeptGameTests`, `NativeFloodedShaftGameTests`, `NativeWaterExitGameTests` and the rest): 156 of 156 in each of
+  three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
+
+## Two cast-route intermittents (F-25c4cs, F-25c4ct) — 9 November 2026 (`claude/cast-refusal-1109`)
+
+- **[F-25c4ct](evidence/F-25c4ct.md), a frame's mould refused with nothing placed:** `NativeCastRefusalGameTests`, the thick-rock
+  cast scene, the inventory changed while the first mould's placement was being recorded (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the refused mould passed over for some 2,400 ticks while the cast stepped
+    closer 244 to 246 times.
+  - With the fix: passes 3 of 3, the mould placed 4 to 5 ticks after its refusal, with no step closer.
+- **[F-25c4cs](evidence/F-25c4cs.md), the obsidian site kept until its water is taken back:** `NativeObsidianPickupGameTests`,
+  the poured-water obsidian scene, the step to take the water back asked for once and not run (staged, as it says).
+  - On `feb4f82`, without the fix: fails 3 of 3, the site given up with its water still standing.
+  - With the fix: passes 3 of 3.
+  - Two forms of the fixture not kept are in the evidence: one cancelled the mining, the other told the two apart 1 of 3.
+- **The classes that cast and make obsidian**, with both fixes (`NativePortalCampaignGameTests`, `NativeCastRefusalGameTests`,
+  `NativeObsidianPickupGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
+  106 of 106 in each of three runs.
+- **The benches** ran beside E-40's iteration 16, at the lowest priority.
+- **Build:** `bash ./gradlew build` successful; JUnit 1,067 tests, 0 failures, 6 skipped.
+## E-40, iteration 16 (`e40a16-922f4fd`, batches 22 to 24) — 9 November 2026 (`claude/e40-iter16-1109`)
+
+- **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `922f4fd`. `python3 tools/eval/run.py --ref 922f4fd
+  --name e40a16-922f4fd --seed-file tools/eval/seeds-10.txt --scenario "goal=nether; ticks=144000" --parallel 3
+  --keep-world`; `score.py`; `compare.py` against `e40a15-dbf4e5c` and `f25c4ax-84b331c`.
+  - Iron pickaxe 10 of 10 within the first hour; obsidian 8 of 10 (iteration 15: 10); a portal lit on 6 of 10 (7);
+    stuck time under a tenth on 3 of 10 (2).
+  - Deaths 0.0 a game hour [0 to 3.5] (23, against 21). Stuck spells 7 [1 to 14] (65, against 114); stuck minutes 21
+    [3 to 42] (25.5 [6 to 111]).
+  - Every range overlaps both: no difference worth noting.
+  - Two players stopped for reconciliation by a cast's outcome (31102026, 404); no pillar held for it.
+  - The lead's GameTest benches ran beside it at the lowest priority.
+  - [Summary](evidence/eval/e40a16-922f4fd/summary.md), [deaths](evidence/eval/e40a16-922f4fd/deaths.md),
+    [against iteration 15](evidence/eval/compare-e40a16.md), [against the start](evidence/eval/compare-e40a16-base.md),
+    [E-40](evidence/E-40.md).
+
 ## E-40, iteration 15 (`e40a15-dbf4e5c`, batches 17 to 20) — 8 November 2026 (`claude/e40-iter15-1108`)
 
 - **The evaluation:** all ten seeds, 144,000 ticks each, earned, on `dbf4e5c`. `python3 tools/eval/run.py --ref dbf4e5c
@@ -91,6 +169,38 @@ jobs were re-run once.
     passed all 587 native fixtures. The bunker and life-first classes passed 8 of 8 alone on `e411089`.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
+
+## E-40, batch 25: a sword in the backpack taken to hand (F-25c4cv) — 9 November 2026 (`claude/backoff-1109`)
+
+- **The fixture** (F-25c4cv, [evidence](evidence/F-25c4cv.md)): `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`,
+  staged as it says (a walled and roofed room, 707 Kindred's hotbar as its death's replay held it, the stone sword in
+  slot 15, and a zombie set on the player).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "The sword never reached its hotbar", the zombie struck five times with
+    the stone pickaxe each time.
+  - With the fix: passes 3 of 3, the sword taken to hand ("Take its weapon to hand") before "Fight zombie".
+- **The death it came from**: `ReplayGameTests` with 707 Kindred's replay (`kindred-43985-707`). On `e7e0b57` it died
+  again 2 of 3, fighting with the stone pickaxe; with the fix it lived 3 of 3 here, the sword taken to hand first. Not kept:
+  on #96's CI (run 42583930289, attempt 2) it died again 2 of 3 with the sword in hand, and locally 3 of 21, badly hurt
+  among several zombies and backing off "the way it came". F-27 keeps a replay only with the fix that makes it pass 3 of 3,
+  so it waits for the back-off fix.
+- **The classes that fight, swap and cast** (`NativeWeaponToHandGameTests`, `ReplayGameTests`, `NativePortalCampaignGameTests`,
+  `NativeCombatGameTests`, `NativeTacticalGameTests`, `NativeEncounterGameTests`, `NativeFallGameTests`,
+  `NativeInitiativeGameTests`, `NativeSpireGameTests`): 126 of 126 in each of three runs.
+- **The kept replay `echo-73670`** died again once in the first replay run with the fix (1 of 3), knocked off a ledge by a
+  zombie villager. The new step never ran there: its sword was on its hotbar from the start. In the three class runs it
+  lived 9 of 9, so 11 of 12 with the fix; on `e7e0b57` it lived 3 of 3. Its course varies; the fix does not reach it.
+## E-40, batch 25: the cast route takes its table along (F-25c4cw) — 9 November 2026 (`claude/cast-table-1109`)
+
+- **The fixture** (F-25c4cw, [evidence](evidence/F-25c4cw.md)): `NativeCastTableGameTests.onTheCastRouteItsTableIsTakenAlongWhenItGoesOnForLava`,
+  staged as it says (a chamber deep in stone with no lava, the cast route's kit with its pickaxe gone and a table, cobblestone
+  and sticks to make another).
+  - On `e7e0b57`, without the fix: fails 3 of 3, "Gone on for lava with its table left behind", branch-mining for lava.
+  - With the fix: passes 3 of 3.
+- **The cast route's classes and the trip's wood** (`NativeCastTableGameTests`, `NativeTripWoodGameTests`,
+  `NativePortalCampaignGameTests`, `NativeBucketGameTests`, `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`,
+  `NativeObstructedPortalGameTests`, `NativeRescueRecipesGameTests`, `NativeTeamPortalGameTests`): 106 of 106 in each of three runs.
+- **The benches** ran with the batch's other benches on the cores, at most three at a time.
+- **Build:** `./gradlew build` passed: JUnit 1,074 tests, 0 failures, 7 skipped.
 
 ## E-40, batch 24: the trip's wood from the next trees (F-25c4cr) — 8 November 2026 (`claude/e40-ladder-24-1108`)
 
@@ -560,6 +670,17 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
     pool, which no player outlives; Sol's, on magma in a flooded tunnel one block high, died 3 of 3 before and after.
   - The way out of the water not stopped to fight while in it: Sol's replay with a drowned died 3 of 3 before and 1 of 3
     after, that one walking back into the water for food.
+
+## M-01f: every ended task traced to its routine, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeOwnRanchGameTests` alone, 3 runs before the change (0 of 3: 4 tasks unlabelled each), 3 after (6 of 6 each).
+
+## M-01a: the pigs' carrots or potatoes grown, 2026-11-09
+
+- Build: `./gradlew build`.
+- JUnit: `WheatPlotTest`, `RanchChoiceTest` (one new case each).
+- Native: `NativeOwnRanchGameTests` alone, 3 runs, 6 of 6 each. Control (the pigs' choice off): 0 of 1.
 
 ## M-01a: a horse of its own, 2026-11-08
 
@@ -3325,3 +3446,76 @@ After the block's first merge from main, CI on PR #25 found:
   - Two other forms were tried first and are not kept: set down in the pit from the start (0 of 3, no way back behind
     it), and the ore at the pit's foot (2 of 3, the ore not seen from the plot's top). The benches ran beside the
     Factions evaluation, at the lowest priority.
+
+- **[F-22c30](evidence/F-22c30.md):** a loaded cart rolling back fast is stopped on its rails at the line's open end (product;
+  #70's run 42533785406: through the player's body and off the line's start, off the rails, and the bring gave up).
+  - The staged roll-back fixture: 1 of 3 before, both failures CI's; after, 3 of 3 and 6 of 6, the cart met at the stop in 6.
+  - F-22c25's fixture 3 of 3; `NativeBringGameTests`, 3 runs, 9 of 9 each.
+  - Tried and not kept: pushing a derailed cart back (2 of 3, then 1 of 3); pushing from beside the stop (1 of 3).
+
+- **[F-22c42](evidence/F-22c42.md):** the hungry search's field under a gapped roof is laid inside its own structure (fixture;
+  #72's run 42584495579: "Back to the climb … back the way it came at -12, 0, -30", 32 blocks out beyond its north wall).
+  - A throwaway copy (not committed) with stone laid 8 blocks over its origin beyond the walls on all four sides, as a test
+    beside it could leave: 0 of 3, each with the CI's text. Over the north side only: 3 of 3, its search went another way.
+  - The fixed fixture on `FixtureGround.WIDE` with sky access, its origin at the middle: a copy, 2 of 2;
+    `NativePortalCampaignGameTests`, 1 run, 95 of 95.
+
+- **[F-22c33](evidence/F-22c33.md):** a fixture's stand-in person is logged out as its test ends (fixture; #73's CI: the
+  second-night fixture ran out of its ticks with full-length nights, a stand-in left awake in the world by earlier fixtures).
+  - A throwaway reproduction (a test leaving a creative stand-in, then the second-night fixture): before, 91 s to the second
+    bedtime and a 49 s second night ending at dawn (23461); after, 32 s and the night skipped (time 1). Locally both pass;
+    CI's slower runners ran out of ticks.
+  - `NativeLifeFirstGameTests` and `NativeNightShelterGameTests`, 3 runs, 7 of 7 each; the 20 classes that call
+    `MockPlayers`, 1 run, 89 of 89.
+
+- **[F-22c34](evidence/F-22c34.md):** a workstation is put down where nothing stands (product; #74's run 42556590202: its anvil
+  refused 1318 times in a row for its tamed wolf in the cell, until the test's time ran out). The pet fixture's body is
+  asserted at every use (fixture: the runtime's stop at tick 8000 removed it, and the step's exception stopped the server).
+  - The staged fixture (its wolf sitting in the first cell): 0 of 3 before, 807 placements refused; after, 3 of 3.
+  - `NativePetGameTests`, 3 runs, 2 of 2 each.
+  - The other workstation users (`NativeBrewGameTests`, `NativeEnchantGameTests`, `NativeHouseGameTests`,
+    `NativeKitNameGameTests`, `NativeNetheriteGameTests`), 1 run: 10 of 10.
+
+- **[F-22c38](evidence/F-22c38.md):** a horse's swap or ride under way is kept to till it ends, not counted again (product;
+  #82's run 42566194927: the saddle's swap planned four times while it waited on its record, and the saddle given up).
+  - The staged fixture (each swap's and ride's record 1.5 s late): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+  - Reopened (#87's run 42584555878: 24 mounts counted for 5 rides). The fixture now checks each mount counted was made.
+    With the first form of the change, 0 of 3 ("counted 24, made 6"); with the step kept till a task of it has run, 3
+    of 3. `NativeHorseGameTests`, 3 runs, 3 of 3 each; `NativeRanchGameTests`, 1 run, 3 of 3.
+
+- **[F-22c32](evidence/F-22c32.md):** a boat a strolling villager steps into late is not broken under it (product; #72's CI on
+  `a2c7baa`, the lake fixture: a break of the boat, planned while it stood empty, went on after the librarian stepped in).
+  - The staged fixture (the seat staged once): 8 copies before, 5 of 8, all 3 staged copies failing as in CI; after, 8 of 8,
+    both staged copies held and brought home.
+  - `NativeBringGameTests`, 3 runs, 10 of 10 each.
+
+- **[F-22c36](evidence/F-22c36.md):** the toss-cap fixture's asks all fall in one of the cap's days (fixture; #83's run
+  42563294688: a cap day ended between the refused third ask and the command's toss, which the new day's cap let through).
+  - The staged fixture (the server's tick 55 before a cap day ends): 0 of 3 before the guard; after, 3 of 3.
+  - `NativeTrustGameTests`, 3 runs, 8 of 8 each.
+
+- **[F-22c35](evidence/F-22c35.md):** a walk from a roof of slabs or stairs crosses them to the nearest stand (product;
+  #78's run 42556777789: a cabin's builder on its roof, "no walkable route" eight times, the cabin eight blocks short).
+  - The staged fixture (the player on a slab roof's middle): 0 of 3 before, as CI; 3 of 3 after.
+  - `NativeNavigationGameTests`, 3 runs, 8 of 8 each; `NativeHouseGameTests`, `NativeBaseGameTests`,
+    `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c37 (fixture diagnostics, in progress):** the gather pause-and-resume fixture's "Gather completed" failure names
+  what ran instead (#87's run 42565807178: resumed, and not completed within the test). No assertion changed.
+  `NativeGatherGameTests`, 3 runs, 5 of 5 each.
+
+- **F-22c39 (fixture diagnostics, in progress):** the pasture-doorway fixture's "A calf born in the pen" failure names every
+  cow about the pen (#91's run 42568179856: the ranch done with the calf in the pen, then no calf counted in it). No
+  assertion changed. `NativeCompoundGameTests`, 3 runs, 6 of 6 each.
+
+- **[F-22c40](evidence/F-22c40.md):** a scaffold column left too high to take down from the ground is reached from a scaffold
+  beside it (product; #86's run 42566156809: fallen off its column, "out of reach to take down" eight times).
+  - The staged fixture (the player put in the pit as its scaffold comes down): 1 of 3 before, the failures CI's; 3 of 3 after.
+  - `:companion-core:test` 899 of 899; `NativeBuildGameTests`, 3 runs, 6 of 6 each; `NativeHouseGameTests`,
+    `NativeBaseGameTests`, `NativeLifeFirstGameTests`, `NativeCompoundGameTests`, 1 run, 16 of 16.
+
+- **F-22c41 (diagnostics, in progress):** the ranch's leaving and done lines name each animal by id, and what it gave up
+  and why (#96's run 42583930289: "no other in sight" with a sheep in sight behind the pen's far fence). A ranch walk
+  ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
+  `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
