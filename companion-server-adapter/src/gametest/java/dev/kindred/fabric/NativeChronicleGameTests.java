@@ -170,4 +170,66 @@ public final class NativeChronicleGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Ada and Bram of oak, seven days of each: oak's week written from their day pages alone, citing only what they cite;
+     * the world's month from oak's week alone; both read back from the Record after a restart.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "chronicleWeeks", tickLimit = 2400)
+    public void aFactionsWeekAndTheWorldsMonthAreWrittenFromTheTierBelow(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        var server = context.getWorld().getServer();
+        UUID[] bodies = new UUID[2];
+        @SuppressWarnings("unchecked") CompletableFuture<Integer>[] step = new CompletableFuture[1];
+        var runner = context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.chronicleForFixtures().idle(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Dana"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Dana"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Egon"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(st -> st.phase() == StoredNativePlayer.Phase.ESTABLISHED), "Both established");
+                    for (int i = 0; i < 2; i++) bodies[i] = statuses.get(i).nativeId();
+                    f.runtime.setFactionOf(id -> "oak");
+                });
+        for (int d = 0; d < 7; d++) {
+            final int day = d;
+            runner = runner
+                    .createAndAdd(() -> f.runtime.record(List.of(
+                            WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "death", bodies[0], "Dana", "", Map.of("cause", "lava " + day)),
+                            WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "journal", bodies[1], "goal", "", Map.of("detail", "day " + day + " work")))))
+                    .createAndAdd(() -> context.assertTrue(f.runtime.ledgers().deaths().getOrDefault(bodies[0], 0) == day + 1, "Day " + day + " written"))
+                    .createAndAdd(() -> step[0] = f.runtime.chronicleForFixtures().writeDay(day * Chronicle.DAY, (day + 1) * Chronicle.DAY))
+                    .createAndAdd(() -> context.assertTrue(step[0].isDone() && f.runtime.chronicleForFixtures().idle(), "Day " + day + "'s pages"));
+        }
+        runner.createAndAdd(() -> step[0] = f.runtime.chronicleForFixtures().writeWeeks(0))
+                .createAndAdd(() -> {
+                    context.assertTrue(step[0].isDone() && step[0].join() == 1, "One week, oak's");
+                    var week = f.runtime.chronicleForFixtures().pagesAbove("faction:oak");
+                    context.assertTrue(week.size() == 1 && week.getFirst().tier() == Chronicle.Tier.FACTION_WEEK, "oak's week: " + week);
+                    var cited = new java.util.HashSet<Long>();
+                    for (String name : List.of("Dana", "Egon")) for (var p : f.runtime.chronicleForFixtures().pagesOf(name)) cited.addAll(p.cites());
+                    context.assertTrue(!week.getFirst().cites().isEmpty() && cited.containsAll(week.getFirst().cites()),
+                            "The week cites only what its days cite: " + week.getFirst().cites());
+                    context.assertTrue(week.getFirst().text().contains("lava 3") && week.getFirst().text().contains("day 6 work"), "Both members' days told: " + week.getFirst().text());
+                    step[0] = f.runtime.chronicleForFixtures().writeMonth(0);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(step[0].isDone() && step[0].join() == 1, "The world's month");
+                    var month = f.runtime.chronicleForFixtures().pagesAbove("world");
+                    var week = f.runtime.chronicleForFixtures().pagesAbove("faction:oak").getFirst();
+                    context.assertTrue(month.size() == 1 && week.cites().containsAll(month.getFirst().cites()), "The month from the week alone: " + month);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.chronicleForFixtures().idle(), "Restarted"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.chronicleForFixtures().pagesAbove("faction:oak").size() == 1
+                            && f.runtime.chronicleForFixtures().pagesAbove("world").size() == 1, "The week and the month read back from the Record");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped again"))
+                .completeIfSuccessful();
+    }
 }

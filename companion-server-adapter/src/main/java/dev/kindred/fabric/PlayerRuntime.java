@@ -15930,7 +15930,7 @@ final class PlayerRuntime {
                 var actors = new java.util.HashSet<UUID>();
                 actors.add(entry.data.id());
                 if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
-                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors));
+                out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors, factionOf.apply(entry.data.id())));
             }
             return out;
         }
