@@ -16,6 +16,13 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## F-35d: the route planners in core behind a terrain, 2026-11-10
+
+- Build: `./gradlew build`; `RoutePlannerTest` (new, pure), 11 of 11.
+- Equivalence: a temporary GameTest (not committed) dumped every cell's facts, every stand's moves and costs, and 19,344 navigator and planner searches over the navigation, stair, cave-ledge and cavern-ledge scenes and a mixed one, before and after the port: identical.
+- Native: The nine classes (`NativeNavigationGameTests`, `NativeStairGameTests`, `NativeCaveLedgeGameTests`, `NativeCavernLedgeGameTests`, `NativeLakeBedClimbGameTests`, `NativeStrandedReturnGameTests`, `NativePortalCampaignGameTests`, `NativeBranchMineGameTests`, `NativeDeepPortalGameTests`) alone: 1 run before the change, 113 of 114; 3 runs after, 113 of 114 each. The one failure is the same before and after, `goalClimbsOutOfAPitBelowItsWayBackWithNoPickaxe` ("Out of the pit and back up under open sky ... Wood: waiting for a feasible step"), already failing on the branch before this change.
+- Not run: the simulator on the core planner (step 3), a ten-seed batch.
+
 ## F-35c: the walk into a far or deep portal, 2026-11-10
 
 - Build: `./gradlew build`.
