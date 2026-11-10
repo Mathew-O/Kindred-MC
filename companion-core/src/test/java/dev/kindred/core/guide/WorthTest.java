@@ -156,4 +156,14 @@ class WorthTest {
         assertEquals(Map.of(), Worth.stow(Map.of("minecraft:red_bed", 1, "minecraft:white_bed", 1), Holding.of(Map.of(), Map.of()), false),
                 "Its bed, of any colour, it sleeps in");
     }
+
+    /** A mod's item with an id shorter than vanilla's prefix is judged, not thrown on: no use to it, as any unknown item. */
+    @Test
+    void aModsShortIdIsJudgedNotThrownOn() {
+        var judgement = assertDoesNotThrow(() -> Worth.judge(new Stack("mymod:odd", 1), EARLY));
+        assertEquals(Keep.LEAVE, judgement.keep());
+        assertEquals("no use to it", judgement.why());
+        assertTrue(Worth.slotOf("mymod:odd").isEmpty(), "Not a piece of kit");
+        assertEquals(Piece.NONE, Worth.pieceOf("mymod:odd", 0));
+    }
 }
