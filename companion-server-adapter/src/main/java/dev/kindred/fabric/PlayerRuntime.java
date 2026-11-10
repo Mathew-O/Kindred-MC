@@ -16079,6 +16079,22 @@ final class PlayerRuntime {
     }
 
     /**
+     * Bare {@code /ah}: a person at a client gets the auction house's chest screen ({@link AuctionScreenHandler}); an AI
+     * player, the console or an operator without a body gets the listings as text, as {@code /ah list}.
+     */
+    int openAuctionScreen(ServerCommandSource source) {
+        requireThread();
+        var player = source.getPlayer();
+        if (player == null || player instanceof PreparedNativePlayer) return auctionRequest(source, player == null ? new UUID(0, 0) : player.getUuid(), "list", List.of());
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
+                (syncId, inventory, p) -> new AuctionScreenHandler(syncId, inventory, auctions, player, () -> ready && running && factionsWorld()),
+                Text.literal("Auction house")));
+        return 1;
+    }
+
+    /**
      * {@code who}'s auction request (M-06h), a person's or an AI player's alike: {@code list} (open listings and orders),
      * {@code mine}, {@code sell <start> [buyNow] [hours]} (the stack in hand), {@code bid <id> <amount>}, {@code buy <id>},
      * {@code cancel <id>}, {@code order <item> <count> <each>}, {@code unorder <id>}. Prices in coins. Only in a faction

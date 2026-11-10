@@ -830,7 +830,8 @@ In a faction world:
   things are priced from what they are made of, so no craft or smelt loop pays. Refused, with the reason: admin-only
   items, containers with things in them, unknown data or enchantments, anything not yet priced. A sale left half done
   by a crash is logged as uncertain for an operator to reconcile.
-- Auctions (M-06h): `/ah` lists what is open; `/ah sell <start> [buyNow] [hours]` lists the stack in hand (25 coins, at
+- Auctions (M-06h): `/ah` opens the auction house's chest screen (click a listing, then confirm a bid at the least the
+  house takes, buy now, or cancel your own; clicks never move items); `/ah list` lists what is open as text; `/ah sell <start> [buyNow] [hours]` lists the stack in hand (25 coins, at
   most five, up to 48 hours); `/ah bid <id> <amount>`, `/ah buy <id>`, `/ah cancel <id>` (before any bid);
   `/ah order <item> <count> <each>` posts a buy order a later listing fills, `/ah unorder <id>`. Bids are held until
   outbid; the winner is handed the item at the close (when next online), the seller paid less 3%; unsold items come
