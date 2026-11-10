@@ -1,0 +1,271 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 17203,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  60,
+  7,
+  38
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.466482459721377,
+  8.0,
+  16.899650437958087
+ ],
+ "yaw": 101.529564,
+ "pitch": 31.679083,
+ "health": 14.0,
+ "food": 10,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 52
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 17
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 58
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 20
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 13
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 20
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 2
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 32
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 13
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 19
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 10
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 17
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 6
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 42
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 17203,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie the way it came",
+ "task": "Fight zombie",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[14:15:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:15] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 67, 20, 49 [Walk to iron ore at 67, 20, 49]",
+  "[14:15:15] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 92, 31, 32 [Walk to iron ore at 92, 31, 32]",
+  "[14:15:16] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+  "[14:15:17] [Server thread/INFO]: Kindred native_fight BLOCKED: Lost sight of the target [Fight zombie]",
+  "[14:15:18] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear 75, 15, 36]",
+  "[14:15:19] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 90, 46, 51]",
+  "[14:15:20] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[14:15:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back to where it saw iron ore at 90, 46, 51]",
+  "[14:15:21] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 78, 23, 68 [Walk to iron ore at 78, 23, 68]",
+  "[14:15:21] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 97, 37, 44 [Walk to iron ore at 97, 37, 44]",
+  "[14:15:21] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 90, 46, 51 [Back to where it saw iron ore at 90, 46, 51]",
+  "[14:15:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[14:15:22] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Branch mine for iron: advance]"
+ ],
+ "corpus": {
+  "run": "e40a15-dbf4e5c",
+  "seed": "303",
+  "build": "dbf4e5c",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a15-dbf4e5c/303/replays/world/Kindred-17203",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

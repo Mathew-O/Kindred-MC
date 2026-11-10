@@ -492,9 +492,11 @@ public final class Ranch {
                     : new Step.Wait(true, "Wait for the " + kind.noun() + " to come in");
         }
         waitingSince = -1;
+        // The one already in shut in whenever it is out for the next, until the next is lined up at the gate's front: shut
+        // only for one far off, the gate stood open as the player led the second up, the first walked out of it and on
+        // through the pasture, down its way in, and hemmed the player in there (#98's CI) (F-22c43).
+        if (seen.gateOpen() && adultsIn > 0 && !lined) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
         if (apart > FOLLOWING) {
-            // The one already in is shut in before it walks off for the next.
-            if (seen.gateOpen() && adultsIn > 0) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
             return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
         }
         if (apart > LAGGING) {

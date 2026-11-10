@@ -1,0 +1,289 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 118599,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -85,
+  27,
+  -52
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.50341461450077,
+  8.200000047683716,
+  16.550120839928006
+ ],
+ "yaw": -7356.143,
+ "pitch": 18.159489,
+ "health": 4.0,
+ "food": 7,
+ "saturation": 0.0,
+ "air": 180,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:acacia_log",
+    "count": 5
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 24
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 58
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 19
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 87
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 4
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 41
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 7
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 17
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 10
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:wheat_seeds",
+    "count": 2
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 19
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 32
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 12
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 8
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 43
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 22599,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Get out of the water: to dry ground",
+ "task": "Get out of the water: to dry ground",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol drowned",
+ "ticks": 1200,
+ "log": [
+  "[07:00:18] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[07:00:18] [Server thread/INFO]: Sol native_craft COMPLETED [Craft torch]",
+  "[07:00:18] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -67, 29, -11 [Back to where it saw iron ore at -67, 29, -11]",
+  "[07:01:02] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -94, 31, -39 [try elsewhere, toward -94, 31, -39]",
+  "[07:01:05] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -69, 32, -39]",
+  "[07:01:06] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear -69, 31, -39]",
+  "[07:01:06] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to iron ore at -67, 31, -35]",
+  "[07:01:06] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to iron ore at -67, 31, -35]",
+  "[07:01:07] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to iron ore at -67, 31, -35]",
+  "[07:01:07] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -67, 31, -36]",
+  "[07:01:08] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -67, 31, -35]",
+  "[07:01:08] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -68, 31, -35]",
+  "[07:01:10] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -68, 32, -36]",
+  "[07:01:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:01:10] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[07:01:10] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -69, 31, -39 [Hole up: back into the passage]",
+  "[07:01:12] [Server thread/INFO]: Sol native_goto CANCELLED: In deep water; up for air first [Back off from zombie]",
+  "[07:01:15] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -68, 30, -38 is blocked [Get out of the water: to dry ground]",
+  "[07:01:16] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Get out of the water: to dry ground]",
+  "[07:01:16] [Server thread/INFO]: Sol died at -69, 35, -36: Sol drowned (tick 118599, night, under cover, hunger 7, armour 0, holding stone_pickaxe, a shield; doing \"Get out of the water: to dry ground\" in \"Iron: Get out of the water: to dry ground\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40a14-80b7150",
+  "seed": "505",
+  "build": "80b7150",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a14-80b7150/505/replays/world/Sol-118599",
+  "class": "death: drowned",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

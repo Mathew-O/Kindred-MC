@@ -75,7 +75,7 @@ public final class ReplayGameTests implements FabricGameTest {
     }
 
     /** One run of a replay: the player made from its state where it died, its goal given, the ticks run. */
-    private static void play(TestContext context, JsonObject replay, int run, int ticks) {
+    static void play(TestContext context, JsonObject replay, int run, int ticks) {
         var world = context.getWorld();
         var server = world.getServer();
         JsonObject state = replay;
