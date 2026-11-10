@@ -16,6 +16,16 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+## From a perch beside its own column (F-22c47) — 10 November 2026 (`claude/ci-green-1110-perch`)
+
+- **[F-22c47](evidence/F-22c47.md):** taking its scaffold down from a perch beside its own column, it drops onto the column's top
+  and takes it down; when the top is too far below, the build ends, built, its scaffolding left standing (product; a local
+  house-cabin class run, and #113's run 42756884925: "out of reach to take down" until the ticks ran out).
+  - The two perch fixtures in `NativeBuildGameTests`: 0 of 3 each without the change, on #130's code; 3 of 3 each with it.
+  - Build, house, life-first, seed-build and base classes, 3 runs: 23, 24 and 24 of 24. "left standing" appears only in the
+    far-perch batch; the one failure was the seed cabin's stairs form, which #132 fixes and this branch does not carry.
+  - `./gradlew build`: green, JUnit 1,120 tests, 0 failures, 7 skipped.
+
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
 - **[F-22c45](evidence/F-22c45.md):** taking its scaffold down, the last block down a hollow is taken down from the hollow's floor when a
