@@ -27,6 +27,26 @@ public final class Wording {
         return this;
     }
 
+    /**
+     * The line an onlooker may read of a message an AI player was told (F-34c, the watch page, which may be on a stream):
+     * the message in words when every fact of it is public; otherwise only who it was from, on which channel and of what
+     * kind ("[faction] Wren: raid planned (kept to its faction)", "[private] title (to it alone)"), never a fact narrower than public.
+     */
+    public String forOnlookers(Message message, String fromName) {
+        boolean open = message.facts().values().stream().allMatch(f -> f.visibility() == Visibility.PUBLIC);
+        if (open) {
+            String words = words(message, fromName);
+            if (words != null) return words;
+        }
+        String prefix = "[" + message.scope().channel().id() + "] " + (message.fromServer() || fromName == null || fromName.isBlank() ? "" : fromName + ": ");
+        String kind = message.kind();
+        int dot = kind.indexOf('.');
+        String line = prefix + (dot >= 0 ? kind.substring(dot + 1) : kind).replace('_', ' ').replace('-', ' ')
+                + (message.scope().channel().audience() == Channel.Audience.PRIVATE ? " (to it alone)" : " (kept to its " + message.scope().channel().id() + ")");
+        line = line.replaceAll("\\s+", " ").strip();
+        return line.length() <= MAX_CHARS ? line : line.substring(0, MAX_CHARS - 1) + "…";
+    }
+
     /** The words for this message from {@code fromName} ("" for the server); null when its kind's line names a fact it lacks. */
     public String words(Message message, String fromName) {
         String prefix = "[" + message.scope().channel().id() + "] " + (message.fromServer() || fromName == null || fromName.isBlank() ? "" : fromName + ": ");
