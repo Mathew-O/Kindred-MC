@@ -1,0 +1,351 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 171479,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  46,
+  21,
+  181
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.30000001192093,
+  8.0,
+  16.639572555333018
+ ],
+ "yaw": 527.8174,
+ "pitch": 18.159489,
+ "health": 15.633331,
+ "food": 20,
+ "saturation": 0.6000004,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_boat",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cooked_chicken",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 12
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 95
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 8
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:flint_and_steel",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:lilac",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 13
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 63
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 21
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:diamond",
+    "count": 2
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 1
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 40
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 17
+    }
+   }
+  },
+  {
+   "slot": 39,
+   "stack": {
+    "id": "minecraft:iron_helmet",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 17
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 29
+    }
+   }
+  }
+ ],
+ "selected": 1,
+ "timeOfDay": 3479,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "DRAGON",
+ "stage": "End: Prepare: inventory full - Drop surplus rotten flesh",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Kindred was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[15:34:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb out to look for animals: step up]",
+  "[15:34:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 61, 28, 202]",
+  "[15:34:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 60, 27, 202]",
+  "[15:34:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 60, 28, 202]",
+  "[15:34:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb out to look for animals: step up]",
+  "[15:34:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 60, 29, 202]",
+  "[15:34:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 60, 28, 201]",
+  "[15:34:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 60, 29, 201]",
+  "[15:34:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb out to look for animals: step up]",
+  "[15:34:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 60, 30, 201]",
+  "[15:34:26] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 59, 29, 201]",
+  "[15:34:26] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 59, 30, 201]",
+  "[15:34:26] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb out to look for animals: step up]",
+  "[15:34:26] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 59, 31, 201]",
+  "[15:34:26] [Server thread/INFO]: Kindred native_break COMPLETED [Climb out to look for animals: clear 59, 30, 200]",
+  "[15:34:26] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb out to look for animals: step up]",
+  "[15:34:29] [Server thread/INFO]: Kindred native_fight BLOCKED: The fight broke off [Fight skeleton]",
+  "[15:34:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+  "[15:34:30] [Server thread/INFO]: Kindred native_eat CANCELLED: The player died",
+  "[15:34:30] [Server thread/INFO]: Kindred died at 62, 29, 197: Kindred was slain by Spider (tick 171479, day, under cover, hunger 17, armour 8, holding cooked_chicken, a shield; doing \"native_eat\" in \"End: Prepare: inventory full - Drop surplus rotten flesh\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "e40c1-eed2dc5",
+  "seed": "8675309",
+  "build": "eed2dc5",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40c1-eed2dc5/8675309/replays/world/Kindred-171479",
+  "class": "death: spider",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

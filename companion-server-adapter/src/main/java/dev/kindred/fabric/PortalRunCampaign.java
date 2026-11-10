@@ -184,6 +184,12 @@ final class PortalRunCampaign {
     private long retraceStalledUntil;
     /** Where it sealed its night shelter, by the tick it did: the way out in the morning when no other goes (F-25c4at). */
     private final Map<Long, Long> ownSeals = new HashMap<>();
+    /** Its own cover from a mob, by the cell, and the tick it was put up (F-25c4cy). */
+    private final Map<Long, Long> ownCover = new HashMap<>();
+    /** Of that cover, the cells still standing with a hostile mob close by: held from every dig, as a cell set aside is (F-25c4cy). */
+    private final Set<Long> coverHeld = new HashSet<>();
+    /** Cover is kept for at most two minutes, against a hostile mob within six blocks of it (F-25c4cy). */
+    private static final int COVER_KEPT = 2400, COVER_MOB_NEAR = 6;
     /** Pillars beside the water refused where it stood, by the cell, and until when they count (F-25c4bf). */
     private final Map<Long, Integer> pillarMisses = new HashMap<>();
     private final Map<Long, Long> pillarMissesUntil = new HashMap<>();
@@ -713,6 +719,12 @@ final class PortalRunCampaign {
             ownSeals.put(position(task.args()).asLong(), tick);
             if (atlas != null && atlasWorld != null) atlas.shelter(place(atlasWorld, lastFeet), "seal");
         }
+        // Its own cover from a mob: kept from its digs while a mob is about (F-25c4cy).
+        if (task != null && completed && "native_place".equals(task.skill()) && task.label().startsWith("Take cover from")
+                && position(task.args()) != null) {
+            if (ownCover.size() > 32) ownCover.clear();
+            ownCover.put(position(task.args()).asLong(), tick);
+        }
         if (task != null && !completed && task.label().startsWith(LEAD_LABEL)) leadFailedUntil = tick + 1200;
         // A pillar beside the water refused where it stood (F-25c4bf).
         if (task != null && !completed && "native_pillar".equals(task.skill()) && task.label().endsWith(": pillar up beside the water")
@@ -981,6 +993,7 @@ final class PortalRunCampaign {
     }
 
     boolean blocked(BlockPos pos) {
+        if (coverHeld.contains(pos.asLong())) return true;
         Long until = blockedUntil.get(pos.asLong());
         return until != null && until > lastTick;
     }
@@ -2094,6 +2107,22 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /**
+     * Cover it put up from a mob, still standing with a hostile mob within a few blocks of it, is held from every dig, as a
+     * cell set aside is ({@link #blocked}). In ReplayGameTests' echo-73670 on #83's CI the player, at four health with no
+     * food and its way off refused, took cover from a zombie; with the zombie out of sight the goal's next step was the
+     * hungry climb, which dug that same block out at once, three times over, until the zombie killed it (F-25c4cy). Let go
+     * once no such mob is near, the block is gone, or two minutes have passed.
+     */
+    private void holdCover(ServerWorld world) {
+        coverHeld.clear();
+        ownCover.entrySet().removeIf(e -> lastTick - e.getValue() > COVER_KEPT || world.getBlockState(BlockPos.fromLong(e.getKey())).isAir());
+        for (long key : ownCover.keySet()) {
+            BlockPos cell = BlockPos.fromLong(key);
+            if (!world.getEntitiesByClass(HostileEntity.class, new Box(cell).expand(COVER_MOB_NEAR), HostileEntity::isAlive).isEmpty()) coverHeld.add(key);
+        }
+    }
+
     /** A climb on a move elsewhere: its step up is a level the move never steps back down from. */
     private Optional<Task> climbed(Optional<Task> up) {
         if (up.get().label().endsWith(": step up")) relocateFloor = Math.max(relocateFloor, lastFeet.getY() + 1);
@@ -2104,6 +2133,7 @@ final class PortalRunCampaign {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
         atlasWorld = body.entity().getServerWorld();
+        holdCover(body.entity().getServerWorld());
         // A pickaxe broken below ground with none left (E-46's trouble), seen as a player sees a tool break: vanilla
         // counts each broken item in the player's statistics.
         int broken = brokenPickaxes(body.entity());
@@ -3323,7 +3353,7 @@ final class PortalRunCampaign {
         spots.add(feet.up().offset(digDirection.getOpposite()));
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
-            if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP)) continue;
+            if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
         }
@@ -3586,6 +3616,16 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /**
+     * Whether the player may work the block at {@code pos}: the world's own rule (spawn protection, the border) and, in a
+     * faction world, its land's ({@link TerritoryGuard#mayChange}: a safe zone or another faction's land takes no edit).
+     * The goal chooses what to gather and where to put things down by the rule the edit itself is checked by, so it does
+     * not walk to logs it may not cut (M-06i). Outside a faction world the second part is always true.
+     */
+    static boolean mayWork(ServerPlayerEntity player, BlockPos pos) {
+        return player.getServerWorld().canPlayerModifyAt(player, pos) && TerritoryGuard.mayChange(player, pos);
+    }
+
     /** A block of {@code kind} the goal would go and gather from where the player stands now: the one rule for both. */
     private Predicate<BlockPos> gatherable(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
         var player = body.entity();
@@ -3594,7 +3634,7 @@ final class PortalRunCampaign {
         return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
                 && also.test(p)
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
-                && harvestable(body, p) && player.getServerWorld().canPlayerModifyAt(player, p)
+                && harvestable(body, p) && mayWork(player, p)
                 && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());
     }
 
@@ -4885,7 +4925,7 @@ final class PortalRunCampaign {
                 var floor = world.getBlockState(spot.down()).getCollisionShape(world, spot.down());
                 // Not on a wall or a fence: it stands taller than a block, into the spot (the sky island's edge wall).
                 if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0) continue;
-                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot)) continue;
+                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot) || !mayWork(player, spot)) continue;
                 // Over the void, not at the island's edge: picked up again, the block's drop could slide off it.
                 if (!ground && besideTheVoid(world, spot)) continue;
                 // Not where the player (standing off the middle of its block) or anything living overlaps it: vanilla
@@ -4898,7 +4938,7 @@ final class PortalRunCampaign {
         List<Direction> sides = List.of(digDirection.rotateYClockwise(), digDirection.rotateYCounterclockwise(), digDirection.getOpposite(), digDirection);
         for (Direction direction : sides) {
             BlockPos wall = feet.offset(direction);
-            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall)) continue;
+            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall) || !mayWork(player, wall)) continue;
             if (world.getBlockState(wall.down()).getCollisionShape(world, wall.down()).isEmpty()) continue;
             if (breakableNow(body, wall)) return Optional.of(clearAt(wall, "Clear space for a workstation"));
         }
@@ -4909,7 +4949,8 @@ final class PortalRunCampaign {
         for (BlockPos cell : BlockPos.iterateOutwards(feet, 5, 2, 5)) {
             if (cell.getSquaredDistance(feet) < 4 || !world.getBlockState(cell).isReplaceable() || !world.getFluidState(cell).isEmpty() || blocked(cell)) continue;
             var floor = world.getBlockState(cell.down()).getCollisionShape(world, cell.down());
-            if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)) continue;
+            if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)
+                    || !mayWork(player, cell)) continue;
             for (Direction side : Direction.Type.HORIZONTAL) {
                 BlockPos stand = cell.offset(side);
                 if (stand.equals(feet) || !standable(world, stand) || blocked(stand) || unreachable(stand) || !ground && besideTheVoid(world, stand)) continue;
@@ -5108,7 +5149,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         // At night below ground, only water down there too: water under the sky waits for daylight (see daylightBelow).
         boolean below = underground(player) && night(world);
-        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
+        var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p) && mayWork(player, p)
                 && p.getSquaredDistance(feet) < 64 * 64 && !(below && world.isSkyVisible(p.up())));
         if (source.isEmpty()) return Optional.empty();
         BlockPos water = source.get();
@@ -6837,7 +6878,10 @@ final class PortalRunCampaign {
         if (hoglin != null && !outOfReach(player, hoglin) && !running.label().startsWith("Fight hoglin") && !running.label().startsWith("Fight zoglin")) {
             return "A hoglin is after it; out of its reach first";
         }
-        return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null
+        // Badly hurt, the goal starts no fight (threats() is empty below six health), but a mob on foot in reach still stops
+        // its work: defend() backs off from it, takes cover or, cornered, fights it. In ReplayGameTests' echo-73670 on main
+        // `335da88` the hungry climb went on digging by hand with a zombie on the player, and the zombie killed it (F-25c4dd).
+        return !threats(player).isEmpty() || player.getHealth() >= 6 && creeperAfter(player) != null || onFootInReach(player) != null
                 ? "A hostile mob is attacking; fight back first" : null;
     }
 

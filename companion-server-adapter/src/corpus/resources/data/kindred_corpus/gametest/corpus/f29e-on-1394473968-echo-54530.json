@@ -1,0 +1,264 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 54530,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -12,
+  17,
+  -79
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.509667898333685,
+  8.200000047683716,
+  16.443686161446394
+ ],
+ "yaw": -11844.127,
+ "pitch": 18.159489,
+ "health": 20.0,
+ "food": 19,
+ "saturation": 0.0,
+ "air": -9,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cooked_mutton",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 17
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 62
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 59
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 65
+    }
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 29
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 3
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 12
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 14
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 2
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 3
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 6530,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Get out of the water: to dry ground",
+ "task": "Get out of the water: to dry ground",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Echo drowned",
+ "ticks": 1200,
+ "log": [
+  "[02:02:20] [Server thread/INFO]: Echo native_smelt COMPLETED [Take smelted iron]",
+  "[02:02:20] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+  "[02:02:21] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+  "[02:02:22] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+  "[02:02:22] [Server thread/INFO]: Echo native_smelt COMPLETED [Take smelted iron]",
+  "[02:02:22] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+  "[02:02:23] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+  "[02:02:24] [Server thread/INFO]: Echo native_wait COMPLETED [Wait by the furnace]",
+  "[02:02:24] [Server thread/INFO]: Echo native_smelt COMPLETED [Take smelted iron]",
+  "[02:02:24] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]",
+  "[02:02:24] [Server thread/INFO]: Echo native_craft COMPLETED [Craft bucket]",
+  "[02:02:25] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the crafting table]",
+  "[02:02:25] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the furnace]",
+  "[02:02:26] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 3, 21, -62]",
+  "[02:02:26] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at 4, 22, -63]",
+  "[02:02:27] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[02:02:29] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 4, 17, -65 is blocked [Get out of the water: to dry ground]",
+  "[02:02:31] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 3, 16, -61 is blocked [Get out of the water: to dry ground]",
+  "[02:02:32] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Get out of the water: to dry ground]",
+  "[02:02:32] [Server thread/INFO]: Echo died at 4, 25, -63: Echo drowned (tick 54530, day, under cover, hunger 17, armour 6, holding stone_pickaxe, a shield; doing \"Get out of the water: to dry ground\" in \"Iron: Get out of the water: to dry ground\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "1394473968",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/1394473968/replays/world/Echo-54530",
+  "source": "docs/evidence/eval/f29e-on/1394473968/replays/world/Echo-54530",
+  "class": "death: drowned",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

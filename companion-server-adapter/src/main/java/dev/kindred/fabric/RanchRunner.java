@@ -114,7 +114,10 @@ final class RanchRunner {
         // Its animals in: the doorway shut behind them, from the blocks it dug out of it.
         if (ranched != null) {
             if (shutting == null) shutting = new BuildRunner(shut, at, 0);
-            var task = shutting.next(body);
+            // With the run's own supply, as any build of its own: a block short (a drop of the doorway's not picked up) is
+            // picked up where it lies, else gathered or made from what it holds, never left short for good (F-22c44). It
+            // hunts no animal for it.
+            var task = shutting.next(body, new BuildRunner.Supply(campaign, null, animal -> true, 0));
             progress = "Shutting the doorway: " + shutting.progress();
             if (task.isPresent()) return task;
             done = true;

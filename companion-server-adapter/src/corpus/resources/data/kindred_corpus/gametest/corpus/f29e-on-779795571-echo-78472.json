@@ -1,0 +1,331 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 78472,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  48,
+  -10,
+  -218
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.64579031927451,
+  8.0,
+  16.102949382129566
+ ],
+ "yaw": 166.40704,
+ "pitch": 18.159473,
+ "health": 18.233332,
+ "food": 6,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 15
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 21
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 19
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 26
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 7
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 2
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 2
+    }
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:tuff",
+    "count": 21
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 24
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 46
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 3
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 10
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cocoa_beans",
+    "count": 3
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 3
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 8
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 6472,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Echo tried to swim in lava to escape Zombie",
+ "ticks": 1200,
+ "log": [
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:53] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:54] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:54] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:54] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]",
+  "[02:52:54] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[02:52:54] [Server thread/INFO]: Echo native_retreat CANCELLED: The player died",
+  "[02:52:54] [Server thread/INFO]: Echo died at 64, -2, -202: Echo tried to swim in lava to escape Zombie (tick 78472, day, under cover, hunger 6, armour 6, holding stone_pickaxe, a shield; doing \"native_retreat\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "779795571",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/779795571/replays/world/Echo-78472",
+  "source": "docs/evidence/eval/f29e-on/779795571/replays/world/Echo-78472",
+  "class": "death: lava",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

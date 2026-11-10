@@ -385,13 +385,14 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     var inventory = player.getInventory();
                     inventory.clear();
                     // The ward's bill, as though gathered and crafted, with stone tools to dig its way in, dirt to
-                    // scaffold with and bread.
+                    // scaffold with and bread. Its way in's door, the lintel over it and the fence beside it since F-22c43: a
+                    // door, a plank and four fences more.
                     ItemStack[] bill = {
                             new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_SHOVEL),
                             new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.COBBLESTONE, 64),
                             new ItemStack(Items.COBBLESTONE, 27),
-                            new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 34),
-                            new ItemStack(Items.OAK_FENCE, 23), new ItemStack(Items.OAK_FENCE_GATE, 1),
+                            new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 35),
+                            new ItemStack(Items.OAK_FENCE, 27), new ItemStack(Items.OAK_FENCE_GATE, 1), new ItemStack(Items.OAK_DOOR, 1),
                             new ItemStack(Items.TORCH, 12), new ItemStack(Items.DIRT, 64), new ItemStack(Items.BREAD, 16)};
                     for (int slot = 0; slot < bill.length; slot++) inventory.setStack(slot, bill[slot]);
                     player.setHealth(20);
@@ -438,6 +439,21 @@ public final class NativeCompoundGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundCattle", tickLimit = 9000)
     public void aPlayerBringsAPairInByThePasturesDoorwayBreedsThemAndShutsItBehindThem(TestContext context) {
+        pastureDoorway(context, false);
+    }
+
+    /**
+     * The same with one of the doorway's planks not picked up as it was dug out: on #101's CI (run 42584569435) the
+     * doorway's shut placed seven of its eight blocks and stopped, "Nothing in hand to place", a plank short, for good
+     * (F-22c44). Staged: once the doorway is open, one plank taken from the player's pack and left lying in the
+     * pasture's south-west corner, in sight of the doorway and off the player's ways to the pen.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundCattleDrop", tickLimit = 9000)
+    public void withADoorwayPlankLeftLyingItPicksItUpToShutTheDoorway(TestContext context) {
+        pastureDoorway(context, true);
+    }
+
+    private static void pastureDoorway(TestContext context, boolean dropLeft) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8800);
         var style = new BuildStyle("", "oak", "cobblestone", 0, 0);
         var plans = java.util.List.of(Compounds.keep(style), Compounds.farmWard(style), Compounds.pastureWard(style));
@@ -498,6 +514,20 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.startPasture(f.source, f.id, origin, dev.kindred.core.survival.Ranch.Kind.COW) == 1, "Pasture started");
                 })
                 .createAndAdd(() -> {
+                    if (!dropLeft) return;
+                    context.assertTrue(f.runtime.ranchStatus(f.id).orElse("").contains("leading"), "Leading begun: " + f.runtime.ranchStatus(f.id).orElse(""));
+                    var inventory = f.player().getInventory();
+                    int slot = -1;
+                    for (int s = 0; s < 36 && slot < 0; s++) if (inventory.getStack(s).isOf(Items.OAK_PLANKS)) slot = s;
+                    context.assertTrue(slot >= 0, "A doorway plank in its pack");
+                    inventory.removeStack(slot, 1);
+                    var world = context.getWorld();
+                    var lying = new net.minecraft.entity.ItemEntity(world, origin.getX() + wall.west() + 2.5, origin.getY() + 0.1,
+                            origin.getZ() + wall.south() - 2.5, new ItemStack(Items.OAK_PLANKS));
+                    lying.setVelocity(0, 0, 0);
+                    world.spawnEntity(lying);
+                })
+                .createAndAdd(() -> {
                     var status = f.runtime.ranchStatus(f.id);
                     if (status.isEmpty()) return;
                     // Where they stand, from the pen's gate, if it runs out: the log says what it did, not where.
@@ -539,6 +569,62 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * A cow loose in the pasture does not get into its way in under the east wall (F-22c43): the wards as they stand,
+     * a cow just inside the door at the head of the way in's stair, and a person beyond the door down in the passage with
+     * wheat in hand, which the cow follows. For 30 seconds the cow is never past the door.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "compoundWayInDoor", tickLimit = 1200)
+    public void aCowLooseInThePastureDoesNotGetIntoItsWayIn(TestContext context) {
+        var style = new BuildStyle("", "oak", "cobblestone", 0, 0);
+        var plans = java.util.List.of(Compounds.keep(style), Compounds.farmWard(style), Compounds.pastureWard(style));
+        var wall = Compounds.pastureWall(style);
+        BlockPos o = context.getAbsolutePos(new BlockPos(12, 0, 12));
+        BlockPos origin = o.add(4, 7, 4);
+        var door = Compounds.wayInDoor(style);
+        int row = origin.getZ() + door.z(), doorX = origin.getX() + door.x();
+        UUID[] cow = new UUID[1];
+        int[] watched = {0};
+        boolean[] got = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-12, 0, -12), o.add(60, 24, 52));
+                    for (int x = -12; x <= 60; x++) for (int z = -12; z <= 52; z++) {
+                        for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        for (int y = 4; y <= 5; y++) world.setBlockState(o.add(x, y, z), Blocks.DIRT.getDefaultState());
+                        world.setBlockState(o.add(x, 6, z), Blocks.GRASS_BLOCK.getDefaultState());
+                        for (int y = 7; y <= 24; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    for (var plan : plans) {
+                        for (var q : plan.placedClear(BuildRunner.pos(origin), 0)) world.setBlockState(BuildRunner.blockPos(q), Blocks.AIR.getDefaultState());
+                        for (var b : plan.placed(BuildRunner.pos(origin), 0)) {
+                            world.setBlockState(BuildRunner.blockPos(b.at()), state(b.spec()), net.minecraft.block.Block.NOTIFY_LISTENERS | net.minecraft.block.Block.FORCE_STATE);
+                        }
+                    }
+                    var loose = EntityType.COW.create(world);
+                    loose.refreshPositionAndAngles(doorX - 1.5, origin.getY(), row + 0.5, 0, 0);
+                    world.spawnEntity(loose);
+                    cow[0] = loose.getUuid();
+                    var person = MockPlayers.survival(context, "Herder", new BlockPos(origin.getX() + wall.east() + 1, origin.getY() - 3, row)
+                            .subtract(context.getAbsolutePos(BlockPos.ORIGIN)));
+                    person.getInventory().setStack(0, new ItemStack(Items.WHEAT, 4));
+                    person.getInventory().selectedSlot = 0;
+                })
+                .createAndAdd(() -> {
+                    var loose = context.getWorld().getEntity(cow[0]);
+                    if (loose != null && loose.getBlockX() >= doorX && loose.getBlockZ() == row && loose.getBlockY() < origin.getY()) got[0] = true;
+                    context.assertTrue(++watched[0] >= 600, "Watching the cow: " + watched[0]);
+                })
+                .createAndAdd(() -> {
+                    var loose = context.getWorld().getEntity(cow[0]);
+                    context.assertTrue(!got[0], "The cow kept out of the way in: it got past the door"
+                            + (loose == null ? "" : ", now at " + loose.getBlockPos().subtract(origin).toShortString()));
+                })
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }

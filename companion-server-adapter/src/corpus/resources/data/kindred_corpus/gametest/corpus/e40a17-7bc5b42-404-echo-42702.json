@@ -1,0 +1,331 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 42702,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  105,
+  -61,
+  3
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.773148669028913,
+  8.0,
+  16.446909209770574
+ ],
+ "yaw": -448.94113,
+ "pitch": 14.146167,
+ "health": 5.159998,
+ "food": 9,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:jungle_log",
+    "count": 5
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 224
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:raw_gold",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 2
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 35
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 62
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 28
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 10
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:tuff",
+    "count": 22
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 11
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 23
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:smooth_basalt",
+    "count": 5
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:amethyst_block",
+    "count": 13
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 6
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 7
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 38
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 7
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  }
+ ],
+ "selected": 6,
+ "timeOfDay": 18702,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: outmatched - Hole up: back into the passage",
+ "task": "Back off from skeleton",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[08:06:05] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 120, -55, 15 [Cast: walk to the lava]",
+  "[08:06:05] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Cast: dig toward the lava at 121, -55, 14: clear 116, -53, 19]",
+  "[08:06:07] [Server thread/INFO]: Echo native_fight BLOCKED: Lost sight of the target [Fight skeleton]",
+  "[08:06:07] [Server thread/INFO]: Echo native_break COMPLETED [Cast: dig toward the lava at 121, -55, 14: clear 117, -53, 18]",
+  "[08:06:07] [Server thread/INFO]: Echo native_goto COMPLETED [Cast: dig toward the lava at 121, -55, 14: step down]",
+  "[08:06:08] [Server thread/INFO]: Echo native_break COMPLETED [Cast: dig toward the lava at 121, -55, 14: clear 118, -53, 18]",
+  "[08:06:08] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Cast: dig toward the lava at 121, -55, 14: clear 118, -54, 18]",
+  "[08:06:08] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[08:06:08] [Server thread/INFO]: Echo native_break COMPLETED [Cast: dig toward the lava at 121, -55, 14: clear 118, -54, 18]",
+  "[08:06:08] [Server thread/INFO]: Echo native_goto COMPLETED [Cast: dig toward the lava at 121, -55, 14: step down]",
+  "[08:06:08] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Cast: dig toward the lava at 121, -55, 14: clear 118, -53, 17]",
+  "[08:06:09] [Server thread/INFO]: Echo native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Take cover from skeleton]",
+  "[08:06:09] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[08:06:14] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 125, -54, 13 is blocked [Back off from skeleton]",
+  "[08:06:16] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+  "[08:06:17] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[08:06:18] [Server thread/INFO]: Echo native_goto COMPLETED [Hole up: back into the passage]",
+  "[08:06:18] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[08:06:18] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[08:06:19] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from skeleton]"
+ ],
+ "corpus": {
+  "run": "e40a17-7bc5b42",
+  "seed": "404",
+  "build": "7bc5b42",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a17-7bc5b42/404/replays/world/Echo-42702",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

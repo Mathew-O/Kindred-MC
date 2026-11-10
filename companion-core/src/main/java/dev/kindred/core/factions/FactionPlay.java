@@ -45,6 +45,12 @@ public final class FactionPlay {
 
     public enum Kind { FOUND, JOIN, INVITE, CLAIM, SELL, BUY, BID, DEFEND, SCOUT, CAPTURE }
 
+    /**
+     * The least a kind's spare must be worth at the market's quote before it is sold: a coin. A spare worth less waits
+     * until there is more of it. Its {@code target} names the kinds sold, comma-separated.
+     */
+    public static final long MIN_LOT = Coins.CENT;
+
     /** One thing to do: {@code target} a faction id, chunk key, item id or listing id; {@code amount} a count or coins (hundredths). */
     public record Choice(Kind kind, String target, long amount, String reason) {
         public Choice { Objects.requireNonNull(kind); target = target == null ? "" : target; Objects.requireNonNull(reason); }
@@ -106,9 +112,13 @@ public final class FactionPlay {
         // Its people first: a player it met who is in no faction is asked before land is bought.
         if (officer && view.personality().sociability() >= 40) invite(view, mine).ifPresent(out::add);
         if (officer) claim(view, mine, at).ifPresent(out::add);
-        if (!view.spare().isEmpty()) {
-            long cents = view.spare().stream().mapToLong(Spare::cents).sum();
-            out.add(new Choice(Kind.SELL, "", cents, "Sell what is spare for " + Coins.show(cents)));
+        // A kind is sold only once its spare makes a lot worth selling: a sale for a fraction of a coin is churn (factions2c:
+        // about 290 a seed, each a World Record event and a turn between its goal's steps, for under a coin each).
+        var lots = view.spare().stream().filter(sp -> sp.cents() >= MIN_LOT).toList();
+        if (!lots.isEmpty()) {
+            long cents = lots.stream().mapToLong(Spare::cents).sum();
+            String kinds = String.join(",", lots.stream().map(Spare::item).toList());
+            out.add(new Choice(Kind.SELL, kinds, cents, "Sell what is spare for " + Coins.show(cents)));
         }
         long spendable = Math.max(0, view.coins() - reserve);
         for (var want : view.wants()) {

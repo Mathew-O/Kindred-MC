@@ -177,6 +177,10 @@ def finish(folder, process, started, keep_world=False):
         for part in ("region", "DIM-1/region", "DIM1/region"):
             if (folder / "world" / part).is_dir():
                 shutil.copytree(folder / "world" / part, folder / "world-kept" / part, dirs_exist_ok=True)
+        # And the companion database (the World Record and the ledgers) with its WAL, for measuring what it holds.
+        for db in sorted((folder / "world" / "kindred").glob("companions.sqlite*")) if (folder / "world" / "kindred").is_dir() else []:
+            (folder / "world-kept" / "kindred").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(db, folder / "world-kept" / "kindred" / db.name)
     for name in ("world", "libraries", ".fabric", "mods", "logs", "versions", "config", "kindred"):
         path = folder / name
         if path.is_dir():
@@ -215,7 +219,7 @@ def main():
     parser.add_argument("--out", default=str(ROOT / "run/eval"), help="where the runs go")
     parser.add_argument("--recipes", help="F-29d: a rescue-recipes.json each world starts with, or a run folder whose seeds' kept files "
                         "each world of the same seed starts with")
-    parser.add_argument("--keep-world", action="store_true", help="keep each run's region files (world-kept/) for diagnosis")
+    parser.add_argument("--keep-world", action="store_true", help="keep each run's region files and companion database (world-kept/) for diagnosis")
     parser.add_argument("--policy", action="append", default=[], metavar="KEY=VALUE",
                         help="a line of the server's own policy (world/kindred/edits.properties), e.g. maxNativePlayers=8; repeatable")
     args = parser.parse_args()
