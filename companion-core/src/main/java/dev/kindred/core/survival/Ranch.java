@@ -132,6 +132,8 @@ public final class Ranch {
     /** Whether the animal it leads has been brought round to the front of the gate. */
     private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
+    /** Why each it gave up on was given up, for {@link #diagnosis()}: kept when it tries them again. */
+    private final java.util.Map<UUID, String> givenUpWhy = new java.util.LinkedHashMap<>();
     /** The one the last walk it asked for went toward, or whose last-seen spot it went to ({@link #goingToSpot}); none for others. */
     private UUID goingFor;
     private boolean goingToSpot;
@@ -198,6 +200,20 @@ public final class Ranch {
     }
 
     /** What it is doing, in words. */
+    /**
+     * What it gave up and how far it got with its tries, for the log: each animal it gave up on (its id's first eight
+     * characters) and why, whether still given up or tried again since, and the counts of its searches, retries,
+     * re-lines and re-fetches. Not spoken: the outcome it says is {@link Step.Done}'s.
+     */
+    public String diagnosis() {
+        var gave = givenUpWhy.entrySet().stream()
+                .map(e -> e.getKey().toString().substring(0, 8) + " " + e.getValue() + (givenUp.contains(e.getKey()) ? "" : ", tried again"))
+                .toList();
+        return "given up " + gave + "; searched " + searched + " of " + SEARCHES + ", retried " + retried + " of " + RETRIES
+                + ", relined " + relined + " of " + RELINES + ", refetched " + refetched + "; leading "
+                + (leading == null ? "none" : leading.toString().substring(0, 8));
+    }
+
     public String phase() {
         return switch (phase) {
             case BUILD -> "building the pen";
@@ -342,6 +358,7 @@ public final class Ranch {
             searched++;
         } else {
             givenUp.add(goingFor);
+            givenUpWhy.put(goingFor, "its walk refused");
             lastSeen.remove(goingFor);
             if (goingFor.equals(leading)) leading = null;
         }
@@ -462,6 +479,7 @@ public final class Ranch {
             }
             if (seen.tick() - waitingSince > COME_IN) {
                 givenUp.add(animal.id());
+                givenUpWhy.put(animal.id(), "would not come in");
                 leading = null;
                 waitingSince = -1;
                 return new Step.Wait(false, "That " + kind.noun() + " will not come in");

@@ -5326,6 +5326,88 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * A pocket of lava under the rock, found by the one cell over it its tunnel opened, is followed once that lava is taken
+     * (F-25c4cz): the lava flowing into where it filled its bucket comes from the sources round it under the rock, and the
+     * cell over each is opened in turn, so the pocket's lava is cast. Before, after the one or two sources it could see, its
+     * tunnel went back to legs leading away: on 707 in E-40's iteration 17 (`e40a17-7bc5b42`) Kindred took 2 of a pocket of
+     * 208 and branch-mined on for half an hour of play. Staged: stone walled in obsidian, the pocket a line of nine sources
+     * under the stone, running off to one side of the way its tunnel runs and touching it at one cell, and glowstone in the rock; the kit, a water bucket, an empty
+     * one and a crafting table, is given as though made.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "lavaPocket", tickLimit = 6000)
+    public void aPocketOfLavaUnderTheRockIsFollowedOnceTheLavaItSawIsTaken(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] at = new BlockPos[1];
+        java.util.List<BlockPos> pocket = new java.util.ArrayList<>();
+        java.util.Set<BlockPos> taken = new java.util.HashSet<>();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Pocketer"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    at[0] = p;
+                    FixtureGround.keep(context, p.add(-11, -3, -15), p.add(9, 7, 5));
+                    for (int x = -11; x <= 9; x++) for (int z = -15; z <= 5; z++) for (int y = -3; y <= 7; y++) {
+                        boolean shell = x == -11 || x == 9 || z == -15 || z == 5 || y == -3 || y == 7;
+                        boolean room = x == 0 && z >= -1 && z <= 1 && (y == 0 || y == 1);
+                        // The pocket: a line of nine sources under the rock, running west from the one under the way north its
+                        // tunnel runs; past the second, none is in view from any cell it has opened.
+                        boolean source = y == -1 && z == -6 && x >= -8 && x <= 0;
+                        var state = shell ? Blocks.OBSIDIAN.getDefaultState() : room ? Blocks.AIR.getDefaultState()
+                                : source ? Blocks.LAVA.getDefaultState() : Blocks.STONE.getDefaultState();
+                        world.setBlockState(p.add(x, y, z), state);
+                        if (source) pocket.add(p.add(x, y, z));
+                    }
+                    for (var light : java.util.List.of(new BlockPos(0, 2, 0), new BlockPos(0, 2, -4), new BlockPos(0, 2, -9), new BlockPos(-3, 2, -6),
+                            new BlockPos(3, 2, -6), new BlockPos(3, 2, -1), new BlockPos(-3, 2, -1), new BlockPos(0, 2, -13), new BlockPos(-6, 2, -5),
+                            new BlockPos(-6, 2, -7)))
+                        world.setBlockState(p.add(light), Blocks.GLOWSTONE.getDefaultState());
+                    f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 180, 0);
+                    var inventory = f.player().getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.IRON_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.IRON_CHESTPLATE));
+                    inventory.setStack(3, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(5, new ItemStack(Items.STICK, 4));
+                    inventory.setStack(6, new ItemStack(Items.FLINT_AND_STEEL));
+                    inventory.setStack(7, new ItemStack(Items.WATER_BUCKET));
+                    inventory.setStack(8, new ItemStack(Items.BUCKET));
+                    inventory.setStack(9, new ItemStack(Items.CRAFTING_TABLE));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                // Six of the pocket's nine sources taken, each counted once it is seen gone, whatever flows in after: more than the one or
+                // two it can see from the cell its tunnel opens.
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var world = context.getWorld();
+                    for (BlockPos pos : pocket) {
+                        var fluid = world.getFluidState(pos);
+                        if (!fluid.isIn(net.minecraft.registry.tag.FluidTags.LAVA) || !fluid.isStill()) taken.add(pos);
+                    }
+                    String goal = f.runtime.panelBots(Actor.console()).stream().findFirst().map(bot -> bot.goalProgress()).orElse("not on the panel");
+                    context.assertTrue(player != null && taken.size() >= 6, "Six of the pocket's sources taken: "
+                            + taken.size() + " of " + pocket.size() + ", now "
+                            + (player == null ? "no body" : player.getBlockPos().subtract(at[0]).toShortString()) + ", " + goal);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isAlive(), "Alive");
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Lava it can see but no walk leads to is dug toward (F-25c4ad). Looking for its cast's lava on the rim of a pit five
      * deep, a pool at the pit's bottom in plain view and no way down it could walk, it digs a way down beside the pit to
      * the pool's level and fills its bucket there. Before, each source was set aside as its walk failed and the next tried:

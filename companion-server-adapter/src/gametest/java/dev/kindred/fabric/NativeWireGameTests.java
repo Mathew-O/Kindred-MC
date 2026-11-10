@@ -143,6 +143,41 @@ public final class NativeWireGameTests implements FabricGameTest {
         context.complete();
     }
 
+    /**
+     * F-34c: in a manhunt, a hunter's own update reaches the other AI hunter and never a runner, and a runner's the other
+     * runner and never a hunter, every five seconds for a minute; no person on either side hears a word of it; and none
+     * of it is in an inbox. Before, every AI player out of a match had every other's, and none in one.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "wire")
+    public void aManhuntSidesUpdatesStayOnItsSide(TestContext context) {
+        var s = new Stand(context, Set.of());
+        s.mode = GameModes.WorldMode.MANHUNT;
+        String hunters = Listener.side("m1", "hunters"), runners = Listener.side("m1", "runners");
+        UUID hawk = s.aiPlayer(context, "Hawk", new BlockPos(1, 2, 1), side(hunters));
+        UUID kite = s.aiPlayer(context, "Kite", new BlockPos(2, 2, 1), side(hunters));
+        var mat = s.person(context, "Mat", new BlockPos(3, 2, 1), side(hunters));
+        UUID fox = s.aiPlayer(context, "Fox", new BlockPos(1, 2, 3), side(runners));
+        UUID vix = s.aiPlayer(context, "Vix", new BlockPos(2, 2, 3), side(runners));
+        var ren = s.person(context, "Ren", new BlockPos(3, 2, 3), side(runners));
+        var got = new HashMap<UUID, List<UUID>>();
+        s.wire.onState((to, u) -> got.computeIfAbsent(to, k -> new ArrayList<>()).add(u.from()));
+        var place = new dev.kindred.core.social.PeerLedger.Place(context.getWorld().getRegistryKey().getValue().toString(), 100, 70, -40);
+        for (int i = 0; i < 12; i++) {
+            s.now.addAndGet(5_000);
+            var h = s.wire.sendState(new dev.kindred.core.social.PeerUpdate(hawk, "Hawk", "hunting", List.of(), List.of(), place));
+            var r = s.wire.sendState(new dev.kindred.core.social.PeerUpdate(fox, "Fox", "running to the portal", List.of("8 obsidian"), List.of(), place));
+            context.assertTrue(h != null && h.sent() && r != null && r.sent(), "Both sent " + i + ": " + (h == null ? null : h.refused()) + " " + (r == null ? null : r.refused()));
+        }
+        context.assertTrue(got.getOrDefault(kite, List.of()).size() == 12 && got.get(kite).stream().allMatch(hawk::equals), "Kite has Hawk's twelve: " + got.get(kite));
+        context.assertTrue(got.getOrDefault(vix, List.of()).size() == 12 && got.get(vix).stream().allMatch(fox::equals), "Vix has Fox's twelve: " + got.get(vix));
+        context.assertTrue(!got.containsKey(fox) && !got.containsKey(hawk), "No runner has a hunter's, no hunter a runner's: " + got);
+        context.assertTrue(s.heardBy(mat).isEmpty() && s.heardBy(ren).isEmpty(), "No word to a person: " + s.heardBy(mat) + " " + s.heardBy(ren));
+        context.assertTrue(s.wire.inbox(kite).isEmpty() && s.wire.inbox(vix).isEmpty() && s.told.isEmpty(), "Never an inbox, never knowledge");
+        context.assertTrue(s.wire.stateTold() == 24, "24 told: " + s.wire.stateTold());
+        s.cleanup(context);
+        context.complete();
+    }
+
     /** A shortage announced near two people by two AI players: each person hears it once; one 40 blocks off not at all. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "wire")
     public void aPublicShortageIsSaidOncePerPersonInEarshot(TestContext context) {
@@ -200,7 +235,9 @@ public final class NativeWireGameTests implements FabricGameTest {
         var race = new dev.kindred.core.match.MatchRegistry.Match(UUID.randomUUID(), dev.kindred.core.match.MatchRegistry.Mode.SPEEDRUN,
                 List.of(racer), Set.of(racer), Set.of(racer), Set.of(), dev.kindred.core.match.MatchRegistry.State.RUNNING, 0, 0, null, Set.of(), "");
         var free = KindredWire.belongs(true, java.util.Optional.empty(), UUID.randomUUID(), "oak");
-        context.assertTrue(free.teams().equals(Set.of(KindredWire.TEAM)) && free.faction().equals("oak") && free.side().isEmpty(), "Out of a match: " + free);
+        context.assertTrue(free.teams().equals(Set.of(KindredWire.TEAM + ":oak")) && free.faction().equals("oak") && free.side().isEmpty(), "Out of a match, its faction's team: " + free);
+        var unaligned = KindredWire.belongs(true, java.util.Optional.empty(), UUID.randomUUID(), "");
+        context.assertTrue(unaligned.teams().equals(Set.of(KindredWire.TEAM)), "Out of a match and of any faction: " + unaligned);
         context.assertTrue(KindredWire.belongs(false, java.util.Optional.empty(), UUID.randomUUID(), null).teams().isEmpty(), "A person is on no AI team");
         var h = KindredWire.belongs(true, java.util.Optional.of(hunt), hunter, "");
         var r = KindredWire.belongs(true, java.util.Optional.of(hunt), runner, "");
