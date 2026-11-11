@@ -38,7 +38,8 @@ for i in $(seq 1 "$runs"); do
   results+=("$out/results-$i.xml")
 done
 sha=$(git rev-parse --short HEAD)
-python3 tools/corpus/report.py "${results[@]}" --sha "$sha" --flagged-out "$out/flagged.txt" --out "$out/report.md" > /dev/null
+logs=("${results[@]/%.xml/.log}")
+python3 tools/corpus/report.py "${results[@]}" --sha "$sha" --logs "${logs[@]}" --flagged-out "$out/flagged.txt" --out "$out/report.md" > /dev/null
 if [ ! -s "$out/flagged.txt" ]; then cat "$out/report.md"; exit 0; fi
 
 # Confirm: the flagged scenes alone, three times here and three times on main's tip.
@@ -52,4 +53,4 @@ git worktree add -q --detach "$tree" origin/main || exit 2
 for i in 1 2 3; do corpus "$tree" "$out/confirm-main-$i.xml" || exit 2; main+=("$out/confirm-main-$i.xml"); done
 mainsha=$(git -C "$tree" rev-parse --short HEAD)
 git worktree remove --force "$tree"
-python3 tools/corpus/report.py "${results[@]}" --sha "$sha (main $mainsha)" --confirm-branch "${branch[@]}" --confirm-main "${main[@]}" --out "$out/report.md"
+python3 tools/corpus/report.py "${results[@]}" --sha "$sha (main $mainsha)" --logs "${logs[@]}" --confirm-branch "${branch[@]}" --confirm-main "${main[@]}" --out "$out/report.md"

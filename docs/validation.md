@@ -1,7 +1,11 @@
 # AI-player development validation
 
+New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entries-by-id), in ID order; the entries below it are kept as written.
+
 ## Conventions for evaluation runs and death replays
 
+- **Validation entries (from 2026-11-10).** A feature's validation is one line in [Entries by ID](#entries-by-id), at its ID's place: the ID, the
+  date, its evidence file, which holds the detail, and the outcome in a few words. Entries before that date are not rewritten.
 - **Evaluation summaries (F-26).** A build is scored with `tools/eval/` on at least ten seeds
   (`tools/eval/seeds-10.txt`); a summary prints medians and ranges, never one number, and says whether the runs were
   earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
@@ -49,6 +53,10 @@
   - Eleven classes that fight, take cover and climb (with `ReplayGameTests`), 3 runs: 129 of 129 each; the seal fired only in
     its own fixture.
   - The ten-seed measure against e40a17 is to come (RUNNER 2's survival-1).
+
+## Entries by ID
+
+- (none yet)
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
