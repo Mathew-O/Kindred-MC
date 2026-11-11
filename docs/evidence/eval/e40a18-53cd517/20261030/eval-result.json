@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 14.15, "tickMsWorst": 1961.49, "tickMsWorstAt": 1, "ticksOver50ms": 916, "ticksOver200ms": 13, "heapMbMax": 995, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1880, "iron_ingot": 7280, "iron_pickaxe": 35680},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 33080, "x": 165, "y": 16, "z": -80, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 540, "stone_tools": 2160, "iron_ingot": 5060, "iron_pickaxe": 20400, "obsidian": 104281, "portal_lit": 123329},
+      "deaths": [
+        {"tick": 78600, "cause": "Sol was slain by Zombie", "x": -6, "y": 79, "z": -140, "light": 5, "timeOfDay": 6762, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 109600, "x": -35, "y": 93, "z": -127, "attempt": 1}, {"tick": 118740, "x": -16, "y": 81, "z": -112, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 980, "stone_tools": 2540, "iron_ingot": 12240, "iron_pickaxe": 18740, "diamond": 31320},
+      "deaths": [
+        {"tick": 48027, "cause": "Echo was slain by Zombie", "x": 119, "y": -54, "z": -60, "light": 0, "timeOfDay": 189, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 101340, "x": 73, "y": 49, "z": 33, "attempt": 1}, {"tick": 138860, "x": 73, "y": 48, "z": 33, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
