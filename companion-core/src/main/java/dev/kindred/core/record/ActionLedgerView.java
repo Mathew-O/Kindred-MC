@@ -18,6 +18,8 @@ import java.util.UUID;
  */
 public final class ActionLedgerView implements Ledger<Map<UUID, ActionLedgerView.Row>> {
     public static final String ACTION = "action";
+    /** A journal line, written to the Record as an event. */
+    public static final String JOURNAL = "journal";
     /** A settled action's history compacted into its final row (the action fold): not news, its id fresh. */
     public static final String FOLDED = "action.folded";
 
