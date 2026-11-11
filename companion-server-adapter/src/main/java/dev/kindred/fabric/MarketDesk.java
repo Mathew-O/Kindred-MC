@@ -43,6 +43,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
  */
 final class MarketDesk {
     static final String INTENT = "market.intent", CANCEL = "market.cancel", RECEIVED = "market.received", UNCERTAIN = "market.uncertain";
+    /** The server's own market kinds, registered as an integration would register its own (F-31: event kinds are a registry). */
+    static final String KINDS_OWNER = "kindred-server";
+
+    static {
+        for (String kind : java.util.List.of(INTENT, CANCEL, RECEIVED, UNCERTAIN)) dev.kindred.core.record.EventKinds.register(kind, KINDS_OWNER);
+    }
     static final String HELD = "Your last trade is still being saved; try again in a moment";
     /** Data components the market reads or knowingly ignores; any other changed component makes a stack pending. */
     private static final Set<ComponentType<?>> KNOWN = Set.of(DataComponentTypes.DAMAGE, DataComponentTypes.ENCHANTMENTS,

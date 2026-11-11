@@ -511,7 +511,7 @@ final class PlayerRuntime {
         this.metadataDirectory = metadataDirectory;
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
-        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market, () -> running && !stopping);
         this.hud = new FactionsHud(factions, market, hudSections);
         factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
@@ -695,8 +695,11 @@ final class PlayerRuntime {
             }
             java.util.Properties properties = new java.util.Properties();
             try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            // Free travel and free items (mod-support decision 6): forbidden unless the operator wrote "allow".
             return new EditPolicy.ServerPolicy(Boolean.parseBoolean(properties.getProperty("autonomousEdits", "false")),
-                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")));
+                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")),
+                    "allow".equalsIgnoreCase(properties.getProperty("teleport", "forbid").trim()),
+                    "allow".equalsIgnoreCase(properties.getProperty("freeItems", "forbid").trim()));
         } catch (Exception failure) {
             KindredMod.LOGGER.error("Kindred edit policy could not be read; autonomous edits stay disabled", failure);
             return EditPolicy.ServerPolicy.deferredD4();
@@ -709,6 +712,7 @@ final class PlayerRuntime {
     }
 
     void start() {
+        stopping = false; // A runtime started again begins a new epoch: its writes and callbacks are live.
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
@@ -2649,6 +2653,7 @@ final class PlayerRuntime {
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
                 if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
+                if (replays != null && tick % 20 == 0) captureSpell(entry);
                 if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
                 if (tick % 20 == 0 && factionsWorld()) watchFactionLand(entry, entry.nativeBody.entity());
                 refreshTacticalObservation(entry, tick);
@@ -3788,9 +3793,11 @@ final class PlayerRuntime {
                     if (actualRecipe != null) {
                         BlockPos craftTable = entry.cachedCraftingTablePos;
                         if (actualRecipe.equals("oak_planks") && body.planCraft("oak_planks", craftTable).isEmpty()) {
-                            for (String logType : List.of("birch", "spruce", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo")) {
-                                if (body.planCraft(logType + "_planks", craftTable).isPresent()) {
-                                    actualRecipe = logType + "_planks";
+                            // F-38: the planks of whatever wood it holds, by the server's #minecraft:planks; vanilla's
+                            // woods in the order they were always tried, then any other the tag holds, by id.
+                            for (String planks : planksInTryOrder()) {
+                                if (body.planCraft(planks, craftTable).isPresent()) {
+                                    actualRecipe = planks;
                                     break;
                                 }
                             }
@@ -14093,6 +14100,10 @@ final class PlayerRuntime {
     void stop() {
         requireThread();
         ready = false;
+        // The stop barrier first: whatever stop() itself waits on (the store's last writes) may hand callbacks back on
+        // this thread, and every write-then-callback begun before now is stale from here on (recordThen).
+        stopping = true;
+        ++stopEpoch;
         if (replays != null) replays.close();
         // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
         for (var raced : racePace.entrySet()) {
@@ -14160,6 +14171,23 @@ final class PlayerRuntime {
     }
 
     /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    /**
+     * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
+     * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
+     * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
+     */
+    private void captureSpell(Entry entry) {
+        var campaign = entry.campaign;
+        // With rescues on, the rescue keeps the spell's scene as it asks, as before (F-29); this keeps it otherwise.
+        if (campaign == null || campaign.rescueOn()) return;
+        int spells = campaign.stuckSpells();
+        if (spells <= entry.spellsCaptured) return;
+        entry.spellsCaptured = spells;
+        replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
+                String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+    }
+
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
@@ -14486,7 +14514,11 @@ final class PlayerRuntime {
 
     private final dev.kindred.core.wire.Wording onlookerWording = new dev.kindred.core.wire.Wording();
 
-    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page may read it. */
+    private static List<String> lastOf(List<String> lines, int most) {
+        return List.copyOf(lines.subList(Math.max(0, lines.size() - most), lines.size()));
+    }
+
+    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page or the K panel may read it. */
     private List<String> toldLately(UUID ai) {
         var inbox = wire.inbox(ai);
         var out = new ArrayList<String>();
@@ -16032,7 +16064,7 @@ final class PlayerRuntime {
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
-                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
+                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
                     // three game days compacted on the writer, a batch at a time, never on the tick.
@@ -16106,16 +16138,41 @@ final class PlayerRuntime {
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
+        // Stop revokes synchronously and invalidates late callbacks: a write asked for after the stop (a callback of
+        // work begun before it) is not tried, and neither callback runs. What it would have finished stays unfinished in
+        // the Record, reported for an operator at the next start, never replayed (M-06h's intent and delivery rules).
+        if (!running || stopping) {
+            lateWritesRefused++;
+            KindredMod.LOGGER.warn("Kindred stopped: {} event(s) not written, their work left for reconciliation: {}", drafts.size(),
+                    drafts.isEmpty() ? "" : drafts.getFirst().kind());
+            return;
+        }
         if (store == null) {
             failed.accept(new IllegalStateException("World Record not open"));
             return;
         }
+        long epoch = stopEpoch;
         record(drafts);
         var write = recordFlush;
         write.whenComplete((ignored, failure) -> handBack(() -> {
+            if (epoch != stopEpoch) {
+                lateCallbacksDropped++;
+                KindredMod.LOGGER.warn("Kindred stopped: a callback of {} event(s) dropped after the stop", drafts.size());
+                return;
+            }
             if (failure == null) written.run(); else failed.accept(failure);
         }));
     }
+
+    /** Bumped as each stop begins: a write-then-callback begun under an earlier epoch drops its callback. */
+    private long stopEpoch;
+    /** From the first line of stop() until the next start(): no write-then-callback is begun. */
+    private boolean stopping;
+    /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
+    private int lateWritesRefused, lateCallbacksDropped;
+
+    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it}. */
+    int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped}; }
 
     /**
      * A sale's intent the Record holds with neither its sale nor its cancel is ambiguous: the server stopped between
@@ -16137,7 +16194,7 @@ final class PlayerRuntime {
                     for (var e : open.values()) {
                         String id = e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) ? e.get("purchase", "") : e.subject();
                         KindredMod.LOGGER.error("Market {} {} by {} is unfinished: reconcile its items and coins by hand", e.kind(), id, e.actor());
-                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), "market.uncertain", e.actor(), id, "",
+                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), MarketDesk.UNCERTAIN, e.actor(), id, "",
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
@@ -16533,11 +16590,37 @@ final class PlayerRuntime {
             String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : source.getWorld().getRegistryKey().getValue().toString();
             BlockPos pos = player != null ? player.getBlockPos() : BlockPos.ofFloored(source.getPosition());
             reply = factions.request(who, verb.toLowerCase(java.util.Locale.ROOT), args, world, pos, this::playerByName, this::factionName);
+            if (reply.accepted() && verb.equalsIgnoreCase("home") && player != null) reply = homeTravel(player, reply);
         }
         for (String line : reply.lines()) {
             if (reply.accepted()) feedback(source, line); else reject(source, line);
         }
         return reply;
+    }
+
+    /**
+     * {@code /faction home} with free travel allowed on this server (mod-support decision 6): whoever asks is taken to its
+     * faction's home, by the rule announced to everyone (D6). Forbidden (the default), home is only told. An AI player
+     * never travels this way: no recorded skill uses it, and the lead approves one first.
+     */
+    private FactionsService.Reply homeTravel(ServerPlayerEntity player, FactionsService.Reply told) {
+        if (!teleportAllowed()) return told;
+        // An AI player's body, by its entry or by its kind: never taken.
+        if (entryForPlayer(player.getUuid()) != null || player instanceof PreparedNativePlayer) return told;
+        var faction = factions.book().of(player.getUuid()).orElse(null);
+        if (faction == null || faction.home().isEmpty()) return told;
+        String home = faction.home();
+        int split = home.lastIndexOf(':');
+        String[] xyz = split < 0 ? new String[0] : home.substring(split + 1).split(",");
+        var world = split < 0 ? null : server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD,
+                net.minecraft.util.Identifier.tryParse(home.substring(0, split))));
+        if (world == null || xyz.length != 3) return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        try {
+            player.teleport(world, Integer.parseInt(xyz[0]) + 0.5, Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]) + 0.5, player.getYaw(), player.getPitch());
+        } catch (NumberFormatException failure) {
+            return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        }
+        return FactionsService.Reply.told(List.of("Teleported to " + faction.name() + "'s home (teleporting is allowed on this server, for everyone alike)."));
     }
 
     /** An online player's id by name, a person or an AI player. */
@@ -16952,6 +17035,8 @@ final class PlayerRuntime {
         private String skillId;
         /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
         private String dispatchSource = "", pendingSource;
+        /** The goal's stuck spells already kept as replays (F-27a), so that each is kept once. */
+        private int spellsCaptured;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
@@ -17501,7 +17586,10 @@ final class PlayerRuntime {
     record PanelBot(UUID id, String name, boolean connected, String phase, boolean stopped, boolean busy,
                     String playstyle, String collaboration, dev.kindred.core.survival.SurvivalGoal goal, String status,
                     String goalProgress, float health, int food, BlockPos position, String dimension, String task,
-                    UUID bodyId, String skin) { }
+                    UUID bodyId, String skin, List<String> told) {
+        /** The most it shows of what it was told lately (F-34c), newest last. */
+        static final int TOLD = 5;
+    }
 
     /** Native players this actor may control, as plain values for the panel. */
     List<PanelBot> panelBots(Actor actor) {
@@ -17520,7 +17608,8 @@ final class PlayerRuntime {
                     player != null ? player.getHealth() : 0f, player != null ? player.getHungerManager().getFoodLevel() : 0,
                     player != null ? player.getBlockPos().toImmutable() : null,
                     player != null ? player.getServerWorld().getRegistryKey().getValue().getPath() : entry.data.dimension(),
-                    busy ? entry.skillId : "", entry.data.entityId(), KindredSkins.choiceOf(entry.data.entityId())));
+                    busy ? entry.skillId : "", entry.data.entityId(), KindredSkins.choiceOf(entry.data.entityId()),
+                    lastOf(toldLately(entry.data.id()), PanelBot.TOLD)));
         }
         bots.sort(java.util.Comparator.comparing(PanelBot::name, String.CASE_INSENSITIVE_ORDER));
         return bots;
@@ -17535,7 +17624,7 @@ final class PlayerRuntime {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's AI edit policy.");
-        EditPolicy.ServerPolicy next = new EditPolicy.ServerPolicy(enabled, true);
+        EditPolicy.ServerPolicy next = edits.withEdits(enabled);
         edits = next; // Revocation applies to the next mutation check immediately.
         Path file = metadataDirectory.resolve("edits.properties");
         String content = policyFile(enabled, dragonFight, bases);
@@ -17563,8 +17652,63 @@ final class PlayerRuntime {
                 + "# dragonFight lets them fight the Ender Dragon; bases lets them choose, site and build their own bases;\n"
                 + "# maxNativePlayers is how many native AI players the server allows (default " + DEFAULT_NATIVE_PLAYERS + ", at most "
                 + MAX_NATIVE_PLAYERS + ").\n"
+                + "# teleport and freeItems are allow or forbid: free travel and free items for every player alike, announced to all (D6).\n"
                 + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\nbases=" + bases + "\n"
+                + "teleport=" + (this.edits.teleport() ? "allow" : "forbid") + "\nfreeItems=" + (this.edits.freeItems() ? "allow" : "forbid") + "\n"
                 + (maxNativePlayers == DEFAULT_NATIVE_PLAYERS ? "" : "maxNativePlayers=" + maxNativePlayers + "\n");
+    }
+
+    /** Whether free travel is allowed on this server, for every player alike (mod-support decision 6). */
+    boolean teleportAllowed() { return edits.teleport(); }
+
+    /** Whether free items are allowed on this server, for every player alike (mod-support decision 6). */
+    boolean freeItemsAllowed() { return edits.freeItems(); }
+
+    /**
+     * Records the server's switch for free travel ({@code teleport}) or free items ({@code freeItems}) in edits.properties;
+     * operators only. The new rule is announced to every player online in the same words (D6), and to the operator.
+     */
+    int setFreeSwitch(ServerCommandSource source, String which, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's rule for free travel and free items.");
+        boolean travel = switch (which) {
+            case "teleport" -> true;
+            case "freeItems" -> false;
+            default -> throw new IllegalArgumentException("Not a switch: " + which);
+        };
+        edits = travel ? edits.withTeleport(allowed) : edits.withFreeItems(allowed);
+        Path file = metadataDirectory.resolve("edits.properties");
+        String content = policyFile(edits.autonomousEditsEnabled(), dragonFight, bases);
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> handBack(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred free travel and items rule could not be saved", failure);
+                reject(source, "The rule applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        // The audit: who changed which switch, and when, in the World Record (D6).
+        var by = source.getPlayer();
+        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", EditPolicy.POLICY_SET,
+                by == null ? null : by.getUuid(), which, "", Map.of("allowed", String.valueOf(allowed), "by", source.getName())));
+        String line = edits.announcement().get(travel ? 0 : 1);
+        for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) listener.sendMessage(Text.literal(line), false);
+        KindredMod.LOGGER.info("Rule announced to every player: {}", line);
+        feedback(source, line);
+        return 1;
+    }
+
+    /** The standing rule for free travel and free items, as announced (D6). */
+    int tellFreeSwitches(ServerCommandSource source) {
+        requireThread();
+        for (String line : edits.announcement()) feedback(source, line);
+        return 1;
     }
 
     boolean dragonFightAllowed() { return dragonFight; }
@@ -18328,5 +18472,20 @@ final class PlayerRuntime {
         @Override public boolean isSettled(ActionLease lease) {
             return entity.getNavigation().isIdle() && !entity.getMoveControl().isMoving() && !entity.isUsingItem();
         }
+    }
+
+    private static final List<String> VANILLA_PLANKS_TRY_ORDER = List.of("birch", "spruce", "jungle", "acacia", "dark_oak",
+            "mangrove", "cherry", "bamboo");
+
+    /** Planks to try when oak's cannot be made: vanilla's woods first, as before, then the tag's others by id. */
+    static List<String> planksInTryOrder() {
+        var members = dev.kindred.core.Capabilities.current().members(dev.kindred.core.VanillaIds.PLANKS);
+        var tried = new java.util.LinkedHashSet<String>();
+        for (String wood : VANILLA_PLANKS_TRY_ORDER) {
+            String id = dev.kindred.core.VanillaIds.NAMESPACE + wood + "_planks";
+            if (members.contains(id)) tried.add(id);
+        }
+        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS)).sorted().forEach(tried::add);
+        return List.copyOf(tried);
     }
 }

@@ -97,6 +97,8 @@ final class BuildRunner {
     private ConstructionPlanner.Step lastPlaceStep;
     /** The placement the to-and-fro guard chose to make from where it stands, held until that placement's task ends (F-22c15). */
     private ConstructionPlanner.Step heldPlace;
+    /** The scaffold top last called out of reach to take down, the plan before: a second time running ends the build (F-22c47). */
+    private Pos outOfReachTop;
     /** The spot it last walked to, to place from, and how often in a row the walk ended short of standing just there. */
     private Pos lastStance;
     private int stanceWalks;
@@ -517,8 +519,7 @@ final class BuildRunner {
         if (step.kind() == ConstructionPlanner.Kind.BLOCKED && player.isOnGround() && highOnItsScaffold(feet, site)) {
             Pos below = feet.down();
             progress = blueprint.name() + ": blocked up its scaffold, down it first";
-            return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(below.x()), "y", str(below.y()), "z", str(below.z()),
-                    "collect", "true", "underfoot", "true"), "Down the scaffold"));
+            return Optional.of(downTheScaffold(player, feet, below));
         }
         if (supply != null && step.kind() != ConstructionPlanner.Kind.DONE) {
             var fetch = fetch(body, supply, wanted, site, step);
@@ -554,10 +555,7 @@ final class BuildRunner {
             progress = blueprint.name() + ": landing on its scaffold";
             return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1", "landed", "true"), "Landing on its scaffold"));
         }
-        if (down && player.isOnGround()) {
-            return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
-                    "collect", "true", "underfoot", "true"), "Down the scaffold"));
-        }
+        if (down && player.isOnGround()) return Optional.of(downTheScaffold(player, feet, under));
         // Down in a hollow below the build's floor, nothing of the build in reach and a walk round already failed: up out
         // of it first, as from a trip down for stone, by a route or by climbing. Fallen three blocks into a hollow beside
         // its cabin, its walks round to the last scaffold found "no walkable route" eight times and the build stopped (#82:
@@ -610,6 +608,8 @@ final class BuildRunner {
                     ? Optional.of(outside(groundBeside(step.target(), world, overFailed), step.reason() + OVER + feet))
                     : step.target() != null && up(feet) && !scaffold.contains(feet.down())
                     ? Optional.of(outside(groundBeside(feet, world), step.reason() + "; down off the build first"))
+                    : outOfReachTwice(step, tally, player.isOnGround())
+                    ? Optional.empty()
                     : Optional.of(wait(step.reason() + " (standing at " + feet + ")"));
             case BREAK -> {
                 // Its own scaffold's block in the column it stands on, wanted gone: dug out from on top, the block underfoot
@@ -618,8 +618,7 @@ final class BuildRunner {
                 // run 49, and runs 22 and 48 before it).
                 if (scaffold.contains(step.target()) && step.target().x() == feet.x() && step.target().z() == feet.z() && step.target().y() < feet.y()) {
                     if (!player.isOnGround()) yield Optional.of(landing("Landing first"));
-                    yield Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
-                            "collect", "true", "underfoot", "true"), "Down the scaffold"));
+                    yield Optional.of(downTheScaffold(player, feet, under));
                 }
                 // Planned again for the block it set out for two walks ago, another between: it walks to and fro (two
                 // blocks of a hideout's floor, each to be broken from on top of the other, 1,231 walks each way to the end
@@ -994,6 +993,12 @@ final class BuildRunner {
         // A walk to a break that found no way there lets the break go, to be planned again from where it is: kept, the
         // same walk was asked for again, and eight such failures in a row stopped a hideout at its first steps (F-22c10).
         if ("native_break".equals(task.skill()) && completed) walksWithoutBreak = 0;
+        // A block broken or placed since: the next "out of reach to take down" counts as the first again. Coming down its own
+        // column, a plan made mid-descent called the top below out of reach twice running, the break between them under
+        // way, and ended a seed cabin with that scaffold left standing (F-22c47's class run).
+        if (completed && ("native_break".equals(task.skill()) || "native_place".equals(task.skill()) || "native_pillar".equals(task.skill()))) {
+            outOfReachTop = null;
+        }
         if ("native_goto".equals(task.skill()) && task.label().startsWith("To break ")) {
             breakWalks++;
             if (completed) walksWithoutBreak++;
@@ -1139,6 +1144,31 @@ final class BuildRunner {
         return spare;
     }
 
+    /**
+     * The same scaffold top out of reach to take down at two plans running, nothing else asked between: the build is ended
+     * there, built, with that scaffolding left standing, rather than waited on till its ticks run out (F-22c47). In a local
+     * class run the house cabin's builder, slid off its column onto the cabin, waited so on "out of reach to take down" until
+     * the fixture's ticks ran out. Refused once, as before; the second time it says so and stops.
+     */
+    private boolean outOfReachTwice(ConstructionPlanner.Step step, ConstructionPlanner.Progress tally, boolean onGround) {
+        boolean outOfReach = step.reason().endsWith("is out of reach to take down") && step.target() != null;
+        // A plan made mid-fall, just down off a block of its own column, counts for nothing: it lands lower and plans again.
+        if (outOfReach && !onGround) return false;
+        if (!outOfReach) {
+            outOfReachTop = null;
+            return false;
+        }
+        if (!step.target().equals(outOfReachTop)) {
+            outOfReachTop = step.target();
+            return false;
+        }
+        done = true;
+        complete = tally.placed() == tally.total();
+        progress = blueprint.name() + ": built, " + tally.placed() + "/" + tally.total() + " blocks; scaffolding at " + step.target()
+                + " out of reach to take down, left standing";
+        return true;
+    }
+
     /** A slot holding a block it can spare for scaffolding: one the build needs no more of. */
     private static int scaffoldSlot(ServerPlayerEntity player, List<Blueprint.Block> wanted, BuildSite site) {
         var bill = dev.kindred.core.construction.BillOfMaterials.of(wanted, site, Map.of());
@@ -1188,6 +1218,33 @@ final class BuildRunner {
 
     /** On the spot, near its middle (the walk there stops within 0.4 of it). */
     /** Break {@code target}, collecting the drop; the block it stands on with the leave to step down onto what is below. */
+    /** How far off its column's middle the body may stand to dig out the block underfoot: its box clear of the next cell. */
+    static final double DOWN_OFF_MIDDLE = 0.18;
+    /** The walks over its column's middle asked for one cell in a row, at most {@link #CENTRE_TRIES} before it digs anyway. */
+    private Pos centringAt;
+    private int centringTries;
+    private static final int CENTRE_TRIES = 3;
+
+    /**
+     * Down its own scaffold, the block underfoot dug out, with the body over the column's middle first. A body more than
+     * 0.2 off the middle overlaps the next cell; as the block gave way, a bottom slab of the cabin's roof there caught it
+     * half a block down. It slid onto the roof, where no walk could start, and the cabin stopped short of its roof
+     * (#136's CI, run 42826864347; this morning's house cabin) (F-22c57).
+     */
+    private PortalRunCampaign.Task downTheScaffold(ServerPlayerEntity player, Pos feet, Pos under) {
+        double off = Math.max(Math.abs(player.getX() - (feet.x() + 0.5)), Math.abs(player.getZ() - (feet.z() + 0.5)));
+        if (!feet.equals(centringAt)) {
+            centringAt = feet;
+            centringTries = 0;
+        }
+        if (off > DOWN_OFF_MIDDLE && centringTries++ < CENTRE_TRIES) {
+            return new PortalRunCampaign.Task("native_goto", Map.of("x", str(feet.x()), "y", str(feet.y()), "z", str(feet.z()),
+                    "range", "0", "centre_within", "0.15"), "Over the middle of its scaffold");
+        }
+        return new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
+                "collect", "true", "underfoot", "true"), "Down the scaffold");
+    }
+
     /** Whether a block stands at {@code at}, for the diagnostics; null for no cell. */
     private static Boolean there(ServerWorld world, Pos at) {
         return at == null ? null : !world.getBlockState(blockPos(at)).isAir();
