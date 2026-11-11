@@ -1,5 +1,7 @@
 package dev.kindred.core.guide;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.team.ShareOut;
 import dev.kindred.core.team.ShareOut.Material;
 import dev.kindred.core.team.ShareOut.Slot;
@@ -250,19 +252,21 @@ public final class Worth {
     }
 
     private static String id(String item) {
-        return item.indexOf(':') >= 0 ? item : "minecraft:" + item;
+        return item.indexOf(':') >= 0 ? item : VanillaIds.NAMESPACE + item;
     }
 
     private static Info info(String item) {
         return ITEMS.get(id(item));
     }
 
-    /** A piece of kit by its id, "minecraft:iron_chestplate", or null for anything else. */
+    /** A piece of kit by its id, minecraft:iron_chestplate, or null for anything else. */
     record Kit(Slot slot, Material material) { }
 
     /** A piece of gear by its item id, or nothing for anything that is not gear. */
     static Kit kit(String item) {
-        String path = id(item).substring("minecraft:".length());
+        // The path, whatever the namespace: a mod's id can be shorter than vanilla's prefix ("mymod:odd").
+        String full = id(item);
+        String path = full.substring(full.indexOf(':') + 1);
         int split = path.lastIndexOf('_');
         if (split < 0) return null;
         Slot slot;
@@ -284,7 +288,7 @@ public final class Worth {
         return new Kit(slot, material);
     }
 
-    /** The slot a piece of kit goes in, by its id ("minecraft:iron_boots"), or none for anything that is not kit. */
+    /** The slot a piece of kit goes in, by its id (minecraft:iron_boots), or none for anything that is not kit. */
     public static Optional<Slot> slotOf(String item) {
         Kit kit = kit(item);
         return kit == null ? Optional.empty() : Optional.of(kit.slot());
@@ -316,12 +320,12 @@ public final class Worth {
     /** What a player keeps on it wherever it is, to use as it goes: never put away. A bed of any colour too: it sleeps in it. */
     private static final java.util.Set<String> KEPT_ON = java.util.Set.of("bucket", "water_bucket", "lava_bucket", "flint_and_steel",
             "shield", "bow", "crossbow", "arrow", "spectral_arrow", "tipped_arrow", "torch", "compass", "clock", "ender_pearl",
-            "totem_of_undying", "trident", "white_bed").stream().map(item -> "minecraft:" + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
+            "totem_of_undying", "trident", "white_bed").stream().map(item -> VanillaIds.NAMESPACE + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
 
     /** What no run to the dragon uses, kept only for later: what a player on its run puts away when it passes its store. */
     private static final java.util.Set<String> FOR_LATER = java.util.Set.of("enchanted_book", "book", "saddle", "name_tag", "lead",
             "rail", "powered_rail", "diamond_horse_armor", "golden_horse_armor", "iron_horse_armor", "heart_of_the_sea", "nautilus_shell",
-            "experience_bottle", "emerald").stream().map(item -> "minecraft:" + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
+            "experience_bottle", "emerald").stream().map(item -> VanillaIds.NAMESPACE + item).collect(java.util.stream.Collectors.toUnmodifiableSet());
 
     /**
      * What of what it holds a player puts away in its storage (E-43), item by item and all of each: what it keeps for

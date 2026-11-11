@@ -321,8 +321,17 @@ final class MatchPresenter {
         return bar == null ? "" : bar.getName().getString();
     }
 
+    /** Who else hears of each title shown (F-34c: the Wire, for an AI player's own), by the player's body id. */
+    private java.util.function.BiConsumer<UUID, MatchPresentation.Title> onShown = (player, title) -> { };
+
+    /** Sets who hears of each title as it is shown. */
+    void onShown(java.util.function.BiConsumer<UUID, MatchPresentation.Title> sink) {
+        onShown = sink == null ? (player, title) -> { } : sink;
+    }
+
     /** One title shown to one player, with its sound, and kept among what it was shown. */
     void show(UUID playerId, MatchPresentation.Title title) {
+        onShown.accept(playerId, title);
         var titles = shown.computeIfAbsent(playerId, id -> new ArrayDeque<>());
         if (titles.size() == SHOWN_KEPT) titles.removeFirst();
         titles.addLast(title.title());
