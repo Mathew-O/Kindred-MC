@@ -1,0 +1,151 @@
+diff --git a/companion-server-adapter/src/main/java/dev/kindred/fabric/PortalRunCampaign.java b/companion-server-adapter/src/main/java/dev/kindred/fabric/PortalRunCampaign.java
+index 0e463fde..c1ed26dd 100644
+--- a/companion-server-adapter/src/main/java/dev/kindred/fabric/PortalRunCampaign.java
++++ b/companion-server-adapter/src/main/java/dev/kindred/fabric/PortalRunCampaign.java
+@@ -102,6 +102,33 @@ final class PortalRunCampaign {
+     private long leadFailedUntil;
+     private final Set<Long> ownWorkstations = new HashSet<>();
+     private final Map<Long, Long> blockedUntil = new HashMap<>();
++    /**
++     * The floor of a dead end it climbed out of "to find another way", the cell and its open neighbours at that level, and
++     * until when: read only by tunnel()'s step down, so a walk or route through the pocket is not refused. Its step down
++     * otherwise went into the next cell of the same pocket each time, a climb blocking only the one it left: on 8675309 in
++     * e40a20-79a9aad Kindred went up and down a step at Y=-51/-52 for 32,000 ticks (nine spells, each failing 6 of 6 replayed).
++     */
++    private final Map<Long, Long> deadEndUntil = new HashMap<>();
++    /** No-way-on climbs this spell that came after a tunnel past liquid's step, logged once a spell (K for its set-aside). */
++    private int deadEndsAfterTunnel;
++    /** The label of the last step its plan took, to tell a dead end met tunnelling past liquid. */
++    private String lastStepLabel = "";
++    /**
++     * So many dead ends in a spell after a tunnel past liquid's step, and that tunnel is set aside near where it was for the
++     * rest of the spell. Measured on the nine 8675309 pocket scenes of e40a20-79a9aad with the dead-end floor alone (each
++     * still failing 3 of 3): 4 to 12 a spell where a spell logged them, 2 once on a tenth scene beside them.
++     */
++    static final int DEAD_ENDS_BEFORE_TUNNEL_ASIDE = 3;
++    /** Where the tunnel past liquid was set aside this spell, within {@link #TUNNEL_ASIDE_RADIUS}; none outside a spell. */
++    private BlockPos tunnelAsideNear;
++    static final int TUNNEL_ASIDE_RADIUS = 16;
++    /** What the set-aside descent was toward ("lava"), from its step's label. */
++    private String tunnelAsideWhat;
++
++    private boolean deadEnd(BlockPos pos) {
++        Long until = deadEndUntil.get(pos.asLong());
++        return until != null && until > lastTick;
++    }
+     /** Targets the player could not walk to; consulted when choosing what to gather, never when digging. */
+     private final Map<Long, Long> unreachableUntil = new HashMap<>();
+     /** Where the player stood when each unreachable target failed: it stays unreachable from around there. */
+@@ -947,6 +974,7 @@ final class PortalRunCampaign {
+         best.clear();
+         stuckClock = 0;
+         stuckLevel = 0;
++        tunnelAsideNear = null;
+         relocate = null;
+         obsidianSite = null;
+         exploreHeading = null;
+@@ -1230,6 +1258,7 @@ final class PortalRunCampaign {
+             lastGain = tick;
+             stuckClock = 0;
+             stuckLevel = 0;
++            tunnelAsideNear = null;
+             relocate = null;
+             relocateEarly = false;
+             progressMade(tick);
+@@ -1346,6 +1375,7 @@ final class PortalRunCampaign {
+      */
+     private void startRelocating(boolean elsewhere) {
+         stuckSpells++;
++        logDeadEnds();
+         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
+         stuckLevel++;
+         stuckClock = 0;
+@@ -1380,8 +1410,16 @@ final class PortalRunCampaign {
+      * The watchdog's spell, three minutes with no progress, while a move elsewhere begun early for a rescue is under way
+      * (F-29b): counted as every spell is, the move going on with the heading it has.
+      */
++    /** Once a spell: how many no-way-on climbs came after a tunnel past liquid's step (for the set-aside's K). */
++    private void logDeadEnds() {
++        if (deadEndsAfterTunnel > 0) KindredMod.LOGGER.info("Goal stuck spell {}: {} dead ends after a tunnel past liquid near {}",
++                stuckSpells, deadEndsAfterTunnel, lastFeet.toShortString());
++        deadEndsAfterTunnel = 0;
++    }
++
+     private void countSpell() {
+         stuckSpells++;
++        logDeadEnds();
+         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
+         stuckLevel++;
+         stuckClock = 0;
+@@ -2005,6 +2043,7 @@ final class PortalRunCampaign {
+         if (outcome.equals("unstuck")) {
+             stuckClock = 0;
+             stuckLevel = 0;
++            tunnelAsideNear = null;
+             relocate = null;
+             relocateEarly = false;
+         }
+@@ -2627,6 +2666,7 @@ final class PortalRunCampaign {
+             if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) continue;
+             if (task.isPresent()) {
+                 progress = stageLabel(stage) + ": " + step.why() + " - " + task.get().label();
++                lastStepLabel = task.get().label();
+                 return task;
+             }
+         }
+@@ -2653,6 +2693,14 @@ final class PortalRunCampaign {
+             Optional<Task> up = climb(body, "Climb to find another way");
+             if (up.isPresent()) {
+                 blockedUntil.merge(lastFeet.asLong(), lastTick + 2400, Math::max); // A dead end: do not step back down into it.
++                markDeadEnd(player.getServerWorld(), lastFeet);
++                if (lastStepLabel.startsWith("Tunnel past liquid toward") && ++deadEndsAfterTunnel >= DEAD_ENDS_BEFORE_TUNNEL_ASIDE
++                        && tunnelAsideNear == null) {
++                    tunnelAsideNear = lastFeet.toImmutable();
++                    tunnelAsideWhat = lastStepLabel.substring("Tunnel past liquid toward ".length()).replaceFirst(":.*", "");
++                    KindredMod.LOGGER.info("Goal stuck spell {}: tunnel past liquid set aside within {} of {} after {} dead ends",
++                            stuckSpells, TUNNEL_ASIDE_RADIUS, tunnelAsideNear.toShortString(), deadEndsAfterTunnel);
++                }
+                 progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
+                 return up;
+             }
+@@ -4258,6 +4306,10 @@ final class PortalRunCampaign {
+     }
+ 
+     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
++        // Given up this spell near the pocket its dead ends were in, digging down and tunnelling alike: the plan's other
++        // steps get their turn (F-27a).
++        if (what.equals(tunnelAsideWhat) && tunnelAsideNear != null
++                && tunnelAsideNear.getSquaredDistance(body.entity().getBlockPos()) <= TUNNEL_ASIDE_RADIUS * TUNNEL_ASIDE_RADIUS) return Optional.empty();
+         // Over the void there is nothing below to reach: digging would only spend the island.
+         if (!groundBelow(body.entity())) return Optional.empty();
+         int y = body.entity().getBlockY();
+@@ -5057,6 +5109,20 @@ final class PortalRunCampaign {
+     /** Whether the step down being dug may be dug by hand, with no pickaxe held: out from under the water (F-25c4cq). */
+     private boolean digDownByHand;
+ 
++    /**
++     * A dead end's floor: the cell it stood in and each open neighbour at that level with a floor under it, which its
++     * tunnel would step down into next, set aside from the tunnel's step down for as long as the cell itself is.
++     */
++    private void markDeadEnd(ServerWorld world, BlockPos floor) {
++        long until = lastTick + 2400;
++        deadEndUntil.merge(floor.asLong(), until, Math::max);
++        for (Direction side : Direction.Type.HORIZONTAL) {
++            BlockPos next = floor.offset(side);
++            if (passable(world, next) && passable(world, next.up()) && !passable(world, next.down())) deadEndUntil.merge(next.asLong(), until, Math::max);
++        }
++        if (deadEndUntil.size() > 4096) deadEndUntil.values().removeIf(t -> t <= lastTick);
++    }
++
+     Optional<Task> tunnel(NativePlayerBody body, String label, boolean revealLava) {
+         var player = body.entity();
+         var world = player.getServerWorld();
+@@ -5095,7 +5161,7 @@ final class PortalRunCampaign {
+                 return Optional.of(go(ahead, 0.4, false, label + ": advance"));
+             }
+             // Never a step down into water: wading back out to here and stepping in again would go round for ever.
+-            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down()) && ahead.getY() > tunnelFloor
++            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down()) && !deadEnd(ahead.down()) && ahead.getY() > tunnelFloor
+                     && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
+                 if (comingDown(world, ahead.down())) return Optional.of(settle(label));
+                 return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
