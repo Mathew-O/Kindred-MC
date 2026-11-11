@@ -125,6 +125,7 @@
       "dev.kindred.fabric.NativeSafeZoneGameTests",
       "dev.kindred.fabric.NativeMarketGameTests",
       "dev.kindred.fabric.NativeAuctionGameTests",
+      "dev.kindred.fabric.NativeCaveLedgeGameTests",
       "dev.kindred.fabric.NativeAuctionScreenGameTests",
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
