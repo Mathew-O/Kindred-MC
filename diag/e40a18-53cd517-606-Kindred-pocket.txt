@@ -1,0 +1,456 @@
+===== spell given up at tick 33800: Kindred lines from ~tick 30000 (wall 55852s) to ~tick 33800 (wall 55893s); tick-to-wall from the run's "thinking at tick" marks, about ±10 s
+(1077 lines after deduping consecutive repeats; showing the last 150)
+[15:31:30] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:30] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall
+[15:31:30] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:30] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance
+[15:31:30] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall
+[15:31:30] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:30] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:30] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance
+[15:31:30] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:30] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall
+[15:31:30] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:30] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance
+[15:31:30] Goal made no progress for 3600 ticks near 196, 56, -126; trying 196, 56, -150 (attempt 1)
+[15:31:30] Kindred goal at 196 56 -126: Iron: no progress here for a while - try elsewhere, toward 196, 56, -150
+[15:31:30] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:31] Kindred native_goto COMPLETED [try elsewhere, toward 196, 56, -150]
+[15:31:31] Kindred native_goto BLOCKED: No walkable route toward 196, 56, -150 [try elsewhere, toward 196, 56, -150]
+[15:31:31] Kindred goal at 196 56 -132: Iron: no progress here for a while - dig toward elsewhere: clear 196, 57, -133
+      (… same line 1 more times)
+[15:31:31] Kindred native_break COMPLETED [dig toward elsewhere: clear 196, 57, -133]
+[15:31:31] Kindred goal at 196 56 -132: Iron: no progress here for a while - dig toward elsewhere: advance
+[15:31:31] Kindred native_break COMPLETED [dig toward elsewhere: clear 196, 56, -133]
+[15:31:31] Kindred native_goto COMPLETED [dig toward elsewhere: advance]
+[15:31:31] Kindred goal at 196 56 -133: Iron: no progress here for a while - climb away from here: out from under the water: advance
+[15:31:31] Kindred native_goto COMPLETED [climb away from here: out from under the water: advance]
+[15:31:31] Kindred goal at 196 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:32] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:32] Kindred goal at 196 56 -133: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: clear 196, 55, -132 (tried elsewhere 1 time)
+[15:31:32] Kindred goal at 196 56 -133: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: step down (tried elsewhere 1 time)
+[15:31:32] Kindred native_break COMPLETED [Climb toward the surface for water: out from under the water, a level lower: clear 196, 55, -132]
+[15:31:32] Kindred goal at 196 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:32] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water, a level lower: step down]
+[15:31:32] Kindred goal at 196 55 -132: Iron: Fill a bucket with water - Climb toward the surface for water: step up (tried elsewhere 1 time)
+[15:31:32] Kindred goal at 196 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:32] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:32] Kindred native_goto COMPLETED [Climb toward the surface for water: step up]
+[15:31:32] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+      (… same line 3 more times)
+[15:31:32] Kindred goal at 196 56 -130: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:32] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:32] Kindred goal at 197 56 -130: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: clear 197, 57, -131 (tried elsewhere 1 time)
+[15:31:32] Kindred goal at 198 56 -130: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: clear 198, 55, -131 (tried elsewhere 1 time)
+[15:31:32] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:32] Kindred native_break COMPLETED [Climb toward the surface for water: out from under the water, a level lower: clear 198, 55, -131]
+[15:31:32] Kindred goal at 198 56 -130: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: step down (tried elsewhere 1 time)
+[15:31:32] Kindred goal at 198 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: clear 199, 57, -131 (tried elsewhere 1 time)
+[15:31:33] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water, a level lower: step down]
+[15:31:33] Kindred goal at 198 55 -131: Iron: Fill a bucket with water - Climb toward the surface for water: clear 199, 56, -131 (tried elsewhere 1 time)
+      (… same line 1 more times)
+[15:31:33] Kindred native_break COMPLETED [Climb toward the surface for water: clear 199, 56, -131]
+[15:31:33] Kindred goal at 198 55 -131: Iron: Fill a bucket with water - Climb toward the surface for water: step up (tried elsewhere 1 time)
+[15:31:33] Kindred native_break COMPLETED [Climb toward the surface for water: clear 199, 57, -131]
+[15:31:33] Kindred goal at 198 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:33] Kindred native_goto COMPLETED [Climb toward the surface for water: step up]
+[15:31:33] Kindred goal at 199 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: step down (tried elsewhere 1 time)
+[15:31:33] Kindred goal at 198 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: clear 197, 57, -131 (tried elsewhere 1 time)
+[15:31:33] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water, a level lower: step down]
+[15:31:33] Kindred goal at 198 55 -131: Iron: Fill a bucket with water - Climb toward the surface for water: clear 197, 56, -131 (tried elsewhere 1 time)
+[15:31:34] Kindred native_break COMPLETED [Climb toward the surface for water: clear 197, 56, -131]
+[15:31:34] Kindred goal at 198 55 -131: Iron: Fill a bucket with water - Climb toward the surface for water: clear 197, 57, -131 (tried elsewhere 1 time)
+[15:31:34] Kindred native_break COMPLETED [Climb toward the surface for water: clear 197, 57, -131]
+[15:31:34] Kindred goal at 198 55 -131: Iron: Fill a bucket with water - Climb toward the surface for water: step up (tried elsewhere 1 time)
+[15:31:34] Kindred goal at 198 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:34] Kindred native_goto COMPLETED [Climb toward the surface for water: step up]
+[15:31:34] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:34] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:34] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:34] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:34] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:34] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:34] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:34] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:34] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:34] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:35] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:35] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:35] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:35] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:35] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:35] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:35] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:35] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:35] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:35] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:35] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:35] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:35] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:35] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:36] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:36] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:36] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:36] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:36] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:36] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:36] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:36] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:36] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:36] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:37] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:37] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:37] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:37] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:37] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:37] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:37] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:37] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:37] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:37] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:37] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:37] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:37] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:37] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:37] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:38] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:38] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:38] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:38] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:38] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:38] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+[15:31:38] Kindred goal at 197 56 -131: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 1 time)
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:31:38] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:31:38] Kindred goal at 197 56 -132: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 1 time)
+===== spell given up at tick 73520: Kindred lines from ~tick 69720 (wall 56233s) to ~tick 73520 (wall 56270s); tick-to-wall from the run's "thinking at tick" marks, about ±10 s
+(374 lines after deduping consecutive repeats; showing the last 150)
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:46] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:46] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:46] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:46] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:46] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:46] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:46] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:46] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:46] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:46] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:47] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:47] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:47] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:47] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:47] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:47] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:47] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:47] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:47] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:47] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:47] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:48] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:48] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:48] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:48] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:48] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:48] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:48] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:48] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:48] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:48] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:48] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:48] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:49] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:49] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:49] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:49] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:49] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:49] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:49] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:49] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:49] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:49] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:49] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:50] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:50] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:50] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:50] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:50] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:50] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:50] Kindred goal at 196 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 4 times)
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:50] Kindred goal at 195 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 4 times)
+[15:37:50] Goal made no progress for 3600 ticks near 195, 56, -126; trying 195, 56, -102 (attempt 5)
+[15:37:50] Kindred goal at 195 56 -126: Iron: no progress here for a while - try elsewhere, toward 195, 56, -102
+[15:37:50] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:52] Kindred native_goto COMPLETED [try elsewhere, toward 195, 56, -102]
+[15:37:52] Kindred native_goto BLOCKED: No walkable route toward 195, 56, -102 [try elsewhere, toward 195, 56, -102]
+[15:37:52] Kindred goal at 193 55 -113: Iron: no progress here for a while - climb away from here: out from under the water, a level lower: step down
+[15:37:52] Kindred goal at 194 54 -113: Iron: no progress here for a while - dig toward elsewhere: advance
+[15:37:52] Kindred native_goto COMPLETED [climb away from here: out from under the water, a level lower: step down]
+[15:37:52] Kindred native_goto COMPLETED [dig toward elsewhere: advance]
+[15:37:52] Kindred goal at 195 54 -113: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 5 times)
+[15:37:52] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:52] Kindred goal at 196 54 -113: Iron: Fill a bucket with water - Climb toward the surface for water: step aside (tried elsewhere 5 times)
+[15:37:52] Kindred goal at 195 54 -113: Iron: Fill a bucket with water - Climb toward the surface for water: back the way it came (tried elsewhere 5 times)
+[15:37:52] Kindred native_goto COMPLETED [Climb toward the surface for water: step aside]
+[15:37:52] Kindred goal at 195 55 -114: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 5 times)
+[15:37:52] Kindred goal at 194 55 -115: Iron: Fill a bucket with water - Climb toward the surface for water: step up (tried elsewhere 5 times)
+[15:37:52] Kindred goal at 194 56 -116: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 5 times)
+[15:37:52] Kindred goal at 194 56 -117: Iron: Fill a bucket with water - Climb toward the surface for water: back the way it came (tried elsewhere 5 times)
+[15:37:52] Kindred goal at 193 56 -118: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 5 times)
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: back the way it came]
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:53] Kindred goal at 188 56 -123: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 5 times)
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:53] Kindred goal at 189 56 -123: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 5 times)
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+      (… same line 1 more times)
+[15:37:53] Kindred goal at 189 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 5 times)
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:53] Kindred goal at 190 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 5 times)
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+      (… same line 1 more times)
+[15:37:53] Kindred goal at 190 56 -127: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 5 times)
+[15:37:53] Kindred goal at 190 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: clear 191, 57, -126 (tried elsewhere 5 times)
+      (… same line 1 more times)
+[15:37:53] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:37:54] Kindred goal at 190 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: clear 191, 56, -125 (tried elsewhere 5 times)
+[15:37:54] Kindred native_break COMPLETED [Climb toward the surface for water: out from under the water: clear 191, 57, -125]
+[15:37:54] Kindred goal at 190 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 5 times)
+[15:37:54] Kindred native_break COMPLETED [Climb toward the surface for water: out from under the water: clear 191, 56, -125]
+[15:37:54] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+      (… same line 1 more times)
+[15:37:54] Kindred goal at 190 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: clear 189, 55, -125 (tried elsewhere 5 times)
+[15:37:54] Kindred native_break COMPLETED [Climb toward the surface for water: out from under the water, a level lower: clear 189, 55, -125]
+[15:37:54] Kindred goal at 190 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: step down (tried elsewhere 5 times)
+[15:37:54] Kindred goal at 189 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 5 times)
+[15:37:54] Kindred goal at 189 55 -125: Iron: Fill a bucket with water - Climb toward the surface for water: step up (tried elsewhere 5 times)
+[15:37:54] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water, a level lower: step down]
+[15:37:54] Kindred goal at 189 56 -125: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 5 times)
+[15:37:54] Kindred native_goto COMPLETED [Climb toward the surface for water: step up]
+[15:37:54] Kindred goal at 189 56 -124: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 5 times)
+[15:37:54] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:37:54] Kindred goal at 189 56 -123: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water, a level lower: clear 188, 55, -123 (tried elsewhere 5 times)
+===== spell given up at tick 108100: Kindred lines from ~tick 104300 (wall 56565s) to ~tick 108100 (wall 56602s); tick-to-wall from the run's "thinking at tick" marks, about ±10 s
+(999 lines after deduping consecutive repeats; showing the last 150)
+[15:43:19] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:19] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:19] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:19] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:19] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:19] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:19] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:19] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:19] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:19] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:19] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:19] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:19] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:19] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:19] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:20] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:20] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:20] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:20] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:20] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:20] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:20] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:20] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:20] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:20] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:20] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:20] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:20] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:21] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:21] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:21] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:21] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:21] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:21] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:21] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:21] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:21] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:21] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:21] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:21] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:21] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:22] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:22] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:22] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:22] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:22] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:22] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:22] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:22] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:22] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 9 times)
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:22] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 9 times)
+[15:43:22] Goal made no progress for 3600 ticks near 185, 56, -126; trying 161, 56, -126 (attempt 10)
+[15:43:22] Kindred goal at 185 56 -126: Iron: no progress here for a while - try elsewhere, toward 161, 56, -126
+[15:43:22] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:22] Kindred native_goto COMPLETED [try elsewhere, toward 161, 56, -126]
+[15:43:22] Kindred goal at 185 56 -126: Iron: no progress here for a while - climb away from here: out from under the water: advance
+[15:43:23] Kindred goal at 186 56 -126: Iron: no progress here for a while - dig toward elsewhere: advance
+[15:43:23] Kindred native_goto COMPLETED [climb away from here: out from under the water: advance]
+[15:43:23] Kindred native_goto COMPLETED [dig toward elsewhere: advance]
+[15:43:23] Kindred goal at 185 56 -126: Iron: no progress here for a while - climb away from here: out from under the water: advance
+[15:43:23] Kindred native_goto COMPLETED [climb away from here: out from under the water: advance]
+[15:43:23] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:23] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:23] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:23] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:23] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:23] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:23] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:23] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:23] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:23] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:23] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:24] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:24] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:24] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:24] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:24] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:24] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:24] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:24] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:24] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:24] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:24] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:24] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:24] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:25] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:25] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:25] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:25] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:25] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:25] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:25] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:25] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: out from under the water: advance (tried elsewhere 10 times)
+[15:43:25] Kindred native_goto COMPLETED [Climb toward the surface for water: out from under the water: advance]
+[15:43:25] Kindred goal at 186 56 -126: Iron: Fill a bucket with water - Climb toward the surface for water: to the wall (tried elsewhere 10 times)
+[15:43:25] Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]
+[15:43:25] Kindred goal at 185 56 -126: Iron: Fill a bucket with water - Wait for daylight (tried elsewhere 10 times)
+[15:43:26] Kindred native_wait COMPLETED [Wait for daylight]
+      (… same line 1 more times)
