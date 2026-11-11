@@ -14310,11 +14310,6 @@ final class PlayerRuntime {
     }
 
     /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
-    /**
-     * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
-     * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
-     * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
-     */
     /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
     private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
         var campaign = entry.campaign;
@@ -14323,6 +14318,11 @@ final class PlayerRuntime {
         return origin -> campaign.memoryIn(origin, DeathReplays.WIDTH, DeathReplays.HEIGHT, tick);
     }
 
+    /**
+     * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
+     * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
+     * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
+     */
     private void captureSpell(Entry entry) {
         var campaign = entry.campaign;
         // With rescues on, the rescue keeps the spell's scene as it asks, as before (F-29); this keeps it otherwise.
