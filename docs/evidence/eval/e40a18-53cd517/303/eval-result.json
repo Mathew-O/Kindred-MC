@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 12.76, "tickMsWorst": 2322.90, "tickMsWorstAt": 1, "ticksOver50ms": 344, "ticksOver200ms": 7, "heapMbMax": 1224, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 3800, "stone_tools": 4720, "iron_ingot": 14120, "iron_pickaxe": 28760, "obsidian": 57265, "portal_lit": 58065},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 6120, "stone_tools": 6940, "iron_ingot": 14740, "iron_pickaxe": 44740},
+      "deaths": [
+        {"tick": 70783, "cause": "Sol was doomed to fall by Zombie", "x": 35, "y": -16, "z": 75, "light": 0, "timeOfDay": 22945, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Done: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 38800, "x": 158, "y": 14, "z": 89, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 960, "stone_tools": 1460, "iron_ingot": 9000, "iron_pickaxe": 18080, "obsidian": 103628, "portal_lit": 108273},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
