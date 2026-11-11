@@ -1,0 +1,47 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144039,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 137, "factions": 3, "claims": 10, "captures": 0, "sales": 28, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 2, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 14.47, "tickMsWorst": 1979.69, "tickMsWorstAt": 7, "ticksOver50ms": 1168, "ticksOver200ms": 10, "heapMbMax": 1559, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 107120, "stone_tools": 107620, "iron_ingot": 110260, "iron_pickaxe": 123520},
+      "deaths": [
+        {"tick": 41128, "cause": "Kindred drowned", "x": 431, "y": 53, "z": 24, "light": 0, "timeOfDay": 17290, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Wood: Get out of the water: up for air (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 7040, "x": 407, "y": 60, "z": 62, "attempt": 1}, {"tick": 34540, "x": 427, "y": 63, "z": 79, "attempt": 2}, {"tick": 75080, "x": 419, "y": 64, "z": 174, "attempt": 1}, {"tick": 78980, "x": 434, "y": 63, "z": 174, "attempt": 2}, {"tick": 99900, "x": 434, "y": 69, "z": 288, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 58660, "stone_tools": 61640, "iron_ingot": 67920, "iron_pickaxe": 74420},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 11260, "x": -84, "y": 64, "z": 540, "attempt": 1}, {"tick": 27560, "x": -69, "y": 72, "z": 548, "attempt": 2}, {"tick": 31240, "x": -49, "y": 73, "z": 548, "attempt": 3}, {"tick": 58280, "x": 99, "y": 73, "z": 250, "attempt": 1}, {"tick": 82040, "x": 124, "y": 65, "z": 246, "attempt": 1}, {"tick": 100420, "x": 101, "y": 64, "z": 166, "attempt": 2}, {"tick": 104440, "x": 74, "y": 63, "z": 164, "attempt": 3}, {"tick": 123280, "x": 76, "y": 64, "z": 129, "attempt": 4}, {"tick": 131240, "x": 116, "y": 65, "z": 160, "attempt": 5}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 79960, "stone_tools": 81440, "iron_ingot": 83880, "iron_pickaxe": 93020},
+      "deaths": [
+        {"tick": 55016, "cause": "Echo suffocated in a wall", "x": -76, "y": 71, "z": 163, "light": 0, "timeOfDay": 7178, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Interrupted: Cut through east for animals: clear -76, 72, 164", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 8400, "x": -22, "y": 63, "z": 415, "attempt": 1}, {"tick": 29480, "x": -19, "y": 74, "z": 562, "attempt": 2}, {"tick": 33780, "x": -11, "y": 67, "z": 497, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

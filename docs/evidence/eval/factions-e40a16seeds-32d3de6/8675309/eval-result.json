@@ -1,0 +1,48 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144245,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 170, "factions": 3, "claims": 10, "captures": 0, "sales": 38, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 3, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 15.73, "tickMsWorst": 797.82, "tickMsWorstAt": 5838, "ticksOver50ms": 362, "ticksOver200ms": 6, "heapMbMax": 972, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 34640, "stone_tools": 36460, "iron_ingot": 40260, "iron_pickaxe": 48420},
+      "deaths": [
+        {"tick": 56393, "cause": "Kindred was shot by Skeleton", "x": 38, "y": 92, "z": 152, "light": 12, "timeOfDay": 8555, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 10980, "x": 116, "y": 69, "z": 480, "attempt": 1}, {"tick": 27740, "x": 125, "y": 63, "z": 454, "attempt": 2}, {"tick": 31440, "x": 125, "y": 63, "z": 431, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3260, "stone_tools": 4300, "iron_ingot": 11700, "iron_pickaxe": 26200, "obsidian": 127277},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 131980, "x": 161, "y": -54, "z": 491, "attempt": 1}, {"tick": 139400, "x": 171, "y": -54, "z": 500, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 35100, "stone_tools": 37320, "iron_ingot": 46080},
+      "deaths": [
+        {"tick": 55236, "cause": "Echo was slain by Zombie", "x": 20, "y": 40, "z": 98, "light": 0, "timeOfDay": 7398, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 67013, "cause": "Echo was shot by Skeleton", "x": 14, "y": 21, "z": -16, "light": 3, "timeOfDay": 19175, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Stone: fight back - Back off from skeleton (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 8480, "x": 167, "y": 64, "z": 315, "attempt": 1}, {"tick": 27160, "x": 274, "y": 68, "z": 432, "attempt": 2}, {"tick": 31040, "x": 263, "y": 65, "z": 377, "attempt": 3}, {"tick": 42400, "x": 16, "y": 46, "z": 73, "attempt": 1}, {"tick": 65640, "x": 56, "y": 39, "z": -38, "attempt": 1}, {"tick": 92300, "x": 52, "y": 27, "z": 84, "attempt": 1}, {"tick": 118580, "x": 17, "y": 19, "z": 64, "attempt": 1}, {"tick": 125440, "x": 17, "y": 19, "z": 64, "attempt": 1}, {"tick": 129040, "x": 16, "y": 19, "z": 64, "attempt": 2}, {"tick": 134200, "x": 16, "y": 19, "z": 66, "attempt": 3}, {"tick": 138380, "x": 16, "y": 19, "z": 64, "attempt": 1}, {"tick": 143680, "x": 16, "y": 19, "z": 66, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
