@@ -3387,9 +3387,25 @@ final class PortalRunCampaign {
             nearest.put(WorldFacts.Source.GENERATOR, (int) Math.round(Math.sqrt(g.cobble().getSquaredDistance(feet))));
         }
         nearestSapling(player).ifPresent(sapling -> nearest.put(WorldFacts.Source.SAPLING, (int) Math.round(Math.sqrt(sapling.getSquaredDistance(feet)))));
+        // A diamond lying in reach, one it has just mined, is a diamond in sight as its ore was: with the ore gone and
+        // the diamond not yet picked up, the frame was weighed as if none were near, and the plan turned to the iron for
+        // a second bucket until it was in hand (F-30d (b)'s fixture, once in 735).
+        looseDiamond(player).ifPresent(d -> nearest.merge(WorldFacts.Source.DIAMOND_ORE, d, Math::min));
         facts = new WorldFacts(nearest, methods(player));
         factsTick = lastTick;
         return facts;
+    }
+
+    /**
+     * How far off the nearest diamond lying loose is, within the reach it picks up what it keeps from (eight blocks
+     * across, three up or down), in sight and not where it gave up going: as {@link #pickUpLoose} would go for it.
+     */
+    private Optional<Integer> looseDiamond(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        return world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(8, 3, 8),
+                        drop -> drop.getStack().isOf(Items.DIAMOND) && player.canSee(drop) && !blocked(drop.getBlockPos()))
+                .stream().map(drop -> (int) Math.round(Math.sqrt(drop.getBlockPos().getSquaredDistance(player.getBlockPos()))))
+                .min(Integer::compare);
     }
 
     /** Underground, sight lines are shorter and every walk is through the dark: ore within two dozen blocks. */
@@ -4917,8 +4933,14 @@ final class PortalRunCampaign {
 
     /** {@link #buildRoute(NativePlayerBody, BlockPos, java.util.function.Predicate, boolean, String)} under the server's current edit policy. */
     Optional<Task> buildRoute(NativePlayerBody body, EditPolicy.ServerPolicy policy, BlockPos target, java.util.function.Predicate<BlockPos> goal, String label) {
+        return buildRoute(body, policy, target, goal, false, label);
+    }
+
+    /** As above; {@code needEdit} refuses a way that only walks, for a caller whose walk there has just failed. */
+    Optional<Task> buildRoute(NativePlayerBody body, EditPolicy.ServerPolicy policy, BlockPos target, java.util.function.Predicate<BlockPos> goal,
+                              boolean needEdit, String label) {
         this.policy = policy;
-        return buildRoute(body, target, goal, false, label);
+        return buildRoute(body, target, goal, needEdit, label);
     }
 
     /**

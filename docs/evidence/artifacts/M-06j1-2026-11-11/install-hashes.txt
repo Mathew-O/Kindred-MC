@@ -1,0 +1,8 @@
+mods/fabric-api-0.116.17+1.21.1.jar: 2452735 bytes, sha512 match, sha1 match, size match
+mods/Chunky-Fabric-1.4.23.jar: 342979 bytes, sha512 match, sha1 match, size match
+mods/spark-1.10.109-fabric.jar: 3609981 bytes, sha512 match, sha1 match, size match
+mods/lithium-fabric-0.15.4+mc1.21.1.jar: 797454 bytes, sha512 match, sha1 match, size match
+mods/ferritecore-7.0.3-fabric.jar: 123450 bytes, sha512 match, sha1 match, size match
+mods/textile_backup-3.1.3-1.21.jar: 1308283 bytes, sha512 match, sha1 match, size match
+mods/cloth-config-15.0.140-fabric.jar: 1157166 bytes, sha512 match, sha1 match, size match
+ALL MATCH

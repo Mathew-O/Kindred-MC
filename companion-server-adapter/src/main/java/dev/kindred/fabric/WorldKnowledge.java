@@ -64,6 +64,9 @@ final class WorldKnowledge {
     private static final int MAX_PER_KIND = 2_000;
 
     private final Map<Kind, Map<Long, BlockPos>> known = new EnumMap<>(Kind.class);
+    /** The columns where it saw still water open to the air, the last {@value #WATER_COLUMNS} (F-35j). */
+    private final java.util.LinkedHashSet<Long> waterColumns = new java.util.LinkedHashSet<>();
+    static final int WATER_COLUMNS = 16_384;
     private String dimension = "";
     private final List<ChunkSectionPos> sweep = new ArrayList<>();
     private int cursor;
@@ -134,6 +137,7 @@ final class WorldKnowledge {
         if (!dim.equals(dimension)) {
             dimension = dim;
             for (var map : known.values()) map.clear();
+            waterColumns.clear();
             sweep.clear();
             caveBacklog.clear();
         }
@@ -336,6 +340,13 @@ final class WorldKnowledge {
     void onFirstSight(java.util.function.BiConsumer<Kind, BlockPos> listener) { firstSight = listener; }
 
     void remember(Kind kind, BlockPos pos) {
+        // Water it saw, by column, past the cap on blocks of a kind: a sea fills that cap long before it has looked round.
+        if (kind == Kind.WATER) {
+            long column = net.minecraft.util.math.ChunkPos.toLong(pos.getX(), pos.getZ());
+            waterColumns.remove(column);
+            waterColumns.add(column);
+            if (waterColumns.size() > WATER_COLUMNS) waterColumns.remove(waterColumns.iterator().next());
+        }
         var map = known.get(kind);
         long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
         if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
@@ -391,6 +402,29 @@ final class WorldKnowledge {
     }
 
     List<BlockPos> all(Kind kind) { return List.copyOf(known.get(kind).values()); }
+
+    /**
+     * Whether a walk from {@code from} to {@code to} would end in open water it saw (F-35j). Within its sight
+     * ({@value #HORIZONTAL_RADIUS} blocks), every column within two of the end is still water open to the air that it saw;
+     * beyond, the last {@code run} columns along the line out to the edge of its sight are. Nothing is read from the world:
+     * a column it has not seen is not water to it, and land seen beyond a strait breaks the run, so a crossing to land it
+     * can see is not open water.
+     */
+    boolean seenOpenWaterToward(BlockPos from, BlockPos to, int run) {
+        double dx = to.getX() - from.getX(), dz = to.getZ() - from.getZ();
+        double far = Math.hypot(dx, dz);
+        if (far <= HORIZONTAL_RADIUS) {
+            for (int ox = -2; ox <= 2; ox++) for (int oz = -2; oz <= 2; oz++) {
+                if (!waterColumns.contains(net.minecraft.util.math.ChunkPos.toLong(to.getX() + ox, to.getZ() + oz))) return false;
+            }
+            return true;
+        }
+        for (int i = HORIZONTAL_RADIUS - run + 1; i <= HORIZONTAL_RADIUS; i++) {
+            int x = (int) Math.floor(from.getX() + 0.5 + dx * i / far), z = (int) Math.floor(from.getZ() + 0.5 + dz * i / far);
+            if (!waterColumns.contains(net.minecraft.util.math.ChunkPos.toLong(x, z))) return false;
+        }
+        return true;
+    }
 
     /** Lowest-scoring remembered block of a kind that still matches the world and the caller's filter. */
     Optional<BlockPos> best(ServerWorld world, Kind kind, java.util.function.ToDoubleFunction<BlockPos> score, Predicate<BlockPos> filter) {
