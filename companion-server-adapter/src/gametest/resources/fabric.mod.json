@@ -188,6 +188,7 @@
       "dev.kindred.fabric.NativeKnowledgeGameTests",
       "dev.kindred.fabric.NativeCostGameTests",
       "dev.kindred.fabric.NativeCraftHelperGameTests",
+      "dev.kindred.fabric.NativeGatherTargetGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
       "dev.kindred.fabric.NativeOutingGameTests"
     ]
