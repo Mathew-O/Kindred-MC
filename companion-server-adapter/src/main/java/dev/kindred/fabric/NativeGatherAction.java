@@ -201,8 +201,12 @@ final class NativeGatherAction extends NativeRecordedAction {
             }
         }
 
-        // Completion check on resume only
-        if (checkpoint.isPresent() && currentInventory >= targetTotal) {
+        // Completion check on resume only: on the resume's first tick, before any work of this run. Made on every tick, it
+        // returned complete while the gather walked to its last log's drop, picked up mid-step, ahead of the drop's own
+        // branch that stops its walking and verifies the break: still walking, its body never settled, and the resumed
+        // gather never completed, its record left DISPATCHED (#144's CI, run 42805028977) (F-22c53).
+        if (fresh && checkpoint.isPresent() && currentInventory >= targetTotal) {
+            body.stopInputs();
             phase = Phase.FINISHED;
             finalStep = Step.completed(currentProgress());
             return finalStep;

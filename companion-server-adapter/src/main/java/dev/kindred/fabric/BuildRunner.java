@@ -509,6 +509,17 @@ final class BuildRunner {
         }
         var walkedTo = placeWalkedTo(player, site);
         var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned, spareScaffold(player, wanted, site));
+        // Blocked high up its own scaffold, the ground beneath more than a drop down: down the column first, the block
+        // underfoot dug out, before any walk off (a walk round, or one out to fetch what it lacks) that the navigator cannot
+        // take from up there. In #123's CI (run 42758107947, the life-first cabin; and #113's, #117's and #119's) the builder,
+        // four up its own column, had its plan come back "No way to reach minecraft:oak_stairs"; its walks over to the ground
+        // were "no walkable route" eight times and the cabin stopped short of its roof (F-22c46).
+        if (step.kind() == ConstructionPlanner.Kind.BLOCKED && player.isOnGround() && highOnItsScaffold(feet, site)) {
+            Pos below = feet.down();
+            progress = blueprint.name() + ": blocked up its scaffold, down it first";
+            return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(below.x()), "y", str(below.y()), "z", str(below.z()),
+                    "collect", "true", "underfoot", "true"), "Down the scaffold"));
+        }
         if (supply != null && step.kind() != ConstructionPlanner.Kind.DONE) {
             var fetch = fetch(body, supply, wanted, site, step);
             if (fetch.isPresent()) {
@@ -1104,6 +1115,17 @@ final class BuildRunner {
             if (!stack.isEmpty()) items.add(Registries.ITEM.getId(stack.getItem()).toString());
         }
         return items;
+    }
+
+    /**
+     * Stood on its own scaffold, a solid block of it underfoot, with the ground under the column more than a walk's drop
+     * ({@link ConstructionPlanner#MAX_DROP}) below its feet (F-22c46).
+     */
+    private boolean highOnItsScaffold(Pos feet, BuildSite site) {
+        Pos at = feet.down();
+        if (!scaffold.contains(at) || !site.cell(at).map(c -> c.kind() == BuildSite.Kind.SOLID).orElse(false)) return false;
+        while (scaffold.contains(at)) at = at.down();
+        return feet.y() - (at.y() + 1) > ConstructionPlanner.MAX_DROP;
     }
 
     /** How many blocks it holds that it can spare for scaffolding, beyond what the build still needs of them (F-22c45). */

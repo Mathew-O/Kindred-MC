@@ -44,6 +44,7 @@ class WatchSnapshotTest {
         assertTrue(json.contains("{\"what\": \"Mine iron ore at 3, 12, -4\", \"priority\": \"PROJECT\", \"score\": 64.0}"), json);
         assertTrue(json.contains("\"lastWords\": \"Off to find iron, \\\"properly\\\" this time.\\nTwo lines?\""), "Quotes and newlines escaped: " + json);
         assertTrue(json.contains("\"habits\": [\"MORE_FOOD\"], \"notes\": [\"Twice dead hungry; carry more food.\"], \"tokensToday\": 1234"), json);
+        assertTrue(json.contains("\"tokensToday\": 1234, \"told\": []"), "Nothing told, an empty list (F-34c): " + json);
         assertEquals(json.chars().filter(c -> c == '{').count(), json.chars().filter(c -> c == '}').count(), "Balanced: " + json);
     }
 
@@ -101,5 +102,18 @@ class WatchSnapshotTest {
         assertFalse(page.contains("innerHTML"), "Nothing from the snapshot is put in as markup");
         assertFalse(Pattern.compile("(?i)<script[^>]+src=|<link[^>]+href=|https?://").matcher(page).find(), "No CDN, nothing from elsewhere");
         assertFalse(Pattern.compile("method:\\s*\"(POST|PUT|DELETE|PATCH)\"").matcher(page).find(), "It only reads");
+    }
+
+    /** F-34c: what it was told, the last ten, in the JSON. */
+    @Test
+    void whatItWasToldIsTheLastTenInTheJson() {
+        var told = new java.util.ArrayList<String>();
+        for (int i = 0; i < 12; i++) told.add("[team] Wren: stored " + i + " (kept to its team)");
+        var p = new WatchSnapshot.Player("i", "N", true, 20, 20, "", "", "", "", "minecraft:overworld", 0, 0, 0, List.of(), List.of(), List.of(),
+                List.of(), List.of(), 0, told);
+        assertEquals(WatchSnapshot.TOLD, p.told().size());
+        assertEquals("[team] Wren: stored 2 (kept to its team)", p.told().getFirst(), "the oldest two dropped");
+        String json = new WatchSnapshot(1, "Server thread", List.of(p), List.of(), null).playersJson();
+        assertTrue(json.contains("\"told\": [\"[team] Wren: stored 2 (kept to its team)\""), json);
     }
 }
