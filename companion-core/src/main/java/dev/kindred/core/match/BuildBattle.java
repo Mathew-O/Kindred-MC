@@ -1,6 +1,7 @@
 package dev.kindred.core.match;
 
 import dev.kindred.core.VanillaIds;
+import dev.kindred.core.construction.Woods;
 
 import dev.kindred.core.construction.Blueprint;
 import dev.kindred.core.construction.Generators;
@@ -155,8 +156,8 @@ public final class BuildBattle {
                 var hut = Generators.hut(5 + 2 * random.nextInt(2), 5 + 2 * random.nextInt(2), 3);
                 String wood = pickOf(random, "oak", "spruce", "birch", "dark_oak");
                 String stone = pickOf(random, VanillaIds.COBBLESTONE, VanillaIds.ICON_STONE, VanillaIds.BRICKS, VanillaIds.MOSSY_COBBLESTONE);
-                yield hut.recolored(Map.of(VanillaIds.OAK_PLANKS, VanillaIds.NAMESPACE + wood + "_planks", VanillaIds.ICON_WOOD, VanillaIds.NAMESPACE + wood + "_log",
-                        VanillaIds.OAK_STAIRS, VanillaIds.NAMESPACE + wood + "_stairs", VanillaIds.OAK_SLAB, VanillaIds.NAMESPACE + wood + "_slab",
+                yield hut.recolored(Map.of(VanillaIds.OAK_PLANKS, Woods.planks(wood), VanillaIds.ICON_WOOD, Woods.log(wood),
+                        VanillaIds.OAK_STAIRS, Woods.stairs(wood), VanillaIds.OAK_SLAB, Woods.slab(wood),
                         VanillaIds.COBBLESTONE, stone), "cottage of " + wood);
             }
             case WATCHTOWER -> Generators.tower(5 + 2 * random.nextInt(2), 7 + random.nextInt(4),

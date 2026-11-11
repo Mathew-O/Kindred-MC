@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 15.97, "tickMsWorst": 1947.76, "tickMsWorstAt": 77693, "ticksOver50ms": 815, "ticksOver200ms": 10, "heapMbMax": 1470, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 860, "stone_tools": 1600, "iron_ingot": 9840, "iron_pickaxe": 26500, "obsidian": 88058, "portal_lit": 90259},
+      "deaths": [
+        {"tick": 98173, "cause": "Kindred was slain by Zombie", "x": -178, "y": -54, "z": -102, "light": 0, "timeOfDay": 2335, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Done: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 55980, "x": -2, "y": 48, "z": -84, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2360, "stone_tools": 3680, "iron_ingot": 8260, "iron_pickaxe": 45560, "obsidian": 90963, "portal_lit": 93483},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 79960, "x": -145, "y": -54, "z": 25, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1380, "stone_tools": 2360, "iron_ingot": 8840, "iron_pickaxe": 23380, "obsidian": 74883, "portal_lit": 77692},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30540, "x": -4, "y": 58, "z": 56, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
