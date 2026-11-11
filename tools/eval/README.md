@@ -45,7 +45,9 @@ operator guide.
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says
-  so at the top. A staged run is not earned progress.
+  so at the top. A staged run is not earned progress. A run on a server that allowed free travel or free items
+  (`/aiplayer teleport|freeitems allow`) at any point is never earned: `eval-result.json` records both under `policy`,
+  `score.py` names the seed, and `compare.py` refuses the comparison, so no ladder counts a teleport or a free item.
 - **The model players.** `strategist=on` needs the strategist configured as in play (`KINDRED_STRATEGIST=on` and a key
   in your environment); `run.py` passes the key and the `KINDRED_STRATEGIST*` settings to a server only when its
   scenario says `strategist=on` or `voice=on`, and never writes them to a file. The voice has no switch of its own: it
