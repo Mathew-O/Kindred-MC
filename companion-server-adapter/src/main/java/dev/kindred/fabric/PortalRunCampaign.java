@@ -4924,8 +4924,14 @@ final class PortalRunCampaign {
 
     /** {@link #buildRoute(NativePlayerBody, BlockPos, java.util.function.Predicate, boolean, String)} under the server's current edit policy. */
     Optional<Task> buildRoute(NativePlayerBody body, EditPolicy.ServerPolicy policy, BlockPos target, java.util.function.Predicate<BlockPos> goal, String label) {
+        return buildRoute(body, policy, target, goal, false, label);
+    }
+
+    /** As above; {@code needEdit} refuses a way that only walks, for a caller whose walk there has just failed. */
+    Optional<Task> buildRoute(NativePlayerBody body, EditPolicy.ServerPolicy policy, BlockPos target, java.util.function.Predicate<BlockPos> goal,
+                              boolean needEdit, String label) {
         this.policy = policy;
-        return buildRoute(body, target, goal, false, label);
+        return buildRoute(body, target, goal, needEdit, label);
     }
 
     /**
