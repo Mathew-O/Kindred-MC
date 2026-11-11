@@ -34,15 +34,25 @@ final class KindredCapabilities {
 
     private KindredCapabilities() { }
 
-    /** Builds the snapshot from the server's current tags and installs it. Server thread only. */
-    static Capabilities refresh() {
-        Capabilities facts = Capabilities.fromServer(tagMembers(), tools());
+    /** For each server wood's planks, the id of the recipe that makes them from its log; replaced whole at refresh. */
+    private static volatile Map<String, String> plankRecipes = Map.of();
+
+    /** The recipe that makes these planks from their wood's log, as this server read it, if one was found. */
+    static java.util.Optional<String> plankRecipe(String planks) {
+        return java.util.Optional.ofNullable(plankRecipes.get(planks));
+    }
+
+    /** Builds the snapshot from the server's current tags, tools and recipes, and installs it. Server thread only. */
+    static Capabilities refresh(net.minecraft.server.MinecraftServer server) {
+        var tags = tagMembers();
+        Capabilities facts = Capabilities.fromServer(tags, tools(), woods(server, tags), recipes(server));
         Capabilities.install(facts);
         return facts;
     }
 
     /** Back to the vanilla facts once the server has stopped. */
     static void clear() {
+        plankRecipes = Map.of();
         Capabilities.reset();
     }
 
@@ -71,6 +81,89 @@ final class KindredCapabilities {
             String kind = kind(item);
             if (kind == null || !(item instanceof ToolItem tool)) continue;
             out.put(Registries.ITEM.getId(item).toString(), new Capabilities.Tool(kind, tier(tool.getMaterial())));
+        }
+        return out;
+    }
+
+    /**
+     * Each planks the server's #minecraft:planks holds, as a wood: the #minecraft:logs item its crafting recipe
+     * takes, and the wooden stairs, slab, fence, gate, door and trapdoor its planks make, by their tags. Planks no
+     * log makes are left out; Capabilities keeps vanilla's written families and drops the woods builds never used.
+     */
+    private static java.util.List<Capabilities.Wood> woods(net.minecraft.server.MinecraftServer server,
+                                                           Map<String, Set<String>> tags) {
+        Set<String> planksIds = tags.getOrDefault(VanillaIds.PLANKS.tag(), VanillaIds.PLANKS.ids());
+        Set<String> logIds = tags.getOrDefault(VanillaIds.LOGS.tag(), VanillaIds.LOGS.ids());
+        var registries = server.getRegistryManager();
+        var recipes = server.getRecipeManager().listAllOfType(net.minecraft.recipe.RecipeType.CRAFTING);
+        Map<String, String> logOf = new HashMap<>();
+        Map<String, String> recipeOf = new HashMap<>();
+        Map<String, Map<String, String>> parts = new HashMap<>();
+        Map<TagKey<Item>, String> partTags = new java.util.LinkedHashMap<>();
+        partTags.put(net.minecraft.registry.tag.ItemTags.WOODEN_STAIRS, "stairs");
+        partTags.put(net.minecraft.registry.tag.ItemTags.WOODEN_SLABS, "slab");
+        partTags.put(net.minecraft.registry.tag.ItemTags.WOODEN_FENCES, "fence");
+        partTags.put(net.minecraft.registry.tag.ItemTags.FENCE_GATES, "fenceGate");
+        partTags.put(net.minecraft.registry.tag.ItemTags.WOODEN_DOORS, "door");
+        partTags.put(net.minecraft.registry.tag.ItemTags.WOODEN_TRAPDOORS, "trapdoor");
+        for (var entry : recipes) {
+            var result = entry.value().getResult(registries);
+            if (result.isEmpty()) continue;
+            String out = Registries.ITEM.getId(result.getItem()).toString();
+            var inputs = new LinkedHashSet<String>();
+            for (var ingredient : entry.value().getIngredients()) {
+                for (var stack : ingredient.getMatchingStacks()) inputs.add(Registries.ITEM.getId(stack.getItem()).toString());
+            }
+            if (planksIds.contains(out)) {
+                for (String in : inputs) {
+                    if (logIds.contains(in) && logOf.putIfAbsent(out, in) == null) { recipeOf.put(out, entry.id().toString()); break; }
+                }
+                continue;
+            }
+            for (var tag : partTags.entrySet()) {
+                if (!result.isIn(tag.getKey())) continue;
+                for (String in : inputs) {
+                    if (planksIds.contains(in)) parts.computeIfAbsent(in, k -> new HashMap<>()).putIfAbsent(tag.getValue(), out);
+                }
+            }
+        }
+        var woods = new java.util.ArrayList<Capabilities.Wood>();
+        for (String planks : new java.util.TreeSet<>(planksIds)) {
+            String log = logOf.get(planks);
+            if (log == null) continue;
+            var p = parts.getOrDefault(planks, Map.of());
+            String name = planks.endsWith("_planks") ? planks.substring(0, planks.length() - "_planks".length()) : planks;
+            woods.add(new Capabilities.Wood(name, log, planks, p.get("stairs"), p.get("slab"), p.get("fence"),
+                    p.get("fenceGate"), p.get("door"), p.get("trapdoor")));
+        }
+        plankRecipes = Map.copyOf(recipeOf);
+        return woods;
+    }
+
+    /**
+     * The server's crafting and smelting recipes for items outside vanilla's namespace, as plain values: each
+     * ingredient by its first matching item, counted. Core works a mod's item's worth out of these (vanilla's items keep
+     * their written worth).
+     */
+    private static java.util.List<Capabilities.Recipe> recipes(net.minecraft.server.MinecraftServer server) {
+        var registries = server.getRegistryManager();
+        var out = new java.util.ArrayList<Capabilities.Recipe>();
+        for (var entry : server.getRecipeManager().values()) {
+            var recipe = entry.value();
+            if (recipe.getType() != net.minecraft.recipe.RecipeType.CRAFTING && recipe.getType() != net.minecraft.recipe.RecipeType.SMELTING) continue;
+            var result = recipe.getResult(registries);
+            if (result.isEmpty()) continue;
+            String output = Registries.ITEM.getId(result.getItem()).toString();
+            if (output.startsWith(VanillaIds.NAMESPACE)) continue;
+            Map<String, Integer> inputs = new java.util.TreeMap<>();
+            boolean whole = true;
+            for (var ingredient : recipe.getIngredients()) {
+                if (ingredient.isEmpty()) continue;
+                var stacks = ingredient.getMatchingStacks();
+                if (stacks.length == 0) { whole = false; break; }
+                inputs.merge(Registries.ITEM.getId(stacks[0].getItem()).toString(), 1, Integer::sum);
+            }
+            if (whole && !inputs.isEmpty()) out.add(new Capabilities.Recipe(output, result.getCount(), inputs));
         }
         return out;
     }

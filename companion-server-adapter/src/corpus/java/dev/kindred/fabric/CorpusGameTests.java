@@ -27,7 +27,8 @@ import net.minecraft.test.GameTest;
  *   structure is {@code kindred_corpus:corpus/<id>}, and {@link ReplayGameTests#play} plays it;</li>
  *   <li>a staged fixture: {@code {"fixture": "<GameTest class>.<method>", "corpus": {...}}}, a GameTest of the contract
  *   suite run as it stands, with its own template, ticks and staging (its javadoc says how it is staged).</li>
- * </ul> Scenes go ten to a batch, so a batch's scenes run side by side. With {@code KINDRED_CORPUS_ONLY} set to scene ids
+ * </ul> Scenes go at most ten to a batch, side by side, a batch's scenes sharing difficulty, weather and day or night
+ * ({@link #worldKey}), since they share one world. With {@code KINDRED_CORPUS_ONLY} set to scene ids
  * (comma-separated) only those run, together in one batch: the gate's confirming runs of a flagged scene. The suite
  * is its own mod and run ({@code runCorpus}), so the contract tests and the corpus never run together.
  */
@@ -45,12 +46,30 @@ public final class CorpusGameTests implements FabricGameTest {
         String onlyList = System.getenv("KINDRED_CORPUS_ONLY");
         var only = onlyList == null || onlyList.isBlank() ? null : new java.util.HashSet<>(java.util.Arrays.asList(onlyList.trim().split("\\s*,\\s*")));
         try (var files = Files.list(folder.get())) {
-            int index = 0;
-            for (Path file : files.filter(f -> f.getFileName().toString().endsWith(".json")).sorted().toList()) {
-                String id = file.getFileName().toString().replace(".json", "");
-                if (only != null && !only.contains(id)) continue;
-                JsonObject scene = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
-                String batch = "corpus_" + (index++ / BATCH);
+            var scenes = new java.util.TreeMap<String, JsonObject>();
+            for (Path file : files.filter(f -> f.getFileName().toString().endsWith(".json")).toList()) {
+                String name = file.getFileName().toString().replace(".json", "");
+                if (only != null && !only.contains(name)) continue;
+                scenes.put(file.getFileName().toString().replace(".json", ""), JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject());
+            }
+            // Batched by what a batch's scenes share, fixtures last: one world clock, weather and difficulty for ten side by
+            // side, each replay setting them to its own record as it starts, so the last of ten to start set them for all
+            // ten. Scenes go together by difficulty, weather, day or night, then the time itself.
+            var order = new ArrayList<>(scenes.keySet());
+            order.sort(java.util.Comparator.comparing((String id) -> worldKey(scenes.get(id))).thenComparing(java.util.Comparator.naturalOrder()));
+            // A batch is at most ten scenes, all of one group: a new group starts a new batch.
+            int batchNumber = -1, inBatch = BATCH;
+            String group = null;
+            for (String id : order) {
+                JsonObject scene = scenes.get(id);
+                String key = worldKey(scene), its = key.substring(0, Math.max(0, key.lastIndexOf('/')));
+                if (inBatch >= BATCH || !its.equals(group)) {
+                    batchNumber++;
+                    inBatch = 0;
+                    group = its;
+                }
+                inBatch++;
+                String batch = "corpus_" + batchNumber;
                 if (scene.has("fixture")) {
                     tests.add(fixture(batch, id, scene.get("fixture").getAsString()));
                     continue;
@@ -63,6 +82,15 @@ public final class CorpusGameTests implements FabricGameTest {
             throw new IllegalStateException("A scene in " + CORPUS + " could not be read", unreadable);
         }
         return tests;
+    }
+
+    /** What a scene sets for the whole world, as a sort key: difficulty, thunder, rain, night, time of day. */
+    static String worldKey(JsonObject scene) {
+        if (!scene.has("timeOfDay")) return "~";
+        long time = Math.floorMod(scene.get("timeOfDay").getAsLong(), 24000L);
+        boolean night = time >= 13000 && time < 23000;
+        return String.format("%s/%b/%b/%b/%05d", scene.has("difficulty") ? scene.get("difficulty").getAsString() : "",
+                scene.has("thundering") && scene.get("thundering").getAsBoolean(), scene.has("raining") && scene.get("raining").getAsBoolean(), night, time);
     }
 
     /** A contract-suite GameTest run as a scene: its own template, ticks and staging. */

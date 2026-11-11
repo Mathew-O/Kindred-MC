@@ -175,6 +175,83 @@ public final class NativeKnowledgeGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * F-34: Ada's faction claims a chunk; the claim is written to the World Record, and only then is it told on the
+     * faction's channel, citing the id the Record gave it. Bram knows the claim as told, resting on that event; the
+     * Record's own note of the delivery cites it too. Nothing is told for a write that never happened.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "knowledgeCites", tickLimit = 1000)
+    public void aToldClaimCitesTheEventTheRecordGaveIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 900);
+        var server = context.getWorld().getServer();
+        UUID[] ids = new UUID[2];
+        String chunk = ClaimLedger.chunk("minecraft:overworld", 90, 90);
+        List<Long> cited = new java.util.ArrayList<>();
+        dev.kindred.core.wire.Delivery[] delivered = new dev.kindred.core.wire.Delivery[1];
+        @SuppressWarnings("unchecked") java.util.concurrent.CompletableFuture<List<WorldEvent>>[] record = new java.util.concurrent.CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.webs().rebuilt(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(dev.kindred.core.Actor.console()).size() == 1, "Ada"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bram"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(dev.kindred.core.Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(st -> st.connected()), "Both connected");
+                    for (var st : statuses) {
+                        var body = server.getPlayerManager().getPlayer(st.nativeId());
+                        ids[body.getName().getString().equals("Ada") ? 0 : 1] = f.runtime.wire().idOf(body);
+                    }
+                    f.runtime.setFactionOf(id -> id.equals(ids[0]) || id.equals(ids[1]) ? "oak" : "");
+                    f.runtime.recordAndTell(List.of(WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "minecraft:overworld", ClaimLedger.CLAIM,
+                                    null, "oak", chunk, Map.of())),
+                            eventIds -> {
+                                cited.addAll(eventIds);
+                                return dev.kindred.core.wire.Message.of("faction.claim", ids[0], dev.kindred.core.wire.Scope.faction("oak"),
+                                        Map.of("claimed", dev.kindred.core.wire.Fact.of(chunk, dev.kindred.core.wire.Visibility.FACTION)), eventIds);
+                            },
+                            d -> delivered[0] = d);
+                    context.assertTrue(cited.isEmpty() && delivered[0] == null, "Nothing told before the Record has it");
+                    boolean[] asked = new boolean[1], answered = new boolean[1];
+                    f.runtime.recordAndTell(List.of(), eventIds -> { asked[0] = true; return null; }, d -> answered[0] = d == null);
+                    context.assertTrue(!asked[0] && answered[0], "Nothing recorded, nothing told");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(delivered[0] != null && delivered[0].sent() && delivered[0].receivers().equals(List.of(ids[1])), "Told to Bram: " + delivered[0]);
+                    context.assertTrue(cited.size() == 1 && cited.getFirst() > 0, "One event cited: " + cited);
+                    context.assertTrue("oak".equals(f.runtime.ledgers().claims().get(chunk)), "The claim is the Record's: " + f.runtime.ledgers().claims());
+                    var bram = KnowledgeWeb.Viewer.of(new Listener(ids[1], "Bram", false, Set.of(), "oak", "", "", false, null, null));
+                    var known = f.runtime.webs().existing(ids[1]).orElseThrow()
+                            .about(bram, dev.kindred.core.knowledge.WebFeed.entityOf(ids[0], false), KnowledgeWeb.Verb.CLAIMED, server.getTicks());
+                    context.assertTrue(known.size() == 1 && known.getFirst().object().equals(chunk) && known.getFirst().provenance().events().equals(cited),
+                            "Bram knows it resting on the Record's event: " + known);
+                    record[0] = f.runtime.worldEventsForTest(Set.of(ClaimLedger.CLAIM, dev.kindred.core.knowledge.WebFeed.MESSAGE));
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(record[0].isDone(), "The Record read");
+                    var events = record[0].join();
+                    var claim = events.stream().filter(e -> e.kind().equals(ClaimLedger.CLAIM) && chunk.equals(e.place())).toList();
+                    context.assertTrue(claim.size() == 1 && claim.getFirst().id() == cited.getFirst(), "The cited id is the claim's: " + claim + " " + cited);
+                    var note = events.stream().filter(e -> e.kind().equals(dev.kindred.core.knowledge.WebFeed.MESSAGE)
+                            && String.valueOf(cited.getFirst()).equals(e.data().get("cites"))).toList();
+                    context.assertTrue(note.size() == 1, "The Record's note of the delivery cites it: " + events);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> {
+                    f.runtime.onServerTick(server); // A fixture's runtime is ticked through its bodies; these are not back yet.
+                    context.assertTrue(f.runtime.isReady() && f.runtime.webs().rebuilt(), "Restarted, the webs rebuilt");
+                    var bram = KnowledgeWeb.Viewer.of(new Listener(ids[1], "Bram", false, Set.of(), "oak", "", "", false, null, null));
+                    var known = f.runtime.webs().existing(ids[1]).map(w -> w.about(bram, dev.kindred.core.knowledge.WebFeed.entityOf(ids[0], false),
+                            KnowledgeWeb.Verb.CLAIMED, server.getTicks())).orElse(List.of());
+                    context.assertTrue(known.size() == 1 && known.getFirst().provenance().events().equals(cited),
+                            "After a restart, from the Record alone, still resting on the claim's event: " + known);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped again"))
+                .completeIfSuccessful();
+    }
+
     private static boolean needs(NativePaidSkillsGameTests.Fixture f, UUID[] ids) {
         var web = f.runtime.webs().existing(ids[1]);
         if (web.isEmpty()) return false;

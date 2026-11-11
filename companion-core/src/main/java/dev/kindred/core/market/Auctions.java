@@ -45,7 +45,7 @@ public final class Auctions implements Ledger<AuctionBook> {
 
     @Override public String name() { return "auctions"; }
 
-    @Override public Set<String> kinds() { return Set.of(LIST, BID, CLOSE, CANCEL, ORDER, FILL, ORDER_CANCEL, DELIVERED); }
+    @Override public Set<String> kinds() { return Set.of(LIST, BID, CLOSE, CANCEL, ORDER, FILL, ORDER_CANCEL, DELIVERING, DELIVERED); }
 
     @Override public AuctionBook empty() { return AuctionBook.EMPTY; }
 
@@ -77,7 +77,10 @@ public final class Auctions implements Ledger<AuctionBook> {
                     var order = book.orders().get(e.subject());
                     yield order == null ? book : book.put(new AuctionBook.Order(order.id(), order.buyer(), order.key(), 0, order.each()));
                 }
-                case DELIVERED -> book.delivered(e.subject());
+                // A delivery begun is owed no longer: whatever happens after its begin is written (the hand-over, the
+                // player's file, the receipt), it is never begun again. Begun and not delivered after a stop or a crash, it is
+                // reported for an operator at the next start (market.uncertain), never handed over twice.
+                case DELIVERING, DELIVERED -> book.delivered(e.subject());
                 default -> book;
             };
         } catch (IllegalArgumentException | NullPointerException malformed) {
