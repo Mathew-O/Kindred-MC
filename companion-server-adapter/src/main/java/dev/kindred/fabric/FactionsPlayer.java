@@ -58,19 +58,21 @@ final class FactionsPlayer {
     }
 
     /**
-     * A walk toward {@code target} refused, from {@code at}, at the surface or not: the target waits as above, and the
-     * player's run of refusals grows; after {@value #STREAK} in a row, whatever the targets, no faction walk is asked
-     * for a while, and after that wait each further refusal with nothing between waits again, twice as long.
+     * A walk toward {@code target} refused, from {@code at}, at the surface or not: the target waits as above, and is
+     * set aside after {@value #SET_ASIDE}. Once {@value #STREAK} places have been set aside so with no walk between,
+     * whatever the places, no faction walk is asked for a while, and after that wait each further refusal with nothing
+     * between waits again, twice as long. Each place still gets its own three tries first.
      */
     void refused(String target, long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
         refusalsCounted++;
         var before = refused.get(target);
         int times = before == null ? 1 : before.times() + 1;
         refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
-        if (streak++ == 0) {
-            streakFrom = at == null ? null : at.toImmutable();
+        if (streakFrom == null && at != null) {
+            streakFrom = at.toImmutable();
             streakAtSurface = atSurface;
         }
+        if (times == SET_ASIDE) streak++;
         if (streak >= STREAK || pauses > 0) {
             pausedUntil = tick + Math.min(BACKOFF_MAX, PAUSE << Math.min(pauses, 10));
             pauses++;
@@ -107,8 +109,8 @@ final class FactionsPlayer {
         return pos.getY() >= top - 1;
     }
 
-    /** Refusals in a row, whatever the targets, before every faction walk waits; and how far a move ends the wait early. */
-    static final int STREAK = 3, STREAK_MOVED = 32;
+    /** Places set aside in a row, with no walk between, before every faction walk waits; and how far a move ends the wait early. */
+    static final int STREAK = 2, STREAK_MOVED = 32;
     /** Every faction walk's first wait, in ticks (half a minute); it doubles with each, to a game day at most. */
     static final long PAUSE = 600;
     private int streak, pauses;

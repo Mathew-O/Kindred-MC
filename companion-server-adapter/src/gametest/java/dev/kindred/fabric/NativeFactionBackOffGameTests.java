@@ -33,15 +33,21 @@ import net.minecraft.util.math.Vec3d;
 public final class NativeFactionBackOffGameTests implements FabricGameTest {
     private static final FactionSettings WIDE = FactionSettings.parse(Map.of("border", "60000000"));
     private static final String W = Territory.OVERWORLD;
+    /**
+     * The most faction walks refused in the island's six thousand ticks, set from the measured counts (F-35i's evidence):
+     * with no wait as a whole (main's rule) 35, 34 and 23; with it 9, 6 and 9.
+     */
+    private static final int BOUND = 15;
 
     /**
-     * Every faction walk that came back refused is counted by the back-off, and after three in a row, whatever the
-     * places, it asks for none for a while: few of them in two thousand ticks (eight before, two places three times each
-     * and again).
+     * Every faction walk that came back refused is counted by the back-off, and once two places have each been set
+     * aside, it asks for none for a while: few of them in six thousand ticks. Staged with five places on the border to
+     * go to, to stand for the live fan-out of many places each out of reach (Factions seed 303, diag-factions303: 494
+     * faction legs refused for no way against 62 done; seed 109, main a60f919: Kindred refused 89 times from a tunnel).
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionBackOff", tickLimit = 3000)
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionBackOff", tickLimit = 7000)
     public void aFactionWalkRefusedBetweenItsGoalsTasksIsBackedOffEachTime(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2900);
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 6900);
         var server = context.getWorld().getServer();
         ServerPlayerEntity[] ben = new ServerPlayerEntity[1];
         long[] start = {-1};
@@ -56,13 +62,14 @@ public final class NativeFactionBackOffGameTests implements FabricGameTest {
                     start[0] = server.getTicks();
                 })
                 .createAndAdd(() -> {
-                    // Two thousand ticks of its goal's work on the island, its faction walk refused between.
-                    context.assertTrue(server.getTicks() - start[0] >= 2000, "Two thousand ticks on");
+                    // Six thousand ticks of its goal's work on the island, its faction walk refused between.
+                    context.assertTrue(server.getTicks() - start[0] >= 6000, "Six thousand ticks on");
                     int[] counts = f.runtime.factionBlockedForTest(f.id);
+                    KindredMod.LOGGER.info("Back-off fixture: {} faction walks refused, {} counted, in 6,000 ticks", counts[0], counts[1]);
                     context.assertTrue(counts[0] >= 1, "Its faction walk asked and refused at least once: " + counts[0]);
                     context.assertTrue(counts[0] == counts[1], "Every refused faction walk counted by the back-off: " + counts[0]
                             + " refused, " + counts[1] + " counted; move " + f.runtime.factionMoveForTest(f.id));
-                    context.assertTrue(counts[0] <= 4, "Backed off, not asked again and again: " + counts[0] + " refused in 2,000 ticks");
+                    context.assertTrue(counts[0] <= BOUND, "Backed off, not asked again and again: " + counts[0] + " refused in 6,000 ticks");
                 })
                 .completeIfSuccessful();
     }
@@ -150,8 +157,12 @@ public final class NativeFactionBackOffGameTests implements FabricGameTest {
         var ledgers = f.runtime.projected();
         String red = ledgers.factions().named("Red").orElseThrow().id().toString();
         String blue = ledgers.factions().named("Blue").orElseThrow().id().toString();
-        f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, player.getUuid(), red, here.key(), Map.of()));
-        f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, here.offset(1, 0).key(), Map.of()));
+        // Red's land a column of five chunks, Blue's the five beside it east: five places on the border to go to, each
+        // out of reach from the island, as a tunnel's player has many places its faction play chooses.
+        for (int dz = -2; dz <= 2; dz++) {
+            f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, player.getUuid(), red, here.offset(0, dz).key(), Map.of()));
+            f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, here.offset(1, dz).key(), Map.of()));
+        }
         f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, here.offset(2, 0).key(), Map.of()));
         f.runtime.record(PowerRules.set(ben[0].getUuid(), 1, null, FactionSettings.DEFAULTS, server.getTicks(), System.currentTimeMillis()));
         return o;

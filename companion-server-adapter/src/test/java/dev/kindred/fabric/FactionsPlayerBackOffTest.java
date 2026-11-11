@@ -8,7 +8,9 @@ import net.minecraft.util.math.BlockPos;
 import org.junit.jupiter.api.Test;
 
 /**
- * Faction walks waiting as a whole (F-35i): three refused in a row, whatever the places, and none is asked for a while;
+ * Faction walks waiting as a whole (F-35i): two places each refused three times and set aside with no walk between,
+ * and none is asked for a while; each place keeps its own three tries ({@code NativeFactionPlayGameTests}' no-way
+ * fixture);
  * the wait ends early once it walks somewhere, moves 32 blocks off, or comes up to the surface having begun below. The
  * surface case is the one that matters in a tunnel (Factions seed 109: Kindred branch mining at Y 19); "at the surface"
  * itself, leaves not counted, is the adapter's {@code FactionsPlayer.atSurface}, read from the world's heightmap.
@@ -16,24 +18,41 @@ import org.junit.jupiter.api.Test;
 class FactionsPlayerBackOffTest {
     private static final BlockPos TUNNEL = new BlockPos(105, 19, 64);
 
+    /** Two places refused three times each from the tunnel, the last at {@code tick + 20}: both set aside. */
     private static FactionsPlayer refusedThrice(long tick) {
         var play = new FactionsPlayer();
-        play.refused("minecraft:overworld:9:5", tick, TUNNEL, false);
-        play.refused("minecraft:overworld:10:4", tick + 10, TUNNEL.east(2), false);
-        play.refused("minecraft:overworld:9:6", tick + 20, TUNNEL.east(4), false);
+        for (int i = 0; i < 3; i++) {
+            play.refused("minecraft:overworld:9:5", tick, TUNNEL.east(i), false);
+            play.refused("minecraft:overworld:10:4", tick + 10 + 10 * i / 2, TUNNEL.east(i), false);
+        }
         return play;
     }
 
     @Test
-    void threeRefusedInARowWhateverThePlacesAndEveryFactionWalkWaits() {
+    void twoPlacesSetAsideWithNothingBetweenAndEveryFactionWalkWaits() {
         var play = new FactionsPlayer();
-        play.refused("minecraft:overworld:9:5", 1000, TUNNEL, false);
+        for (int i = 0; i < 3; i++) play.refused("minecraft:overworld:9:5", 1000 + i, TUNNEL, false);
+        assertFalse(play.paused(1003, TUNNEL, false), "one place set aside: each place keeps its own three tries");
         play.refused("minecraft:overworld:10:4", 1010, TUNNEL, false);
-        assertFalse(play.paused(1011, TUNNEL, false), "two refused: not yet");
-        play.refused("minecraft:overworld:9:6", 1020, TUNNEL, false);
-        assertTrue(play.paused(1021, TUNNEL, false), "three refused, three places: every faction walk waits");
+        play.refused("minecraft:overworld:10:4", 1011, TUNNEL, false);
+        assertFalse(play.paused(1012, TUNNEL, false), "the second place twice: not yet");
+        assertEquals(2, play.refusals("minecraft:overworld:10:4"));
+        play.refused("minecraft:overworld:10:4", 1020, TUNNEL, false);
+        assertEquals(3, play.refusals("minecraft:overworld:10:4"), "the second place had its three tries");
+        assertTrue(play.paused(1021, TUNNEL, false), "two places set aside: every faction walk waits");
         assertTrue(play.paused(1020 + FactionsPlayer.PAUSE - 1, TUNNEL, false), "for the first wait");
         assertFalse(play.paused(1020 + FactionsPlayer.PAUSE, TUNNEL, false), "and no longer");
+    }
+
+    @Test
+    void aWalkCompletedBetweenTheTwoSetAsidesStartsNoWait() {
+        var play = new FactionsPlayer();
+        for (int i = 0; i < 3; i++) play.refused("minecraft:overworld:9:5", 1000 + i, TUNNEL, false);
+        play.walked("minecraft:overworld:3:3");
+        for (int i = 0; i < 3; i++) play.refused("minecraft:overworld:10:4", 1010 + i, TUNNEL, false);
+        assertFalse(play.paused(1013, TUNNEL, false), "a walk got somewhere between: the run began again, one place set aside since");
+        for (int i = 0; i < 3; i++) play.refused("minecraft:overworld:9:6", 1020 + i, TUNNEL, false);
+        assertTrue(play.paused(1023, TUNNEL, false), "a second place set aside since the walk: every faction walk waits");
     }
 
     @Test
@@ -52,7 +71,7 @@ class FactionsPlayerBackOffTest {
     void aRunBegunAtTheSurfaceIsNotEndedByStandingAtTheSurface() {
         var play = new FactionsPlayer();
         BlockPos island = new BlockPos(0, 100, 0);
-        for (int i = 0; i < 3; i++) play.refused("minecraft:overworld:" + i + ":0", 1000 + i, island, true);
+        for (int i = 0; i < 3; i++) for (int place = 0; place < 2; place++) play.refused("minecraft:overworld:" + place + ":0", 1000 + i, island, true);
         assertTrue(play.paused(1010, island.east(3), true), "on its island, at the surface throughout: still waiting");
     }
 
