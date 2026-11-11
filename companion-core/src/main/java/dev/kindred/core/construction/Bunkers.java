@@ -31,7 +31,7 @@ public final class Bunkers {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
         String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
-        String planks = VanillaIds.NAMESPACE + wood + "_planks";
+        String planks = Woods.planks(wood);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var open = new LinkedHashSet<Pos>();
         // The shed: three wide and five deep, three high, a planks roof, the door in the north wall.
@@ -43,8 +43,8 @@ public final class Bunkers {
             }
             at.put(new Pos(x, 3, z), BlockSpec.parse(planks));
         }
-        at.put(new Pos(1, 0, 0), BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_door[facing=south,half=lower,hinge=left,open=false]"));
-        at.put(new Pos(1, 1, 0), BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_door[facing=south,half=upper,hinge=left,open=false]"));
+        at.put(new Pos(1, 0, 0), BlockSpec.parse(Woods.door(wood) + "[facing=south,half=lower,hinge=left,open=false]"));
+        at.put(new Pos(1, 1, 0), BlockSpec.parse(Woods.door(wood) + "[facing=south,half=upper,hinge=left,open=false]"));
         at.put(new Pos(1, 2, 3), BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=north]"));
         // The floor inside the door.
         at.put(new Pos(STAIR_X, -1, STAIR_TOP), BlockSpec.parse(s));

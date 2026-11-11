@@ -1,0 +1,42 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 10.72, "tickMsWorst": 941.84, "tickMsWorstAt": 361, "ticksOver50ms": 329, "ticksOver200ms": 7, "heapMbMax": 955, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 360, "stone_tools": 2580, "iron_ingot": 7440, "iron_pickaxe": 32780, "obsidian": 67631},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 36400, "x": 199, "y": 22, "z": -76, "attempt": 1}, {"tick": 43980, "x": 231, "y": 58, "z": -79, "attempt": 2}, {"tick": 71580, "x": 207, "y": -54, "z": -55, "attempt": 1}, {"tick": 78220, "x": 205, "y": -54, "z": -52, "attempt": 2}, {"tick": 83140, "x": 202, "y": -45, "z": -28, "attempt": 1}, {"tick": 101600, "x": 199, "y": 64, "z": -43, "attempt": 2}, {"tick": 122920, "x": 208, "y": 67, "z": -33, "attempt": 3}, {"tick": 127520, "x": 195, "y": 68, "z": -19, "attempt": 4}, {"tick": 131260, "x": 192, "y": 68, "z": 4, "attempt": 5}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 220, "stone_tools": 2920, "iron_ingot": 10360, "iron_pickaxe": 37620, "obsidian": 84517, "portal_lit": 92184},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 88720, "x": 186, "y": -54, "z": 63, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1520, "stone_tools": 2940, "iron_ingot": 17400, "iron_pickaxe": 30820},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 37240, "x": 264, "y": 55, "z": -86, "attempt": 1}, {"tick": 42080, "x": 264, "y": 55, "z": -86, "attempt": 1}, {"tick": 50620, "x": 265, "y": 56, "z": -87, "attempt": 2}, {"tick": 54400, "x": 265, "y": 56, "z": -86, "attempt": 3}, {"tick": 58080, "x": 266, "y": 56, "z": -87, "attempt": 4}, {"tick": 72620, "x": 265, "y": 56, "z": -86, "attempt": 5}, {"tick": 77180, "x": 265, "y": 56, "z": -86, "attempt": 1}, {"tick": 80860, "x": 265, "y": 56, "z": -85, "attempt": 2}, {"tick": 95480, "x": 266, "y": 56, "z": -85, "attempt": 3}, {"tick": 99160, "x": 268, "y": 55, "z": -87, "attempt": 4}, {"tick": 102840, "x": 264, "y": 56, "z": -84, "attempt": 5}, {"tick": 106520, "x": 264, "y": 56, "z": -83, "attempt": 6}, {"tick": 121080, "x": 266, "y": 56, "z": -85, "attempt": 7}, {"tick": 125180, "x": 265, "y": 56, "z": -83, "attempt": 8}, {"tick": 128840, "x": 264, "y": 56, "z": -84, "attempt": 9}, {"tick": 143400, "x": 266, "y": 55, "z": -86, "attempt": 10}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
