@@ -9452,11 +9452,16 @@ final class PlayerRuntime {
 
     /** A fixture's AI player (by its companion id) chooses one faction act and does it now, as its own native_faction step would. */
     NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target) {
+        return factionActForTest(player, kind, target, 0);
+    }
+
+    /** As above, with the act's amount: a purchase's count, a bid's coins in hundredths. */
+    NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target, long amount) {
         requireThread();
         var entry = entries.get(player);
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) throw new IllegalStateException("No connected body");
-        entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, 0, "a fixture's act");
-        return factionAct(entry, kind, target, 0);
+        entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, amount, "a fixture's act");
+        return factionAct(entry, kind, target, amount);
     }
 
     /** A fixture's AI player (by its companion id) weighs the faction world now; what it chose is left for its turn. */
