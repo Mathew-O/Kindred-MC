@@ -15,6 +15,7 @@ fails in two or more of the runs given, or in the one run when only one is given
 given (each flagged scene run alone on the branch and on main's tip, three times each), a flagged scene blocks (exit 1)
 only when the branch fails it two or more times of three and main passes it two or more times of three: it is then
 confirmed. Otherwise it is cleared (noise, or main's own failure). Without confirming runs every flagged scene blocks.
+A flagged scene listed in tools/corpus/known-intermittent.txt is marked expected; the rule is the same for it.
 """
 import argparse
 import json
@@ -25,6 +26,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCENES = ROOT / "companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus"
+
+
+def known_intermittent(path):
+    """The scenes known intermittent on main though the baseline counts them passing: {id: why}."""
+    known = {}
+    if path.is_file():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            sid, _, why = line.partition("#")
+            if sid.strip():
+                known[sid.strip()] = why.strip() or "known intermittent"
+    return known
+
+
+KNOWN = known_intermittent(ROOT / "tools/corpus/known-intermittent.txt")
 
 
 def outcomes(results):
@@ -120,6 +135,9 @@ def main():
         lines += ["", f"Baseline: {stored['sha']} over {stored.get('runs', '?')} runs."]
     lines += ["", f"Flagged: passing on the baseline, now failing in {limit} or more of {len(runs)} run(s): {len(gate)}"
               + (" — " + ", ".join(gate) if gate else "")]
+    expected = [f"{sid} ({KNOWN[sid]})" for sid in gate if sid in KNOWN]
+    if expected:
+        lines.append(f"Known intermittent among the flagged (expected; the rule is unchanged): {len(expected)} — " + "; ".join(expected))
     if args.flagged_out:
         args.flagged_out.write_text("".join(sid + "\n" for sid in gate), encoding="utf-8")
     blocking = gate

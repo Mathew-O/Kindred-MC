@@ -1,0 +1,258 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 75760,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  327,
+  24,
+  146
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.278839969148862,
+  8.419999986886978,
+  16.658770325194666
+ ],
+ "yaw": -97.2348,
+ "pitch": 18.157116,
+ "health": 8.825003,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 22
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 22
+    }
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 15
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 56
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 2
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 22
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 50
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 3
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 18
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 17
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 6
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 8
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 43
+    }
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 3760,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from spider",
+ "task": "Back off from spider",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[08:29:48] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:29:49] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3169]",
+  "[08:29:50] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 309, 54, 149]",
+  "[08:29:52] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:29:53] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:29:54] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:29:58] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:29:58] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 317, 32, 110]",
+  "[08:30:00] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[08:30:00] [Server thread/INFO]: Echo native_goto COMPLETED [Back to where it saw iron ore at 317, 32, 110]",
+  "[08:30:03] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 321, 49, 145]",
+  "[08:30:05] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+  "[08:30:06] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 326, 47, 151 [Walk to iron ore at 326, 47, 151]",
+  "[08:30:06] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 316, 36, 160]",
+  "[08:30:09] [Server thread/INFO]: Echo native_fight COMPLETED [Fight skeleton]",
+  "[08:30:11] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+  "[08:30:11] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: step up]",
+  "[08:30:14] [Server thread/INFO]: Echo native_fight COMPLETED [Fight skeleton]",
+  "[08:30:17] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[08:30:18] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from spider]"
+ ],
+ "corpus": {
+  "run": "diag-factions303-079bdc2",
+  "seed": "303",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-factions303-1111@c5b3e43:diag-factions303-079bdc2/303/replays/world/Echo-75760",
+  "class": "death: spider",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}

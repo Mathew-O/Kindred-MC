@@ -68,6 +68,7 @@ public final class Capabilities {
     private final Map<String, Tool> tools;
     private final Map<String, Wood> woods;
     private final Map<String, java.util.List<Recipe>> recipes;
+    private final Map<String, java.util.List<Recipe>> uses;
 
     private Capabilities(Map<String, Set<String>> tagMembers) {
         this(tagMembers, Map.of(), java.util.List.of(), java.util.List.of());
@@ -97,6 +98,13 @@ public final class Capabilities {
         Map<String, java.util.List<Recipe>> frozen = new HashMap<>();
         byOutput.forEach((k, v) -> frozen.put(k, java.util.List.copyOf(v)));
         this.recipes = Map.copyOf(frozen);
+        Map<String, java.util.List<Recipe>> byInput = new HashMap<>();
+        for (Recipe recipe : serverRecipes) {
+            for (String input : recipe.inputs().keySet()) byInput.computeIfAbsent(input, k -> new java.util.ArrayList<>()).add(recipe);
+        }
+        Map<String, java.util.List<Recipe>> frozenUses = new HashMap<>();
+        byInput.forEach((k, v) -> frozenUses.put(k, java.util.List.copyOf(v)));
+        this.uses = Map.copyOf(frozenUses);
     }
 
     /** The vanilla facts, from {@link VanillaIds} alone. */
@@ -198,10 +206,16 @@ public final class Capabilities {
         return java.util.Optional.empty();
     }
 
-    /** The server's ways of making an item, as read; none for a vanilla item or one nothing makes. */
+    /** The server's ways of making an item, as read (those that make or take another namespace's item); none for one nothing makes. */
     public java.util.List<Recipe> recipesFor(String id) {
         if (id == null || id.isBlank()) return java.util.List.of();
         return recipes.getOrDefault(normalize(id), java.util.List.of());
+    }
+
+    /** The server's recipes, as read, that take an item; none for one no recipe it read takes. */
+    public java.util.List<Recipe> recipesUsing(String id) {
+        if (id == null || id.isBlank()) return java.util.List.of();
+        return uses.getOrDefault(normalize(id), java.util.List.of());
     }
 
     /** An id in its full form: trimmed, lower case, the vanilla namespace added when it has none. */
