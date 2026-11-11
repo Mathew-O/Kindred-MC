@@ -1,5 +1,8 @@
 package dev.kindred.core.progression;
 
+import dev.kindred.core.Capabilities;
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,14 +56,14 @@ public final class MilestoneGraph {
         // 3. Sticks
         map.put(MilestoneId.CRAFT_STICKS, new Milestone(
                 MilestoneId.CRAFT_STICKS, "Craft Sticks", Set.of(MilestoneId.CRAFT_PLANKS),
-                obs -> obs.has("minecraft:stick", 1) || hasPickaxeTier(obs, 1),
+                obs -> obs.has(VanillaIds.STICK, 1) || hasPickaxeTier(obs, 1),
                 52.0
         ));
 
         // 4. Crafting table creation
         map.put(MilestoneId.CRAFT_CRAFTING_TABLE, new Milestone(
                 MilestoneId.CRAFT_CRAFTING_TABLE, "Craft Crafting Table", Set.of(MilestoneId.CRAFT_PLANKS),
-                obs -> obs.has("minecraft:crafting_table", 1) || obs.hasNearbyCraftingTable(),
+                obs -> obs.has(VanillaIds.CRAFTING_TABLE, 1) || obs.hasNearbyCraftingTable(),
                 53.0
         ));
 
@@ -82,7 +85,7 @@ public final class MilestoneGraph {
         // 7. Mine cobblestone
         map.put(MilestoneId.MINE_COBBLESTONE, new Milestone(
                 MilestoneId.MINE_COBBLESTONE, "Mine Cobblestone", Set.of(MilestoneId.CRAFT_WOODEN_PICKAXE),
-                obs -> obs.has("minecraft:cobblestone", 1) || hasPickaxeTier(obs, 2),
+                obs -> obs.has(VanillaIds.COBBLESTONE, 1) || hasPickaxeTier(obs, 2),
                 56.0
         ));
 
@@ -98,7 +101,7 @@ public final class MilestoneGraph {
         map.put(MilestoneId.CRAFT_FURNACE, new Milestone(
                 MilestoneId.CRAFT_FURNACE, "Craft Furnace",
                 Set.of(MilestoneId.MINE_COBBLESTONE, MilestoneId.DEPLOY_CRAFTING_TABLE),
-                obs -> obs.has("minecraft:furnace", 1) || obs.hasNearbyFurnace(),
+                obs -> obs.has(VanillaIds.FURNACE, 1) || obs.hasNearbyFurnace(),
                 58.0
         ));
 
@@ -112,8 +115,8 @@ public final class MilestoneGraph {
         // 11. Smelt resources (charcoal / iron / food)
         map.put(MilestoneId.SMELT_RESOURCES, new Milestone(
                 MilestoneId.SMELT_RESOURCES, "Smelt Resources", Set.of(MilestoneId.DEPLOY_FURNACE),
-                obs -> obs.has("minecraft:iron_ingot", 1) || obs.has("minecraft:charcoal", 1)
-                        || obs.has("minecraft:cooked_beef", 1) || obs.has("minecraft:cooked_porkchop", 1),
+                obs -> obs.has(VanillaIds.IRON_INGOT, 1) || obs.has(VanillaIds.CHARCOAL, 1)
+                        || obs.has(VanillaIds.COOKED_BEEF, 1) || obs.has(VanillaIds.COOKED_PORKCHOP, 1),
                 60.0
         ));
 
@@ -129,7 +132,7 @@ public final class MilestoneGraph {
         map.put(MilestoneId.CRAFT_SHIELD, new Milestone(
                 MilestoneId.CRAFT_SHIELD, "Craft Shield",
                 Set.of(MilestoneId.SMELT_RESOURCES, MilestoneId.CRAFT_PLANKS, MilestoneId.DEPLOY_CRAFTING_TABLE),
-                obs -> obs.has("minecraft:shield", 1),
+                obs -> obs.has(VanillaIds.SHIELD, 1),
                 62.0
         ));
 
@@ -137,8 +140,7 @@ public final class MilestoneGraph {
         map.put(MilestoneId.CRAFT_IRON_SWORD, new Milestone(
                 MilestoneId.CRAFT_IRON_SWORD, "Craft Iron Sword",
                 Set.of(MilestoneId.SMELT_RESOURCES, MilestoneId.DEPLOY_CRAFTING_TABLE),
-                obs -> obs.has("minecraft:iron_sword", 1) || obs.has("minecraft:diamond_sword", 1)
-                        || obs.has("minecraft:netherite_sword", 1),
+                obs -> obs.hasTool(Capabilities.Tool.SWORD, 3),
                 63.0
         ));
 
@@ -161,7 +163,7 @@ public final class MilestoneGraph {
         map.put(MilestoneId.ESTABLISH_FARM, new Milestone(
                 MilestoneId.ESTABLISH_FARM, "Establish Cultivated Farm",
                 Set.of(MilestoneId.CRAFT_HOE),
-                obs -> obs.hasCultivatedFarm() || obs.has("minecraft:wheat", 1) || obs.has("minecraft:bread", 1) || obs.has("minecraft:carrot", 1) || obs.has("minecraft:potato", 1),
+                obs -> obs.hasCultivatedFarm() || obs.has(VanillaIds.WHEAT, 1) || obs.has(VanillaIds.BREAD, 1) || obs.has(VanillaIds.CARROT, 1) || obs.has(VanillaIds.POTATO, 1),
                 62.0
         ));
 
@@ -185,7 +187,7 @@ public final class MilestoneGraph {
         map.put(MilestoneId.GATHER_BLAZE_RODS, new Milestone(
                 MilestoneId.GATHER_BLAZE_RODS, "Gather Blaze Rods",
                 Set.of(MilestoneId.ENTER_NETHER),
-                obs -> obs.has("minecraft:blaze_rod", 1),
+                obs -> obs.has(VanillaIds.ICON_NETHER_END, 1),
                 66.0
         ));
 
@@ -193,7 +195,7 @@ public final class MilestoneGraph {
         map.put(MilestoneId.GATHER_NETHER_WART, new Milestone(
                 MilestoneId.GATHER_NETHER_WART, "Gather Nether Wart",
                 Set.of(MilestoneId.ENTER_NETHER),
-                obs -> obs.has("minecraft:nether_wart", 1),
+                obs -> obs.has(VanillaIds.NETHER_WART, 1),
                 66.5
         ));
 
@@ -265,28 +267,17 @@ public final class MilestoneGraph {
 
     /** Whether the player has any kind of log. */
     private static boolean hasAnyWoodLog(ProgressionObservation obs) {
-        return obs.has("minecraft:oak_log", 1) || obs.has("minecraft:birch_log", 1)
-                || obs.has("minecraft:spruce_log", 1) || obs.has("minecraft:jungle_log", 1)
-                || obs.has("minecraft:acacia_log", 1) || obs.has("minecraft:dark_oak_log", 1)
-                || obs.has("minecraft:mangrove_log", 1) || obs.has("minecraft:cherry_log", 1);
+        return obs.has(VanillaIds.LOGS, 1);
     }
 
     /** Whether the player has any kind of planks. */
     private static boolean hasAnyPlank(ProgressionObservation obs) {
-        return obs.has("minecraft:oak_planks", 1) || obs.has("minecraft:birch_planks", 1)
-                || obs.has("minecraft:spruce_planks", 1) || obs.has("minecraft:jungle_planks", 1)
-                || obs.has("minecraft:acacia_planks", 1) || obs.has("minecraft:dark_oak_planks", 1)
-                || obs.has("minecraft:mangrove_planks", 1) || obs.has("minecraft:cherry_planks", 1)
-                || obs.has("minecraft:bamboo_planks", 1);
+        return obs.has(VanillaIds.PLANKS, 1);
     }
 
     /** Whether the player has a pickaxe at least this good. */
     private static boolean hasPickaxeTier(ProgressionObservation obs, int minimumTier) {
-        if (minimumTier <= 1 && obs.has("minecraft:wooden_pickaxe", 1)) return true;
-        if (minimumTier <= 2 && obs.has("minecraft:stone_pickaxe", 1)) return true;
-        if (minimumTier <= 3 && obs.has("minecraft:iron_pickaxe", 1)) return true;
-        if (minimumTier <= 4 && obs.has("minecraft:diamond_pickaxe", 1)) return true;
-        return obs.has("minecraft:netherite_pickaxe", 1);
+        return obs.hasTool(Capabilities.Tool.PICKAXE, Math.max(1, Math.min(minimumTier, 5)));
     }
 
     /** Puts the steps in an order where each comes after what it needs. */

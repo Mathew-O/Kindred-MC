@@ -1,5 +1,7 @@
 package dev.kindred.core.match;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Pos;
 
 import java.util.ArrayList;
@@ -33,9 +35,9 @@ public final class PursuitBlock {
     }
 
     /** Blocks a player spends to shut a way behind it: plain fillers of no other worth to it. Gravity blocks are not among them. */
-    public static final Set<String> FILLERS = Set.of("minecraft:cobblestone", "minecraft:cobbled_deepslate", "minecraft:dirt",
-            "minecraft:coarse_dirt", "minecraft:stone", "minecraft:andesite", "minecraft:diorite", "minecraft:granite",
-            "minecraft:tuff", "minecraft:netherrack", "minecraft:deepslate");
+    public static final Set<String> FILLERS = Set.of(VanillaIds.COBBLESTONE, VanillaIds.COBBLED_DEEPSLATE, VanillaIds.DIRT,
+            VanillaIds.COARSE_DIRT, VanillaIds.STONE, VanillaIds.ANDESITE, VanillaIds.DIORITE, VanillaIds.GRANITE,
+            VanillaIds.TUFF, VanillaIds.NETHERRACK, VanillaIds.DEEPSLATE);
 
     /** How near the pursuer must be for the gap to be worth shutting, and how far: it is coming, but not yet upon it. */
     public static final double NEAREST = 3.5, FARTHEST = 16;

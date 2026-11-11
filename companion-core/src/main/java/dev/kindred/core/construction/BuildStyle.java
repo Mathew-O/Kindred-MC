@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.Locale;
 
 /**
@@ -51,7 +53,7 @@ public record BuildStyle(String seed, String wood, String stone, int variant, in
     /** The wood a block is of (a log, planks, stairs, a slab, a door, wood, stripped or not), or null. */
     public static String woodOf(String block) {
         if (block == null) return null;
-        String id = block.startsWith("minecraft:") ? block.substring("minecraft:".length()) : block;
+        String id = block.startsWith(VanillaIds.NAMESPACE) ? block.substring(VanillaIds.NAMESPACE.length()) : block;
         if (id.startsWith("stripped_")) id = id.substring("stripped_".length());
         for (String suffix : new String[] {"_log", "_wood", "_planks", "_stairs", "_slab", "_door", "_fence", "_trapdoor", "_sapling", "_leaves"}) {
             if (!id.endsWith(suffix)) continue;
