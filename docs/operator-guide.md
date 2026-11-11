@@ -16,6 +16,9 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer goal end [bot]             on from a lit portal to the End portal (earns the portal first)
 /aiplayer goal dragon [bot]          on through the End portal to beat the Ender Dragon (needs dragonfight on)
 /aiplayer dragonfight on|off         server-wide leave for AI players to go into the End and fight the dragon (default off)
+/aiplayer teleport allow|forbid      free travel (teleports) for every player alike, human or AI (default forbid; announced to all)
+/aiplayer freeitems allow|forbid     free items (kits, creative storage) for every player alike (default forbid; announced to all)
+/aiplayer policy                     tell the standing rule for free travel and free items
 /aiplayer goal none [bot]            stop pursuing the goal
 /aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
 /aiplayer build cabin|house|manor <x y z> [turns] [bot]  build a stage of a base there, of oak and cobblestone
@@ -62,6 +65,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 - After adding files, press Reload in the selector.
 
 How many native AI players the server allows is its own policy too: `maxNativePlayers=N` in `<world>/kindred/edits.properties` (3 when absent, at most 12; the server logs the value at startup, and a refused creation names the setting). It is kept when an operator's command rewrites the file. Raising it is a capacity decision: the month run's eight wait on an engine run at eight that measures tick time and heap (M-06i, M-06k).
+
+Free travel and free items are forbidden until an operator allows them (`teleport=allow`, `freeItems=allow` in `edits.properties`; mod-support decision 6). Allowed, a switch is the same rule for every player, human or AI: each change is announced to everyone online in the same words and kept in the World Record with who made it (`policy.set`). No AI skill teleports or takes a free item; with teleporting allowed, `/faction home` takes a person who asks to the faction's home and still only tells an AI player where it is. An eval run with either switch allowed is not earned: `eval-result.json` records both, `score.py` names the run and `compare.py` refuses it, so no ladder counts a teleport or a free item.
 
 World edits stay off until an operator turns them on; a fresh world has no `edits.properties`, which means off (decision D4). With edits on and no assigned work area, the player follows the roaming policy: it may break and place where a survival player could, never containers or block entities other than its own empty furnace, never in spawn protection, never the block under its own feet, and never a break that would let lava out (obsidian guarded by water is the one exception).
 
@@ -800,7 +805,7 @@ on the first start (10 members, power 0 to 10 starting at 10, −2 a qualifying 
 In a faction world:
 
 - `/faction create <name> <tag> [colour]`, `invite|uninvite|kick|promote|demote|leader <player>`, `join <faction>`,
-  `leave`, `ally|truce|enemy <faction>`, `sethome`, `home` (tells where it is; nothing teleports), `colour <dye>`,
+  `leave`, `ally|truce|enemy <faction>`, `sethome`, `home` (tells where it is; with `/aiplayer teleport allow`, takes a person there), `colour <dye>`,
   `disband`, `info [faction]`, `list`, `power [player]`. People and AI players use the same rules; an operator makes a
   request for an AI player with `/faction as <player> <request>`.
 - The leader alone sets ranks, hands over the lead, chooses the colour (one of the sixteen dyes) and disbands; officers
@@ -979,6 +984,9 @@ for each player, with:
 - what it weighed at its last decision, with each candidate's priority and score;
 - what it said last, and the lines before that;
 - its habits and notes;
+- what it was told lately on the Wire, its last ten: a message whose every fact is public in full, and of anything
+  narrower (its team's, its faction's, its side's, its own) only who it came from, the channel and the kind, as
+  "[faction] Ada: need (kept to its faction)", so a page on a stream never shows a team's or a faction's facts;
 - a feed of highlights: deaths, the stages of its run, rescues, habits taken up, matches starting and ending.
 
 It reads once a second. The same data is served as JSON, each request with the token, as `Authorization: Bearer <token>`

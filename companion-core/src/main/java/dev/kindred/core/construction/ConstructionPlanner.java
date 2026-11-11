@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.BuildSite.Cell;
 import dev.kindred.core.construction.Pos.Face;
 
@@ -39,13 +41,13 @@ public final class ConstructionPlanner {
     /** For a block whose state is the way the player faces, the look stays this many degrees inside the quarter. */
     static final double FACING_MARGIN = 35;
     /** The highest drop it walks off, as the navigator does without a water bucket. */
-    static final int MAX_DROP = 3;
+    public static final int MAX_DROP = 3;
     /** Spots weighed in working out where it can walk. */
     static final int WALK_BUDGET = 40_000;
     /** How far from a target a scaffold column may stand. */
     static final int SCAFFOLD_RADIUS = 4;
     /** A scaffold block, as the planner reckons it while weighing a column. */
-    private static final Cell SCAFFOLD_CELL = new Cell(BuildSite.Kind.SOLID, BlockSpec.of("minecraft:dirt"), true);
+    private static final Cell SCAFFOLD_CELL = new Cell(BuildSite.Kind.SOLID, BlockSpec.of(VanillaIds.DIRT), true);
     /** Tallest prop it puts up beside a block with nothing to be set against. */
     static final int MAX_PROP = 6;
     /** Tallest scaffold column it builds. */
@@ -724,7 +726,7 @@ public final class ConstructionPlanner {
     /** A wooden door, either half: a way through for a player, unlike an iron one. */
     static boolean doorway(BlockSpec spec) {
         String id = spec.block();
-        return id.endsWith("_door") && !id.endsWith("_trapdoor") && !id.equals("minecraft:iron_door");
+        return id.endsWith("_door") && !id.endsWith("_trapdoor") && !id.equals(VanillaIds.IRON_DOOR);
     }
 
     private static boolean sealedIn(BuildSite site, Pos stance, Pos placing, Map<Pos, BlockSpec> wanted, Box box) {

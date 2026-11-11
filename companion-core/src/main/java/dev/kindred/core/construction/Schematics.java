@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,19 +32,19 @@ public final class Schematics {
      * Blocks a survival player cannot get as an item at all: they are never in a bill of materials as something to
      * gather, only reported (M-05).
      */
-    public static final Set<String> UNOBTAINABLE = Set.of("minecraft:bedrock", "minecraft:barrier", "minecraft:light",
-            "minecraft:command_block", "minecraft:chain_command_block", "minecraft:repeating_command_block",
-            "minecraft:structure_block", "minecraft:structure_void", "minecraft:jigsaw", "minecraft:spawner",
-            "minecraft:trial_spawner", "minecraft:vault", "minecraft:end_portal_frame", "minecraft:end_portal",
-            "minecraft:nether_portal", "minecraft:end_gateway", "minecraft:budding_amethyst", "minecraft:reinforced_deepslate",
-            "minecraft:petrified_oak_slab", "minecraft:farmland", "minecraft:dirt_path", "minecraft:frosted_ice",
-            "minecraft:chorus_plant", "minecraft:infested_stone", "minecraft:infested_cobblestone",
-            "minecraft:infested_stone_bricks", "minecraft:infested_mossy_stone_bricks", "minecraft:infested_cracked_stone_bricks",
-            "minecraft:infested_chiseled_stone_bricks", "minecraft:infested_deepslate", "minecraft:moving_piston",
-            "minecraft:piston_head", "minecraft:fire", "minecraft:soul_fire", "minecraft:water", "minecraft:lava",
-            "minecraft:bubble_column", "minecraft:tall_seagrass", "minecraft:test_block", "minecraft:test_instance_block");
+    public static final Set<String> UNOBTAINABLE = Set.of(VanillaIds.BEDROCK, VanillaIds.BARRIER, VanillaIds.LIGHT,
+            VanillaIds.COMMAND_BLOCK, VanillaIds.CHAIN_COMMAND_BLOCK, VanillaIds.REPEATING_COMMAND_BLOCK,
+            VanillaIds.STRUCTURE_BLOCK, VanillaIds.STRUCTURE_VOID, VanillaIds.JIGSAW, VanillaIds.SPAWNER,
+            VanillaIds.TRIAL_SPAWNER, VanillaIds.VAULT, VanillaIds.END_PORTAL_FRAME, VanillaIds.END_PORTAL,
+            VanillaIds.NETHER_PORTAL, VanillaIds.END_GATEWAY, VanillaIds.BUDDING_AMETHYST, VanillaIds.REINFORCED_DEEPSLATE,
+            VanillaIds.PETRIFIED_OAK_SLAB, VanillaIds.FARMLAND, VanillaIds.DIRT_PATH, VanillaIds.FROSTED_ICE,
+            VanillaIds.CHORUS_PLANT, VanillaIds.INFESTED_STONE, VanillaIds.INFESTED_COBBLESTONE,
+            VanillaIds.INFESTED_STONE_BRICKS, VanillaIds.INFESTED_MOSSY_STONE_BRICKS, VanillaIds.INFESTED_CRACKED_STONE_BRICKS,
+            VanillaIds.INFESTED_CHISELED_STONE_BRICKS, VanillaIds.INFESTED_DEEPSLATE, VanillaIds.MOVING_PISTON,
+            VanillaIds.PISTON_HEAD, VanillaIds.FIRE, VanillaIds.SOUL_FIRE, VanillaIds.WATER, VanillaIds.LAVA,
+            VanillaIds.BUBBLE_COLUMN, VanillaIds.TALL_SEAGRASS, VanillaIds.TEST_BLOCK, VanillaIds.TEST_INSTANCE_BLOCK);
 
-    private static final Set<String> VOID = Set.of("minecraft:structure_void");
+    private static final Set<String> VOID = Set.of(VanillaIds.STRUCTURE_VOID);
 
     private Schematics() { }
 

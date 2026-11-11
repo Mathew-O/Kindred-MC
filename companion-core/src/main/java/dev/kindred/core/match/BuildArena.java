@@ -1,5 +1,7 @@
 package dev.kindred.core.match;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Pos;
 
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ public final class BuildArena {
     /** The podium's blocks for the given number of places (one to three), by position: gold, iron and copper steps. */
     public Map<Pos, String> podiumBlocks(int places) {
         var out = new LinkedHashMap<Pos, String>();
-        String[] kind = {"minecraft:gold_block", "minecraft:iron_block", "minecraft:copper_block"};
+        String[] kind = {VanillaIds.GOLD_BLOCK, VanillaIds.IRON_BLOCK, VanillaIds.COPPER_BLOCK};
         for (int i = 0; i < Math.min(3, Math.max(0, places)); i++) {
             Pos top = podium.get(i);
             int height = 3 - i;
@@ -72,17 +74,17 @@ public final class BuildArena {
         // The walkway, one up from the plots' floor, from the lobby pad to the podium, with a railing on its far side.
         for (int x = westX; x <= eastX; x++) {
             for (int dz = 0; dz < WALK_WIDTH; dz++) {
-                blocks.put(new Pos(x, floor + 1, walkZ + dz), "minecraft:polished_andesite");
-                for (int y = 2; y <= 4; y++) blocks.put(new Pos(x, floor + y, walkZ + dz), "minecraft:air");
+                blocks.put(new Pos(x, floor + 1, walkZ + dz), VanillaIds.POLISHED_ANDESITE);
+                for (int y = 2; y <= 4; y++) blocks.put(new Pos(x, floor + y, walkZ + dz), VanillaIds.AIR);
             }
-            blocks.put(new Pos(x, floor + 1, walkZ + WALK_WIDTH), "minecraft:polished_andesite");
-            blocks.put(new Pos(x, floor + 2, walkZ + WALK_WIDTH), "minecraft:oak_fence");
+            blocks.put(new Pos(x, floor + 1, walkZ + WALK_WIDTH), VanillaIds.POLISHED_ANDESITE);
+            blocks.put(new Pos(x, floor + 2, walkZ + WALK_WIDTH), VanillaIds.OAK_FENCE);
         }
         // The lobby pad at the walkway's west end, reaching north alongside the first plot.
         for (int x = westX; x < westX + LOBBY; x++) {
             for (int z = walkZ + WALK_WIDTH - LOBBY; z < walkZ + WALK_WIDTH; z++) {
-                blocks.put(new Pos(x, floor + 1, z), "minecraft:smooth_quartz");
-                for (int y = 2; y <= 4; y++) blocks.put(new Pos(x, floor + y, z), "minecraft:air");
+                blocks.put(new Pos(x, floor + 1, z), VanillaIds.SMOOTH_QUARTZ);
+                for (int y = 2; y <= 4; y++) blocks.put(new Pos(x, floor + y, z), VanillaIds.AIR);
             }
         }
         Pos lobby = new Pos(westX + LOBBY / 2, floor + 2, walkZ + WALK_WIDTH - LOBBY / 2 - 1);
@@ -91,7 +93,7 @@ public final class BuildArena {
         for (var plot : plots) {
             Pos spot = new Pos(plot.origin().x() + BuildBattle.PLOT / 2, floor + 2, walkZ + 1);
             spots.put(plot.builder(), spot);
-            blocks.put(new Pos(spot.x(), floor + 1, spot.z()), "minecraft:gold_block");
+            blocks.put(new Pos(spot.x(), floor + 1, spot.z()), VanillaIds.GOLD_BLOCK);
         }
         // The podium across the walkway's east end, facing anyone coming along it: first in the middle, second on the
         // plots' side, third on the railing's.
@@ -100,7 +102,7 @@ public final class BuildArena {
         podium.add(new Pos(podiumX, floor + 2 + 3, walkZ + 1));
         podium.add(new Pos(podiumX, floor + 2 + 2, walkZ));
         podium.add(new Pos(podiumX, floor + 2 + 1, walkZ + 2));
-        for (Pos step : podium) for (int y = step.y(); y <= step.y() + 2; y++) blocks.put(new Pos(step.x(), y, step.z()), "minecraft:air");
+        for (Pos step : podium) for (int y = step.y(); y <= step.y() + 2; y++) blocks.put(new Pos(step.x(), y, step.z()), VanillaIds.AIR);
         return new BuildArena(blocks, spots, lobby, podium);
     }
 }
