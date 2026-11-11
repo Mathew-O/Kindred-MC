@@ -7764,6 +7764,7 @@ final class PlayerRuntime {
             boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
                     && entry.dispatchSource.startsWith("factionCandidates");
             if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
+            if (factionWalk) entry.factionPlay.walksEnded++;
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
@@ -9293,8 +9294,8 @@ final class PlayerRuntime {
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
         }
-        if (play.waiting(move.target(), tick)) return null;
-        // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up.
+        // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
+        // way is made toward any of them meanwhile (F-35i).
         if (play.paused(tick, player.getBlockPos(), FactionsPlayer.atSurface(player))) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
@@ -9303,12 +9304,63 @@ final class PlayerRuntime {
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
         }
+        // Its walk would end in open water it saw (F-35j): the place set aside at once, with no walk asked and no way made.
+        // On Factions seed 303 the players' land is an island, and the places its faction play chose east of it were open
+        // sea, refused leg after leg. Only what it saw counts; out of its sight the walk is asked as before.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && seenOpenWater(entry, play, player, to, tick)) {
+            play.openWater(move.target(), tick);
+            play.move = null;
+            play.decidedAt = Long.MIN_VALUE / 2;
+            return null;
+        }
+        // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
+        // own put, as a player climbs out of a hollow, through the run's own route builder under the server's edit policy
+        // and the faction land's rules; then the walk is asked again. On Factions seed 109 in RUNNER 2's trace the players'
+        // spawn was a basin no walk leaves, and 253 of the 359 refused legs had searched all of it (1,184 positions).
+        if (play.refusals(move.target()) > 0 && play.waysMade(move.target()) < FactionsPlayer.WAY_STEPS) {
+            var way = factionWay(entry, body, move, to);
+            if (way != null) return way;
+        }
+        if (play.waiting(move.target(), tick)) return null;
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(FactionsPlayer.taskId(player.getUuid(), move),
                 dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0, dev.kindred.core.TaskPreferences.Affinities.none(),
                 new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /** Whether the way toward a faction walk's end {@code to} is open water the player saw (F-35j); a dry answer kept a second for the same end. */
+    private boolean seenOpenWater(Entry entry, FactionsPlayer play, ServerPlayerEntity player, BlockPos to, long tick) {
+        if (entry.campaign == null) return false;
+        if (to.equals(play.dryAt) && tick - play.dryAtTick < 20) return false;
+        boolean water = entry.campaign.knowledge().seenOpenWaterToward(player.getBlockPos(), to, FactionsPlayer.OPEN_WATER);
+        if (!water) {
+            play.dryAt = to.toImmutable();
+            play.dryAtTick = tick;
+        }
+        return water;
+    }
+
+    /**
+     * The next step of a way made toward {@code to}, where a faction walk there was refused: a dug step, a block of its own
+     * put or the walk up to where that is needed, never a way that only walks (that was refused). Null when the server
+     * allows no edits or the route builder finds none, and the walk waits as before.
+     */
+    private List<NativeTaskCandidate> factionWay(Entry entry, NativePlayerBody body, dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
+        if (!worldEditsEnabled()) return null;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        var task = entry.campaign.buildRoute(body, edits, to, p -> p.getSquaredDistance(to) <= 9, true, "Make a way toward " + to.toShortString());
+        if (task.isEmpty()) return null;
+        entry.factionPlay.wayMade(move.target());
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("faction-way:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.campaignTasks.clear();
+        entry.campaignTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
     /** Who {@code id} (an AI player's own id, or a person's) is in, as a faction id; empty outside a faction world or a faction. */
@@ -9506,6 +9558,20 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+    }
+
+    /** How many times the fixture's AI player has looked all round it (its perception's sweeps); -1 before it looks at all. */
+    int sweepsForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null || entry.campaign == null ? -1 : entry.campaign.knowledge().sweeps();
+    }
+
+    /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
+    int[] factionOverWaterForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.overWater, entry.factionPlay.walksEnded};
     }
 
     /** Whether the fixture's AI player's faction walks all wait now, where it stands. */
