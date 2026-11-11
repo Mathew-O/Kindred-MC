@@ -1,0 +1,87 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 6460,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    399,
+    54,
+    173
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.487755788721074,
+    8.766367993957523,
+    16.437095836573036
+  ],
+  "yaw": -54.00293,
+  "pitch": 18.144955,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 6459,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 438, 63, 189",
+  "task": "try elsewhere, toward 438, 63, 189",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[08:11:30] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 447, 63, 223 [from factionCandidates:9266]",
+    "[08:11:38] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 447, 63, 223 [from factionCandidates:9266]",
+    "[08:11:38] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 462, 63, 194 [from factionCandidates:9266]",
+    "[08:11:42] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 462, 63, 194 [from factionCandidates:9266]",
+    "[08:11:49] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 462, 63, 194 [from factionCandidates:9266]",
+    "[08:11:49] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 458, 63, 207 [from factionCandidates:9266]",
+    "[08:11:49] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 453, 63, 217 [from factionCandidates:9266]",
+    "[08:11:52] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 453, 63, 217 [from factionCandidates:9266]",
+    "[08:11:57] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 453, 63, 217 [from factionCandidates:9266]",
+    "[08:11:57] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 447, 63, 223 [from factionCandidates:9266]",
+    "[08:11:57] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 462, 63, 193 [from factionCandidates:9266]",
+    "[08:12:00] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 462, 63, 193 [from factionCandidates:9266]",
+    "[08:12:06] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 462, 63, 193 [from factionCandidates:9266]",
+    "[08:12:06] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 462, 63, 194 [from factionCandidates:9266]",
+    "[08:12:06] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 460, 63, 203 [from factionCandidates:9266]",
+    "[08:12:11] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 460, 63, 203 [from factionCandidates:9266]",
+    "[08:12:16] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 460, 63, 203 [from factionCandidates:9266]",
+    "[08:12:16] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 458, 63, 207 [from factionCandidates:9266]",
+    "[08:12:17] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 453, 63, 217 [from factionCandidates:9266]",
+    "[08:12:17] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 456, 63, 212 [from factionCandidates:9266]"
+  ]
+}

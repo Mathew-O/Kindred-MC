@@ -1,0 +1,48 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144074,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 144, "factions": 3, "claims": 8, "captures": 0, "sales": 30, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 2, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 18.55, "tickMsWorst": 1277.87, "tickMsWorstAt": 5838, "ticksOver50ms": 2082, "ticksOver200ms": 8, "heapMbMax": 1224, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 47980, "stone_tools": 49500, "iron_ingot": 52500, "iron_pickaxe": 74240, "obsidian": 80041},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 27340, "x": -445, "y": 68, "z": 342, "attempt": 1}, {"tick": 31060, "x": -468, "y": 71, "z": 338, "attempt": 2}, {"tick": 34920, "x": -413, "y": 66, "z": 324, "attempt": 3}, {"tick": 70180, "x": -203, "y": 18, "z": 43, "attempt": 1}, {"tick": 84020, "x": -195, "y": 72, "z": 60, "attempt": 1}, {"tick": 98920, "x": -198, "y": 68, "z": 79, "attempt": 2}, {"tick": 103600, "x": -219, "y": 69, "z": 79, "attempt": 3}, {"tick": 107400, "x": -194, "y": 62, "z": 84, "attempt": 4}, {"tick": 123280, "x": -178, "y": 64, "z": 96, "attempt": 5}, {"tick": 127940, "x": -182, "y": 74, "z": 123, "attempt": 6}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 59740, "stone_tools": 60720, "iron_ingot": 66040, "iron_pickaxe": 79460},
+      "deaths": [
+        {"tick": 41616, "cause": "Sol was impaled by Drowned", "x": 440, "y": 61, "z": 209, "light": 2, "timeOfDay": 17778, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Wood: Get out of the water: up for air (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "Get out of the water: up for air"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 27520, "x": 407, "y": 64, "z": 210, "attempt": 1}, {"tick": 32500, "x": 407, "y": 60, "z": 209, "attempt": 2}, {"tick": 58600, "x": -46, "y": 66, "z": 569, "attempt": 1}, {"tick": 98980, "x": -8, "y": 86, "z": 567, "attempt": 1}, {"tick": 102760, "x": -8, "y": 86, "z": 567, "attempt": 2}, {"tick": 106480, "x": -8, "y": 88, "z": 564, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 49300, "stone_tools": 50040, "iron_ingot": 56740, "iron_pickaxe": 111500},
+      "deaths": [
+        {"tick": 75598, "cause": "Echo was slain by Spider", "x": 343, "y": 32, "z": 162, "light": 0, "timeOfDay": 3760, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Back off from spider", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 6300, "x": 415, "y": 62, "z": 189, "attempt": 1}, {"tick": 10200, "x": 414, "y": 63, "z": 189, "attempt": 2}, {"tick": 26980, "x": 415, "y": 63, "z": 205, "attempt": 3}, {"tick": 35960, "x": 421, "y": 63, "z": 220, "attempt": 4}, {"tick": 118520, "x": -69, "y": 34, "z": 53, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

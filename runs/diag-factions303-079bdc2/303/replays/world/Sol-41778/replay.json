@@ -1,0 +1,86 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 41778,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    424,
+    53,
+    193
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.452073233955446,
+    8.213705752612839,
+    16.544761146194844
+  ],
+  "yaw": -123.21786,
+  "pitch": -4.5230513,
+  "health": 9.333334,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": 251,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 43
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 17778,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: up for air (tried elsewhere 2 times)",
+  "task": "Get out of the water: up for air",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was impaled by Drowned",
+  "ticks": 1200,
+  "log": [
+    "[08:19:08] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:08] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:09] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:09] [Server thread/INFO]: Sol native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3169]",
+    "[08:19:09] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_wait CANCELLED: In deep water; up for air first [Rest to heal]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:11] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:11] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:11] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:11] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]",
+    "[08:19:11] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: up for air]"
+  ]
+}

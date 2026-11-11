@@ -1,0 +1,22 @@
+seed	player	replay tick	stuck tick	bucket	replay
+303	Echo	6460	6300	no walkable route	Echo-6460
+303	Echo	10360	10200	no walkable route	Echo-10360
+303	Echo	27140	26980	no walkable route	Echo-27140
+303	Echo	36120	35960	water loop	Echo-36120
+303	Echo	118680	118520	busy-work loop	Echo-118680
+303	Kindred	27500	27340	hole or pit	Kindred-27500
+303	Kindred	31220	31060	hole or pit	Kindred-31220
+303	Kindred	35080	34920	hole or pit	Kindred-35080
+303	Kindred	70340	70180	mining for a find	Kindred-70340
+303	Kindred	84180	84020	refused target repeated	Kindred-84180
+303	Kindred	99080	98920	hemmed in	Kindred-99080
+303	Kindred	103760	103600	busy-work loop	Kindred-103760
+303	Kindred	107560	107400	hole or pit	Kindred-107560
+303	Kindred	123440	123280	hemmed in	Kindred-123440
+303	Kindred	128100	127940	hemmed in	Kindred-128100
+303	Sol	27680	27520	hole or pit	Sol-27680
+303	Sol	32660	32500	no walkable route	Sol-32660
+303	Sol	58760	58600	water loop	Sol-58760
+303	Sol	99140	98980	hole or pit	Sol-99140
+303	Sol	102920	102760	hole or pit	Sol-102920
+303	Sol	106640	106480	hole or pit	Sol-106640
