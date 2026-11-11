@@ -200,7 +200,11 @@ final class FactionsService {
 
     /** A decision's events written to the Record; its reason either way. */
     Factions.Decision apply(Factions.Decision decision) {
-        if (decision.accepted()) record.accept(decision.events());
+        return apply(record, decision);
+    }
+
+    private static Factions.Decision apply(java.util.function.Consumer<List<WorldEvent>> recordWith, Factions.Decision decision) {
+        if (decision.accepted()) recordWith.accept(decision.events());
         return decision;
     }
 
@@ -316,6 +320,17 @@ final class FactionsService {
      */
     Reply request(UUID who, String verb, List<String> args, String world, BlockPos pos, java.util.function.Function<String, UUID> players,
                   java.util.function.Function<UUID, String> names) {
+        return request(who, verb, args, world, pos, players, names, record);
+    }
+
+    /**
+     * As {@link #request}, with the decision's events handed to {@code recordWith} instead of written at once: an AI
+     * player's act whose faction is then told on the Wire writes them through {@code PlayerRuntime.recordAndTell}, so
+     * the message cites the ids the Record gave them (F-34).
+     */
+    Reply request(UUID who, String verb, List<String> args, String world, BlockPos pos, java.util.function.Function<String, UUID> players,
+                  java.util.function.Function<UUID, String> names,
+                  java.util.function.Consumer<List<WorldEvent>> recordWith) {
         var book = book();
         var at = at(world);
         String first = args.isEmpty() ? "" : args.getFirst();
@@ -324,37 +339,37 @@ final class FactionsService {
                 if (args.size() < 2) return Reply.refused("/faction create <name> <tag> [colour]");
                 var colour = args.size() > 2 ? FactionColour.parse(args.get(2)) : java.util.Optional.of(FactionColour.WHITE);
                 if (colour.isEmpty()) return Reply.refused("A colour is one of the sixteen dyes: " + dyes());
-                return Reply.of(apply(Factions.create(book, who, args.get(0), args.get(1), colour.get(), UUID.randomUUID(), at)));
+                return Reply.of(apply(recordWith, Factions.create(book, who, args.get(0), args.get(1), colour.get(), UUID.randomUUID(), at)));
             }
             case "invite", "uninvite" -> {
                 UUID player = players.apply(first);
                 if (player == null) return Reply.refused("No player named " + first);
-                return Reply.of(apply(Factions.invite(book, who, player, verb.equals("invite"), at)));
+                return Reply.of(apply(recordWith, Factions.invite(book, who, player, verb.equals("invite"), at)));
             }
             case "join" -> {
                 var faction = book.named(first).orElse(null);
                 if (faction == null) return Reply.refused("No faction named " + first);
-                return Reply.of(apply(Factions.join(book, who, faction.id(), settings, at)));
+                return Reply.of(apply(recordWith, Factions.join(book, who, faction.id(), settings, at)));
             }
-            case "leave" -> { return Reply.of(apply(Factions.leave(book, who, at))); }
+            case "leave" -> { return Reply.of(apply(recordWith, Factions.leave(book, who, at))); }
             case "kick", "promote", "demote", "leader" -> {
                 UUID player = players.apply(first);
                 if (player == null) return Reply.refused("No player named " + first);
-                if (verb.equals("kick")) return Reply.of(apply(Factions.kick(book, who, player, at)));
+                if (verb.equals("kick")) return Reply.of(apply(recordWith, Factions.kick(book, who, player, at)));
                 var rank = switch (verb) {
                     case "promote" -> Faction.Rank.OFFICER;
                     case "leader" -> Faction.Rank.LEADER;
                     default -> Faction.Rank.MEMBER;
                 };
-                return Reply.of(apply(Factions.rank(book, who, player, rank, at)));
+                return Reply.of(apply(recordWith, Factions.rank(book, who, player, rank, at)));
             }
             case "ally", "truce", "enemy" -> {
                 var other = book.named(first).orElse(null);
                 if (other == null) return Reply.refused("No faction named " + first);
                 var relation = Faction.Relation.valueOf(verb.toUpperCase(java.util.Locale.ROOT));
-                return Reply.of(apply(Factions.wish(book, who, other.id(), relation, at)));
+                return Reply.of(apply(recordWith, Factions.wish(book, who, other.id(), relation, at)));
             }
-            case "sethome" -> { return Reply.of(apply(Factions.home(book, who, world + ":" + pos.getX() + "," + pos.getY() + "," + pos.getZ(), at))); }
+            case "sethome" -> { return Reply.of(apply(recordWith, Factions.home(book, who, world + ":" + pos.getX() + "," + pos.getY() + "," + pos.getZ(), at))); }
             case "home" -> {
                 var faction = book.of(who).orElse(null);
                 if (faction == null) return Reply.refused("You are not in a faction");
@@ -363,15 +378,15 @@ final class FactionsService {
             case "colour", "color" -> {
                 var colour = FactionColour.parse(first);
                 if (colour.isEmpty()) return Reply.refused("A colour is one of the sixteen dyes: " + dyes());
-                return Reply.of(apply(Factions.colour(book, who, colour.get(), at)));
+                return Reply.of(apply(recordWith, Factions.colour(book, who, colour.get(), at)));
             }
-            case "disband" -> { return Reply.of(apply(Factions.disband(book, who, at))); }
+            case "disband" -> { return Reply.of(apply(recordWith, Factions.disband(book, who, at))); }
             case "claim", "unclaim" -> {
                 var chunk = dev.kindred.core.factions.Territory.Chunk.at(world, pos.getX(), pos.getZ());
                 var decision = verb.equals("claim")
                         ? dev.kindred.core.factions.Territory.claim(book, powers(), ledgers.get().claims(), safe(), ledgers.get().coins().of(who), settings, who, chunk, at)
                         : dev.kindred.core.factions.Territory.unclaim(book, ledgers.get().claims(), who, chunk, at);
-                if (decision.accepted()) record.accept(decision.events());
+                if (decision.accepted()) recordWith.accept(decision.events());
                 return new Reply(decision.accepted(), List.of(decision.reason()));
             }
             case "capture" -> {
@@ -380,7 +395,7 @@ final class FactionsService {
                 var decision = dev.kindred.core.factions.Capture.capture(book, powers(), ledgers.get().claims(), safe(), ledgers.get().captures(),
                         ledgers.get().coins().of(who), settings, who, chunk, at);
                 if (decision.accepted()) {
-                    record.accept(decision.events());
+                    recordWith.accept(decision.events());
                     var attacker = book.of(who).orElseThrow();
                     var loser = book.get(UUID.fromString(from)).orElseThrow();
                     tellFaction(attacker.id(), attacker.name() + " captured " + chunk.key() + " from " + loser.name());
