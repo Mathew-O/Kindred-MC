@@ -1,0 +1,110 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 38258,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  93,
+  51,
+  -23
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.513304882207677,
+  8.021825024206223,
+  16.52040558606833
+ ],
+ "yaw": 1531.7052,
+ "pitch": -4.9999995,
+ "health": 13.5,
+ "food": 5,
+ "saturation": 0.0,
+ "air": 79,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 64
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 3
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 9
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 12
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 14258,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "STRONGHOLD",
+ "stage": "Wood: Get out of the water: up for air",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo drowned",
+ "ticks": 1200,
+ "log": [
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:54] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[06:59:55] [Server thread/INFO]: Echo died at 109, 59, -7: Echo drowned (tick 38258, night, under cover, hunger 5, armour 0, holding nothing, no shield; doing \"native_goto\" in \"Wood: Get out of the water: up for air\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "factions-110-d5057a4",
+  "seed": "110",
+  "build": "d5057a4",
+  "replay": "",
+  "source": "claude/corpus-data-factions110-1110@0445d5b:factions-110-d5057a4/110/replays/world/Echo-38258",
+  "class": "death: drowned",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}
