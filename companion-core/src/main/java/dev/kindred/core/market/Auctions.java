@@ -45,7 +45,7 @@ public final class Auctions implements Ledger<AuctionBook> {
 
     @Override public String name() { return "auctions"; }
 
-    @Override public Set<String> kinds() { return Set.of(LIST, BID, CLOSE, CANCEL, ORDER, FILL, ORDER_CANCEL, DELIVERED); }
+    @Override public Set<String> kinds() { return Set.of(LIST, BID, CLOSE, CANCEL, ORDER, FILL, ORDER_CANCEL, DELIVERING, DELIVERED); }
 
     @Override public AuctionBook empty() { return AuctionBook.EMPTY; }
 
@@ -77,7 +77,10 @@ public final class Auctions implements Ledger<AuctionBook> {
                     var order = book.orders().get(e.subject());
                     yield order == null ? book : book.put(new AuctionBook.Order(order.id(), order.buyer(), order.key(), 0, order.each()));
                 }
-                case DELIVERED -> book.delivered(e.subject());
+                // A delivery begun is owed no longer: whatever happens after its begin is written (the hand-over, the
+                // player's file, the receipt), it is never begun again. Begun and not delivered after a stop or a crash, it is
+                // reported for an operator at the next start (market.uncertain), never handed over twice.
+                case DELIVERING, DELIVERED -> book.delivered(e.subject());
                 default -> book;
             };
         } catch (IllegalArgumentException | NullPointerException malformed) {
@@ -124,13 +127,18 @@ public final class Auctions implements Ledger<AuctionBook> {
     }
 
     /** {@code bidder} bids {@code amount} on {@code id}: held until outbid or the close; at or above buy-now it wins at once. */
+    /** The least a bid on {@code listing} may be now: the start, then a coin or a twentieth over the best, at most buy now. */
+    public static long least(AuctionBook.Listing listing) {
+        long least = listing.bidder() == null ? listing.start() : listing.bid() + Math.max(Coins.CENT, listing.bid() / 20);
+        return listing.buyNow() > 0 ? Math.min(least, listing.buyNow()) : least;
+    }
+
     public static Decision bid(AuctionBook book, Coins.Book coins, FactionSettings settings, UUID bidder, String id, long amount, Factions.At at) {
         var listing = book.listings().get(id);
         if (listing == null) return Decision.refused("No such listing");
         if (listing.seller().equals(bidder)) return Decision.refused("Not on your own listing");
         if (at.realTimeMs() >= listing.closesAt()) return Decision.refused("It has closed");
-        long least = listing.bidder() == null ? listing.start() : listing.bid() + Math.max(Coins.CENT, listing.bid() / 20);
-        if (listing.buyNow() > 0) least = Math.min(least, listing.buyNow());
+        long least = least(listing);
         if (amount < least) return Decision.refused("A bid is at least " + Coins.show(least));
         if (listing.buyNow() > 0) amount = Math.min(amount, listing.buyNow());
         var events = new ArrayList<WorldEvent>();

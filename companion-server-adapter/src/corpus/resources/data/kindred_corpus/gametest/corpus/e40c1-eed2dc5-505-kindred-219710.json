@@ -1,0 +1,123 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 219710,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -51,
+  61,
+  -21
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.45507072885885,
+  8.766367993957516,
+  16.46650268744385
+ ],
+ "yaw": 1305.694,
+ "pitch": 18.144691,
+ "health": 10.733335,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:acacia_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 46
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:wheat_seeds",
+    "count": 4
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 4
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 2
+   }
+  }
+ ],
+ "selected": 3,
+ "timeOfDay": 3710,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "DRAGON",
+ "stage": "Wood: outmatched - Hole up: seal -35, 70, -6 (tried elsewhere 3 times)",
+ "task": "Hole up: back into the passage",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Kindred was blown up by Creeper",
+ "ticks": 1200,
+ "log": [
+  "[15:44:40] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+  "[15:44:40] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+  "[15:44:40] [Server thread/INFO]: Kindred native_eat COMPLETED",
+  "[15:44:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+  "[15:44:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk under the logs at -30, 78, 14]",
+  "[15:44:42] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to the crafting table]",
+  "[15:44:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[15:44:43] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to the crafting table]",
+  "[15:44:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[15:44:43] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to the crafting table]",
+  "[15:44:43] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[15:44:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[15:44:44] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to the crafting table]",
+  "[15:44:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[15:44:44] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -30, 71, 8 [Back off from creeper]",
+  "[15:44:47] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+  "[15:44:48] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to the crafting table]",
+  "[15:44:48] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal -33, 70, -4]",
+  "[15:44:48] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Hole up: back into the passage]",
+  "[15:44:48] [Server thread/INFO]: Kindred died at -35, 69, -5: Kindred was blown up by Creeper (tick 219710, day, under cover, hunger 16, armour 0, holding dirt, no shield; doing \"Hole up: back into the passage\" in \"Wood: outmatched - Hole up: seal -35, 70, -6 (tried elsewhere 3 times)\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+ ],
+ "corpus": {
+  "run": "e40c1-eed2dc5",
+  "seed": "505",
+  "build": "eed2dc5",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40c1-eed2dc5/505/replays/world/Kindred-219710",
+  "class": "death: creeper",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

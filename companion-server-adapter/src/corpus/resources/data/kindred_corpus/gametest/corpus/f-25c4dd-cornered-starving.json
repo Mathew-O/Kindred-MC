@@ -1,0 +1,3 @@
+{"fixture": "NativePortalCampaignGameTests.badlyHurtAndStarvingWithAZombieOnItItStopsItsClimbAndFights",
+ "corpus": {"class": "death: badly hurt, the hungry climb dug on with a zombie in reach", "source": "F-25c4dd, main@963959c",
+  "staged": "dead-end tunnel, adult zombie 2 off with AI on, health 5, iron chestplate, food 10, nothing to eat, stone sword"}}

@@ -32,7 +32,7 @@ final class RecordGauge {
     }
 
     /** What the runtime holds in memory now. */
-    record Held(long recordThrough, int webs, long webRelations, int worldRelations, long inboxed, int chroniclePages) { }
+    record Held(long recordThrough, int webs, long webRelations, int worldRelations, long inboxed, int chroniclePages, long teamStateTold) { }
 
     /** The day's line, the database's files measured off the thread first. */
     CompletableFuture<String> line(long day, Path database, Held held) {
@@ -46,7 +46,8 @@ final class RecordGauge {
             return "Kindred cost: day " + day + ": the Record through event " + held.recordThrough() + ", " + w + " written since start (" + c
                     + " characters of data); by kind events/characters " + counts + "; the database " + bytes + " bytes on disk; webs " + held.webs()
                     + " holding " + held.webRelations() + " relations, the world's " + held.worldRelations() + "; Wire inboxes " + held.inboxed()
-                    + " messages; Chronicle " + held.chroniclePages() + " pages kept; heap in use " + heap + " MB";
+                    + " messages; teammates' updates (team.state) " + held.teamStateTold() + " told since start, kept only in the peer ledgers"
+                    + "; Chronicle " + held.chroniclePages() + " pages kept; heap in use " + heap + " MB";
         });
     }
 

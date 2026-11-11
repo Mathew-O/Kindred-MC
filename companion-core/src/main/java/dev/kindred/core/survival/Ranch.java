@@ -1,5 +1,7 @@
 package dev.kindred.core.survival;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Pos;
 
 import java.util.Comparator;
@@ -21,11 +23,11 @@ import java.util.UUID;
 public final class Ranch {
     /** The animals a pen is for, each with the food it follows and is bred with, as vanilla has them. */
     public enum Kind {
-        COW("minecraft:cow", List.of("minecraft:wheat")),
-        SHEEP("minecraft:sheep", List.of("minecraft:wheat")),
-        PIG("minecraft:pig", List.of("minecraft:carrot", "minecraft:potato", "minecraft:beetroot")),
-        CHICKEN("minecraft:chicken", List.of("minecraft:wheat_seeds", "minecraft:melon_seeds", "minecraft:pumpkin_seeds",
-                "minecraft:beetroot_seeds", "minecraft:torchflower_seeds"));
+        COW(VanillaIds.COW, List.of(VanillaIds.WHEAT)),
+        SHEEP(VanillaIds.SHEEP, List.of(VanillaIds.WHEAT)),
+        PIG(VanillaIds.PIG, List.of(VanillaIds.CARROT, VanillaIds.POTATO, VanillaIds.BEETROOT)),
+        CHICKEN(VanillaIds.CHICKEN, List.of(VanillaIds.WHEAT_SEEDS, VanillaIds.MELON_SEEDS, VanillaIds.PUMPKIN_SEEDS,
+                VanillaIds.BEETROOT_SEEDS, VanillaIds.TORCHFLOWER_SEEDS));
 
         public final String entity;
         public final List<String> food;
@@ -130,6 +132,8 @@ public final class Ranch {
     /** Whether the animal it leads has been brought round to the front of the gate. */
     private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
+    /** Why each it gave up on was given up, for {@link #diagnosis()}: kept when it tries them again. */
+    private final java.util.Map<UUID, String> givenUpWhy = new java.util.LinkedHashMap<>();
     /** The one the last walk it asked for went toward, or whose last-seen spot it went to ({@link #goingToSpot}); none for others. */
     private UUID goingFor;
     private boolean goingToSpot;
@@ -196,6 +200,20 @@ public final class Ranch {
     }
 
     /** What it is doing, in words. */
+    /**
+     * What it gave up and how far it got with its tries, for the log: each animal it gave up on (its id's first eight
+     * characters) and why, whether still given up or tried again since, and the counts of its searches, retries,
+     * re-lines and re-fetches. Not spoken: the outcome it says is {@link Step.Done}'s.
+     */
+    public String diagnosis() {
+        var gave = givenUpWhy.entrySet().stream()
+                .map(e -> e.getKey().toString().substring(0, 8) + " " + e.getValue() + (givenUp.contains(e.getKey()) ? "" : ", tried again"))
+                .toList();
+        return "given up " + gave + "; searched " + searched + " of " + SEARCHES + ", retried " + retried + " of " + RETRIES
+                + ", relined " + relined + " of " + RELINES + ", refetched " + refetched + "; leading "
+                + (leading == null ? "none" : leading.toString().substring(0, 8));
+    }
+
     public String phase() {
         return switch (phase) {
             case BUILD -> "building the pen";
@@ -340,6 +358,7 @@ public final class Ranch {
             searched++;
         } else {
             givenUp.add(goingFor);
+            givenUpWhy.put(goingFor, "its walk refused");
             lastSeen.remove(goingFor);
             if (goingFor.equals(leading)) leading = null;
         }
@@ -460,6 +479,7 @@ public final class Ranch {
             }
             if (seen.tick() - waitingSince > COME_IN) {
                 givenUp.add(animal.id());
+                givenUpWhy.put(animal.id(), "would not come in");
                 leading = null;
                 waitingSince = -1;
                 return new Step.Wait(false, "That " + kind.noun() + " will not come in");
@@ -474,9 +494,11 @@ public final class Ranch {
                     : new Step.Wait(true, "Wait for the " + kind.noun() + " to come in");
         }
         waitingSince = -1;
+        // The one already in shut in whenever it is out for the next, until the next is lined up at the gate's front: shut
+        // only for one far off, the gate stood open as the player led the second up, the first walked out of it and on
+        // through the pasture, down its way in, and hemmed the player in there (#98's CI) (F-22c43).
+        if (seen.gateOpen() && adultsIn > 0 && !lined) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
         if (apart > FOLLOWING) {
-            // The one already in is shut in before it walks off for the next.
-            if (seen.gateOpen() && adultsIn > 0) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
             return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
         }
         if (apart > LAGGING) {
@@ -567,6 +589,6 @@ public final class Ranch {
     }
 
     private String foodName() {
-        return kind.food.getFirst().substring("minecraft:".length()).replace('_', ' ');
+        return kind.food.getFirst().substring(VanillaIds.NAMESPACE.length()).replace('_', ' ');
     }
 }

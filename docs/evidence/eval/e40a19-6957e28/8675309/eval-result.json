@@ -1,0 +1,48 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 10.47, "tickMsWorst": 1155.91, "tickMsWorstAt": 98223, "ticksOver50ms": 143, "ticksOver200ms": 4, "heapMbMax": 1237, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1420, "stone_tools": 2960, "iron_ingot": 4820, "iron_pickaxe": 74780},
+      "deaths": [
+        {"tick": 86704, "cause": "Kindred was slain by Zombie", "x": 21, "y": -40, "z": 40, "light": 8, "timeOfDay": 14866, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 100914, "cause": "Kindred was slain by Drowned", "x": 32, "y": 48, "z": 62, "light": 9, "timeOfDay": 5076, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 102024, "cause": "Kindred was slain by Drowned", "x": 32, "y": 49, "z": 62, "light": 10, "timeOfDay": 6186, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1780, "stone_tools": 3180, "iron_ingot": 10700, "iron_pickaxe": 25160, "obsidian": 122893},
+      "deaths": [
+        {"tick": 43523, "cause": "Sol was slain by Zombie", "x": 80, "y": -31, "z": 103, "light": 2, "timeOfDay": 19685, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: inventory full - Drop surplus andesite (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 33700, "x": 17, "y": 56, "z": 61, "attempt": 1}, {"tick": 61620, "x": 115, "y": 27, "z": 145, "attempt": 1}, {"tick": 97620, "x": -24, "y": -25, "z": 89, "attempt": 1}, {"tick": 106120, "x": 0, "y": -15, "z": 41, "attempt": 1}, {"tick": 110280, "x": 1, "y": -16, "z": 41, "attempt": 2}, {"tick": 114640, "x": 1, "y": -16, "z": 41, "attempt": 3}, {"tick": 118980, "x": 1, "y": -15, "z": 41, "attempt": 4}, {"tick": 122680, "x": -5, "y": -16, "z": 47, "attempt": 5}, {"tick": 128840, "x": 3, "y": -17, "z": 48, "attempt": 1}, {"tick": 134040, "x": 25, "y": -36, "z": 46, "attempt": 2}, {"tick": 139440, "x": 24, "y": -35, "z": 48, "attempt": 3}, {"tick": 143400, "x": 25, "y": -36, "z": 47, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2020, "stone_tools": 4440, "iron_ingot": 9120, "iron_pickaxe": 37680, "obsidian": 97089, "portal_lit": 98186},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 25340, "x": 66, "y": 19, "z": 42, "attempt": 1}, {"tick": 42040, "x": 72, "y": 17, "z": 81, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

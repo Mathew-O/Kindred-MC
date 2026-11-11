@@ -103,7 +103,7 @@ final class NativeBreakAction extends NativeRecordedAction {
         String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded, underfoot, overLava);
         if (denial != null) throw new IllegalArgumentException(denial);
         body.faceBlock(target);
-        if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible");
+        if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible: " + body.miningRefusal(target));
         resource = Registries.BLOCK.getId(state.getBlock()).toString();
         int tool = bestTool(body, state);
         // A block that needs a tool still gives way to a bare hand, slowly and dropping nothing: only a clearing
@@ -305,6 +305,13 @@ final class NativeBreakAction extends NativeRecordedAction {
                 }
                 double dx = next.getX() - player.getX();
                 double dz = next.getZ() - player.getZ();
+                // Down its own pillar, the block underfoot just dug out: held still over the column while its drop falls
+                // onto it, a player's reach for items a block either side. Chased, the drop still above it as it landed,
+                // it jumped, drifted a fifth of a block, and came down on a bottom slab beside its column (F-22c57).
+                if (underfoot) {
+                    body.stopInputs();
+                    return Step.running(Map.of("phase", phase.name(), "collect", String.valueOf(collectTicks)), false);
+                }
                 if (dx * dx + dz * dz > 0.25 || Math.abs(next.getY() - player.getY()) > 1.2) {
                     float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
                     // A drop that fell down a shaft or into a cave is not followed over the edge.

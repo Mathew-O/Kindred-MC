@@ -4,9 +4,9 @@ Three scripts, Python 3 standard library only, run a build of Kindred MC unatten
 
 | Script | What it does |
 | --- | --- |
-| `run.py` | Builds a git ref (or takes a built jar), and for each seed starts a fresh Fabric server in `run/eval/<build>/<seed>/` with the jar and the pinned Fabric API, its world from the seed and `KINDRED_EVAL` set to the scenario. The mod plays the scenario with no one at the console and stops the server; the script keeps the server's whole console (`console.txt`), `latest.log`, `eval-result.json` and the jar's name (in `run.json`), and removes the world. With `--keep-world` it keeps the world's region files as the run left them (`world-kept/`), so a stuck place can be staged from its own ground; they are for diagnosis only. |
+| `run.py` | Builds a git ref (or takes a built jar), and for each seed starts a fresh Fabric server in `run/eval/<build>/<seed>/` with the jar and the pinned Fabric API, its world from the seed and `KINDRED_EVAL` set to the scenario. The mod plays the scenario with no one at the console and stops the server; the script keeps the server's whole console (`console.txt`), `latest.log`, `eval-result.json` and the jar's name (in `run.json`), and removes the world. With `--keep-world` it keeps the world's region files as the run left them (`world-kept/`), so a stuck place can be staged from its own ground, and the world's companion database (`world-kept/kindred/companions.sqlite` with its WAL), to measure what the World Record and the ledgers hold; both are for diagnosis only. |
 | `score.py` | Turns a build's results into `summary.md` and `summary.json`: per seed and per player the stage reached, the time to each stage, deaths a game hour by cause, stuck spells and stuck game minutes (three for each spell, the watchdog's minutes of no progress before it gives a spot up), rescue plans and how many got the player out, `RunMetrics`' measures (from `console.txt`, the whole run: `latest.log` starts again at midnight), tokens, and the social lanes' lines (between AI players, said first to people, a meeting noted with nobody to hear) with the lines a game minute (E-51, E-53); then medians and ranges across the seeds. A time to a stage is over every seed, a seed that never reached the stage counted as later than any that did, so its median or the top of its range can read "not reached". A run some of whose starters never came into the world is named and left out, and a seed run on another jar than its build's is said so. |
-| `compare.py` | Puts two builds' summaries side by side on the seeds both ran, and calls a difference worth noting only when the two ranges do not overlap; times to a stage (iron, diamonds, the portal) are compared the same way, over every seed. |
+| `compare.py` | Puts two builds' summaries side by side on the seeds both ran. First, paired by seed (F-26c): for the portal, the Nether, stuck minutes, deaths an hour and the minutes to an iron pickaxe and to the portal (a seed that never reached a stage counted as the run's length), each seed's difference, how many seeds it helped and hurt, the median difference with a bootstrap 95% interval, and an exact two-sided sign test. Then the unpaired ranges, a difference worth noting only when they do not overlap. An older build with only a `summary.md` is read from its per-seed table (furthest stage, deaths an hour, stuck spells), with no times to a stage. |
 
 ```
 tools/eval/run.py --ref HEAD --seeds 101,102,103,104,105,106,107,108,109,110 --scenario "goal=nether; ticks=144000" --parallel 2
@@ -39,10 +39,15 @@ operator guide.
 | `atlas` | `on`, `off` (the players' atlas of the world, F-30) | `on` |
 | `rescue` | `on`, `off` (a stuck player asks the strategist for a way out, F-29; only with `strategist=on`) | `on` |
 | `advice` | `on`, `off` (the strategist's advice; with `strategist=on`, `advice=off` asks it for rescue plans alone) | `on` |
+| `mode` | `survival`, `factions` (a faction world the starters joined, M-06i; its locked rules audited from the World Record at the end) | `survival` |
+| `players` | more AI players by name beside the starters, comma-separated (3 to 16 letters, digits or `_`; native players with no preset) | none |
+| `founders` | with `mode=factions`, how many of the players (the starters first, in order) are set to found a faction and invite, the others to wait to be asked | 0 |
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says
-  so at the top. A staged run is not earned progress.
+  so at the top. A staged run is not earned progress. A run on a server that allowed free travel or free items
+  (`/aiplayer teleport|freeitems allow`) at any point is never earned: `eval-result.json` records both under `policy`,
+  `score.py` names the seed, and `compare.py` refuses the comparison, so no ladder counts a teleport or a free item.
 - **The model players.** `strategist=on` needs the strategist configured as in play (`KINDRED_STRATEGIST=on` and a key
   in your environment); `run.py` passes the key and the `KINDRED_STRATEGIST*` settings to a server only when its
   scenario says `strategist=on` or `voice=on`, and never writes them to a file. The voice has no switch of its own: it
@@ -70,6 +75,66 @@ gave a spot up), every rescue plan (F-29: when, and its line, `rescue: <steps> -
 `-> refused: <why>`), and the model tokens it used; and the scenario, earned or staged, the seed, the ticks run, and whether
 the run ran all its ticks. Stages are seen once a game second from the player's inventory and dimension, and from the
 cast and the portal's lighting as they complete; a frame's obsidian is cast where it stands and never held.
+
+## A faction world (M-06i)
+
+`mode=factions` plays the run in a faction world, under the settings in the server's
+`config/kindred/factions.properties` (the defaults when it is not there).
+- The world's mode is set to Factions once every starter is in the world, as an operator's choice would set it: each
+  starter's playstyle, the territory guard and the borders. The spawn hub is made a safe zone, its lighthouse not
+  built.
+- The starters then play it on their own, with nothing staged. A starter with a goal (`goal=nether` and so on) works
+  at that too. `goal=none` leaves them to the faction world alone.
+- At the end, the run reads the World Record back and audits it against the locked rules:
+  - every claim and capture is decided again by the same rules from the state just before it;
+  - no player is killed inside a safe zone;
+  - every coin balance follows from the one before and never goes below zero;
+  - coins come into being only as starting coins or a market sale;
+  - the auction house only moves or destroys coins;
+  - every sale has its seller's intent, not cancelled;
+  - nothing from the auction house is handed over twice.
+- The result is written into `eval-result.json` as `factions`: `audited`, a `note` when it could not run, `counts`
+  (events, factions, claims, captures, sales, purchases, listings, deliveries, deaths, kills) and `violations` (each
+  rule broken, with its event). `score.py` adds the audit's table to `summary.md`.
+- `founders=N` sets each player's bounded traits as its administrator may set them: the first N to found at once and to
+  invite the players they meet (initiative 80, sociability 60), the others to wait to be asked and to join (20, 70).
+  Everything else is the players' own: who meets whom, who asks, and who joins whom (an invited player joins the faction
+  with the fewest members that asked it).
+- A run with more than three players in all needs the server to allow them: `--policy maxNativePlayers=8` writes that
+  line into each server's `world/kindred/edits.properties` before it starts (the server's own policy; default 3, at
+  most 12). Without it the first three are made and the run notes that the others did not come.
+- The mode is not yet an operator's choice (`GameModes` keeps it unplayable until M-06i is complete). The run sets it
+  for itself.
+
+```
+tools/eval/run.py --ref HEAD --seeds 101,102,103,104,105,106,107,108,109,110 --scenario "goal=none; mode=factions; ticks=288000" --parallel 2
+tools/eval/run.py --ref HEAD --seeds 101,102,103 --policy maxNativePlayers=8 --parallel 1 \
+    --scenario "starters=Kindred,Sol,Echo; players=Ada,Bram,Cleo,Dara,Eli; founders=3; goal=none; mode=factions; ticks=72000"
+```
+
+Every run's result now also carries the server's load (`server`: the mean tick over the run from the server's own
+last-hundred mean, taken once a game second; the worst tick and when it fell, in ticks into the run (`tickMsWorstAt`);
+how many of the run's ticks took over 50 and over 200 ms (`ticksOver50ms`, `ticksOver200ms`), each tick counted once
+and the set-up before the run's start not counted; the heap at most), and `score.py` adds a table of it. An autosave
+falls every 6,000 ticks and its time counts in its tick, so a worst tick at a multiple of 6,000 is the save. That
+is the measurement a larger run is qualified by. Run such a run one server at a time (`--parallel 1`), so no other
+server shares its cores.
+
+## Stuck spells and deaths by kind (F-26c)
+
+`score.py` puts every stuck spell and every death in a bucket and prints the build's distribution in `summary.md` (and
+`stuckKinds` and `deathKinds` in `summary.json`, per player and for the build). The rules are tables at the top of the
+script, `STUCK_RULES` and `DEATH_RULES`, tested by `python3 -m unittest discover -s tools/eval`.
+
+- **A death** goes to the first rule it matches: lava, drowning, fall (by the game's cause), starving with a mob near
+  (a mob killed it at hunger 6 or less), cornered (a mob killed it while it was backing off, taking cover or holing up),
+  dark melee (a mob that does not shoot killed it at light 7 or less), else other.
+- **A stuck spell** is read from the player's last 60 console lines before the watchdog gave the spot up (its "Goal made
+  no progress ... near" line there, or the spell's tick placed on the console's clock): the bucket whose lines match most
+  often, at least three times, of water loop, no walkable route (BLOCKED lines only), the same refusal repeated, hole or
+  pit, hemmed in. Failing those, ordinary work that went on through the spell (`STUCK_QUIET_RULES`): waiting for daylight
+  or a teammate, or mining for a find. Failing those, a busy-work loop when one step, its numbers aside, came six times or
+  more; else other. A run with no console has its spells counted as unmatched.
 
 ## Conventions
 

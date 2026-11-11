@@ -389,4 +389,131 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Gaps jumped (MOVEMENT): a course floating twenty up, a one-block gap and then a two-block gap across it, nothing
+     * to bridge with and no way round or down. It walks to the far end by jumping each gap, as a player does, a running
+     * jump over the one and a sprint jump over the two, and never falls. Staged: the course, the player at its start
+     * with an empty inventory.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "gapJump", tickLimit = 800)
+    public void aWalkJumpsAOneAndATwoBlockGapItCannotBridge(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] origin = new BlockPos[1];
+        double[] lowest = {Double.MAX_VALUE};
+        boolean[] asked = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Leaper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    for (int x = -3; x <= 15; x++) for (int z = -7; z <= 7; z++) for (int y = -2; y <= 5; y++) {
+                        world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    // The course: one wide, a one-block gap at 3, a two-block gap at 7 and 8.
+                    for (int x = -1; x <= 12; x++) {
+                        if (x == 3 || x == 7 || x == 8) continue;
+                        world.setBlockState(o.add(x, -1, 0), Blocks.STONE.getDefaultState());
+                    }
+                    var player = f.player();
+                    player.getInventory().clear();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, -90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    player.getHungerManager().setFoodLevel(20);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the course"))
+                .createAndAdd(() -> {
+                    if (!asked[0]) {
+                        asked[0] = f.runtime.nativeGoto(f.source, f.id, origin[0].add(11, 0, 0), 0.5) == 1;
+                        context.assertTrue(asked[0], "Walk requested");
+                    }
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    lowest[0] = Math.min(lowest[0], player.getY());
+                    context.assertTrue(lowest[0] > origin[0].getY() - 1.5, "Fell into a gap: down to " + (lowest[0] - origin[0].getY()));
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && !activity.work().isEmpty() && !activity.work().contains("Running"),
+                            "The walk ends: " + activity.work());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.work().startsWith("Completed native_goto"), "The walk completes over both gaps: " + activity.work()
+                            + " at " + player.getBlockPos().subtract(origin[0]).toShortString());
+                    context.assertTrue(player.getBlockX() - origin[0].getX() >= 10 && Math.abs(player.getY() - origin[0].getY()) < 0.1 && player.isOnGround(),
+                            "At the far end, on the course: " + player.getBlockPos().subtract(origin[0]).toShortString());
+                    KindredMod.LOGGER.info("Gap jumps: lowest {} relative to the course", lowest[0] - origin[0].getY());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Stood on the middle slab of a roof of slabs, half a block up in that slab's cell, it walks across the roof and down
+     * off it by a stair of blocks to the ground. Searched from the slab's cell, which holds the slab and is no stand, with
+     * only more slabs beside it, the search expanded that one cell and the walk was "no walkable route" (#78's CI, run 42556777789: an oak cabin's builder on its roof's slabs and
+     * stairs, eight walks in a row to its scaffold's foot, and the cabin stopped eight blocks short). Staged: the player
+     * set on the slab.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "slabStart", tickLimit = 600)
+    public void aWalkFromASlabItStandsOnStepsOffIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] goal = new BlockPos[1];
+        BlockPos[] slab = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Slabfoot"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Absolute positions around wherever the player stood up, so the test's rotation does not matter.
+                    var world = context.getWorld();
+                    BlockPos base = f.player().getBlockPos().toImmutable();
+                    for (int x = -3; x <= 8; x++) for (int z = -3; z <= 4; z++) {
+                        world.setBlockState(base.add(x, -1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 0; y <= 6; y++) world.setBlockState(base.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    // A roof of bottom slabs, three by three, on stone three high; east of its edge, a stair of blocks
+                    // down to the ground. Every cell beside its middle slab is another slab.
+                    for (int x = 1; x <= 3; x++) for (int z = 0; z <= 2; z++) {
+                        for (int y = 0; y <= 2; y++) world.setBlockState(base.add(x, y, z), Blocks.STONE.getDefaultState());
+                        world.setBlockState(base.add(x, 3, z), Blocks.OAK_SLAB.getDefaultState());
+                    }
+                    slab[0] = base.add(2, 3, 1);
+                    for (int y = 0; y <= 1; y++) world.setBlockState(base.add(4, y, 1), Blocks.STONE.getDefaultState());
+                    world.setBlockState(base.add(5, 0, 1), Blocks.STONE.getDefaultState());
+                    goal[0] = base.add(7, 0, 1);
+                    // Staged: stood on the roof's middle slab.
+                    f.player().refreshPositionAndAngles(slab[0].getX() + 0.5, slab[0].getY() + 0.5, slab[0].getZ() + 0.5, 90, 0);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    context.assertTrue(player.isOnGround() && Math.abs(player.getY() - (slab[0].getY() + 0.5)) < 0.01,
+                            "On the slab: " + player.getPos());
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeGoto(f.source, f.id, goal[0], 0.5) == 1, "Route requested");
+                })
+                .createAndAdd(() -> {
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_goto"),
+                            "The walk down off the slab completes: " + activity + " at " + f.player().getPos());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    Vec3d at = player.getPos();
+                    context.assertTrue(Math.hypot(at.x - (goal[0].getX() + 0.5), at.z - (goal[0].getZ() + 0.5)) < 0.8
+                            && Math.abs(at.y - goal[0].getY()) < 0.1, "On the ground at the goal: " + at);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

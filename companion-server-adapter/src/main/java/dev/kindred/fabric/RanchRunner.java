@@ -91,8 +91,19 @@ final class RanchRunner {
             String id = Registries.ITEM.getId(stack.getItem()).getPath();
             String kind = id.endsWith("_planks") ? id.substring(0, id.length() - "_planks".length())
                     : id.endsWith("_log") && !id.startsWith("stripped_") ? id.substring(0, id.length() - "_log".length()) : null;
-            if (kind == null || !Registries.ITEM.containsId(Identifier.ofVanilla(kind + "_fence"))) continue;
-            wood.merge(kind, stack.getCount() * (id.endsWith("_log") ? 4 : 1), Integer::sum);
+            boolean log = id.endsWith("_log");
+            if (kind == null || !Registries.ITEM.containsId(Identifier.ofVanilla(kind + "_fence"))) {
+                // F-38: a wood the server's tags and recipes name, with a fence of its own.
+                if (stack.isEmpty()) continue;
+                String full = Registries.ITEM.getId(stack.getItem()).toString();
+                var facts = dev.kindred.core.Capabilities.current();
+                log = facts.is(dev.kindred.core.VanillaIds.LOGS, full);
+                if (!log && !facts.is(dev.kindred.core.VanillaIds.PLANKS, full)) continue;
+                var family = facts.woodOfPart(full).filter(w -> w.fence() != null && w.fenceGate() != null);
+                if (family.isEmpty()) continue;
+                kind = family.get().name();
+            }
+            wood.merge(kind, stack.getCount() * (log ? 4 : 1), Integer::sum);
         }
         return wood.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
     }
@@ -103,7 +114,10 @@ final class RanchRunner {
         // Its animals in: the doorway shut behind them, from the blocks it dug out of it.
         if (ranched != null) {
             if (shutting == null) shutting = new BuildRunner(shut, at, 0);
-            var task = shutting.next(body);
+            // With the run's own supply, as any build of its own: a block short (a drop of the doorway's not picked up) is
+            // picked up where it lies, else gathered or made from what it holds, never left short for good (F-22c44). It
+            // hunts no animal for it.
+            var task = shutting.next(body, new BuildRunner.Supply(campaign, null, animal -> true, 0));
             progress = "Shutting the doorway: " + shutting.progress();
             if (task.isPresent()) return task;
             done = true;
@@ -142,9 +156,12 @@ final class RanchRunner {
         // What it saw as it gave up fetching, as well as at the end: the ranch fixture once left with cows at the gate
         // that the look at its end saw.
         if (step instanceof Ranch.Step.Done || !before.equals(ranch.phase()) && ranch.phase().equals("leaving the pen")) {
-            KindredMod.LOGGER.info("Ranch {} at {}: {}; standing at {}, it saw {}", step instanceof Ranch.Step.Done ? "done" : "leaving", origin.toShortString(),
+            // Each with its id's first eight characters, and what it gave up and tried: the own-ranch fixture in CI left
+            // with "no other in sight", one sheep in sight behind the pen's far fence, and nothing logged said why.
+            KindredMod.LOGGER.info("Ranch {} at {}: {}; standing at {}, it saw {}; {}", step instanceof Ranch.Step.Done ? "done" : "leaving", origin.toShortString(),
                     ranch.phase(), seen.feet(), seen.animals().stream()
-                    .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList());
+                    .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " " + a.id().toString().substring(0, 8) + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList(),
+                    ranch.diagnosis());
         }
         progress = ranch.phase();
         return switch (step) {
@@ -199,7 +216,11 @@ final class RanchRunner {
         // Told before the pen's build, whose runner is never marked done once the pen stands.
         if (ranchWalk && task.skill().equals("native_goto")) {
             ranchWalk = false;
-            if (!completed) ranch.refused();
+            if (!completed) {
+                KindredMod.LOGGER.info("Ranch at {}: its walk not completed, the one it went for given up or its spot crossed off: {} [{}]",
+                        origin.toShortString(), reason, task.label());
+                ranch.refused();
+            }
             return;
         }
         if (shutting != null && !shutting.done()) shutting.finished(task, completed, reason, world);

@@ -43,6 +43,10 @@ import java.util.concurrent.TimeUnit;
  */
 final class DeathReplays implements AutoCloseable {
     static final int WIDTH = 33, HEIGHT = 17;
+    /** A stuck spell's budget, the goal's watchdog's three minutes: a {@code "spell"} scene passes if out within it. */
+    static final int SPELL_TICKS = 3600;
+    /** A {@code "spell"} scene's pass: out of where it was stuck within its budget. */
+    static final String SPELL_PASS = "out within " + SPELL_TICKS + " ticks: moved more than 8 blocks, or its feet 3 or more blocks higher";
     /** A capture at most once a minute for each player; its vitals as they were ten seconds before. */
     private static final long GAP = 1200, BEFORE = 200;
     private static final int KEPT_VITALS = 16, LOG_LINES = 20;
@@ -165,7 +169,9 @@ final class DeathReplays implements AutoCloseable {
         state.put("stance", context.stance());
         state.put("habits", context.habits());
         state.put("cause", context.cause());
-        state.put("ticks", 1200);
+        boolean spell = "spell".equals(context.kind());
+        state.put("ticks", spell ? SPELL_TICKS : 1200);
+        if (spell) state.put("pass", SPELL_PASS);
         return state;
     }
 

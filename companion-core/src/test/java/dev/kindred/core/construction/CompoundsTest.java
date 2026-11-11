@@ -212,7 +212,11 @@ class CompoundsTest {
             assertTrue(p.x() == pen.x() + 3 || p.x() == pen.x() + 4, "two wide: " + p);
             assertEquals(p.z() == wall.south() ? "minecraft:cobblestone" : "minecraft:oak_planks", at.get(p).block(), "shut at " + p);
         }
-        assertFalse(ward.blocks().stream().anyMatch(b -> b.spec().block().endsWith("_door")), "no door: the way in is under the wall");
+        // Its one door at the head of its way in's stair inside, which the player opens and cattle do not (F-22c43).
+        var doors = ward.blocks().stream().filter(b -> b.spec().block().endsWith("_door")).map(Blueprint.Block::at).toList();
+        Pos door = Compounds.wayInDoor(style);
+        assertEquals(java.util.List.of(door, door.add(0, 1, 0)), doors, "a door at the way in's stair head, and none elsewhere");
+        assertEquals("lower", at.get(door).property("half"), "its lower half on the stair's head");
         // The farm ward's blocks are not in it but where they agree.
         var farmAt = Blueprint.byPosition(Compounds.farmWard(style).blocks());
         for (var b : ward.blocks()) {

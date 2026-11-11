@@ -126,6 +126,20 @@ final class NativeNavigator {
         return this;
     }
 
+    /**
+     * The same navigator, now jumping gaps up to {@code blocks} wide (1 or 2) as a player does (MOVEMENT): straight across
+     * to ground at the same level, with head room for the jump and nothing harmful below the gap. Only a walk that can
+     * make the jump asks for it (a two-block gap needs a sprint); other plans keep to the ground.
+     */
+    NativeNavigator jumpingGaps(int blocks) {
+        if (blocks < 0 || blocks > 2) throw new IllegalArgumentException("A gap jump is 0 to 2 blocks");
+        gapJump = blocks;
+        return this;
+    }
+
+    /** The widest gap a route may jump; 0 for none. */
+    private int gapJump;
+
     /** The same navigator, now counting closed wooden doors as a way through. */
     NativeNavigator throughDoors() {
         doors = true;
@@ -162,6 +176,14 @@ final class NativeNavigator {
         var open = new PriorityQueue<Node>((a, b) -> Double.compare(a.f(), b.f()));
         Map<BlockPos, Double> best = new HashMap<>();
         Map<BlockPos, BlockPos> parent = new HashMap<>();
+        if (!standable(origin) && !swimmable(origin) && lowStand(origin)) {
+            // On a roof of slabs or stairs, every cell beside it another: across them to the nearest stand, those cells
+            // kept at the head of the route, walked in turn. From the slab's cell, which is no stand, the search went no
+            // further, and a cabin's builder on its roof found "no walkable route" eight times in a row, and the cabin
+            // stopped eight blocks short (#78's CI, run 42556777789) (F-22c35).
+            BlockPos stand = acrossLowStands(origin, parent);
+            if (stand != null) origin = stand;
+        }
         open.add(new Node(origin, 0, heuristic(origin, target)));
         best.put(origin, 0.0);
         BlockPos closest = origin;
@@ -189,6 +211,56 @@ final class NativeNavigator {
             }
         }
         return new Path(trace(parent, closest), false, expanded);
+    }
+
+    /** The cells it crosses a roof of slabs or stairs by, at most this many. */
+    private static final int LOW_STANDS = 16;
+
+    /**
+     * A cell a body stands in on the lower half of a block, as on a bottom slab or a bottom stair, with room above it: no
+     * stand to the search, which wants a full block's top under an empty cell.
+     */
+    boolean lowStand(BlockPos cell) {
+        if (!loaded(cell) || !passable(cell.up()) || !passable(cell.up(2))) return false;
+        BlockState state = state(cell);
+        if (hazard(state)) return false;
+        if (state.getBlock() instanceof net.minecraft.block.SlabBlock) {
+            return state.get(net.minecraft.block.SlabBlock.TYPE) == net.minecraft.block.enums.SlabType.BOTTOM;
+        }
+        if (state.getBlock() instanceof net.minecraft.block.StairsBlock) {
+            return state.get(net.minecraft.block.StairsBlock.HALF) == net.minecraft.block.enums.BlockHalf.BOTTOM;
+        }
+        return false;
+    }
+
+    /**
+     * The nearest stand beside a run of low stands from {@code from}, a step up or down or level, found across at most
+     * {@link #LOW_STANDS} of them; the cells crossed go into {@code parent}, so the route traced back from it begins at
+     * {@code from}. Null when there is none.
+     */
+    private BlockPos acrossLowStands(BlockPos from, Map<BlockPos, BlockPos> parent) {
+        var queue = new java.util.ArrayDeque<BlockPos>();
+        var seen = new java.util.HashMap<BlockPos, BlockPos>();
+        queue.add(from);
+        seen.put(from, null);
+        while (!queue.isEmpty() && seen.size() <= LOW_STANDS) {
+            BlockPos at = queue.poll();
+            for (Direction side : Direction.Type.HORIZONTAL) {
+                BlockPos off = at.offset(side);
+                if (seen.containsKey(off) || !loaded(off)) continue;
+                BlockPos stand = standable(off) ? off : standable(off.up()) ? off.up() : standable(off.down()) ? off.down() : null;
+                if (stand != null) {
+                    parent.put(stand, at);
+                    for (BlockPos cell = at; seen.get(cell) != null; cell = seen.get(cell)) parent.put(cell, seen.get(cell));
+                    return stand;
+                }
+                if (lowStand(off)) {
+                    seen.put(off, at);
+                    queue.add(off);
+                }
+            }
+        }
+        return null;
     }
 
     private static double heuristic(BlockPos a, BlockPos b) {
@@ -241,6 +313,20 @@ final class NativeNavigator {
                     if (!passable(landing)) break;
                     if (standable(landing) && passable(landing.up())) {
                         if (k <= maxDrop) moves.add(new Move(landing, base + k * 0.5 + (k > MAX_SAFE_DROP ? 20 : 0)));
+                        break;
+                    }
+                }
+            }
+            // A gap jumped (MOVEMENT): no floor under the next block, ground at the same level one or two blocks past it,
+            // head room all the way for the jump's arc, and nothing harmful below to fall into on a missed landing.
+            if (gapJump > 0 && clear(flat) && !standable(flat) && !swimmable(flat) && !inWater && passable(from.up(2))) {
+                for (int span = 2; span <= gapJump + 1; span++) {
+                    BlockPos over = from.add(d[0] * (span - 1), 0, d[1] * (span - 1));
+                    if (!loaded(over) || !clear(over) || standable(over) || swimmable(over) || !passable(over.up(2)) || hazard(over.down())) break;
+                    BlockPos land = from.add(d[0] * span, 0, d[1] * span);
+                    if (!loaded(land)) break;
+                    if (clear(land) && standable(land) && !hazard(land) && passable(land.up(2))) {
+                        moves.add(new Move(land, (span == 2 ? 3.0 : 5.0) * terrainCost(land)));
                         break;
                     }
                 }

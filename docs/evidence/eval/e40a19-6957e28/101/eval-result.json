@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 9.80, "tickMsWorst": 821.72, "tickMsWorstAt": 5838, "ticksOver50ms": 400, "ticksOver200ms": 8, "heapMbMax": 959, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1400, "stone_tools": 2420, "iron_ingot": 5500, "iron_pickaxe": 22460},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 920, "stone_tools": 2180, "iron_ingot": 5600, "iron_pickaxe": 47060},
+      "deaths": [
+        {"tick": 30146, "cause": "Sol was slain by Spider", "x": -365, "y": 31, "z": -137, "light": 0, "timeOfDay": 6308, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "Stone: fight back - Fight spider", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 76960, "x": -420, "y": 62, "z": -259, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1760, "stone_tools": 2500, "iron_ingot": 11040, "iron_pickaxe": 17940, "obsidian": 108576},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 112800, "x": -289, "y": -54, "z": -219, "attempt": 1}, {"tick": 116420, "x": -289, "y": -54, "z": -219, "attempt": 2}, {"tick": 120020, "x": -289, "y": -54, "z": -219, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

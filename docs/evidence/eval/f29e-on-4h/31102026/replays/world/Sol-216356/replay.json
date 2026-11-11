@@ -1,0 +1,121 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 216356,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -82,
+    51,
+    93
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.252203340253729,
+    16.30000001192093
+  ],
+  "yaw": -15.945395,
+  "pitch": 35.971592,
+  "health": 10.0,
+  "food": 0,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 2
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 21
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 356,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Fight husk",
+  "task": "Fight husk",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Husk",
+  "ticks": 1200,
+  "log": [
+    "[05:11:06] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -55, 71, 113 [Climb toward the surface for logs: back the way it came]",
+    "[05:11:07] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 57, 108 by hand]",
+    "[05:11:07] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 58, 108 by hand]",
+    "[05:11:07] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[05:11:07] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -53, 72, 113 [Climb toward the surface for logs: back the way it came]",
+    "[05:11:08] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 59, 108 by hand]",
+    "[05:11:08] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 58, 109 by hand]",
+    "[05:11:09] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 59, 109 by hand]",
+    "[05:11:09] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 60, 109 by hand]",
+    "[05:11:09] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[05:11:09] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 58, 109]",
+    "[05:11:09] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[05:11:09] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -65, 58, 109]",
+    "[05:11:09] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[05:11:09] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -56, 73, 100 [Climb toward the surface for logs: back the way it came]",
+    "[05:11:10] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear -64, 59, 109 by hand]",
+    "[05:11:10] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for logs: clear -64, 60, 109 by hand]",
+    "[05:11:10] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -61, 58, 107 [Back off from husk]",
+    "[05:11:11] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight husk]",
+    "[05:11:11] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -69, 58, 101 [Back off from husk]"
+  ]
+}

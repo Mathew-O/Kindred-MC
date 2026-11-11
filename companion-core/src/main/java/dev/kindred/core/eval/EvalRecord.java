@@ -44,7 +44,7 @@ public final class EvalRecord {
 
     public EvalRecord(EvalScenario scenario) {
         this.scenario = scenario;
-        for (String name : scenario.starters()) players.put(name, new Player());
+        for (String name : scenario.everyone()) players.put(name, new Player());
     }
 
     public EvalScenario scenario() { return scenario; }
@@ -85,6 +85,58 @@ public final class EvalRecord {
         if (p != null) p.tokens = Math.max(p.tokens, tokens);
     }
 
+    /**
+     * The server's load over the run: its mean and worst tick in milliseconds, when the worst fell (ticks into the run),
+     * how many ticks took over 50 and over 200 ms, and its heap at most in megabytes; null until set.
+     */
+    private String server;
+
+    /** The server's switches for free travel and free items over the run (mod-support decision 6); allowed at any point is allowed. */
+    private boolean teleport, freeItems;
+
+    /** Records the server's switches for free travel and free items; once allowed in a run, the run stays not earned. */
+    public void policy(boolean teleport, boolean freeItems) {
+        this.teleport |= teleport;
+        this.freeItems |= freeItems;
+    }
+
+    /**
+     * Whether the run is earned progress: its scenario earned (nothing handed out or kept) and neither free travel nor free
+     * items allowed on the server at any point. A teleport or a free item never counts as earned.
+     */
+    public boolean earned() { return scenario.earned() && !teleport && !freeItems; }
+
+    /** The server's load over the run, as the file will hold it (the measurement a larger run is qualified by). */
+    public void server(double tickMsMean, double tickMsWorst, long worstAtTick, int ticksOver50ms, int ticksOver200ms, long heapMbMax, int samples) {
+        server = String.format(java.util.Locale.ROOT, ",\n  \"server\": {\"tickMsMean\": %.2f, \"tickMsWorst\": %.2f, \"tickMsWorstAt\": %d, "
+                        + "\"ticksOver50ms\": %d, \"ticksOver200ms\": %d, \"heapMbMax\": %d, \"samples\": %d}",
+                tickMsMean, tickMsWorst, worstAtTick, ticksOver50ms, ticksOver200ms, heapMbMax, samples);
+    }
+
+    /** A faction world's audit (M-06i), written into the file; null in any other run. */
+    private String factions;
+
+    /**
+     * A faction world's audit against its locked rules, as the file will hold it: what the World Record holds, every rule
+     * it shows broken, and why it could not be run if it could not ({@code note}, else empty).
+     */
+    public void factions(java.util.Map<String, Integer> counts, java.util.List<String> violations, String note) {
+        var out = new StringBuilder(",\n  \"factions\": {\"audited\": ").append(note.isEmpty()).append(", \"note\": ").append(Json.string(note))
+                .append(", \"counts\": {");
+        boolean first = true;
+        for (var c : counts.entrySet()) {
+            out.append(first ? "" : ", ").append(Json.string(c.getKey())).append(": ").append(c.getValue());
+            first = false;
+        }
+        out.append("}, \"violations\": [");
+        first = true;
+        for (String v : violations) {
+            out.append(first ? "" : ", ").append(Json.string(v));
+            first = false;
+        }
+        factions = out.append("]}").toString();
+    }
+
     public int deaths(String player) {
         var p = players.get(player);
         return p == null ? 0 : p.deaths.size() + p.deathsDropped;
@@ -98,12 +150,15 @@ public final class EvalRecord {
     public String toJson(String build, long seed, long ticksRun, boolean complete) {
         var out = new StringBuilder(4096);
         out.append("{\n  \"scenario\": ").append(Json.string(scenario.asText()))
-                .append(",\n  \"kind\": ").append(Json.string(scenario.earned() ? "earned" : "staged"))
+                .append(",\n  \"kind\": ").append(Json.string(earned() ? "earned" : "staged"))
+                .append(",\n  \"policy\": {\"teleport\": ").append(teleport).append(", \"freeItems\": ").append(freeItems).append('}')
                 .append(",\n  \"build\": ").append(Json.string(build))
                 .append(",\n  \"seed\": ").append(seed)
                 .append(",\n  \"ticks\": ").append(scenario.ticks())
                 .append(",\n  \"ticksRun\": ").append(ticksRun)
                 .append(",\n  \"complete\": ").append(complete)
+                .append(factions == null ? "" : factions)
+                .append(server == null ? "" : server)
                 .append(",\n  \"players\": {");
         boolean firstPlayer = true;
         for (var entry : players.entrySet()) {

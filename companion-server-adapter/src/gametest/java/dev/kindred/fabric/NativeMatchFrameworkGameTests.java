@@ -145,6 +145,12 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
                     var presenter = f.runtime.presenter();
                     context.assertTrue(presenter.shown(people[0].getUuid()).equals(List.of("3", "2", "1", "Fight!", "Defeat")), "Mira shown " + presenter.shown(people[0].getUuid()));
                     context.assertTrue(presenter.shown(ada[0]).getLast().equals("Victory"), "Ada shown " + presenter.shown(ada[0]));
+                    // F-34c: Ada, who has no screen, was told the same titles by the server, to her alone; no countdown seconds.
+                    var told = f.runtime.wire().inbox(id[0], dev.kindred.core.wire.MatchTitles.KIND).reversed().stream()
+                            .map(t -> t.message().facts().get("title").value()).toList();
+                    context.assertTrue(told.equals(List.of("Fight!", "Victory")), "Ada told " + told);
+                    context.assertTrue(f.runtime.wire().inbox(id[0], dev.kindred.core.wire.MatchTitles.KIND).stream()
+                            .allMatch(t -> t.message().fromServer() && t.message().scope().key().equals(id[0].toString())), "From the server, to her alone");
                     context.assertTrue(presenter.shown(people[1].getUuid()).equals(List.of("Ada wins")), "Owen shown " + presenter.shown(people[1].getUuid()));
                     context.assertTrue(presenter.bursts(ada[0]).equals(List.of("start", "win")) && presenter.bursts(people[0].getUuid()).equals(List.of("start")),
                             "Particles: Ada " + presenter.bursts(ada[0]) + ", Mira " + presenter.bursts(people[0].getUuid()));

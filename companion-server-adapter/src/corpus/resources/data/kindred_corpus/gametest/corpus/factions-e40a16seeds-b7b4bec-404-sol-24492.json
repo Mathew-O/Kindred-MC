@@ -1,0 +1,85 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 24492,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  33,
+  62,
+  -166
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.778315541674523,
+  8.0,
+  16.61204847347156
+ ],
+ "yaw": 296.3961,
+ "pitch": 18.159336,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 4.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [
+  {
+   "id": "minecraft:slowness",
+   "amplifier": 0,
+   "duration": 192
+  },
+  {
+   "id": "minecraft:poison",
+   "amplifier": 0,
+   "duration": 99
+  }
+ ],
+ "inventory": [],
+ "selected": 0,
+ "timeOfDay": 492,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from spider",
+ "task": "Back off from spider",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was killed by Witch using magic",
+ "ticks": 1200,
+ "log": [
+  "[12:58:39] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 40, 69, -138 is blocked [from factionCandidates:9263]",
+  "[12:58:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[12:58:41] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[12:58:41] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [To where it last saw game at 60, 65, -124]",
+  "[12:58:42] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[12:58:43] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper the way it came]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9263]",
+  "[12:58:44] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 55, 80, -193 [from factionCandidates:9263]",
+  "[12:58:45] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from witch]",
+  "[12:58:45] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from spider]",
+  "[12:58:45] [Server thread/INFO]: Sol died at 49, 70, -150: Sol was killed by Witch using magic (tick 24492, day, under cover, hunger 20, armour 0, holding nothing, no shield; doing \"Back off from spider\" in \"Wood: fight back - Back off from spider\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "factions-e40a16seeds-b7b4bec",
+  "seed": "404",
+  "build": "b7b4bec",
+  "replay": "",
+  "source": "claude/corpus-data-factions-b7b4bec-1110@03b73b6:factions-e40a16seeds-b7b4bec/404/replays/world/Sol-24492",
+  "class": "death: witch",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state; recorded on b7b4bec, which still had the walk set-aside of #120"
+ }
+}

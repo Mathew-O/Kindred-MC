@@ -248,4 +248,76 @@ public final class NativeHorseGameTests implements FabricGameTest {
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
+
+    /**
+     * A far walk of its own ridden on its horse: its horse kept, tamed to it and saddled, two blocks off (staged: the
+     * taming and saddling are the fixture above's), and a walk ninety blocks east dispatched as one it chose itself. It
+     * gets on, rides most of the way, gets off and walks the rest; the horse ends near where it went.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "rideTrip", tickLimit = 3000)
+    public void aFarWalkOfItsOwnIsRiddenOnItsHorse(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2800);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos stand = o.add(-30, 7, 16);
+        BlockPos target = o.add(60, 7, 16);
+        UUID[] horse = new UUID[1];
+        boolean[] rode = {false};
+        long[] asked = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Rider"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, new BlockPos[0]);
+                    // The way east laid as the field is, the length of the fixture's ground (put back at its end).
+                    for (int x = -36; x <= 66; x++) for (int z = 6; z <= 26; z++) {
+                        for (int y = 0; y <= 5; y++) world.setBlockState(o.add(x, y, z), (y < 4 ? Blocks.STONE : Blocks.DIRT).getDefaultState());
+                        world.setBlockState(o.add(x, 6, z), Blocks.GRASS_BLOCK.getDefaultState());
+                        for (int y = 7; y <= 24; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    world.setTimeOfDay(1000);
+                    var player = f.player();
+                    player.getInventory().clear();
+                    player.getInventory().setStack(1, new ItemStack(Items.BREAD, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    // Staged: its own horse, tamed to it and saddled (both earned in the fixture above), beside it.
+                    var tame = (HorseEntity) context.spawnEntity(EntityType.HORSE, stand.add(2, 0, 2).subtract(context.getAbsolutePos(BlockPos.ORIGIN)));
+                    tame.bondWithPlayer(player);
+                    tame.saddle(new ItemStack(Items.SADDLE), null);
+                    horse[0] = tame.getUuid();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.stageHorseForTest(f.id, horse[0]), "Its horse kept"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player.isOnGround() && context.getTick() > asked[0] + 5, "Settled");
+                    context.assertTrue(f.runtime.ownWalkForTest(f.id, target, 2) == 1, "Its walk east begun: " + f.runtime.nativeStatusLine(f.id));
+                    asked[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var tame = (HorseEntity) context.getWorld().getEntity(horse[0]);
+                    if (tame != null && player.getVehicle() == tame) rode[0] = true;
+                    double left = Math.hypot(player.getX() - target.getX() - 0.5, player.getZ() - target.getZ() - 0.5);
+                    context.assertTrue(left <= 3 && !player.hasVehicle() && player.isOnGround(), "There on foot: " + (int) left + " blocks left, riding "
+                            + player.hasVehicle() + "; " + f.runtime.nativeStatusLine(f.id));
+                })
+                .createAndAdd(() -> {
+                    var tame = (HorseEntity) context.getWorld().getEntity(horse[0]);
+                    double moved = Math.hypot(tame.getX() - stand.getX(), tame.getZ() - stand.getZ());
+                    double near = Math.hypot(tame.getX() - target.getX(), tame.getZ() - target.getZ());
+                    context.assertTrue(rode[0], "It rode its horse on the way");
+                    context.assertTrue(moved >= 50 && near <= 12, "The horse carried it: moved " + (int) moved + ", " + (int) near + " from where it went");
+                    KindredMod.LOGGER.info("Trip ridden: horse moved {} blocks, ended {} from the target", (int) moved, (int) near);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
 }
