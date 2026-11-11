@@ -32,11 +32,16 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
 - F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
+- F-35c1, no walk to the portal out of a night shelter: [evidence](evidence/F-35c1.md).
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
+- F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
+- F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
+- F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
+- M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 
 ## An AI player's own trade and defence, native (M-06i) — 11 November 2026 (`claude/m06i-trade-fixtures-1111`)
 
@@ -45,6 +50,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 ## Faction acts told resting on the Record (M-06i) — 11 November 2026 (`claude/m06i-faction-tell-1111`)
 
 - [M-06i: faction acts told resting on the Record](evidence/M-06i.md#faction-acts-told-resting-on-the-record-2026-11-11-claudem06i-faction-tell-1111).
+
+## The safe zones' chunks gathered once (M-06f) — 11 November 2026 (`claude/m06i-safe-chunks-1111`)
+
+- [M-06f: the safe zones' chunks gathered once](evidence/M-06f.md#the-safe-zones-chunks-gathered-once-2026-11-11-claudem06i-safe-chunks-1111).
 
 ## Factions an operator's choice (M-06i) — 11 November 2026 (`claude/m06i-playable-1111`)
 
@@ -74,6 +83,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c59](evidence/F-22c59.md) (2026-11-11, diagnostics): a build walk the plan counted on and the navigator found no way for logs the plan's way and the first step the navigator will not take.
 - [F-22c60](evidence/F-22c60.md) (2026-11-11, diagnostics): a drop worth walking back for, left lying, says which check left it; portal and obsidian-pickup classes 98 of 98, 3 runs.
 - [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
+- [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

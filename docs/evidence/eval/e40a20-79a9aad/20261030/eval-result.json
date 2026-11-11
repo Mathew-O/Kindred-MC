@@ -1,0 +1,46 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 13.39, "tickMsWorst": 3205.19, "tickMsWorstAt": 1, "ticksOver50ms": 652, "ticksOver200ms": 14, "heapMbMax": 1252, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2040, "iron_ingot": 9380, "iron_pickaxe": 21600, "obsidian": 63269},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 77300, "x": -185, "y": 56, "z": 104, "attempt": 1}, {"tick": 80900, "x": -185, "y": 56, "z": 104, "attempt": 2}, {"tick": 99440, "x": -164, "y": 60, "z": 106, "attempt": 3}, {"tick": 105460, "x": -128, "y": 66, "z": 80, "attempt": 4}, {"tick": 122920, "x": -154, "y": 60, "z": 79, "attempt": 5}, {"tick": 126700, "x": -129, "y": 62, "z": 76, "attempt": 6}, {"tick": 131260, "x": -17, "y": 81, "z": 20, "attempt": 7}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 580, "stone_tools": 2000, "iron_ingot": 9720, "iron_pickaxe": 25460, "obsidian": 60797, "portal_lit": 63533},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29500, "x": -14, "y": 16, "z": -116, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 860, "stone_tools": 2360, "iron_ingot": 10000, "iron_pickaxe": 26300},
+      "deaths": [
+        {"tick": 48021, "cause": "Echo was slain by Zombie Villager", "x": 50, "y": 120, "z": -15, "light": 13, "timeOfDay": 183, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Back off from zombie_villager the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "Fight zombie_villager"},
+        {"tick": 73903, "cause": "Echo was shot by Skeleton", "x": 25, "y": -47, "z": 164, "light": 0, "timeOfDay": 2065, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO, SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 143320, "x": -80, "y": -52, "z": 90, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

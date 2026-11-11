@@ -807,6 +807,27 @@ leave it any time. A person in no faction is never a target, and an AI player in
 on the first start (10 members, power 0 to 10 starting at 10, −2 a qualifying PvP death, +1 an online hour, 80 chunks,
 500-block spawn exclusion, an 8,000-block border); an unknown key or a bad value is logged and the defaults apply.
 
+### Setting up a Factions server (M-06j1)
+
+Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-06j1.md)):
+
+1. Build the server from `packs/factions/` (its README): the seven mods by the index's links, each checked against its
+   SHA-512; the Fabric server launcher for 1.21.1 with Loader 0.19.5; the Kindred jar; the pack's `server.properties`,
+   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first.
+2. Start it, then at the console: `aiplayer mode world factions`, then `faction admin hub` (the safe zone, the borders,
+   the hub built). The mode is kept across restarts.
+3. Pre-generate with Chunky (the README's commands); `spark tps` after should read 20. Use
+   `spark heapsummary --save-to-file`, never the default, which uploads to spark's public paste site.
+4. AI players: `aiplayer native create <name>` puts one where the command stands. The console stands at world spawn,
+   inside the hub once it is built, so create the first with
+   `execute positioned ~20 ~ ~20 positioned over world_surface run aiplayer native create <name>`, and the rest beside it
+   with `execute at <first> positioned ~2 ~ ~ positioned over world_surface run ...`. Act for one with
+   `/faction as <player> <request>` (`create`, `invite`, `join`, `claim`, `coins`, `shop price <item>`, `ah list`, ...).
+5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
+   `aiplayer native connect <UUID>` for each.
+6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
+   read from the console.
+
 In a faction world:
 
 - `/faction create <name> <tag> [colour]`, `invite|uninvite|kick|promote|demote|leader <player>`, `join <faction>`,
@@ -821,6 +842,11 @@ In a faction world:
   killer within 20 minutes, and the killer's account not first seen in the last hour. Online time restores 1 power an hour,
   kept to the second across logouts and restarts (written every five minutes, at a logout and at a stop).
 - Every change is an event in the World Record (F-31); factions and power are rebuilt from it at startup.
+- Disk: the World Record (`kindred/companions.sqlite` and its `-wal`) grows with the number of players and what they do, and nothing
+  is pruned but settled action history. Measured with 3 AI players on seed 101 at 72 game days a real day (dragon goal, a build of
+  2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
+  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
+  for a long run; a figure for eight players is to follow.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);

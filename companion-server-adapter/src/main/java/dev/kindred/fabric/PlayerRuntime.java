@@ -277,7 +277,6 @@ final class PlayerRuntime {
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
     /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
-    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -7642,7 +7641,14 @@ final class PlayerRuntime {
                 entry.patchDropsAside.clear(); // A block out opens the way to what fell beside it.
                 entry.patchDropRetries = 0;
             }
-            if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null) entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            // A mine refused before it broke anything (the player moved, its tool or the block changed between the plan and
+            // the dispatch) is a try, as a walk is: planned again, every check made afresh, and set aside only after three.
+            // Set aside at once, a trunk's third log was left standing, the top log over it had no ground to walk to, and
+            // the trunk was never replanted (F-22c63). Any other refusal, or an uncertain outcome, is set aside as before.
+            if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null
+                    && !(NativeMiningAction.nothingIssued(entry.runner.reason().orElse(null)) && ++entry.patchWalks < 3)) {
+                entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            }
             if ("native_goto".equals(entry.skillId) && entry.patchDropWalk < 0 && entry.patchWalkTo != null) entry.patchWalks++;
             // A drop it could not walk to (fallen into a hole too low to step into), or that it reached twice and is still
             // lying there out of its reach: set aside while the mining goes on.
@@ -7770,10 +7776,15 @@ final class PlayerRuntime {
             // A faction walk (M-06i): a refusal backs it off and, after three, sets the place aside; a walk that went
             // somewhere forgets its refusals.
             var factionMove = entry.factionPlay.move;
+            boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
+                    && entry.dispatchSource.startsWith("factionCandidates");
+            if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
+            if (factionWalk) entry.factionPlay.walksEnded++;
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
-                    entry.factionPlay.refused(factionMove.target(), server.getTicks());
+                    var walker = entry.nativeBody.entity();
+                    entry.factionPlay.refused(factionMove.target(), server.getTicks(), walker.getBlockPos(), FactionsPlayer.atSurface(walker));
                     // The weighed copy of this walk is not dispatched again while it waits.
                     entry.cachedRoutineCandidates = List.of();
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
@@ -9298,7 +9309,9 @@ final class PlayerRuntime {
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
         }
-        if (play.waiting(move.target(), tick)) return null;
+        // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
+        // way is made toward any of them meanwhile (F-35i).
+        if (play.paused(tick, player.getBlockPos(), FactionsPlayer.atSurface(player))) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9306,12 +9319,63 @@ final class PlayerRuntime {
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
         }
+        // Its walk would end in open water it saw (F-35j): the place set aside at once, with no walk asked and no way made.
+        // On Factions seed 303 the players' land is an island, and the places its faction play chose east of it were open
+        // sea, refused leg after leg. Only what it saw counts; out of its sight the walk is asked as before.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && seenOpenWater(entry, play, player, to, tick)) {
+            play.openWater(move.target(), tick);
+            play.move = null;
+            play.decidedAt = Long.MIN_VALUE / 2;
+            return null;
+        }
+        // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
+        // own put, as a player climbs out of a hollow, through the run's own route builder under the server's edit policy
+        // and the faction land's rules; then the walk is asked again. On Factions seed 109 in RUNNER 2's trace the players'
+        // spawn was a basin no walk leaves, and 253 of the 359 refused legs had searched all of it (1,184 positions).
+        if (play.refusals(move.target()) > 0 && play.waysMade(move.target()) < FactionsPlayer.WAY_STEPS) {
+            var way = factionWay(entry, body, move, to);
+            if (way != null) return way;
+        }
+        if (play.waiting(move.target(), tick)) return null;
         var candidate = new dev.kindred.core.TaskPreferences.Candidate(FactionsPlayer.taskId(player.getUuid(), move),
                 dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0, dev.kindred.core.TaskPreferences.Affinities.none(),
                 new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /** Whether the way toward a faction walk's end {@code to} is open water the player saw (F-35j); a dry answer kept a second for the same end. */
+    private boolean seenOpenWater(Entry entry, FactionsPlayer play, ServerPlayerEntity player, BlockPos to, long tick) {
+        if (entry.campaign == null) return false;
+        if (to.equals(play.dryAt) && tick - play.dryAtTick < 20) return false;
+        boolean water = entry.campaign.knowledge().seenOpenWaterToward(player.getBlockPos(), to, FactionsPlayer.OPEN_WATER);
+        if (!water) {
+            play.dryAt = to.toImmutable();
+            play.dryAtTick = tick;
+        }
+        return water;
+    }
+
+    /**
+     * The next step of a way made toward {@code to}, where a faction walk there was refused: a dug step, a block of its own
+     * put or the walk up to where that is needed, never a way that only walks (that was refused). Null when the server
+     * allows no edits or the route builder finds none, and the walk waits as before.
+     */
+    private List<NativeTaskCandidate> factionWay(Entry entry, NativePlayerBody body, dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
+        if (!worldEditsEnabled()) return null;
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        var task = entry.campaign.buildRoute(body, edits, to, p -> p.getSquaredDistance(to) <= 9, true, "Make a way toward " + to.toShortString());
+        if (task.isEmpty()) return null;
+        entry.factionPlay.wayMade(move.target());
+        var t = task.get();
+        UUID id = UUID.nameUUIDFromBytes(("faction-way:" + entry.data.id() + ":" + t.skill() + ":" + new java.util.TreeMap<>(t.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.campaignTasks.clear();
+        entry.campaignTasks.put(id, t);
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, t.skill(), t.args()));
     }
 
     /** Who {@code id} (an AI player's own id, or a person's) is in, as a faction id; empty outside a faction world or a faction. */
@@ -9514,6 +9578,36 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? 0 : entry.factionPlay.refusals(target);
+    }
+
+    /** The fixture's AI player's faction walks that came back refused, and the refusals its back-off counted. */
+    int[] factionBlockedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+    }
+
+    /** How many times the fixture's AI player has looked all round it (its perception's sweeps); -1 before it looks at all. */
+    int sweepsForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null || entry.campaign == null ? -1 : entry.campaign.knowledge().sweeps();
+    }
+
+    /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
+    int[] factionOverWaterForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.overWater, entry.factionPlay.walksEnded};
+    }
+
+    /** Whether the fixture's AI player's faction walks all wait now, where it stands. */
+    boolean factionPausedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
+        var body = entry.nativeBody.entity();
+        return entry.factionPlay.paused(server.getTicks(), body.getBlockPos(), FactionsPlayer.atSurface(body));
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
@@ -16635,8 +16729,12 @@ final class PlayerRuntime {
 
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
-        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept(), wire.stateTold());
-        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
+        SqliteCompanionStore database = store;
+        var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
+        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
+                chronicle.kept(), wire.stateTold());
+        var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
     }
@@ -16672,7 +16770,6 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
-                    gauge.written(event); // The month-long cost check.
                 }
             });
         });
