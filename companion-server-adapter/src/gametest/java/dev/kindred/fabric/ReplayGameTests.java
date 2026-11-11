@@ -284,7 +284,8 @@ public final class ReplayGameTests implements FabricGameTest {
                         if (hook != null) hook.accept(campaign, dropped);
                         MUST_RESTORE.remove(state.get("player").getAsString());
                     }
-                    context.assertFalse(MUST_RESTORE.remove(state.get("player").getAsString()), "Its scene's memory put back");
+                    // Checked without changing anything: a timed task that fails is tried again the next tick.
+                    context.assertFalse(MUST_RESTORE.contains(state.get("player").getAsString()), "Its scene's memory put back");
                     from[0] = body.getPos();
                     began[0] = context.getTick();
                 })
