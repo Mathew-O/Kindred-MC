@@ -473,6 +473,106 @@ public final class NativeBuildGameTests implements FabricGameTest {
     }
 
     /**
+     * Its wall's top block placed from its own scaffold, the player stood 0.4 of a block off its column's middle
+     * toward a bottom slab in the next cell, level with the block underfoot (staged; the cabin's roof on #136's CI, run
+     * 42826864347). Dug out from there, the block gave way under a body overlapping the slab's cell, and the slab caught it
+     * half a block down: it slid onto the roof, where no walk could start, and the cabin stopped short. It steps over the
+     * column's middle first and goes down its own scaffold, never onto the slab, and takes the scaffold down (F-22c57).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildDownBesideSlab", tickLimit = 6000)
+    public void aScaffoldBesideASlabIsClimbedDownOverItsMiddleNotOntoTheSlab(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
+        var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
+        for (int x = 0; x <= 4; x++) for (int y = 0; y <= 7; y++) blocks.add(new dev.kindred.core.construction.Blueprint.Block(
+                new dev.kindred.core.construction.Pos(x, y, 0), dev.kindred.core.construction.BlockSpec.parse("minecraft:cobblestone")));
+        var wall = new dev.kindred.core.construction.Blueprint("wall", "fixture", "Kindred", "fixture", blocks);
+        BlockPos[] origin = new BlockPos[1];
+        BlockPos[] slab = new BlockPos[1];
+        boolean[] slid = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -6; x <= 12; x++) for (int z = -6; z <= 12; z++) {
+                        for (int y = -1; y <= 1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    origin[0] = o.add(3, 2, 3);
+                    for (int x = 0; x <= 4; x++) for (int y = 0; y <= 7; y++) {
+                        if (x == 4 && y == 7) continue; // The block left to place, from its scaffold.
+                        world.setBlockState(origin[0].add(x, y, 0), Blocks.COBBLESTONE.getDefaultState());
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 1));
+                    inventory.setStack(2, new ItemStack(Items.DIRT, 64));
+                    inventory.setStack(3, new ItemStack(Items.STONE_PICKAXE));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = origin[0].add(4, 0, 2);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.startBuild(f.source, f.id, wall, origin[0], 0) == 1, "Build started"))
+                .createAndAdd(() -> {
+                    // Staged, once, as the top goes in: the slab beside its column, the player 0.4 off toward it.
+                    var world = context.getWorld();
+                    var player = f.player();
+                    if (slab[0] == null && world.getBlockState(origin[0].add(4, 7, 0)).isOf(Blocks.COBBLESTONE)) {
+                        BlockPos feet = player.getBlockPos();
+                        context.assertTrue(player.isOnGround() && feet.getY() > origin[0].getY() + 1 && world.getBlockState(feet.down()).isOf(Blocks.DIRT),
+                                "On its scaffold as the top went in: " + feet + " on " + world.getBlockState(feet.down()));
+                        for (var d : List.of(net.minecraft.util.math.Direction.EAST, net.minecraft.util.math.Direction.WEST,
+                                net.minecraft.util.math.Direction.SOUTH, net.minecraft.util.math.Direction.NORTH)) {
+                            BlockPos beside = feet.offset(d);
+                            if (beside.getZ() == origin[0].getZ() || !world.getBlockState(beside.down()).isAir() || !world.getBlockState(beside).isAir()
+                                    || !world.getBlockState(beside.up()).isAir()) continue;
+                            slab[0] = beside.down();
+                            world.setBlockState(slab[0], Blocks.STONE_SLAB.getDefaultState());
+                            player.refreshPositionAndAngles(feet.getX() + 0.5 + 0.4 * d.getOffsetX(), player.getY(),
+                                    feet.getZ() + 0.5 + 0.4 * d.getOffsetZ(), player.getYaw(), player.getPitch());
+                            player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            KindredMod.LOGGER.info("Build fixture: a slab beside its scaffold at {}, the player at {} {} {}", slab[0],
+                                    player.getX(), player.getY(), player.getZ());
+                            break;
+                        }
+                        context.assertTrue(slab[0] != null, "A cell beside its scaffold for the slab, at " + feet);
+                    }
+                    context.assertTrue(slab[0] != null, "The top placed: " + f.runtime.buildStatus(f.id).orElse(""));
+                })
+                .createAndAdd(() -> {
+                    // Watched each tick from here: never stood on the slab's top, half a block down its column. Its block
+                    // there is still the column's, dug out; the slab under the overlapping box holds it up.
+                    var player = f.player();
+                    if (!slid[0] && player.isOnGround() && Math.abs(player.getY() - (slab[0].getY() + 0.5)) < 1.0e-3) {
+                        slid[0] = true;
+                        KindredMod.LOGGER.info("Build fixture: slid onto the slab at {}: {} {} {}", slab[0], player.getX(), player.getY(), player.getZ());
+                    }
+                    context.assertFalse(slid[0], "Slid onto the slab at " + slab[0] + "; the last word: " + f.runtime.nativeLastResult(f.id));
+                    context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(),
+                            "Built: " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    int left = 0;
+                    for (BlockPos at : BlockPos.iterate(origin[0].add(-3, 0, -3), origin[0].add(7, 9, 3))) {
+                        if (at.getZ() == origin[0].getZ() && at.getX() >= origin[0].getX() && at.getX() <= origin[0].getX() + 4) continue;
+                        var state = world.getBlockState(at);
+                        if (state.isOf(Blocks.DIRT) || state.isOf(Blocks.COBBLESTONE)) left++;
+                    }
+                    context.assertTrue(left == 0, "Its scaffold taken down: " + left + " blocks left; the last word: " + f.runtime.nativeLastResult(f.id));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A bed to build, two of its three wool held, and the third lying beside the player, not to be picked up for four
      * seconds (staged: a player's toss is two): it waits by it, picks it up once it may, makes the bed and puts it in.
      * Before, each look at the drop while it waited counted as a try, the plan being asked again every few ticks, and

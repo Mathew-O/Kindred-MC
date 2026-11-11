@@ -305,6 +305,13 @@ final class NativeBreakAction extends NativeRecordedAction {
                 }
                 double dx = next.getX() - player.getX();
                 double dz = next.getZ() - player.getZ();
+                // Down its own pillar, the block underfoot just dug out: held still over the column while its drop falls
+                // onto it, a player's reach for items a block either side. Chased, the drop still above it as it landed,
+                // it jumped, drifted a fifth of a block, and came down on a bottom slab beside its column (F-22c57).
+                if (underfoot) {
+                    body.stopInputs();
+                    return Step.running(Map.of("phase", phase.name(), "collect", String.valueOf(collectTicks)), false);
+                }
                 if (dx * dx + dz * dz > 0.25 || Math.abs(next.getY() - player.getY()) > 1.2) {
                     float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
                     // A drop that fell down a shaft or into a cave is not followed over the edge.

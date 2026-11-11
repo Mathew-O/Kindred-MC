@@ -130,7 +130,7 @@ final class NativePlayerSkills {
             case "native_faction" -> new SkillDescriptor(id, Set.of("kind"), Set.of("target", "amount"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre",
-                    "hold", "leg", "safe", "fall", "horse", "ride_slot"), Set.of("move"), Set.of(),
+                    "centre_within", "hold", "leg", "safe", "fall", "horse", "ride_slot"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
             case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot", "over_lava"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
@@ -215,7 +215,8 @@ final class NativePlayerSkills {
             if (arguments.containsKey("leg")) go.leg(Integer.parseInt(arguments.get("leg")));
             if (arguments.containsKey("fall")) go.fallingAtMost(Integer.parseInt(arguments.get("fall")));
             if (Boolean.parseBoolean(arguments.getOrDefault("safe", "false"))) go.safely();
-            SkillBody walk = Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
+            SkillBody walk = arguments.containsKey("centre_within") ? go.centredWithin(Double.parseDouble(arguments.get("centre_within")))
+                    : Boolean.parseBoolean(arguments.getOrDefault("centre", "false")) ? go.centred() : go;
             // A far walk ridden on its own horse (M-01a), the walk itself kept for the last blocks and any fall-back.
             if (arguments.containsKey("horse")) {
                 return new NativeTripSkill(body, lease, UUID.fromString(arguments.get("horse")), Integer.parseInt(arguments.getOrDefault("ride_slot", "-1")), target, walk);

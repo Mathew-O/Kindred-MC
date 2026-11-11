@@ -543,10 +543,7 @@ final class BuildRunner {
             progress = blueprint.name() + ": landing on its scaffold";
             return Optional.of(new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1", "landed", "true"), "Landing on its scaffold"));
         }
-        if (down && player.isOnGround()) {
-            return Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
-                    "collect", "true", "underfoot", "true"), "Down the scaffold"));
-        }
+        if (down && player.isOnGround()) return Optional.of(downTheScaffold(player, feet, under));
         // Down in a hollow below the build's floor, nothing of the build in reach and a walk round already failed: up out
         // of it first, as from a trip down for stone, by a route or by climbing. Fallen three blocks into a hollow beside
         // its cabin, its walks round to the last scaffold found "no walkable route" eight times and the build stopped (#82:
@@ -607,8 +604,7 @@ final class BuildRunner {
                 // run 49, and runs 22 and 48 before it).
                 if (scaffold.contains(step.target()) && step.target().x() == feet.x() && step.target().z() == feet.z() && step.target().y() < feet.y()) {
                     if (!player.isOnGround()) yield Optional.of(landing("Landing first"));
-                    yield Optional.of(new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
-                            "collect", "true", "underfoot", "true"), "Down the scaffold"));
+                    yield Optional.of(downTheScaffold(player, feet, under));
                 }
                 // Planned again for the block it set out for two walks ago, another between: it walks to and fro (two
                 // blocks of a hideout's floor, each to be broken from on top of the other, 1,231 walks each way to the end
@@ -1166,6 +1162,33 @@ final class BuildRunner {
 
     /** On the spot, near its middle (the walk there stops within 0.4 of it). */
     /** Break {@code target}, collecting the drop; the block it stands on with the leave to step down onto what is below. */
+    /** How far off its column's middle the body may stand to dig out the block underfoot: its box clear of the next cell. */
+    static final double DOWN_OFF_MIDDLE = 0.18;
+    /** The walks over its column's middle asked for one cell in a row, at most {@link #CENTRE_TRIES} before it digs anyway. */
+    private Pos centringAt;
+    private int centringTries;
+    private static final int CENTRE_TRIES = 3;
+
+    /**
+     * Down its own scaffold, the block underfoot dug out, with the body over the column's middle first. A body more than
+     * 0.2 off the middle overlaps the next cell; as the block gave way, a bottom slab of the cabin's roof there caught it
+     * half a block down. It slid onto the roof, where no walk could start, and the cabin stopped short of its roof
+     * (#136's CI, run 42826864347; this morning's house cabin) (F-22c57).
+     */
+    private PortalRunCampaign.Task downTheScaffold(ServerPlayerEntity player, Pos feet, Pos under) {
+        double off = Math.max(Math.abs(player.getX() - (feet.x() + 0.5)), Math.abs(player.getZ() - (feet.z() + 0.5)));
+        if (!feet.equals(centringAt)) {
+            centringAt = feet;
+            centringTries = 0;
+        }
+        if (off > DOWN_OFF_MIDDLE && centringTries++ < CENTRE_TRIES) {
+            return new PortalRunCampaign.Task("native_goto", Map.of("x", str(feet.x()), "y", str(feet.y()), "z", str(feet.z()),
+                    "range", "0", "centre_within", "0.15"), "Over the middle of its scaffold");
+        }
+        return new PortalRunCampaign.Task("native_break", Map.of("x", str(under.x()), "y", str(under.y()), "z", str(under.z()),
+                "collect", "true", "underfoot", "true"), "Down the scaffold");
+    }
+
     /** Whether a block stands at {@code at}, for the diagnostics; null for no cell. */
     private static Boolean there(ServerWorld world, Pos at) {
         return at == null ? null : !world.getBlockState(blockPos(at)).isAir();
