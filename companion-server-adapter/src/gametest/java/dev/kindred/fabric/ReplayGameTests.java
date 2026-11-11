@@ -53,10 +53,26 @@ public final class ReplayGameTests implements FabricGameTest {
     /**
      * Each replay's runtime, with the server tick past which its test is over. A test that times out never reaches its
      * own stop, and its player lived on into later batches: it fell when its scene was cleared, respawned at the world's
-     * spawn and kept acting (12 or 13 a run in the corpus gate on 7ec519c). A server tick listener stops each one once
-     * its test's time is past, whatever way the test ended.
+     * spawn and kept acting (12 or 13 a run in the corpus gate on 7ec519c). A server tick listener stops each one as
+     * soon as its test has ended, passed or failed, or its test's time is past: the test's finally.
      */
     private static final java.util.Map<PlayerRuntime, Long> LIVE = new java.util.concurrent.ConcurrentHashMap<>();
+    /** Each replay runtime's test, to stop it as soon as its test has ended, passed or failed. */
+    private static final java.util.Map<PlayerRuntime, net.minecraft.test.GameTestState> TESTS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** The test a context belongs to: TestContext keeps it private, and its end is what a finally would follow. */
+    private static net.minecraft.test.GameTestState testOf(TestContext context) {
+        for (var field : TestContext.class.getDeclaredFields()) {
+            if (field.getType() != net.minecraft.test.GameTestState.class) continue;
+            try {
+                field.setAccessible(true);
+                return (net.minecraft.test.GameTestState) field.get(context);
+            } catch (ReflectiveOperationException | RuntimeException unreadable) {
+                return null;
+            }
+        }
+        return null;
+    }
 
     private static final java.util.concurrent.atomic.AtomicBoolean WATCHING = new java.util.concurrent.atomic.AtomicBoolean();
 
@@ -69,8 +85,10 @@ public final class ReplayGameTests implements FabricGameTest {
     private static void stopFinished(long tick) {
         for (var it = LIVE.entrySet().iterator(); it.hasNext(); ) {
             var live = it.next();
-            if (live.getValue() >= tick) continue;
+            var test = TESTS.get(live.getKey());
+            if (live.getValue() >= tick && (test == null || !test.isCompleted())) continue;
             it.remove();
+            TESTS.remove(live.getKey());
             if (live.getKey().running()) live.getKey().stop();
         }
     }
@@ -128,6 +146,8 @@ public final class ReplayGameTests implements FabricGameTest {
         runtime.start();
         watch();
         LIVE.put(runtime, (long) server.getTicks() + ticks + 600 + 20);
+        var test = testOf(context);
+        if (test != null) TESTS.put(runtime, test);
         // The scene's mobs held still until the player is in it (below): with their AI on from the structure's placing,
         // they moved for the 40 ticks the ground settles and the seconds the player takes to be made, different each
         // run, and the player's first choice (fight this one, back off from that one) differed with them.
