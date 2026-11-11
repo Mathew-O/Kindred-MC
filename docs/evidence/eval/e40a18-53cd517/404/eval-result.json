@@ -1,0 +1,49 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 13.45, "tickMsWorst": 2650.57, "tickMsWorstAt": 94674, "ticksOver50ms": 390, "ticksOver200ms": 13, "heapMbMax": 1356, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 560, "stone_tools": 1840, "iron_ingot": 4020, "iron_pickaxe": 37120},
+      "deaths": [
+        {"tick": 48254, "cause": "Kindred was slain by Zombie", "x": 83, "y": 63, "z": -37, "light": 14, "timeOfDay": 416, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 75369, "cause": "Kindred fell from a high place", "x": 14, "y": 22, "z": -57, "light": 1, "timeOfDay": 3531, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: Mine cobblestone for a furnace and portal corners - Mine stone at 15, 32, -58", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 121096, "cause": "Kindred was shot by Skeleton", "x": 42, "y": 18, "z": -97, "light": 3, "timeOfDay": 1258, "dimension": "minecraft:overworld", "hunger": 3, "underSky": false, "stage": "Iron: fight back - Ready a block", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 124174, "cause": "Kindred was blown up by Creeper", "x": 14, "y": 16, "z": -65, "light": 8, "timeOfDay": 4336, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Wood: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52200, "x": 25, "y": 80, "z": -45, "attempt": 1}, {"tick": 55880, "x": 25, "y": 80, "z": -44, "attempt": 2}, {"tick": 59500, "x": 25, "y": 80, "z": -44, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1820, "stone_tools": 3280, "iron_ingot": 8780, "iron_pickaxe": 24880, "obsidian": 91841, "portal_lit": 93454},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2540, "iron_ingot": 17500, "iron_pickaxe": 72980, "obsidian": 118325},
+      "deaths": [
+        {"tick": 31823, "cause": "Echo fell from a high place", "x": 32, "y": -21, "z": -23, "light": 11, "timeOfDay": 7985, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Fight zombie (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 25560, "x": 52, "y": 19, "z": -53, "attempt": 1}, {"tick": 29680, "x": 33, "y": 18, "z": -56, "attempt": 1}, {"tick": 69420, "x": 16, "y": 16, "z": -56, "attempt": 1}, {"tick": 99000, "x": 28, "y": -51, "z": 72, "attempt": 1}, {"tick": 122480, "x": -38, "y": -50, "z": 45, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
