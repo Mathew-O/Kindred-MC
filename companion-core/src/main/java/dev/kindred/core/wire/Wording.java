@@ -47,6 +47,11 @@ public final class Wording {
         return line.length() <= MAX_CHARS ? line : line.substring(0, MAX_CHARS - 1) + "…";
     }
 
+    /** Who a line is from and on which channel, as it begins: "[faction] Wren: ", "[match] " for the server's. */
+    public static String prefix(Message message, String fromName) {
+        return "[" + message.scope().channel().id() + "] " + (message.fromServer() || fromName == null || fromName.isBlank() ? "" : fromName + ": ");
+    }
+
     /** The words for this message from {@code fromName} ("" for the server); null when its kind's line names a fact it lacks. */
     public String words(Message message, String fromName) {
         String prefix = "[" + message.scope().channel().id() + "] " + (message.fromServer() || fromName == null || fromName.isBlank() ? "" : fromName + ": ");

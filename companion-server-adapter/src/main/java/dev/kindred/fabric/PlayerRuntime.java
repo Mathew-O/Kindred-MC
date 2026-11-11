@@ -511,7 +511,7 @@ final class PlayerRuntime {
         this.metadataDirectory = metadataDirectory;
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
-        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market, () -> running && !stopping);
         this.hud = new FactionsHud(factions, market, hudSections);
         factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
@@ -545,8 +545,12 @@ final class PlayerRuntime {
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         webs = new KnowledgeWebs(server::getTicks);
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
-                PlayerRuntime::now);
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs,
+                (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
+                    var said = Text.literal(words);
+                    person.sendMessage(said, false);
+                    if (heardForFixtures != null) heardForFixtures.accept(person, said);
+                }, PlayerRuntime::now);
         // A player's faction for the Wire (M-06i): the Factions ledger's, its AI players by their bodies.
         setFactionOf(this::factionKey);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
@@ -596,6 +600,9 @@ final class PlayerRuntime {
         socials.setVoice(voice);
         voice.setManner(socials::manner);
         voice.setSwearing(socials::maySwear); // E-18b: a rough player's reply may swear to someone who said yes.
+        // F-34: a line said on an AI player's behalf on the Wire, in its own voice when a model is on; else the plain line.
+        wire.voice((sender, person, message, plain, prefix, say) -> running && voice.phraseWire(sender, person, message, plain, prefix,
+                words -> { if (running) say.accept(words); }));
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
             Entry entry = entries.get(participant.id());
@@ -695,8 +702,11 @@ final class PlayerRuntime {
             }
             java.util.Properties properties = new java.util.Properties();
             try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            // Free travel and free items (mod-support decision 6): forbidden unless the operator wrote "allow".
             return new EditPolicy.ServerPolicy(Boolean.parseBoolean(properties.getProperty("autonomousEdits", "false")),
-                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")));
+                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")),
+                    "allow".equalsIgnoreCase(properties.getProperty("teleport", "forbid").trim()),
+                    "allow".equalsIgnoreCase(properties.getProperty("freeItems", "forbid").trim()));
         } catch (Exception failure) {
             KindredMod.LOGGER.error("Kindred edit policy could not be read; autonomous edits stay disabled", failure);
             return EditPolicy.ServerPolicy.deferredD4();
@@ -709,6 +719,7 @@ final class PlayerRuntime {
     }
 
     void start() {
+        stopping = false; // A runtime started again begins a new epoch: its writes and callbacks are live.
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
@@ -2649,6 +2660,7 @@ final class PlayerRuntime {
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
                 if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
+                if (replays != null && tick % 20 == 0) captureSpell(entry);
                 if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
                 if (tick % 20 == 0 && factionsWorld()) watchFactionLand(entry, entry.nativeBody.entity());
                 refreshTacticalObservation(entry, tick);
@@ -3788,9 +3800,11 @@ final class PlayerRuntime {
                     if (actualRecipe != null) {
                         BlockPos craftTable = entry.cachedCraftingTablePos;
                         if (actualRecipe.equals("oak_planks") && body.planCraft("oak_planks", craftTable).isEmpty()) {
-                            for (String logType : List.of("birch", "spruce", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo")) {
-                                if (body.planCraft(logType + "_planks", craftTable).isPresent()) {
-                                    actualRecipe = logType + "_planks";
+                            // F-38: the planks of whatever wood it holds, by the server's #minecraft:planks; vanilla's
+                            // woods in the order they were always tried, then any other the tag holds, by id.
+                            for (String planks : planksInTryOrder()) {
+                                if (body.planCraft(planks, craftTable).isPresent()) {
+                                    actualRecipe = planks;
                                     break;
                                 }
                             }
@@ -5384,11 +5398,11 @@ final class PlayerRuntime {
             entry.bases = loaded != null ? loaded : new PlayerMemoryStore.Bases();
             // A record it cannot read as one of its stages (an edited file, a stage since renamed) is left out.
             entry.bases.built.removeIf(base -> base == null || base.dimension() == null || stageNamed(base.stage()) == null
-                    || base.wood() != null && !dev.kindred.core.construction.BuildNeeds.WOODS.contains(base.wood())
+                    || base.wood() != null && !dev.kindred.core.construction.Woods.known(base.wood())
                     || base.variant() < 0 || base.variant() > dev.kindred.core.construction.BuildStyle.VARIANTS);
             // A hall it cannot build again as recorded (an edited file) is left out, as a base is.
             var hall = entry.bases.hall;
-            if (hall != null && (hall.dimension() == null || hall.wood() == null || !dev.kindred.core.construction.BuildNeeds.WOODS.contains(hall.wood())
+            if (hall != null && (hall.dimension() == null || hall.wood() == null || !dev.kindred.core.construction.Woods.known(hall.wood())
                     || hall.cells() < dev.kindred.core.construction.TradingHall.MIN_CELLS || hall.cells() > dev.kindred.core.construction.TradingHall.MAX_CELLS)) {
                 entry.bases.hall = null;
             }
@@ -5537,7 +5551,17 @@ final class PlayerRuntime {
             var stack = inventory.getStack(slot);
             String id = Registries.ITEM.getId(stack.getItem()).getPath();
             String wood = id.endsWith("_planks") || id.endsWith("_log") ? dev.kindred.core.construction.BuildStyle.woodOf(id) : null;
-            if (wood != null) count.merge(wood, stack.getCount() * (id.endsWith("_log") ? 4 : 1), Integer::sum);
+            boolean log = id.endsWith("_log");
+            if (wood == null && !stack.isEmpty()) {
+                // F-38: a wood the server's tags and recipes name, whatever its ids are called.
+                String full = Registries.ITEM.getId(stack.getItem()).toString();
+                var facts = dev.kindred.core.Capabilities.current();
+                log = facts.is(dev.kindred.core.VanillaIds.LOGS, full);
+                if (log || facts.is(dev.kindred.core.VanillaIds.PLANKS, full)) {
+                    wood = facts.woodOfPart(full).map(dev.kindred.core.Capabilities.Wood::name).orElse(null);
+                }
+            }
+            if (wood != null) count.merge(wood, stack.getCount() * (log ? 4 : 1), Integer::sum);
         }
         var held = count.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
         if (held.isPresent()) return held.get();
@@ -7496,6 +7520,15 @@ final class PlayerRuntime {
     /** Report state changes once, persist checkpoints on pause, and release the lease on every terminal state. */
     private void observeRunner(Entry entry) {
         if (entry.runner == null) return;
+        // An outcome its goal could not settle for itself, its ceiling opened under the water and the fill or the reseal not
+        // gone as planned: blocked for reconciliation, as an uncertain action is, and never tried again (F-35g).
+        if (entry.nativeState != null && entry.campaign != null && !entry.reconciliationBlocked) {
+            var unsettled = entry.campaign.reconciliation();
+            if (unsettled.isPresent()) {
+                nativeFailure(server.getCommandSource(), entry, "Goal outcome requires reconciliation", new IllegalStateException(unsettled.get()));
+                return;
+            }
+        }
         SkillRunner.State state = entry.runner.state();
         if (state == entry.lastRunnerState) return;
         entry.lastRunnerState = state;
@@ -9899,6 +9932,35 @@ final class PlayerRuntime {
      * dev.kindred.core.construction.RailRoute}), the steps along it, and the cart. The hall's door is taken off for the
      * line and put back after; the rails it lays it takes up again; nothing owned is left but what holds the villager.
      */
+    /**
+     * Whether a boat on the ground could be rowed in a straight line from one spot to another without its box meeting a
+     * block or a hard entity, as far as the water: once over water what stands ahead is a shore, which the row itself ends at.
+     */
+    private static boolean boatRunClear(net.minecraft.server.world.ServerWorld world, net.minecraft.entity.vehicle.BoatEntity boat,
+                                        double fromX, double fromZ, double toX, double toZ) {
+        double length = Math.hypot(toX - fromX, toZ - fromZ);
+        double y = boat.getY() + 0.05;
+        for (double t = 0; t <= length; t += 0.25) {
+            double x = fromX + (toX - fromX) * t / Math.max(length, 1e-6), z = fromZ + (toZ - fromZ) * t / Math.max(length, 1e-6);
+            if (world.getFluidState(BlockPos.ofFloored(x, y - 0.5, z)).isIn(net.minecraft.registry.tag.FluidTags.WATER)) return true;
+            var box = new net.minecraft.util.math.Box(x - 0.6875, y, z - 0.6875, x + 0.6875, y + 0.5625, z + 0.6875);
+            if (!world.isSpaceEmpty(boat, box)) return false;
+        }
+        return true;
+    }
+
+    /** The nearest spot to one side of the boat's way, two to six blocks off it, from which it runs clear to the water. */
+    private static Vec3d boatDetour(net.minecraft.server.world.ServerWorld world, net.minecraft.entity.vehicle.BoatEntity boat, double toX, double toZ) {
+        double dx = toX - boat.getX(), dz = toZ - boat.getZ(), length = Math.hypot(dx, dz);
+        if (length < 1e-6) return null;
+        double px = -dz / length, pz = dx / length;
+        for (double k : new double[] {2, -2, 3, -3, 4, -4, 5, -5, 6, -6}) {
+            double x = boat.getX() + px * k, z = boat.getZ() + pz * k;
+            if (boatRunClear(world, boat, boat.getX(), boat.getZ(), x, z) && boatRunClear(world, boat, x, z, toX, toZ)) return new Vec3d(x, boat.getY(), z);
+        }
+        return null;
+    }
+
     private static final class Bring {
         enum Phase { HOLD, BOARD, ROW, LAND, BRIDGE, DOOR, OPEN, LAY, CART, PUSH, RECART, ROLL, LINTEL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, UNBRIDGE,
             DOOR_BACK, KEEP }
@@ -9941,6 +10003,13 @@ final class PlayerRuntime {
         BlockPos dock;
         int rows;
         Vec3d rowFrom;
+        /** Where the boat is being rowed aside to over the ground, round what stands in its way, or null (E-45e1). */
+        Vec3d aside;
+        /** Whether it went aside; and the rows done before the crossing proper, which the far bank's test does not count. */
+        boolean wentAside;
+        int rowsAside, asideAtRows;
+        /** Whether it has walked to the boat's spot rather than the villager (said once). */
+        boolean walkedToSpot;
         /** The hall's blocks taken out over the line for a villager riding in its boat, and what each was, to put back. */
         final Map<BlockPos, net.minecraft.block.BlockState> opened = new LinkedHashMap<>();
         final String wood;
@@ -10206,7 +10275,18 @@ final class PlayerRuntime {
                     return List.of(waitTask(hold, "For the " + b.noun + " to stand still"));
                 }
                 Vec3d top = aim != null ? aim : new Vec3d(ground.getX() + 0.5, ground.getY() + 1.0, ground.getZ() + 0.5);
-                if (player.getEyePos().distanceTo(top) > 3.5) return List.of(goNear(hold, villager.getBlockPos()));
+                // Near the villager, as before; but there already (a walk to it ends within two and a half blocks) with the spot on
+                // its far side still out of reach, near the spot itself. Else the walk to the villager was asked for again and
+                // again, ending at once each time, until the runtime's stop (E-45e1's staged librarian behind its lectern).
+                if (player.getEyePos().distanceTo(top) > 3.5) {
+                    boolean byIt = player.getPos().distanceTo(villager.getPos()) <= 3.0;
+                    if (byIt && !b.walkedToSpot) {
+                        b.walkedToSpot = true;
+                        KindredMod.LOGGER.info("{} bringing: by the {} with the boat's spot out of reach; to the spot, {}", entry.data.displayName(), b.noun,
+                                BlockPos.ofFloored(top).toShortString());
+                    }
+                    return List.of(goNear(hold, byIt ? BlockPos.ofFloored(top) : villager.getBlockPos()));
+                }
                 var args = new java.util.HashMap<>(Map.of("mode", "place", "slot", String.valueOf(boatSlot),
                         "x", String.valueOf(ground.getX()), "y", String.valueOf(ground.getY()), "z", String.valueOf(ground.getZ())));
                 if (aim != null) {
@@ -10240,14 +10320,43 @@ final class PlayerRuntime {
                 double wx = water.x() + 0.5, wz = water.z() + 0.5;
                 double left = Math.hypot(boat.getX() - wx, boat.getZ() - wz);
                 // There, or aground against the far bank well across (a row ends at the first shore met afloat).
-                boolean ashore = b.rows > 0 && boat.isTouchingWater() && left < b.rowFrom.distanceTo(new Vec3d(wx, b.rowFrom.y, wz)) / 2;
+                boolean ashore = b.rows > b.rowsAside && boat.isTouchingWater() && left < b.rowFrom.distanceTo(new Vec3d(wx, b.rowFrom.y, wz)) / 2;
                 if (left <= 2.5 || ashore) {
                     KindredMod.LOGGER.info("{} bringing: rowed the {} across to {} ({} rows), {} off the landing", entry.data.displayName(), b.noun,
                             boat.getBlockPos().toShortString(), b.rows, String.format(java.util.Locale.ROOT, "%.1f", left));
                     b.phase = Bring.Phase.LAND;
                     return bringCandidates(entry, body);
                 }
-                if (b.rows >= 4) return giveUp(entry, body, "I couldn't row the " + b.noun + " across.");
+                if (b.rows >= 4 + b.rowsAside) return giveUp(entry, body, "I couldn't row the " + b.noun + " across.");
+                // Still on the ground with something standing between it and the water (the villager's lectern, say): a boat
+                // rowed over land cannot climb a block, and pressed against it goes nowhere. So first aside, to where both the
+                // way there and the way on to the water are clear. That spot is rowed to until the row to it ends (arrived, or
+                // aground), not judged again while the boat is on its way (E-45e1).
+                if (b.aside != null && b.rows > b.asideAtRows) b.aside = null;
+                if (b.aside != null) {
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", b.aside.x),
+                            "z", String.format(java.util.Locale.ROOT, "%.2f", b.aside.z), "range", "1.0", "seconds", "60", "land", "true")));
+                }
+                if (!boat.isTouchingWater() && !boatRunClear(world, boat, boat.getX(), boat.getZ(), wx, wz)) {
+                    if (b.aside == null) {
+                        b.aside = boatDetour(world, boat, wx, wz);
+                        b.asideAtRows = b.rows;
+                        if (b.aside != null) KindredMod.LOGGER.info("{} bringing: the way to the water blocked; rowing the {} aside to {}, {} first", entry.data.displayName(), b.noun,
+                                String.format(java.util.Locale.ROOT, "%.1f", b.aside.x), String.format(java.util.Locale.ROOT, "%.1f", b.aside.z));
+                    }
+                    if (b.aside != null) {
+                        b.wentAside = true;
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", b.aside.x),
+                                "z", String.format(java.util.Locale.ROOT, "%.2f", b.aside.z), "range", "1.0", "seconds", "60", "land", "true")));
+                    }
+                }
+                b.aside = null;
+                // The crossing proper from here: its start and its rows, for the far bank's test.
+                if (b.wentAside) {
+                    b.wentAside = false;
+                    b.rowFrom = boat.getPos();
+                    b.rowsAside = b.rows;
+                }
                 return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", wx),
                         "z", String.format(java.util.Locale.ROOT, "%.2f", wz), "range", "1.5", "seconds", "90", "land", "true")));
             }
@@ -14093,6 +14202,10 @@ final class PlayerRuntime {
     void stop() {
         requireThread();
         ready = false;
+        // The stop barrier first: whatever stop() itself waits on (the store's last writes) may hand callbacks back on
+        // this thread, and every write-then-callback begun before now is stale from here on (recordThen).
+        stopping = true;
+        ++stopEpoch;
         if (replays != null) replays.close();
         // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
         for (var raced : racePace.entrySet()) {
@@ -14160,6 +14273,23 @@ final class PlayerRuntime {
     }
 
     /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    /**
+     * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
+     * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
+     * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
+     */
+    private void captureSpell(Entry entry) {
+        var campaign = entry.campaign;
+        // With rescues on, the rescue keeps the spell's scene as it asks, as before (F-29); this keeps it otherwise.
+        if (campaign == null || campaign.rescueOn()) return;
+        int spells = campaign.stuckSpells();
+        if (spells <= entry.spellsCaptured) return;
+        entry.spellsCaptured = spells;
+        replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
+                String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+    }
+
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
@@ -14486,7 +14616,11 @@ final class PlayerRuntime {
 
     private final dev.kindred.core.wire.Wording onlookerWording = new dev.kindred.core.wire.Wording();
 
-    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page may read it. */
+    private static List<String> lastOf(List<String> lines, int most) {
+        return List.copyOf(lines.subList(Math.max(0, lines.size() - most), lines.size()));
+    }
+
+    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page or the K panel may read it. */
     private List<String> toldLately(UUID ai) {
         var inbox = wire.inbox(ai);
         var out = new ArrayList<String>();
@@ -14597,7 +14731,8 @@ final class PlayerRuntime {
      * The world's game mode chosen (M-00), operators only, and saved in mode.properties. It is announced to everyone
      * online with its rules, and each AI player's playstyle follows it (the profile it maps onto, not a second setting
      * beside it). From then on only its matches, and duels, may be proposed. A match already proposed or running plays
-     * on under its own rules. Factions is declared but not playable yet.
+     * on under its own rules. Factions turns the territory guard on (and the borders once the hub is set); any other mode
+     * turns it off. Claims and coins stay in the Record either way.
      */
     int setWorldMode(ServerCommandSource source, dev.kindred.core.match.GameModes.WorldMode mode) {
         requireThread();
@@ -14611,8 +14746,14 @@ final class PlayerRuntime {
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
         }
+        if (factionsWorld()) {
+            TerritoryGuard.activate(factions);
+            factions.applyBorders();
+        } else {
+            TerritoryGuard.deactivate(factions);
+        }
         Path file = metadataDirectory.resolve("mode.properties");
-        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
+        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt, builder or factions.\nmode=" + mode.key() + "\n";
         // In order: two saves left to run side by side could finish the older last and keep it.
         modeSaved = modeSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
@@ -16032,7 +16173,7 @@ final class PlayerRuntime {
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
-                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
+                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
                     // three game days compacted on the writer, a batch at a time, never on the tick.
@@ -16103,19 +16244,72 @@ final class PlayerRuntime {
         @Override public net.minecraft.server.MinecraftServer server() { return server; }
     }
 
+    /**
+     * F-34: events written to the World Record, then a message that rests on them sent on the Wire, citing exactly the
+     * ids the ordered writer gave them, on this thread. Never before they are written, and on a failed write nothing is
+     * said: a message never cites an event the Record does not hold. {@code tell} makes the message from those ids;
+     * null for none. What the Wire did with it, or null when nothing was sent, goes to {@code sent}.
+     */
+    void recordAndTell(List<dev.kindred.core.record.WorldEvent> drafts, java.util.function.Function<List<Long>, dev.kindred.core.wire.Message> tell,
+                       java.util.function.Consumer<dev.kindred.core.wire.Delivery> sent) {
+        requireThread();
+        java.util.function.Consumer<dev.kindred.core.wire.Delivery> done = sent == null ? d -> { } : sent;
+        SqliteCompanionStore database = store;
+        if (database == null || drafts.isEmpty()) {
+            KindredMod.LOGGER.warn("Nothing recorded, so nothing told: {}", database == null ? "World Record not open" : "no events");
+            done.accept(null);
+            return;
+        }
+        record(drafts);
+        @SuppressWarnings("unchecked") var write = (CompletableFuture<List<dev.kindred.core.record.WorldEvent>>) recordFlush;
+        write.whenComplete((written, failure) -> handBack(() -> {
+            if (failure != null || written == null || !running) {
+                done.accept(null);
+                return;
+            }
+            var message = tell.apply(written.stream().map(dev.kindred.core.record.WorldEvent::id).toList());
+            done.accept(message == null ? null : wire.send(message));
+        }));
+    }
+
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
+        // Stop revokes synchronously and invalidates late callbacks: a write asked for after the stop (a callback of
+        // work begun before it) is not tried, and neither callback runs. What it would have finished stays unfinished in
+        // the Record, reported for an operator at the next start, never replayed (M-06h's intent and delivery rules).
+        if (!running || stopping) {
+            lateWritesRefused++;
+            KindredMod.LOGGER.warn("Kindred stopped: {} event(s) not written, their work left for reconciliation: {}", drafts.size(),
+                    drafts.isEmpty() ? "" : drafts.getFirst().kind());
+            return;
+        }
         if (store == null) {
             failed.accept(new IllegalStateException("World Record not open"));
             return;
         }
+        long epoch = stopEpoch;
         record(drafts);
         var write = recordFlush;
         write.whenComplete((ignored, failure) -> handBack(() -> {
+            if (epoch != stopEpoch) {
+                lateCallbacksDropped++;
+                KindredMod.LOGGER.warn("Kindred stopped: a callback of {} event(s) dropped after the stop", drafts.size());
+                return;
+            }
             if (failure == null) written.run(); else failed.accept(failure);
         }));
     }
+
+    /** Bumped as each stop begins: a write-then-callback begun under an earlier epoch drops its callback. */
+    private long stopEpoch;
+    /** From the first line of stop() until the next start(): no write-then-callback is begun. */
+    private boolean stopping;
+    /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
+    private int lateWritesRefused, lateCallbacksDropped;
+
+    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it}. */
+    int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped}; }
 
     /**
      * A sale's intent the Record holds with neither its sale nor its cancel is ambiguous: the server stopped between
@@ -16137,7 +16331,7 @@ final class PlayerRuntime {
                     for (var e : open.values()) {
                         String id = e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) ? e.get("purchase", "") : e.subject();
                         KindredMod.LOGGER.error("Market {} {} by {} is unfinished: reconcile its items and coins by hand", e.kind(), id, e.actor());
-                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), "market.uncertain", e.actor(), id, "",
+                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), MarketDesk.UNCERTAIN, e.actor(), id, "",
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
@@ -16381,8 +16575,8 @@ final class PlayerRuntime {
     /**
      * An evaluation run's faction world (M-06i's scenario): the world's mode set to Factions for this run as an
      * operator's choice would set it (each AI player's playstyle, the territory guard, the borders) under the settings
-     * read from config/kindred/factions.properties, the mode not yet being an operator's choice. Not saved: the run's
-     * world is thrown away.
+     * read from config/kindred/factions.properties. Not saved, unlike an operator's {@code /kindred mode factions}: the
+     * run's world is thrown away.
      */
     void factionsWorldForEval() {
         requireThread();
@@ -16427,7 +16621,7 @@ final class PlayerRuntime {
                 .thenApplyAsync(events -> dev.kindred.core.factions.FactionsAudit.check(events, settings));
     }
 
-    /** A fixture's faction world under {@code settings}, the mode not yet being playable for operators. */
+    /** A fixture's faction world under {@code settings}, without the world's mode (an operator's choice) set. */
     void factionsWorldForTest(dev.kindred.core.factions.FactionSettings settings) {
         requireThread();
         factionsForTest = true;
@@ -16533,11 +16727,37 @@ final class PlayerRuntime {
             String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : source.getWorld().getRegistryKey().getValue().toString();
             BlockPos pos = player != null ? player.getBlockPos() : BlockPos.ofFloored(source.getPosition());
             reply = factions.request(who, verb.toLowerCase(java.util.Locale.ROOT), args, world, pos, this::playerByName, this::factionName);
+            if (reply.accepted() && verb.equalsIgnoreCase("home") && player != null) reply = homeTravel(player, reply);
         }
         for (String line : reply.lines()) {
             if (reply.accepted()) feedback(source, line); else reject(source, line);
         }
         return reply;
+    }
+
+    /**
+     * {@code /faction home} with free travel allowed on this server (mod-support decision 6): whoever asks is taken to its
+     * faction's home, by the rule announced to everyone (D6). Forbidden (the default), home is only told. An AI player
+     * never travels this way: no recorded skill uses it, and the lead approves one first.
+     */
+    private FactionsService.Reply homeTravel(ServerPlayerEntity player, FactionsService.Reply told) {
+        if (!teleportAllowed()) return told;
+        // An AI player's body, by its entry or by its kind: never taken.
+        if (entryForPlayer(player.getUuid()) != null || player instanceof PreparedNativePlayer) return told;
+        var faction = factions.book().of(player.getUuid()).orElse(null);
+        if (faction == null || faction.home().isEmpty()) return told;
+        String home = faction.home();
+        int split = home.lastIndexOf(':');
+        String[] xyz = split < 0 ? new String[0] : home.substring(split + 1).split(",");
+        var world = split < 0 ? null : server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD,
+                net.minecraft.util.Identifier.tryParse(home.substring(0, split))));
+        if (world == null || xyz.length != 3) return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        try {
+            player.teleport(world, Integer.parseInt(xyz[0]) + 0.5, Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]) + 0.5, player.getYaw(), player.getPitch());
+        } catch (NumberFormatException failure) {
+            return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        }
+        return FactionsService.Reply.told(List.of("Teleported to " + faction.name() + "'s home (teleporting is allowed on this server, for everyone alike)."));
     }
 
     /** An online player's id by name, a person or an AI player. */
@@ -16952,6 +17172,8 @@ final class PlayerRuntime {
         private String skillId;
         /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
         private String dispatchSource = "", pendingSource;
+        /** The goal's stuck spells already kept as replays (F-27a), so that each is kept once. */
+        private int spellsCaptured;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
@@ -17501,7 +17723,10 @@ final class PlayerRuntime {
     record PanelBot(UUID id, String name, boolean connected, String phase, boolean stopped, boolean busy,
                     String playstyle, String collaboration, dev.kindred.core.survival.SurvivalGoal goal, String status,
                     String goalProgress, float health, int food, BlockPos position, String dimension, String task,
-                    UUID bodyId, String skin) { }
+                    UUID bodyId, String skin, List<String> told) {
+        /** The most it shows of what it was told lately (F-34c), newest last. */
+        static final int TOLD = 5;
+    }
 
     /** Native players this actor may control, as plain values for the panel. */
     List<PanelBot> panelBots(Actor actor) {
@@ -17520,7 +17745,8 @@ final class PlayerRuntime {
                     player != null ? player.getHealth() : 0f, player != null ? player.getHungerManager().getFoodLevel() : 0,
                     player != null ? player.getBlockPos().toImmutable() : null,
                     player != null ? player.getServerWorld().getRegistryKey().getValue().getPath() : entry.data.dimension(),
-                    busy ? entry.skillId : "", entry.data.entityId(), KindredSkins.choiceOf(entry.data.entityId())));
+                    busy ? entry.skillId : "", entry.data.entityId(), KindredSkins.choiceOf(entry.data.entityId()),
+                    lastOf(toldLately(entry.data.id()), PanelBot.TOLD)));
         }
         bots.sort(java.util.Comparator.comparing(PanelBot::name, String.CASE_INSENSITIVE_ORDER));
         return bots;
@@ -17535,7 +17761,7 @@ final class PlayerRuntime {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's AI edit policy.");
-        EditPolicy.ServerPolicy next = new EditPolicy.ServerPolicy(enabled, true);
+        EditPolicy.ServerPolicy next = edits.withEdits(enabled);
         edits = next; // Revocation applies to the next mutation check immediately.
         Path file = metadataDirectory.resolve("edits.properties");
         String content = policyFile(enabled, dragonFight, bases);
@@ -17563,8 +17789,63 @@ final class PlayerRuntime {
                 + "# dragonFight lets them fight the Ender Dragon; bases lets them choose, site and build their own bases;\n"
                 + "# maxNativePlayers is how many native AI players the server allows (default " + DEFAULT_NATIVE_PLAYERS + ", at most "
                 + MAX_NATIVE_PLAYERS + ").\n"
+                + "# teleport and freeItems are allow or forbid: free travel and free items for every player alike, announced to all (D6).\n"
                 + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\nbases=" + bases + "\n"
+                + "teleport=" + (this.edits.teleport() ? "allow" : "forbid") + "\nfreeItems=" + (this.edits.freeItems() ? "allow" : "forbid") + "\n"
                 + (maxNativePlayers == DEFAULT_NATIVE_PLAYERS ? "" : "maxNativePlayers=" + maxNativePlayers + "\n");
+    }
+
+    /** Whether free travel is allowed on this server, for every player alike (mod-support decision 6). */
+    boolean teleportAllowed() { return edits.teleport(); }
+
+    /** Whether free items are allowed on this server, for every player alike (mod-support decision 6). */
+    boolean freeItemsAllowed() { return edits.freeItems(); }
+
+    /**
+     * Records the server's switch for free travel ({@code teleport}) or free items ({@code freeItems}) in edits.properties;
+     * operators only. The new rule is announced to every player online in the same words (D6), and to the operator.
+     */
+    int setFreeSwitch(ServerCommandSource source, String which, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's rule for free travel and free items.");
+        boolean travel = switch (which) {
+            case "teleport" -> true;
+            case "freeItems" -> false;
+            default -> throw new IllegalArgumentException("Not a switch: " + which);
+        };
+        edits = travel ? edits.withTeleport(allowed) : edits.withFreeItems(allowed);
+        Path file = metadataDirectory.resolve("edits.properties");
+        String content = policyFile(edits.autonomousEditsEnabled(), dragonFight, bases);
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> handBack(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred free travel and items rule could not be saved", failure);
+                reject(source, "The rule applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        // The audit: who changed which switch, and when, in the World Record (D6).
+        var by = source.getPlayer();
+        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", EditPolicy.POLICY_SET,
+                by == null ? null : by.getUuid(), which, "", Map.of("allowed", String.valueOf(allowed), "by", source.getName())));
+        String line = edits.announcement().get(travel ? 0 : 1);
+        for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) listener.sendMessage(Text.literal(line), false);
+        KindredMod.LOGGER.info("Rule announced to every player: {}", line);
+        feedback(source, line);
+        return 1;
+    }
+
+    /** The standing rule for free travel and free items, as announced (D6). */
+    int tellFreeSwitches(ServerCommandSource source) {
+        requireThread();
+        for (String line : edits.announcement()) feedback(source, line);
+        return 1;
     }
 
     boolean dragonFightAllowed() { return dragonFight; }
@@ -18328,5 +18609,23 @@ final class PlayerRuntime {
         @Override public boolean isSettled(ActionLease lease) {
             return entity.getNavigation().isIdle() && !entity.getMoveControl().isMoving() && !entity.isUsingItem();
         }
+    }
+
+    private static final List<String> VANILLA_PLANKS_TRY_ORDER = List.of("birch", "spruce", "jungle", "acacia", "dark_oak",
+            "mangrove", "cherry", "bamboo");
+
+    /** Planks to try when oak's cannot be made: vanilla's woods first, as before, then the tag's others by id. */
+    static List<String> planksInTryOrder() {
+        var members = dev.kindred.core.Capabilities.current().members(dev.kindred.core.VanillaIds.PLANKS);
+        var tried = new java.util.LinkedHashSet<String>();
+        for (String wood : VANILLA_PLANKS_TRY_ORDER) {
+            String id = dev.kindred.core.VanillaIds.NAMESPACE + wood + "_planks";
+            if (members.contains(id)) tried.add(id);
+        }
+        // Another wood's planks by the recipe the server makes them with from its log (an id of its own may also name
+        // a different recipe, as minecraft:bamboo_mosaic names the one from slabs).
+        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS) && !tried.contains(id)).sorted()
+                .forEach(id -> tried.add(KindredCapabilities.plankRecipe(id).orElse(id)));
+        return List.copyOf(tried);
     }
 }

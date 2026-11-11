@@ -682,5 +682,50 @@ public final class VanillaIds {
     /** Every vanilla tool, by id. */
     public static java.util.Map<String, Capabilities.Tool> tools() { return TOOLS; }
 
+    // ---- Route facts (F-35d's Terrain): which blocks hurt or trap a body, and which it climbs. ----
+
+    /**
+     * Blocks that hurt or trap a body entering them, as NativeNavigator.hazard names them: no vanilla tag says the
+     * same, so a mod's hazard comes from its profile (F-36's {@code hazard}).
+     */
+    public static final Group HAZARDS = group("#kindred:hazards", false,
+            "minecraft:lava", "minecraft:fire", "minecraft:soul_fire", "minecraft:campfire", "minecraft:soul_campfire",
+            "minecraft:cactus", "minecraft:sweet_berry_bush", "minecraft:cobweb", "minecraft:powder_snow",
+            "minecraft:wither_rose", "minecraft:magma_block", "minecraft:pointed_dripstone");
+
+    /** #minecraft:climbable as in vanilla 1.21.1 (block tag): ladders, vines and scaffolding. */
+    public static final Group CLIMBABLE = group("#minecraft:climbable", true,
+            "minecraft:ladder", "minecraft:vine", "minecraft:scaffolding", "minecraft:weeping_vines",
+            "minecraft:weeping_vines_plant", "minecraft:twisting_vines", "minecraft:twisting_vines_plant",
+            "minecraft:cave_vines", "minecraft:cave_vines_plant");
+
+    // ---- Woods a build is made of: the eight it always used, each family named the vanilla way. Would be read from
+    // the recipes that take each #minecraft:logs item, as the adapter does for the server's other woods. ----
+
+    private static final List<Capabilities.Wood> WOODS = buildWoods();
+
+    private static List<Capabilities.Wood> buildWoods() {
+        List<Capabilities.Wood> woods = new ArrayList<>();
+        for (String w : new String[] {"oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry"}) {
+            String n = NAMESPACE + w;
+            woods.add(new Capabilities.Wood(w, n + "_log", n + "_planks", n + "_stairs", n + "_slab", n + "_fence",
+                    n + "_fence_gate", n + "_door", n + "_trapdoor"));
+        }
+        return List.copyOf(woods);
+    }
+
+    /** Vanilla's building woods, in the order they were always listed. */
+    public static List<Capabilities.Wood> woods() { return WOODS; }
+
+    /**
+     * Planks in #minecraft:planks that builds never used (Nether stems, bamboo): kept out of the server's woods so a
+     * vanilla build is chosen as before.
+     */
+    public static final Group UNBUILT_PLANKS = group("#kindred:unbuilt_planks", false,
+            "minecraft:crimson_planks", "minecraft:warped_planks", "minecraft:bamboo_planks");
+
+    /** Whether these planks are ones builds never used. */
+    public static boolean unbuiltWood(String planks) { return UNBUILT_PLANKS.ids().contains(planks); }
+
     private VanillaIds() { }
 }

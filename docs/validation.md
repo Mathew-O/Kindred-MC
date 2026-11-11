@@ -1,7 +1,11 @@
 # AI-player development validation
 
+New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entries-by-id), in ID order; the entries below it are kept as written.
+
 ## Conventions for evaluation runs and death replays
 
+- **Validation entries (from 2026-11-10).** A feature's validation is one line in [Entries by ID](#entries-by-id), at its ID's place: the ID, the
+  date, its evidence file, which holds the detail, and the outcome in a few words. Entries before that date are not rewritten.
 - **Evaluation summaries (F-26).** A build is scored with `tools/eval/` on at least ten seeds
   (`tools/eval/seeds-10.txt`); a summary prints medians and ranges, never one number, and says whether the runs were
   earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
@@ -27,6 +31,19 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+- F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
+- F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
+- E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
+
+## Factions an operator's choice (M-06i) — 11 November 2026 (`claude/m06i-playable-1111`)
+
+- [M-06i: Factions an operator's choice](evidence/M-06i.md#factions-an-operators-choice-2026-11-11-claudem06i-playable-1111).
+
+## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeNavigationGameTests` (the gap fixture: 0 of 3 before, passing after) with `NativeRanchGameTests`, `NativeHouseGameTests`, `NativeBuildGameTests` and `NativeLakeBedClimbGameTests` alone, 3 runs, 20 of 20 each.
+
 ## A dark passage sealed from two or more mobs (F-25c4dc) — 10 November 2026 (`claude/survival-1110-seal`)
 
 - **[F-25c4dc](evidence/F-25c4dc.md):** underground in the dark, with two or more mobs after it along a passage one wide and none
@@ -37,6 +54,13 @@
   - Eleven classes that fight, take cover and climb (with `ReplayGameTests`), 3 runs: 129 of 129 each; the seal fired only in
     its own fixture.
   - The ten-seed measure against e40a17 is to come (RUNNER 2's survival-1).
+
+## Entries by ID
+
+- [F-22c50](evidence/F-22c50.md) (2026-11-11, CI): main's runs are no longer cancelled by the next push; pull requests' still are.
+- [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
+- [F-22c59](evidence/F-22c59.md) (2026-11-11, diagnostics): a build walk the plan counted on and the navigator found no way for logs the plan's way and the first step the navigator will not take.
+- [F-22c60](evidence/F-22c60.md) (2026-11-11, diagnostics): a drop worth walking back for, left lying, says which check left it; portal and obsidian-pickup classes 98 of 98, 3 runs.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

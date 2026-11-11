@@ -30,7 +30,10 @@ public final class BuildNeeds {
         }
     }
 
-    /** Woods with the whole family of planks, stairs, slabs, fences, gates, doors and trapdoors. */
+    /**
+     * Vanilla's building woods by name, as saves name them. Which woods a build may use on this server, a mod's
+     * included, is {@link Woods#known}; their parts are {@link Woods}' (F-38).
+     */
     public static final Set<String> WOODS = Set.of("oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry");
 
     /** What is gathered, not made: cut, mined or dug. */
@@ -46,16 +49,18 @@ public final class BuildNeeds {
      */
     public static Optional<Recipe> recipe(String item, String wood) {
         String id = item.startsWith(VanillaIds.NAMESPACE) ? item.substring(VanillaIds.NAMESPACE.length()) : item;
-        String planks = VanillaIds.NAMESPACE + wood + "_planks";
-        for (String w : WOODS) {
-            String p = VanillaIds.NAMESPACE + w + "_planks";
-            if (id.equals(w + "_planks")) return Optional.of(new Recipe(item(id), 4, Map.of(VanillaIds.NAMESPACE + w + "_log", 1), false));
-            if (id.equals(w + "_stairs")) return Optional.of(new Recipe(item(id), 4, Map.of(p, 6), true));
-            if (id.equals(w + "_slab")) return Optional.of(new Recipe(item(id), 6, Map.of(p, 3), true));
-            if (id.equals(w + "_fence")) return Optional.of(new Recipe(item(id), 3, Map.of(p, 4, VanillaIds.STICK, 2), true));
-            if (id.equals(w + "_fence_gate")) return Optional.of(new Recipe(item(id), 1, Map.of(p, 2, VanillaIds.STICK, 4), true));
-            if (id.equals(w + "_door")) return Optional.of(new Recipe(item(id), 3, Map.of(p, 6), true));
-            if (id.equals(w + "_trapdoor")) return Optional.of(new Recipe(item(id), 2, Map.of(p, 6), true));
+        String planks = Woods.planks(wood);
+        // A wood's family by what the game says its log and planks make (F-38); vanilla's as they always were.
+        String full = item.indexOf(':') >= 0 ? item : item(id);
+        for (var w : dev.kindred.core.Capabilities.current().woods()) {
+            String p = w.planks();
+            if (full.equals(w.planks())) return Optional.of(new Recipe(full, 4, Map.of(w.log(), 1), false));
+            if (full.equals(w.stairs())) return Optional.of(new Recipe(full, 4, Map.of(p, 6), true));
+            if (full.equals(w.slab())) return Optional.of(new Recipe(full, 6, Map.of(p, 3), true));
+            if (full.equals(w.fence())) return Optional.of(new Recipe(full, 3, Map.of(p, 4, VanillaIds.STICK, 2), true));
+            if (full.equals(w.fenceGate())) return Optional.of(new Recipe(full, 1, Map.of(p, 2, VanillaIds.STICK, 4), true));
+            if (full.equals(w.door())) return Optional.of(new Recipe(full, 3, Map.of(p, 6), true));
+            if (full.equals(w.trapdoor())) return Optional.of(new Recipe(full, 2, Map.of(p, 6), true));
         }
         // A bed: three wool of its colour over three planks (any planks; the build's own wood's are planned).
         for (String c : COLOURS) {
@@ -88,7 +93,8 @@ public final class BuildNeeds {
     public static boolean gathered(String item) {
         String id = item.startsWith(VanillaIds.NAMESPACE) ? item.substring(VanillaIds.NAMESPACE.length()) : item;
         if (GATHERED.contains(id)) return true;
-        for (String w : WOODS) if (id.equals(w + "_log")) return true;
+        String full = item.indexOf(':') >= 0 ? item : item(id);
+        for (var w : dev.kindred.core.Capabilities.current().woods()) if (full.equals(w.log())) return true;
         for (String c : COLOURS) if (id.equals(c + "_wool")) return true;
         return false;
     }

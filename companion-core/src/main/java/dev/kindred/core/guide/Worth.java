@@ -1,5 +1,6 @@
 package dev.kindred.core.guide;
 
+import dev.kindred.core.Capabilities;
 import dev.kindred.core.VanillaIds;
 
 import dev.kindred.core.team.ShareOut;
@@ -256,7 +257,44 @@ public final class Worth {
     }
 
     private static Info info(String item) {
-        return ITEMS.get(id(item));
+        Info known = ITEMS.get(id(item));
+        if (known != null || id(item).startsWith(VanillaIds.NAMESPACE)) return known;
+        // F-38: an item vanilla's table does not name (a mod's) is worth what it is made of, by the server's recipes.
+        double minutes = derived(id(item), 0, new java.util.HashSet<>());
+        return minutes > 0 ? new Info(id(item), 1, minutes, DERIVED_USEFUL, null) : null;
+    }
+
+    /** How many of an item worked out from its recipes a run counts as useful. */
+    private static final int DERIVED_USEFUL = 16;
+    /** How deep a recipe tree is followed for an item's worth. */
+    private static final int DERIVED_DEPTH = 4;
+
+    /**
+     * Minutes one of {@code item} is worth by its cheapest recipe whose every input has a worth: the table's for what it
+     * names, the inputs' own recipes for the rest; 0 for one with no such recipe.
+     */
+    private static double derived(String item, int depth, java.util.Set<String> visiting) {
+        if (depth > DERIVED_DEPTH || !visiting.add(item)) return 0;
+        try {
+            double best = 0;
+            for (var recipe : Capabilities.current().recipesFor(item)) {
+                double total = 0;
+                for (var input : recipe.inputs().entrySet()) {
+                    Info known = ITEMS.get(input.getKey());
+                    double each = known != null ? known.minutes() * known.per()
+                            : input.getKey().startsWith(VanillaIds.NAMESPACE) ? 0 : derived(input.getKey(), depth + 1, visiting);
+                    if (each <= 0) { total = -1; break; }
+                    total += each * input.getValue();
+                }
+                if (total > 0) {
+                    double each = total / recipe.makes();
+                    if (best == 0 || each < best) best = each;
+                }
+            }
+            return best;
+        } finally {
+            visiting.remove(item);
+        }
     }
 
     /** A piece of kit by its id, minecraft:iron_chestplate, or null for anything else. */

@@ -126,6 +126,20 @@ final class NativeNavigator {
         return this;
     }
 
+    /**
+     * The same navigator, now jumping gaps up to {@code blocks} wide (1 or 2) as a player does (MOVEMENT): straight across
+     * to ground at the same level, with head room for the jump and nothing harmful below the gap. Only a walk that can
+     * make the jump asks for it (a two-block gap needs a sprint); other plans keep to the ground.
+     */
+    NativeNavigator jumpingGaps(int blocks) {
+        if (blocks < 0 || blocks > 2) throw new IllegalArgumentException("A gap jump is 0 to 2 blocks");
+        gapJump = blocks;
+        return this;
+    }
+
+    /** The widest gap a route may jump; 0 for none. */
+    private int gapJump;
+
     /** The same navigator, now counting closed wooden doors as a way through. */
     NativeNavigator throughDoors() {
         doors = true;
@@ -299,6 +313,20 @@ final class NativeNavigator {
                     if (!passable(landing)) break;
                     if (standable(landing) && passable(landing.up())) {
                         if (k <= maxDrop) moves.add(new Move(landing, base + k * 0.5 + (k > MAX_SAFE_DROP ? 20 : 0)));
+                        break;
+                    }
+                }
+            }
+            // A gap jumped (MOVEMENT): no floor under the next block, ground at the same level one or two blocks past it,
+            // head room all the way for the jump's arc, and nothing harmful below to fall into on a missed landing.
+            if (gapJump > 0 && clear(flat) && !standable(flat) && !swimmable(flat) && !inWater && passable(from.up(2))) {
+                for (int span = 2; span <= gapJump + 1; span++) {
+                    BlockPos over = from.add(d[0] * (span - 1), 0, d[1] * (span - 1));
+                    if (!loaded(over) || !clear(over) || standable(over) || swimmable(over) || !passable(over.up(2)) || hazard(over.down())) break;
+                    BlockPos land = from.add(d[0] * span, 0, d[1] * span);
+                    if (!loaded(land)) break;
+                    if (clear(land) && standable(land) && !hazard(land) && passable(land.up(2))) {
+                        moves.add(new Move(land, (span == 2 ? 3.0 : 5.0) * terrainCost(land)));
                         break;
                     }
                 }

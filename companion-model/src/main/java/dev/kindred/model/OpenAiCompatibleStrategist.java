@@ -642,7 +642,8 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         follow.addProperty("type", "object");
         follow.addProperty("additionalProperties", false);
         var fields = new JsonObject();
-        fields.add("need", enumField(StrategistPrompt.QUEUE_NEED, dev.kindred.core.guide.Need.values()));
+        fields.add("need", enumField(StrategistPrompt.QUEUE_NEED, java.util.Arrays.stream(dev.kindred.core.guide.Need.values())
+                .map(dev.kindred.core.guide.Need::name).toArray(String[]::new)));
         var count = new JsonObject();
         count.addProperty("type", "integer");
         count.addProperty("description", StrategistPrompt.QUEUE_COUNT);
@@ -673,6 +674,15 @@ public final class OpenAiCompatibleStrategist implements Strategist {
         var field = new JsonObject();
         field.addProperty("type", "string");
         field.addProperty("description", description);
+        return field;
+    }
+
+    /** A string field limited to these names, in this order (a need's names: needs are data, F-38). */
+    private static JsonObject enumField(String description, String[] names) {
+        var field = stringField(description);
+        var list = new JsonArray();
+        for (String name : names) list.add(name);
+        field.add("enum", list);
         return field;
     }
 
