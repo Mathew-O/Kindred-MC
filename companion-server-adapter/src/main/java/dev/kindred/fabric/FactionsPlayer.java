@@ -60,7 +60,22 @@ final class FactionsPlayer {
     }
 
     /** A walk toward {@code target} got somewhere: its refusals forgotten. */
-    void walked(String target) { refused.remove(target); }
+    void walked(String target) {
+        refused.remove(target);
+        ways.remove(target);
+    }
+
+    /**
+     * The steps of a way made toward a target whose walk was refused (MOVEMENT, #120), each a dig, a block put or a walk up
+     * to one; after {@value #WAY_STEPS} with the walk still refused, no more are made toward it and the back-off and
+     * set-aside take over.
+     */
+    private final Map<String, Integer> ways = new LinkedHashMap<>();
+    static final int WAY_STEPS = 48;
+
+    void wayMade(String target) { ways.merge(target, 1, Integer::sum); }
+
+    int waysMade(String target) { return ways.getOrDefault(target, 0); }
 
     int refusals(String target) { var r = refused.get(target); return r == null ? 0 : r.times(); }
 
