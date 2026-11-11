@@ -1,0 +1,280 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 120608,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -588,
+  34,
+  65
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.51707809038851,
+  8.0,
+  16.94481379781101
+ ],
+ "yaw": 3.8103848,
+ "pitch": 18.158781,
+ "health": 1.4166279,
+ "food": 11,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:red_mushroom",
+    "count": 3
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 24
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 100
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 49
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:dark_oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 52
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 41
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 4
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 12
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:oak_fence",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:moss_block",
+    "count": 8
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 10
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:moss_carpet",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 14
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 56
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 608,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie the way it came",
+ "task": "Back off from zombie the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Sol was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[12:38:31] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -571, 40, 82]",
+  "[12:38:32] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -571, 41, 82]",
+  "[12:38:32] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[12:38:32] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -571, 42, 82]",
+  "[12:38:33] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -572, 41, 82]",
+  "[12:38:33] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -572, 42, 82]",
+  "[12:38:33] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[12:38:33] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -572, 43, 82]",
+  "[12:38:34] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -572, 42, 81]",
+  "[12:38:34] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -572, 43, 81]",
+  "[12:38:35] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[12:38:35] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -572, 44, 81]",
+  "[12:38:36] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -573, 43, 81]",
+  "[12:38:36] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -573, 44, 81]",
+  "[12:38:36] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[12:38:37] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -573, 45, 81]",
+  "[12:38:37] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -573, 44, 80]",
+  "[12:38:37] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -573, 45, 80]",
+  "[12:38:37] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[12:38:38] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear -573, 46, 80]"
+ ],
+ "corpus": {
+  "run": "factions-e40a16seeds-b7b4bec",
+  "seed": "20261030",
+  "build": "b7b4bec",
+  "replay": "",
+  "source": "claude/corpus-data-factions-b7b4bec-1110@03b73b6:factions-e40a16seeds-b7b4bec/20261030/replays/world/Sol-120608",
+  "class": "death: zombie",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state; recorded on b7b4bec, which still had the walk set-aside of #120"
+ }
+}
