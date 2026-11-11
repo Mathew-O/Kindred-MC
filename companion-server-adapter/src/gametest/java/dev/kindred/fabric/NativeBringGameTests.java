@@ -179,7 +179,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * beside it between: Hal steps round to the door's front and takes it off from there. In REFACTOR's runs of this class
      * on main 9972e80 (1 of 30), Hal's second try at a strolling librarian aimed its break of the door from where the
      * hall's own cobblestone stood in the way; refused three times as out of sight, the bring was given up, "door went
-     * wrong three times over" (F-22c62). Staged: Hal stood there, once, as it comes to the door.
+     * wrong three times over" (F-22c62). Staged: Hal's walk to the door ended there, once.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDoorAside", tickLimit = 12000)
     public void aDoorInReachButBehindTheHallsWallIsTakenOffFromItsFront(TestContext context) {
@@ -422,17 +422,21 @@ public final class NativeBringGameTests implements FabricGameTest {
                         KindredMod.LOGGER.info("Bring: the librarian sits in the boat behind its lectern, at {}",
                                 librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
                     }
-                    // Staged, once, as Hal comes to take the hall's door off: Hal stood beside the hall, three blocks along its front
-                    // from the door and one out, in reach of the door but with the wall beside it between (F-22c62).
+                    // Staged, once, as Hal comes to take the hall's door off: its walk there ended beside the hall, at its east
+                    // side a block back from its front (7, 0, 7), in reach of the door but with the hall's own wall between,
+                    // and it looks again from there. Its walk under way is stopped and it is set going again where it stands.
                     if (doorAside && !asideOnce[0] && f.runtime.bringNote(f.id).contains("[DOOR]")) {
                         asideOnce[0] = true;
                         BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
+                        BlockPos aside = origin[0].add(7, 0, 7);
                         var player = f.player();
-                        player.refreshPositionAndAngles(door.getX() + 3.5, door.getY() - 1, door.getZ() + 1.5, 90, 0);
+                        context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", f.id) == 1, "Hal's walk to the door stopped");
+                        player.refreshPositionAndAngles(aside.getX() + 0.5, aside.getY(), aside.getZ() + 0.5, 270, 0);
                         player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
-                        KindredMod.LOGGER.info("Bring: Hal stood beside the hall at {}, the door at {}, the wall beside it {}",
-                                player.getBlockPos().subtract(origin[0]).toShortString(), door.subtract(origin[0]).toShortString(),
-                                context.getWorld().getBlockState(door.east()));
+                        context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Hal playing again");
+                        KindredMod.LOGGER.info("Bring: Hal stood beside the hall at {}, the door at {}, the wall between {}",
+                                aside.subtract(origin[0]).toShortString(), door.subtract(origin[0]).toShortString(),
+                                context.getWorld().getBlockState(origin[0].add(6, 1, 7)));
                     }
                     // Staged: the boat Hal put down beside the librarian, stood empty past Hal's wait for it, stepped into by the
                     // librarian, as a strolling villager steps into one a moment late (F-22c32).
