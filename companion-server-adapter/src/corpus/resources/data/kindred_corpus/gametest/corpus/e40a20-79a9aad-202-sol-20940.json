@@ -1,0 +1,535 @@
+{
+ "kind": "spell",
+ "player": "Sol",
+ "tick": 20940,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -128,
+  32,
+  -29
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.685967032848367,
+  8.0,
+  16.597695305263475
+ ],
+ "yaw": -167.2285,
+ "pitch": -46.833992,
+ "health": 20.0,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:cooked_mutton",
+    "count": 3
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 42
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:sunflower",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 47
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 4
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cherry_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 20
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 10
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 36
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 37
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 50
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 4
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:dripstone_block",
+    "count": 3
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 12
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 9
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 11
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:cherry_planks",
+    "count": 2
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 20939,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward -136, 40, -13",
+ "task": "try elsewhere, toward -136, 40, -13",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+ "memory": {
+  "version": 1,
+  "blocked": [],
+  "failures": [],
+  "approaches": [
+   {
+    "at": [
+     16,
+     9,
+     16
+    ],
+    "n": 1
+   }
+  ],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [
+   [
+    20,
+    0,
+    25
+   ]
+  ],
+  "dug": [],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    16,
+    8,
+    13
+   ],
+   [
+    16,
+    4,
+    9
+   ],
+   [
+    16,
+    4,
+    13
+   ],
+   [
+    24,
+    0,
+    17
+   ],
+   [
+    24,
+    0,
+    21
+   ],
+   [
+    16,
+    0,
+    9
+   ],
+   [
+    12,
+    8,
+    21
+   ],
+   [
+    12,
+    4,
+    13
+   ],
+   [
+    12,
+    4,
+    17
+   ],
+   [
+    12,
+    4,
+    21
+   ],
+   [
+    28,
+    0,
+    21
+   ],
+   [
+    28,
+    0,
+    17
+   ],
+   [
+    12,
+    0,
+    9
+   ],
+   [
+    12,
+    0,
+    13
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "COAL_ORE": [
+    [
+     16,
+     11,
+     16
+    ],
+    [
+     16,
+     10,
+     15
+    ],
+    [
+     17,
+     10,
+     16
+    ]
+   ],
+   "IRON_ORE": [
+    [
+     28,
+     0,
+     15
+    ]
+   ],
+   "GRAVEL": [
+    [
+     32,
+     0,
+     23
+    ],
+    [
+     32,
+     0,
+     24
+    ],
+    [
+     32,
+     0,
+     25
+    ],
+    [
+     32,
+     0,
+     26
+    ],
+    [
+     32,
+     0,
+     27
+    ],
+    [
+     32,
+     0,
+     28
+    ],
+    [
+     17,
+     15,
+     0
+    ],
+    [
+     18,
+     15,
+     0
+    ],
+    [
+     30,
+     0,
+     28
+    ],
+    [
+     31,
+     0,
+     27
+    ],
+    [
+     31,
+     0,
+     28
+    ]
+   ],
+   "CAVE": [
+    [
+     16,
+     8,
+     16
+    ],
+    [
+     16,
+     6,
+     14
+    ],
+    [
+     24,
+     0,
+     19
+    ],
+    [
+     25,
+     0,
+     21
+    ],
+    [
+     17,
+     0,
+     2
+    ],
+    [
+     12,
+     8,
+     21
+    ],
+    [
+     14,
+     4,
+     14
+    ],
+    [
+     14,
+     5,
+     17
+    ],
+    [
+     13,
+     7,
+     21
+    ],
+    [
+     30,
+     0,
+     20
+    ],
+    [
+     15,
+     2,
+     8
+    ]
+   ]
+  },
+  "exploreStalls": 10,
+  "exploreFailures": 4,
+  "stuckSpells": 1,
+  "stuckLevel": 1,
+  "leftOut": 4502
+ },
+ "log": [
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:21] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]",
+  "[14:41:22] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a torch]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "202",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/202/replays/world/Sol-20940",
+  "class": "stuck: busy-work loop",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166), with its goal's own memory of the box (#198, put back by #201): passes when its goal gains something or it stays out of the 8 blocks it was caught in for the budget's last half (#190)"
+ }
+}

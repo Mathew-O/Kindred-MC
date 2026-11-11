@@ -1,0 +1,1010 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 72461,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -387,
+  22,
+  -188
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.35556832297368,
+  8.0,
+  16.53872387757508
+ ],
+ "yaw": -0.5490999,
+ "pitch": 18.159481,
+ "health": 15.950001,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 3
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cooked_porkchop",
+    "count": 3
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 103
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 19
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 10
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 8
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 58
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 3
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 6
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 7
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 23
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 136
+    }
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 461,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie the way it came",
+ "task": "Back off from zombie the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was slain by Zombie",
+ "ticks": 1200,
+ "memory": {
+  "version": 1,
+  "blocked": [],
+  "failures": [
+   {
+    "at": [
+     25,
+     12,
+     23
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     25,
+     12,
+     22
+    ],
+    "n": 1
+   }
+  ],
+  "approaches": [
+   {
+    "at": [
+     15,
+     11,
+     19
+    ],
+    "n": 1
+   }
+  ],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    11,
+    11,
+    28
+   ],
+   [
+    12,
+    10,
+    28
+   ],
+   [
+    12,
+    11,
+    28
+   ],
+   [
+    13,
+    11,
+    28
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    3,
+    10,
+    32
+   ],
+   [
+    7,
+    10,
+    32
+   ],
+   [
+    7,
+    6,
+    32
+   ],
+   [
+    7,
+    6,
+    28
+   ],
+   [
+    7,
+    6,
+    24
+   ],
+   [
+    11,
+    10,
+    28
+   ],
+   [
+    11,
+    10,
+    20
+   ],
+   [
+    11,
+    6,
+    28
+   ],
+   [
+    11,
+    6,
+    24
+   ],
+   [
+    11,
+    6,
+    12
+   ],
+   [
+    11,
+    6,
+    32
+   ],
+   [
+    15,
+    14,
+    24
+   ],
+   [
+    15,
+    14,
+    16
+   ],
+   [
+    15,
+    10,
+    24
+   ],
+   [
+    15,
+    10,
+    28
+   ],
+   [
+    15,
+    10,
+    20
+   ],
+   [
+    15,
+    10,
+    16
+   ],
+   [
+    15,
+    6,
+    28
+   ],
+   [
+    15,
+    6,
+    32
+   ],
+   [
+    15,
+    6,
+    24
+   ],
+   [
+    15,
+    6,
+    12
+   ],
+   [
+    15,
+    6,
+    16
+   ],
+   [
+    19,
+    10,
+    20
+   ],
+   [
+    19,
+    10,
+    24
+   ],
+   [
+    19,
+    10,
+    16
+   ],
+   [
+    23,
+    10,
+    20
+   ],
+   [
+    23,
+    10,
+    24
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "IRON_ORE": [
+    [
+     32,
+     12,
+     12
+    ]
+   ],
+   "GRAVEL": [
+    [
+     17,
+     5,
+     0
+    ],
+    [
+     18,
+     4,
+     0
+    ],
+    [
+     18,
+     5,
+     1
+    ],
+    [
+     19,
+     4,
+     0
+    ],
+    [
+     19,
+     5,
+     1
+    ],
+    [
+     20,
+     4,
+     0
+    ],
+    [
+     21,
+     5,
+     0
+    ]
+   ],
+   "CAVE": [
+    [
+     5,
+     14,
+     20
+    ],
+    [
+     3,
+     14,
+     24
+    ],
+    [
+     4,
+     14,
+     19
+    ],
+    [
+     6,
+     14,
+     14
+    ],
+    [
+     4,
+     14,
+     5
+    ],
+    [
+     3,
+     14,
+     10
+    ],
+    [
+     5,
+     13,
+     4
+    ],
+    [
+     5,
+     13,
+     8
+    ],
+    [
+     6,
+     13,
+     12
+    ],
+    [
+     3,
+     9,
+     25
+    ],
+    [
+     7,
+     14,
+     15
+    ],
+    [
+     7,
+     14,
+     16
+    ],
+    [
+     10,
+     13,
+     14
+    ],
+    [
+     10,
+     13,
+     16
+    ],
+    [
+     10,
+     13,
+     11
+    ],
+    [
+     7,
+     12,
+     5
+    ],
+    [
+     9,
+     8,
+     29
+    ],
+    [
+     7,
+     8,
+     32
+    ],
+    [
+     12,
+     12,
+     26
+    ],
+    [
+     11,
+     13,
+     14
+    ],
+    [
+     13,
+     12,
+     18
+    ],
+    [
+     13,
+     11,
+     28
+    ],
+    [
+     11,
+     9,
+     29
+    ],
+    [
+     11,
+     9,
+     32
+    ],
+    [
+     14,
+     7,
+     5
+    ],
+    [
+     15,
+     12,
+     30
+    ],
+    [
+     15,
+     11,
+     20
+    ],
+    [
+     16,
+     10,
+     24
+    ],
+    [
+     16,
+     13,
+     15
+    ],
+    [
+     17,
+     10,
+     16
+    ],
+    [
+     16,
+     11,
+     0
+    ],
+    [
+     18,
+     9,
+     28
+    ],
+    [
+     18,
+     7,
+     32
+    ],
+    [
+     16,
+     8,
+     26
+    ],
+    [
+     15,
+     7,
+     5
+    ],
+    [
+     15,
+     8,
+     10
+    ],
+    [
+     21,
+     11,
+     20
+    ],
+    [
+     19,
+     10,
+     24
+    ],
+    [
+     20,
+     13,
+     12
+    ],
+    [
+     20,
+     13,
+     17
+    ],
+    [
+     22,
+     13,
+     10
+    ],
+    [
+     19,
+     7,
+     31
+    ],
+    [
+     23,
+     15,
+     32
+    ],
+    [
+     25,
+     14,
+     14
+    ],
+    [
+     25,
+     14,
+     16
+    ],
+    [
+     23,
+     14,
+     27
+    ],
+    [
+     23,
+     11,
+     20
+    ],
+    [
+     24,
+     11,
+     18
+    ],
+    [
+     26,
+     13,
+     3
+    ],
+    [
+     26,
+     13,
+     4
+    ],
+    [
+     24,
+     13,
+     8
+    ],
+    [
+     26,
+     11,
+     15
+    ],
+    [
+     25,
+     10,
+     24
+    ],
+    [
+     30,
+     16,
+     29
+    ],
+    [
+     28,
+     14,
+     12
+    ],
+    [
+     27,
+     15,
+     25
+    ],
+    [
+     28,
+     15,
+     20
+    ],
+    [
+     30,
+     14,
+     2
+    ],
+    [
+     29,
+     14,
+     4
+    ],
+    [
+     27,
+     14,
+     16
+    ],
+    [
+     30,
+     14,
+     8
+    ],
+    [
+     27,
+     13,
+     0
+    ],
+    [
+     27,
+     13,
+     4
+    ],
+    [
+     27,
+     13,
+     8
+    ],
+    [
+     29,
+     11,
+     12
+    ],
+    [
+     27,
+     10,
+     23
+    ],
+    [
+     27,
+     10,
+     24
+    ],
+    [
+     27,
+     11,
+     16
+    ],
+    [
+     30,
+     9,
+     24
+    ],
+    [
+     30,
+     9,
+     23
+    ],
+    [
+     32,
+     16,
+     21
+    ],
+    [
+     31,
+     16,
+     28
+    ],
+    [
+     31,
+     15,
+     26
+    ],
+    [
+     31,
+     14,
+     12
+    ],
+    [
+     31,
+     14,
+     3
+    ],
+    [
+     31,
+     14,
+     8
+    ],
+    [
+     31,
+     14,
+     4
+    ],
+    [
+     31,
+     9,
+     24
+    ],
+    [
+     31,
+     9,
+     23
+    ],
+    [
+     1,
+     14,
+     24
+    ],
+    [
+     2,
+     16,
+     5
+    ],
+    [
+     0,
+     14,
+     9
+    ],
+    [
+     2,
+     8,
+     26
+    ],
+    [
+     0,
+     7,
+     28
+    ]
+   ]
+  },
+  "strandedAt": [
+   23,
+   11,
+   22
+  ],
+  "strandedWalks": 2,
+  "strandedAgo": 9577,
+  "exploreStalls": 1,
+  "exploreFailures": 32,
+  "stuckSpells": 0,
+  "stuckLevel": 0,
+  "leftOut": 9263
+ },
+ "log": [
+  "[14:48:06] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+  "[14:48:06] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[14:48:07] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+  "[14:48:07] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[14:48:08] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[14:48:08] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+  "[14:48:09] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:48:09] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+  "[14:48:10] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:48:10] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:48:11] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:48:11] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:48:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: to the wall]",
+  "[14:48:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: step up]",
+  "[14:48:12] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: step up]",
+  "[14:48:12] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for water: back the way it came]",
+  "[14:48:14] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+  "[14:48:15] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]",
+  "[14:48:20] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[14:48:21] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie the way it came]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "101",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/101/replays/world/Kindred-72461",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; with its goal's own memory of the box (#198, put back by #201)"
+ }
+}
