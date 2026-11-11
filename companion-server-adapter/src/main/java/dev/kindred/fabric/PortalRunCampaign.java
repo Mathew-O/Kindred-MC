@@ -1462,6 +1462,9 @@ final class PortalRunCampaign {
     /** Whether rescues are on for this player: the bridge says so each look (F-29b). */
     void rescueOn(boolean on) { rescueOn = on; }
 
+    /** Whether rescues are asked for this goal's stuck spells: its rescue then keeps the spell's scene itself. */
+    boolean rescueOn() { return rescueOn; }
+
     /** The server's rescue recipes, shared by every player, and the skills a plan may use (F-29d). */
     void recipes(dev.kindred.core.rescue.RescueRecipes book, java.util.Set<String> installed) {
         recipes = book;
@@ -3344,19 +3347,134 @@ final class PortalRunCampaign {
             return Optional.empty();
         }
         BlockPos feet = lastFeet;
+        // A cave pocket its last walk was refused on, up or down a cave wall (MOVEMENT): climbed to once with its own
+        // blocks when near enough, or else the whole pocket let go, not cell by cell (e40a17: 972 such refusals).
+        var climb = pocket(body, what, feet);
+        if (climb != null) return climb;
         BlockPos anchor = home == null ? feet : home;
         int gapNow = Math.abs(feet.getY() - targetY);
         // About eight blocks on is a good stride: far enough to open new views, near enough to stay on known ground.
         return knowledge.best(world, WorldKnowledge.Kind.CAVE,
                         pos -> Math.abs(Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) - 8) + 1.5 * Math.abs(pos.getY() - targetY),
                         pos -> !visitedCaves.contains(BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2))
-                                && !blocked(pos) && !unreachable(pos) && !dangerous(pos) && pos.getSquaredDistance(feet) >= 4
+                                && !blocked(pos) && !pocketLetGo(pos) && !unreachable(pos) && !dangerous(pos) && pos.getSquaredDistance(feet) >= 4
                                 && (shield || quietAround(world, pos))
                                 && Math.hypot(pos.getX() - feet.getX(), pos.getZ() - feet.getZ()) <= 48
                                 && Math.hypot(pos.getX() - anchor.getX(), pos.getZ() - anchor.getZ()) <= EXPLORE_RADIUS
                                 && Math.abs(pos.getY() - targetY) < gapNow + 8)
                 // A full route only: a cave floor seen below a ledge is reached by digging down, not by standing at the edge.
-                .map(pos -> go(pos, 0.8, false, CAVE_WALK + what));
+                .map(pos -> {
+                    caveWalkedTo = pos.toImmutable();
+                    return go(pos, 0.8, false, CAVE_WALK + what);
+                });
+    }
+
+    /** Pocket-level (MOVEMENT): how high and far a refused cave pocket may be to be climbed to, and how big a pocket is. */
+    private static final int POCKET_UP = 6, POCKET_ACROSS = 12, POCKET_RADIUS = 3;
+    /** A climb's steps at most before the pocket is let go. */
+    private static final int POCKET_STEPS = 40, POCKET_FALL = 3;
+    static final String POCKET_CLIMB = "Climb to the cave toward ";
+
+    /** The cave floor its last cave walk was bound for; the pocket it is climbing to; the pockets it has climbed for. */
+    private BlockPos caveWalkedTo, climbingTo;
+    private int climbSteps, climbFromY;
+    private final java.util.Set<Long> pocketsTried = new java.util.HashSet<>();
+    /** Cave floors let go with a pocket, to the tick they are let go until: for {@link #cave}'s choice alone. */
+    private final java.util.Map<Long, Long> pocketsLetGo = new java.util.HashMap<>();
+
+    /**
+     * Its last cave walk refused, the cave floor it was bound for set aside (MOVEMENT, pocket-level; the run's global
+     * set-aside of a refused target is LOOPS'): a pocket at most {@link #POCKET_UP} up or down and {@link #POCKET_ACROSS}
+     * across is climbed to once by a route that may pillar, stair, bridge and dig with its own blocks, under the edit
+     * policy; any other, or one it cannot climb to, is let go with the cells round it. Null to walk on as before.
+     */
+    private Optional<Task> pocket(NativePlayerBody body, String what, BlockPos feet) {
+        if (climbingTo != null) {
+            if (inPocket(feet, climbingTo) || ++climbSteps > POCKET_STEPS) {
+                if (!inPocket(feet, climbingTo)) letPocketGo(climbingTo, "its climb ran long");
+                climbingTo = null;
+                return null;
+            }
+            // Fallen from its climb: the pocket is let go, not climbed to again from wherever it landed.
+            if (feet.getY() < climbFromY - POCKET_FALL) {
+                letPocketGo(climbingTo, "it fell from its climb");
+                climbingTo = null;
+                return null;
+            }
+            // Mid-jump on a pillar or a stair: the route is planned again on landing, not given up.
+            var player = body.entity();
+            if (!player.isOnGround() && !player.isTouchingWater()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), POCKET_CLIMB + what + ": land"));
+            BlockPos to = climbingTo;
+            var step = buildRoute(body, to, cell -> inPocket(cell, to), false, POCKET_CLIMB + what);
+            if (step.isPresent() && !bridgesOverADrop(body, step.get())) return step;
+            letPocketGo(climbingTo, step.isPresent() ? "its climb would bridge out over a drop" : "no way up to it");
+            climbingTo = null;
+            return null;
+        }
+        BlockPos refused = caveWalkedTo;
+        if (refused == null || !blocked(refused)) return null;
+        caveWalkedTo = null;
+        long key = BlockPos.asLong(refused.getX() >> 3, refused.getY() >> 3, refused.getZ() >> 3);
+        int up = Math.abs(refused.getY() - feet.getY());
+        boolean near = up <= POCKET_UP && Math.hypot(refused.getX() - feet.getX(), refused.getZ() - feet.getZ()) <= POCKET_ACROSS;
+        if (near && pocketsTried.add(key) && policy != null && policy.autonomousEditsEnabled()) {
+            var step = buildRoute(body, refused, cell -> inPocket(cell, refused), true, POCKET_CLIMB + what);
+            if (step.isPresent() && bridgesOverADrop(body, step.get())) {
+                letPocketGo(refused, "its climb would bridge out over a drop");
+                return null;
+            }
+            if (step.isPresent()) {
+                climbingTo = refused;
+                climbSteps = 0;
+                climbFromY = feet.getY();
+                event("a cave seen " + up + " " + (refused.getY() > feet.getY() ? "up" : "down") + " the wall at " + refused.toShortString()
+                        + ": climbed to with its own blocks");
+                return step;
+            }
+        }
+        letPocketGo(refused, near ? "no way to it with its own blocks" : "too far up or down a cave wall");
+        return null;
+    }
+
+    /**
+     * Standing in the pocket: at its floor's height and a block across at most. Within a block and a half was arrived a
+     * step short, diagonally below it on the stair up, and the climb was let end there.
+     */
+    private static boolean inPocket(BlockPos feet, BlockPos pocket) {
+        return feet.getY() == pocket.getY() && Math.abs(feet.getX() - pocket.getX()) <= 1 && Math.abs(feet.getZ() - pocket.getZ()) <= 1;
+    }
+
+    private boolean pocketLetGo(BlockPos pos) {
+        Long until = pocketsLetGo.get(pos.asLong());
+        return until != null && until > lastTick;
+    }
+
+    /**
+     * A climb's step that bridges out over a drop deeper than {@link #POCKET_FALL}: on a cavern's rim the climb to a pocket
+     * across it put its block out over the cavern, missed the stair on it and fell twenty blocks
+     * (`NativeBranchMineGameTests`' rim of a cavern, 3 of 3 with F-35b). A pocket climbed to is one up a wall, not across a void.
+     */
+    private boolean bridgesOverADrop(NativePlayerBody body, Task step) {
+        if (!step.skill().equals("native_place") || !step.label().contains(": bridge ")) return false;
+        var world = body.entity().getServerWorld();
+        BlockPos cell = new BlockPos(Integer.parseInt(step.args().get("x")), Integer.parseInt(step.args().get("y")), Integer.parseInt(step.args().get("z")));
+        for (int d = 1; d <= POCKET_FALL; d++) if (!passable(world, cell.down(d))) return false;
+        return true;
+    }
+
+    /**
+     * A refused cave pocket let go: the cave floors round it are passed over by the next cave walk's choice, so it goes
+     * elsewhere. Only that choice: set aside for every route and edit, the cells round a pocket three across took in the
+     * player's own cell and the rock beside it, and on a cavern's rim it waited rather than dig on (the branch mine's rim
+     * of a cavern, with F-35b).
+     */
+    private void letPocketGo(BlockPos pocket, String why) {
+        long until = lastTick + 2400;
+        if (pocketsLetGo.size() > 20_000) pocketsLetGo.values().removeIf(t -> t <= lastTick);
+        for (BlockPos near : BlockPos.iterate(pocket.add(-POCKET_RADIUS, -2, -POCKET_RADIUS), pocket.add(POCKET_RADIUS, 2, POCKET_RADIUS))) {
+            pocketsLetGo.merge(near.asLong(), until, Math::max);
+        }
+        event("the cave at " + pocket.toShortString() + " let go: " + why);
     }
 
     /** Arrived somewhere new: look around (one full knowledge sweep) before deciding there is nothing but digging. */
