@@ -91,6 +91,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
 - [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
+- [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
