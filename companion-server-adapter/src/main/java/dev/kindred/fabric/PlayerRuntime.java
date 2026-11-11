@@ -4426,6 +4426,7 @@ final class PlayerRuntime {
                 if (!running || entries.get(id) != entry || entry.atlas != null) return;
                 entry.atlas = dev.kindred.core.atlas.Atlas.restore(failure == null ? snapshot : null, PRIORS);
                 entry.atlasSavedAt = server.getTicks();
+                entry.atlasRecall = failure == null && snapshot != null; // F-30d: read back from its file, so seen before this start.
             }));
             return;
         }
@@ -4481,6 +4482,7 @@ final class PlayerRuntime {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
         entry.campaign.atlas(atlasOn ? entry.atlas : null);
+        if (entry.atlasRecall && atlasOn && entry.atlas != null) { entry.campaign.recall(entry.atlas); entry.atlasRecall = false; }
         entry.campaign.recipes(rescueBook, rescueSkills);
         entry.campaign.customs(customs);
         entry.campaign.pursue(goalOf(entry));
@@ -6610,6 +6612,7 @@ final class PlayerRuntime {
             if (goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
                 entry.campaign.atlas(atlasOn ? entry.atlas : null); // What it sees goes into its atlas from the first look (F-30).
+                if (entry.atlasRecall && atlasOn && entry.atlas != null) { entry.campaign.recall(entry.atlas); entry.atlasRecall = false; }
                 entry.campaign.observe(body.entity());
             }
         }
@@ -16788,6 +16791,8 @@ final class PlayerRuntime {
         /** Its atlas of this world (F-30), kept across goals; read from its file once, saved once a game minute and at the end. */
         dev.kindred.core.atlas.Atlas atlas;
         private boolean atlasLoading;
+        /** F-30d: its atlas was read back from its file and its sightings are yet to be recalled by its campaign. */
+        private boolean atlasRecall;
         private long atlasSavedAt;
         private int memorySaved = -1;
         private final dev.kindred.core.PlayerDecisionLoop mind;
