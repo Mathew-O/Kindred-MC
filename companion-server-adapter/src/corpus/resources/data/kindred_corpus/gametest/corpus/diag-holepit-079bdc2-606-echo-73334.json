@@ -1,0 +1,358 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 73334,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  160,
+  4,
+  -139
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.507498750539753,
+  8.056410106657413,
+  16.38564581998213
+ ],
+ "yaw": 3.751787,
+ "pitch": -62.048706,
+ "health": 18.0,
+ "food": 20,
+ "saturation": 4.2000003,
+ "air": -5,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 9
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 27
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 64
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 20
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 35
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 2
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 17
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 2
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 3
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:feather",
+    "count": 3
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 17
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 15
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 125
+    }
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 26
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:birch_planks",
+    "count": 4
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 3,
+ "timeOfDay": 1334,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Get out of the water: up for air",
+ "task": "Get out of the water: up for air",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo drowned",
+ "ticks": 1200,
+ "log": [
+  "[07:52:48] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 169, 15, -118 is blocked [Get out of the water: to dry ground]",
+  "[07:52:53] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 167, 14, -128 is blocked [Get out of the water: to dry ground]",
+  "[07:52:58] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 168, 15, -119 is blocked [Get out of the water: to dry ground]",
+  "[07:53:02] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 169, 14, -128 is blocked [Get out of the water: to dry ground]",
+  "[07:53:07] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 167, 14, -129 is blocked [Get out of the water: to dry ground]",
+  "[07:53:12] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 170, 14, -123 is blocked [Get out of the water: to dry ground]",
+  "[07:53:17] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 168, 14, -127 is blocked [Get out of the water: to dry ground]",
+  "[07:53:23] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 167, 14, -126 is blocked [Get out of the water: to dry ground]",
+  "[07:53:28] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 168, 15, -118 is blocked [Get out of the water: to dry ground]",
+  "[07:53:32] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 168, 14, -128 is blocked [Get out of the water: to dry ground]",
+  "[07:53:39] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:53:39] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:53:44] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 171, 14, -123 is blocked [Get out of the water: to dry ground]",
+  "[07:53:44] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3169]",
+  "[07:53:48] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 171, 14, -122 is blocked [Get out of the water: to dry ground]",
+  "[07:53:51] [Server thread/INFO]: Echo native_break COMPLETED [Get out of the water: open the way up at 176, 14, -123]",
+  "[07:53:51] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:53:51] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:53:52] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Get out of the water: up for air]",
+  "[07:53:52] [Server thread/INFO]: Echo died at 176, 12, -123: Echo drowned (tick 73334, day, under cover, hunger 20, armour 6, holding stone_pickaxe, a shield; doing \"Get out of the water: up for air\" in \"Iron: Get out of the water: up for air\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "diag-holepit-079bdc2",
+  "seed": "606",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-holepit-1111@4a9f0ff:diag-holepit-079bdc2/606/replays/world/Echo-73334",
+  "class": "death: drowned",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

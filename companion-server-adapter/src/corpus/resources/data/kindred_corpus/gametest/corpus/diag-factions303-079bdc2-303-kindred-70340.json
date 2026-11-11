@@ -1,0 +1,236 @@
+{
+ "kind": "spell",
+ "player": "Kindred",
+ "tick": 70340,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -219,
+  9,
+  27
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.338247536990934,
+  8.419999986886978,
+  16.528288760290067
+ ],
+ "yaw": -102.66076,
+ "pitch": 43.014988,
+ "health": 20.0,
+ "food": 19,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 27
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cooked_porkchop",
+    "count": 3
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 40
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 5
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 71
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 22
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 21
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 2
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 28
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 22339,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward -203, 17, 67",
+ "task": "Mine iron ore at -202, 17, 43",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+ "log": [
+  "[08:28:16] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -206, 19, 43]",
+  "[08:28:16] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[08:28:17] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -205, 20, 43]",
+  "[08:28:17] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -205, 19, 43]",
+  "[08:28:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[08:28:18] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -204, 20, 43]",
+  "[08:28:18] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -204, 19, 43]",
+  "[08:28:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[08:28:18] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -203, 20, 43]",
+  "[08:28:19] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -203, 19, 43]",
+  "[08:28:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[08:28:19] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -202, 20, 43]",
+  "[08:28:19] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -202, 19, 43]",
+  "[08:28:20] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[08:28:20] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -203, 18, 43]",
+  "[08:28:21] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -202, 18, 43]",
+  "[08:28:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Branch mine for iron: advance]",
+  "[08:28:21] [Server thread/INFO]: Kindred native_break COMPLETED [Branch mine for iron: clear -201, 19, 43]",
+  "[08:28:23] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -203, 17, 43]",
+  "[08:28:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Pick up raw iron]"
+ ],
+ "corpus": {
+  "run": "diag-factions303-079bdc2",
+  "seed": "303",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-factions303-1111@c5b3e43:diag-factions303-079bdc2/303/replays/world/Kindred-70340",
+  "class": "stuck: mining for a find",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166): passes if out within its 3600 ticks; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}

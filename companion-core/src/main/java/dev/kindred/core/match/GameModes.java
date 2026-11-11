@@ -30,8 +30,11 @@ public final class GameModes {
         SPEEDRUN("Speedrun", PlaystyleProfile.SPEEDRUN_ANY_PERCENT, true, Set.of(MatchRegistry.Mode.SPEEDRUN, MatchRegistry.Mode.DUEL)),
         MANHUNT("Manhunt", PlaystyleProfile.OPTIMAL_SURVIVAL, true, Set.of(MatchRegistry.Mode.MANHUNT, MatchRegistry.Mode.DUEL)),
         BUILDER("Builder", PlaystyleProfile.IDLE_OBSERVING, true, Set.of(MatchRegistry.Mode.BUILDER, MatchRegistry.Mode.DUEL)),
-        /** The optional mode (M-06): declared, but not playable until its own feature is. */
-        FACTIONS("Factions", PlaystyleProfile.OPTIMAL_SURVIVAL, false, Set.of(MatchRegistry.Mode.DUEL));
+        /**
+         * The optional mode (M-06): an operator's choice like the others, never on by itself. The faction world is a
+         * standing match its members joined by joining a faction (D7).
+         */
+        FACTIONS("Factions", PlaystyleProfile.OPTIMAL_SURVIVAL, true, Set.of(MatchRegistry.Mode.DUEL));
 
         public final String label;
         /** The playstyle an AI player plays this world at, unless its administrator sets its own. */
@@ -126,12 +129,13 @@ public final class GameModes {
                     "none: creative",
                     "the best builds by the builders' votes");
             case FACTIONS -> new Rules("Factions",
-                    "not playable yet (M-06): survival with every AI player its own side",
-                    "the server's edit policy and protection, the same for everyone",
-                    "only players who joined the match",
+                    "survival in factions: found or join one, claim land by its power, earn coins at the market",
+                    "the server's edit policy; claimed land only by its faction, the same for people and AI players",
+                    // D7, the stricter reading: a person in no faction is never a target; the owner may loosen it later.
+                    "only between members of different factions, never in safe zones; joining a faction is joining the match; leave it any time",
                     "none handed out",
-                    "respawn as usual",
-                    "not yet defined");
+                    "respawn as usual; a death to another faction costs two power",
+                    "no end: the factions' standing by land and power");
         };
     }
 

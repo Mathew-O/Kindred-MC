@@ -46,7 +46,8 @@ final class DeathReplays implements AutoCloseable {
     /** A stuck spell's budget, the goal's watchdog's three minutes: a {@code "spell"} scene passes if out within it. */
     static final int SPELL_TICKS = 3600;
     /** A {@code "spell"} scene's pass: out of where it was stuck within its budget. */
-    static final String SPELL_PASS = "out within " + SPELL_TICKS + " ticks: moved more than 8 blocks, or its feet 3 or more blocks higher";
+    static final String SPELL_PASS = "out within " + SPELL_TICKS + " ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last "
+            + (SPELL_TICKS / 2) + " ticks";
     /** A capture at most once a minute for each player; its vitals as they were ten seconds before. */
     private static final long GAP = 1200, BEFORE = 200;
     private static final int KEPT_VITALS = 16, LOG_LINES = 20;
@@ -54,7 +55,13 @@ final class DeathReplays implements AutoCloseable {
     record Vitals(long tick, float health, int food, float saturation, int air, float absorption) { }
 
     /** What the runtime knows of the player as it dies, for the replay's own record. */
-    record Context(String kind, String goal, String stage, String task, String stance, String habits, String cause) { }
+    record Context(String kind, String goal, String stage, String task, String stance, String habits, String cause,
+                   java.util.function.Function<BlockPos, JsonObject> memory) {
+        /** No goal memory: a capture with none. */
+        Context(String kind, String goal, String stage, String task, String stance, String habits, String cause) {
+            this(kind, goal, stage, task, stance, habits, cause, null);
+        }
+    }
 
     private final Path dir;
     private final Path log;
@@ -172,6 +179,11 @@ final class DeathReplays implements AutoCloseable {
         boolean spell = "spell".equals(context.kind());
         state.put("ticks", spell ? SPELL_TICKS : 1200);
         if (spell) state.put("pass", SPELL_PASS);
+        // Its goal's own memory of the box, copied now (F-27a): what it set aside, gave up and knew, for the replay to start with.
+        if (context.memory() != null) {
+            JsonObject memory = context.memory().apply(origin);
+            if (memory != null) state.put("memory", memory);
+        }
         return state;
     }
 
@@ -199,6 +211,7 @@ final class DeathReplays implements AutoCloseable {
                     }
                     json.add("effects", effects);
                 }
+                case "memory" -> json.add("memory", (JsonObject) value);
                 case "inventory" -> {
                     JsonArray items = new JsonArray();
                     for (Object[] held : (List<Object[]>) value) {
@@ -230,7 +243,7 @@ final class DeathReplays implements AutoCloseable {
             String snbt = NbtHelper.toNbtProviderString(scene.templateNbt()).lines().map(String::strip).collect(java.util.stream.Collectors.joining("\n"));
             Files.writeString(folder.resolve("replay.snbt"), snbt, StandardCharsets.UTF_8);
             Files.writeString(folder.resolve("replay.json"), new GsonBuilder().setPrettyPrinting().create().toJson(state), StandardCharsets.UTF_8);
-            KindredMod.LOGGER.info("{} death replay written to {} ({} KB)", player, folder, snbt.length() / 1024);
+            KindredMod.LOGGER.info("{} {} replay written to {} ({} KB)", player, copied.get("kind"), folder, snbt.length() / 1024);
         } catch (IOException | RuntimeException failure) {
             KindredMod.LOGGER.warn("{} death replay not written to {}: {}", player, folder, failure.toString());
         }
