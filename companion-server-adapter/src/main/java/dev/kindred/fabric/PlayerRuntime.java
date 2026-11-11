@@ -7626,7 +7626,14 @@ final class PlayerRuntime {
                 entry.patchDropsAside.clear(); // A block out opens the way to what fell beside it.
                 entry.patchDropRetries = 0;
             }
-            if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null) entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            // A mine refused before it broke anything (the player moved, its tool or the block changed between the plan and
+            // the dispatch) is a try, as a walk is: planned again, every check made afresh, and set aside only after three.
+            // Set aside at once, a trunk's third log was left standing, the top log over it had no ground to walk to, and
+            // the trunk was never replanted (F-22c63). Any other refusal, or an uncertain outcome, is set aside as before.
+            if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null
+                    && !(NativeMiningAction.nothingIssued(entry.runner.reason().orElse(null)) && ++entry.patchWalks < 3)) {
+                entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            }
             if ("native_goto".equals(entry.skillId) && entry.patchDropWalk < 0 && entry.patchWalkTo != null) entry.patchWalks++;
             // A drop it could not walk to (fallen into a hole too low to step into), or that it reached twice and is still
             // lying there out of its reach: set aside while the mining goes on.
