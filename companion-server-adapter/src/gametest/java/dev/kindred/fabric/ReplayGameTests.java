@@ -162,13 +162,24 @@ public final class ReplayGameTests implements FabricGameTest {
      * the same tick, so each run starts from the recorded positions; no mob is moved and none given a target. The
      * world's time of day, weather and difficulty are set to the record.
      */
+    /** For fixtures: called with a replay's goal and what was dropped once its memory is put back, by the replay's player. */
+    static final java.util.Map<String, java.util.function.BiConsumer<PortalRunCampaign, java.util.List<String>>> ON_RESTORE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** The scene box's size along {@code axis} as recorded, or the recorder's own when the scene has none. */
+    private static int sizeOf(JsonObject state, int axis, int otherwise) {
+        return state.has("size") && state.get("size").isJsonArray() && state.getAsJsonArray("size").size() > axis
+                ? state.getAsJsonArray("size").get(axis).getAsInt() : otherwise;
+    }
+
     static void play(TestContext context, JsonObject replay, int run, int ticks) {
         var world = context.getWorld();
         var server = world.getServer();
         JsonObject state = replay;
         var at = state.getAsJsonArray("at");
         // A test's own position is its structure block's, one below the structure, so the structure's corner is (0, 1, 0).
-        Vec3d start = Vec3d.of(context.getAbsolutePos(BlockPos.ORIGIN.up())).add(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble());
+        BlockPos boxOrigin = context.getAbsolutePos(BlockPos.ORIGIN.up()).toImmutable();
+        Vec3d start = Vec3d.of(boxOrigin).add(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble());
         Path directory = server.getSavePath(WorldSavePath.ROOT).resolve("kindred-replay-" + UUID.randomUUID());
         // Made where it can stand, the nearest such cell, then set where it died: one that died falling, swimming or
         // knocked back died where no player can be made ("Make room on solid ground").
@@ -259,6 +270,17 @@ public final class ReplayGameTests implements FabricGameTest {
                     });
                     var goal = SurvivalGoal.valueOf(state.get("goal").getAsString());
                     if (goal != SurvivalGoal.NONE) context.assertTrue(runtime.startGoal(made[0], id[0], goal) == 1, "Its goal, " + goal + ", accepted");
+                    // Its goal's own memory of the box, as the recorder kept it (F-27a): what it had set aside, given up and
+                    // known. Put back into this replay's own goal, nothing else; what does not fit is dropped and logged.
+                    if (state.has("memory") && state.get("memory").isJsonObject()) {
+                        var campaign = runtime.campaignForTest(id[0]);
+                        var dropped = campaign.restoreMemory(state.getAsJsonObject("memory"), boxOrigin, sizeOf(state, 0, DeathReplays.WIDTH),
+                                sizeOf(state, 1, DeathReplays.HEIGHT), server.getTicks());
+                        KindredMod.LOGGER.info("Replay {} of {}: its goal's memory put back, {} entries dropped{}", run, name, dropped.size(),
+                                dropped.isEmpty() ? "" : ": " + String.join("; ", dropped.subList(0, Math.min(8, dropped.size()))));
+                        var hook = ON_RESTORE.get(state.get("player").getAsString());
+                        if (hook != null) hook.accept(campaign, dropped);
+                    }
                     from[0] = body.getPos();
                     began[0] = context.getTick();
                 })
@@ -431,5 +453,66 @@ public final class ReplayGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /**
+     * A scene made here as the recorder writes one, in a bedrock pen on the field: the player at (16, 4, 16) in the box with
+     * bread, a jungle log three high four east, day, the portal goal; with {@code memory} when given (STAGED).
+     */
+    private static JsonObject pennedScene(TestContext context, String player, long tick, String memory) {
+        BlockPos box = context.getAbsolutePos(BlockPos.ORIGIN.up());
+        BlockPos feet = box.add(16, 4, 16);
+        var world = context.getWorld();
+        FixtureGround.keep(context, feet.add(-8, -3, -8), feet.add(8, 8, 8));
+        for (BlockPos c : BlockPos.iterate(feet.add(-8, -3, -8), feet.add(8, 8, 8))) {
+            int dx = c.getX() - feet.getX(), dy = c.getY() - feet.getY(), dz = c.getZ() - feet.getZ();
+            boolean wall = Math.max(Math.abs(dx), Math.abs(dz)) == 6 && dy <= 4, floor = Math.max(Math.abs(dx), Math.abs(dz)) <= 6 && dy < 0;
+            world.setBlockState(c, (wall || floor ? net.minecraft.block.Blocks.BEDROCK : net.minecraft.block.Blocks.AIR).getDefaultState());
+        }
+        for (int dy = 0; dy < 3; dy++) world.setBlockState(feet.add(4, dy, 0), net.minecraft.block.Blocks.JUNGLE_LOG.getDefaultState());
+        String json = "{\"kind\":\"death\",\"player\":\"" + player + "\",\"tick\":" + tick + ",\"size\":[33,17,33],\"at\":[16.5,4.0,16.5],"
+                + "\"yaw\":-90,\"pitch\":0,\"health\":20,\"food\":20,\"saturation\":5,\"air\":300,\"absorption\":0,\"effects\":[],"
+                + "\"inventory\":[{\"slot\":0,\"stack\":{\"id\":\"minecraft:bread\",\"count\":8}}],\"selected\":0,\"timeOfDay\":1000,"
+                + "\"raining\":false,\"thundering\":false,\"difficulty\":\"peaceful\",\"goal\":\"NETHER_PORTAL\",\"stage\":\"staged\","
+                + "\"task\":\"nothing\",\"stance\":\"PRESS_ON\",\"habits\":\"[]\",\"cause\":\"staged\",\"ticks\":300"
+                + (memory == null ? "" : ",\"memory\":" + memory) + "}";
+        return JsonParser.parseString(json).getAsJsonObject();
+    }
+
+    /**
+     * In plain terms: a replay of a scene whose goal had set a tree aside starts with that tree still set aside, as the
+     * player had it, not with a fresh goal that would walk straight to it.
+     *
+     * Technical: F-27a, the harness half of the goal's memory. STAGED: a scene made as the recorder writes one (above), its
+     * memory setting the tree's three logs aside; passes if the replay's goal has each set aside once its memory is put
+     * back, nothing dropped, and the player lives the scene's 300 ticks.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "replayMemory", tickLimit = 1400)
+    public void aScenesMemoryIsPutBackIntoItsReplaysGoal(TestContext context) {
+        String memory = "{\"version\":1,\"blocked\":[{\"at\":[20,4,16],\"left\":1000000},{\"at\":[20,5,16],\"left\":1000000},{\"at\":[20,6,16],\"left\":1000000}]}";
+        var scene = pennedScene(context, "Minded", 4242, memory);
+        BlockPos log = context.getAbsolutePos(BlockPos.ORIGIN.up()).add(20, 4, 16).toImmutable();
+        ON_RESTORE.put("Minded", (campaign, dropped) -> {
+            ON_RESTORE.remove("Minded");
+            for (int dy = 0; dy < 3; dy++) context.assertTrue(campaign.blocked(log.up(dy)), "The tree's log " + dy + " up set aside again");
+            context.assertTrue(dropped.isEmpty(), "Nothing dropped: " + dropped);
+        });
+        play(context, scene, 1, 300);
+    }
+
+    /**
+     * In plain terms: a scene recorded before replays kept their goal's memory plays as it always did.
+     *
+     * Technical: F-27a. STAGED as above with no {@code memory}: passes if nothing is put back and the player lives the
+     * scene's 300 ticks, as every scene in the corpus so far.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "replayNoMemory", tickLimit = 1400)
+    public void aSceneWithoutMemoryPlaysAsBefore(TestContext context) {
+        var scene = pennedScene(context, "Plain", 4343, null);
+        ON_RESTORE.put("Plain", (campaign, dropped) -> {
+            ON_RESTORE.remove("Plain");
+            throw new net.minecraft.test.GameTestException("A memory put back for a scene that has none");
+        });
+        play(context, scene, 1, 300);
     }
 }
