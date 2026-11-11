@@ -1,4 +1,3 @@
 # Scenes known to be intermittent on main though the baseline counts them as passing, one id a line, with why after
 # a "#". The report marks a flagged scene listed here as expected; the flag and block rules are unchanged, and a
 # listed scene confirmed by the gate still blocks. Cleared at the next re-baseline, which counts them as they are.
-e40a14-80b7150-8675309-kindred-120887  # skeleton death in fight-back; flagged by the gates of #181 and #126, each time failing only part of the time alone (#181: 1 of 3); the baseline counts it a pass
