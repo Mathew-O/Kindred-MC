@@ -910,6 +910,45 @@ public final class VanillaIds {
             "minecraft:leather_boots", "minecraft:netherite_boots");
 
 
+    // ---- Kinds of raw material and food (F-38): a mod's item of a kind Worth's table does not name is worth what that
+    // kind's vanilla members typically are. Each is the convention tag's vanilla 1.21.1 item members. ----
+
+    /** #c:gems as in vanilla 1.21.1 (item tag): gems. */
+    public static final Group GEMS = group("#c:gems", true,
+            "minecraft:amethyst_shard", "minecraft:diamond", "minecraft:emerald", "minecraft:lapis_lazuli",
+            "minecraft:prismarine_crystals", "minecraft:quartz");
+
+    /** #c:ingots as in vanilla 1.21.1 (item tag): ingots. */
+    public static final Group INGOTS = group("#c:ingots", true,
+            "minecraft:copper_ingot", "minecraft:gold_ingot", "minecraft:iron_ingot", "minecraft:netherite_ingot");
+
+    /** #c:raw_materials as in vanilla 1.21.1 (item tag): raw ores. */
+    public static final Group RAW_MATERIALS = group("#c:raw_materials", true,
+            "minecraft:raw_copper", "minecraft:raw_gold", "minecraft:raw_iron");
+
+    /** #c:nuggets as in vanilla 1.21.1 (item tag): nuggets. */
+    public static final Group NUGGETS = group("#c:nuggets", true,
+            "minecraft:gold_nugget", "minecraft:iron_nugget");
+
+    /** #c:dusts as in vanilla 1.21.1 (item tag): dusts. */
+    public static final Group DUSTS = group("#c:dusts", true,
+            "minecraft:glowstone_dust", "minecraft:redstone");
+
+    /** #c:foods as in vanilla 1.21.1 (item tag): foods. */
+    public static final Group FOODS = group("#c:foods", true,
+            "minecraft:apple", "minecraft:baked_potato", "minecraft:beef", "minecraft:beetroot",
+            "minecraft:beetroot_soup", "minecraft:bread", "minecraft:cake", "minecraft:carrot", "minecraft:chicken",
+            "minecraft:chorus_fruit", "minecraft:cod", "minecraft:cooked_beef", "minecraft:cooked_chicken",
+            "minecraft:cooked_cod", "minecraft:cooked_mutton", "minecraft:cooked_porkchop", "minecraft:cooked_rabbit",
+            "minecraft:cooked_salmon", "minecraft:cookie", "minecraft:dried_kelp", "minecraft:enchanted_golden_apple",
+            "minecraft:glow_berries", "minecraft:golden_apple", "minecraft:golden_carrot", "minecraft:honey_bottle",
+            "minecraft:melon_slice", "minecraft:mushroom_stew", "minecraft:mutton", "minecraft:ominous_bottle",
+            "minecraft:poisonous_potato", "minecraft:porkchop", "minecraft:potato", "minecraft:pufferfish",
+            "minecraft:pumpkin_pie", "minecraft:rabbit", "minecraft:rabbit_stew", "minecraft:rotten_flesh",
+            "minecraft:salmon", "minecraft:spider_eye", "minecraft:suspicious_stew", "minecraft:sweet_berries",
+            "minecraft:tropical_fish");
+
+
     /** Moss carpet: placed on top like a carpet, but not in #minecraft:wool_carpets. Would be its block's shape. */
     public static final String MOSS_CARPET = "minecraft:moss_carpet";
 

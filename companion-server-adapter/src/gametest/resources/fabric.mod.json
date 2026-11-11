@@ -124,6 +124,7 @@
       "dev.kindred.fabric.NativeWorldRecordGameTests",
       "dev.kindred.fabric.NativeFactionPowerGameTests",
       "dev.kindred.fabric.NativeTerritoryGameTests",
+      "dev.kindred.fabric.NativeMobGriefGameTests",
       "dev.kindred.fabric.NativeSafeZoneGameTests",
       "dev.kindred.fabric.NativeMarketGameTests",
       "dev.kindred.fabric.NativeAuctionGameTests",

@@ -141,9 +141,9 @@ final class KindredCapabilities {
     }
 
     /**
-     * The server's crafting and smelting recipes for items outside vanilla's namespace, as plain values: each
-     * ingredient by its first matching item, counted. Core works a mod's item's worth out of these (vanilla's items keep
-     * their written worth).
+     * The server's crafting and smelting recipes that make or take an item outside vanilla's namespace, as plain values:
+     * each ingredient by its first matching item, counted. Core works a mod's item's worth out of these, from what it is
+     * made of or what it is turned into (vanilla's items keep their written worth).
      */
     private static java.util.List<Capabilities.Recipe> recipes(net.minecraft.server.MinecraftServer server) {
         var registries = server.getRegistryManager();
@@ -154,7 +154,6 @@ final class KindredCapabilities {
             var result = recipe.getResult(registries);
             if (result.isEmpty()) continue;
             String output = Registries.ITEM.getId(result.getItem()).toString();
-            if (output.startsWith(VanillaIds.NAMESPACE)) continue;
             Map<String, Integer> inputs = new java.util.TreeMap<>();
             boolean whole = true;
             for (var ingredient : recipe.getIngredients()) {
@@ -163,7 +162,10 @@ final class KindredCapabilities {
                 if (stacks.length == 0) { whole = false; break; }
                 inputs.merge(Registries.ITEM.getId(stacks[0].getItem()).toString(), 1, Integer::sum);
             }
-            if (whole && !inputs.isEmpty()) out.add(new Capabilities.Recipe(output, result.getCount(), inputs));
+            // Vanilla's own recipes are left out: vanilla's items keep their written worth. One that makes or takes another
+            // namespace's item is kept (a mod's raw ore smelted to a vanilla ingot is worth that ingot).
+            boolean foreign = !output.startsWith(VanillaIds.NAMESPACE) || inputs.keySet().stream().anyMatch(i -> !i.startsWith(VanillaIds.NAMESPACE));
+            if (whole && foreign && !inputs.isEmpty()) out.add(new Capabilities.Recipe(output, result.getCount(), inputs));
         }
         return out;
     }
