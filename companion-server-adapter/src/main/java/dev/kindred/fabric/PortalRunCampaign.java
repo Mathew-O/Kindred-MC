@@ -7568,11 +7568,21 @@ final class PortalRunCampaign {
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
-    /** The nearest mob on foot after the player and in sight, close enough to strike it within a step. */
+    /** Closer than this, a shooter is a mob in reach (see {@link #onFootInReach}). */
+    static final double POINT_BLANK = 2.0;
+
+    /**
+     * The nearest mob on foot after the player and in sight, close enough to strike it within a step. A shooter counts
+     * once it stands closer than {@link #POINT_BLANK}: no block goes between them there, the cell it would go in holding
+     * the shooter or the player. In e40a20-79a9aad on 20261030 Echo, at 2.7 health with a skeleton 0.8 blocks off, tried
+     * cover into the skeleton's own cell ("Block placement produced no effect or was obstructed"), then, with no way off,
+     * rested to heal in its line of fire and was shot (4 of 6 replays on main b7027be).
+     */
     private static HostileEntity onFootInReach(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(3.0, 1.5, 3.0),
                         mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
-                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < 3.0 && player.canSee(mob))
+                                && (!(mob instanceof net.minecraft.entity.ai.RangedAttackMob) || player.distanceTo(mob) < POINT_BLANK)
+                                && player.distanceTo(mob) < 3.0 && player.canSee(mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
