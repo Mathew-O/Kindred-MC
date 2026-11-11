@@ -10,8 +10,8 @@ import net.minecraft.world.World;
 
 /**
  * In plain terms: the one place every game event asks whether a faction's land allows it: a person's or an AI player's
- * break, place or use, an explosion, a flow of water or lava, a piston's push, a hopper's pull, a dispenser's shot and a
- * projectile's hit.
+ * break, place or use, an explosion, a flow of water or lava, a piston's push, a hopper's pull, a dispenser's shot, a
+ * projectile's hit, and a mob's own griefing (endermen, ravagers, silverfish, withers, zombies at doors).
  *
  * Technical: M-06d's enforcement entry for the event callbacks and mixins. The runtimes playing a faction world register
  * their {@link FactionsService}; each check asks every one of the world's own server (any refusal refuses), on the server thread only (anything
@@ -117,6 +117,15 @@ public final class TerritoryGuard {
     public static boolean mayExplode(World world, BlockPos pos) {
         for (var service : of(world)) if (!service.unprotected(chunk(world, pos))) return false;
         return true;
+    }
+
+    /**
+     * Whether a mob may change the block at {@code pos} of its own accord (M-06d1): an enderman taking or setting down a
+     * block, a ravager trampling leaves, a silverfish hiding in stone, a wither tearing through, a zombie breaking a door.
+     * Never on claimed land or in a safe zone, as an explosion may not.
+     */
+    public static boolean mayMobChange(World world, BlockPos pos) {
+        return mayExplode(world, pos);
     }
 
     /** Whether a projectile shot by {@code owner} (null for none) may set off the block at {@code pos}. */

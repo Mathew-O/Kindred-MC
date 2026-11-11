@@ -267,7 +267,6 @@ final class PlayerRuntime {
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
     /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
-    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -6641,7 +6640,8 @@ final class PlayerRuntime {
             var doingThen = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
             replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(goalOf(entry)),
                     entry.campaign == null ? "no goal" : entry.campaign.progress(), doingThen, entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
-                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString()));
+                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString(),
+                    memoryOf(entry)));
         }
         teamCoordinator.handlePlayerDeath(entry.data.id());
         entry.hazardInterrupted = false;
@@ -7811,7 +7811,14 @@ final class PlayerRuntime {
                 entry.patchDropsAside.clear(); // A block out opens the way to what fell beside it.
                 entry.patchDropRetries = 0;
             }
-            if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null) entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            // A mine refused before it broke anything (the player moved, its tool or the block changed between the plan and
+            // the dispatch) is a try, as a walk is: planned again, every check made afresh, and set aside only after three.
+            // Set aside at once, a trunk's third log was left standing, the top log over it had no ground to walk to, and
+            // the trunk was never replanted (F-22c63). Any other refusal, or an uncertain outcome, is set aside as before.
+            if (state == SkillRunner.State.BLOCKED && "native_mine".equals(entry.skillId) && entry.patchWalkTo != null
+                    && !(NativeMiningAction.nothingIssued(entry.runner.reason().orElse(null)) && ++entry.patchWalks < 3)) {
+                entry.patchSkipped.add(entry.patchWalkTo.asLong());
+            }
             if ("native_goto".equals(entry.skillId) && entry.patchDropWalk < 0 && entry.patchWalkTo != null) entry.patchWalks++;
             // A drop it could not walk to (fallen into a hole too low to step into), or that it reached twice and is still
             // lying there out of its reach: set aside while the mining goes on.
@@ -7939,10 +7946,14 @@ final class PlayerRuntime {
             // A faction walk (M-06i): a refusal backs it off and, after three, sets the place aside; a walk that went
             // somewhere forgets its refusals.
             var factionMove = entry.factionPlay.move;
+            boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
+                    && entry.dispatchSource.startsWith("factionCandidates");
+            if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
-                    entry.factionPlay.refused(factionMove.target(), server.getTicks());
+                    var walker = entry.nativeBody.entity();
+                    entry.factionPlay.refused(factionMove.target(), server.getTicks(), walker.getBlockPos(), FactionsPlayer.atSurface(walker));
                     // The weighed copy of this walk is not dispatched again while it waits.
                     entry.cachedRoutineCandidates = List.of();
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
@@ -9468,6 +9479,8 @@ final class PlayerRuntime {
             return null;
         }
         if (play.waiting(move.target(), tick)) return null;
+        // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up.
+        if (play.paused(tick, player.getBlockPos(), FactionsPlayer.atSurface(player))) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9671,6 +9684,22 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? 0 : entry.factionPlay.refusals(target);
+    }
+
+    /** The fixture's AI player's faction walks that came back refused, and the refusals its back-off counted. */
+    int[] factionBlockedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+    }
+
+    /** Whether the fixture's AI player's faction walks all wait now, where it stands. */
+    boolean factionPausedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
+        var body = entry.nativeBody.entity();
+        return entry.factionPlay.paused(server.getTicks(), body.getBlockPos(), FactionsPlayer.atSurface(body));
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
@@ -14093,7 +14122,7 @@ final class PlayerRuntime {
                     String.valueOf(goalOf(entry)), campaign == null ? "no goal" : campaign.progress(),
                     entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
                     campaign == null ? "" : String.valueOf(campaign.stance()), campaign == null ? "" : String.valueOf(campaign.preferences().habits()),
-                    "stuck"));
+                    "stuck", memoryOf(entry)));
         }
     };
 
@@ -14508,7 +14537,14 @@ final class PlayerRuntime {
         catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
     }
 
-    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
+    private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
+        var campaign = entry.campaign;
+        if (campaign == null) return null;
+        long tick = server.getTicks();
+        return origin -> campaign.memoryIn(origin, DeathReplays.WIDTH, DeathReplays.HEIGHT, tick);
+    }
+
     /**
      * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
      * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
@@ -14523,9 +14559,11 @@ final class PlayerRuntime {
         entry.spellsCaptured = spells;
         replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
                 String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
-                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks",
+                memoryOf(entry)));
     }
 
+    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
@@ -16775,8 +16813,12 @@ final class PlayerRuntime {
 
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
-        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept(), wire.stateTold());
-        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
+        SqliteCompanionStore database = store;
+        var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
+        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
+                chronicle.kept(), wire.stateTold());
+        var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
     }
@@ -16812,7 +16854,6 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
-                    gauge.written(event); // The month-long cost check.
                 }
             });
         });

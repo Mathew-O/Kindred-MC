@@ -55,7 +55,13 @@ final class DeathReplays implements AutoCloseable {
     record Vitals(long tick, float health, int food, float saturation, int air, float absorption) { }
 
     /** What the runtime knows of the player as it dies, for the replay's own record. */
-    record Context(String kind, String goal, String stage, String task, String stance, String habits, String cause) { }
+    record Context(String kind, String goal, String stage, String task, String stance, String habits, String cause,
+                   java.util.function.Function<BlockPos, JsonObject> memory) {
+        /** No goal memory: a capture with none. */
+        Context(String kind, String goal, String stage, String task, String stance, String habits, String cause) {
+            this(kind, goal, stage, task, stance, habits, cause, null);
+        }
+    }
 
     private final Path dir;
     private final Path log;
@@ -173,6 +179,11 @@ final class DeathReplays implements AutoCloseable {
         boolean spell = "spell".equals(context.kind());
         state.put("ticks", spell ? SPELL_TICKS : 1200);
         if (spell) state.put("pass", SPELL_PASS);
+        // Its goal's own memory of the box, copied now (F-27a): what it set aside, gave up and knew, for the replay to start with.
+        if (context.memory() != null) {
+            JsonObject memory = context.memory().apply(origin);
+            if (memory != null) state.put("memory", memory);
+        }
         return state;
     }
 
@@ -200,6 +211,7 @@ final class DeathReplays implements AutoCloseable {
                     }
                     json.add("effects", effects);
                 }
+                case "memory" -> json.add("memory", (JsonObject) value);
                 case "inventory" -> {
                     JsonArray items = new JsonArray();
                     for (Object[] held : (List<Object[]>) value) {

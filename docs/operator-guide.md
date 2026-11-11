@@ -828,13 +828,20 @@ In a faction world:
   killer within 20 minutes, and the killer's account not first seen in the last hour. Online time restores 1 power an hour,
   kept to the second across logouts and restarts (written every five minutes, at a logout and at a stop).
 - Every change is an event in the World Record (F-31); factions and power are rebuilt from it at startup.
+- Disk: the World Record (`kindred/companions.sqlite` and its `-wal`) grows with the number of players and what they do, and nothing
+  is pruned but settled action history. Measured with 3 AI players on seed 101 at 72 game days a real day (dragon goal, a build of
+  2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
+  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
+  for a long run; a figure for eight players is to follow.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
   `/faction unclaim` gives it up (no refund); `/faction map` shows the land round you; `/faction coins` your balance
   (500 at your first sight on a faction world). On claimed land only its faction's members break, place, open or use
-  anything; explosions and fire break nothing there; water, lava, pistons, hoppers, dispensers and droppers reach
-  nothing over its border; an outsider's arrow sets nothing off.
+  anything; explosions and fire break nothing there, and no mob changes a block there of its own accord (an enderman
+  takes or sets down nothing, a ravager tramples no leaves, a silverfish hides in no stone, a wither tears through
+  nothing, a zombie breaks no door; M-06d1); water, lava, pistons, hoppers, dispensers and droppers reach nothing over
+  its border; an outsider's arrow sets nothing off.
 - Spawn and the border (M-06f): `/faction admin hub` makes spawn's chunks within `safeRadius` (64) blocks a safe zone,
   sets the border (`border`, 8,000, across round 0 0 with a 20-block warning; the Nether an eighth, the End the same)
   and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.

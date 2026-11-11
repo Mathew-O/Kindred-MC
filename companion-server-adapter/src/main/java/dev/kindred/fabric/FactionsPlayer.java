@@ -54,13 +54,81 @@ final class FactionsPlayer {
 
     /** A walk toward {@code target} refused: not asked again for a while, longer each time. */
     void refused(String target, long tick) {
+        refused(target, tick, null, true);
+    }
+
+    /**
+     * A walk toward {@code target} refused, from {@code at}, at the surface or not: the target waits as above, and is
+     * set aside after {@value #SET_ASIDE}. Once {@value #STREAK} places have been set aside so with no walk between,
+     * whatever the places, no faction walk is asked for a while, and after that wait each further refusal with nothing
+     * between waits again, twice as long. Each place still gets its own three tries first.
+     */
+    void refused(String target, long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
+        refusalsCounted++;
         var before = refused.get(target);
         int times = before == null ? 1 : before.times() + 1;
         refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
+        if (streakFrom == null && at != null) {
+            streakFrom = at.toImmutable();
+            streakAtSurface = atSurface;
+        }
+        if (times == SET_ASIDE) streak++;
+        if (streak >= STREAK || pauses > 0) {
+            pausedUntil = tick + Math.min(BACKOFF_MAX, PAUSE << Math.min(pauses, 10));
+            pauses++;
+            streak = 0;
+        }
     }
 
-    /** A walk toward {@code target} got somewhere: its refusals forgotten. */
-    void walked(String target) { refused.remove(target); }
+    /**
+     * Whether its faction walks wait now, every one of them: after a run of refusals with no walk between, as from a
+     * tunnel underground every place its faction play chooses is out of reach (MOVEMENT: on Factions seed 109, main
+     * a60f919, Kindred branch mining at Y 19 had walks to many places refused 89 times in seventeen minutes, each
+     * place three times). The wait ends early once it has gone more than {@value #STREAK_MOVED} blocks from where the
+     * run began, or come up to the surface having begun it below: from there the places may be in reach again.
+     */
+    boolean paused(long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
+        if (streakFrom != null && at != null && (streakFrom.getSquaredDistance(at) > (double) STREAK_MOVED * STREAK_MOVED
+                || atSurface && !streakAtSurface)) {
+            streak = 0;
+            pauses = 0;
+            pausedUntil = Long.MIN_VALUE / 2;
+            streakFrom = null;
+            return false;
+        }
+        return pausedUntil > tick;
+    }
+
+    /**
+     * Whether it stands at the surface: no more than a block below the topmost solid block of its column, leaves not
+     * counted (under a tree's crown it is still at the surface; in a tunnel under a hill it is not).
+     */
+    static boolean atSurface(ServerPlayerEntity player) {
+        var pos = player.getBlockPos();
+        int top = player.getServerWorld().getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
+        return pos.getY() >= top - 1;
+    }
+
+    /** Places set aside in a row, with no walk between, before every faction walk waits; and how far a move ends the wait early. */
+    static final int STREAK = 2, STREAK_MOVED = 32;
+    /** Every faction walk's first wait, in ticks (half a minute); it doubles with each, to a game day at most. */
+    static final long PAUSE = 600;
+    private int streak, pauses;
+    private long pausedUntil = Long.MIN_VALUE / 2;
+    private net.minecraft.util.math.BlockPos streakFrom;
+    private boolean streakAtSurface = true;
+
+    /** Faction walks that came back refused, and the refusals the back-off counted of them: equal when it holds. */
+    int blockedWalks, refusalsCounted;
+
+    /** A walk toward {@code target} got somewhere: its refusals forgotten, and the run of refusals with them. */
+    void walked(String target) {
+        refused.remove(target);
+        streak = 0;
+        pauses = 0;
+        pausedUntil = Long.MIN_VALUE / 2;
+        streakFrom = null;
+    }
 
     int refusals(String target) { var r = refused.get(target); return r == null ? 0 : r.times(); }
 
