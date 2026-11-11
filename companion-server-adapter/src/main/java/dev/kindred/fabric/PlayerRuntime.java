@@ -10739,6 +10739,11 @@ final class PlayerRuntime {
                     return bringCandidates(entry, body);
                 }
                 if (!reaches(player, b.door)) return List.of(goNear(task, b.door.south()));
+                // In reach but out of the server's sight, the hall's own wall between (come at the door from beside the hall):
+                // to the ground before its front first, where the OPEN step stands too. Broken from where it was, refused three
+                // times as out of sight, the bring was given up, "door went wrong three times over" (F-22c62).
+                var front = b.door.south().down();
+                if (!body.miningEligible(b.door) && !player.getBlockPos().equals(front)) return List.of(standAt(bringTask(entry, "to the door"), front));
                 return List.of(breakAt(task, b.door));
             }
             case OPEN -> {
