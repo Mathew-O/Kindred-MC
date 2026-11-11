@@ -203,6 +203,8 @@ public final class ReplayGameTests implements FabricGameTest {
         boolean[] died = {false}, stopped = {false};
         long[] began = {-1};
         boolean stuck = "stuck".equals(state.get("kind").getAsString());
+        // A stuck spell kept by the watchdog (F-27a): out of where it was within the spell's budget, by distance or height.
+        boolean spell = "spell".equals(state.get("kind").getAsString());
         context.createTimedTaskRunner()
                 .createAndAdd(() -> {
                     context.assertTrue(runtime.isReady(), "Ready");
@@ -266,7 +268,13 @@ public final class ReplayGameTests implements FabricGameTest {
                         }
                         throw new net.minecraft.test.GameTestException("Replay " + run + ": died again, as it did (" + state.get("cause").getAsString() + ")");
                     }
+                    // A stuck spell's scene passes the moment it is out, within its budget; at the budget's end still in, it fails.
+                    if (spell && (body.getPos().distanceTo(from[0]) > 8 || body.getY() - from[0].y >= 3)) {
+                        runtime.stop();
+                        return;
+                    }
                     context.assertTrue(context.getTick() - began[0] >= ticks, "Still running");
+                    if (spell) throw new net.minecraft.test.GameTestException("Replay " + run + ": still where it was stuck after " + ticks + " ticks");
                     if (stuck) {
                         context.assertTrue(body.getPos().distanceTo(from[0]) > 8 || completed[0] > 0, "Replay " + run + ": stuck where it was");
                     }

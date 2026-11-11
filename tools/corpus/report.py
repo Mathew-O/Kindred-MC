@@ -88,6 +88,14 @@ def main():
         by_class.setdefault(c, Counter())[s] += 1
     for c, k in sorted(by_class.items(), key=lambda kv: -sum(kv[1].values())):
         lines.append(f"| {c} | {k['pass']} | {k['intermittent']} | {k['fail']} | {sum(k.values())} |")
+    by_kind = {}
+    for sid, s in status.items():
+        kind = scenes[sid].get("kind", "fixture" if "fixture" in scenes[sid] else "death")
+        by_kind.setdefault("stuck" if kind in ("stuck", "spell") else kind, Counter())[s] += 1
+    if len(by_kind) > 1:
+        lines += ["", "| Kind | Pass | Intermittent | Fail | Scenes |", "| --- | --- | --- | --- | --- |"]
+        for k_name, k in sorted(by_kind.items()):
+            lines.append(f"| {k_name} | {k['pass']} | {k['intermittent']} | {k['fail']} | {sum(k.values())} |")
     by_mode = {}
     for sid, s in status.items():
         by_mode.setdefault(scenes[sid].get("corpus", {}).get("mode", "survival"), Counter())[s] += 1

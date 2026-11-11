@@ -166,6 +166,7 @@ public final class NativeWatchGameTests implements FabricGameTest {
     /**
      * What an AI player was told on the Wire is on its card (F-34c), as an onlooker may read it, since the page may be on
      * a stream: Ada tells her faction she needs iron; Bram's card says a faction message came from Ada, never the iron.
+     * The K panel's state for Bram says the same.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "watchTold", tickLimit = 1200)
     public void whatItWasToldIsOnItsCardWithNothingNarrowerThanPublicInWords(TestContext context) {
@@ -204,6 +205,12 @@ public final class NativeWatchGameTests implements FabricGameTest {
                     context.assertTrue(bram.told().equals(List.of("[faction] Ada: need (kept to its faction)")), "Bram's card: " + bram.told());
                     context.assertTrue(ada.told().isEmpty(), "Ada, the sender, was told nothing: " + ada.told());
                     context.assertTrue(latest.players().stream().flatMap(p -> p.told().stream()).noneMatch(line -> line.contains("iron")), "Never the iron");
+                    // The K panel shows the same, in its state for whoever may control Bram (F-34c).
+                    var panel = f.runtime.panelBots(Actor.console()).stream().filter(b -> b.name().equals("Bram")).findFirst().orElseThrow();
+                    context.assertTrue(panel.told().equals(List.of("[faction] Ada: need (kept to its faction)")), "Bram in the panel: " + panel.told());
+                    var json = KindredPanelService.botJson(panel, null).getAsJsonArray("told");
+                    context.assertTrue(json.size() == 1 && json.get(0).getAsString().equals("[faction] Ada: need (kept to its faction)")
+                            && !json.toString().contains("iron"), "The panel's state: " + json);
                     f.runtime.watch(null);
                     watch[0].close();
                     f.runtime.stop();
