@@ -14309,7 +14309,6 @@ final class PlayerRuntime {
         catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
     }
 
-    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
     /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
     private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
         var campaign = entry.campaign;
@@ -14336,6 +14335,7 @@ final class PlayerRuntime {
                 memoryOf(entry)));
     }
 
+    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
