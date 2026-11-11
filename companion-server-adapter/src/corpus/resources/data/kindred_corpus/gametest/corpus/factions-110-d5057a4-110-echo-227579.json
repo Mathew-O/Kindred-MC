@@ -1,0 +1,96 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 227579,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  65,
+  55,
+  126
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.851451111178378,
+  8.009699660822761,
+  16.175800462391607
+ ],
+ "yaw": 151.05026,
+ "pitch": 18.159489,
+ "health": 15.199999,
+ "food": 6,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 38
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 21
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 4
+   }
+  }
+ ],
+ "selected": 3,
+ "timeOfDay": 11579,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "STRONGHOLD",
+ "stage": "Wood: Get out of the water: to dry ground",
+ "task": "Get out of the water: to dry ground",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was impaled by Drowned",
+ "ticks": 1200,
+ "log": [
+  "[07:39:26] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:39:27] [Server thread/INFO]: Echo native_goto COMPLETED [Walk to gravel at 53, 60, 104]",
+  "[07:39:27] [Server thread/INFO]: Echo native_break COMPLETED [Mine gravel at 53, 60, 104]",
+  "[07:39:27] [Server thread/INFO]: Echo native_place COMPLETED [Set down gravel to dig for flint]",
+  "[07:39:27] [Server thread/INFO]: Echo native_break COMPLETED [Dig gravel for flint]",
+  "[07:39:27] [Server thread/INFO]: Echo native_place COMPLETED [Set down gravel to dig for flint]",
+  "[07:39:28] [Server thread/INFO]: Echo native_break COMPLETED [Dig gravel for flint]",
+  "[07:39:28] [Server thread/INFO]: Echo native_place COMPLETED [Set down gravel to dig for flint]",
+  "[07:39:28] [Server thread/INFO]: Echo native_break COMPLETED [Dig gravel for flint]",
+  "[07:39:28] [Server thread/INFO]: Echo native_place COMPLETED [Set down gravel to dig for flint]",
+  "[07:39:31] [Server thread/INFO]: Echo native_goto COMPLETED [Walk to gravel at 76, 63, 135]",
+  "[07:39:31] [Server thread/INFO]: Echo native_break COMPLETED [Clear the way to gravel at 76, 63, 135]",
+  "[07:39:32] [Server thread/INFO]: Echo native_break COMPLETED [Mine gravel at 76, 63, 135]",
+  "[07:39:33] [Server thread/INFO]: Echo native_place COMPLETED [Set down gravel to dig for flint]",
+  "[07:39:36] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at 106, 63, 151]",
+  "[07:39:37] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:39:39] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk toward the trees seen at 73, 64, 137]",
+  "[07:39:39] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+  "[07:39:39] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk toward the trees seen at 63, 69, 137]",
+  "[07:39:40] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Get out of the water: to dry ground]"
+ ],
+ "corpus": {
+  "run": "factions-110-d5057a4",
+  "seed": "110",
+  "build": "d5057a4",
+  "replay": "",
+  "source": "claude/corpus-data-factions110-1110@0445d5b:factions-110-d5057a4/110/replays/world/Echo-227579",
+  "class": "death: drowned",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}
