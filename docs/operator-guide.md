@@ -861,7 +861,10 @@ In a faction world:
   and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.
   In a safe zone nobody's hit lands on a player and only operators change blocks. A Nether portal that would lead
   beyond the border takes nobody anywhere.
-- The market (M-06g): `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
+- The market (M-06g): bare `/shop` or `/market` opens its chest screen for a person at a client (M-06g1): what it
+  sells with what it pays and asks, and your own stacks with what each fetches; click one, then confirm to buy one,
+  sixteen or sixty-four, or to sell the stack. The price is quoted again at the confirming click and a moved price asks
+  again; clicks never move items. As text: `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
   `/shop buy <item> <count>` (raw materials the market stocks), `/shop price [item]`, `/market top` (the day's movers),
   `/market history <item>`; operators `/market baseline <item> <hundredths> <mass|ordinary|scarce> [nobuy]` to price a
   pending item. Prices fall as the market fills and drift back over hours; a sale of many walks down the price; made
