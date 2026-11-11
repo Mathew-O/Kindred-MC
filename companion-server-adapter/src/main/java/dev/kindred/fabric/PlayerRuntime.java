@@ -10570,6 +10570,11 @@ final class PlayerRuntime {
                     return bringCandidates(entry, body);
                 }
                 if (!reaches(player, b.door)) return List.of(goNear(task, b.door.south()));
+                // In reach but out of the server's sight, the hall's own wall between (come at the door from beside the hall):
+                // to the ground before its front first, where the OPEN step stands too. Broken from where it was, refused three
+                // times as out of sight, the bring was given up, "door went wrong three times over" (F-22c62).
+                var front = b.door.south().down();
+                if (!body.miningEligible(b.door) && !player.getBlockPos().equals(front)) return List.of(standAt(bringTask(entry, "to the door"), front));
                 return List.of(breakAt(task, b.door));
             }
             case OPEN -> {
@@ -16643,6 +16648,22 @@ final class PlayerRuntime {
             return reject(source, "/ah sell <start> [buyNow] [hours] | bid <id> <amount> | buy <id> | cancel <id> | order <item> <count> <each> | unorder <id>");
         }
         return refusal == null ? 1 : reject(source, refusal);
+    }
+
+    /**
+     * Bare {@code /shop} or {@code /market} for a person at a client: the market's chest screen (M-06g1,
+     * {@link MarketScreenHandler}), its buys and sales the desk's own, as {@code /shop buy} and {@code /shop sell}.
+     */
+    int openMarketScreen(ServerCommandSource source) {
+        requireThread();
+        var player = source.getPlayer();
+        if (player == null || player instanceof PreparedNativePlayer) return reject(source, "Only a person at a client opens the market's screen; /shop help");
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
+                (syncId, inventory, p) -> new MarketScreenHandler(syncId, inventory, market, player, () -> ready && running && factionsWorld()),
+                Text.literal("Market")));
+        return 1;
     }
 
     /** The market's counter (M-06g). */
