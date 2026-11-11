@@ -122,6 +122,86 @@ public final class NativeAtlasGameTests implements FabricGameTest {
     }
 
     /**
+     * F-30d: what it saw is kept across a restart. It sees two diamond ores, the server stops and starts again, and,
+     * put far off where it cannot see them, its atlas still holds them where they are, as last seen before the stop;
+     * nothing it never saw (iron, a village) is in it. What its plan then does with them after a restart is F-30d's
+     * open part (a restarted campaign's first want differs from an unrestarted one's).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "atlasRestart", tickLimit = 3000)
+    public void diamondsItSawBeforeARestartAreStillInItsAtlasAfterIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        BlockPos[] origin = new BlockPos[1];
+        BlockPos[] ores = new BlockPos[2];
+        long[] seenBefore = new long[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Prospector"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    chunks(world, o.add(-8, 0, -8), o.add(AWAY + 10, 0, 8), true);
+                    for (int x = -6; x <= AWAY + 8; x++) for (int z = -5; z <= 5; z++) {
+                        for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        boolean edge = x == -6 || x == AWAY + 8 || z == -5 || z == 5;
+                        for (int y = 0; y <= 4; y++) {
+                            world.setBlockState(o.add(x, y, z), edge && y <= 2 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                    }
+                    ores[0] = o.add(3, 0, 4);
+                    ores[1] = o.add(4, 0, 4);
+                    for (BlockPos ore : ores) world.setBlockState(ore, Blocks.DIAMOND_ORE.getDefaultState());
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(origin[0]), "On the causeway"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.atlasForFixtures(f.id) != null, "Its atlas read"))
+                .createAndAdd(() -> {
+                    kit(f, true);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var sighting = f.runtime.atlasForFixtures(f.id).lastSeen(Atlas.Resource.DIAMOND);
+                    context.assertTrue(sighting.isPresent(), "Its atlas has the diamonds it saw");
+                    seenBefore[0] = sighting.get().last();
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", f.id) == 1, "Stopped");
+                })
+                .createAndAdd(() -> {
+                    // Put far off before the restart, so after it nothing of the diamonds is in its sight.
+                    var player = f.player();
+                    player.refreshPositionAndAngles(origin[0].getX() + AWAY + 0.5, origin[0].getY(), origin[0].getZ() + 0.5, -90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped for the restart"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Restarted"))
+                // A restart never auto-spawns: its body comes back when connected, stopped until set going.
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "connect", f.id) == 1, "Connected again"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var atlas = f.runtime.atlasForFixtures(f.id);
+                    context.assertTrue(atlas != null, "Its atlas read after the restart");
+                    var kept = atlas.lastSeen(Atlas.Resource.DIAMOND);
+                    context.assertTrue(kept.isPresent() && kept.get().last() == seenBefore[0], "The diamonds it saw, kept as seen: " + kept);
+                    BlockPos at = new BlockPos(kept.get().at().x(), kept.get().at().y(), kept.get().at().z());
+                    context.assertTrue(at.equals(ores[0]) || at.equals(ores[1]), "Where they are: " + at);
+                    context.assertTrue(atlas.lastSeen(Atlas.Resource.IRON).isEmpty() && atlas.lastSeen(Atlas.Resource.VILLAGE).isEmpty(),
+                            "Nothing it never saw");
+                })
+                .createAndAdd(() -> {
+                    chunks(context.getWorld(), origin[0].add(-8, 0, -8), origin[0].add(AWAY + 10, 0, 8), false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Iron ore it saw across a deep channel it cannot climb out of on the far side: after a walk back or two that ends
      * in the water, it lets the sighting go and looks for iron another way, rather than swim out and back for ever. In
      * the ten seeds on `84b331c` Echo and Kindred on 505 each walked back to iron ore seen across deep water: each walk
