@@ -501,7 +501,11 @@ final class StrongholdLeg {
         // The portal's lowest block: its feet cell.
         while (world.getBlockState(portal.down()).isOf(Blocks.NETHER_PORTAL)) portal = portal.down();
         double off = Math.sqrt(feet.getSquaredDistance(portal));
-        if (off <= PORTAL_NEAR) {
+        // Dug in for the night in its sealed shelter (the campaign's own knowing, from where it dug in tonight), the walk
+        // to its portal is the one walk into it, as before the legs: refused from the shelter, it stays in till daylight
+        // rather than dig its way out to the portal in the dark. With the legs at night, a player sealed in five below
+        // its portal dug out to it and back, and the night shelter's fixture (F-25c4bx) failed in the suite (F-35c1).
+        if (off <= PORTAL_NEAR || campaign.dugInForTheNight(player)) {
             portalWalkFrom = -1;
             return Optional.of(PortalRunCampaign.go(portal, 0.4, false, PortalRunCampaign.INTO_PORTAL));
         }

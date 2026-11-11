@@ -73,6 +73,7 @@
       "dev.kindred.fabric.NativeUnderLakeKeptGameTests",
       "dev.kindred.fabric.NativeGravelTunnelGameTests",
       "dev.kindred.fabric.NativeNightShelterGameTests",
+      "dev.kindred.fabric.NativeNightPortalGameTests",
       "dev.kindred.fabric.NativeFrameReturnGameTests",
       "dev.kindred.fabric.NativeSnowSiteGameTests",
       "dev.kindred.fabric.NativeSpireGameTests",
