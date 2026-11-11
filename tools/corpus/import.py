@@ -30,7 +30,7 @@ def classify(state):
     kind = state.get("kind", "death")
     cause = (state.get("cause") or "").lower()
     task = (state.get("task") or "") + " " + (state.get("stage") or "")
-    if kind == "stuck":
+    if kind in ("stuck", "spell"):
         if "water" in task.lower():
             return "stuck: water"
         return "stuck: " + (task.split(" - ")[-1].split(":")[0].strip().lower() or "other")
