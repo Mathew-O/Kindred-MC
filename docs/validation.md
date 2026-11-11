@@ -46,6 +46,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06i: faction acts told resting on the Record](evidence/M-06i.md#faction-acts-told-resting-on-the-record-2026-11-11-claudem06i-faction-tell-1111).
 
+## The safe zones' chunks gathered once (M-06f) — 11 November 2026 (`claude/m06i-safe-chunks-1111`)
+
+- [M-06f: the safe zones' chunks gathered once](evidence/M-06f.md#the-safe-zones-chunks-gathered-once-2026-11-11-claudem06i-safe-chunks-1111).
+
 ## Factions an operator's choice (M-06i) — 11 November 2026 (`claude/m06i-playable-1111`)
 
 - [M-06i: Factions an operator's choice](evidence/M-06i.md#factions-an-operators-choice-2026-11-11-claudem06i-playable-1111).
