@@ -162,7 +162,7 @@ public final class ChestOrganizationPolicy {
         }
         String id = normalizeId(itemId);
         Capabilities facts = Capabilities.current();
-        if (facts.is(VanillaIds.CHEST_VALUABLES, id) || id.endsWith("_ore")) {
+        if (facts.isAny(id, VanillaIds.CHEST_VALUABLES, VanillaIds.ORES)) {
             return StorageCategory.ORES_AND_VALUABLES;
         }
         if (facts.is(VanillaIds.CHEST_REDSTONE, id)) {
@@ -171,11 +171,9 @@ public final class ChestOrganizationPolicy {
         if (facts.is(VanillaIds.CHEST_NETHER_END, id) || id.contains("potion") || id.startsWith(VanillaIds.NETHER_PREFIX)) {
             return StorageCategory.NETHER_AND_END;
         }
-        if (id.endsWith("_sword") || id.endsWith("_pickaxe") || id.endsWith("_axe")
-                || id.endsWith("_shovel") || id.endsWith("_hoe")
-                || id.endsWith("_helmet") || id.endsWith("_chestplate")
-                || id.endsWith("_leggings") || id.endsWith("_boots")
-                || facts.is(VanillaIds.CHEST_COMBAT, id)) {
+        if (facts.isAny(id, VanillaIds.SWORDS, VanillaIds.PICKAXES, VanillaIds.AXES, VanillaIds.SHOVELS,
+                VanillaIds.HOES, VanillaIds.HEAD_ARMOR, VanillaIds.CHEST_ARMOR, VanillaIds.LEG_ARMOR,
+                VanillaIds.FOOT_ARMOR, VanillaIds.CHEST_COMBAT)) {
             return StorageCategory.TOOLS_AND_COMBAT;
         }
         if (id.contains("bread") || id.contains("beef") || id.contains("porkchop")
@@ -183,14 +181,12 @@ public final class ChestOrganizationPolicy {
                 || id.contains("salmon") || id.contains("potato") || id.contains("carrot")
                 || id.contains("apple") || id.contains("melon") || id.contains("pumpkin")
                 || id.contains("wheat") || id.contains("beetroot") || id.contains("berries")
-                || id.endsWith("_seeds") || id.contains("stew") || facts.is(VanillaIds.CHEST_CROPS, id)) {
+                || facts.is(VanillaIds.SEEDS, id) || id.contains("stew") || facts.is(VanillaIds.CHEST_CROPS, id)) {
             return StorageCategory.FOOD_AND_CROPS;
         }
-        if (id.endsWith("_log") || id.endsWith("_wood") || id.endsWith("_stem")
-                || id.endsWith("_hyphae") || id.endsWith("_planks") || id.endsWith("_sapling")
-                || id.endsWith("_leaves") || facts.is(VanillaIds.CHEST_TIMBER, id)
-                || id.endsWith("_door") || id.endsWith("_trapdoor") || id.endsWith("_fence")
-                || id.endsWith("_fence_gate") || id.endsWith("_sign")) {
+        if (facts.isAny(id, VanillaIds.LOGS, VanillaIds.PLANKS, VanillaIds.SAPLINGS, VanillaIds.LEAVES,
+                VanillaIds.CHEST_TIMBER, VanillaIds.DOORS, VanillaIds.TRAPDOORS, VanillaIds.FENCES,
+                VanillaIds.FENCE_GATES, VanillaIds.SIGNS, VanillaIds.HANGING_SIGNS)) {
             return StorageCategory.WOOD_AND_TIMBER;
         }
         if (id.contains("stone") || id.contains("deepslate") || id.contains("cobble")
@@ -330,7 +326,7 @@ public final class ChestOrganizationPolicy {
                 }
             }
             if (cat == StorageCategory.FOOD_AND_CROPS) {
-                if (keptFoodItems < 32 && !slot.itemId().endsWith("_seeds") && !slot.itemId().equals(VanillaIds.WHEAT)) {
+                if (keptFoodItems < 32 && !Capabilities.current().is(VanillaIds.SEEDS, slot.itemId()) && !slot.itemId().equals(VanillaIds.WHEAT)) {
                     keptFoodItems += slot.count();
                     continue;
                 }
