@@ -180,8 +180,20 @@ public final class ConstructionPlanner {
         // Of the top layer, one it can break from where it stands first. The nearest first, the last two blocks of a
         // hideout's floor, side by side, the player on one: the one underfoot came first, broken from on the other, the
         // only spot beside it, and there the other was underfoot; it walked between them without end (F-22c8).
-        int top = inTheWay.isEmpty() ? 0 : inTheWay.getFirst().y();
+        // The top layer is the topmost it can break any of: a block higher up out of reach from every spot it can stand
+        // on left that layer with nothing to break, the nearest came first again, and on the farm ward's way under its
+        // wall it walked between the floor's last two 1,961 and 1,960 times (#121's CI) (F-22c54).
+        Integer top = null;
         for (Pos p : inTheWay) {
+            if (site.cell(p).get().kind() == BuildSite.Kind.PROTECTED) continue;
+            if (stanceToBreak(site, p, feet, wanted, box, walk).isPresent()) {
+                top = p.y();
+                break;
+            }
+        }
+        for (Pos p : inTheWay) {
+            if (top == null) break;
+            if (p.y() > top) continue;
             if (p.y() != top) break;
             if (site.cell(p).get().kind() == BuildSite.Kind.PROTECTED) continue;
             Optional<Pos> stance = stanceToBreak(site, p, feet, wanted, box, walk);
