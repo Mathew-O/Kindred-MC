@@ -132,6 +132,7 @@
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
       "dev.kindred.fabric.NativeFactionsEvalGameTests",
+      "dev.kindred.fabric.NativeFactionBackOffGameTests",
       "dev.kindred.fabric.NativeLimitGameTests",
       "dev.kindred.fabric.NativeHudGameTests",
       "dev.kindred.fabric.NativeMatchFrameworkGameTests",
