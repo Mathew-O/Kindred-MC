@@ -1,0 +1,548 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 148460,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    59,
+    83,
+    -313
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.008002300107805,
+    8.0,
+    16.849163813936002
+  ],
+  "yaw": 131.54756,
+  "pitch": 18.159487,
+  "health": 20.0,
+  "food": 8,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 103
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:jungle_log",
+        "count": 18
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 9
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 9
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 49
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 32
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 3
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 33
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 10
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cocoa_beans",
+        "count": 3
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 55
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 40
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:terracotta",
+        "count": 23
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 19
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:yellow_terracotta",
+        "count": 3
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:orange_terracotta",
+        "count": 7
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 9
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 41
+        }
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:netherrack",
+        "count": 2
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:jungle_planks",
+        "count": 6
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 4459,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - try elsewhere, toward 74, 91, -321",
+  "task": "try elsewhere, toward 74, 91, -321",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [
+      {
+        "at": [
+          7,
+          0,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          7,
+          3,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          7,
+          2,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          7,
+          1,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          0,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          3,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          2,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          1,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          6,
+          0,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          6,
+          3,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          6,
+          2,
+          0
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          6,
+          1,
+          0
+        ],
+        "left": 0
+      }
+    ],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        23,
+        0,
+        18
+      ],
+      [
+        23,
+        1,
+        18
+      ],
+      [
+        21,
+        3,
+        19
+      ],
+      [
+        22,
+        1,
+        18
+      ],
+      [
+        22,
+        2,
+        18
+      ],
+      [
+        22,
+        2,
+        19
+      ],
+      [
+        19,
+        6,
+        20
+      ],
+      [
+        20,
+        4,
+        19
+      ],
+      [
+        17,
+        9,
+        19
+      ],
+      [
+        18,
+        7,
+        20
+      ],
+      [
+        18,
+        8,
+        19
+      ],
+      [
+        18,
+        9,
+        19
+      ],
+      [
+        18,
+        10,
+        19
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        15,
+        9,
+        16
+      ],
+      [
+        15,
+        9,
+        15
+      ],
+      [
+        13,
+        8,
+        17
+      ],
+      [
+        14,
+        8,
+        17
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        17,
+        5,
+        17
+      ]
+    ],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "south",
+    "exploreStalls": 0,
+    "exploreFailures": 34,
+    "stuckSpells": 5,
+    "stuckLevel": 4,
+    "leftOut": 18026
+  },
+  "log": [
+    "[18:51:13] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:13] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:14] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for water: back the way it came]",
+    "[18:51:14] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:15] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:15] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:16] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for water: back the way it came]",
+    "[18:51:16] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:17] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:17] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:18] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for water: back the way it came]",
+    "[18:51:18] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:20] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for water: clear 74, 92, -297]",
+    "[18:51:21] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel for water: clear 74, 91, -297]",
+    "[18:51:22] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: advance]",
+    "[18:51:23] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for water: clear 74, 92, -298]",
+    "[18:51:23] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for water: step up]",
+    "[18:51:24] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel for water: step down]",
+    "[18:51:24] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus dirt]",
+    "[18:51:26] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for water: back the way it came]"
+  ]
+}

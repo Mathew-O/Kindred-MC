@@ -1,0 +1,438 @@
+{
+ "build": "recap-factions110-b663fb5",
+ "jar": "kindred-mc-0.1.0-SNAPSHOT.jar",
+ "otherJars": {},
+ "seeds": [
+  "110"
+ ],
+ "missing": [],
+ "short": {},
+ "freeSwitches": {},
+ "kinds": [
+  "earned"
+ ],
+ "scenarios": [
+  "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=160000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions"
+ ],
+ "team": {
+  "teamFurthestIndex": {
+   "median": 3,
+   "min": 3,
+   "max": 3,
+   "n": 1
+  },
+  "teamDeathsPerHour": {
+   "median": 4.95,
+   "min": 4.95,
+   "max": 4.95,
+   "n": 1
+  },
+  "stuckSpells": {
+   "median": 18,
+   "min": 18,
+   "max": 18,
+   "n": 1
+  },
+  "stuckMinutes": {
+   "median": 54,
+   "min": 54,
+   "max": 54,
+   "n": 1
+  },
+  "rescues": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescuesUnstuck": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueAsks": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueSpells": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueSpellsOut": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueRounds": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "recipesTried": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "spellsOutByRecipe": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "askSeconds": null,
+  "askSecondsPooled": null,
+  "tokens": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "linesPerMinute": {
+   "median": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "n": 1
+  },
+  "talkLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "unaskedLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "silentMeetings": {
+   "median": 1,
+   "min": 1,
+   "max": 1,
+   "n": 1
+  },
+  "minutesTo_wooden_tool": {
+   "median": 0.9,
+   "min": 0.9,
+   "max": 0.9,
+   "n": 1,
+   "reached": 1
+  },
+  "reached_wooden_tool": 1,
+  "minutesTo_stone_tools": {
+   "median": 4.9,
+   "min": 4.9,
+   "max": 4.9,
+   "n": 1,
+   "reached": 1
+  },
+  "reached_stone_tools": 1,
+  "minutesTo_iron_ingot": {
+   "median": 27.8,
+   "min": 27.8,
+   "max": 27.8,
+   "n": 1,
+   "reached": 1
+  },
+  "reached_iron_ingot": 1,
+  "minutesTo_iron_pickaxe": {
+   "median": 53.4,
+   "min": 53.4,
+   "max": 53.4,
+   "n": 1,
+   "reached": 1
+  },
+  "reached_iron_pickaxe": 1,
+  "minutesTo_diamond": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_diamond": 0,
+  "minutesTo_obsidian": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_obsidian": 0,
+  "minutesTo_portal_lit": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_portal_lit": 0,
+  "minutesTo_nether_entered": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_nether_entered": 0,
+  "minutesTo_blaze_rods": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_blaze_rods": 0,
+  "minutesTo_eyes": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_eyes": 0,
+  "minutesTo_stronghold": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_stronghold": 0,
+  "minutesTo_end": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_end": 0,
+  "minutesTo_dragon": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_dragon": 0
+ },
+ "deathCauses": {
+  "fire": 7,
+  "enderman": 1,
+  "drowned": 1,
+  "drowning": 1,
+  "creeper": 1
+ },
+ "stuckKinds": {
+  "water loop": 0,
+  "no walkable route": 3,
+  "refused target repeated": 0,
+  "hole or pit": 13,
+  "hemmed in": 2,
+  "waiting for daylight or a teammate": 0,
+  "mining for a find": 0,
+  "busy-work loop": 0,
+  "other": 0,
+  "unmatched": 0
+ },
+ "deathKinds": {
+  "lava": 0,
+  "drowning": 1,
+  "fall": 0,
+  "starving with a mob near": 1,
+  "cornered": 1,
+  "dark melee": 1,
+  "other": 7
+ },
+ "perSeed": {
+  "110": {
+   "complete": true,
+   "ticksRun": 160001,
+   "hours": 2.22,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 1,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 101,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 3,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 11,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 29.11,
+    "tickMsWorst": 1522.94,
+    "tickMsWorstAt": 5838,
+    "ticksOver50ms": 10474,
+    "ticksOver200ms": 17,
+    "heapMbMax": 1573,
+    "samples": 8000
+   },
+   "teamFurthest": "iron_pickaxe",
+   "teamFurthestIndex": 3,
+   "teamDeathsPerHour": 4.95,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 4,
+     "deathsPerHour": 1.8,
+     "causes": {
+      "enderman": 1,
+      "fire": 2,
+      "drowned": 1
+     },
+     "stuckSpells": 7,
+     "stuckMinutes": 21,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 1,
+      "cornered": 1,
+      "dark melee": 0,
+      "other": 2
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 6,
+      "hemmed in": 1,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     }
+    },
+    "Sol": {
+     "furthest": "iron_pickaxe",
+     "furthestIndex": 3,
+     "minutesTo": {
+      "wooden_tool": 0.9,
+      "stone_tools": 4.9,
+      "iron_ingot": 27.8,
+      "iron_pickaxe": 53.4
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 6,
+     "stuckMinutes": 18,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 2,
+      "refused target repeated": 0,
+      "hole or pit": 4,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 7,
+     "deathsPerHour": 3.15,
+     "causes": {
+      "drowning": 1,
+      "creeper": 1,
+      "fire": 5
+     },
+     "stuckSpells": 5,
+     "stuckMinutes": 15,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 1,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 1,
+      "other": 5
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 1,
+      "refused target repeated": 0,
+      "hole or pit": 3,
+      "hemmed in": 1,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     }
+    }
+   }
+  }
+ }
+}

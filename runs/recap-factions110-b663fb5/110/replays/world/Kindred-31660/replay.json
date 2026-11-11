@@ -1,0 +1,118 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 31660,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -485,
+    56,
+    -87
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.491161434962578,
+    8.666368029720303,
+    16.661208947745735
+  ],
+  "yaw": -267.86148,
+  "pitch": 10.459923,
+  "health": 17.766666,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 10
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 7659,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward -490, 64, -71",
+  "task": "try elsewhere, toward -490, 64, -71",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        17,
+        8,
+        15
+      ],
+      [
+        13,
+        8,
+        15
+      ]
+    ],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "east",
+    "exploreStalls": 0,
+    "exploreFailures": 1,
+    "stuckSpells": 2,
+    "stuckLevel": 2,
+    "leftOut": 10351
+  },
+  "log": [
+    "[17:48:17] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[17:48:17] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -503, 66, -94 [Climb toward the surface for logs: back the way it came]",
+    "[17:48:17] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -506, 61, -100]",
+    "[17:48:18] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+    "[17:48:18] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -503, 66, -93 [Climb toward the surface for logs: back the way it came]",
+    "[17:48:18] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -506, 62, -100]",
+    "[17:48:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:48:20] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:48:20] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk toward the trees seen at -534, 68, -78]",
+    "[17:48:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[17:48:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[17:48:24] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+    "[17:48:25] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+    "[17:48:25] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[17:48:27] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[17:48:29] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[17:48:30] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+    "[17:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk toward the trees seen at -464, 63, -93]",
+    "[17:48:34] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+    "[17:50:00] [Server thread/INFO]: Kindred native_goto COMPLETED [try elsewhere, toward -466, 64, -68]"
+  ]
+}

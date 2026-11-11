@@ -1,0 +1,779 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 76230,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    28,
+    67,
+    7
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.28729782277275,
+    8.249187078744683,
+    16.306960467728327
+  ],
+  "yaw": -897.6318,
+  "pitch": 11.0592575,
+  "health": 3.0,
+  "food": 9,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 40
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 11
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 4230,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Explore west for animals",
+  "task": "Explore west for animals",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo went up in flames",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [
+      [
+        32,
+        0,
+        1
+      ]
+    ],
+    "dug": [],
+    "tunnelled": [
+      [
+        19,
+        11,
+        5
+      ],
+      [
+        18,
+        11,
+        5
+      ]
+    ],
+    "visitedCaves": [
+      [
+        32,
+        1,
+        17
+      ],
+      [
+        32,
+        5,
+        1
+      ],
+      [
+        24,
+        5,
+        5
+      ],
+      [
+        32,
+        5,
+        5
+      ],
+      [
+        24,
+        5,
+        9
+      ],
+      [
+        32,
+        5,
+        17
+      ],
+      [
+        28,
+        5,
+        5
+      ],
+      [
+        24,
+        9,
+        5
+      ],
+      [
+        12,
+        9,
+        5
+      ],
+      [
+        12,
+        9,
+        9
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "LOG": [
+        [
+          13,
+          10,
+          10
+        ],
+        [
+          13,
+          10,
+          11
+        ],
+        [
+          13,
+          12,
+          10
+        ],
+        [
+          13,
+          12,
+          11
+        ],
+        [
+          13,
+          11,
+          10
+        ],
+        [
+          13,
+          11,
+          11
+        ],
+        [
+          13,
+          14,
+          10
+        ],
+        [
+          13,
+          14,
+          11
+        ],
+        [
+          13,
+          13,
+          10
+        ],
+        [
+          13,
+          13,
+          11
+        ],
+        [
+          13,
+          16,
+          10
+        ],
+        [
+          13,
+          16,
+          11
+        ],
+        [
+          13,
+          15,
+          10
+        ],
+        [
+          13,
+          15,
+          11
+        ],
+        [
+          14,
+          10,
+          10
+        ],
+        [
+          14,
+          10,
+          11
+        ],
+        [
+          14,
+          12,
+          10
+        ],
+        [
+          14,
+          12,
+          11
+        ],
+        [
+          14,
+          11,
+          10
+        ],
+        [
+          14,
+          11,
+          11
+        ],
+        [
+          14,
+          14,
+          10
+        ],
+        [
+          14,
+          14,
+          11
+        ],
+        [
+          14,
+          13,
+          10
+        ],
+        [
+          14,
+          13,
+          11
+        ],
+        [
+          14,
+          16,
+          10
+        ],
+        [
+          14,
+          16,
+          11
+        ],
+        [
+          14,
+          15,
+          10
+        ],
+        [
+          14,
+          15,
+          11
+        ],
+        [
+          16,
+          10,
+          12
+        ],
+        [
+          16,
+          9,
+          12
+        ],
+        [
+          16,
+          11,
+          6
+        ],
+        [
+          16,
+          12,
+          12
+        ],
+        [
+          16,
+          11,
+          12
+        ],
+        [
+          19,
+          16,
+          1
+        ],
+        [
+          20,
+          11,
+          2
+        ],
+        [
+          20,
+          12,
+          2
+        ],
+        [
+          20,
+          13,
+          2
+        ],
+        [
+          20,
+          14,
+          2
+        ],
+        [
+          20,
+          13,
+          23
+        ],
+        [
+          20,
+          15,
+          2
+        ],
+        [
+          20,
+          16,
+          2
+        ],
+        [
+          22,
+          14,
+          13
+        ],
+        [
+          22,
+          13,
+          13
+        ],
+        [
+          25,
+          9,
+          7
+        ],
+        [
+          25,
+          9,
+          8
+        ],
+        [
+          25,
+          10,
+          7
+        ],
+        [
+          25,
+          10,
+          8
+        ],
+        [
+          25,
+          11,
+          7
+        ],
+        [
+          25,
+          11,
+          8
+        ],
+        [
+          25,
+          12,
+          7
+        ],
+        [
+          25,
+          12,
+          8
+        ],
+        [
+          25,
+          13,
+          7
+        ],
+        [
+          25,
+          13,
+          8
+        ],
+        [
+          25,
+          14,
+          7
+        ],
+        [
+          25,
+          14,
+          8
+        ],
+        [
+          25,
+          15,
+          7
+        ],
+        [
+          25,
+          15,
+          8
+        ],
+        [
+          25,
+          16,
+          7
+        ],
+        [
+          25,
+          16,
+          8
+        ],
+        [
+          24,
+          13,
+          15
+        ],
+        [
+          26,
+          9,
+          7
+        ],
+        [
+          26,
+          9,
+          8
+        ],
+        [
+          26,
+          10,
+          7
+        ],
+        [
+          26,
+          10,
+          8
+        ],
+        [
+          26,
+          11,
+          7
+        ],
+        [
+          26,
+          11,
+          8
+        ],
+        [
+          26,
+          12,
+          7
+        ],
+        [
+          26,
+          12,
+          8
+        ],
+        [
+          26,
+          13,
+          7
+        ],
+        [
+          26,
+          13,
+          8
+        ],
+        [
+          26,
+          14,
+          7
+        ],
+        [
+          26,
+          14,
+          8
+        ],
+        [
+          26,
+          15,
+          7
+        ],
+        [
+          26,
+          15,
+          8
+        ],
+        [
+          26,
+          16,
+          7
+        ],
+        [
+          26,
+          16,
+          8
+        ],
+        [
+          29,
+          12,
+          8
+        ],
+        [
+          31,
+          11,
+          6
+        ],
+        [
+          31,
+          14,
+          16
+        ],
+        [
+          31,
+          14,
+          17
+        ],
+        [
+          31,
+          13,
+          16
+        ],
+        [
+          31,
+          13,
+          17
+        ],
+        [
+          31,
+          16,
+          16
+        ],
+        [
+          31,
+          16,
+          17
+        ],
+        [
+          31,
+          15,
+          16
+        ],
+        [
+          31,
+          15,
+          17
+        ],
+        [
+          30,
+          11,
+          7
+        ],
+        [
+          32,
+          5,
+          5
+        ],
+        [
+          32,
+          6,
+          5
+        ],
+        [
+          32,
+          7,
+          5
+        ],
+        [
+          32,
+          8,
+          5
+        ],
+        [
+          32,
+          9,
+          5
+        ],
+        [
+          32,
+          10,
+          5
+        ],
+        [
+          32,
+          11,
+          5
+        ],
+        [
+          32,
+          12,
+          5
+        ],
+        [
+          32,
+          13,
+          5
+        ],
+        [
+          32,
+          14,
+          16
+        ],
+        [
+          32,
+          14,
+          17
+        ],
+        [
+          32,
+          14,
+          5
+        ],
+        [
+          32,
+          13,
+          16
+        ],
+        [
+          32,
+          13,
+          17
+        ],
+        [
+          32,
+          15,
+          5
+        ],
+        [
+          32,
+          16,
+          16
+        ],
+        [
+          32,
+          16,
+          17
+        ],
+        [
+          32,
+          15,
+          16
+        ],
+        [
+          32,
+          15,
+          17
+        ]
+      ],
+      "STONE": [
+        [
+          31,
+          0,
+          10
+        ],
+        [
+          31,
+          0,
+          13
+        ],
+        [
+          31,
+          1,
+          10
+        ],
+        [
+          31,
+          1,
+          11
+        ],
+        [
+          31,
+          1,
+          12
+        ],
+        [
+          30,
+          0,
+          11
+        ],
+        [
+          30,
+          0,
+          12
+        ],
+        [
+          32,
+          0,
+          9
+        ],
+        [
+          32,
+          0,
+          13
+        ],
+        [
+          32,
+          2,
+          10
+        ],
+        [
+          32,
+          2,
+          11
+        ],
+        [
+          32,
+          2,
+          12
+        ],
+        [
+          32,
+          1,
+          9
+        ],
+        [
+          32,
+          1,
+          13
+        ]
+      ],
+      "LEAVES": [
+        [
+          19,
+          16,
+          0
+        ]
+      ]
+    },
+    "exploreHeading": "west",
+    "exploreStalls": 0,
+    "exploreFailures": 28,
+    "stuckSpells": 2,
+    "stuckLevel": 0,
+    "leftOut": 9597
+  },
+  "log": [
+    "[18:09:27] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[18:09:28] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from drowned the way it came]",
+    "[18:09:30] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from drowned]",
+    "[18:09:32] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from drowned]",
+    "[18:09:33] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 116, 63, -88 [from factionCandidates:9297]",
+    "[18:09:33] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 121, 63, -81 [from factionCandidates:9297]",
+    "[18:09:36] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[18:09:41] [Server thread/INFO]: Echo native_goto COMPLETED [Explore south for animals]",
+    "[18:09:41] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 112, 63, -54 [from factionCandidates:9297]",
+    "[18:09:44] [Server thread/INFO]: Echo native_goto COMPLETED [Explore south for animals]",
+    "[18:09:49] [Server thread/INFO]: Echo native_goto COMPLETED [Explore south for animals]",
+    "[18:09:50] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+    "[18:09:50] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+    "[18:09:50] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+    "[18:09:50] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear 71, 66, 25]",
+    "[18:09:51] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+    "[18:09:57] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for animals]",
+    "[18:09:57] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 83, 64, -6 is blocked ahead [from factionCandidates:9297]",
+    "[18:09:58] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Explore west for animals]",
+    "[18:09:58] [Server thread/INFO]: Echo died at 44, 75, 23: Echo went up in flames (tick 76230, day, under the sky, hunger 9, armour 0, holding dirt, no shield; doing \"Explore west for animals\" in \"Wood: hurt and out of food - Explore west for animals\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

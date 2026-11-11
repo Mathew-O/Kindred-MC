@@ -1,0 +1,1920 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 99900,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    84,
+    55,
+    -346
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.46863722499836,
+    8.419999986886978,
+    16.429771947312588
+  ],
+  "yaw": 37.317856,
+  "pitch": 9.765394,
+  "health": 20.0,
+  "food": 8,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 21
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:jungle_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 24
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 36
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 32
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 33
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 10
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 14
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 63
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 40
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 17
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 2
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 8
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 15
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 18
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:jungle_planks",
+        "count": 6
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 3899,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - try elsewhere, toward 76, 63, -331",
+  "task": "try elsewhere, toward 76, 63, -331",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          16,
+          8,
+          16
+        ],
+        "left": 1414
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          16,
+          8,
+          16
+        ],
+        "n": 2
+      }
+    ],
+    "approaches": [],
+    "unreachable": [
+      {
+        "at": [
+          16,
+          13,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          14,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          9,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          10,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          11,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          12,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          5,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          6,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          7,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          8,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          2,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          3,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          4,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          13,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          14,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          9,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          10,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          11,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          12,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          5,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          6,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          7,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          8,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          2,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          3,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          4,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          5,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          6,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          7,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          8,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          2,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          3,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          4,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          13,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          14,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          9,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          10,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          11,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          12,
+          16
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          13,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          13,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          14,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          14,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          9,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          9,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          10,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          10,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          11,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          11,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          12,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          12,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          5,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          5,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          6,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          6,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          7,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          7,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          8,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          8,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          2,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          2,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          3,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          3,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          4,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          4,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          13,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          13,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          14,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          14,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          9,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          9,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          10,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          10,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          11,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          11,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          12,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          17,
+          12,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          5,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          5,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          6,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          6,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          7,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          7,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          8,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          8,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          2,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          2,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          3,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          3,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          4,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          16,
+          4,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          5,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          5,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          6,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          6,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          7,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          7,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          8,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          8,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          2,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          2,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          3,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          3,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          4,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          4,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          13,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          13,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          14,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          14,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          9,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          9,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          10,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          10,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          11,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          11,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          12,
+          17
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      },
+      {
+        "at": [
+          15,
+          12,
+          15
+        ],
+        "left": 1414,
+        "from": [
+          16,
+          7,
+          14
+        ]
+      }
+    ],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        19,
+        6,
+        19
+      ],
+      [
+        19,
+        7,
+        18
+      ],
+      [
+        19,
+        7,
+        19
+      ],
+      [
+        19,
+        8,
+        18
+      ],
+      [
+        19,
+        8,
+        19
+      ],
+      [
+        19,
+        9,
+        18
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        16,
+        8,
+        16
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        16,
+        5,
+        18
+      ]
+    ],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "south",
+    "exploreStalls": 0,
+    "exploreFailures": 34,
+    "stuckSpells": 2,
+    "stuckLevel": 1,
+    "leftOut": 16745
+  },
+  "log": [
+    "[18:21:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 103, 68, -379 [from factionCandidates:9297]",
+    "[18:21:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 108, 72, -378 [from factionCandidates:9297]",
+    "[18:21:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 114, 84, -377 [from factionCandidates:9297]",
+    "[18:21:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 117, 79, -376 [from factionCandidates:9297]",
+    "[18:21:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 111, 77, -378 [from factionCandidates:9297]",
+    "[18:21:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 122, 84, -374 [from factionCandidates:9297]",
+    "[18:21:17] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 100, 65, -379 [from factionCandidates:9297]",
+    "[18:21:17] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 100, 65, -379 [from factionCandidates:9297]",
+    "[18:21:17] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 107, 73, -379 [from factionCandidates:9297]",
+    "[18:21:23] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 107, 73, -379 [from factionCandidates:9297]",
+    "[18:21:37] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 107, 73, -379 [from factionCandidates:9297]",
+    "[18:21:37] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 114, 84, -377 [from factionCandidates:9297]",
+    "[18:21:37] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 100, 65, -379 [from factionCandidates:9297]",
+    "[18:21:37] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 110, 75, -378 [from factionCandidates:9297]",
+    "[18:21:44] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 110, 75, -378 [from factionCandidates:9297]",
+    "[18:21:58] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 110, 75, -378 [from factionCandidates:9297]",
+    "[18:21:58] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 115, 79, -377 [from factionCandidates:9297]",
+    "[18:21:58] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 100, 65, -379 [from factionCandidates:9297]",
+    "[18:21:58] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 103, 68, -379 [from factionCandidates:9297]",
+    "[18:21:58] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 113, 82, -377 [from factionCandidates:9297]"
+  ]
+}

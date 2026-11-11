@@ -1,0 +1,113 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 25129,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    110,
+    51,
+    -302
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.42801423748675,
+    8.0,
+    16.19652264132094
+  ],
+  "yaw": 353.72275,
+  "pitch": 18.159489,
+  "health": 20.0,
+  "food": 10,
+  "saturation": 0.0,
+  "air": 10,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 4
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 1129,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Interrupted: To where it last saw game at 130, 64, -233: walk on",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo drowned",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "west",
+    "exploreStalls": 1,
+    "exploreFailures": 1,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 8650
+  },
+  "log": [
+    "[17:48:50] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:50] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:50] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[17:48:51] [Server thread/INFO]: Echo died at 126, 59, -286: Echo drowned (tick 25129, day, under cover, hunger 10, armour 0, holding dirt, no shield; doing \"native_goto\" in \"Interrupted: To where it last saw game at 130, 64, -233: walk on\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 60044,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    25,
+    64,
+    26
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.500004650878743,
+    8.0,
+    16.483881810780957
+  ],
+  "yaw": 8.6401624E-4,
+  "pitch": 18.159489,
+  "health": 16.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 15
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 12044,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Explore west for animals",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo went up in flames",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          9,
+          8,
+          20
+        ],
+        "left": 2161
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          9,
+          8,
+          20
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [
+      [
+        25,
+        11,
+        32
+      ]
+    ],
+    "visitedCaves": [
+      [
+        31,
+        4,
+        18
+      ],
+      [
+        27,
+        8,
+        18
+      ],
+      [
+        15,
+        12,
+        22
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "LOG": [
+        [
+          23,
+          16,
+          4
+        ]
+      ]
+    },
+    "strandedAt": [
+      16,
+      9,
+      19
+    ],
+    "strandedWalks": 2,
+    "strandedAgo": 228,
+    "exploreHeading": "west",
+    "exploreStalls": 0,
+    "exploreFailures": 27,
+    "stuckSpells": 2,
+    "stuckLevel": 0,
+    "leftOut": 9649
+  },
+  "log": [
+    "[18:02:36] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:36] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:36] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:36] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:37] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:37] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:37] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:37] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:37] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:37] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:38] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:38] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:38] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:38] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:38] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:38] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:39] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:39] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:39] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:02:39] [Server thread/INFO]: Echo died at 41, 72, 42: Echo went up in flames (tick 60044, day, under cover, hunger 16, armour 0, holding bamboo, no shield; doing \"native_retreat\" in \"Wood: hurt and out of food - Explore west for animals\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

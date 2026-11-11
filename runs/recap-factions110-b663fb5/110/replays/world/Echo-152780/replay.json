@@ -1,0 +1,204 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 152780,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    356,
+    112,
+    459
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.305736542440798,
+    8.166109260938214,
+    16.20848233117073
+  ],
+  "yaw": -168.57523,
+  "pitch": 17.62384,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 4
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 4
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 8779,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 21, 80, -10",
+  "task": "try elsewhere, toward 21, 80, -10",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [
+      {
+        "at": [
+          31,
+          13,
+          18
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          26,
+          10,
+          29
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          15,
+          8,
+          14
+        ],
+        "n": 1
+      }
+    ],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [
+      [
+        24,
+        0,
+        29
+      ],
+      [
+        28,
+        0,
+        17
+      ],
+      [
+        12,
+        0,
+        13
+      ]
+    ],
+    "dug": [
+      [
+        24,
+        0,
+        0
+      ],
+      [
+        24,
+        0,
+        1
+      ],
+      [
+        24,
+        1,
+        0
+      ],
+      [
+        24,
+        1,
+        1
+      ],
+      [
+        24,
+        2,
+        1
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        28,
+        4,
+        17
+      ],
+      [
+        24,
+        4,
+        29
+      ],
+      [
+        24,
+        0,
+        1
+      ]
+    ],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "south",
+    "exploreStalls": 0,
+    "exploreFailures": 29,
+    "stuckSpells": 5,
+    "stuckLevel": 3,
+    "leftOut": 10924
+  },
+  "log": [
+    "[18:51:37] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:37] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:37] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:38] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:38] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:38] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:38] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:41] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:41] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[18:51:41] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up food]",
+    "[18:51:47] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at 387, 125, 477]",
+    "[18:51:50] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[18:51:55] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at 371, 120, 473]"
+  ]
+}

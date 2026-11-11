@@ -1,0 +1,107 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 103500,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    457,
+    80,
+    354
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.10638730703255,
+    8.024424088213692,
+    16.948110308739956
+  ],
+  "yaw": 391.71536,
+  "pitch": 16.210281,
+  "health": 17.850332,
+  "food": 14,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 4
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 7499,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 475, 87, 394",
+  "task": "try elsewhere, toward 475, 87, 394",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "strandedAt": [
+      20,
+      13,
+      17
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 3539,
+    "exploreHeading": "south",
+    "exploreStalls": 0,
+    "exploreFailures": 29,
+    "stuckSpells": 3,
+    "stuckLevel": 1,
+    "leftOut": 10568
+  },
+  "log": [
+    "[18:20:11] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[18:20:11] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 419, 66, 344]",
+    "[18:20:11] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[18:20:11] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 416, 70, 345 [Climb toward the surface for logs: back the way it came]",
+    "[18:20:15] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 420, 67, 344 by hand]",
+    "[18:20:20] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 420, 68, 344 by hand]",
+    "[18:20:20] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[18:20:21] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 420, 67, 344]",
+    "[18:20:21] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[18:20:23] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for logs: back the way it came]",
+    "[18:20:26] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+    "[18:20:27] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from creeper]",
+    "[18:20:29] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from creeper]",
+    "[18:20:51] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from creeper]",
+    "[18:21:17] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from creeper]",
+    "[18:21:19] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from creeper]",
+    "[18:21:56] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+    "[18:21:56] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+    "[18:22:06] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 487, 72, 357 is blocked [Run from creeper]",
+    "[18:22:06] [Server thread/INFO]: Echo native_goto COMPLETED [Jump down from the ledge]"
+  ]
+}

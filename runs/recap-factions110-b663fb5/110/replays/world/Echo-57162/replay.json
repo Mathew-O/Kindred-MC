@@ -1,0 +1,157 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 57162,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -9,
+    64,
+    17
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.49999726844746,
+    8.0,
+    16.76025005553212
+  ],
+  "yaw": 179.99895,
+  "pitch": 10.331147,
+  "health": 12.0,
+  "food": 13,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 6
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 9162,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Gather logs for a table and a wooden pickaxe - Walk toward the trees seen at 0, 73, -30",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo went up in flames",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          15,
+          8,
+          15
+        ],
+        "left": 2003
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          15,
+          8,
+          15
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "LOG": [
+        [
+          7,
+          16,
+          4
+        ],
+        [
+          7,
+          16,
+          5
+        ],
+        [
+          8,
+          16,
+          4
+        ],
+        [
+          8,
+          16,
+          5
+        ],
+        [
+          8,
+          16,
+          7
+        ],
+        [
+          8,
+          16,
+          8
+        ],
+        [
+          18,
+          11,
+          12
+        ],
+        [
+          17,
+          12,
+          7
+        ],
+        [
+          19,
+          9,
+          14
+        ]
+      ]
+    },
+    "exploreStalls": 0,
+    "exploreFailures": 25,
+    "stuckSpells": 2,
+    "stuckLevel": 0,
+    "leftOut": 9620
+  },
+  "log": [
+    "[18:01:14] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 6, 72, 32 is blocked [Explore south for food]",
+    "[18:01:17] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for food]",
+    "[18:01:18] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for food]",
+    "[18:01:19] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -33, 72, 36 [Explore west for food]",
+    "[18:01:21] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Explore north for food]",
+    "[18:01:21] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:21] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [from factionCandidates:9297]",
+    "[18:01:21] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:22] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:22] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:22] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:22] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:22] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:22] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:23] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:23] [Server thread/INFO]: Echo native_retreat BLOCKED: Retreat destination became obstructed, unsupported or unavailable [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:23] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:23] [Server thread/INFO]: Echo native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:23] [Server thread/INFO]: Echo native_retreat CANCELLED: The player died [from evaluateEssentialSurvivalCandidates:3029]",
+    "[18:01:23] [Server thread/INFO]: Echo died at 7, 72, 33: Echo went up in flames (tick 57162, day, under the sky, hunger 13, armour 0, holding bamboo, no shield; doing \"native_retreat\" in \"Wood: Gather logs for a table and a wooden pickaxe - Walk toward the trees seen at 0, 73, -30\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=160000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 110,
+  "ticks": 160000,
+  "ticksRun": 160001,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 101, "factions": 3, "claims": 10, "captures": 0, "sales": 3, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 11, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 29.11, "tickMsWorst": 1522.94, "tickMsWorstAt": 5838, "ticksOver50ms": 10474, "ticksOver200ms": 17, "heapMbMax": 1573, "samples": 8000},
+  "players": {
+    "Kindred": {
+      "stages": {},
+      "deaths": [
+        {"tick": 52840, "cause": "Kindred was slain by Enderman", "x": -263, "y": 79, "z": -57, "light": 11, "timeOfDay": 5002, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Wood: fight back - Back off from enderman the way it came (tried elsewhere 4 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 60802, "cause": "Kindred went up in flames", "x": -11, "y": 79, "z": -16, "light": 14, "timeOfDay": 12964, "dimension": "minecraft:overworld", "hunger": 14, "underSky": true, "stage": "Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 117380, "cause": "Kindred was impaled by Drowned", "x": -50, "y": 63, "z": -21, "light": 4, "timeOfDay": 21542, "dimension": "minecraft:overworld", "hunger": 0, "underSky": true, "stage": "Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 118048, "cause": "Kindred went up in flames", "x": 16, "y": 79, "z": -11, "light": 14, "timeOfDay": 22210, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 27780, "x": -465, "y": 64, "z": -89, "attempt": 1}, {"tick": 31500, "x": -469, "y": 64, "z": -71, "attempt": 2}, {"tick": 35200, "x": -488, "y": 66, "z": -72, "attempt": 3}, {"tick": 51260, "x": -252, "y": 79, "z": -63, "attempt": 4}, {"tick": 98060, "x": -52, "y": 66, "z": -18, "attempt": 1}, {"tick": 101820, "x": -46, "y": 63, "z": -22, "attempt": 2}, {"tick": 127160, "x": 14, "y": 94, "z": -16, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1100, "stone_tools": 5880, "iron_ingot": 33380, "iron_pickaxe": 64040},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 57660, "x": 81, "y": 18, "z": -85, "attempt": 1}, {"tick": 99740, "x": 100, "y": 64, "z": -330, "attempt": 1}, {"tick": 125520, "x": 83, "y": 103, "z": -513, "attempt": 2}, {"tick": 130780, "x": 83, "y": 103, "z": -516, "attempt": 3}, {"tick": 148300, "x": 74, "y": 91, "z": -297, "attempt": 4}, {"tick": 152760, "x": 62, "y": 97, "z": -313, "attempt": 5}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {},
+      "deaths": [
+        {"tick": 24967, "cause": "Echo drowned", "x": 126, "y": 59, "z": -286, "light": 11, "timeOfDay": 1129, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Interrupted: To where it last saw game at 130, 64, -233: walk on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 42743, "cause": "Echo was blown up by Creeper", "x": 56, "y": 73, "z": -26, "light": 3, "timeOfDay": 18905, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Interrupted: Explore north for food", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 53585, "cause": "Echo went up in flames", "x": 6, "y": 77, "z": 13, "light": 15, "timeOfDay": 5747, "dimension": "minecraft:overworld", "hunger": 9, "underSky": true, "stage": "Wood: hurt and out of food - Explore west for animals", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 57000, "cause": "Echo went up in flames", "x": 7, "y": 72, "z": 33, "light": 15, "timeOfDay": 9162, "dimension": "minecraft:overworld", "hunger": 13, "underSky": true, "stage": "Wood: Gather logs for a table and a wooden pickaxe - Walk toward the trees seen at 0, 73, -30", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 59882, "cause": "Echo went up in flames", "x": 41, "y": 72, "z": 42, "light": 14, "timeOfDay": 12044, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: hurt and out of food - Explore west for animals", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 60225, "cause": "Echo went up in flames", "x": 10, "y": 80, "z": -10, "light": 14, "timeOfDay": 12387, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: Gather logs for a table and a wooden pickaxe - Explore north for logs", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 76068, "cause": "Echo went up in flames", "x": 44, "y": 75, "z": 23, "light": 15, "timeOfDay": 4230, "dimension": "minecraft:overworld", "hunger": 9, "underSky": true, "stage": "Wood: hurt and out of food - Explore west for animals", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31000, "x": 19, "y": 95, "z": -20, "attempt": 1}, {"tick": 34700, "x": 18, "y": 95, "z": -20, "attempt": 2}, {"tick": 103320, "x": 475, "y": 87, "z": 370, "attempt": 1}, {"tick": 129640, "x": 464, "y": 118, "z": 384, "attempt": 2}, {"tick": 152620, "x": 372, "y": 119, "z": 474, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

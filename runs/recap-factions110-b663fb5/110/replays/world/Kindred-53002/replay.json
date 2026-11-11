@@ -1,0 +1,275 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 53002,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -279,
+    71,
+    -73
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.636850348533926,
+    8.0,
+    16.53353028990221
+  ],
+  "yaw": -609.08777,
+  "pitch": 17.466095,
+  "health": 5.7666664,
+  "food": 9,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 5002,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from enderman the way it came (tried elsewhere 4 times)",
+  "task": "Back off from enderman the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Enderman",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          26,
+          9,
+          13
+        ],
+        "left": 1124
+      },
+      {
+        "at": [
+          10,
+          5,
+          16
+        ],
+        "left": 2009
+      },
+      {
+        "at": [
+          19,
+          7,
+          20
+        ],
+        "left": 1380
+      },
+      {
+        "at": [
+          28,
+          8,
+          28
+        ],
+        "left": 938
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          26,
+          9,
+          13
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          30,
+          10,
+          19
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          29,
+          10,
+          19
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          10,
+          5,
+          16
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          19,
+          7,
+          20
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          28,
+          8,
+          28
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [
+      [
+        12,
+        6,
+        17
+      ],
+      [
+        12,
+        6,
+        18
+      ],
+      [
+        20,
+        7,
+        20
+      ],
+      [
+        24,
+        8,
+        11
+      ],
+      [
+        23,
+        8,
+        10
+      ],
+      [
+        21,
+        8,
+        11
+      ],
+      [
+        26,
+        9,
+        15
+      ],
+      [
+        23,
+        9,
+        10
+      ],
+      [
+        26,
+        10,
+        15
+      ]
+    ],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        7,
+        1,
+        1
+      ],
+      [
+        31,
+        5,
+        17
+      ],
+      [
+        23,
+        5,
+        9
+      ],
+      [
+        19,
+        5,
+        13
+      ],
+      [
+        7,
+        1,
+        5
+      ],
+      [
+        15,
+        5,
+        13
+      ],
+      [
+        31,
+        1,
+        17
+      ],
+      [
+        23,
+        5,
+        5
+      ]
+    ],
+    "setAside": [],
+    "known": {},
+    "strandedAt": [
+      8,
+      3,
+      8
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 391,
+    "exploreHeading": "east",
+    "exploreStalls": 0,
+    "exploreFailures": 1,
+    "stuckSpells": 4,
+    "stuckLevel": 4,
+    "leftOut": 10379
+  },
+  "log": [
+    "[17:59:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[17:59:15] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[17:59:15] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[17:59:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[17:59:18] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [try elsewhere, toward -251, 79, -38]",
+    "[17:59:18] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[17:59:18] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[17:59:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[17:59:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[17:59:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[17:59:25] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [try elsewhere, toward -251, 79, -38]",
+    "[17:59:25] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[17:59:25] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[17:59:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[17:59:29] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from creeper the way it came]",
+    "[17:59:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Run from creeper]",
+    "[17:59:33] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[17:59:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[17:59:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from enderman]",
+    "[17:59:38] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from enderman the way it came]"
+  ]
+}
