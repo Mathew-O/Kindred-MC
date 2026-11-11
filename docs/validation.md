@@ -33,6 +33,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
+- F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
 
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
