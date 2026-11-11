@@ -31,6 +31,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+- F-35d, the route planners in core behind a terrain of per-cell facts: [evidence](evidence/F-35d.md).
 - F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
 - F-35c1, no walk to the portal out of a night shelter: [evidence](evidence/F-35c1.md).
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
