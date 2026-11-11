@@ -1,0 +1,97 @@
+{
+ "kind": "spell",
+ "player": "Sol",
+ "tick": 27680,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  392,
+  56,
+  193
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.282033623911616,
+  8.001335979112142,
+  16.964646270607176
+ ],
+ "yaw": 97.927734,
+ "pitch": 10.53463,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 2.6000001,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 4
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 35
+   }
+  }
+ ],
+ "selected": 2,
+ "timeOfDay": 3679,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: no progress here for a while - try elsewhere, toward 385, 63, 209",
+ "task": "try elsewhere, toward 385, 63, 209",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+ "log": [
+  "[08:15:51] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 441, 63, 245 [from factionCandidates:9266]",
+  "[08:15:55] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 441, 63, 245 [from factionCandidates:9266]",
+  "[08:15:55] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 426, 63, 254 [from factionCandidates:9266]",
+  "[08:15:56] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 431, 63, 252 [from factionCandidates:9266]",
+  "[08:15:56] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 437, 63, 248 [from factionCandidates:9266]",
+  "[08:15:56] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 206 [from factionCandidates:9266]",
+  "[08:15:59] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 206 [from factionCandidates:9266]",
+  "[08:16:03] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 206 [from factionCandidates:9266]",
+  "[08:16:03] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 445, 63, 240 [from factionCandidates:9266]",
+  "[08:16:04] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 449, 63, 236 [from factionCandidates:9266]",
+  "[08:16:04] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 415, 63, 257 [from factionCandidates:9266]",
+  "[08:16:04] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 204 [from factionCandidates:9266]",
+  "[08:16:04] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 205 [from factionCandidates:9266]",
+  "[08:16:04] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 210 [from factionCandidates:9266]",
+  "[08:16:06] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 210 [from factionCandidates:9266]",
+  "[08:16:11] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 457, 63, 210 [from factionCandidates:9266]",
+  "[08:16:11] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 445, 63, 241 [from factionCandidates:9266]",
+  "[08:16:12] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 441, 63, 245 [from factionCandidates:9266]",
+  "[08:16:12] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 456, 63, 218 [from factionCandidates:9266]",
+  "[08:16:14] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 456, 63, 218 [from factionCandidates:9266]"
+ ],
+ "corpus": {
+  "run": "diag-factions303-079bdc2",
+  "seed": "303",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-factions303-1111@c5b3e43:diag-factions303-079bdc2/303/replays/world/Sol-27680",
+  "class": "stuck: hole or pit",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166): passes if out within its 3600 ticks; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}

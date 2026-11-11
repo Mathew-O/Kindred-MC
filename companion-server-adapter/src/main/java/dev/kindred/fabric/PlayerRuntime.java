@@ -6455,7 +6455,8 @@ final class PlayerRuntime {
             var doingThen = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
             replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(goalOf(entry)),
                     entry.campaign == null ? "no goal" : entry.campaign.progress(), doingThen, entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
-                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString()));
+                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString(),
+                    memoryOf(entry)));
         }
         teamCoordinator.handlePlayerDeath(entry.data.id());
         entry.hazardInterrupted = false;
@@ -9451,11 +9452,16 @@ final class PlayerRuntime {
 
     /** A fixture's AI player (by its companion id) chooses one faction act and does it now, as its own native_faction step would. */
     NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target) {
+        return factionActForTest(player, kind, target, 0);
+    }
+
+    /** As above, with the act's amount: a purchase's count, a bid's coins in hundredths. */
+    NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target, long amount) {
         requireThread();
         var entry = entries.get(player);
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) throw new IllegalStateException("No connected body");
-        entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, 0, "a fixture's act");
-        return factionAct(entry, kind, target, 0);
+        entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, amount, "a fixture's act");
+        return factionAct(entry, kind, target, amount);
     }
 
     /** A fixture's AI player (by its companion id) weighs the faction world now; what it chose is left for its turn. */
@@ -13893,7 +13899,7 @@ final class PlayerRuntime {
                     String.valueOf(goalOf(entry)), campaign == null ? "no goal" : campaign.progress(),
                     entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
                     campaign == null ? "" : String.valueOf(campaign.stance()), campaign == null ? "" : String.valueOf(campaign.preferences().habits()),
-                    "stuck"));
+                    "stuck", memoryOf(entry)));
         }
     };
 
@@ -14307,7 +14313,14 @@ final class PlayerRuntime {
         catch (Exception failure) { KindredMod.LOGGER.error("Kindred shutdown flush incomplete; reconcile on startup", failure); }
     }
 
-    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
+    private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
+        var campaign = entry.campaign;
+        if (campaign == null) return null;
+        long tick = server.getTicks();
+        return origin -> campaign.memoryIn(origin, DeathReplays.WIDTH, DeathReplays.HEIGHT, tick);
+    }
+
     /**
      * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
      * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
@@ -14322,9 +14335,11 @@ final class PlayerRuntime {
         entry.spellsCaptured = spells;
         replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
                 String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
-                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks",
+                memoryOf(entry)));
     }
 
+    /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;

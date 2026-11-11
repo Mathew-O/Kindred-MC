@@ -1,0 +1,314 @@
+{
+ "kind": "spell",
+ "player": "Sol",
+ "tick": 126580,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  35,
+  62,
+  147
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.253399990684834,
+  8.0,
+  16.503826807709657
+ ],
+ "yaw": -90.175125,
+ "pitch": 41.813744,
+ "health": 20.0,
+ "food": 4,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 62
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 4
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 21
+    }
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 42
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 74
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 148
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 5
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 14
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:rooted_dirt",
+    "count": 5
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 53
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:moss_block",
+    "count": 3
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:smooth_basalt",
+    "count": 8
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 55
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 30
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:azalea",
+    "count": 2
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 8
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 28
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 50
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 6579,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward 51, 70, 187",
+ "task": "Cut through east for water: clear 52, 70, 163",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+ "log": [
+  "[07:33:07] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for water: advance]",
+  "[07:33:07] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for water: advance]",
+  "[07:33:07] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for water: advance]",
+  "[07:33:07] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for water: advance]",
+  "[07:33:09] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for water]",
+  "[07:33:11] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for water]",
+  "[07:33:11] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:11] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:11] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:11] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:13] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for water]",
+  "[07:33:15] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for water]",
+  "[07:33:15] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:15] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:15] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:15] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through west for water: advance]",
+  "[07:33:17] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for water]",
+  "[07:33:19] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for water]",
+  "[07:33:20] [Server thread/INFO]: Sol native_break COMPLETED [Cut through east for water: clear 51, 70, 163]",
+  "[07:33:20] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for water: advance]"
+ ],
+ "corpus": {
+  "run": "diag-holepit-079bdc2",
+  "seed": "31102026",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-holepit-1111@4a9f0ff:diag-holepit-079bdc2/31102026/replays/world/Sol-126580",
+  "class": "stuck: busy-work loop",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166): passes if out within its 3600 ticks"
+ }
+}

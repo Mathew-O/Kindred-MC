@@ -7801,4 +7801,285 @@ final class PortalRunCampaign {
         }
         return Optional.of(go(nearest.getBlockPos(), 2.0, false, "Approach " + Registries.ENTITY_TYPE.getId(nearest.getType()).getPath()));
     }
+
+    // ------------------------------------------------------------------ replay memory (F-27a)
+
+    /** At most this many entries of each kind of memory go into a replay: a capture's size is bounded. */
+    static final int MEMORY_CAP = 512;
+    /** Task arguments a set-aside task may carry into a replay besides its x, y, z: none of them names a place or a thing. */
+    private static final Set<String> PLAIN_ARGS = Set.of("seconds", "slot", "mode", "side", "range", "action", "guarded",
+            "count", "collect", "partial", "direction", "drop", "dirs", "blocks", "recipe", "source");
+
+    /** {@code pos} as a position in the box at {@code origin}, or null when it lies outside it. */
+    private static int[] inBox(BlockPos pos, BlockPos origin, int width, int height) {
+        if (pos == null) return null;
+        int x = pos.getX() - origin.getX(), y = pos.getY() - origin.getY(), z = pos.getZ() - origin.getZ();
+        return x < 0 || y < 0 || z < 0 || x >= width || y >= height || z >= width ? null : new int[] {x, y, z};
+    }
+
+    private static com.google.gson.JsonArray array(int[] at) {
+        var array = new com.google.gson.JsonArray();
+        for (int v : at) array.add(v);
+        return array;
+    }
+
+    /**
+     * What this goal remembers of the scene box at {@code origin}, copied as it stands at {@code tick} for a spell or death
+     * replay (F-27a): the targets it set aside and why, those it found it could not reach and from where, its approaches,
+     * the cover it holds, the trees it gave up, the steps it set aside, the blocks it knows by kind, where it dug,
+     * tunnelled and walked caves, its home, and its stranding, exploring and stuck counts. Only its own fields are copied,
+     * never the world: a replay knows no more than the player did. Positions are relative to the box, times are ticks
+     * left; what lies outside the box is left out (the replay's world has nothing there), at most {@link #MEMORY_CAP} of
+     * each kind. Taken only when a replay is written.
+     */
+    com.google.gson.JsonObject memoryIn(BlockPos origin, int width, int height, long tick) {
+        var memory = new com.google.gson.JsonObject();
+        memory.addProperty("version", 1);
+        int[] left = {0};
+        var blocked = new com.google.gson.JsonArray();
+        for (var entry : blockedUntil.entrySet()) {
+            int[] at = inBox(BlockPos.fromLong(entry.getKey()), origin, width, height);
+            if (entry.getValue() <= tick) continue;
+            if (at == null || blocked.size() >= MEMORY_CAP) { left[0]++; continue; }
+            var one = new com.google.gson.JsonObject();
+            one.add("at", array(at));
+            one.addProperty("left", entry.getValue() - tick);
+            blocked.add(one);
+        }
+        memory.add("blocked", blocked);
+        memory.add("failures", counts(failures, origin, width, height, left));
+        memory.add("approaches", counts(approaches, origin, width, height, left));
+        var unreachable = new com.google.gson.JsonArray();
+        for (var entry : unreachableUntil.entrySet()) {
+            int[] at = inBox(BlockPos.fromLong(entry.getKey()), origin, width, height);
+            if (at == null || unreachable.size() >= MEMORY_CAP) { left[0]++; continue; }
+            var one = new com.google.gson.JsonObject();
+            one.add("at", array(at));
+            one.addProperty("left", Math.max(0, entry.getValue() - tick));
+            // Where it found no way from: kept only in the box; outside it the replay has no such place.
+            int[] from = inBox(unreachableFrom.get(entry.getKey()), origin, width, height);
+            if (from != null) one.add("from", array(from));
+            unreachable.add(one);
+        }
+        memory.add("unreachable", unreachable);
+        memory.add("coverHeld", cells(coverHeld, false, origin, width, height, left));
+        memory.add("treesGivenUp", columns(treesGivenUp, origin, width, height, left));
+        memory.add("dug", cells(dug, false, origin, width, height, left));
+        memory.add("tunnelled", cells(tunnelled, false, origin, width, height, left));
+        memory.add("visitedCaves", cells(visitedCaves, true, origin, width, height, left));
+        var tasks = new com.google.gson.JsonArray();
+        for (var entry : setAside.entrySet()) {
+            if (entry.getValue() <= tick) continue;
+            var task = entry.getKey();
+            BlockPos at = position(task.args());
+            int[] rel = at == null ? null : inBox(at, origin, width, height);
+            boolean plain = task.args().keySet().stream().allMatch(key -> PLAIN_ARGS.contains(key) || key.equals("x") || key.equals("y") || key.equals("z"));
+            if (!plain || at != null && rel == null || tasks.size() >= MEMORY_CAP) { left[0]++; continue; }
+            var one = new com.google.gson.JsonObject();
+            one.addProperty("skill", task.skill());
+            one.addProperty("label", task.label());
+            var args = new com.google.gson.JsonObject();
+            task.args().forEach((key, value) -> { if (!key.equals("x") && !key.equals("y") && !key.equals("z")) args.addProperty(key, value); });
+            one.add("args", args);
+            if (rel != null) one.add("at", array(rel));
+            one.addProperty("left", entry.getValue() - tick);
+            tasks.add(one);
+        }
+        memory.add("setAside", tasks);
+        var known = new com.google.gson.JsonObject();
+        for (var kind : WorldKnowledge.Kind.values()) {
+            var list = new com.google.gson.JsonArray();
+            for (BlockPos pos : knowledge.all(kind)) {
+                int[] at = inBox(pos, origin, width, height);
+                if (at == null || list.size() >= MEMORY_CAP) { left[0]++; continue; }
+                list.add(array(at));
+            }
+            if (!list.isEmpty()) known.add(kind.name(), list);
+        }
+        memory.add("known", known);
+        int[] homeAt = inBox(home, origin, width, height);
+        if (homeAt != null) memory.add("home", array(homeAt));
+        int[] stranded = inBox(strandedAt, origin, width, height);
+        if (stranded != null) {
+            memory.add("strandedAt", array(stranded));
+            memory.addProperty("strandedWalks", strandedWalks);
+            memory.addProperty("strandedAgo", tick - strandedTick);
+        }
+        if (exploreHeading != null) memory.addProperty("exploreHeading", exploreHeading.asString());
+        memory.addProperty("exploreStalls", exploreStalls);
+        memory.addProperty("exploreFailures", exploreFailures);
+        memory.addProperty("stuckSpells", stuckSpells);
+        memory.addProperty("stuckLevel", stuckLevel);
+        memory.addProperty("leftOut", left[0]);
+        return memory;
+    }
+
+    private static com.google.gson.JsonArray counts(Map<Long, Integer> map, BlockPos origin, int width, int height, int[] left) {
+        var list = new com.google.gson.JsonArray();
+        for (var entry : map.entrySet()) {
+            int[] at = inBox(BlockPos.fromLong(entry.getKey()), origin, width, height);
+            if (at == null || list.size() >= MEMORY_CAP) { left[0]++; continue; }
+            var one = new com.google.gson.JsonObject();
+            one.add("at", array(at));
+            one.addProperty("n", entry.getValue());
+            list.add(one);
+        }
+        return list;
+    }
+
+    /** Block cells, or with {@code fourBlock} 4×4×4 cells (kept by their least corner), in the box. */
+    private static com.google.gson.JsonArray cells(Set<Long> set, boolean fourBlock, BlockPos origin, int width, int height, int[] left) {
+        var list = new com.google.gson.JsonArray();
+        for (long key : set) {
+            BlockPos cell = BlockPos.fromLong(key);
+            BlockPos pos = fourBlock ? new BlockPos(cell.getX() << 2, cell.getY() << 2, cell.getZ() << 2) : cell;
+            int[] at = inBox(pos, origin, width, height);
+            if (at == null || list.size() >= MEMORY_CAP) { left[0]++; continue; }
+            list.add(array(at));
+        }
+        return list;
+    }
+
+    /** Four-block columns (x and z only), kept by their least corner at the box's floor. */
+    private static com.google.gson.JsonArray columns(Set<Long> set, BlockPos origin, int width, int height, int[] left) {
+        var list = new com.google.gson.JsonArray();
+        for (long key : set) {
+            BlockPos column = BlockPos.fromLong(key);
+            int[] at = inBox(new BlockPos(column.getX() << 2, origin.getY(), column.getZ() << 2), origin, width, height);
+            if (at == null || list.size() >= MEMORY_CAP) { left[0]++; continue; }
+            list.add(array(at));
+        }
+        return list;
+    }
+
+    /**
+     * Puts back what {@link #memoryIn} copied, for a replay whose box now stands at {@code origin} at {@code tick}: those
+     * fields and nothing else. An entry outside the box, malformed or of a kind it does not know is dropped, not guessed;
+     * the notes say what was dropped. A four-block cell is put back as the cell its least corner falls in now.
+     */
+    List<String> restoreMemory(com.google.gson.JsonObject memory, BlockPos origin, int width, int height, long tick) {
+        var dropped = new java.util.ArrayList<String>();
+        if (memory == null) return dropped;
+        if (!memory.has("version") || memory.get("version").getAsInt() != 1) {
+            dropped.add("all: version " + memory.get("version"));
+            return dropped;
+        }
+        var known = Set.of("version", "blocked", "failures", "approaches", "unreachable", "coverHeld", "treesGivenUp", "dug",
+                "tunnelled", "visitedCaves", "setAside", "known", "home", "strandedAt", "strandedWalks", "strandedAgo",
+                "exploreHeading", "exploreStalls", "exploreFailures", "stuckSpells", "stuckLevel", "leftOut");
+        for (String key : memory.keySet()) if (!known.contains(key)) dropped.add(key + ": not known");
+        java.util.function.Function<com.google.gson.JsonElement, BlockPos> at = element -> {
+            try {
+                var array = element.getAsJsonArray();
+                int x = array.get(0).getAsInt(), y = array.get(1).getAsInt(), z = array.get(2).getAsInt();
+                if (array.size() != 3 || x < 0 || y < 0 || z < 0 || x >= width || y >= height || z >= width) return null;
+                return origin.add(x, y, z);
+            } catch (RuntimeException malformed) {
+                return null;
+            }
+        };
+        java.util.function.BiConsumer<String, java.util.function.Consumer<com.google.gson.JsonObject>> each = (key, put) -> {
+            if (!memory.has(key)) return;
+            for (var element : memory.getAsJsonArray(key)) {
+                try {
+                    put.accept(element.getAsJsonObject());
+                } catch (RuntimeException malformed) {
+                    dropped.add(key + ": " + element);
+                }
+            }
+        };
+        java.util.function.BiConsumer<String, java.util.function.Consumer<BlockPos>> cellsOf = (key, put) -> {
+            if (!memory.has(key)) return;
+            for (var element : memory.getAsJsonArray(key)) {
+                BlockPos pos = at.apply(element);
+                if (pos == null) dropped.add(key + ": " + element);
+                else put.accept(pos);
+            }
+        };
+        each.accept("blocked", one -> {
+            BlockPos pos = at.apply(one.get("at"));
+            if (pos == null) { dropped.add("blocked: " + one); return; }
+            blockedUntil.merge(pos.asLong(), tick + one.get("left").getAsLong(), Math::max);
+        });
+        each.accept("failures", one -> {
+            BlockPos pos = at.apply(one.get("at"));
+            if (pos == null) { dropped.add("failures: " + one); return; }
+            failures.put(pos.asLong(), one.get("n").getAsInt());
+        });
+        each.accept("approaches", one -> {
+            BlockPos pos = at.apply(one.get("at"));
+            if (pos == null) { dropped.add("approaches: " + one); return; }
+            approaches.put(pos.asLong(), one.get("n").getAsInt());
+        });
+        each.accept("unreachable", one -> {
+            BlockPos pos = at.apply(one.get("at"));
+            if (pos == null) { dropped.add("unreachable: " + one); return; }
+            unreachableUntil.merge(pos.asLong(), tick + one.get("left").getAsLong(), Math::max);
+            if (one.has("from")) {
+                BlockPos from = at.apply(one.get("from"));
+                if (from != null) unreachableFrom.put(pos.asLong(), from);
+                else dropped.add("unreachable from: " + one);
+            }
+        });
+        cellsOf.accept("coverHeld", pos -> coverHeld.add(pos.asLong()));
+        cellsOf.accept("treesGivenUp", pos -> treesGivenUp.add(BlockPos.asLong(pos.getX() >> 2, 0, pos.getZ() >> 2)));
+        cellsOf.accept("dug", pos -> dug.add(pos.asLong()));
+        cellsOf.accept("tunnelled", pos -> tunnelled.add(pos.asLong()));
+        cellsOf.accept("visitedCaves", pos -> visitedCaves.add(BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2)));
+        each.accept("setAside", one -> {
+            var args = new LinkedHashMap<String, String>();
+            for (var arg : one.getAsJsonObject("args").entrySet()) {
+                if (!PLAIN_ARGS.contains(arg.getKey())) { dropped.add("setAside: " + one); return; }
+                args.put(arg.getKey(), arg.getValue().getAsString());
+            }
+            if (one.has("at")) {
+                BlockPos pos = at.apply(one.get("at"));
+                if (pos == null) { dropped.add("setAside: " + one); return; }
+                args.put("x", String.valueOf(pos.getX()));
+                args.put("y", String.valueOf(pos.getY()));
+                args.put("z", String.valueOf(pos.getZ()));
+            }
+            setAside.merge(new Task(one.get("skill").getAsString(), Map.copyOf(args), one.get("label").getAsString()), tick + one.get("left").getAsLong(), Math::max);
+        });
+        if (memory.has("known")) {
+            for (var entry : memory.getAsJsonObject("known").entrySet()) {
+                WorldKnowledge.Kind kind;
+                try {
+                    kind = WorldKnowledge.Kind.valueOf(entry.getKey());
+                } catch (IllegalArgumentException unknown) {
+                    dropped.add("known: kind " + entry.getKey());
+                    continue;
+                }
+                for (var element : entry.getValue().getAsJsonArray()) {
+                    BlockPos pos = at.apply(element);
+                    if (pos == null) dropped.add("known " + kind + ": " + element);
+                    else knowledge.remember(kind, pos);
+                }
+            }
+        }
+        if (memory.has("home")) {
+            BlockPos pos = at.apply(memory.get("home"));
+            if (pos == null) dropped.add("home: " + memory.get("home"));
+            else home = pos;
+        }
+        if (memory.has("strandedAt")) {
+            BlockPos pos = at.apply(memory.get("strandedAt"));
+            if (pos == null) dropped.add("strandedAt: " + memory.get("strandedAt"));
+            else {
+                strandedAt = pos;
+                strandedWalks = memory.has("strandedWalks") ? memory.get("strandedWalks").getAsInt() : 0;
+                strandedTick = tick - (memory.has("strandedAgo") ? memory.get("strandedAgo").getAsLong() : 0);
+            }
+        }
+        if (memory.has("exploreHeading")) {
+            Direction heading = Direction.byName(memory.get("exploreHeading").getAsString());
+            if (heading == null) dropped.add("exploreHeading: " + memory.get("exploreHeading"));
+            else exploreHeading = heading;
+        }
+        if (memory.has("exploreStalls")) exploreStalls = memory.get("exploreStalls").getAsInt();
+        if (memory.has("exploreFailures")) exploreFailures = memory.get("exploreFailures").getAsInt();
+        if (memory.has("stuckSpells")) stuckSpells = memory.get("stuckSpells").getAsInt();
+        if (memory.has("stuckLevel")) stuckLevel = memory.get("stuckLevel").getAsInt();
+        return dropped;
+    }
 }
