@@ -103,7 +103,7 @@ final class NativeBreakAction extends NativeRecordedAction {
         String denial = RoamingEdits.breakDenial(player, target, policy.get(), guarded, underfoot, overLava);
         if (denial != null) throw new IllegalArgumentException(denial);
         body.faceBlock(target);
-        if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible");
+        if (!body.miningEligible(target)) throw new IllegalArgumentException("Break target is out of reach or not visible: " + body.miningRefusal(target));
         resource = Registries.BLOCK.getId(state.getBlock()).toString();
         int tool = bestTool(body, state);
         // A block that needs a tool still gives way to a bare hand, slowly and dropping nothing: only a clearing
