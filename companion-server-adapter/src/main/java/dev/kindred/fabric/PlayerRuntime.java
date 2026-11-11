@@ -5391,11 +5391,11 @@ final class PlayerRuntime {
             entry.bases = loaded != null ? loaded : new PlayerMemoryStore.Bases();
             // A record it cannot read as one of its stages (an edited file, a stage since renamed) is left out.
             entry.bases.built.removeIf(base -> base == null || base.dimension() == null || stageNamed(base.stage()) == null
-                    || base.wood() != null && !dev.kindred.core.construction.BuildNeeds.WOODS.contains(base.wood())
+                    || base.wood() != null && !dev.kindred.core.construction.Woods.known(base.wood())
                     || base.variant() < 0 || base.variant() > dev.kindred.core.construction.BuildStyle.VARIANTS);
             // A hall it cannot build again as recorded (an edited file) is left out, as a base is.
             var hall = entry.bases.hall;
-            if (hall != null && (hall.dimension() == null || hall.wood() == null || !dev.kindred.core.construction.BuildNeeds.WOODS.contains(hall.wood())
+            if (hall != null && (hall.dimension() == null || hall.wood() == null || !dev.kindred.core.construction.Woods.known(hall.wood())
                     || hall.cells() < dev.kindred.core.construction.TradingHall.MIN_CELLS || hall.cells() > dev.kindred.core.construction.TradingHall.MAX_CELLS)) {
                 entry.bases.hall = null;
             }
@@ -5544,7 +5544,17 @@ final class PlayerRuntime {
             var stack = inventory.getStack(slot);
             String id = Registries.ITEM.getId(stack.getItem()).getPath();
             String wood = id.endsWith("_planks") || id.endsWith("_log") ? dev.kindred.core.construction.BuildStyle.woodOf(id) : null;
-            if (wood != null) count.merge(wood, stack.getCount() * (id.endsWith("_log") ? 4 : 1), Integer::sum);
+            boolean log = id.endsWith("_log");
+            if (wood == null && !stack.isEmpty()) {
+                // F-38: a wood the server's tags and recipes name, whatever its ids are called.
+                String full = Registries.ITEM.getId(stack.getItem()).toString();
+                var facts = dev.kindred.core.Capabilities.current();
+                log = facts.is(dev.kindred.core.VanillaIds.LOGS, full);
+                if (log || facts.is(dev.kindred.core.VanillaIds.PLANKS, full)) {
+                    wood = facts.woodOfPart(full).map(dev.kindred.core.Capabilities.Wood::name).orElse(null);
+                }
+            }
+            if (wood != null) count.merge(wood, stack.getCount() * (log ? 4 : 1), Integer::sum);
         }
         var held = count.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
         if (held.isPresent()) return held.get();
@@ -18522,7 +18532,10 @@ final class PlayerRuntime {
             String id = dev.kindred.core.VanillaIds.NAMESPACE + wood + "_planks";
             if (members.contains(id)) tried.add(id);
         }
-        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS)).sorted().forEach(tried::add);
+        // Another wood's planks by the recipe the server makes them with from its log (an id of its own may also name
+        // a different recipe, as minecraft:bamboo_mosaic names the one from slabs).
+        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS) && !tried.contains(id)).sorted()
+                .forEach(id -> tried.add(KindredCapabilities.plankRecipe(id).orElse(id)));
         return List.copyOf(tried);
     }
 }

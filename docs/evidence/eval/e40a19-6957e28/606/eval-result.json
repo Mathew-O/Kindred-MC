@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 10.05, "tickMsWorst": 2110.52, "tickMsWorstAt": 61663, "ticksOver50ms": 186, "ticksOver200ms": 6, "heapMbMax": 935, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1120, "stone_tools": 2360, "iron_ingot": 4500, "iron_pickaxe": 84320, "obsidian": 97991, "portal_lit": 98868},
+      "deaths": [
+        {"tick": 36405, "cause": "Kindred was shot by Skeleton", "x": 195, "y": 16, "z": -86, "light": 0, "timeOfDay": 12567, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton: wait behind the seal", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 620, "stone_tools": 2080, "iron_ingot": 6700, "iron_pickaxe": 21260, "obsidian": 38678, "portal_lit": 60546},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 58640, "x": 196, "y": -54, "z": -75, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1300, "stone_tools": 2720, "iron_ingot": 10540, "iron_pickaxe": 20340, "obsidian": 52931, "portal_lit": 54953},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
