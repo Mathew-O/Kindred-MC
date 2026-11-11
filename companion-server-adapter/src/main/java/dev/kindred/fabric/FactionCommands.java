@@ -26,11 +26,12 @@ final class FactionCommands {
     private FactionCommands() {}
 
     static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        // The market (M-06g): /shop sell hand|all [confirm], /shop buy <item> <count>, /shop price [item]; /market top,
-        // /market history <item>, /market baseline (operators); /sellall as /shop sell all.
+        // The market (M-06g): bare /shop or /market opens its chest screen for a person (M-06g1); /shop sell hand|all
+        // [confirm], /shop buy <item> <count>, /shop price [item]; /market top, /market history <item>, /market baseline
+        // (operators); /sellall as /shop sell all.
         for (String root : new String[] {"shop", "market"}) {
             dispatcher.register(CommandManager.literal(root)
-                    .executes(context -> market(context.getSource(), "help"))
+                    .executes(context -> marketScreen(context.getSource()))
                     .then(CommandManager.argument("request", StringArgumentType.greedyString())
                             .executes(context -> market(context.getSource(), StringArgumentType.getString(context, "request")))));
         }
@@ -86,6 +87,14 @@ final class FactionCommands {
     }
 
     /** Bare /ah: the chest screen for a person, the listings as text for anyone else. */
+    private static int marketScreen(ServerCommandSource source) {
+        PlayerRuntime runtime = KindredMod.runtime();
+        if (runtime == null) return unavailable(source);
+        var player = source.getPlayer();
+        if (player == null || player instanceof PreparedNativePlayer) return market(source, "help");
+        return runtime.openMarketScreen(source);
+    }
+
     private static int auctionScreen(ServerCommandSource source) {
         PlayerRuntime runtime = KindredMod.runtime();
         return runtime == null ? unavailable(source) : runtime.openAuctionScreen(source);

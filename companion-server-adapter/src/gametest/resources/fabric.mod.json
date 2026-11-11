@@ -130,6 +130,7 @@
       "dev.kindred.fabric.NativeCaveLedgeGameTests",
       "dev.kindred.fabric.NativeDeepPortalGameTests",
       "dev.kindred.fabric.NativeAuctionScreenGameTests",
+      "dev.kindred.fabric.NativeMarketScreenGameTests",
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
       "dev.kindred.fabric.NativeFactionTellGameTests",
