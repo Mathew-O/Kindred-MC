@@ -114,10 +114,18 @@ final class NativeBucketAction extends NativeRecordedAction {
      * away, so points nearer the top and edges are tried too, as a player clicks whatever part of it is in view.
      */
     private Optional<Vec3d> fillAim() {
+        return fillAim(body.entity(), target);
+    }
+
+    /**
+     * As a fill aims at {@code target} from where {@code player} stands: whether its bucket would take that source now. The
+     * campaign asks before it opens a way to water it cannot see the far side of (F-35g).
+     */
+    static Optional<Vec3d> fillAim(net.minecraft.server.network.ServerPlayerEntity player, BlockPos target) {
         double[] spread = {0, 0.3, -0.3};
         for (double dy : spread) for (double dx : spread) for (double dz : spread) {
             Vec3d point = Vec3d.ofCenter(target).add(dx, dy, dz);
-            if (rayLands(target, null, point)) return Optional.of(point);
+            if (rayLands(player, target, null, point, Mode.FILL)) return Optional.of(point);
         }
         return Optional.empty();
     }
@@ -138,7 +146,10 @@ final class NativeBucketAction extends NativeRecordedAction {
     }
 
     private boolean rayLands(BlockPos expected, Direction side, Vec3d point) {
-        var player = body.entity();
+        return rayLands(body.entity(), expected, side, point, mode);
+    }
+
+    private static boolean rayLands(net.minecraft.server.network.ServerPlayerEntity player, BlockPos expected, Direction side, Vec3d point, Mode mode) {
         Vec3d eye = player.getEyePos();
         if (eye.distanceTo(point) > player.getBlockInteractionRange() - 0.05) return false;
         Vec3d end = eye.add(point.subtract(eye).normalize().multiply(player.getBlockInteractionRange()));

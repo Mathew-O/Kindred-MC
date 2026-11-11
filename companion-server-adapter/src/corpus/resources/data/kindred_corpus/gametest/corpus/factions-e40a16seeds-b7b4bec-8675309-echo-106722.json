@@ -1,0 +1,231 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 106722,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  108,
+  17,
+  459
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.041807292619666,
+  8.0,
+  16.64500528311521
+ ],
+ "yaw": -93.15866,
+ "pitch": 17.691223,
+ "health": 1.0,
+ "food": 0,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 31
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 12
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 3
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 47
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 99
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 50
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:birch_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 31
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 34
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 12
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 49
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 51
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 2
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 10722,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "Back off from zombie",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[14:08:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 124, 22, 475]",
+  "[14:08:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 124, 21, 474]",
+  "[14:08:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 124, 22, 474]",
+  "[14:08:35] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 119, 20, 476 [Back off from skeleton]",
+  "[14:08:35] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:08:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 124, 23, 474]",
+  "[14:08:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 125, 22, 474]",
+  "[14:08:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 125, 23, 474]",
+  "[14:08:36] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:08:36] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 125, 24, 474]",
+  "[14:08:36] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:08:36] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 124, 24, 475]",
+  "[14:08:37] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 124, 25, 475]",
+  "[14:08:37] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:08:37] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 124, 26, 475]",
+  "[14:08:37] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 123, 25, 475]",
+  "[14:08:38] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear 123, 26, 475]",
+  "[14:08:38] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:08:38] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie]",
+  "[14:08:38] [Server thread/INFO]: Echo died at 124, 25, 475: Echo was slain by Zombie (tick 106722, day, under cover, hunger 0, armour 0, holding stone_pickaxe, no shield; doing \"Back off from zombie\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "factions-e40a16seeds-b7b4bec",
+  "seed": "8675309",
+  "build": "b7b4bec",
+  "replay": "",
+  "source": "claude/corpus-data-factions-b7b4bec-1110@03b73b6:factions-e40a16seeds-b7b4bec/8675309/replays/world/Echo-106722",
+  "class": "death: zombie",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state; recorded on b7b4bec, which still had the walk set-aside of #120"
+ }
+}

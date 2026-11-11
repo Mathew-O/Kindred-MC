@@ -54,6 +54,10 @@ final class NativeGoToSkill implements SkillBody {
     private final int maxDrop;
     /** Arrived only near the middle of the target block, as a player lines up on a spot to build from (E-08b). */
     private boolean centre;
+    /** With {@link #centre}, how near the middle it stops: {@link #CENTRE_WITHIN} unless a caller asks closer. */
+    private double centreWithin = CENTRE_WITHIN;
+    /** The usual arrival near a block's middle (0.4), as before. */
+    static final double CENTRE_WITHIN = 0.4;
     /** Ended only on a stand with nothing that harms beside it, as on a walk someone asked for (E-49). */
     private boolean safe;
     private NativeNavigator safety;
@@ -139,6 +143,18 @@ final class NativeGoToSkill implements SkillBody {
     NativeGoToSkill safely() {
         safe = true;
         return this;
+    }
+
+    /**
+     * As {@link #centred()}, stopping within {@code within} of the middle. "Down the scaffold" asks 0.15: a body further
+     * than 0.2 off its column's middle overlaps the next cell, and a bottom slab of the roof there caught it half a block
+     * down as the block underfoot gave way. It slid onto the roof, where no walk could start, and a cabin stopped (#136's
+     * CI) (F-22c57). Every other caller keeps the usual 0.4.
+     */
+    NativeGoToSkill centredWithin(double within) {
+        if (!(within > 0 && within <= CENTRE_WITHIN)) throw new IllegalArgumentException("Centred within 0..0.4");
+        centreWithin = within;
+        return centred();
     }
 
     /** Arrive only near the middle of the target block. */
@@ -264,7 +280,7 @@ final class NativeGoToSkill implements SkillBody {
             body.stopInputs();
             return Step.blocked("Could not take hotbar slot " + hold + " in hand", true);
         }
-        if (goalReached(feet) && (!centre || reached(player.getPos(), target) && reached(atRest(player), target)) && (player.isOnGround() || player.isTouchingWater())) {
+        if (goalReached(feet) && (!centre || reached(player.getPos(), target, centreWithin) && reached(atRest(player), target, centreWithin)) && (player.isOnGround() || player.isTouchingWater())) {
             var tread = treadForBreath(player);
             if (tread != null) return tread;
             body.stopInputs();
@@ -297,7 +313,7 @@ final class NativeGoToSkill implements SkillBody {
         while (index < path.size() - 1 && (reached(pos, path.get(index)) || passed(pos, index))) index++;
         if (index < path.size() - 1 && reached(pos, path.get(index + 1))) index++;
         BlockPos next = path.get(index);
-        if (index == path.size() - 1 && reached(pos, next) && (!centre || reached(atRest(player), next))) {
+        if (index == path.size() - 1 && reached(pos, next) && (!centre || reached(pos, next, centreWithin) && reached(atRest(player), next, centreWithin))) {
             var tread = treadForBreath(player);
             if (tread != null) return tread;
             body.stopInputs();
@@ -505,9 +521,13 @@ final class NativeGoToSkill implements SkillBody {
     }
 
     private static boolean reached(Vec3d pos, BlockPos node) {
+        return reached(pos, node, CENTRE_WITHIN);
+    }
+
+    private static boolean reached(Vec3d pos, BlockPos node, double within) {
         double dx = node.getX() + 0.5 - pos.x;
         double dz = node.getZ() + 0.5 - pos.z;
-        return dx * dx + dz * dz < 0.16 && Math.abs(pos.y - node.getY()) < 0.9;
+        return dx * dx + dz * dz < within * within && Math.abs(pos.y - node.getY()) < 0.9;
     }
 
     private boolean steer(BlockPos next, Vec3d pos) {
