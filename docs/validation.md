@@ -16,7 +16,9 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
-  run alone ×3 on the branch and ×3 on main's tip (`KINDRED_CORPUS_ONLY`). It blocks only if the branch fails it 2 of 3
+  run alone ×3 on the branch and ×3 on main as the branch has it, its merge-base with origin/main, so merges that land
+  while the gate runs are not counted against it (`KINDRED_CORPUS_ONLY`; `--main-ref REF` picks another, and the report
+  names the one used). It blocks only if the branch fails it 2 of 3
   or more and main passes it 2 of 3 or more; otherwise it is cleared, and the report lists both. The baseline is six
   runs on main's tip, recorded with its sha: pass is 6 of 6, fail is 0 of 6, anything else intermittent. It is renewed
   at least once a day. The daily number is the baseline's pass rate: passing, failing and intermittent, an intermittent
@@ -86,9 +88,11 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c31](evidence/F-22c31.md) (2026-11-09, diagnostics): the voice fixture's "same gather" failure names the action that ran instead, the work line and what was said.
 - [F-22c50](evidence/F-22c50.md) (2026-11-11, CI): main's runs are no longer cancelled by the next push; pull requests' still are.
 - [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
+- [F-22c58](evidence/F-22c58.md) (2026-11-11): a block in the way is not planned to be broken through a torch, sign or flower in the eyes' line (break lines only); planner tests before and after; build classes 3 runs; corpus gate passed.
 - [F-22c59](evidence/F-22c59.md) (2026-11-11, diagnostics): a build walk the plan counted on and the navigator found no way for logs the plan's way and the first step the navigator will not take.
 - [F-22c60](evidence/F-22c60.md) (2026-11-11, diagnostics): a drop worth walking back for, left lying, says which check left it; portal and obsidian-pickup classes 98 of 98, 3 runs.
 - [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
+- [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
