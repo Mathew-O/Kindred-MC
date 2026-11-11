@@ -91,6 +91,7 @@
       "dev.kindred.fabric.NativeTripWoodGameTests",
       "dev.kindred.fabric.NativeCastWaterLostGameTests",
       "dev.kindred.fabric.NativeCoverClimbGameTests",
+      "dev.kindred.fabric.NativePassageSealGameTests",
       "dev.kindred.fabric.NativeWeaponToHandGameTests",
       "dev.kindred.fabric.NativeCastRefusalGameTests",
       "dev.kindred.fabric.NativeObsidianPickupGameTests",

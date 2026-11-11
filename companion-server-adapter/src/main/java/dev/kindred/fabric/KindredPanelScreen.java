@@ -284,6 +284,19 @@ final class KindredPanelScreen extends Screen {
                         y += 10;
                     }
                 }
+                // F-34c: what it was told lately on the Wire, newest first, as far as the space allows.
+                var told = bot.has("told") && bot.get("told").isJsonArray() ? bot.getAsJsonArray("told") : null;
+                if (told != null && !told.isEmpty() && y + 19 <= limit) {
+                    context.drawTextWithShadow(textRenderer, Text.literal("Told lately:"), x0, y, TEXT);
+                    y += 10;
+                    for (int i = told.size() - 1; i >= 0 && y + 9 <= limit; i--) {
+                        for (var line : textRenderer.wrapLines(Text.literal(told.get(i).getAsString()), textWidth)) {
+                            if (y + 9 > limit) break;
+                            context.drawTextWithShadow(textRenderer, line, x0, y, MUTED);
+                            y += 10;
+                        }
+                    }
+                }
             }
         }
         JsonObject bot = selected();

@@ -2577,6 +2577,33 @@ final class NativePlayerBody implements BodyAdapter {
      */
     void allowCreative(boolean allowed) { requireThread(); creativeAllowed = allowed; }
 
+    /**
+     * Why {@code target} cannot be mined from where it stands, for the refusal's message, or null when it can: out of
+     * reach, not the player's to change, nothing there, unbreakable, or out of sight, then naming the block the eyes'
+     * line to its middle meets first. On #148's CI (run 42843095037) a hideout's builder had a break refused "out of reach
+     * or not visible" from every spot the plan gave it, and waited to the end of its ticks; which it was could not be told
+     * (F-22c56's diagnostics).
+     */
+    String miningRefusal(BlockPos target) {
+        requireThread();
+        ServerWorld world = player.getServerWorld();
+        if (!player.isAlive()) return "the player is dead";
+        if (!world.isChunkLoaded(target)) return "its chunk is not loaded";
+        if (!world.getWorldBorder().contains(target)) return "outside the world border";
+        if (!player.canInteractWithBlockAt(target, 0)) {
+            return String.format(java.util.Locale.ROOT, "out of reach, %.2f from the eyes", Math.sqrt(new net.minecraft.util.math.Box(target).squaredMagnitude(player.getEyePos())));
+        }
+        if (!world.canPlayerModifyAt(player, target)) return "not the player's to change there";
+        BlockState state = world.getBlockState(target);
+        if (state.isAir()) return "nothing there";
+        if (state.getHardness(world, target) < 0) return "unbreakable";
+        if (aimPoint(target) != null) return null;
+        BlockHitResult hit = world.raycast(new RaycastContext(player.getEyePos(), Vec3d.ofCenter(target), RaycastContext.ShapeType.OUTLINE,
+                RaycastContext.FluidHandling.NONE, player));
+        return "out of sight from " + player.getBlockPos().toShortString() + ": the line to its middle meets "
+                + (hit.getType() == HitResult.Type.BLOCK ? world.getBlockState(hit.getBlockPos()) + " at " + hit.getBlockPos().toShortString() : "nothing");
+    }
+
     private boolean canMine(BlockPos target) {
         ServerWorld world = player.getServerWorld();
         if (!world.isChunkLoaded(target) || !world.getWorldBorder().contains(target)
