@@ -3820,6 +3820,70 @@ final class PortalRunCampaign {
 
     private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,
                                   Predicate<BlockPos> also) {
+        Optional<Task> task = gatherFrom(body, kind, radius, what, guarded, also);
+        if (task.isEmpty() && kind == WorldKnowledge.Kind.LOG && stuckSpells > 0 && lastTick - spellStart >= stuckTicks && logsSpell != stuckSpells) {
+            logsSpell = stuckSpells;
+            logsKeptOut(body, radius, also);
+        }
+        return task;
+    }
+
+    /** The stuck spell ({@link #stuckSpells}) whose logs kept out were last logged: once a spell. */
+    private int logsSpell, logsKeptOutLines;
+    private String logsKeptOutLast;
+
+    /** For fixtures: how many logs-kept-out lines it has logged, and the last. */
+    int logsKeptOutLinesForTest() { return logsKeptOutLines; }
+    String logsKeptOutLastForTest() { return logsKeptOutLast; }
+
+    /**
+     * Diagnostic only, no decision reads it: stuck, short of logs and its gather finding none, while logs stand within
+     * eight blocks, a line saying what kept each out (known to it or not, set aside, given up, unreachable, and the
+     * gather's own first failing rule). In seed 110's Factions run on d5057a4 Kindred circled a bamboo thicket by a tree
+     * for 4 hours with no "Mine logs" step; a replay starts its goal's memory fresh and passes, so only a live run says.
+     */
+    private void logsKeptOut(NativePlayerBody body, int radius, Predicate<BlockPos> also) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var known = new HashSet<>(knowledge.all(WorldKnowledge.Kind.LOG));
+        int logs = 0, isKnown = 0, setAsideCount = 0, givenUp = 0, unreachableCount = 0;
+        var why = new java.util.ArrayList<String>();
+        for (BlockPos pos : BlockPos.iterate(feet.add(-8, -8, -8), feet.add(8, 8, 8))) {
+            if (!world.getBlockState(pos).isIn(BlockTags.LOGS)) continue;
+            BlockPos log = pos.toImmutable();
+            logs++;
+            boolean knows = known.contains(log), aside = blocked(log), gone = treesGivenUp.contains(BlockPos.asLong(log.getX() >> 2, 0, log.getZ() >> 2)),
+                    out = unreachable(log);
+            if (knows) isKnown++;
+            if (aside) setAsideCount++;
+            if (gone) givenUp++;
+            if (out) unreachableCount++;
+            if (why.size() >= 8) continue;
+            String reason = !knows ? "not known"
+                    : aside ? (coverHeld.contains(log.asLong()) ? "set aside: cover held" : "set aside until " + blockedUntil.get(log.asLong()) + " after " + failures.getOrDefault(log.asLong(), 0) + " failures")
+                    : out ? "unreachable until " + unreachableUntil.get(log.asLong()) + " from " + (unreachableFrom.get(log.asLong()) == null ? "-" : unreachableFrom.get(log.asLong()).toShortString())
+                    : dangerous(log) ? "dangerous"
+                    : log.equals(feet.down()) ? "its own support"
+                    : log.getSquaredDistance(feet) > radius * radius ? "beyond " + radius
+                    : !also.test(log) ? "the step's own filter"
+                    : !harvestable(body, log) ? "not harvestable"
+                    : !mayWork(player, log) ? "may not work here"
+                    : log.getY() > feet.getY() + TRUNK_REACH ? "above its trunk reach"
+                    : trunkFoot(world, log).isEmpty() ? (builtIn(world, log) ? "built in" : "no trunk foot")
+                    : "usable, " + approaches.getOrDefault(log.asLong(), 0) + " approaches";
+            why.add(log.toShortString() + " " + reason + (gone ? ", tree given up" : ""));
+        }
+        if (logs == 0) return;
+        logsKeptOutLines++;
+        logsKeptOutLast = "Stuck " + (lastTick - spellStart) + " ticks and its gather found no logs, with " + logs + " within 8 blocks of "
+                + feet.toShortString() + ": " + isKnown + " known, " + setAsideCount + " set aside, " + givenUp + " given up, "
+                + unreachableCount + " unreachable; " + String.join("; ", why);
+        KindredMod.LOGGER.info("{} (spell {})", logsKeptOutLast, stuckSpells);
+    }
+
+    private Optional<Task> gatherFrom(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,
+                                      Predicate<BlockPos> also) {
         var player = body.entity();
         BlockPos feet = player.getBlockPos();
         Predicate<BlockPos> usable = gatherable(body, kind, radius, also);
