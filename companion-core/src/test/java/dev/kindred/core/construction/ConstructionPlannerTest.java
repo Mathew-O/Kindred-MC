@@ -333,6 +333,69 @@ class ConstructionPlannerTest {
         assertEquals(ConstructionPlanner.Kind.BLOCKED, next(blocks, cells, new Pos(0, 1, 0)).kind());
     }
 
+    /**
+     * A block in the way of the build, and a torch on the wall between it and the eyes. A torch is no bar to the feet,
+     * but the server's look at a block meets the torch's own shape first, and it refuses the break as out of sight. The
+     * break is planned from a spot whose line to the block's middle passes no such cell. Seen through it, a hideout's
+     * last block in the way was refused from every spot the plan gave and its builder waited to the end (#148's CI,
+     * run 42843095037; F-22c56) (F-22c58).
+     */
+    @Test
+    void aBlockInTheWayIsNotBrokenFromWhereATorchStandsInTheEyesLineToIt() {
+        var cells = BuildTestSites.flat();
+        cells.put(new Pos(2, 1, 0), BuildTestSites.solid("minecraft:dirt"));
+        var blocks = List.of(block(2, 1, 0, "minecraft:cobblestone"));
+        var open = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.BREAK, open.kind(), open.toString());
+        assertEquals(new Pos(0, 1, 0), open.stance(), "with nothing between, from where it stands: " + open);
+        cells.put(new Pos(1, 2, 0), new Cell(Kind.PASSABLE, BlockSpec.parse("minecraft:wall_torch[facing=east]"), false));
+        var lit = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.BREAK, lit.kind(), lit.toString());
+        assertEquals(new Pos(2, 1, 0), lit.target());
+        assertNotEquals(new Pos(0, 1, 0), lit.stance(), "not through the torch: " + lit);
+    }
+
+    /**
+     * A block to place, a flower between the eyes and the face it is set against: placed from where it stands all the
+     * same. A placement's click is no look the server checks against the flower's shape; barred for placements too, a
+     * pasture ward on a field of flowers was sent to farther spots and stopped on its walks to them (F-22c58).
+     */
+    @Test
+    void aFlowerInTheEyesLineDoesNotMoveWhereABlockIsPlacedFrom() {
+        var cells = BuildTestSites.flat();
+        var blocks = List.of(block(2, 1, 0, "minecraft:cobblestone"));
+        var bare = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.PLACE, bare.kind(), bare.toString());
+        for (int x = 1; x <= 2; x++) for (int y = 1; y <= 2; y++) if (!(x == 2 && y == 1)) {
+            cells.put(new Pos(x, y, 0), new Cell(Kind.PASSABLE, BlockSpec.parse("minecraft:poppy"), false));
+        }
+        var flowers = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.PLACE, flowers.kind(), flowers.toString());
+        assertEquals(bare.stance(), flowers.stance(), "the same spot as with no flowers: " + flowers);
+    }
+
+    /**
+     * The eyes' line to a block three up and two along, a solid block three up and one along: the line crosses that block's
+     * cell for a thirtieth of a block, at its corner, and the server's look meets it. Sampled every eighth of a block, the
+     * line was counted clear; a hideout's last block in the way was planned from there, refused as out of sight, and its
+     * builder waited to the end of its ticks (#192's CI, run 43015365370: "the line to its middle meets cobblestone")
+     * (F-22c58).
+     */
+    @Test
+    void aLineThatClipsASolidBlocksCornerIsNotClear() {
+        var cells = BuildTestSites.flat();
+        cells.put(new Pos(0, 4, 1), BuildTestSites.solid("minecraft:cobblestone"));
+        cells.put(new Pos(0, 4, 2), BuildTestSites.solid("minecraft:dirt"));
+        var site = new BuildSite(cells);
+        double[] eye = {0.5, 1 + ConstructionPlanner.EYE, 0.5};
+        double[] middle = {0.5, 4.5, 2.5};
+        assertFalse(ConstructionPlanner.clearSight(site, eye, middle, new Pos(0, 4, 2), new Pos(0, 4, 2), true),
+                "the line crosses (0, 4, 1) at its corner");
+        cells.put(new Pos(0, 4, 1), Cell.AIR);
+        assertTrue(ConstructionPlanner.clearSight(new BuildSite(cells), eye, middle, new Pos(0, 4, 2), new Pos(0, 4, 2), true),
+                "with that block gone, clear");
+    }
+
     /** The plan's own way to a spot it can walk to, step by step, for a failed walk's diagnostics; none where it cannot (F-22c59). */
     @Test
     void theWayThePlanWalksToASpotIsItsOwnStepByStep() {
