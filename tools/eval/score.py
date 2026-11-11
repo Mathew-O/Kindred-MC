@@ -284,6 +284,7 @@ def score(build_dir, use_metrics=True):
     per_seed, kinds, scenarios, short, other_jars = {}, set(), set(), {}, {}
     build_info = build_dir / "build.json"
     build_jar = json.loads(build_info.read_text(encoding="utf-8")).get("jar") if build_info.is_file() else None
+    free_runs = {}
     for folder in seeds:
         run_info = folder / "run.json"
         jar = json.loads(run_info.read_text(encoding="utf-8")).get("jar") if run_info.is_file() else None
@@ -295,7 +296,12 @@ def score(build_dir, use_metrics=True):
             note = result["build"][result["build"].index(SHORT) + len(SHORT):].split(";")[0].rstrip(")")
             short[folder.name] = note.lstrip(": ")
             continue
-        kinds.add(result["kind"])
+        # Free travel or free items allowed (mod-support decision 6): never earned, whatever the file's kind says.
+        policy = result.get("policy", {})
+        free = [name for name in ("teleport", "freeItems") if policy.get(name)]
+        if free:
+            free_runs[folder.name] = free
+        kinds.add("staged" if free else result["kind"])
         scenarios.add(result["scenario"])
         hours = max(result["ticksRun"], 1) / TICKS_PER_HOUR
         players, best = {}, -1
@@ -385,7 +391,7 @@ def score(build_dir, use_metrics=True):
             for cause, n in p["causes"].items():
                 causes[cause] = causes.get(cause, 0) + n
     return {"build": build_dir.name, "jar": build_jar, "otherJars": other_jars, "seeds": sorted(per_seed), "missing": missing, "short": short,
-            "kinds": sorted(kinds), "scenarios": sorted(scenarios),
+            "freeSwitches": free_runs, "kinds": sorted(kinds), "scenarios": sorted(scenarios),
             "team": team, "deathCauses": dict(sorted(causes.items(), key=lambda kv: -kv[1])),
             "stuckKinds": stuck_kinds, "deathKinds": death_kinds, "perSeed": per_seed}
 
@@ -422,6 +428,8 @@ def markdown(summary):
                                                            "; ".join(summary["scenarios"]) or "none"))
     if "staged" in summary["kinds"]:
         lines.append("These runs are staged (something was kept or edits were off): they are not earned progress.")
+    for seed, free in summary.get("freeSwitches", {}).items():
+        lines.append("Seed %s ran with %s allowed: not earned, and no ladder counts it." % (seed, " and ".join(free)))
     if summary["missing"]:
         lines.append("No result from: %s." % ", ".join(summary["missing"]))
     for seed, came in summary.get("short", {}).items():

@@ -32,6 +32,17 @@
 - Build: `./gradlew build`.
 - Native: `NativeNavigationGameTests` (the gap fixture: 0 of 3 before, passing after) with `NativeRanchGameTests`, `NativeHouseGameTests`, `NativeBuildGameTests` and `NativeLakeBedClimbGameTests` alone, 3 runs, 20 of 20 each.
 
+## A dark passage sealed from two or more mobs (F-25c4dc) — 10 November 2026 (`claude/survival-1110-seal`)
+
+- **[F-25c4dc](evidence/F-25c4dc.md):** underground in the dark, with two or more mobs after it along a passage one wide and none
+  in reach, it seals the passage on their side, feet then head, and waits behind it; the seal is held as F-25c4cy's cover
+  while a hostile is within six and 200 ticks after (product; the kept replay `kindred-43985-707`).
+  - `NativePassageSealGameTests` (staged, as it says): two zombies, with a shield, 0 of 3 without the change and 3 of 3 with it;
+    one zombie, fought and not sealed out, 3 of 3 both.
+  - Eleven classes that fight, take cover and climb (with `ReplayGameTests`), 3 runs: 129 of 129 each; the seal fired only in
+    its own fixture.
+  - The ten-seed measure against e40a17 is to come (RUNNER 2's survival-1).
+
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
 - **[F-22c45](evidence/F-22c45.md):** taking its scaffold down, the last block down a hollow is taken down from the hollow's floor when a
