@@ -274,6 +274,7 @@ public final class ReplayGameTests implements FabricGameTest {
                     if (spell) {
                         // Its goal's own progress: something gained since the scene began.
                         if (runtime.goalProgressTick(id[0]) > 0) {
+                            KindredMod.LOGGER.info("Replay {} of {}: out of its stuck spell, its goal gained something after {} ticks", run, name, context.getTick() - began[0]);
                             runtime.stop();
                             return;
                         }
@@ -284,6 +285,7 @@ public final class ReplayGameTests implements FabricGameTest {
                     context.assertTrue(context.getTick() - began[0] >= ticks, "Still running");
                     if (spell) {
                         if (outSince[0] >= 0 && context.getTick() - outSince[0] >= ticks / 2) {
+                            KindredMod.LOGGER.info("Replay {} of {}: out of its stuck spell, out of its 8 blocks for the last {} ticks", run, name, context.getTick() - outSince[0]);
                             runtime.stop();
                             return;
                         }
