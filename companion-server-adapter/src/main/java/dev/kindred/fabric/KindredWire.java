@@ -69,6 +69,23 @@ final class KindredWire {
     /** How a line reaches one person. */
     interface Speaker { void say(ServerPlayerEntity person, String words); }
 
+    /**
+     * F-34: an AI player's own voice for a line said on its behalf to a person, when a model is on. Given the message,
+     * the plain line and its prefix, it either takes the line ({@code true}), handing {@code say} the words to say on the
+     * server thread later (its own, checked, or the plain line), or declines at once ({@code false}): the plain line is
+     * said then.
+     */
+    interface Voice {
+        boolean phrase(UUID sender, ServerPlayerEntity person, Message message, String plain, String prefix, java.util.function.Consumer<String> say);
+
+        Voice NONE = (sender, person, message, plain, prefix, say) -> false;
+    }
+
+    private Voice voice = Voice.NONE;
+
+    /** Sets the voice lines said on an AI player's behalf go through; none for the plain lines alone. */
+    void voice(Voice voice) { this.voice = voice == null ? Voice.NONE : voice; }
+
     private final MinecraftServer server;
     private final Wire wire;
     private final Wording wording;
@@ -167,6 +184,13 @@ final class KindredWire {
             ServerPlayerEntity person = bodies.get(p.person());
             String words = wording.words(message, from);
             if (person == null || words == null) continue;
+            String prefix = Wording.prefix(message, from);
+            // F-34: an AI player's line in its own voice when a model is on; the plain line when it declines or fails.
+            if (sender != null && !sender.person() && words.startsWith(prefix)
+                    && voice.phrase(sender.id(), person, message, words.substring(prefix.length()), prefix, said -> speaker.say(person, said))) {
+                spoken++;
+                continue;
+            }
             speaker.say(person, words);
             spoken++;
         }
