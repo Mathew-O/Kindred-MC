@@ -315,6 +315,13 @@ final class PortalRunCampaign {
     int deaths() { return deathCount; }
     int stuckSpells() { return stuckSpells; }
 
+    /**
+     * The tick its goal last gained something (material progress, the watchdog's measure less new ground), 0 if none yet
+     * (F-27a). New ground is left out: a replay's goal starts with no ground seen, so its first step anywhere would count.
+     */
+    long lastGain() { return lastGain; }
+    private long lastGain;
+
     /** How many places in a row the watchdog has given up on, the latest included (0 once it gets on). */
     int stuckLevel() { return stuckLevel; }
     Optional<Death> lastDeath() { return Optional.ofNullable(deathsSeen.peekLast()); }
@@ -1190,6 +1197,7 @@ final class PortalRunCampaign {
         boolean newGround = seenCells.size() < 100_000
                 && seenCells.add(BlockPos.asLong(lastFeet.getX() >> 3, lastFeet.getY() >> 3, lastFeet.getZ() >> 3));
         if (gainedSomething()) {
+            lastGain = tick;
             stuckClock = 0;
             stuckLevel = 0;
             relocate = null;

@@ -203,8 +203,11 @@ public final class ReplayGameTests implements FabricGameTest {
         boolean[] died = {false}, stopped = {false};
         long[] began = {-1};
         boolean stuck = "stuck".equals(state.get("kind").getAsString());
-        // A stuck spell kept by the watchdog (F-27a): out of where it was within the spell's budget, by distance or height.
+        // A stuck spell kept by the watchdog (F-27a): out of it within the spell's budget, by its goal's own progress, or by
+        // leaving the 8 blocks round where it was caught and staying out for the budget's second half. Moving alone was not
+        // out: a loop walking between two places ("to the wall", "back the way it came") moved it 8 blocks and passed.
         boolean spell = "spell".equals(state.get("kind").getAsString());
+        long[] outSince = {-1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> {
                     context.assertTrue(runtime.isReady(), "Ready");
@@ -268,13 +271,25 @@ public final class ReplayGameTests implements FabricGameTest {
                         }
                         throw new net.minecraft.test.GameTestException("Replay " + run + ": died again, as it did (" + state.get("cause").getAsString() + ")");
                     }
-                    // A stuck spell's scene passes the moment it is out, within its budget; at the budget's end still in, it fails.
-                    if (spell && (body.getPos().distanceTo(from[0]) > 8 || body.getY() - from[0].y >= 3)) {
-                        runtime.stop();
-                        return;
+                    if (spell) {
+                        // Its goal's own progress: something gained since the scene began.
+                        if (runtime.goalProgressTick(id[0]) > 0) {
+                            runtime.stop();
+                            return;
+                        }
+                        boolean out = body.getPos().distanceTo(from[0]) > 8;
+                        if (!out) outSince[0] = -1;
+                        else if (outSince[0] < 0) outSince[0] = context.getTick();
                     }
                     context.assertTrue(context.getTick() - began[0] >= ticks, "Still running");
-                    if (spell) throw new net.minecraft.test.GameTestException("Replay " + run + ": still where it was stuck after " + ticks + " ticks");
+                    if (spell) {
+                        if (outSince[0] >= 0 && context.getTick() - outSince[0] >= ticks / 2) {
+                            runtime.stop();
+                            return;
+                        }
+                        throw new net.minecraft.test.GameTestException("Replay " + run + ": still in its stuck spell after " + ticks + " ticks"
+                                + (outSince[0] >= 0 ? " (out of its 8 blocks only for the last " + (context.getTick() - outSince[0]) + ")" : ""));
+                    }
                     if (stuck) {
                         context.assertTrue(body.getPos().distanceTo(from[0]) > 8 || completed[0] > 0, "Replay " + run + ": stuck where it was");
                     }

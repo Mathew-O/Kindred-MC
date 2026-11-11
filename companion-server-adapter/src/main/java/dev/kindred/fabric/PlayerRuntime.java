@@ -14255,6 +14255,13 @@ final class PlayerRuntime {
         return Optional.empty();
     }
 
+    /** The tick its goal last gained something, 0 with none or no goal: read only, for a corpus scene's pass (F-27a). */
+    long goalProgressTick(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? 0 : entry.campaign.lastGain();
+    }
+
     /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
     PortalRunCampaign campaignForTest(UUID id) {
         requireThread();
