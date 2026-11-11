@@ -9925,6 +9925,35 @@ final class PlayerRuntime {
      * dev.kindred.core.construction.RailRoute}), the steps along it, and the cart. The hall's door is taken off for the
      * line and put back after; the rails it lays it takes up again; nothing owned is left but what holds the villager.
      */
+    /**
+     * Whether a boat on the ground could be rowed in a straight line from one spot to another without its box meeting a
+     * block or a hard entity, as far as the water: once over water what stands ahead is a shore, which the row itself ends at.
+     */
+    private static boolean boatRunClear(net.minecraft.server.world.ServerWorld world, net.minecraft.entity.vehicle.BoatEntity boat,
+                                        double fromX, double fromZ, double toX, double toZ) {
+        double length = Math.hypot(toX - fromX, toZ - fromZ);
+        double y = boat.getY() + 0.05;
+        for (double t = 0; t <= length; t += 0.25) {
+            double x = fromX + (toX - fromX) * t / Math.max(length, 1e-6), z = fromZ + (toZ - fromZ) * t / Math.max(length, 1e-6);
+            if (world.getFluidState(BlockPos.ofFloored(x, y - 0.5, z)).isIn(net.minecraft.registry.tag.FluidTags.WATER)) return true;
+            var box = new net.minecraft.util.math.Box(x - 0.6875, y, z - 0.6875, x + 0.6875, y + 0.5625, z + 0.6875);
+            if (!world.isSpaceEmpty(boat, box)) return false;
+        }
+        return true;
+    }
+
+    /** The nearest spot to one side of the boat's way, two to six blocks off it, from which it runs clear to the water. */
+    private static Vec3d boatDetour(net.minecraft.server.world.ServerWorld world, net.minecraft.entity.vehicle.BoatEntity boat, double toX, double toZ) {
+        double dx = toX - boat.getX(), dz = toZ - boat.getZ(), length = Math.hypot(dx, dz);
+        if (length < 1e-6) return null;
+        double px = -dz / length, pz = dx / length;
+        for (double k : new double[] {2, -2, 3, -3, 4, -4, 5, -5, 6, -6}) {
+            double x = boat.getX() + px * k, z = boat.getZ() + pz * k;
+            if (boatRunClear(world, boat, boat.getX(), boat.getZ(), x, z) && boatRunClear(world, boat, x, z, toX, toZ)) return new Vec3d(x, boat.getY(), z);
+        }
+        return null;
+    }
+
     private static final class Bring {
         enum Phase { HOLD, BOARD, ROW, LAND, BRIDGE, DOOR, OPEN, LAY, CART, PUSH, RECART, ROLL, LINTEL, SHUT, FREE, FETCH, CLOSE, UNDO, TIDY, UNBRIDGE,
             DOOR_BACK, KEEP }
@@ -9967,6 +9996,13 @@ final class PlayerRuntime {
         BlockPos dock;
         int rows;
         Vec3d rowFrom;
+        /** Where the boat is being rowed aside to over the ground, round what stands in its way, or null (E-45e1). */
+        Vec3d aside;
+        /** Whether it went aside; and the rows done before the crossing proper, which the far bank's test does not count. */
+        boolean wentAside;
+        int rowsAside, asideAtRows;
+        /** Whether it has walked to the boat's spot rather than the villager (said once). */
+        boolean walkedToSpot;
         /** The hall's blocks taken out over the line for a villager riding in its boat, and what each was, to put back. */
         final Map<BlockPos, net.minecraft.block.BlockState> opened = new LinkedHashMap<>();
         final String wood;
@@ -10232,7 +10268,18 @@ final class PlayerRuntime {
                     return List.of(waitTask(hold, "For the " + b.noun + " to stand still"));
                 }
                 Vec3d top = aim != null ? aim : new Vec3d(ground.getX() + 0.5, ground.getY() + 1.0, ground.getZ() + 0.5);
-                if (player.getEyePos().distanceTo(top) > 3.5) return List.of(goNear(hold, villager.getBlockPos()));
+                // Near the villager, as before; but there already (a walk to it ends within two and a half blocks) with the spot on
+                // its far side still out of reach, near the spot itself. Else the walk to the villager was asked for again and
+                // again, ending at once each time, until the runtime's stop (E-45e1's staged librarian behind its lectern).
+                if (player.getEyePos().distanceTo(top) > 3.5) {
+                    boolean byIt = player.getPos().distanceTo(villager.getPos()) <= 3.0;
+                    if (byIt && !b.walkedToSpot) {
+                        b.walkedToSpot = true;
+                        KindredMod.LOGGER.info("{} bringing: by the {} with the boat's spot out of reach; to the spot, {}", entry.data.displayName(), b.noun,
+                                BlockPos.ofFloored(top).toShortString());
+                    }
+                    return List.of(goNear(hold, byIt ? BlockPos.ofFloored(top) : villager.getBlockPos()));
+                }
                 var args = new java.util.HashMap<>(Map.of("mode", "place", "slot", String.valueOf(boatSlot),
                         "x", String.valueOf(ground.getX()), "y", String.valueOf(ground.getY()), "z", String.valueOf(ground.getZ())));
                 if (aim != null) {
@@ -10266,14 +10313,43 @@ final class PlayerRuntime {
                 double wx = water.x() + 0.5, wz = water.z() + 0.5;
                 double left = Math.hypot(boat.getX() - wx, boat.getZ() - wz);
                 // There, or aground against the far bank well across (a row ends at the first shore met afloat).
-                boolean ashore = b.rows > 0 && boat.isTouchingWater() && left < b.rowFrom.distanceTo(new Vec3d(wx, b.rowFrom.y, wz)) / 2;
+                boolean ashore = b.rows > b.rowsAside && boat.isTouchingWater() && left < b.rowFrom.distanceTo(new Vec3d(wx, b.rowFrom.y, wz)) / 2;
                 if (left <= 2.5 || ashore) {
                     KindredMod.LOGGER.info("{} bringing: rowed the {} across to {} ({} rows), {} off the landing", entry.data.displayName(), b.noun,
                             boat.getBlockPos().toShortString(), b.rows, String.format(java.util.Locale.ROOT, "%.1f", left));
                     b.phase = Bring.Phase.LAND;
                     return bringCandidates(entry, body);
                 }
-                if (b.rows >= 4) return giveUp(entry, body, "I couldn't row the " + b.noun + " across.");
+                if (b.rows >= 4 + b.rowsAside) return giveUp(entry, body, "I couldn't row the " + b.noun + " across.");
+                // Still on the ground with something standing between it and the water (the villager's lectern, say): a boat
+                // rowed over land cannot climb a block, and pressed against it goes nowhere. So first aside, to where both the
+                // way there and the way on to the water are clear. That spot is rowed to until the row to it ends (arrived, or
+                // aground), not judged again while the boat is on its way (E-45e1).
+                if (b.aside != null && b.rows > b.asideAtRows) b.aside = null;
+                if (b.aside != null) {
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", b.aside.x),
+                            "z", String.format(java.util.Locale.ROOT, "%.2f", b.aside.z), "range", "1.0", "seconds", "60", "land", "true")));
+                }
+                if (!boat.isTouchingWater() && !boatRunClear(world, boat, boat.getX(), boat.getZ(), wx, wz)) {
+                    if (b.aside == null) {
+                        b.aside = boatDetour(world, boat, wx, wz);
+                        b.asideAtRows = b.rows;
+                        if (b.aside != null) KindredMod.LOGGER.info("{} bringing: the way to the water blocked; rowing the {} aside to {}, {} first", entry.data.displayName(), b.noun,
+                                String.format(java.util.Locale.ROOT, "%.1f", b.aside.x), String.format(java.util.Locale.ROOT, "%.1f", b.aside.z));
+                    }
+                    if (b.aside != null) {
+                        b.wentAside = true;
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", b.aside.x),
+                                "z", String.format(java.util.Locale.ROOT, "%.2f", b.aside.z), "range", "1.0", "seconds", "60", "land", "true")));
+                    }
+                }
+                b.aside = null;
+                // The crossing proper from here: its start and its rows, for the far bank's test.
+                if (b.wentAside) {
+                    b.wentAside = false;
+                    b.rowFrom = boat.getPos();
+                    b.rowsAside = b.rows;
+                }
                 return List.of(new NativeTaskCandidate(bringTask(entry, "row:" + b.rows), "native_row", Map.of("x", String.format(java.util.Locale.ROOT, "%.2f", wx),
                         "z", String.format(java.util.Locale.ROOT, "%.2f", wz), "range", "1.5", "seconds", "90", "land", "true")));
             }
