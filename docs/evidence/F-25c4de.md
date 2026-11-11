@@ -2,8 +2,8 @@
 
 Date: 2026-11-11
 Agent / branch: Claude, LOOPS (claude/f25c4de-swimup-1111)
-Build: 0dda410 on main bc49b07
-Status: in progress (the corpus gate on main with #164 to come)
+Build: bae60a6 (main acb8a73 merged in)
+Status: in progress (checked when merged)
 
 ## Scope and implementation
 
@@ -45,7 +45,14 @@ The seven still failing each have another cause:
 
 None is the hover.
 
-## Remaining
+## The corpus gate (bae60a6, against the 084dde5 baseline, three runs and the confirm step against main a60f919)
 
-The corpus gate on main once #164 (the harness and its baseline) has landed, with the 22 scenes' counts from the gate's
-runs on main and the branch.
+- **Whole corpus:** 119 of 275 pass (43.3%) over three runs: 90 fail and 66 are intermittent. Factions is 18 of 50 and
+  survival 101 of 225. Replay players left after their batch: 0, 0, 0.
+- **Flagged:** 1 (`e40a14-80b7150-8675309-kindred-120887`). Confirm cleared it: the branch failed it 1 of 3 alone, and
+  main passed it 3 of 3. Confirmed: 0. The gate passes.
+- **The 22 drowning scenes in the gate's runs:** 13 pass, 1 intermittent, 8 fail. The baseline had 0 pass, 2 intermittent
+  and 20 fail.
+
+The seven or eight still failing have other causes (above). They go to a child of their own if one of those causes is
+shared.
