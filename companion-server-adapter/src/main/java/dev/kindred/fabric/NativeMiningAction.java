@@ -97,6 +97,16 @@ final class NativeMiningAction extends NativeRecordedAction {
                 ? body.entity().getWorld().getBlockState(target) : "unloaded") + "; toolSlot=" + slot
                 + "; tool=" + Registries.ITEM.getId(actual.getItem()) + "; count=" + actual.getCount() + "; damage=" + actual.getDamage();
     }
+    /**
+     * Its refusal before any break was issued: the target, tool, claim or policy changed between the mine's plan and its
+     * dispatch. Nothing was done, so the outcome is certain, not ambiguous; a mine planned again re-checks all of them
+     * (F-22c63). Every other refusal says otherwise.
+     */
+    static final String UNBROKEN = "Mining preconditions changed before dispatch; no break issued";
+
+    /** Whether {@code reason} is {@link #UNBROKEN}: a mine refused with nothing issued. */
+    static boolean nothingIssued(String reason) { return reason != null && reason.startsWith(UNBROKEN); }
+
     private Step waiting() { return Step.running(Map.of("durableAction", phase(), "mining", String.valueOf(started)), false); }
 
     @Override public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
@@ -125,7 +135,7 @@ final class NativeMiningAction extends NativeRecordedAction {
         }
         if (admission.phase() == ActionAdmission.Phase.READY) {
             if (!ownsClaim() || !eligible()) {
-                result = Step.blocked("Mining preconditions changed before dispatch; no break issued", true);
+                result = Step.blocked(UNBROKEN, true);
                 flush = admission.close();
                 return waiting();
             }
