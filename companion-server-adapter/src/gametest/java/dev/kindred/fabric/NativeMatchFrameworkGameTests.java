@@ -486,7 +486,9 @@ public final class NativeMatchFrameworkGameTests implements FabricGameTest {
                     person[0] = MockPlayers.survival(context, "Nell", new BlockPos(1, 2, 1));
                     context.assertTrue(f.runtime.setWorldMode(person[0].getCommandSource(), GameModes.WorldMode.SPEEDRUN) == 0 && f.runtime.worldMode() == null,
                             "Not chosen by a player without operator rights");
-                    context.assertTrue(f.runtime.setWorldMode(f.source, GameModes.WorldMode.FACTIONS) == 0, "Factions not playable yet");
+                    // Factions is an operator's choice too (its own fixture: NativeFactionsModeGameTests).
+                    context.assertTrue(f.runtime.setWorldMode(person[0].getCommandSource(), GameModes.WorldMode.FACTIONS) == 0 && f.runtime.worldMode() == null,
+                            "Factions not chosen by a player without operator rights");
                     // Every other condition of each match met (fresh starts, edits, the dragon fight's leave, PvP), so
                     // the world's mode is the only reason left to refuse one.
                     f.runtime.setDragonFightForTest(true);

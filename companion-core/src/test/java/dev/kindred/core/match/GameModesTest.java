@@ -23,13 +23,20 @@ class GameModesTest {
     }
 
     @Test
-    void eachModeMapsOntoThePlaystyleAndFactionsIsNotPlayableYet() {
+    void eachModeMapsOntoThePlaystyleAndEveryModeIsAnOperatorsChoice() {
         assertEquals(PlaystyleProfile.OPTIMAL_SURVIVAL, GameModes.WorldMode.COOP_SURVIVAL.playstyle);
         assertEquals(PlaystyleProfile.SPEEDRUN_ANY_PERCENT, GameModes.WorldMode.SPEEDRUN.playstyle);
         assertEquals(PlaystyleProfile.IDLE_OBSERVING, GameModes.WorldMode.BUILDER.playstyle);
         assertEquals(PlaystyleProfile.IDLE_OBSERVING, GameModes.playstyle(null, PlaystyleProfile.IDLE_OBSERVING), "no mode: as it was");
-        assertFalse(GameModes.WorldMode.FACTIONS.playable);
-        for (var mode : GameModes.WorldMode.values()) if (mode != GameModes.WorldMode.FACTIONS) assertTrue(mode.playable, mode.label);
+        for (var mode : GameModes.WorldMode.values()) assertTrue(mode.playable, mode.label);
+    }
+
+    @Test
+    void factionsToldWhoMayFightAsD7HasIt() {
+        var rules = GameModes.rules(GameModes.WorldMode.FACTIONS);
+        assertTrue(rules.lines().contains("Fighting: only between members of different factions, never in safe zones; joining a faction is joining the match; leave it any time"),
+                rules.lines().toString());
+        for (String line : rules.lines()) assertFalse(line.contains("not playable") || line.contains("not yet"), line);
     }
 
     @Test
