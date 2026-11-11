@@ -91,6 +91,49 @@ public final class NativeWireGameTests implements FabricGameTest {
         return out;
     }
 
+    /**
+     * F-34: words through the voice. An AI player's line to a person goes through its voice: what the voice says is said,
+     * its prefix kept; a voice that declines leaves the plain line; a person's own line never goes through it. The
+     * voice is given the plain body alone, never the prefix, and is asked once for each person who hears it.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "wireVoice")
+    public void anAiPlayersLineToAPersonIsInItsOwnVoiceOrThePlainLine(TestContext context) {
+        var s = new Stand(context, Set.of());
+        UUID wren = s.aiPlayer(context, "Wren", new BlockPos(1, 2, 1), faction("oak"));
+        var mat = s.person(context, "Mat", new BlockPos(1, 2, 2), faction("oak"));
+        var kit = s.person(context, "Kit", new BlockPos(2, 2, 2), faction("oak"));
+        var asked = new ArrayList<String>();
+        boolean[] takes = {true};
+        s.wire.voice((sender, person, message, plain, prefix, say) -> {
+            asked.add(person.getName().getString() + "|" + sender + "|" + plain + "|" + prefix);
+            if (!takes[0]) return false;
+            say.accept(prefix + "Raid on birch's east wall at dusk, be there.");
+            return true;
+        });
+        var raid = facts("target", Fact.of("birch's east wall", Visibility.FACTION), "when", Fact.of("dusk", Visibility.FACTION));
+        context.assertTrue(s.wire.send(Message.of("faction.raid_planned", wren, Scope.faction("oak"), raid, List.of())).sent(), "Sent");
+        context.assertTrue(s.heardBy(mat).equals(List.of("[faction] Wren: Raid on birch's east wall at dusk, be there.")), "Mat hears its own words: " + s.heardBy(mat));
+        context.assertTrue(s.heardBy(kit).equals(List.of("[faction] Wren: Raid on birch's east wall at dusk, be there.")), "And Kit: " + s.heardBy(kit));
+        context.assertTrue(asked.size() == 2 && asked.stream().allMatch(a -> a.endsWith("|" + wren + "|raid planned: target birch's east wall, when dusk.|[faction] Wren: ")),
+                "Asked once a person, with the plain body and the prefix apart: " + asked);
+        // Declined: the plain line.
+        takes[0] = false;
+        s.now.addAndGet(120_000);
+        context.assertTrue(s.wire.send(Message.of("faction.raid_planned", wren, Scope.faction("oak"),
+                facts("target", Fact.of("birch's gate", Visibility.FACTION), "when", Fact.of("dawn", Visibility.FACTION)), List.of())).sent(), "Sent again");
+        context.assertTrue(s.heardBy(mat).getLast().equals("[faction] Wren: raid planned: target birch's gate, when dawn."), "The plain line: " + s.heardBy(mat));
+        // A person's own words never go through the voice.
+        int before = asked.size();
+        s.now.addAndGet(120_000);
+        var said = new Message("faction.chat", s.wire.idOf(mat), Scope.faction("oak"), facts("said", Fact.of("on my way", Visibility.FACTION)), List.of(),
+                Message.Origin.PERSON_WORDS);
+        context.assertTrue(s.wire.send(said).sent(), "Mat's words sent");
+        context.assertTrue(asked.size() == before, "No voice for a person's words: " + asked);
+        context.assertTrue(s.heardBy(kit).getLast().equals("[faction] Mat: chat: said on my way."), "Kit hears Mat's words plainly: " + s.heardBy(kit));
+        s.cleanup(context);
+        context.complete();
+    }
+
     /** A faction's announcement: its member (a person) hears it, its AI member is told it, the outsider beside them neither. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "wire")
     public void aFactionAnnouncementReachesAMemberAndNotAnOutsider(TestContext context) {

@@ -7527,6 +7527,7 @@ final class PortalRunCampaign {
                 long since = dropWaits.computeIfAbsent(drop.getUuid(), id -> lastTick);
                 if (lastTick - since < 100) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Wait for the drop to settle"));
             }
+            leftBehind(player, near, saplings);
             return Optional.empty();
         }
         ItemEntity nearest = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
@@ -7536,6 +7537,32 @@ final class PortalRunCampaign {
         // through the cell the next block was coming down into, and was buried there (F-25c4cl).
         if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
         return Optional.of(go(nearest.getBlockPos(), 0.6, false, label));
+    }
+
+    /** The drops it was told of leaving behind, by their id, each told once (F-22c60's diagnostics). */
+    private final Set<java.util.UUID> toldLeft = new HashSet<>();
+
+    /**
+     * A drop worth walking back for, close by, that it is leaving to go on: each check that kept it from a pickup, said
+     * once at info. A fixture's obsidian, mined from lava under poured water, was left lying under CI's load as the
+     * player went on exploring, its waits for the drop to settle cut short; which check left it could not be told
+     * (#161's and #162's CI) (F-22c60's diagnostics).
+     */
+    private void leftBehind(ServerPlayerEntity player, Box near, boolean saplings) {
+        var world = player.getServerWorld();
+        for (ItemEntity drop : world.getEntitiesByClass(ItemEntity.class, near, d -> d.isAlive() && keep(d.getStack(), saplings))) {
+            if (toldLeft.size() > 256) toldLeft.clear();
+            if (!toldLeft.add(drop.getUuid())) continue;
+            var fluid = world.getFluidState(drop.getBlockPos());
+            Long since = dropWaits.get(drop.getUuid());
+            KindredMod.LOGGER.info("{} leaves {} lying at {} ({}): in sight {}, blocked {}, watched {}, in water {}{}, settle wait {}, within the wait's reach {}; the obsidian site {}; the player at {}",
+                    player.getName().getString(), drop.getStack(), drop.getBlockPos().toShortString(),
+                    String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f", drop.getX(), drop.getY(), drop.getZ()),
+                    player.canSee(drop), blocked(drop.getBlockPos()), watched(world, drop), !fluid.isEmpty(), fluid.isEmpty() ? "" : fluid.isStill() ? " (still)" : " (flowing)",
+                    since == null ? "none" : (lastTick - since) + " ticks", player.getBoundingBox().expand(5, 3, 5).contains(drop.getPos()),
+                    obsidianSite == null ? "none" : obsidianSite.lava().toShortString(),
+                    String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f", player.getX(), player.getY(), player.getZ()));
+        }
     }
 
     /**
