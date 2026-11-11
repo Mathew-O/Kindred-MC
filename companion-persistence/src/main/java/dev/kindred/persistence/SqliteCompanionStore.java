@@ -1513,6 +1513,68 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 13) migrate(13, "V13__action_fold.sql");
         }
         recover();
+        try (Statement query = database.createStatement(); ResultSet row = query.executeQuery("SELECT COALESCE(MAX(id), 0) FROM world_events")) {
+            long last = row.next() ? row.getLong(1) : 0;
+            synchronized (written) {
+                writtenThrough = Math.max(writtenThrough, last);
+            }
+        }
+    }
+
+    // ----- The Record's growth, for the cost gauge -----
+
+    /**
+     * What the World Record has been given since this store opened, by kind: rows and characters (the data as encoded,
+     * the subject and the place), and the last id it holds. Every insert counts, the journal's and the action ledger's
+     * included (each written in its own row's transaction), and only once its transaction has committed.
+     */
+    public record Growth(Map<String, long[]> byKind, long rows, long characters, long through) {
+        public Growth {
+            var copy = new java.util.TreeMap<String, long[]>();
+            byKind.forEach((k, v) -> copy.put(k, v.clone()));
+            byKind = java.util.Collections.unmodifiableMap(copy);
+        }
+    }
+
+    /** Committed counts, guarded by itself; read from any thread. */
+    private final Map<String, long[]> written = new java.util.TreeMap<>();
+    private long writtenThrough;
+    /** Inserts of the transaction now open, on the writer thread only; counted at its commit, dropped at a rollback. */
+    private final Map<String, long[]> pending = new HashMap<>();
+    private long pendingThrough;
+
+    /** The Record's growth since this store opened. */
+    public Growth growth() {
+        synchronized (written) {
+            long rows = 0, chars = 0;
+            for (long[] v : written.values()) {
+                rows += v[0];
+                chars += v[1];
+            }
+            return new Growth(written, rows, chars, writtenThrough);
+        }
+    }
+
+    private void counted(WorldEvent event) throws SQLException {
+        long chars = EventData.encode(event.data()).length() + event.subject().length() + event.place().length();
+        var into = database.getAutoCommit() ? new HashMap<String, long[]>() : pending;
+        var k = into.computeIfAbsent(event.kind(), x -> new long[2]);
+        k[0]++;
+        k[1] += chars;
+        pendingThrough = Math.max(pendingThrough, event.id());
+        if (into != pending) commitCounts(into);
+    }
+
+    private void commitCounts(Map<String, long[]> counts) {
+        synchronized (written) {
+            counts.forEach((kind, v) -> {
+                var k = written.computeIfAbsent(kind, x -> new long[2]);
+                k[0] += v[0];
+                k[1] += v[1];
+            });
+            writtenThrough = Math.max(writtenThrough, pendingThrough);
+        }
+        counts.clear();
     }
 
     private void migrate(int version, String resource) throws Exception {
@@ -1751,7 +1813,9 @@ public final class SqliteCompanionStore {
         }
         try (Statement query = database.createStatement(); ResultSet row = query.executeQuery("SELECT last_insert_rowid()")) {
             if (!row.next()) throw new SQLException("Missing event id");
-            return draft.withId(row.getLong(1));
+            var event = draft.withId(row.getLong(1));
+            counted(event);
+            return event;
         }
     }
 
@@ -2018,9 +2082,14 @@ public final class SqliteCompanionStore {
         try {
             T result = work.run();
             database.commit();
+            commitCounts(pending);
             return result;
         } catch (Exception failure) {
             try { database.rollback(); } catch (SQLException rollback) { failure.addSuppressed(rollback); }
+            pending.clear();
+            synchronized (written) {
+                pendingThrough = writtenThrough;
+            }
             throw failure;
         } finally {
             database.setAutoCommit(true);

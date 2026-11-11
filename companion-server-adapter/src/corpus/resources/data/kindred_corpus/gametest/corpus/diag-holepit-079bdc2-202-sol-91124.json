@@ -1,0 +1,243 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 91124,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -47,
+  60,
+  -51
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.54919865442598,
+  8.0,
+  16.638398589864508
+ ],
+ "yaw": 161.96045,
+ "pitch": 18.063574,
+ "health": 5.633333,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 23
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 8
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 71
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 17
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 28
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 44
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 9
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 30
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 31
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:dandelion",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 6
+    }
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 19124,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from spider the way it came",
+ "task": "Back off from spider the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[07:26:06] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:26:06] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[07:26:07] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[07:26:07] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:26:08] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[07:26:09] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:26:10] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[07:26:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:26:10] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[07:26:11] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:26:11] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[07:26:12] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[07:26:14] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at -93, 37, 105]",
+  "[07:26:14] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[07:26:15] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[07:26:15] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]",
+  "[07:26:16] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+  "[07:26:17] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider the way it came]",
+  "[07:26:18] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from spider the way it came]",
+  "[07:26:18] [Server thread/INFO]: Sol died at -31, 68, -35: Sol was slain by Spider (tick 91124, night, under the sky, hunger 15, armour 0, holding nothing, a shield; doing \"Back off from spider the way it came\" in \"Iron: fight back - Back off from spider the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "diag-holepit-079bdc2",
+  "seed": "202",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-holepit-1111@4a9f0ff:diag-holepit-079bdc2/202/replays/world/Sol-91124",
+  "class": "death: spider",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

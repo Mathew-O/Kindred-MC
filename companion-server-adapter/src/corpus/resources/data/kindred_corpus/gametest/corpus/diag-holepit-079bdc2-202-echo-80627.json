@@ -1,0 +1,334 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 80627,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -105,
+  -59,
+  -139
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.260187593241383,
+  8.0,
+  16.250557363028946
+ ],
+ "yaw": -147.9208,
+ "pitch": -8.69667,
+ "health": 20.0,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:black_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 59
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cherry_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 30
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cooked_mutton",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 96
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 19
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 4
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:pink_petals",
+    "count": 3
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:light_gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 3
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 10
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 2
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 3
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 6
+    }
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:cherry_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 16
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 48
+    }
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 8627,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: outmatched - Hole up: recover behind the wall",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Echo was slain by Slime",
+ "ticks": 1200,
+ "log": [
+  "[07:23:31] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward lava: clear -66, -44, -142]",
+  "[07:23:31] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward lava: clear -66, -45, -142]",
+  "[07:23:32] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward lava: clear -66, -46, -142]",
+  "[07:23:32] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward lava: step down]",
+  "[07:23:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -65, -50, -127 [Explore the cave toward lava]",
+  "[07:23:34] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]",
+  "[07:23:35] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[07:23:36] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:36] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:37] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:39] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:39] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:40] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:40] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -68, -49, -133 [Explore the cave toward lava]",
+  "[07:23:41] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:42] [Server thread/INFO]: Echo native_goto COMPLETED [Explore the cave toward lava]",
+  "[07:23:43] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]",
+  "[07:23:45] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[07:23:45] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3169]",
+  "[07:23:45] [Server thread/INFO]: Echo died at -89, -51, -123: Echo was slain by Slime (tick 80627, day, under cover, hunger 20, armour 6, holding cooked_mutton, a shield; doing \"native_eat\" in \"Iron: outmatched - Hole up: recover behind the wall\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "diag-holepit-079bdc2",
+  "seed": "202",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-holepit-1111@4a9f0ff:diag-holepit-079bdc2/202/replays/world/Echo-80627",
+  "class": "death: slime",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

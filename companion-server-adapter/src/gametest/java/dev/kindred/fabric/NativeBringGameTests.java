@@ -159,6 +159,21 @@ public final class NativeBringGameTests implements FabricGameTest {
         scene(context, false, false, false, false, true, true, false, false, true);
     }
 
+    /**
+     * As the lake's, the librarian taken into Hal's boat south of its own lectern, the lectern (with a fence either side,
+     * four blocks across) between it and the water:
+     * Hal rows it aside over the ground, round the lectern, then into the water and across. In CI on #145 (`adbbf79`,
+     * run 42859042644) the strolling librarian was held there, and the boat, rowed straight at the water over land, was
+     * pressed against the lectern four times and went nowhere ("I couldn't row the librarian across"); the bring's
+     * second try ran past the runtime's stop ("Hal still in play"). Staged: the librarian, its AI on but slowed to a stand
+     * until it sits in a boat, first on the bank, where the crossing is planned from, and moved behind its lectern as
+     * Hal sets about holding it in a boat.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringBehind", tickLimit = 16000)
+    public void aLibrarianHeldBehindItsLecternIsRowedRoundIt(TestContext context) {
+        scene(context, false, false, false, false, true, true, false, false, false, true);
+    }
+
     private static void scene(TestContext context, boolean make) {
         scene(context, make, false);
     }
@@ -195,6 +210,11 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated) {
+        scene(context, make, wander, river, mine, strolling, lake, slowed, derailed, seated, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
+                              boolean slowed, boolean derailed, boolean seated, boolean behind) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         boolean[] damped = {false};
@@ -226,6 +246,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                     world.setTimeOfDay(strolling ? 3000 : 1000);
                     if (strolling) {
                         world.setBlockState(o.add(4, 2, 4).add(5, 0, 20), Blocks.LECTERN.getDefaultState());
+                        // Behind: a fence either side of the lectern, four blocks across in all, so that a boat rowed at it over
+                        // the ground meets it squarely (one met just off the lectern's middle slid by it).
+                        if (behind) for (int x : new int[] {4, 6, 7}) world.setBlockState(o.add(4, 2, 4).add(x, 0, 20), Blocks.OAK_FENCE.getDefaultState());
                         // A fence round the field's edge, as a pen's: a librarian that strolls off it fell into the ground about.
                         for (int x = -8; x <= 24; x++) for (int z : new int[] {-8, 34}) world.setBlockState(o.add(x, 2, z), Blocks.OAK_FENCE.getDefaultState());
                         for (int z = -8; z <= 34; z++) for (int x : new int[] {-8, 24}) world.setBlockState(o.add(x, 2, z), Blocks.OAK_FENCE.getDefaultState());
@@ -263,9 +286,14 @@ public final class NativeBringGameTests implements FabricGameTest {
                     world.getEntitiesByClass(VillagerEntity.class, new net.minecraft.util.math.Box(origin[0]).expand(48), v -> true).forEach(VillagerEntity::discard);
                     // A librarian that has traded, twelve blocks south of the door, selling a Mending book.
                     var villager = EntityType.VILLAGER.create(world);
-                    BlockPos at = origin[0].add(3, 0, 20);
+                    // Behind: first on the bank by the water, where the crossing is planned from.
+                    BlockPos at = behind ? origin[0].add(4, 0, 19) : origin[0].add(3, 0, 20);
                     villager.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 180, 0);
                     villager.setAiDisabled(!strolling);
+                    // Behind: its AI on, as a strolling librarian's (the bring takes such a one by boat), but kept from
+                    // walking off until it sits in Hal's boat.
+                    if (behind) villager.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+                            net.minecraft.entity.effect.StatusEffects.SLOWNESS, 20 * 600, 9, false, false));
                     villager.setVillagerData(new VillagerData(VillagerType.PLAINS, VillagerProfession.LIBRARIAN, 1));
                     villager.setExperience(1);
                     var offers = new net.minecraft.village.TradeOfferList();
@@ -358,6 +386,23 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 && offLine[0] == null) offLine[0] = "the cart at "
                                 + cart.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()) + ", past the line's first rail at "
                                 + firstRail[0].subtract(origin[0]).toShortString();
+                    }
+                    // Behind: the crossing planned from the bank and Hal about to hold it in a boat, it strolls off south of its
+                    // lectern (at 5, 0, 20), in line with it and the water; there it is held.
+                    if (behind && !moved[0]) {
+                        if (String.valueOf(f.runtime.bringNote(f.id)).contains("[HOLD]")) {
+                            var to = origin[0].add(5, 0, 25);
+                            librarian[0].refreshPositionAndAngles(to.getX() + 0.5, to.getY(), to.getZ() + 0.5, 180, 0);
+                            moved[0] = true;
+                            KindredMod.LOGGER.info("Bring: the librarian strolled off behind its lectern, to {}", to.subtract(origin[0]).toShortString());
+                        }
+                    }
+                    // Behind: once in the boat, free to walk again: let go of, it would wade home.
+                    if (behind && librarian[0].hasStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOWNESS)
+                            && librarian[0].getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity) {
+                        librarian[0].removeStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOWNESS);
+                        KindredMod.LOGGER.info("Bring: the librarian sits in the boat behind its lectern, at {}",
+                                librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
                     }
                     // Staged: the boat Hal put down beside the librarian, stood empty past Hal's wait for it, stepped into by the
                     // librarian, as a strolling villager steps into one a moment late (F-22c32).

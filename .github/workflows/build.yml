@@ -32,6 +32,8 @@ jobs:
         run: python3 tools/support-batch-01/support.py manifest
       - name: Check tracker IDs and evidence references
         run: python3 tools/support-batch-01/support.py tracker
+      - name: Check every GameTest class is registered
+        run: python3 tools/support-batch-01/support.py entrypoints
   build:
     runs-on: ubuntu-latest
     # The build and the whole native suite: on 2 November the suite outgrew 60 minutes (cut off at about 93%).

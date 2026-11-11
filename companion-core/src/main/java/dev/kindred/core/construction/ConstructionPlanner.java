@@ -414,7 +414,7 @@ public final class ConstructionPlanner {
     static boolean doorStep(Pos ground, Map<Pos, BlockSpec> wanted) {
         for (var e : wanted.entrySet()) {
             Pos door = e.getKey();
-            if (!e.getValue().block().endsWith("_door") || "upper".equals(e.getValue().property("half"))) continue;
+            if (!dev.kindred.core.Capabilities.current().is(VanillaIds.DOORS, e.getValue().block()) || "upper".equals(e.getValue().property("half"))) continue;
             int dy = door.y() - ground.y();
             if ((dy == 0 || dy == 1) && Math.abs(door.x() - ground.x()) + Math.abs(door.z() - ground.z()) == 1) return true;
         }
@@ -569,7 +569,7 @@ public final class ConstructionPlanner {
         var keep = new HashSet<>(clear);
         var footing = new java.util.HashMap<Pos, Cell>();
         for (var b : blocks) {
-            if (!b.spec().block().endsWith("_stairs") || !keep.contains(b.at().up())) continue;
+            if (!dev.kindred.core.Capabilities.current().is(VanillaIds.STAIRS, b.spec().block()) || !keep.contains(b.at().up())) continue;
             var cell = site.cell(b.at());
             if (cell.isPresent() && cell.get().kind() == BuildSite.Kind.SOLID && cell.get().state().sameAs(b.spec()) && !cell.get().floor()) {
                 footing.put(b.at(), new Cell(BuildSite.Kind.SOLID, cell.get().state(), true));
@@ -601,6 +601,39 @@ public final class ConstructionPlanner {
             }
         }
         return seen;
+    }
+
+    /**
+     * The way {@link #walkable(BuildSite, Pos, Set)} reaches {@code goal} from {@code feet}, both ends included; empty
+     * when it does not. For the diagnostics of a walk the plan counted on and the navigator found no way for (#153's CI:
+     * a hut's floor, "expanded 6000") (F-22c59).
+     */
+    public static List<Pos> walkRoute(BuildSite site, Pos feet, Pos goal, Set<Pos> scaffold) {
+        var parent = new java.util.HashMap<Pos, Pos>();
+        var queue = new ArrayDeque<Pos>();
+        parent.put(feet, feet);
+        queue.add(feet);
+        int budget = WALK_BUDGET;
+        while (!queue.isEmpty() && budget-- > 0) {
+            Pos at = queue.poll();
+            if (at.equals(goal)) {
+                var route = new ArrayList<Pos>();
+                for (Pos p = at; ; p = parent.get(p)) {
+                    route.add(p);
+                    if (p.equals(feet)) break;
+                }
+                java.util.Collections.reverse(route);
+                return route;
+            }
+            if (scaffold.contains(at.down()) && site.cell(at.down().down()).map(Cell::floor).orElse(false) && parent.putIfAbsent(at.down(), at) == null) {
+                queue.add(at.down());
+            }
+            for (Face f : SIDES) {
+                Pos to = stepTo(site, at, f);
+                if (to != null && parent.putIfAbsent(to, at) == null) queue.add(to);
+            }
+        }
+        return List.of();
     }
 
     private static final List<Face> SIDES = List.of(Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST);
@@ -790,7 +823,7 @@ public final class ConstructionPlanner {
     /** A wooden door, either half: a way through for a player, unlike an iron one. */
     static boolean doorway(BlockSpec spec) {
         String id = spec.block();
-        return id.endsWith("_door") && !id.endsWith("_trapdoor") && !id.equals(VanillaIds.IRON_DOOR);
+        return dev.kindred.core.Capabilities.current().is(VanillaIds.DOORS, id) && !id.equals(VanillaIds.IRON_DOOR);
     }
 
     private static boolean sealedIn(BuildSite site, Pos stance, Pos placing, Map<Pos, BlockSpec> wanted, Box box) {

@@ -18,7 +18,25 @@ import net.minecraft.util.math.BlockPos;
 public final class NativeTreeFarmGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "treeFarm", tickLimit = 4000)
     public void itCutsThePatchsTreesThenReplantsWhereEachTrunkStood(TestContext context) {
+        scene(context, false);
+    }
+
+    /**
+     * As the first, a mine of a trunk's third log refused before it broke anything, "Mining preconditions changed before
+     * dispatch; no break issued": the log is tried again, the trunk cut down to its top, and the sapling planted where it
+     * stood. On #182's CI at f427b30 and #185's at 115c960 the refused log was set aside at once; the top log over it,
+     * with no ground under it to walk to, was set aside after three walks; the patch was called cut down at six logs and,
+     * the two left standing over the cut, the trunk was never replanted (F-22c63). Staged: as the mine of the first
+     * third log it comes to is planned, before it is dispatched, the player is moved once, five blocks off, out of reach.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "treeFarmRefused", tickLimit = 4000)
+    public void aLogWhoseMineWasRefusedUnbrokenIsTriedAgainAndItsTrunkReplanted(TestContext context) {
+        scene(context, true);
+    }
+
+    private static void scene(TestContext context, boolean refused) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3800);
+        boolean[] moved = {false};
         BlockPos o = context.getAbsolutePos(new BlockPos(12, 0, 12));
         BlockPos[] trunks = {o.add(6, 7, 6), o.add(10, 7, 6)};
         context.createTimedTaskRunner()
@@ -56,6 +74,20 @@ public final class NativeTreeFarmGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // Staged, once: the mine of a third log planned, not yet dispatched; the player moved out of its reach.
+                    var status = refused && !moved[0] ? f.runtime.nativeActionStatus(Actor.console(), f.id) : null;
+                    var planned = status == null ? null : status.record();
+                    if (planned != null && "native_mine".equals(planned.kind()) && planned.state() == ActionRecord.State.PREPARED) {
+                        for (BlockPos trunk : trunks) {
+                            if (moved[0] || !planned.preconditions().contains(" at " + trunk.up(2).toShortString() + ";")) continue;
+                            moved[0] = true;
+                            var player = f.player();
+                            player.refreshPositionAndAngles(trunk.getX() + 0.5, trunk.getY(), trunk.getZ() - 4.5, 0, 0);
+                            player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            KindredMod.LOGGER.info("Tree farm fixture: the mine of {} planned; the player moved off to {}",
+                                    trunk.up(2).toShortString(), player.getBlockPos().toShortString());
+                        }
+                    }
                     if (world.getTime() % 100 == 0) {
                         KindredMod.LOGGER.info("Tree farm fixture: {} / {}; {}", world.getBlockState(trunks[0]), world.getBlockState(trunks[1]), f.runtime.nativeLastResult(f.id));
                     }
