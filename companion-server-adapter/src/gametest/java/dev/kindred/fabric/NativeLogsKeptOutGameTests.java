@@ -13,8 +13,9 @@ import net.minecraft.util.math.BlockPos;
  * In plain terms: a player stuck for logs beside a tree it has set aside says once a stuck spell why the tree's logs
  * were not for it, and the line changes nothing it does.
  *
- * Technical: the diagnostic line for seed 110's bamboo loop (F-27a; the lead's ask of 2026-11-11). STAGED: open grass
- * under the sky, one jungle log three high four blocks east, its three logs set aside by the fixture as a failed walk
+ * Technical: the diagnostic line for seed 110's bamboo loop (F-27a; the lead's ask of 2026-11-11). STAGED: a pen of
+ * bedrock five high, floor and walls, open to the sky, so no walk or dig gains ground (in the open it explored away and
+ * no spell came), one jungle log three high four blocks east inside it, its three logs set aside by the fixture as a failed walk
  * would set them aside, the player with only bread, the portal goal, and a 200-tick stuck threshold so spells come in
  * seconds. Passes if a line names the logs as set aside, and there are no more lines than stuck spells.
  */
@@ -35,7 +36,9 @@ public final class NativeLogsKeptOutGameTests implements FabricGameTest {
                     FixtureGround.keep(context, p.add(-10, -2, -10), p.add(10, 8, 10));
                     for (BlockPos c : BlockPos.iterate(p.add(-10, -2, -10), p.add(10, 8, 10))) {
                         int dy = c.getY() - p.getY();
-                        world.setBlockState(c, (dy < -1 ? Blocks.DIRT : dy == -1 ? Blocks.GRASS_BLOCK : Blocks.AIR).getDefaultState());
+                        int dx = c.getX() - p.getX(), dz = c.getZ() - p.getZ();
+                        boolean wall = Math.max(Math.abs(dx), Math.abs(dz)) == 6 && dy <= 4, floor = Math.max(Math.abs(dx), Math.abs(dz)) <= 6 && dy < 0;
+                        world.setBlockState(c, (wall || floor ? Blocks.BEDROCK : dy < -1 ? Blocks.DIRT : dy == -1 ? Blocks.GRASS_BLOCK : Blocks.AIR).getDefaultState());
                     }
                     for (int dy = 0; dy < 3; dy++) world.setBlockState(p.add(4, dy, 0), Blocks.JUNGLE_LOG.getDefaultState());
                     f.player().refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
