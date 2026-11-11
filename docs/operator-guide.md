@@ -8,7 +8,7 @@ Use the pinned Java 21/Fabric stack and server JAR. Ordinary clients remain the 
 Use /aiplayer for command help; /companion redirects to the same tree. Creation, status, follow/stay/stop/resume, setup, movement, gather/deposit fixtures, personality and journal retain their existing restrictions. Commands do not imply planned skills are enabled.
 
 ## Quick start: the K panel and the Nether-portal goal
-Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Echo) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect, Skin... and the server's world edits switch (Edits). Operator-only buttons need permission level 2. Commands behind the buttons:
+Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Echo) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, and what it was told lately on the Wire (its last five, newest first, as the watch page shows them: a team's, faction's or side's facts never in words), with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect, Skin... and the server's world edits switch (Edits). Operator-only buttons need permission level 2. Commands behind the buttons:
 ```text
 /aiplayer roster spawn Kindred       spawn a roster player beside you
 /aiplayer edits on|off               server-wide switch for AI block breaking and placing (default off)
