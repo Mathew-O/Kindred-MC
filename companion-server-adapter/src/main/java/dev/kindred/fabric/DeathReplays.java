@@ -231,7 +231,7 @@ final class DeathReplays implements AutoCloseable {
             String snbt = NbtHelper.toNbtProviderString(scene.templateNbt()).lines().map(String::strip).collect(java.util.stream.Collectors.joining("\n"));
             Files.writeString(folder.resolve("replay.snbt"), snbt, StandardCharsets.UTF_8);
             Files.writeString(folder.resolve("replay.json"), new GsonBuilder().setPrettyPrinting().create().toJson(state), StandardCharsets.UTF_8);
-            KindredMod.LOGGER.info("{} death replay written to {} ({} KB)", player, folder, snbt.length() / 1024);
+            KindredMod.LOGGER.info("{} {} replay written to {} ({} KB)", player, copied.get("kind"), folder, snbt.length() / 1024);
         } catch (IOException | RuntimeException failure) {
             KindredMod.LOGGER.warn("{} death replay not written to {}: {}", player, folder, failure.toString());
         }
