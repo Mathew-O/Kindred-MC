@@ -545,8 +545,12 @@ final class PlayerRuntime {
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         webs = new KnowledgeWebs(server::getTicks);
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
-                PlayerRuntime::now);
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs,
+                (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
+                    var said = Text.literal(words);
+                    person.sendMessage(said, false);
+                    if (heardForFixtures != null) heardForFixtures.accept(person, said);
+                }, PlayerRuntime::now);
         // A player's faction for the Wire (M-06i): the Factions ledger's, its AI players by their bodies.
         setFactionOf(this::factionKey);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
@@ -596,6 +600,9 @@ final class PlayerRuntime {
         socials.setVoice(voice);
         voice.setManner(socials::manner);
         voice.setSwearing(socials::maySwear); // E-18b: a rough player's reply may swear to someone who said yes.
+        // F-34: a line said on an AI player's behalf on the Wire, in its own voice when a model is on; else the plain line.
+        wire.voice((sender, person, message, plain, prefix, say) -> running && voice.phraseWire(sender, person, message, plain, prefix,
+                words -> { if (running) say.accept(words); }));
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
             Entry entry = entries.get(participant.id());
