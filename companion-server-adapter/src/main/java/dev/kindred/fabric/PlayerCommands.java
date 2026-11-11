@@ -209,6 +209,27 @@ public final class PlayerCommands {
                     String raw = StringArgumentType.getString(context, "enabled");
                     return runtime.setBases(context.getSource(), raw.equalsIgnoreCase("on") || raw.equalsIgnoreCase("true"));
                 })));
+        // Free travel and free items for every player alike (mod-support decision 6, D6): /aiplayer teleport|freeitems allow|forbid;
+        // /aiplayer policy tells the standing rule.
+        for (String[] free : new String[][] {{"teleport", "teleport"}, {"freeitems", "freeItems"}}) {
+            root.then(CommandManager.literal(free[0]).then(CommandManager.argument("rule", StringArgumentType.word())
+                    .suggests((context, builder) -> { builder.suggest("allow"); builder.suggest("forbid"); return builder.buildFuture(); })
+                    .executes(context -> {
+                        PlayerRuntime runtime = KindredMod.runtime();
+                        if (runtime == null) return unavailable(context.getSource());
+                        String raw = StringArgumentType.getString(context, "rule");
+                        if (!raw.equalsIgnoreCase("allow") && !raw.equalsIgnoreCase("forbid")) {
+                            context.getSource().sendError(net.minecraft.text.Text.literal("The rule is allow or forbid."));
+                            return 0;
+                        }
+                        return runtime.setFreeSwitch(context.getSource(), free[1], raw.equalsIgnoreCase("allow"));
+                    })));
+        }
+        root.then(CommandManager.literal("policy").executes(context -> {
+            PlayerRuntime runtime = KindredMod.runtime();
+            if (runtime == null) return unavailable(context.getSource());
+            return runtime.tellFreeSwitches(context.getSource());
+        }));
         // The seed block a player grows its builds from (E-29a): /aiplayer seed <block> [player], /aiplayer seed clear [player].
         root.then(CommandManager.literal("seed")
                 .then(withOptionalId(CommandManager.literal("clear"), (runtime, context, id) -> runtime.setSeedBlock(context.getSource(), id, null)))

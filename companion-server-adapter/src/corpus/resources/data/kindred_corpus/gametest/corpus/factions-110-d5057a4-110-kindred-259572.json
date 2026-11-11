@@ -1,0 +1,89 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 259572,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -10,
+  53,
+  -87
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.507122548034015,
+  8.18520672780668,
+  16.533850157617195
+ ],
+ "yaw": -1394.0785,
+ "pitch": -4.9999995,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 0.0,
+ "air": -7,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 19572,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "STRONGHOLD",
+ "stage": "Wood: Get out of the water: up for air",
+ "task": "Get out of the water: up for air",
+ "stance": "PRESS_ON",
+ "habits": "[SHELTER_EARLY]",
+ "cause": "Kindred drowned",
+ "ticks": 1200,
+ "log": [
+  "[07:47:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: up for air]",
+  "[07:47:57] [Server thread/INFO]: Kindred died at 6, 61, -71: Kindred drowned (tick 259572, night, under cover, hunger 17, armour 0, holding arrow, no shield; doing \"Get out of the water: up for air\" in \"Wood: Get out of the water: up for air\"; stance PRESS_ON, focus NONE, habits [SHELTER_EARLY])"
+ ],
+ "corpus": {
+  "run": "factions-110-d5057a4",
+  "seed": "110",
+  "build": "d5057a4",
+  "replay": "",
+  "source": "claude/corpus-data-factions110-1110@0445d5b:factions-110-d5057a4/110/replays/world/Kindred-259572",
+  "class": "death: drowned",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}

@@ -28,4 +28,18 @@ class WordingTest {
         for (int i = 0; i < 10; i++) big.put("k" + i, Fact.of("y".repeat(90), Visibility.PUBLIC));
         assertEquals(Wording.MAX_CHARS, w.words(Message.of("team.find", UUID.randomUUID(), Scope.team("t"), big, List.of()), "A").length());
     }
+
+    /** F-34c: what an onlooker of the watch page may read of a message: all of it when public, else only its kind. */
+    @Test
+    void anOnlookerReadsAPublicMessageAndOnlyTheKindOfANarrowerOne() {
+        var w = new Wording();
+        var ren = java.util.UUID.randomUUID();
+        var open = Message.of("public.hello", ren, Scope.server(), java.util.Map.of("greeting", Fact.of("hi all", Visibility.PUBLIC)), java.util.List.of());
+        assertEquals(w.words(open, "Ren"), w.forOnlookers(open, "Ren"));
+        var plan = Message.of("faction.raid_planned", ren, Scope.faction("oak"), java.util.Map.of("target", Fact.of("birch's east wall", Visibility.FACTION),
+                "greeting", Fact.of("hi", Visibility.PUBLIC)), java.util.List.of());
+        assertEquals("[faction] Ren: raid planned (kept to its faction)", w.forOnlookers(plan, "Ren"));
+        var title = MatchTitles.of(ren, new dev.kindred.core.match.MatchPresentation.Title("Victory", "", dev.kindred.core.match.MatchPresentation.Cue.WIN)).orElseThrow();
+        assertEquals("[private] title (to it alone)", w.forOnlookers(title, ""));
+    }
 }

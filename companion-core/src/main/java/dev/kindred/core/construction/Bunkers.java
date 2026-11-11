@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -28,8 +30,8 @@ public final class Bunkers {
     public static Blueprint hideout(BuildStyle style) {
         String wood = style.wood(), stone = style.stone();
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a wood or a stone");
-        String s = stone.contains(":") ? stone : "minecraft:" + stone;
-        String planks = "minecraft:" + wood + "_planks";
+        String s = stone.contains(":") ? stone : VanillaIds.NAMESPACE + stone;
+        String planks = Woods.planks(wood);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var open = new LinkedHashSet<Pos>();
         // The shed: three wide and five deep, three high, a planks roof, the door in the north wall.
@@ -41,9 +43,9 @@ public final class Bunkers {
             }
             at.put(new Pos(x, 3, z), BlockSpec.parse(planks));
         }
-        at.put(new Pos(1, 0, 0), BlockSpec.parse("minecraft:" + wood + "_door[facing=south,half=lower,hinge=left,open=false]"));
-        at.put(new Pos(1, 1, 0), BlockSpec.parse("minecraft:" + wood + "_door[facing=south,half=upper,hinge=left,open=false]"));
-        at.put(new Pos(1, 2, 3), BlockSpec.parse("minecraft:wall_torch[facing=north]"));
+        at.put(new Pos(1, 0, 0), BlockSpec.parse(Woods.door(wood) + "[facing=south,half=lower,hinge=left,open=false]"));
+        at.put(new Pos(1, 1, 0), BlockSpec.parse(Woods.door(wood) + "[facing=south,half=upper,hinge=left,open=false]"));
+        at.put(new Pos(1, 2, 3), BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=north]"));
         // The floor inside the door.
         at.put(new Pos(STAIR_X, -1, STAIR_TOP), BlockSpec.parse(s));
         // The stair: a step down each row south, from the shed's floor to the room's, three high above each step.
@@ -75,12 +77,12 @@ public final class Bunkers {
         }
         // What a first hideout holds, against the south wall; light at each end.
         int f = -DEPTH;
-        at.put(new Pos(ROOM_WEST, f, ROOM_SOUTH), BlockSpec.parse("minecraft:crafting_table"));
-        at.put(new Pos(ROOM_WEST + 1, f, ROOM_SOUTH), BlockSpec.parse("minecraft:furnace[facing=north]"));
-        at.put(new Pos(ROOM_EAST, f, ROOM_SOUTH), BlockSpec.parse("minecraft:chest[facing=north,type=single]"));
-        at.put(new Pos(ROOM_EAST, f, ROOM_SOUTH - 2), BlockSpec.parse("minecraft:chest[facing=west,type=single]"));
-        at.put(new Pos(ROOM_WEST + 1, f + 2, ROOM_NORTH), BlockSpec.parse("minecraft:wall_torch[facing=south]"));
-        at.put(new Pos(ROOM_EAST - 1, f + 2, ROOM_SOUTH), BlockSpec.parse("minecraft:wall_torch[facing=north]"));
+        at.put(new Pos(ROOM_WEST, f, ROOM_SOUTH), BlockSpec.parse(VanillaIds.CRAFTING_TABLE));
+        at.put(new Pos(ROOM_WEST + 1, f, ROOM_SOUTH), BlockSpec.parse(VanillaIds.FURNACE + "[facing=north]"));
+        at.put(new Pos(ROOM_EAST, f, ROOM_SOUTH), BlockSpec.parse(VanillaIds.CHEST + "[facing=north,type=single]"));
+        at.put(new Pos(ROOM_EAST, f, ROOM_SOUTH - 2), BlockSpec.parse(VanillaIds.CHEST + "[facing=west,type=single]"));
+        at.put(new Pos(ROOM_WEST + 1, f + 2, ROOM_NORTH), BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=south]"));
+        at.put(new Pos(ROOM_EAST - 1, f + 2, ROOM_SOUTH), BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=north]"));
         var blocks = new ArrayList<Blueprint.Block>();
         for (var e : at.entrySet()) blocks.add(new Blueprint.Block(e.getKey(), e.getValue()));
         var clear = open.stream().filter(p -> !at.containsKey(p)).toList();

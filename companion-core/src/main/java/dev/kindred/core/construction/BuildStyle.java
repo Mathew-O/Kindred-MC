@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.Locale;
 
 /**
@@ -27,7 +29,7 @@ public record BuildStyle(String seed, String wood, String stone, int variant, in
 
     public BuildStyle {
         seed = seed == null ? "" : seed;
-        if (wood == null || !BuildNeeds.WOODS.contains(wood)) throw new IllegalArgumentException("Not a wood: " + wood);
+        if (wood == null || !Woods.known(wood)) throw new IllegalArgumentException("Not a wood: " + wood);
         if (stone == null || !stone.matches("[a-z_:]+")) throw new IllegalArgumentException("Not a stone: " + stone);
         if (variant < 0 || variant > VARIANTS) throw new IllegalArgumentException("No such variant: " + variant);
         turns = Math.floorMod(turns, 4);
@@ -41,7 +43,7 @@ public record BuildStyle(String seed, String wood, String stone, int variant, in
     public static BuildStyle grown(String seedBlock, String woodAtHand, long worldSeed) {
         String seed = seedBlock == null ? "" : seedBlock.strip().toLowerCase(Locale.ROOT);
         String wood = woodOf(seed);
-        if (wood == null) wood = woodAtHand != null && BuildNeeds.WOODS.contains(woodAtHand) ? woodAtHand : "oak";
+        if (wood == null) wood = woodAtHand != null && Woods.known(woodAtHand) ? woodAtHand : "oak";
         long mix = mix(worldSeed ^ mix(seed.hashCode() * 0x9E3779B97F4A7C15L + wood.hashCode()));
         int variant = 1 + (int) Math.floorMod(mix, (long) VARIANTS);
         int turns = (int) Math.floorMod(mix >>> 17, 4L);
@@ -51,14 +53,15 @@ public record BuildStyle(String seed, String wood, String stone, int variant, in
     /** The wood a block is of (a log, planks, stairs, a slab, a door, wood, stripped or not), or null. */
     public static String woodOf(String block) {
         if (block == null) return null;
-        String id = block.startsWith("minecraft:") ? block.substring("minecraft:".length()) : block;
+        String id = block.startsWith(VanillaIds.NAMESPACE) ? block.substring(VanillaIds.NAMESPACE.length()) : block;
         if (id.startsWith("stripped_")) id = id.substring("stripped_".length());
         for (String suffix : new String[] {"_log", "_wood", "_planks", "_stairs", "_slab", "_door", "_fence", "_trapdoor", "_sapling", "_leaves"}) {
             if (!id.endsWith(suffix)) continue;
             String wood = id.substring(0, id.length() - suffix.length());
             if (BuildNeeds.WOODS.contains(wood)) return wood;
         }
-        return null;
+        // A wood the server added (F-38): one of its parts, by id.
+        return dev.kindred.core.Capabilities.current().woodOfPart(block).map(dev.kindred.core.Capabilities.Wood::name).orElse(null);
     }
 
     /** SplitMix64's finalizer: every bit of the input moves every bit of the output. */

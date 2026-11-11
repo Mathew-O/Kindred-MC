@@ -25,6 +25,9 @@ import java.util.UUID;
  * captured and when each faction last lost one.
  */
 public final class Capture implements Ledger<Capture.Book> {
+    /** The announcements of a change of exposure, kinds in the World Record (registered in {@link dev.kindred.core.record.EventKinds}). */
+    public static final String VULNERABLE = "faction.vulnerable", SECURE = "faction.secure";
+
     public static final Capture INSTANCE = new Capture();
     public static final long HOUR = 3_600_000L;
 
@@ -138,7 +141,7 @@ public final class Capture implements Ledger<Capture.Book> {
     /** The announcement events a change of exposure makes: vulnerable when a faction first overextends, secure when it no longer does. */
     public static WorldEvent notice(UUID faction, boolean vulnerable, Exposure exposure, Factions.At at) {
         var data = Map.of("claims", String.valueOf(exposure.claims()), "power", String.valueOf(exposure.power()), "exposed", String.valueOf(exposure.exposed()));
-        return WorldEvent.recorded(at.tick(), at.realTimeMs(), at.world(), vulnerable ? "faction.vulnerable" : "faction.secure", null, faction.toString(), "", data);
+        return WorldEvent.recorded(at.tick(), at.realTimeMs(), at.world(), vulnerable ? VULNERABLE : SECURE, null, faction.toString(), "", data);
     }
 
     private static long minutes(long ms) { return (ms + 59_999) / 60_000; }

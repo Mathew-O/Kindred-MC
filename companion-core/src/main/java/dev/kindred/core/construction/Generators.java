@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +31,7 @@ public final class Generators {
         }
         var blocks = new ArrayList<Blueprint.Block>();
         var clear = new ArrayList<Pos>();
-        var planks = BlockSpec.of("minecraft:oak_planks");
+        var planks = BlockSpec.of(VanillaIds.OAK_PLANKS);
         int door = width / 2;
         for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) blocks.add(new Blueprint.Block(new Pos(x, 0, z), planks));
         for (int y = 1; y <= walls; y++) for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) {
@@ -38,14 +40,14 @@ public final class Generators {
             if (!edgeX && !edgeZ || x == door && z == depth - 1 && y <= 2) {
                 clear.add(at);
             } else {
-                blocks.add(new Blueprint.Block(at, edgeX && edgeZ ? BlockSpec.parse("minecraft:oak_log[axis=y]")
-                        : BlockSpec.of("minecraft:cobblestone")));
+                blocks.add(new Blueprint.Block(at, edgeX && edgeZ ? BlockSpec.parse(VanillaIds.ICON_WOOD + "[axis=y]")
+                        : BlockSpec.of(VanillaIds.COBBLESTONE)));
             }
         }
         if (depth > 2 && width > 2) {
             var torch = new Pos(door, Math.min(2, walls), 1);
             clear.remove(torch);
-            blocks.add(new Blueprint.Block(torch, BlockSpec.parse("minecraft:wall_torch[facing=south]")));
+            blocks.add(new Blueprint.Block(torch, BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=south]")));
         }
         // The roof: stairs along the north and south eaves facing in, planks between them over the walls, then up a
         // row a level until the two sides meet.
@@ -62,13 +64,13 @@ public final class Generators {
             if (south < north) break;
             for (int x = 0; x < width; x++) {
                 if (south == north) {
-                    blocks.add(new Blueprint.Block(new Pos(x, y, north), BlockSpec.parse("minecraft:oak_slab[type=bottom]")));
+                    blocks.add(new Blueprint.Block(new Pos(x, y, north), BlockSpec.parse(VanillaIds.OAK_SLAB + "[type=bottom]")));
                     continue;
                 }
                 blocks.add(new Blueprint.Block(new Pos(x, y, north), stair("south")));
                 blocks.add(new Blueprint.Block(new Pos(x, y, south), stair("north")));
                 if (south - north == 2) {
-                    blocks.add(new Blueprint.Block(new Pos(x, y, north + 1), BlockSpec.parse("minecraft:oak_slab[type=bottom]")));
+                    blocks.add(new Blueprint.Block(new Pos(x, y, north + 1), BlockSpec.parse(VanillaIds.OAK_SLAB + "[type=bottom]")));
                 } else if (south - north > 2) {
                     blocks.add(new Blueprint.Block(new Pos(x, y, north + 1), planks));
                     blocks.add(new Blueprint.Block(new Pos(x, y, south - 1), planks));
@@ -142,15 +144,15 @@ public final class Generators {
         }
         // The lamp room: glowstone in the middle, glass round it, slabs over all.
         for (int x = 1; x < 4; x++) for (int z = 1; z < 4; z++) {
-            blocks.add(new Blueprint.Block(new Pos(x, height + 1, z), BlockSpec.of(x == 2 && z == 2 ? "minecraft:glowstone" : "minecraft:glass")));
-            blocks.add(new Blueprint.Block(new Pos(x, height + 2, z), BlockSpec.parse("minecraft:smooth_stone_slab[type=bottom]")));
+            blocks.add(new Blueprint.Block(new Pos(x, height + 1, z), BlockSpec.of(x == 2 && z == 2 ? VanillaIds.GLOWSTONE : VanillaIds.GLASS)));
+            blocks.add(new Blueprint.Block(new Pos(x, height + 2, z), BlockSpec.parse(VanillaIds.SMOOTH_STONE_SLAB + "[type=bottom]")));
         }
         return new Blueprint("lighthouse " + height, SOURCE + "lighthouse?height=" + height + "&stripe=" + stripe + "&band=" + band,
                 "Kindred", "Kindred's own", blocks, clear);
     }
 
     private static BlockSpec stair(String facing) {
-        return BlockSpec.parse("minecraft:oak_stairs[facing=" + facing + ",half=bottom,shape=straight]");
+        return BlockSpec.parse(VanillaIds.OAK_STAIRS + "[facing=" + facing + ",half=bottom,shape=straight]");
     }
 
     /** The generator a name stands for, with its sizes: {@code hut}, {@code hut 5 5 3}. */
@@ -169,11 +171,11 @@ public final class Generators {
         }
         if (!wood.matches("[a-z_]+")) throw new IllegalArgumentException("Not a wood: " + wood);
         var blocks = new ArrayList<Blueprint.Block>();
-        var fence = BlockSpec.of("minecraft:" + wood + "_fence");
+        var fence = BlockSpec.of(Woods.fence(wood));
         for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) {
             if (x != 0 && x != width - 1 && z != 0 && z != depth - 1) continue;
             boolean gate = x == width / 2 && z == depth - 1;
-            blocks.add(new Blueprint.Block(new Pos(x, 0, z), gate ? BlockSpec.parse("minecraft:" + wood + "_fence_gate[facing=north]") : fence));
+            blocks.add(new Blueprint.Block(new Pos(x, 0, z), gate ? BlockSpec.parse(Woods.fenceGate(wood) + "[facing=north]") : fence));
         }
         return new Blueprint(wood + " pen " + width + "x" + depth, SOURCE + "pen?width=" + width + "&depth=" + depth + "&wood=" + wood,
                 "Kindred", "Kindred's own", blocks);
@@ -182,9 +184,9 @@ public final class Generators {
     public static Blueprint named(String name, List<Integer> sizes) {
         return switch (name) {
             case "hut" -> hut(sizes.size() > 0 ? sizes.get(0) : 5, sizes.size() > 1 ? sizes.get(1) : 5, sizes.size() > 2 ? sizes.get(2) : 3);
-            case "tower" -> tower(sizes.size() > 0 ? sizes.get(0) : 5, sizes.size() > 1 ? sizes.get(1) : 8, "minecraft:stone_bricks");
-            case "pyramid" -> pyramid(sizes.size() > 0 ? sizes.get(0) : 9, "minecraft:sandstone");
-            case "lighthouse" -> lighthouse(sizes.size() > 0 ? sizes.get(0) : 10, "minecraft:white_concrete", "minecraft:red_concrete");
+            case "tower" -> tower(sizes.size() > 0 ? sizes.get(0) : 5, sizes.size() > 1 ? sizes.get(1) : 8, VanillaIds.ICON_STONE);
+            case "pyramid" -> pyramid(sizes.size() > 0 ? sizes.get(0) : 9, VanillaIds.SANDSTONE);
+            case "lighthouse" -> lighthouse(sizes.size() > 0 ? sizes.get(0) : 10, VanillaIds.WHITE_CONCRETE, VanillaIds.RED_CONCRETE);
             case "pen" -> pen(sizes.size() > 0 ? sizes.get(0) : 7, sizes.size() > 1 ? sizes.get(1) : 7, "oak");
             // The three stages of a base (M-01b), of oak and cobblestone.
             case "cabin" -> Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");

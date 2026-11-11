@@ -42,7 +42,9 @@ public final class KnowledgeWeb {
         /** F-32b, from the peer ledger: what a player is doing, given and received items, a thing seen happen between them. */
         DOING, GAVE, RECEIVED, WITNESSED,
         /** F-32b, from the atlas: a resource found at a place, a place to shelter, a stretch of ground explored. */
-        FOUND, SHELTERS_AT, EXPLORED;
+        FOUND, SHELTERS_AT, EXPLORED,
+        /** F-34c, team talk: what a teammate put into or took out of the team's store, and what it found gone from one. */
+        STORED, TOOK, MISSING;
 
         public String id() { return name().toLowerCase(Locale.ROOT); }
     }

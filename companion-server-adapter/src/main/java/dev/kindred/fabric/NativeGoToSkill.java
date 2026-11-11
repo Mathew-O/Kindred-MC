@@ -54,6 +54,10 @@ final class NativeGoToSkill implements SkillBody {
     private final int maxDrop;
     /** Arrived only near the middle of the target block, as a player lines up on a spot to build from (E-08b). */
     private boolean centre;
+    /** With {@link #centre}, how near the middle it stops: {@link #CENTRE_WITHIN} unless a caller asks closer. */
+    private double centreWithin = CENTRE_WITHIN;
+    /** The usual arrival near a block's middle (0.4), as before. */
+    static final double CENTRE_WITHIN = 0.4;
     /** Ended only on a stand with nothing that harms beside it, as on a walk someone asked for (E-49). */
     private boolean safe;
     private NativeNavigator safety;
@@ -115,6 +119,18 @@ final class NativeGoToSkill implements SkillBody {
     NativeGoToSkill safely() {
         safe = true;
         return this;
+    }
+
+    /**
+     * As {@link #centred()}, stopping within {@code within} of the middle. "Down the scaffold" asks 0.15: a body further
+     * than 0.2 off its column's middle overlaps the next cell, and a bottom slab of the roof there caught it half a block
+     * down as the block underfoot gave way. It slid onto the roof, where no walk could start, and a cabin stopped (#136's
+     * CI) (F-22c57). Every other caller keeps the usual 0.4.
+     */
+    NativeGoToSkill centredWithin(double within) {
+        if (!(within > 0 && within <= CENTRE_WITHIN)) throw new IllegalArgumentException("Centred within 0..0.4");
+        centreWithin = within;
+        return centred();
     }
 
     /** Arrive only near the middle of the target block. */
@@ -193,6 +209,8 @@ final class NativeGoToSkill implements SkillBody {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop).throughDoors();
         if (fall >= 0) navigator.fallingAtMost(fall);
+        // Gaps jumped as a player jumps them (MOVEMENT): one block at a run, two only with food to sprint the run-up.
+        if (hold < 0) navigator.jumpingGaps(player.getHungerManager().getFoodLevel() >= SPRINT_FOOD ? 2 : 1);
         if (safe) {
             safety = new NativeNavigator(player.getServerWorld());
             navigator.endingOnly(safety::safeStand);
@@ -238,7 +256,7 @@ final class NativeGoToSkill implements SkillBody {
             body.stopInputs();
             return Step.blocked("Could not take hotbar slot " + hold + " in hand", true);
         }
-        if (goalReached(feet) && (!centre || reached(player.getPos(), target) && reached(atRest(player), target)) && (player.isOnGround() || player.isTouchingWater())) {
+        if (goalReached(feet) && (!centre || reached(player.getPos(), target, centreWithin) && reached(atRest(player), target, centreWithin)) && (player.isOnGround() || player.isTouchingWater())) {
             body.stopInputs();
             shutOnArrival(player);
             return Step.completed(Map.of("arrived", feet.toShortString()));
@@ -269,7 +287,7 @@ final class NativeGoToSkill implements SkillBody {
         while (index < path.size() - 1 && (reached(pos, path.get(index)) || passed(pos, index))) index++;
         if (index < path.size() - 1 && reached(pos, path.get(index + 1))) index++;
         BlockPos next = path.get(index);
-        if (index == path.size() - 1 && reached(pos, next) && (!centre || reached(atRest(player), next))) {
+        if (index == path.size() - 1 && reached(pos, next) && (!centre || reached(pos, next, centreWithin) && reached(atRest(player), next, centreWithin))) {
             body.stopInputs();
             if (pathComplete) {
                 shutOnArrival(player);
@@ -475,9 +493,13 @@ final class NativeGoToSkill implements SkillBody {
     }
 
     private static boolean reached(Vec3d pos, BlockPos node) {
+        return reached(pos, node, CENTRE_WITHIN);
+    }
+
+    private static boolean reached(Vec3d pos, BlockPos node, double within) {
         double dx = node.getX() + 0.5 - pos.x;
         double dz = node.getZ() + 0.5 - pos.z;
-        return dx * dx + dz * dz < 0.16 && Math.abs(pos.y - node.getY()) < 0.9;
+        return dx * dx + dz * dz < within * within && Math.abs(pos.y - node.getY()) < 0.9;
     }
 
     private boolean steer(BlockPos next, Vec3d pos) {
@@ -486,6 +508,24 @@ final class NativeGoToSkill implements SkillBody {
         boolean inWater = player.isTouchingWater();
         boolean grounded = player.isOnGround();
         if (grounded || inWater) leapt = false;
+        // A gap to jump (MOVEMENT): the next waypoint two or three blocks on from the last, at the same level, no floor
+        // between. Lined up on the landing, at a run (a sprint for two), and the jump taken past the middle of the block
+        // it takes off from, held to the landing.
+        BlockPos from = index > 0 ? path.get(index - 1) : null;
+        int span = from == null ? 0 : Math.abs(next.getX() - from.getX()) + Math.abs(next.getZ() - from.getZ());
+        if (!inWater && from != null && next.getY() == from.getY() && span >= 2 && span <= 3
+                && (next.getX() == from.getX() || next.getZ() == from.getZ()) && !navigator.standable(from.add(Integer.signum(next.getX() - from.getX()), 0, Integer.signum(next.getZ() - from.getZ())))) {
+            double gx = next.getX() + 0.5 - pos.x, gz = next.getZ() + 0.5 - pos.z;
+            float yaw = (float) Math.toDegrees(Math.atan2(-gx, gz));
+            body.turnLeft(yaw);
+            // How far past the take-off block's middle it is, along the jump.
+            double sx = Integer.signum(next.getX() - from.getX()), sz = Integer.signum(next.getZ() - from.getZ());
+            double past = (pos.x - (from.getX() + 0.5)) * sx + (pos.z - (from.getZ() + 0.5)) * sz;
+            boolean takeOff = grounded && !leapt && past >= 0.15;
+            if (takeOff) leapt = true;
+            boolean run = span == 3 || player.getHungerManager().getFoodLevel() >= SPRINT_FOOD;
+            return body.walk(lease.get(), 1.0f, 0, takeOff, run, yaw, 10f);
+        }
         // The furthest of the next few waypoints reachable in a straight line over level, clear ground.
         BlockPos aim = next;
         boolean level = !inWater && onLevel(pos, next);

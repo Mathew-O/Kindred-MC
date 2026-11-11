@@ -1,5 +1,7 @@
 package dev.kindred.core.social;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +59,7 @@ public final class PeerLedger {
     /** How a claim was taken back. */
     public enum Correction { FORGOTTEN, WRONG }
 
-    /** A place in a dimension, by its id ("minecraft:the_nether"). */
+    /** A place in a dimension, by its id (minecraft:the_nether). */
     public record Place(String dimension, int x, int y, int z) {
         public Place {
             Objects.requireNonNull(dimension);
@@ -440,9 +442,9 @@ public final class PeerLedger {
     public static String worldWords(String dimension) {
         if (dimension == null) return "";
         return switch (dimension) {
-            case "minecraft:overworld" -> "the Overworld";
-            case "minecraft:the_nether" -> "the Nether";
-            case "minecraft:the_end" -> "the End";
+            case VanillaIds.OVERWORLD -> "the Overworld";
+            case VanillaIds.THE_NETHER -> "the Nether";
+            case VanillaIds.THE_END -> "the End";
             default -> dimension;
         };
     }

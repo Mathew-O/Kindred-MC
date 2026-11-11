@@ -8,7 +8,7 @@ Use the pinned Java 21/Fabric stack and server JAR. Ordinary clients remain the 
 Use /aiplayer for command help; /companion redirects to the same tree. Creation, status, follow/stay/stop/resume, setup, movement, gather/deposit fixtures, personality and journal retain their existing restrictions. Commands do not imply planned skills are enabled.
 
 ## Quick start: the K panel and the Nether-portal goal
-Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Echo) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect, Skin... and the server's world edits switch (Edits). Operator-only buttons need permission level 2. Commands behind the buttons:
+Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Players) to open the AI player panel. It lists the canonical roster (Kindred, Sol, Echo) with their own skins, spawns a roster player at your feet, and for a selected player shows health, food, position, goal and progress, and what it was told lately on the Wire (its last five, newest first, as the watch page shows them: a team's, faction's or side's facts never in words), with Start Nether run, Stop, Resume, mode, team, activity cap, Connect/Disconnect, Skin... and the server's world edits switch (Edits). Operator-only buttons need permission level 2. Commands behind the buttons:
 ```text
 /aiplayer roster spawn Kindred       spawn a roster player beside you
 /aiplayer edits on|off               server-wide switch for AI block breaking and placing (default off)
@@ -16,6 +16,9 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 /aiplayer goal end [bot]             on from a lit portal to the End portal (earns the portal first)
 /aiplayer goal dragon [bot]          on through the End portal to beat the Ender Dragon (needs dragonfight on)
 /aiplayer dragonfight on|off         server-wide leave for AI players to go into the End and fight the dragon (default off)
+/aiplayer teleport allow|forbid      free travel (teleports) for every player alike, human or AI (default forbid; announced to all)
+/aiplayer freeitems allow|forbid     free items (kits, creative storage) for every player alike (default forbid; announced to all)
+/aiplayer policy                     tell the standing rule for free travel and free items
 /aiplayer goal none [bot]            stop pursuing the goal
 /aiplayer build hut <x y z> [turns] [bot]  build a generated hut there from its own blocks (hut-7x5x3: width, depth, wall height)
 /aiplayer build cabin|house|manor <x y z> [turns] [bot]  build a stage of a base there, of oak and cobblestone
@@ -62,6 +65,8 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 - After adding files, press Reload in the selector.
 
 How many native AI players the server allows is its own policy too: `maxNativePlayers=N` in `<world>/kindred/edits.properties` (3 when absent, at most 12; the server logs the value at startup, and a refused creation names the setting). It is kept when an operator's command rewrites the file. Raising it is a capacity decision: the month run's eight wait on an engine run at eight that measures tick time and heap (M-06i, M-06k).
+
+Free travel and free items are forbidden until an operator allows them (`teleport=allow`, `freeItems=allow` in `edits.properties`; mod-support decision 6). Allowed, a switch is the same rule for every player, human or AI: each change is announced to everyone online in the same words and kept in the World Record with who made it (`policy.set`). No AI skill teleports or takes a free item; with teleporting allowed, `/faction home` takes a person who asks to the faction's home and still only tells an AI player where it is. An eval run with either switch allowed is not earned: `eval-result.json` records both, `score.py` names the run and `compare.py` refuses it, so no ladder counts a teleport or a free item.
 
 World edits stay off until an operator turns them on; a fresh world has no `edits.properties`, which means off (decision D4). With edits on and no assigned work area, the player follows the roaming policy: it may break and place where a survival player could, never containers or block entities other than its own empty furnace, never in spawn protection, never the block under its own feet, and never a break that would let lava out (obsidian guarded by water is the one exception).
 
@@ -672,15 +677,6 @@ The log says `Outing: <host> invited <n> to <place>`, then `... set off ...`, `.
 
 Roster skins come from the bundled textures. To show the same skins to clients without the mod, put signed Mojang texture properties in `config/kindred_skins.properties` as `<key>.value` and `<key>.signature` (keys `kindred`, `sol`, `vesp`; Echo's key keeps its former name, Vesp, so settings made before the rename still apply).
 
-## A place it cannot walk to (M-01f)
-
-When an AI player is refused a walk to a place three times from about the same spot, for want of any route ("No
-walkable route", or a route found blocked), it lets that place be for ten minutes. This holds whatever asked for the
-walk: its goal, its base, a faction move or any other routine. The place is a four-block cell, so neighbouring blocks of
-one patch count together. The log says so once: `<player> lets its walks to around x, y, z be for ten minutes: refused 3
-times from around … [<the routine>]`. Moving more than eight blocks away, arriving there by another way, or breaking or
-placing a block gives the place another try at once. Commands given by people are never held back by it.
-
 ## How the players look about
 
 While a player waits (resting, by its furnace, for daylight), it looks at what matters, as a person does: a monster in plain sight, whoever speaks to it, a player close by who looks at it (for a moment), what it waits on, and otherwise about it, slowly. It never looks an enderman in the eyes. Say its name in chat while it can see you and it stops what it is doing for a moment, between one task and the next, to look at you. Mining, placing and fighting still turn its head in one step.
@@ -809,7 +805,7 @@ on the first start (10 members, power 0 to 10 starting at 10, −2 a qualifying 
 In a faction world:
 
 - `/faction create <name> <tag> [colour]`, `invite|uninvite|kick|promote|demote|leader <player>`, `join <faction>`,
-  `leave`, `ally|truce|enemy <faction>`, `sethome`, `home` (tells where it is; nothing teleports), `colour <dye>`,
+  `leave`, `ally|truce|enemy <faction>`, `sethome`, `home` (tells where it is; with `/aiplayer teleport allow`, takes a person there), `colour <dye>`,
   `disband`, `info [faction]`, `list`, `power [player]`. People and AI players use the same rules; an operator makes a
   request for an AI player with `/faction as <player> <request>`.
 - The leader alone sets ranks, hands over the lead, chooses the colour (one of the sixteen dyes) and disbands; officers
@@ -927,10 +923,23 @@ in `kindred/replays/<world>/<player>-<tick>/` as `replay.snbt` and `replay.json`
 beside its result. Taking the copy takes less than a server tick; writing it happens off the tick. Nothing in the world
 or the player changes.
 
+With replays on, a player stuck long enough for its goal's watchdog to count a spell (three minutes with no progress)
+has that scene kept the same way, as a `spell` replay: the corpus plays it again and it passes if the player gets out
+within three minutes, moving more than eight blocks or climbing three. It is still one capture a minute at most.
+
 A replay that is to be kept as a test goes into the gametest resources (see the conventions in
 [validation](validation.md)), and the suite plays it three times by the real runtime: it passes if the player is
 alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
 of three; one that does not is left out.
+
+### The failure corpus (F-27a)
+
+`./gradlew :companion-server-adapter:runCorpus` plays every kept death again from its own ground and state, one test a
+scene. It takes about 25 minutes on four cores. `python3 tools/corpus/report.py <results.xml>...` prints the share that
+come through. `tools/corpus/gate.sh` runs it three times and compares the result with `tools/corpus/baseline.json`. It
+then runs any scene that newly fails alone, on the change and on main, before saying the change broke it.
+`KINDRED_CORPUS_ONLY=<id>,<id>` in the environment runs only those scenes.
+Nothing in a world is touched: the corpus runs in its own GameTest server.
 
 ### The simulator (F-28)
 
@@ -979,6 +988,9 @@ for each player, with:
 - what it weighed at its last decision, with each candidate's priority and score;
 - what it said last, and the lines before that;
 - its habits and notes;
+- what it was told lately on the Wire, its last ten: a message whose every fact is public in full, and of anything
+  narrower (its team's, its faction's, its side's, its own) only who it came from, the channel and the kind, as
+  "[faction] Ada: need (kept to its faction)", so a page on a stream never shows a team's or a faction's facts;
 - a feed of highlights: deaths, the stages of its run, rescues, habits taken up, matches starting and ending.
 
 It reads once a second. The same data is served as JSON, each request with the token, as `Authorization: Bearer <token>`
