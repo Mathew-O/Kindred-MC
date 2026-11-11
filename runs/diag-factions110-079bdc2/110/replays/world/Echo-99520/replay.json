@@ -1,0 +1,101 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 99520,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    381,
+    105,
+    399
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.83593437945433,
+    8.121600046157837,
+    16.689273998145836
+  ],
+  "yaw": -603.03796,
+  "pitch": 7.7866297,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.8000002,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 6
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 4
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 7
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 3519,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 22, 80, -11",
+  "task": "try elsewhere, toward 22, 80, -11",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:21:20] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:21] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:23] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:24] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:25] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:26] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:27] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:29] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:30] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:31] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:21:31] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 388, 115, 448 [Climb toward the surface for logs: back the way it came]",
+    "[09:21:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 374, 110, 456]",
+    "[09:21:31] [Server thread/INFO]: Echo native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+    "[09:21:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 392, 115, 450 [Climb toward the surface for logs: back the way it came]",
+    "[09:21:32] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 374, 111, 456]",
+    "[09:21:32] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[09:21:34] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:21:35] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk toward the trees seen at 344, 110, 434]",
+    "[09:21:36] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:21:39] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at 402, 114, 416]"
+  ]
+}

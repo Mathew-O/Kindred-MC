@@ -1,0 +1,101 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 123740,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -89,
+    57,
+    -44
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.470954830110998,
+    8.0,
+    16.49362998318294
+  ],
+  "yaw": -77.630066,
+  "pitch": -88.0647,
+  "health": 7.0,
+  "food": 4,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 50
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 17
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 3739,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - climb away from here: clear -73, 67, -28",
+  "task": "climb away from here: clear -73, 67, -28",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:28:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+    "[09:28:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore west for animals]",
+    "[09:28:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+    "[09:28:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore west for animals]",
+    "[09:28:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+    "[09:28:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore west for animals]",
+    "[09:28:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:28:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore east for animals]",
+    "[09:28:59] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -73, 65, -4 [try elsewhere, toward -73, 65, -4]"
+  ]
+}

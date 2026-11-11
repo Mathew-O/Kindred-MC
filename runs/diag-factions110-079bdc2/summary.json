@@ -1,0 +1,431 @@
+{
+ "build": "diag-factions110-079bdc2",
+ "jar": "kindred-mc-0.1.0-SNAPSHOT.jar",
+ "otherJars": {},
+ "seeds": [
+  "110"
+ ],
+ "missing": [],
+ "short": {},
+ "kinds": [
+  "earned"
+ ],
+ "scenarios": [
+  "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions"
+ ],
+ "team": {
+  "teamFurthestIndex": {
+   "median": -1,
+   "min": -1,
+   "max": -1,
+   "n": 1
+  },
+  "teamDeathsPerHour": {
+   "median": 3.0,
+   "min": 3.0,
+   "max": 3.0,
+   "n": 1
+  },
+  "stuckSpells": {
+   "median": 45,
+   "min": 45,
+   "max": 45,
+   "n": 1
+  },
+  "stuckMinutes": {
+   "median": 135,
+   "min": 135,
+   "max": 135,
+   "n": 1
+  },
+  "rescues": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescuesUnstuck": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueAsks": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueSpells": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueSpellsOut": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "rescueRounds": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "recipesTried": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "spellsOutByRecipe": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "askSeconds": null,
+  "askSecondsPooled": null,
+  "tokens": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "linesPerMinute": {
+   "median": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "n": 1
+  },
+  "talkLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "unaskedLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 1
+  },
+  "silentMeetings": {
+   "median": 4,
+   "min": 4,
+   "max": 4,
+   "n": 1
+  },
+  "minutesTo_wooden_tool": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_wooden_tool": 0,
+  "minutesTo_stone_tools": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_stone_tools": 0,
+  "minutesTo_iron_ingot": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_iron_ingot": 0,
+  "minutesTo_iron_pickaxe": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_iron_pickaxe": 0,
+  "minutesTo_diamond": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_diamond": 0,
+  "minutesTo_obsidian": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_obsidian": 0,
+  "minutesTo_portal_lit": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_portal_lit": 0,
+  "minutesTo_nether_entered": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_nether_entered": 0,
+  "minutesTo_blaze_rods": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_blaze_rods": 0,
+  "minutesTo_eyes": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_eyes": 0,
+  "minutesTo_stronghold": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_stronghold": 0,
+  "minutesTo_end": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_end": 0,
+  "minutesTo_dragon": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 1,
+   "reached": 0
+  },
+  "reached_dragon": 0
+ },
+ "deathCauses": {
+  "zombie": 6,
+  "skeleton": 5,
+  "phantom": 1
+ },
+ "stuckKinds": {
+  "water loop": 1,
+  "no walkable route": 3,
+  "refused target repeated": 0,
+  "hole or pit": 35,
+  "hemmed in": 1,
+  "waiting for daylight or a teammate": 1,
+  "mining for a find": 0,
+  "busy-work loop": 4,
+  "other": 0,
+  "unmatched": 0
+ },
+ "deathKinds": {
+  "lava": 0,
+  "drowning": 0,
+  "fall": 0,
+  "starving with a mob near": 6,
+  "cornered": 6,
+  "dark melee": 0,
+  "other": 0
+ },
+ "perSeed": {
+  "110": {
+   "complete": true,
+   "ticksRun": 288001,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 4,
+    "linesPerMinute": 0.0
+   },
+   "factions": {
+    "audited": true,
+    "note": "",
+    "counts": {
+     "events": 90,
+     "factions": 3,
+     "claims": 10,
+     "captures": 0,
+     "sales": 0,
+     "purchases": 0,
+     "listings": 0,
+     "deliveries": 0,
+     "deaths": 12,
+     "kills": 0
+    },
+    "violations": []
+   },
+   "server": {
+    "tickMsMean": 14.65,
+    "tickMsWorst": 1024.93,
+    "tickMsWorstAt": 57156,
+    "ticksOver50ms": 2048,
+    "ticksOver200ms": 13,
+    "heapMbMax": 1143,
+    "samples": 14400
+   },
+   "teamFurthest": "none",
+   "teamFurthestIndex": -1,
+   "teamDeathsPerHour": 3.0,
+   "players": {
+    "Kindred": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 4,
+     "deathsPerHour": 1.0,
+     "causes": {
+      "zombie": 2,
+      "skeleton": 2
+     },
+     "stuckSpells": 15,
+     "stuckMinutes": 45,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 2,
+      "cornered": 2,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 1,
+      "no walkable route": 2,
+      "refused target repeated": 0,
+      "hole or pit": 10,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 2,
+      "other": 0,
+      "unmatched": 0
+     }
+    },
+    "Sol": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 3,
+     "deathsPerHour": 0.75,
+     "causes": {
+      "zombie": 3
+     },
+     "stuckSpells": 19,
+     "stuckMinutes": 57,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 2,
+      "cornered": 1,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 18,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 1,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     }
+    },
+    "Echo": {
+     "furthest": "none",
+     "furthestIndex": -1,
+     "minutesTo": {},
+     "deaths": 5,
+     "deathsPerHour": 1.25,
+     "causes": {
+      "skeleton": 3,
+      "phantom": 1,
+      "zombie": 1
+     },
+     "stuckSpells": 11,
+     "stuckMinutes": 33,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 2,
+      "cornered": 3,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 1,
+      "refused target repeated": 0,
+      "hole or pit": 7,
+      "hemmed in": 1,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 2,
+      "other": 0,
+      "unmatched": 0
+     }
+    }
+   }
+  }
+ }
+}

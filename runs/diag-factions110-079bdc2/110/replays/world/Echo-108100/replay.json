@@ -1,0 +1,108 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 108100,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    6,
+    69,
+    13
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.450705189963017,
+    8.0,
+    16.56242733602232
+  ],
+  "yaw": -985.99786,
+  "pitch": 17.457703,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 6
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 4
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 7
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 12099,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward -2, 77, 29",
+  "task": "Climb toward the surface for logs: to the wall",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:24:58] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:24:58] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:24:59] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:24:59] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:00] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:00] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:00] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:01] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:01] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:01] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:02] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:02] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:02] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:03] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:03] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:03] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:04] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:04] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:25:05] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:25:05] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]"
+  ]
+}

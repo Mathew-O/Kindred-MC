@@ -1,0 +1,86 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 69398,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -91,
+    62,
+    512
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.514919519566632,
+    8.024424088213692,
+    16.719879928508703
+  ],
+  "yaw": -111.13553,
+  "pitch": 18.159489,
+  "health": 3.5,
+  "food": 4,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 26
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 29
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 4
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 21398,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[09:13:49] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:13:50] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:13:51] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:13:52] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:13:52] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from drowned]",
+    "[09:13:52] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from drowned]",
+    "[09:13:54] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:13:56] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:14:01] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -52, 66, 531 is blocked [from factionCandidates:9266]",
+    "[09:14:02] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:14:02] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -45, 67, 547 [from factionCandidates:9266]",
+    "[09:14:02] [Server thread/INFO]: Sol native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from drowned]",
+    "[09:14:02] [Server thread/INFO]: Sol native_faction COMPLETED [from factionCandidates:9244]",
+    "[09:14:03] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from drowned]",
+    "[09:14:03] [Server thread/INFO]: Sol native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[09:14:04] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:14:05] [Server thread/INFO]: Sol native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+    "[09:14:05] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[09:14:06] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+    "[09:14:07] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie]"
+  ]
+}

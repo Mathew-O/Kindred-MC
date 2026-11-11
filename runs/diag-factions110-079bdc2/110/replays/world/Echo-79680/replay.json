@@ -1,0 +1,80 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 79680,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    372,
+    77,
+    364
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.329855433895943,
+    8.0,
+    16.484593627286756
+  ],
+  "yaw": -183.53171,
+  "pitch": 18.118265,
+  "health": 20.0,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 6
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 7679,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 388, 85, 356",
+  "task": "try elsewhere, toward 388, 85, 356",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:14:27] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:28] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:29] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:30] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:31] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:32] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:33] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:35] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:14:35] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 411, 67, 323 [Climb toward the surface for logs: back the way it came]",
+    "[09:14:38] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 413, 64, 324 by hand]",
+    "[09:14:41] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 413, 65, 324 by hand]",
+    "[09:14:43] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 413, 66, 324 by hand]",
+    "[09:14:43] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[09:14:44] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 413, 64, 324]",
+    "[09:14:44] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[09:14:44] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:14:44] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 412, 67, 324]",
+    "[09:15:54] [Server thread/INFO]: Echo native_goto COMPLETED [try elsewhere, toward 388, 66, 323]",
+    "[09:15:57] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at 358, 76, 371]",
+    "[09:16:00] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at 390, 87, 381]"
+  ]
+}

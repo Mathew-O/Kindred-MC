@@ -1,0 +1,129 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 251840,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -88,
+    60,
+    -241
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.737564919090886,
+    8.0,
+    16.182288289427106
+  ],
+  "yaw": 374.32935,
+  "pitch": 18.159481,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.20000005,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 35
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 15
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 8
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:gray_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cocoa_beans",
+        "count": 6
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 6,
+  "timeOfDay": 11839,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 22, 80, -11",
+  "task": "try elsewhere, toward 22, 80, -11",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:53:38] [Server thread/INFO]: Echo native_goto COMPLETED [Approach pig]",
+    "[09:53:38] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:38] [Server thread/INFO]: Echo native_goto COMPLETED [Approach pig]",
+    "[09:53:38] [Server thread/INFO]: Echo native_attack BLOCKED: Target entity not in line of sight; no attack issued [Hunt pig]",
+    "[09:53:38] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:38] [Server thread/INFO]: Echo native_goto COMPLETED [Approach pig]",
+    "[09:53:39] [Server thread/INFO]: Echo native_goto COMPLETED [Approach pig]",
+    "[09:53:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:39] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:40] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt pig]",
+    "[09:53:40] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up porkchop]",
+    "[09:53:44] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at -73, 72, -225]"
+  ]
+}

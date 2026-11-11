@@ -1,0 +1,80 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 241680,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -50,
+    55,
+    -29
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.390229846675034,
+    8.0,
+    16.606175078828414
+  ],
+  "yaw": -453.7673,
+  "pitch": 18.159489,
+  "health": 13.133451,
+  "food": 6,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 42
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 1679,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - dig toward elsewhere: to the wall",
+  "task": "dig toward elsewhere: to the wall",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:51:03] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:51:03] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:51:04] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:51:04] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:51:04] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:51:05] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:51:06] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:51:07] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:51:08] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:51:10] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:51:11] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -62, 63, -13 is blocked [Explore west for food]",
+    "[09:51:12] [Server thread/INFO]: Sol native_goto COMPLETED [Explore south for food]",
+    "[09:51:12] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -35, 63, 15 [Explore south for food]",
+    "[09:51:14] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:51:15] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:51:15] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[09:51:15] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[09:51:16] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[09:51:16] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[09:51:26] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 19, 79, -12 [try elsewhere, toward 19, 79, -12]"
+  ]
+}

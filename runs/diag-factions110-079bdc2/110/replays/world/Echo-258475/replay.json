@@ -1,0 +1,107 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 258475,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    49,
+    63,
+    -215
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.59249273551491,
+    8.0,
+    16.06191977208286
+  ],
+  "yaw": -7.590164,
+  "pitch": 18.159342,
+  "health": 4.1403236,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 43
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 8
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:gray_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cocoa_beans",
+        "count": 6
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 18475,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie the way it came (tried elsewhere 3 times)",
+  "task": "Back off from zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:27] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:28] [Server thread/INFO]: Echo native_swap CANCELLED: A hostile mob is attacking; fight back first [Ready a block]",
+    "[09:56:28] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a block]",
+    "[09:56:28] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from drowned]",
+    "[09:56:28] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:56:29] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:56:32] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:56:34] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie]",
+    "[09:56:34] [Server thread/INFO]: Echo died at 65, 71, -199: Echo was slain by Zombie (tick 258475, night, under the sky, hunger 16, armour 0, holding nothing, no shield; doing \"Back off from zombie\" in \"Wood: fight back - Back off from zombie the way it came (tried elsewhere 3 times)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

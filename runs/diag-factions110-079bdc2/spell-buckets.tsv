@@ -1,0 +1,46 @@
+seed	player	replay tick	stuck tick	bucket	replay
+110	Kindred	30220	30060	no walkable route	Kindred-30220
+110	Kindred	51080	50920	hole or pit	Kindred-51080
+110	Kindred	54780	54620	hole or pit	Kindred-54780
+110	Kindred	123740	123580	busy-work loop	Kindred-123740
+110	Kindred	191600	191440	water loop	Kindred-191600
+110	Kindred	195220	195040	hole or pit	Kindred-195220
+110	Kindred	198840	198660	hole or pit	Kindred-198840
+110	Kindred	216340	216160	hole or pit	Kindred-216340
+110	Kindred	219980	219820	busy-work loop	Kindred-219980
+110	Kindred	223600	223440	hole or pit	Kindred-223600
+110	Kindred	241720	241560	no walkable route	Kindred-241720
+110	Kindred	245340	245180	hole or pit	Kindred-245340
+110	Kindred	248980	248820	hole or pit	Kindred-248980
+110	Kindred	271640	271460	hole or pit	Kindred-271640
+110	Kindred	275280	275120	hole or pit	Kindred-275280
+110	Sol	79140	78980	hole or pit	Sol-79140
+110	Sol	129700	129540	hole or pit	Sol-129700
+110	Sol	145820	145660	hole or pit	Sol-145820
+110	Sol	149440	149280	hole or pit	Sol-149440
+110	Sol	168620	168440	hole or pit	Sol-168620
+110	Sol	172260	172100	hole or pit	Sol-172260
+110	Sol	175880	175720	hole or pit	Sol-175880
+110	Sol	198160	198000	hole or pit	Sol-198160
+110	Sol	201780	201620	hole or pit	Sol-201780
+110	Sol	216360	216200	hole or pit	Sol-216360
+110	Sol	223560	223400	hole or pit	Sol-223560
+110	Sol	227160	227000	hole or pit	Sol-227160
+110	Sol	241680	241520	hole or pit	Sol-241680
+110	Sol	245420	245260	hole or pit	Sol-245420
+110	Sol	249040	248880	hole or pit	Sol-249040
+110	Sol	263600	263440	hole or pit	Sol-263600
+110	Sol	267760	267580	hole or pit	Sol-267760
+110	Sol	271380	271220	waiting for daylight or a teammate	Sol-271380
+110	Sol	275020	274840	hole or pit	Sol-275020
+110	Echo	75460	75300	hole or pit	Echo-75460
+110	Echo	79680	79520	hole or pit	Echo-79680
+110	Echo	99520	99340	hole or pit	Echo-99520
+110	Echo	108100	107940	hole or pit	Echo-108100
+110	Echo	124160	124000	no walkable route	Echo-124160
+110	Echo	226400	226240	busy-work loop	Echo-226400
+110	Echo	247100	246920	hemmed in	Echo-247100
+110	Echo	251840	251680	busy-work loop	Echo-251840
+110	Echo	267700	267540	hole or pit	Echo-267700
+110	Echo	271340	271180	hole or pit	Echo-271340
+110	Echo	274980	274820	hole or pit	Echo-274980

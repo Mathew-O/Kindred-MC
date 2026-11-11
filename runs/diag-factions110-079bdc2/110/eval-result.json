@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 110,
+  "ticks": 288000,
+  "ticksRun": 288001,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 90, "factions": 3, "claims": 10, "captures": 0, "sales": 0, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 12, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 14.65, "tickMsWorst": 1024.93, "tickMsWorstAt": 57156, "ticksOver50ms": 2048, "ticksOver200ms": 13, "heapMbMax": 1143, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {},
+      "deaths": [
+        {"tick": 64408, "cause": "Kindred was slain by Zombie", "x": 29, "y": 80, "z": 13, "light": 4, "timeOfDay": 16570, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Wood: fight back - Back off from zombie (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 80999, "cause": "Kindred was shot by Skeleton", "x": -103, "y": 79, "z": 8, "light": 7, "timeOfDay": 9161, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Wood: fight back - Back off from skeleton the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 127301, "cause": "Kindred was slain by Zombie", "x": -93, "y": 70, "z": -23, "light": 15, "timeOfDay": 7463, "dimension": "minecraft:overworld", "hunger": 3, "underSky": true, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 176302, "cause": "Kindred was shot by Skeleton", "x": 3, "y": 64, "z": -13, "light": 0, "timeOfDay": 8464, "dimension": "minecraft:overworld", "hunger": 0, "underSky": false, "stage": "Wood: fight back - Back off from skeleton the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30060, "x": 50, "y": 63, "z": 212, "attempt": 1}, {"tick": 50920, "x": 57, "y": 63, "z": 513, "attempt": 2}, {"tick": 54620, "x": 62, "y": 63, "z": 491, "attempt": 3}, {"tick": 123580, "x": -73, "y": 65, "z": -28, "attempt": 1}, {"tick": 191440, "x": -34, "y": 63, "z": -13, "attempt": 1}, {"tick": 195040, "x": -35, "y": 63, "z": -13, "attempt": 2}, {"tick": 198660, "x": -35, "y": 63, "z": -14, "attempt": 3}, {"tick": 216160, "x": -34, "y": 63, "z": -13, "attempt": 4}, {"tick": 219820, "x": -34, "y": 63, "z": -13, "attempt": 5}, {"tick": 223440, "x": -34, "y": 63, "z": -13, "attempt": 6}, {"tick": 241560, "x": -35, "y": 63, "z": -14, "attempt": 7}, {"tick": 245180, "x": -35, "y": 63, "z": -14, "attempt": 8}, {"tick": 248820, "x": -35, "y": 63, "z": -15, "attempt": 9}, {"tick": 271460, "x": -35, "y": 63, "z": -15, "attempt": 10}, {"tick": 275120, "x": -34, "y": 63, "z": -13, "attempt": 11}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {},
+      "deaths": [
+        {"tick": 69236, "cause": "Sol was slain by Zombie", "x": -75, "y": 70, "z": 528, "light": 4, "timeOfDay": 21398, "dimension": "minecraft:overworld", "hunger": 4, "underSky": true, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 112423, "cause": "Sol was slain by Zombie", "x": 32, "y": 78, "z": 76, "light": 4, "timeOfDay": 16585, "dimension": "minecraft:overworld", "hunger": 5, "underSky": true, "stage": "Wood: fight back - Back off from zombie the way it came (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 115615, "cause": "Sol was slain by Zombie", "x": 4, "y": 82, "z": 91, "light": 4, "timeOfDay": 19777, "dimension": "minecraft:overworld", "hunger": 11, "underSky": true, "stage": "Wood: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[SHELTER_EARLY, MORE_FOOD]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 78980, "x": 42, "y": 79, "z": 50, "attempt": 1}, {"tick": 129540, "x": -35, "y": 63, "z": -14, "attempt": 1}, {"tick": 145660, "x": -35, "y": 63, "z": -13, "attempt": 2}, {"tick": 149280, "x": -35, "y": 63, "z": -13, "attempt": 3}, {"tick": 168440, "x": -34, "y": 63, "z": -13, "attempt": 4}, {"tick": 172100, "x": -35, "y": 63, "z": -14, "attempt": 5}, {"tick": 175720, "x": -34, "y": 63, "z": -13, "attempt": 6}, {"tick": 198000, "x": -35, "y": 63, "z": -13, "attempt": 7}, {"tick": 201620, "x": -35, "y": 63, "z": -15, "attempt": 8}, {"tick": 216200, "x": -35, "y": 63, "z": -13, "attempt": 9}, {"tick": 223400, "x": -35, "y": 63, "z": -15, "attempt": 10}, {"tick": 227000, "x": -34, "y": 63, "z": -13, "attempt": 11}, {"tick": 241520, "x": -34, "y": 63, "z": -13, "attempt": 12}, {"tick": 245260, "x": -35, "y": 63, "z": -14, "attempt": 13}, {"tick": 248880, "x": -35, "y": 63, "z": -14, "attempt": 14}, {"tick": 263440, "x": -35, "y": 63, "z": -13, "attempt": 15}, {"tick": 267580, "x": -35, "y": 63, "z": -14, "attempt": 16}, {"tick": 271220, "x": -35, "y": 63, "z": -15, "attempt": 17}, {"tick": 274840, "x": -36, "y": 63, "z": -15, "attempt": 18}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {},
+      "deaths": [
+        {"tick": 50654, "cause": "Echo was shot by Skeleton", "x": 80, "y": 62, "z": -46, "light": 14, "timeOfDay": 2816, "dimension": "minecraft:overworld", "hunger": 3, "underSky": true, "stage": "Wood: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 53671, "cause": "Echo was shot by Skeleton", "x": 91, "y": 62, "z": -39, "light": 14, "timeOfDay": 5833, "dimension": "minecraft:overworld", "hunger": 15, "underSky": true, "stage": "Wood: fight back - Back off from skeleton the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 114795, "cause": "Echo was shot by Skeleton", "x": 32, "y": 80, "z": 20, "light": 4, "timeOfDay": 18957, "dimension": "minecraft:overworld", "hunger": 15, "underSky": true, "stage": "Wood: fight back - Back off from zombie the way it came (tried elsewhere 4 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 215067, "cause": "Echo was doomed to fall by Phantom", "x": 8, "y": 86, "z": -27, "light": 10, "timeOfDay": 23229, "dimension": "minecraft:overworld", "hunger": 0, "underSky": true, "stage": "Wood: Gather logs for a table and a wooden pickaxe - Cut through east for logs: advance (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 258313, "cause": "Echo was slain by Zombie", "x": 65, "y": 71, "z": -199, "light": 4, "timeOfDay": 18475, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Wood: fight back - Back off from zombie the way it came (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 75300, "x": 412, "y": 67, "z": 323, "attempt": 1}, {"tick": 79520, "x": 388, "y": 85, "z": 380, "attempt": 2}, {"tick": 99340, "x": 401, "y": 112, "z": 418, "attempt": 3}, {"tick": 107940, "x": 21, "y": 77, "z": 29, "attempt": 4}, {"tick": 124000, "x": 13, "y": 97, "z": -30, "attempt": 1}, {"tick": 226240, "x": -33, "y": 73, "z": -238, "attempt": 1}, {"tick": 246920, "x": -53, "y": 74, "z": -261, "attempt": 2}, {"tick": 251680, "x": -72, "y": 68, "z": -225, "attempt": 3}, {"tick": 267540, "x": 7, "y": 89, "z": -19, "attempt": 1}, {"tick": 271180, "x": 9, "y": 88, "z": -17, "attempt": 2}, {"tick": 274820, "x": 8, "y": 88, "z": -17, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

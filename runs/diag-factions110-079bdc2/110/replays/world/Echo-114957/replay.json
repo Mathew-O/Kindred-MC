@@ -1,0 +1,100 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 114957,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    16,
+    72,
+    4
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.45496613647441,
+    8.001335979112142,
+    16.326229993350566
+  ],
+  "yaw": 1260.1907,
+  "pitch": 11.374044,
+  "health": 16.499996,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:red_sand",
+        "count": 6
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 4
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 7
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 18957,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie the way it came (tried elsewhere 4 times)",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[09:26:14] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[09:26:14] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[09:26:15] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[09:26:15] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:26:15] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[09:26:16] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from spider the way it came]",
+    "[09:26:16] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[09:26:17] [Server thread/INFO]: Echo native_goto COMPLETED [Dig in for the night: step down]",
+    "[09:26:17] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for daylight]",
+    "[09:26:18] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[09:26:19] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:26:20] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:26:21] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[09:26:22] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:26:22] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[09:26:23] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:26:24] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:26:25] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+    "[09:26:26] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[09:26:26] [Server thread/INFO]: Echo died at 32, 80, 20: Echo was shot by Skeleton (tick 114957, night, under the sky, hunger 15, armour 0, holding nothing, no shield; doing \"Back off from zombie the way it came\" in \"Wood: fight back - Back off from zombie the way it came (tried elsewhere 4 times)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 64570,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    13,
+    72,
+    -3
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.59630106302675,
+    8.0,
+    16.545550848663964
+  ],
+  "yaw": 257.24448,
+  "pitch": 16.126354,
+  "health": 3.5,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 63
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 12
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:chicken",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:melon_slice",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 16570,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie (tried elsewhere 3 times)",
+  "task": "Back off from zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[09:12:34] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:35] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:36] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:37] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:38] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:39] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:41] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:42] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:43] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:44] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:12:45] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[09:12:45] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:12:46] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[09:12:47] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:12:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:12:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from creeper]",
+    "[09:12:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[09:12:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:12:54] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie]",
+    "[09:12:54] [Server thread/INFO]: Kindred died at 29, 80, 13: Kindred was slain by Zombie (tick 64570, night, under the sky, hunger 16, armour 0, holding melon_slice, no shield; doing \"Back off from zombie\" in \"Wood: fight back - Back off from zombie (tried elsewhere 3 times)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

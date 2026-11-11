@@ -1,0 +1,108 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 30220,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    35,
+    55,
+    196
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.419515852147775,
+    8.0,
+    16.63129271191491
+  ],
+  "yaw": 102.60842,
+  "pitch": 17.109785,
+  "health": 20.0,
+  "food": 18,
+  "saturation": 1.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 63
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 8
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:chicken",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 6219,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 51, 63, 188",
+  "task": "try elsewhere, toward 51, 63, 188",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:02:53] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 65, 63, 258 [from factionCandidates:9266]",
+    "[09:02:54] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 68, 63, 257 [from factionCandidates:9266]",
+    "[09:02:54] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 67, 63, 257 [from factionCandidates:9266]",
+    "[09:02:54] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:02:58] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:03:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:03:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 61, 63, 259 [from factionCandidates:9266]",
+    "[09:03:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 58, 63, 260 [from factionCandidates:9266]",
+    "[09:03:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:03:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:03:08] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:03:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:03:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 63, 63, 259 [from factionCandidates:9266]",
+    "[09:03:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 67, 63, 257 [from factionCandidates:9266]",
+    "[09:03:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 59, 63, 260 [from factionCandidates:9266]",
+    "[09:03:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 60, 63, 259 [from factionCandidates:9266]",
+    "[09:03:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 69, 63, 257 [from factionCandidates:9266]",
+    "[09:03:15] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 68, 63, 257 [from factionCandidates:9266]",
+    "[09:03:15] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]",
+    "[09:03:19] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 56, 63, 260 [from factionCandidates:9266]"
+  ]
+}

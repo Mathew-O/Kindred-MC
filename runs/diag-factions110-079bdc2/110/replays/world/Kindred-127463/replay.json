@@ -1,0 +1,121 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 127463,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -109,
+    62,
+    -39
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.232299753445076,
+    8.024424088213692,
+    16.864043530307864
+  ],
+  "yaw": -368.4499,
+  "pitch": 16.206215,
+  "health": 4.5,
+  "food": 3,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 17
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 48
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 2
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 7463,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie the way it came",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[09:29:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through west for animals: advance]",
+    "[09:29:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through west for animals: advance]",
+    "[09:29:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through west for animals: advance]",
+    "[09:30:03] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -107, 66, -33 is blocked [Explore west for animals]",
+    "[09:30:10] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -79, 62, -29 is blocked [Explore east for animals]",
+    "[09:30:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore south for animals]",
+    "[09:30:19] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for animals]",
+    "[09:30:20] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[09:30:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:30:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[09:30:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[09:30:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[09:30:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[09:30:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:30:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:30:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:30:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:30:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:30:29] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[09:30:29] [Server thread/INFO]: Kindred died at -93, 70, -23: Kindred was slain by Zombie (tick 127463, day, under the sky, hunger 3, armour 0, holding dirt, no shield; doing \"Back off from zombie the way it came\" in \"Wood: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

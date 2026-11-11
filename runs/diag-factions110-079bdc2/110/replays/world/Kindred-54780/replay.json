@@ -1,0 +1,129 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 54780,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    45,
+    55,
+    475
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.712423383542443,
+    8.0,
+    16.53562763440874
+  ],
+  "yaw": 252.86725,
+  "pitch": 18.146475,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 63
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 12
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:chicken",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:melon_slice",
+        "count": 4
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 6779,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 16, 78, -15",
+  "task": "try elsewhere, toward 16, 78, -15",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:07:50] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:51] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:52] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:55] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:57] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:07:59] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:08:00] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:08:01] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:08:02] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:08:03] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[09:08:03] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 69, 63, 496 [Climb toward the surface for logs: back the way it came]",
+    "[09:08:03] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear 59, 62, 512]",
+    "[09:08:03] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+    "[09:08:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 71, 63, 498 [Climb toward the surface for logs: back the way it came]",
+    "[09:08:04] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear 59, 63, 512]",
+    "[09:08:04] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[09:09:02] [Server thread/INFO]: Kindred native_goto COMPLETED [try elsewhere, toward 59, 62, 489]"
+  ]
+}

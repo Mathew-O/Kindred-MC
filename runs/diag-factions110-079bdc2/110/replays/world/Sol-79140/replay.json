@@ -1,0 +1,80 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 79140,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    27,
+    71,
+    34
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.256903138451335,
+    8.0,
+    16.34759559473106
+  ],
+  "yaw": -33024.133,
+  "pitch": 17.375599,
+  "health": 20.0,
+  "food": 18,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 36
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 7139,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 18, 79, 50",
+  "task": "try elsewhere, toward 18, 79, 50",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:16:52] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:52] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:53] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:53] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:53] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:55] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:55] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:55] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:56] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:56] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:57] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:57] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:57] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:58] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:58] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:58] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:59] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:16:59] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:16:59] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]",
+    "[09:17:00] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]"
+  ]
+}

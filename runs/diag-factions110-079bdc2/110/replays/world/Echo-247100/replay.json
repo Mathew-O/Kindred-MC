@@ -1,0 +1,115 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 247100,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -65,
+    67,
+    -277
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.681302766627432,
+    8.001335979112142,
+    16.498416527547704
+  ],
+  "yaw": -89.90393,
+  "pitch": 1.3455529,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 35
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 15
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 8
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:gray_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 6,
+  "timeOfDay": 7099,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward -29, 74, -261",
+  "task": "try elsewhere, toward -29, 74, -261",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:51:54] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:54] [Server thread/INFO]: Echo native_goto COMPLETED [Approach sheep]",
+    "[09:51:54] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:54] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:54] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:54] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:54] [Server thread/INFO]: Echo native_goto COMPLETED [Approach sheep]",
+    "[09:51:55] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:55] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:55] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:55] [Server thread/INFO]: Echo native_goto COMPLETED [Approach sheep]",
+    "[09:51:55] [Server thread/INFO]: Echo native_goto COMPLETED [Approach sheep]",
+    "[09:51:55] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:56] [Server thread/INFO]: Echo native_goto COMPLETED [Approach sheep]",
+    "[09:51:56] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt sheep]",
+    "[09:51:56] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up mutton]",
+    "[09:51:58] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at -49, 76, -312]",
+    "[09:52:01] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:52:03] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at -59, 74, -279]",
+    "[09:52:05] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at -53, 81, -262]"
+  ]
+}

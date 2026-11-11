@@ -1,0 +1,78 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 81161,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -119,
+    71,
+    -8
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.55786594155363,
+    8.0,
+    16.510754701944002
+  ],
+  "yaw": -90.1504,
+  "pitch": 9.988032,
+  "health": 0.66666603,
+  "food": 5,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [
+    {
+      "id": "minecraft:hunger",
+      "amplifier": 0,
+      "duration": 495
+    }
+  ],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 18
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 9161,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from skeleton the way it came",
+  "task": "Explore east for animals",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[09:17:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[09:17:17] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[09:17:17] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -107, 78, -9 [Back off from skeleton]",
+    "[09:17:18] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore east for logs]",
+    "[09:17:18] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[09:17:18] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk toward the trees seen at -123, 68, -28]",
+    "[09:17:23] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[09:17:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[09:17:24] [Server thread/INFO]: Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+    "[09:17:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:17:26] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+    "[09:17:26] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[09:17:26] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[09:17:26] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[09:17:27] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:17:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:17:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:17:34] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -94, 90, 10 is blocked [Climb toward the surface for food: back the way it came]",
+    "[09:17:34] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3169]",
+    "[09:17:36] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Explore east for animals]"
+  ]
+}

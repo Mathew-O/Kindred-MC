@@ -1,0 +1,93 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 112585,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    16,
+    70,
+    60
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.794834397466026,
+    8.0,
+    16.412951998104717
+  ],
+  "yaw": -261.3374,
+  "pitch": 18.159489,
+  "health": 4.833334,
+  "food": 5,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 35
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 30
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 16585,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from zombie the way it came (tried elsewhere 1 time)",
+  "task": "Back off from zombie the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "log": [
+    "[09:25:46] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[09:25:47] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[09:25:48] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for daylight]",
+    "[09:25:51] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:25:51] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:25:51] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:25:51] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for food]",
+    "[09:25:53] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:25:54] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]",
+    "[09:25:54] [Server thread/INFO]: Sol native_goto COMPLETED [Dig in for the night: step down]",
+    "[09:25:54] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear 35, 76, 68]",
+    "[09:25:55] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear 35, 75, 68]",
+    "[09:25:55] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear 34, 76, 69]",
+    "[09:25:55] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear 34, 75, 69]",
+    "[09:25:55] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear 34, 74, 69]",
+    "[09:25:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig in for the night: step down]",
+    "[09:25:56] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear 34, 75, 70]",
+    "[09:25:58] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[09:25:59] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie the way it came]",
+    "[09:25:59] [Server thread/INFO]: Sol died at 32, 78, 76: Sol was slain by Zombie (tick 112585, night, under the sky, hunger 5, armour 0, holding dirt, no shield; doing \"Back off from zombie the way it came\" in \"Wood: fight back - Back off from zombie the way it came (tried elsewhere 1 time)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 50816,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    64,
+    54,
+    -62
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.1918659689172,
+    8.27793072823416,
+    16.741890343789166
+  ],
+  "yaw": -627.3507,
+  "pitch": 18.159489,
+  "health": 8.164175,
+  "food": 3,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 40
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 9
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 2816,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: to dry ground",
+  "task": "Get out of the water: to dry ground",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[09:08:23] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[09:08:26] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 64, 72, -20 is blocked [Walk toward the trees seen at 64, 72, -20]",
+    "[09:08:30] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 113, 63, -32 is blocked [from factionCandidates:9266]",
+    "[09:08:35] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for logs]",
+    "[09:08:39] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for logs]",
+    "[09:08:44] [Server thread/INFO]: Echo native_goto COMPLETED [from factionCandidates:9266]",
+    "[09:08:44] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 146, 63, -48 [from factionCandidates:9266]",
+    "[09:08:45] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[09:08:49] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for logs]",
+    "[09:08:49] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 113, 63, -47 [from factionCandidates:9266]",
+    "[09:08:51] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore west for logs]",
+    "[09:08:52] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[09:08:52] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore west for animals]",
+    "[09:08:54] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[09:08:54] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore west for animals]",
+    "[09:08:54] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[09:08:55] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[09:08:55] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[09:08:56] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+    "[09:08:56] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Get out of the water: to dry ground]"
+  ]
+}

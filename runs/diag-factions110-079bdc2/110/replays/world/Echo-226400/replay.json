@@ -1,0 +1,115 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 226400,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -49,
+    66,
+    -253
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.47362951966919,
+    8.176759275064242,
+    16.562694616111628
+  ],
+  "yaw": -179.64622,
+  "pitch": 10.261175,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.20000005,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 35
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:gray_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:chicken",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 10399,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward -33, 73, -259",
+  "task": "try elsewhere, toward -33, 73, -259",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:46:18] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:18] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:18] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:18] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:19] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:20] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:21] [Server thread/INFO]: Echo native_goto COMPLETED [To where it last saw game at -31, 79, -203: walk on]",
+    "[09:46:21] [Server thread/INFO]: Echo native_goto COMPLETED [Approach chicken]",
+    "[09:46:21] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:22] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:22] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt chicken]",
+    "[09:46:24] [Server thread/INFO]: Echo native_goto COMPLETED [Walk toward the trees seen at -34, 81, -235]"
+  ]
+}

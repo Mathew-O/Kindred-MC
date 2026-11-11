@@ -1,0 +1,107 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 176464,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -13,
+    56,
+    -29
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.51987961001549,
+    8.532159034213947,
+    16.407780375043437
+  ],
+  "yaw": -181.12793,
+  "pitch": -1.5946554,
+  "health": 3.2115011,
+  "food": 0,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 49
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 29
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 8464,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from skeleton the way it came",
+  "task": "Back off from skeleton the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[09:38:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[09:38:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[09:38:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[09:38:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[09:38:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[09:38:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through north for animals: advance]",
+    "[09:38:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[09:38:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore north for animals]",
+    "[09:38:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:38:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:38:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:38:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Cut through east for animals: advance]",
+    "[09:38:38] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -5, 64, -8 is blocked [Explore east for animals]",
+    "[09:38:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[09:38:43] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -43, 66, -7 is blocked [Explore west for animals]",
+    "[09:38:46] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -49, 78, -29 is blocked [Explore north for animals]",
+    "[09:38:49] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 2, 70, -14 is blocked [Explore east for animals]",
+    "[09:38:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore south for animals]",
+    "[09:38:52] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from skeleton the way it came]",
+    "[09:38:52] [Server thread/INFO]: Kindred died at 3, 64, -13: Kindred was shot by Skeleton (tick 176464, day, under cover, hunger 0, armour 0, holding dirt, no shield; doing \"Back off from skeleton the way it came\" in \"Wood: fight back - Back off from skeleton the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 198160,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -50,
+    55,
+    -29
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.137674659616913,
+    8.0,
+    16.551906710731096
+  ],
+  "yaw": -8008.8027,
+  "pitch": 18.159489,
+  "health": 13.133451,
+  "food": 6,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:bamboo",
+        "count": 42
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 6159,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward -34, 63, 11",
+  "task": "try elsewhere, toward -34, 63, 11",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[09:41:54] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:41:55] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:41:55] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:41:56] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:41:56] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:41:57] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:41:57] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:41:58] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:41:58] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:41:59] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:42:00] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:42:00] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:42:01] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:42:01] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:42:02] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:42:02] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:42:03] [Server thread/INFO]: Sol native_goto COMPLETED [Explore west for food]",
+    "[09:42:04] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]",
+    "[09:42:04] [Server thread/INFO]: Sol native_goto BLOCKED: Route to -62, 63, -13 is blocked [Explore west for food]",
+    "[09:42:05] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for food]"
+  ]
+}
