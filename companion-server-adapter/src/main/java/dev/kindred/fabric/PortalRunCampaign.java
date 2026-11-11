@@ -4955,7 +4955,7 @@ final class PortalRunCampaign {
                 overheadTick = lastTick;
             } else if (overheadOpenFailed || lastTick - overheadTick > 600) {
                 // Not opened: nothing let in, nothing to put back; that block let be a while.
-                blockedUntil.merge(opening.asLong(), lastTick + 2400, Math::max);
+                cellsAside.until(opening.asLong(), lastTick + 2400);
                 overhead = null;
                 return Optional.empty();
             } else {
@@ -5017,7 +5017,7 @@ final class PortalRunCampaign {
         }
         if (overheadLeft != null) {
             event("opened its ceiling at " + opening.toShortString() + " and closed it again, its bucket empty: " + overheadLeft, false);
-            blockedUntil.merge(opening.asLong(), lastTick + 24_000, Math::max);
+            cellsAside.until(opening.asLong(), lastTick + 24_000);
         } else {
             event("filled a bucket from the water over its head at " + overheadSource.toShortString() + "; resealed, its tunnel dry", false);
         }
