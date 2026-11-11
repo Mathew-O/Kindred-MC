@@ -120,6 +120,8 @@ final class FactionsPlayer {
 
     /** Faction walks that came back refused, and the refusals the back-off counted of them: equal when it holds. */
     int blockedWalks, refusalsCounted;
+    /** Faction walks that ended, however they ended: asked of the navigator at all (F-35j's fixtures). */
+    int walksEnded;
 
     /** A walk toward {@code target} got somewhere: its refusals and ways forgotten, and the run of refusals with them. */
     void walked(String target) {
@@ -144,6 +146,26 @@ final class FactionsPlayer {
     int waysMade(String target) { return ways.getOrDefault(target, 0); }
 
     int refusals(String target) { var r = refused.get(target); return r == null ? 0 : r.times(); }
+
+    /**
+     * A walk toward {@code target} that would end in open water it saw (F-35j): set aside at once, with no walk asked, as
+     * after {@value #SET_ASIDE} refusals; again later, the wait twice as long. Not a refusal of the walk: no route was
+     * searched, and the run of refusals (F-35i) is not counted on.
+     */
+    void openWater(String target, long tick) {
+        var before = refused.get(target);
+        int times = Math.max(SET_ASIDE, before == null ? 0 : before.times() + 1);
+        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
+        overWater++;
+    }
+
+    /** Places set aside as open water it saw, for the fixtures. */
+    int overWater;
+    /** Toward a walk's end beyond its sight, the last this many columns out to the edge of its sight all water it saw: open water. */
+    static final int OPEN_WATER = 10;
+    /** The last walk's end found not open water, and when: looked at again once it changes or a second on. */
+    BlockPos dryAt;
+    long dryAtTick = Long.MIN_VALUE / 2;
 
     /** Whether a walk toward {@code target} waits now. */
     boolean waiting(String target, long tick) { var r = refused.get(target); return r != null && r.until() > tick; }

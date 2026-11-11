@@ -7952,6 +7952,7 @@ final class PlayerRuntime {
             boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
                     && entry.dispatchSource.startsWith("factionCandidates");
             if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
+            if (factionWalk) entry.factionPlay.walksEnded++;
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
@@ -9491,6 +9492,15 @@ final class PlayerRuntime {
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
         }
+        // Its walk would end in open water it saw (F-35j): the place set aside at once, with no walk asked and no way made.
+        // On Factions seed 303 the players' land is an island, and the places its faction play chose east of it were open
+        // sea, refused leg after leg. Only what it saw counts; out of its sight the walk is asked as before.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && seenOpenWater(entry, play, player, to, tick)) {
+            play.openWater(move.target(), tick);
+            play.move = null;
+            play.decidedAt = Long.MIN_VALUE / 2;
+            return null;
+        }
         // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
         // own put, as a player climbs out of a hollow, through the run's own route builder under the server's edit policy
         // and the faction land's rules; then the walk is asked again. On Factions seed 109 in RUNNER 2's trace the players'
@@ -9506,6 +9516,18 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /** Whether the way toward a faction walk's end {@code to} is open water the player saw (F-35j); a dry answer kept a second for the same end. */
+    private boolean seenOpenWater(Entry entry, FactionsPlayer play, ServerPlayerEntity player, BlockPos to, long tick) {
+        if (entry.campaign == null) return false;
+        if (to.equals(play.dryAt) && tick - play.dryAtTick < 20) return false;
+        boolean water = entry.campaign.knowledge().seenOpenWaterToward(player.getBlockPos(), to, FactionsPlayer.OPEN_WATER);
+        if (!water) {
+            play.dryAt = to.toImmutable();
+            play.dryAtTick = tick;
+        }
+        return water;
     }
 
     /**
@@ -9724,6 +9746,20 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+    }
+
+    /** How many times the fixture's AI player has looked all round it (its perception's sweeps); -1 before it looks at all. */
+    int sweepsForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null || entry.campaign == null ? -1 : entry.campaign.knowledge().sweeps();
+    }
+
+    /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
+    int[] factionOverWaterForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.overWater, entry.factionPlay.walksEnded};
     }
 
     /** Whether the fixture's AI player's faction walks all wait now, where it stands. */
