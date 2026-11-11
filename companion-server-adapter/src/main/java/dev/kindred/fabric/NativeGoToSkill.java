@@ -121,7 +121,6 @@ final class NativeGoToSkill implements SkillBody {
         return this;
     }
 
-    /** Arrive only near the middle of the target block. */
     /**
      * As {@link #centred()}, stopping within {@code within} of the middle. "Down the scaffold" asks 0.15: a body further
      * than 0.2 off its column's middle overlaps the next cell, and a bottom slab of the roof there caught it half a block
@@ -134,6 +133,7 @@ final class NativeGoToSkill implements SkillBody {
         return centred();
     }
 
+    /** Arrive only near the middle of the target block. */
     NativeGoToSkill centred() {
         centre = true;
         return this;

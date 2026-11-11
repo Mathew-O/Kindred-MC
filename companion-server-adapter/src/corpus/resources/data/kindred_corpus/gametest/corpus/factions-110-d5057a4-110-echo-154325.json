@@ -1,0 +1,117 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 154325,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -13,
+  55,
+  -46
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.62559768858973,
+  8.753199980521202,
+  16.195786941361348
+ ],
+ "yaw": -1795.3339,
+ "pitch": 4.7490063,
+ "health": 3.050002,
+ "food": 10,
+ "saturation": 1.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 37
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 64
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 13
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 8
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 7
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:wheat_seeds",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 10325,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "STRONGHOLD",
+ "stage": "Wood: fight back - Back off from zombie the way it came",
+ "task": "Explore east for animals",
+ "stance": "PRESS_ON",
+ "habits": "[MORE_FOOD]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[07:25:22] [Server thread/INFO]: Echo native_break COMPLETED [Cut through west for animals: clear -85, 77, -2]",
+  "[07:25:22] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through west for animals: advance]",
+  "[07:25:24] [Server thread/INFO]: Echo native_goto COMPLETED [Explore west for animals]",
+  "[07:25:25] [Server thread/INFO]: Echo native_goto COMPLETED [Explore east for animals]",
+  "[07:25:25] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:25] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:25] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:25] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:29] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -52, 75, 1 is blocked [Explore east for animals]",
+  "[07:25:32] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -38, 64, 15 is blocked [Explore south for animals]",
+  "[07:25:36] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -60, 78, 10 is blocked [Explore west for animals]",
+  "[07:25:38] [Server thread/INFO]: Echo native_goto COMPLETED [Explore north for animals]",
+  "[07:25:41] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -39, 71, -19 is blocked [Explore east for animals]",
+  "[07:25:44] [Server thread/INFO]: Echo native_goto COMPLETED [Explore east for animals]",
+  "[07:25:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through east for animals: advance]",
+  "[07:25:47] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Explore east for animals]",
+  "[07:25:47] [Server thread/INFO]: Echo died at 3, 63, -30: Echo was slain by Zombie (tick 154325, day, under cover, hunger 10, armour 0, holding wheat_seeds, no shield; doing \"Explore east for animals\" in \"Wood: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [MORE_FOOD])"
+ ],
+ "corpus": {
+  "run": "factions-110-d5057a4",
+  "seed": "110",
+  "build": "d5057a4",
+  "replay": "",
+  "source": "claude/corpus-data-factions110-1110@0445d5b:factions-110-d5057a4/110/replays/world/Echo-154325",
+  "class": "death: zombie",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}
