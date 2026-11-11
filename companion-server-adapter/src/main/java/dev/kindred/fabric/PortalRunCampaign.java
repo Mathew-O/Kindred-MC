@@ -6724,6 +6724,8 @@ final class PortalRunCampaign {
     private Direction bedRoomWay;
     /** A night spent holed up with no bed to sleep in: a bed is wanted first thing (E-70a). */
     private boolean bedUrgent;
+    /** What it last said of staying up for night work, so it is said once a night. */
+    private String lastNightWork;
     /** Lying down in the bed it carries more often than this in a night, it gives the night up to its other work. */
     private static final int BED_TRIES = 4;
 
@@ -6731,6 +6733,15 @@ final class PortalRunCampaign {
     void nights(boolean inBed, boolean homeInReach) {
         this.bedNights = inBed;
         this.homeInReach = homeInReach;
+    }
+
+    /**
+     * Work that only the night gives, declared by what it is after (E-70a): ender pearls from endermen, on the stronghold
+     * leg's pearl hunt in the Overworld. Then it stays up, and says so.
+     */
+    boolean nightWork(ServerPlayerEntity player) {
+        return player.getServerWorld().getRegistryKey() == net.minecraft.world.World.OVERWORLD
+                && stronghold.stage() == dev.kindred.core.survival.StrongholdRunPlanner.Stage.PEARLS;
     }
 
     /** A bed is a standing want while its nights are spent in bed (E-70a). */
@@ -6783,6 +6794,14 @@ final class PortalRunCampaign {
             return Optional.of(go(carriedBedAt, 2.0, true, "Back to its bed to take it up"));
         }
         if (!bedNights || homeInReach || stronghold.spawnByPortal(player) || bedTries >= BED_TRIES) return Optional.empty();
+        if (nightWork(player)) {
+            if (!"Up tonight for work only the night gives: ender pearls".equals(lastNightWork)) {
+                lastNightWork = "Up tonight for work only the night gives: ender pearls";
+                event(lastNightWork);
+            }
+            return Optional.empty();
+        }
+        lastNightWork = null;
         if (player.isSleeping()) return Optional.of(new Task("native_wait", Map.of("seconds", "2"), "Asleep in the bed it carries"));
         if (carriedBedAt != null) {
             if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 3.0 * 3.0) {

@@ -5769,7 +5769,7 @@ final class PlayerRuntime {
                         mob -> mob.isAlive() && mob.getTarget() == player).isEmpty();
         boolean personAsleep = overworld && world.getPlayers().stream().anyMatch(p -> !(p instanceof PreparedNativePlayer) && p.isSleeping());
         var decision = dev.kindred.core.survival.Nights.decide(new dev.kindred.core.survival.Nights.State(world.getTimeOfDay(), world.isThundering(),
-                overworld, ownRules, toBed, 0, carries, false, personAsleep, !fighting && !below));
+                overworld, ownRules, toBed, 0, carries, entry.campaign != null && goal && entry.campaign.nightWork(player), personAsleep, !fighting && !below));
         boolean home = decision.plan() == dev.kindred.core.survival.Nights.Plan.HOME && bed != null && !fighting;
         if (entry.campaign != null) entry.campaign.nights(!ownRules, entry.homeInReach);
         // On its way to bed while a person sleeps, it counts toward their night, from the moment it set off and for a
