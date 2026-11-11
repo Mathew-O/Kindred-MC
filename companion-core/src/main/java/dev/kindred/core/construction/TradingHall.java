@@ -65,7 +65,7 @@ public final class TradingHall {
         int width = width(cells);
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var clear = new ArrayList<Pos>();
-        BlockSpec planks = BlockSpec.of(VanillaIds.NAMESPACE + wood + "_planks"), wall = BlockSpec.of(VanillaIds.NAMESPACE + stone);
+        BlockSpec planks = BlockSpec.of(Woods.planks(wood)), wall = BlockSpec.of(VanillaIds.NAMESPACE + stone);
         // The floor under it all, the roof over the cells and their fronts.
         for (int x = 0; x < width; x++) for (int z = BACK; z <= FRONT_WALL; z++) {
             at.put(new Pos(x, 0, z), planks);
@@ -100,8 +100,8 @@ public final class TradingHall {
         // The corridor clear, its door in the middle of the front wall, and a torch on the front wall by each cell.
         for (int x = 1; x < width - 1; x++) for (int y = 1; y < ROOF; y++) for (int z = CORRIDOR; z < FRONT_WALL; z++) clear.add(new Pos(x, y, z));
         int door = width / 2;
-        at.put(new Pos(door, 1, FRONT_WALL), BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_door[facing=north,half=lower,hinge=left,open=false]"));
-        at.put(new Pos(door, 2, FRONT_WALL), BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_door[facing=north,half=upper,hinge=left,open=false]"));
+        at.put(new Pos(door, 1, FRONT_WALL), BlockSpec.parse(Woods.door(wood) + "[facing=north,half=lower,hinge=left,open=false]"));
+        at.put(new Pos(door, 2, FRONT_WALL), BlockSpec.parse(Woods.door(wood) + "[facing=north,half=upper,hinge=left,open=false]"));
         for (Cell cell : cells(cells)) {
             int x = cell.stand().x();
             if (x != door) at.put(new Pos(x, 3, FRONT_WALL - 1), BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=north]"));

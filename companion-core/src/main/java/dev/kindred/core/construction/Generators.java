@@ -171,11 +171,11 @@ public final class Generators {
         }
         if (!wood.matches("[a-z_]+")) throw new IllegalArgumentException("Not a wood: " + wood);
         var blocks = new ArrayList<Blueprint.Block>();
-        var fence = BlockSpec.of(VanillaIds.NAMESPACE + wood + "_fence");
+        var fence = BlockSpec.of(Woods.fence(wood));
         for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) {
             if (x != 0 && x != width - 1 && z != 0 && z != depth - 1) continue;
             boolean gate = x == width / 2 && z == depth - 1;
-            blocks.add(new Blueprint.Block(new Pos(x, 0, z), gate ? BlockSpec.parse(VanillaIds.NAMESPACE + wood + "_fence_gate[facing=north]") : fence));
+            blocks.add(new Blueprint.Block(new Pos(x, 0, z), gate ? BlockSpec.parse(Woods.fenceGate(wood) + "[facing=north]") : fence));
         }
         return new Blueprint(wood + " pen " + width + "x" + depth, SOURCE + "pen?width=" + width + "&depth=" + depth + "&wood=" + wood,
                 "Kindred", "Kindred's own", blocks);
