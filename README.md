@@ -17,3 +17,97 @@ Data only, for the failure corpus; no code. Laid out as `claude/corpus-data-1110
   from tick 129540 to 275120. In the kept world that is the surface of a bamboo jungle (ground at y 62), not a hole;
   the goal there is "Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs".
 - The kept world (`world-kept/`) is not here; it stays on the runner's container and is read by position on request.
+
+## Console around one spell at the spot: Sol, stuck tick 129540
+
+Every Kindred or Sol line, and the watchdog's, from 09:30:59 to 09:31:03 by the console's clock (83 lines). The
+watchdog line for this spell is at 09:31:01 (console line 16004). Between "thinking at tick 132000" (09:31:45) and
+"thinking at tick 144000" (09:33:42) the run made about 103 ticks a second, so this is about ±200 ticks around the
+spell. Console lines carry no tick, so the window is placed by clock time. Kindred is not at the spot yet (its first
+spell there is at tick 191440).
+
+```
+[09:30:59] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Sol goal at -35 63 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[09:30:59] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Sol goal at -35 63 -13: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall
+[09:30:59] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[09:30:59] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:30:59] Sol goal at -35 63 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[09:30:59] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Sol goal at -35 63 -13: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall
+[09:31:00] Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Sol goal at -35 63 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Sol goal at -35 63 -13: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:00] Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[09:31:00] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Sol goal at -35 63 -15: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[09:31:01] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Sol goal at -35 63 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall
+[09:31:01] Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[09:31:01] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Goal made no progress for 3600 ticks near -35, 63, -14; trying -11, 63, -14 (attempt 1)
+[09:31:01] Sol goal at -35 63 -14: Wood: no progress here for a while - try elsewhere, toward -11, 63, -14
+[09:31:01] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:01] Sol spell replay captured in 0.8 ms on the server thread (0.8 ms of its time)
+[09:31:01] [kindred-replays/INFO]: Sol death replay written to kindred/replays/world/Sol-129700 (698 KB)
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Sol native_goto COMPLETED [try elsewhere, toward -11, 63, -14]
+[09:31:02] Sol goal at -34 63 -13: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall (tried elsewhere 1 time)
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Sol goal at -35 63 -15: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came (tried elsewhere 1 time)
+[09:31:02] Sol goal at -35 63 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall (tried elsewhere 1 time)
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:02] Sol goal at -35 63 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came (tried elsewhere 1 time)
+[09:31:02] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Sol goal at -35 63 -13: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall (tried elsewhere 1 time)
+[09:31:03] Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[09:31:03] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Sol goal at -35 63 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came (tried elsewhere 1 time)
+[09:31:03] Kindred native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Sol native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[09:31:03] Kindred goal at 29 80 -15: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[09:31:03] Kindred goal at 28 80 -15: Wood: Gather logs for a table and a wooden pickaxe - Cut through east for logs: advance
+[09:31:03] Kindred goal at 27 80 -15: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[09:31:03] Sol goal at -35 63 -13: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall (tried elsewhere 1 time)
+[09:31:03] Kindred goal at 26 80 -15: Wood: Gather logs for a table and a wooden pickaxe - Cut through east for logs: advance
+[09:31:03] Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[09:31:03] Kindred goal at 25 80 -14: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+```
