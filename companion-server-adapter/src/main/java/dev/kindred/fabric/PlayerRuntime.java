@@ -267,7 +267,6 @@ final class PlayerRuntime {
     /** F-32: what each AI player knows, filled from the Wire. */
     private final KnowledgeWebs webs;
     /** The month-long cost check: what the Record, the webs, the Wire and the Chronicle hold, once a game day. */
-    private final RecordGauge gauge = new RecordGauge();
     /** Each player's faction id, plugged in by the Factions mode (M-06i); empty for none until then. */
     private java.util.function.Function<UUID, String> factionOf = id -> "";
     /** Tosses watched for their pickup: a gift counts once picked up (E-22a). */
@@ -16612,8 +16611,12 @@ final class PlayerRuntime {
 
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
-        var held = new RecordGauge.Held(ledgersThrough, webs.count(), webs.relations(), webs.world().size(), wire.inboxed(), chronicle.kept(), wire.stateTold());
-        var line = gauge.line(day, metadataDirectory.resolve("companions.sqlite"), held);
+        // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
+        SqliteCompanionStore database = store;
+        var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
+        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
+                chronicle.kept(), wire.stateTold());
+        var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
     }
@@ -16649,7 +16652,6 @@ final class PlayerRuntime {
                     ledgers = ledgers.apply(event);
                     ledgersThrough = Math.max(ledgersThrough, event.id());
                     webs.recorded(event); // F-32b: what the Record tells everyone.
-                    gauge.written(event); // The month-long cost check.
                 }
             });
         });

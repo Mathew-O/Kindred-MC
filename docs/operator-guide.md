@@ -821,6 +821,11 @@ In a faction world:
   killer within 20 minutes, and the killer's account not first seen in the last hour. Online time restores 1 power an hour,
   kept to the second across logouts and restarts (written every five minutes, at a logout and at a stop).
 - Every change is an event in the World Record (F-31); factions and power are rebuilt from it at startup.
+- Disk: the World Record (`kindred/companions.sqlite` and its `-wal`) grows with the number of players and what they do, and nothing
+  is pruned but settled action history. Measured with 3 AI players on seed 101 at 72 game days a real day (dragon goal, a build of
+  2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
+  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
+  for a long run; a figure for eight players is to follow.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
