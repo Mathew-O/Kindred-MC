@@ -61,6 +61,7 @@ final class WorldKnowledge {
     /** Cave floors passed in a sweep while their sight lines were spent, looked at first in the scans after. */
     private static final int CAVE_BACKLOG = 1024;
     private final java.util.ArrayDeque<BlockPos> caveBacklog = new java.util.ArrayDeque<>();
+    /** At most this many of a kind are remembered; past it the farthest go ({@link #remember}). */
     private static final int MAX_PER_KIND = 2_000;
 
     private final Map<Kind, Map<Long, BlockPos>> known = new EnumMap<>(Kind.class);
@@ -130,6 +131,7 @@ final class WorldKnowledge {
     /** Advances the incremental sweep around the player by a bounded amount of block reads. */
     void scan(ServerPlayerEntity player) {
         ServerWorld world = player.getServerWorld();
+        center = player.getBlockPos().toImmutable();
         String dim = world.getRegistryKey().getValue().toString();
         if (!dim.equals(dimension)) {
             dimension = dim;
@@ -338,8 +340,28 @@ final class WorldKnowledge {
     void remember(Kind kind, BlockPos pos) {
         var map = known.get(kind);
         long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
-        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
+        // Full: the farthest of the kind from where it last looked round go, so what is beside it now is known. Refusing
+        // the new one instead, a player who had walked through a jungle knew 2,000 logs it had left behind and none of
+        // the trunks five blocks off ("0 known" with 42 to 82 logs within 8, recap-factions110-b663fb5).
+        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) evictFarthest(map, center != null ? center : pos);
         if (map.put(key, pos.toImmutable()) == null && firstSight != null) firstSight.accept(kind, pos.toImmutable());
+    }
+
+    /** Where it last looked round from: the far ones are measured from here when a kind is full. */
+    private BlockPos center;
+
+    /** For tests: where it last looked round from, as a scan sets it. */
+    void centerAt(BlockPos at) { center = at == null ? null : at.toImmutable(); }
+
+    /** How many a full kind drops at once, the farthest first: one sort each so many, not a scan per block remembered. */
+    static final int EVICT = MAX_PER_KIND / 10;
+
+    static int maxPerKind() { return MAX_PER_KIND; }
+
+    private static void evictFarthest(Map<Long, BlockPos> map, BlockPos from) {
+        var entries = new ArrayList<>(map.entrySet());
+        entries.sort((a, b) -> Double.compare(b.getValue().getSquaredDistance(from), a.getValue().getSquaredDistance(from)));
+        for (int i = 0; i < EVICT && i < entries.size(); i++) map.remove(entries.get(i).getKey());
     }
 
     /**
