@@ -34,6 +34,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
 
+## The safe zones' chunks gathered once (M-06f) — 11 November 2026 (`claude/m06i-safe-chunks-1111`)
+
+- [M-06f: the safe zones' chunks gathered once](evidence/M-06f.md#the-safe-zones-chunks-gathered-once-2026-11-11-claudem06i-safe-chunks-1111).
+
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
 - Build: `./gradlew build`.
