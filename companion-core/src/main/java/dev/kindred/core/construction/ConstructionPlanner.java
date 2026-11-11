@@ -373,7 +373,7 @@ public final class ConstructionPlanner {
                 float pitch = (float) Math.toDegrees(-Math.atan2(dy, Math.hypot(dx, dz)));
                 // Well inside the facing's quarter, so a body a little off the middle of its spot still faces the same way.
                 if (mustFace != null && (Placement.facingOf(yaw) != mustFace || offQuarter(yaw) > FACING_MARGIN)) continue;
-                if (!clearSight(site, new double[] {ex, ey, ez}, hit, support, b.at())) continue;
+                if (!clearSight(site, new double[] {ex, ey, ez}, hit, support, b.at(), false)) continue;
                 if (box.inside(stance) && sealedIn(site, stance, b.at(), wanted, box)) continue;
                 double cost = Math.sqrt(stance.distanceSquared(feet)) + (box.inside(stance) ? 3 : 0) + reach * 0.1;
                 if (cost < bestCost) {
@@ -397,7 +397,7 @@ public final class ConstructionPlanner {
             double ex = stance.x() + 0.5, ey = stance.y() + EYE, ez = stance.z() + 0.5;
             double reach = Math.sqrt(Math.pow(middle[0] - ex, 2) + Math.pow(middle[1] - ey, 2) + Math.pow(middle[2] - ez, 2));
             if (reach > REACH - 0.05) continue;
-            if (!clearSight(site, new double[] {ex, ey, ez}, middle, target, target)) continue;
+            if (!clearSight(site, new double[] {ex, ey, ez}, middle, target, target, true)) continue;
             double cost = Math.sqrt(stance.distanceSquared(feet)) + (box.inside(stance) ? 3 : 0);
             if (cost < bestCost) { bestCost = cost; best = stance; }
         }
@@ -712,8 +712,12 @@ public final class ConstructionPlanner {
         return new double[] {x - face.dx * 0.01, y - face.dy * 0.01, z - face.dz * 0.01};
     }
 
-    /** Nothing solid between the eyes and the point, but the block clicked and the target itself. */
-    private static boolean clearSight(BuildSite site, double[] eye, double[] to, Pos support, Pos target) {
+    /**
+     * Nothing solid between the eyes and the point, but the block clicked and the target itself. With {@code outlines}, a
+     * break's look: nor a block of no collision with a shape of its own (a torch, a flower, a sign), which the server's
+     * look at a block to break meets first. A placement's click is no such look, and sees past them (F-22c58).
+     */
+    private static boolean clearSight(BuildSite site, double[] eye, double[] to, Pos support, Pos target, boolean outlines) {
         double dx = to[0] - eye[0], dy = to[1] - eye[1], dz = to[2] - eye[2];
         int steps = (int) Math.ceil(Math.sqrt(dx * dx + dy * dy + dz * dz) * 8);
         for (int i = 1; i < steps; i++) {
@@ -722,10 +726,12 @@ public final class ConstructionPlanner {
             if (at.equals(support) || at.equals(target)) continue;
             var cell = site.cell(at);
             if (cell.isEmpty() || !cell.get().passable() && cell.get().kind() != BuildSite.Kind.REPLACEABLE) return false;
-            // No bar to the feet but in the eyes' way: a torch, a sign, a flower. The server's look at a block meets its
-            // shape first and refuses the break as out of sight; seen through one, a hideout's last block in the way was
-            // refused from every spot it was planned from (#148's CI; F-22c56's diagnostics) (F-22c58).
-            if (cell.get().kind() == BuildSite.Kind.PASSABLE) return false;
+            // No bar to the feet but in the eyes' way for a break: a torch, a sign, a flower. The server's look at a block to
+            // break meets its shape first and refuses it as out of sight; seen through one, a hideout's last block in the way
+            // was refused from every spot it was planned from (#148's CI; F-22c56's diagnostics). Barred for placements too,
+            // a pasture ward on a field of flowers was sent to farther spots to place from, and stopped on walks to them
+            // (F-22c58).
+            if (outlines && cell.get().kind() == BuildSite.Kind.PASSABLE) return false;
         }
         return true;
     }

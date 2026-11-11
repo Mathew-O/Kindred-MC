@@ -355,6 +355,25 @@ class ConstructionPlannerTest {
         assertNotEquals(new Pos(0, 1, 0), lit.stance(), "not through the torch: " + lit);
     }
 
+    /**
+     * A block to place, a flower between the eyes and the face it is set against: placed from where it stands all the
+     * same. A placement's click is no look the server checks against the flower's shape; barred for placements too, a
+     * pasture ward on a field of flowers was sent to farther spots and stopped on its walks to them (F-22c58).
+     */
+    @Test
+    void aFlowerInTheEyesLineDoesNotMoveWhereABlockIsPlacedFrom() {
+        var cells = BuildTestSites.flat();
+        var blocks = List.of(block(2, 1, 0, "minecraft:cobblestone"));
+        var bare = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.PLACE, bare.kind(), bare.toString());
+        for (int x = 1; x <= 2; x++) for (int y = 1; y <= 2; y++) if (!(x == 2 && y == 1)) {
+            cells.put(new Pos(x, y, 0), new Cell(Kind.PASSABLE, BlockSpec.parse("minecraft:poppy"), false));
+        }
+        var flowers = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.PLACE, flowers.kind(), flowers.toString());
+        assertEquals(bare.stance(), flowers.stance(), "the same spot as with no flowers: " + flowers);
+    }
+
     @Test
     void withNothingInHandOrPartOutOfSightItWaits() {
         var blocks = List.of(block(2, 1, 0, "minecraft:stone_bricks"));
