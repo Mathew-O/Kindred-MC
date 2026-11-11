@@ -133,7 +133,7 @@ public final class NativeCoverClimbGameTests implements FabricGameTest {
      * where, the sky three blocks off, it still counted as up: north, south, north, south, the climb never taken again
      * (F-22c65). Staged: as the first, the zombie left out.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "hungryUp", tickLimit = 2400)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "cutHungryUp", tickLimit = 2400)
     public void upOutOfTheCutForFoodItDoesNotWalkBackDownToItsFloor(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         int[] startY = {0};
