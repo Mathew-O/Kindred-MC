@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 13.37, "tickMsWorst": 1187.40, "tickMsWorstAt": 60257, "ticksOver50ms": 374, "ticksOver200ms": 11, "heapMbMax": 1124, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1640, "stone_tools": 2360, "iron_ingot": 4660, "iron_pickaxe": 28480, "obsidian": 57948, "portal_lit": 59149},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 35400, "x": 113, "y": 63, "z": 14, "attempt": 1}, {"tick": 46600, "x": 116, "y": 7, "z": -23, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 600, "stone_tools": 1460, "iron_ingot": 27540, "iron_pickaxe": 38960, "diamond": 47660, "obsidian": 126701},
+      "deaths": [
+        {"tick": 59157, "cause": "Sol was blown up by Creeper", "x": 217, "y": -17, "z": 81, "light": 0, "timeOfDay": 11319, "dimension": "minecraft:overworld", "hunger": 5, "underSky": false, "stage": "Wood: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 103440, "x": 228, "y": 46, "z": -29, "attempt": 1}, {"tick": 141200, "x": 303, "y": -54, "z": -65, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 2020, "iron_ingot": 4120, "iron_pickaxe": 12440, "obsidian": 47267, "portal_lit": 58177},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
