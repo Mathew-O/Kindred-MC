@@ -24,7 +24,6 @@ import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -73,7 +72,7 @@ final class FollowUps {
 
     /** What the player holds of each need, counted from its own inventory. */
     static Map<Need, Integer> held(ServerPlayerEntity player, PortalRunSnapshot p) {
-        var held = new EnumMap<Need, Integer>(Need.class);
+        var held = new java.util.TreeMap<Need, Integer>(Need::compare);
         var inventory = player.getInventory();
         // A bed takes three wool of one colour: wool counts by its commonest colour, so mixed wool does not pass for a bed's.
         var wool = new HashMap<Item, Integer>();
@@ -199,16 +198,16 @@ final class FollowUps {
     private static Set<Item> items(List<NeedsAssessment.Chunk> chunks) {
         var items = new HashSet<Item>();
         for (var chunk : chunks) {
-            switch (chunk.need()) {
-                case STRING -> items.add(Items.STRING);
-                case FEATHERS -> items.add(Items.FEATHER);
-                case FLINT -> items.add(Items.FLINT);
-                case ARROWS -> items.add(Items.ARROW);
-                case BOW -> items.add(Items.BOW);
-                case WOOL -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.WOOL).forEach(e -> items.add(e.value()));
-                case BED -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.BEDS).forEach(e -> items.add(e.value()));
-                case GOLD -> { items.add(Items.GOLD_INGOT); items.add(Items.GOLD_NUGGET); }
-                case GOLD_ARMOR -> items.addAll(GOLDEN);
+            switch (chunk.need().name()) {
+                case "STRING" -> items.add(Items.STRING);
+                case "FEATHERS" -> items.add(Items.FEATHER);
+                case "FLINT" -> items.add(Items.FLINT);
+                case "ARROWS" -> items.add(Items.ARROW);
+                case "BOW" -> items.add(Items.BOW);
+                case "WOOL" -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.WOOL).forEach(e -> items.add(e.value()));
+                case "BED" -> Registries.ITEM.iterateEntries(net.minecraft.registry.tag.ItemTags.BEDS).forEach(e -> items.add(e.value()));
+                case "GOLD" -> { items.add(Items.GOLD_INGOT); items.add(Items.GOLD_NUGGET); }
+                case "GOLD_ARMOR" -> items.addAll(GOLDEN);
                 default -> { }
             }
         }
@@ -267,42 +266,42 @@ final class FollowUps {
      * an empty bucket by water. Nothing from a boat or outside the Overworld but crafting.
      */
     private Set<Need> atHand(ServerPlayerEntity player, PortalRunSnapshot p, int swordTier, List<NeedsAssessment.Chunk> chunks, boolean onTheWay) {
-        var at = EnumSet.noneOf(Need.class);
+        var at = new java.util.TreeSet<Need>(Need::compare);
         boolean ashore = ashore(player);
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         for (var chunk : chunks) {
-            switch (chunk.need()) {
-                case FEATHERS -> {
+            switch (chunk.need().name()) {
+                case "FEATHERS" -> {
                     if (ashore && !world.getEntitiesByClass(ChickenEntity.class, player.getBoundingBox().expand(16, 6, 16),
                             chicken -> chicken.isAlive() && !chicken.isBaby() && player.canSee(chicken)).isEmpty()) at.add(Need.FEATHERS);
                 }
-                case WOOL -> {
+                case "WOOL" -> {
                     if (ashore && !world.getEntitiesByClass(net.minecraft.entity.passive.SheepEntity.class, player.getBoundingBox().expand(16, 6, 16),
                             sheep -> sheep.isAlive() && !sheep.isBaby() && player.canSee(sheep)).isEmpty()) at.add(Need.WOOL);
                 }
-                case STRING -> {
+                case "STRING" -> {
                     boolean spider = swordTier >= 2 && player.getHealth() >= 14 && !world.getEntitiesByClass(SpiderEntity.class,
                             player.getBoundingBox().expand(16, 8, 16), mob -> mob.isAlive() && player.canSee(mob)).isEmpty();
                     boolean web = swordTier >= 1 && campaign.knowledge().nearest(world, WorldKnowledge.Kind.COBWEB, feet,
                             b -> b.getSquaredDistance(feet) <= 16 * 16 && world.getBlockState(b).isOf(Blocks.COBWEB)).isPresent();
                     if (ashore && (spider || web)) at.add(Need.STRING);
                 }
-                case FLINT -> {
+                case "FLINT" -> {
                     boolean gravel = campaign.knowledge().nearest(world, WorldKnowledge.Kind.GRAVEL, feet,
                             b -> b.getSquaredDistance(feet) <= 12 * 12 && world.getBlockState(b).isOf(Blocks.GRAVEL)).isPresent();
                     if (ashore && (gravel || player.getInventory().count(Items.GRAVEL) > 0)) at.add(Need.FLINT);
                 }
-                case STICKS -> {
+                case "STICKS" -> {
                     // Not from the wood a boat still wants: the water on the way comes first.
                     int keep = boats(player) == 0 ? StrongholdRunPlanner.BOAT_PLANKS : 0;
                     if (!onTheWay && wood(player) >= keep + 2) at.add(Need.STICKS);
                 }
-                case SHIELD -> { if (!onTheWay && p.ironIngots() >= 1 && wood(player) >= 6) at.add(Need.SHIELD); }
-                case IRON_SWORD -> { if (!onTheWay && p.ironIngots() >= 2 && player.getInventory().count(Items.STICK) >= 1) at.add(Need.IRON_SWORD); }
+                case "SHIELD" -> { if (!onTheWay && p.ironIngots() >= 1 && wood(player) >= 6) at.add(Need.SHIELD); }
+                case "IRON_SWORD" -> { if (!onTheWay && p.ironIngots() >= 2 && player.getInventory().count(Items.STICK) >= 1) at.add(Need.IRON_SWORD); }
                 // Nether gold ore close by with a pickaxe to mine it, or nuggets enough for an ingot: in any dimension.
                 // Not ore with a piglin about, which mining gold would turn on the player.
-                case GOLD -> {
+                case "GOLD" -> {
                     int near = goldRadius(player, false);
                     boolean ore = !RoamingEdits.piglinsAbout(player)
                             && player.getInventory().containsAny(stack -> stack.isIn(net.minecraft.registry.tag.ItemTags.PICKAXES))
@@ -311,7 +310,7 @@ final class FollowUps {
                                     && RoamingEdits.clearOfPiglins(world, b)).isPresent();
                     if (ore || player.getInventory().count(Items.GOLD_NUGGET) >= 9) at.add(Need.GOLD);
                 }
-                case WATER_BUCKET -> {
+                case "WATER_BUCKET" -> {
                     if (!onTheWay && ashore && player.getInventory().count(Items.BUCKET) > 0 && campaign.knowledge().nearest(world, WorldKnowledge.Kind.WATER, feet,
                             b -> b.getSquaredDistance(feet) <= 16 * 16).isPresent()) at.add(Need.WATER_BUCKET);
                 }
@@ -337,36 +336,38 @@ final class FollowUps {
         var player = body.entity();
         boolean ashore = ashore(player);
         int wood = wood(player);
-        return switch (need) {
+        return switch (need.name()) {
             // A table is set down or made only for a craft whose inputs are in hand.
-            case BOW, ARROWS -> !craftable(need) ? Optional.empty() : craftAtTable(body, need == Need.BOW ? "bow" : "arrow");
-            case SHIELD -> p.ironIngots() >= 1 && wood >= 6 ? craftAtTable(body, "shield") : Optional.empty();
-            case IRON_SWORD -> p.ironIngots() >= 2 && player.getInventory().count(Items.STICK) >= 1 ? craftAtTable(body, "iron_sword") : Optional.empty();
-            case STICKS -> p.planks() >= 2 ? campaign.craft(body, "stick") : p.logs() > 0 ? campaign.craft(body, "planks") : Optional.empty();
-            case FEATHERS -> !ashore ? Optional.empty() : campaign.huntFor(player, ChickenEntity.class, "chicken for feathers")
+            case "BOW", "ARROWS" -> !craftable(need) ? Optional.empty() : craftAtTable(body, need == Need.BOW ? "bow" : "arrow");
+            case "SHIELD" -> p.ironIngots() >= 1 && wood >= 6 ? craftAtTable(body, "shield") : Optional.empty();
+            case "IRON_SWORD" -> p.ironIngots() >= 2 && player.getInventory().count(Items.STICK) >= 1 ? craftAtTable(body, "iron_sword") : Optional.empty();
+            case "STICKS" -> p.planks() >= 2 ? campaign.craft(body, "stick") : p.logs() > 0 ? campaign.craft(body, "planks") : Optional.empty();
+            case "FEATHERS" -> !ashore ? Optional.empty() : campaign.huntFor(player, ChickenEntity.class, "chicken for feathers")
                     .or(() -> due ? shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy) : Optional.empty());
-            case STRING -> !ashore ? Optional.empty()
+            case "STRING" -> !ashore ? Optional.empty()
                     : (swordTier >= 2 && player.getHealth() >= 14 ? fightSpider(player) : Optional.<PortalRunCampaign.Task>empty())
                     .or(() -> swordTier >= 1 ? campaign.gather(body, WorldKnowledge.Kind.COBWEB, due ? 48 : 16, "cobweb") : Optional.empty());
-            case FLINT -> ashore ? campaign.flint(body) : Optional.empty();
+            case "FLINT" -> ashore ? campaign.flint(body) : Optional.empty();
             // A bed of the colour it holds three wool of, and the planks it takes, at a table.
-            case BED -> !craftable(need) || wood < 3 ? Optional.empty() : bedColour(player).flatMap(colour -> craftAtTable(body, colour + "_bed"));
-            case WOOL -> !ashore ? Optional.empty() : campaign.huntFor(player, net.minecraft.entity.passive.SheepEntity.class, "sheep for wool")
+            case "BED" -> !craftable(need) || wood < 3 ? Optional.empty() : bedColour(player).flatMap(colour -> craftAtTable(body, colour + "_bed"));
+            case "WOOL" -> !ashore ? Optional.empty() : campaign.huntFor(player, net.minecraft.entity.passive.SheepEntity.class, "sheep for wool")
                     .or(() -> due ? shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy) : Optional.empty());
-            case BLOCKS -> ashore ? shared(PortalRunPlanner.Action.GATHER_STONE, count, why, p, body, policy) : Optional.empty();
-            case FOOD -> ashore ? shared(PortalRunPlanner.Action.HUNT, count, why, p, body, policy)
+            case "BLOCKS" -> ashore ? shared(PortalRunPlanner.Action.GATHER_STONE, count, why, p, body, policy) : Optional.empty();
+            case "FOOD" -> ashore ? shared(PortalRunPlanner.Action.HUNT, count, why, p, body, policy)
                     .or(() -> shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy)) : Optional.empty();
             // Nuggets made up into ingots first, then the ore: any pickaxe mines it, two to six nuggets a block.
-            case GOLD -> player.getInventory().count(Items.GOLD_NUGGET) >= 9 ? craftAtTable(body, "gold_ingot_from_nuggets")
+            case "GOLD" -> player.getInventory().count(Items.GOLD_NUGGET) >= 9 ? craftAtTable(body, "gold_ingot_from_nuggets")
                     : RoamingEdits.piglinsAbout(player) ? Optional.empty()
                     : campaign.gather(body, WorldKnowledge.Kind.NETHER_GOLD_ORE, goldRadius(player, due), "nether gold ore",
                             ore -> RoamingEdits.clearOfPiglins(player.getServerWorld(), ore));
             // A golden helmet: as good as iron's, so worn in the Nether it costs no protection.
-            case GOLD_ARMOR -> player.getInventory().count(Items.GOLD_INGOT) >= 5 ? craftAtTable(body, "golden_helmet")
+            case "GOLD_ARMOR" -> player.getInventory().count(Items.GOLD_INGOT) >= 5 ? craftAtTable(body, "golden_helmet")
                     : player.getInventory().count(Items.GOLD_NUGGET) >= 9 ? craftAtTable(body, "gold_ingot_from_nuggets") : Optional.empty();
-            case WATER_BUCKET -> !ashore ? Optional.empty() : player.getInventory().count(Items.BUCKET) > 0
+            case "WATER_BUCKET" -> !ashore ? Optional.empty() : player.getInventory().count(Items.BUCKET) > 0
                     ? shared(PortalRunPlanner.Action.FILL_WATER, count, why, p, body, policy)
                     : p.ironIngots() >= 3 ? craftAtTable(body, "bucket") : Optional.empty();
+            // A need the vanilla set does not hold has no follow-up of its own (F-38).
+            default -> Optional.empty();
         };
     }
 

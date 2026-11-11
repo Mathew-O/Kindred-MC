@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 9.16, "tickMsWorst": 791.73, "tickMsWorstAt": 5838, "ticksOver50ms": 140, "ticksOver200ms": 4, "heapMbMax": 1191, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1260, "stone_tools": 2840, "iron_ingot": 13400, "iron_pickaxe": 28140, "obsidian": 45325},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 33360, "x": 96, "y": 31, "z": 104, "attempt": 1}, {"tick": 61480, "x": 78, "y": 48, "z": 83, "attempt": 1}, {"tick": 74560, "x": 72, "y": 62, "z": 97, "attempt": 2}, {"tick": 79240, "x": 50, "y": 64, "z": 96, "attempt": 3}, {"tick": 83740, "x": 19, "y": 64, "z": 83, "attempt": 4}, {"tick": 98920, "x": -7, "y": 61, "z": 84, "attempt": 5}, {"tick": 102640, "x": 16, "y": 64, "z": 88, "attempt": 6}, {"tick": 123440, "x": 14, "y": 62, "z": 102, "attempt": 7}, {"tick": 127200, "x": 13, "y": 64, "z": 79, "attempt": 8}, {"tick": 130900, "x": 33, "y": 65, "z": 81, "attempt": 9}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1520, "stone_tools": 3220, "iron_ingot": 12440, "iron_pickaxe": 62620},
+      "deaths": [
+        {"tick": 5839, "cause": "Sol was slain by Zombie", "x": 40, "y": 33, "z": 62, "light": 0, "timeOfDay": 6001, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 17325, "cause": "Sol drowned", "x": 48, "y": 40, "z": 34, "light": 0, "timeOfDay": 17487, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 63882, "cause": "Sol was blown up by Creeper", "x": -35, "y": 28, "z": 60, "light": 0, "timeOfDay": 16044, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: outmatched - Hole up: recover behind the wall", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 37080, "x": -16, "y": 36, "z": 49, "attempt": 1}, {"tick": 89620, "x": -6, "y": 39, "z": 83, "attempt": 1}, {"tick": 94140, "x": -27, "y": 39, "z": 83, "attempt": 2}, {"tick": 99080, "x": 19, "y": 40, "z": 95, "attempt": 3}, {"tick": 105360, "x": 7, "y": 38, "z": 105, "attempt": 4}, {"tick": 111160, "x": -3, "y": 34, "z": 137, "attempt": 5}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1900, "stone_tools": 3620, "iron_ingot": 7980, "iron_pickaxe": 68880},
+      "deaths": [
+        {"tick": 124698, "cause": "Echo was shot by Skeleton", "x": 23, "y": -21, "z": 74, "light": 2, "timeOfDay": 4860, "dimension": "minecraft:overworld", "hunger": 8, "underSky": false, "stage": "Iron: fight back - Back off from skeleton the way it came (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 130365, "cause": "Echo discovered the floor was lava", "x": 21, "y": 1, "z": 36, "light": 3, "timeOfDay": 10527, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 131491, "cause": "Echo discovered the floor was lava", "x": 21, "y": 1, "z": 36, "light": 3, "timeOfDay": 11653, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Wood: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 132742, "cause": "Echo was shot by Skeleton", "x": 32, "y": 32, "z": 88, "light": 0, "timeOfDay": 12904, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE, NO_CAVES]", "task": "nothing"},
+        {"tick": 142415, "cause": "Echo was shot by Skeleton", "x": -7, "y": 63, "z": 69, "light": 6, "timeOfDay": 22577, "dimension": "minecraft:overworld", "hunger": 14, "underSky": true, "stage": "Wood: fight back - Back off from creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE, NO_CAVES]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 91340, "x": 48, "y": 14, "z": 29, "attempt": 1}, {"tick": 119980, "x": 48, "y": -40, "z": 79, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

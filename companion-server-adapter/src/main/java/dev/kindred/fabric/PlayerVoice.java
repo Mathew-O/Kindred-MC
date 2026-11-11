@@ -111,6 +111,34 @@ final class PlayerVoice implements CompanionSocials.Voice {
         return !"off".equalsIgnoreCase(String.valueOf(environment.get("KINDRED_VOICE")).trim());
     }
 
+    /**
+     * F-34: a line said on an AI player's behalf to {@code person} on the Wire, in its own voice when a model is on:
+     * its voice lane is given the plain line and the message's facts, quoted as news; what comes back is said only if
+     * core's {@link dev.kindred.core.wire.WireVoice#check} keeps it, else the plain line. Declined at once (false) when
+     * there is no model, no facts of the player, or its lane is busy or out of budget: the caller says the plain line.
+     * Never waits past the chat deadline and a second; the plain line then.
+     */
+    boolean phraseWire(UUID sender, ServerPlayerEntity person, dev.kindred.core.wire.Message message, String plain, String prefix,
+                       Consumer<String> say) {
+        var lane = bridge.get();
+        if (lane.isEmpty()) return false;
+        Facts facts = source.facts(sender, person);
+        if (facts == null) return false;
+        String text = dev.kindred.core.wire.WireVoice.request(message, person.getName().getString(), plain);
+        // Places only when the plain line already gives one to this person: the Wire has let them know it.
+        var conversation = new Strategist.Conversation(ConversationPrompt.system(facts.name(), facts.personality()), text, plain.matches(".*\\d.*"), false);
+        var asked = lane.get().converse(sender, facts.name(), person.getName().getString(), conversation, server);
+        if (asked.isDone() && asked.join().isEmpty()) return false;
+        asked.completeOnTimeout(Optional.empty(), Strategist.CHAT_DEADLINE.toMillis() + 1_000, TimeUnit.MILLISECONDS)
+                .thenAccept(line -> server.execute(() -> {
+                    var own = line.flatMap(Strategist.Line::say).flatMap(words -> dev.kindred.core.wire.WireVoice.check(message, plain, prefix, words));
+                    if (line.isPresent() && own.isEmpty()) KindredMod.LOGGER.info("{} voice: its words for {} dropped a fact or added one; the plain line instead",
+                            facts.name(), message.kind());
+                    say.accept(prefix + own.orElse(plain));
+                }));
+        return true;
+    }
+
     @Override
     public boolean answer(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message,
                           Consumer<Optional<CompanionSocials.Spoken>> answered) {

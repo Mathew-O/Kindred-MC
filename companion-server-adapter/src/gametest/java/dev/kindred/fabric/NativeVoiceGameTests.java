@@ -18,6 +18,7 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -157,6 +158,59 @@ public final class NativeVoiceGameTests implements FabricGameTest {
             for (var player : others) manager.remove(player);
             f.runtime.stop();
         }
+    }
+
+    /**
+     * F-34: Echo tells its faction a raid is planned; its owner, of the faction, hears it in Echo's own words, which the
+     * model was asked for with the plain line and the facts; when the model's words drop a fact, the owner hears the
+     * plain line instead; the model is never asked for a person's own words.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voiceWire", tickLimit = 1200)
+    public void aFactionLineFromItIsSaidInItsOwnWordsOrThePlainLine(TestContext context) {
+        var t = new Talk(context, false);
+        var f = t.f;
+        int[] before = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> t.quiet(context))
+                .createAndAdd(() -> {
+                    t.listen();
+                    f.runtime.setFactionOf(id -> id.equals(f.id) || id.equals(t.owner.getUuid()) ? "oak" : "");
+                    t.stub.answer = conversation -> Stub.says("Raid on birch's east wall at dusk, be there.");
+                    before[0] = t.stub.asked.size();
+                    var d = f.runtime.wire().send(dev.kindred.core.wire.Message.of("faction.raid_planned", f.id, dev.kindred.core.wire.Scope.faction("oak"),
+                            raid("birch's east wall", "dusk"), List.of()));
+                    context.assertTrue(d.sent() && d.phrase().size() == 1, "Said to the owner: " + d);
+                })
+                .createAndAdd(() -> {
+                    var heard = t.heardBy(t.owner).stream().map(Heard::text).toList();
+                    context.assertTrue(heard.contains("[faction] Echo: Raid on birch's east wall at dusk, be there."), "In its own words: " + heard);
+                    var asked = t.stub.asked.get(before[0]);
+                    context.assertTrue(asked.text().contains("The plain line: \"raid planned:") && asked.text().contains("- target: \"birch's east wall\"")
+                            && !asked.mayAsk(), "Asked with the plain line and the facts, and no ask: " + asked.text());
+                    t.stub.answer = conversation -> Stub.says("Raid tonight, be there.");
+                    var d = f.runtime.wire().send(dev.kindred.core.wire.Message.of("faction.raid_planned", f.id, dev.kindred.core.wire.Scope.faction("oak"),
+                            raid("birch's gate", "dawn"), List.of()));
+                    context.assertTrue(d.sent(), "Sent again: " + d);
+                })
+                .createAndAdd(() -> {
+                    var heard = t.heardBy(t.owner).stream().map(Heard::text).toList();
+                    context.assertTrue(heard.contains("[faction] Echo: raid planned: target birch's gate, when dawn."),
+                            "Words that dropped the facts: the plain line instead: " + heard);
+                    context.assertTrue(heard.stream().noneMatch(line -> line.contains("Raid tonight")), "Never the model's words that dropped them");
+                    t.cleanup(context);
+                })
+                .completeIfSuccessful();
+    }
+
+    /** A raid's facts, the target then when, in that order (the plain line says them so). */
+    private static Map<String, dev.kindred.core.wire.Fact> raid(String target, String when) {
+        var facts = new java.util.LinkedHashMap<String, dev.kindred.core.wire.Fact>();
+        facts.put("target", dev.kindred.core.wire.Fact.of(target, dev.kindred.core.wire.Visibility.FACTION));
+        facts.put("when", dev.kindred.core.wire.Fact.of(when, dev.kindred.core.wire.Visibility.FACTION));
+        return facts;
     }
 
     private static boolean idle(NativePaidSkillsGameTests.Fixture f) {

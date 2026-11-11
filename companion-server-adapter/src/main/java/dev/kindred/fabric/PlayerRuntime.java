@@ -545,8 +545,12 @@ final class PlayerRuntime {
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         webs = new KnowledgeWebs(server::getTicks);
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
-                PlayerRuntime::now);
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs,
+                (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
+                    var said = Text.literal(words);
+                    person.sendMessage(said, false);
+                    if (heardForFixtures != null) heardForFixtures.accept(person, said);
+                }, PlayerRuntime::now);
         // A player's faction for the Wire (M-06i): the Factions ledger's, its AI players by their bodies.
         setFactionOf(this::factionKey);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
@@ -596,6 +600,9 @@ final class PlayerRuntime {
         socials.setVoice(voice);
         voice.setManner(socials::manner);
         voice.setSwearing(socials::maySwear); // E-18b: a rough player's reply may swear to someone who said yes.
+        // F-34: a line said on an AI player's behalf on the Wire, in its own voice when a model is on; else the plain line.
+        wire.voice((sender, person, message, plain, prefix, say) -> running && voice.phraseWire(sender, person, message, plain, prefix,
+                words -> { if (running) say.accept(words); }));
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
             Entry entry = entries.get(participant.id());
@@ -5391,11 +5398,11 @@ final class PlayerRuntime {
             entry.bases = loaded != null ? loaded : new PlayerMemoryStore.Bases();
             // A record it cannot read as one of its stages (an edited file, a stage since renamed) is left out.
             entry.bases.built.removeIf(base -> base == null || base.dimension() == null || stageNamed(base.stage()) == null
-                    || base.wood() != null && !dev.kindred.core.construction.BuildNeeds.WOODS.contains(base.wood())
+                    || base.wood() != null && !dev.kindred.core.construction.Woods.known(base.wood())
                     || base.variant() < 0 || base.variant() > dev.kindred.core.construction.BuildStyle.VARIANTS);
             // A hall it cannot build again as recorded (an edited file) is left out, as a base is.
             var hall = entry.bases.hall;
-            if (hall != null && (hall.dimension() == null || hall.wood() == null || !dev.kindred.core.construction.BuildNeeds.WOODS.contains(hall.wood())
+            if (hall != null && (hall.dimension() == null || hall.wood() == null || !dev.kindred.core.construction.Woods.known(hall.wood())
                     || hall.cells() < dev.kindred.core.construction.TradingHall.MIN_CELLS || hall.cells() > dev.kindred.core.construction.TradingHall.MAX_CELLS)) {
                 entry.bases.hall = null;
             }
@@ -5544,7 +5551,17 @@ final class PlayerRuntime {
             var stack = inventory.getStack(slot);
             String id = Registries.ITEM.getId(stack.getItem()).getPath();
             String wood = id.endsWith("_planks") || id.endsWith("_log") ? dev.kindred.core.construction.BuildStyle.woodOf(id) : null;
-            if (wood != null) count.merge(wood, stack.getCount() * (id.endsWith("_log") ? 4 : 1), Integer::sum);
+            boolean log = id.endsWith("_log");
+            if (wood == null && !stack.isEmpty()) {
+                // F-38: a wood the server's tags and recipes name, whatever its ids are called.
+                String full = Registries.ITEM.getId(stack.getItem()).toString();
+                var facts = dev.kindred.core.Capabilities.current();
+                log = facts.is(dev.kindred.core.VanillaIds.LOGS, full);
+                if (log || facts.is(dev.kindred.core.VanillaIds.PLANKS, full)) {
+                    wood = facts.woodOfPart(full).map(dev.kindred.core.Capabilities.Wood::name).orElse(null);
+                }
+            }
+            if (wood != null) count.merge(wood, stack.getCount() * (log ? 4 : 1), Integer::sum);
         }
         var held = count.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
         if (held.isPresent()) return held.get();
@@ -7503,6 +7520,15 @@ final class PlayerRuntime {
     /** Report state changes once, persist checkpoints on pause, and release the lease on every terminal state. */
     private void observeRunner(Entry entry) {
         if (entry.runner == null) return;
+        // An outcome its goal could not settle for itself, its ceiling opened under the water and the fill or the reseal not
+        // gone as planned: blocked for reconciliation, as an uncertain action is, and never tried again (F-35g).
+        if (entry.nativeState != null && entry.campaign != null && !entry.reconciliationBlocked) {
+            var unsettled = entry.campaign.reconciliation();
+            if (unsettled.isPresent()) {
+                nativeFailure(server.getCommandSource(), entry, "Goal outcome requires reconciliation", new IllegalStateException(unsettled.get()));
+                return;
+            }
+        }
         SkillRunner.State state = entry.runner.state();
         if (state == entry.lastRunnerState) return;
         entry.lastRunnerState = state;
@@ -14629,7 +14655,8 @@ final class PlayerRuntime {
      * The world's game mode chosen (M-00), operators only, and saved in mode.properties. It is announced to everyone
      * online with its rules, and each AI player's playstyle follows it (the profile it maps onto, not a second setting
      * beside it). From then on only its matches, and duels, may be proposed. A match already proposed or running plays
-     * on under its own rules. Factions is declared but not playable yet.
+     * on under its own rules. Factions turns the territory guard on (and the borders once the hub is set); any other mode
+     * turns it off. Claims and coins stay in the Record either way.
      */
     int setWorldMode(ServerCommandSource source, dev.kindred.core.match.GameModes.WorldMode mode) {
         requireThread();
@@ -14643,8 +14670,14 @@ final class PlayerRuntime {
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
         }
+        if (factionsWorld()) {
+            TerritoryGuard.activate(factions);
+            factions.applyBorders();
+        } else {
+            TerritoryGuard.deactivate(factions);
+        }
         Path file = metadataDirectory.resolve("mode.properties");
-        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
+        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt, builder or factions.\nmode=" + mode.key() + "\n";
         // In order: two saves left to run side by side could finish the older last and keep it.
         modeSaved = modeSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
@@ -16135,6 +16168,34 @@ final class PlayerRuntime {
         @Override public net.minecraft.server.MinecraftServer server() { return server; }
     }
 
+    /**
+     * F-34: events written to the World Record, then a message that rests on them sent on the Wire, citing exactly the
+     * ids the ordered writer gave them, on this thread. Never before they are written, and on a failed write nothing is
+     * said: a message never cites an event the Record does not hold. {@code tell} makes the message from those ids;
+     * null for none. What the Wire did with it, or null when nothing was sent, goes to {@code sent}.
+     */
+    void recordAndTell(List<dev.kindred.core.record.WorldEvent> drafts, java.util.function.Function<List<Long>, dev.kindred.core.wire.Message> tell,
+                       java.util.function.Consumer<dev.kindred.core.wire.Delivery> sent) {
+        requireThread();
+        java.util.function.Consumer<dev.kindred.core.wire.Delivery> done = sent == null ? d -> { } : sent;
+        SqliteCompanionStore database = store;
+        if (database == null || drafts.isEmpty()) {
+            KindredMod.LOGGER.warn("Nothing recorded, so nothing told: {}", database == null ? "World Record not open" : "no events");
+            done.accept(null);
+            return;
+        }
+        record(drafts);
+        @SuppressWarnings("unchecked") var write = (CompletableFuture<List<dev.kindred.core.record.WorldEvent>>) recordFlush;
+        write.whenComplete((written, failure) -> handBack(() -> {
+            if (failure != null || written == null || !running) {
+                done.accept(null);
+                return;
+            }
+            var message = tell.apply(written.stream().map(dev.kindred.core.record.WorldEvent::id).toList());
+            done.accept(message == null ? null : wire.send(message));
+        }));
+    }
+
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
@@ -16438,8 +16499,8 @@ final class PlayerRuntime {
     /**
      * An evaluation run's faction world (M-06i's scenario): the world's mode set to Factions for this run as an
      * operator's choice would set it (each AI player's playstyle, the territory guard, the borders) under the settings
-     * read from config/kindred/factions.properties, the mode not yet being an operator's choice. Not saved: the run's
-     * world is thrown away.
+     * read from config/kindred/factions.properties. Not saved, unlike an operator's {@code /kindred mode factions}: the
+     * run's world is thrown away.
      */
     void factionsWorldForEval() {
         requireThread();
@@ -16484,7 +16545,7 @@ final class PlayerRuntime {
                 .thenApplyAsync(events -> dev.kindred.core.factions.FactionsAudit.check(events, settings));
     }
 
-    /** A fixture's faction world under {@code settings}, the mode not yet being playable for operators. */
+    /** A fixture's faction world under {@code settings}, without the world's mode (an operator's choice) set. */
     void factionsWorldForTest(dev.kindred.core.factions.FactionSettings settings) {
         requireThread();
         factionsForTest = true;
@@ -18485,7 +18546,10 @@ final class PlayerRuntime {
             String id = dev.kindred.core.VanillaIds.NAMESPACE + wood + "_planks";
             if (members.contains(id)) tried.add(id);
         }
-        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS)).sorted().forEach(tried::add);
+        // Another wood's planks by the recipe the server makes them with from its log (an id of its own may also name
+        // a different recipe, as minecraft:bamboo_mosaic names the one from slabs).
+        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS) && !tried.contains(id)).sorted()
+                .forEach(id -> tried.add(KindredCapabilities.plankRecipe(id).orElse(id)));
         return List.copyOf(tried);
     }
 }

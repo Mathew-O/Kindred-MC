@@ -2740,6 +2740,18 @@ final class NativePlayerBody implements BodyAdapter {
             networkHandler = new SinkNetworkHandler(this);
         }
 
+        /**
+         * A pickup, as vanilla counts it in the player's stats: one console line with the item and how many were taken,
+         * so an evaluation's console can tally what a player picked up (logging only; nothing reads it).
+         */
+        @Override public void increaseStat(net.minecraft.stat.Stat<?> stat, int amount) {
+            super.increaseStat(stat, amount);
+            if (amount > 0 && stat.getType() == net.minecraft.stat.Stats.PICKED_UP && stat.getValue() instanceof Item item) {
+                KindredMod.LOGGER.info("{} picked up {} {}", getGameProfile().getName(), amount,
+                        net.minecraft.registry.Registries.ITEM.getId(item));
+            }
+        }
+
         @Override public void tick() {
             if (this != player) return; // A dead entity replaced by respawn no longer drives the body.
             beforeTick();
