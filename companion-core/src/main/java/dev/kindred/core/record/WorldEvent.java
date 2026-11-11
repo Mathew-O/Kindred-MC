@@ -22,6 +22,9 @@ public record WorldEvent(long id, long tick, long realTimeMs, String world, Stri
     public static final int MAX_DATA = 16_384;
     private static final Pattern KIND = Pattern.compile("[a-z][a-z0-9_.]{0,63}");
 
+    /** Whether {@code kind} is spelled as an event kind may be: lower case, digits, '_' and '.', at most 64 characters. */
+    public static boolean validKind(String kind) { return kind != null && KIND.matcher(kind).matches(); }
+
     /** How the Record knows it: the game's own record, a structured message, or someone's words. */
     public enum HowKnown {
         RECORDED, TOLD, CLAIMED;

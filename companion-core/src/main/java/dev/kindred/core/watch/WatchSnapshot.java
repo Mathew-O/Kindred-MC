@@ -16,7 +16,7 @@ import java.util.Optional;
  * highlights. {@code takenOn} names the thread it was taken on.
  */
 public record WatchSnapshot(long tick, String takenOn, List<Player> players, List<Highlight> highlights, String eval) {
-    public static final int CANDIDATES = 8, LINES = 30, TALK = 6, NOTES = 10, HIGHLIGHTS = 50;
+    public static final int CANDIDATES = 8, LINES = 30, TALK = 6, NOTES = 10, TOLD = 10, HIGHLIGHTS = 50;
 
     /** Something it weighed doing, its priority and its score. */
     public record Candidate(String what, String priority, double score) {
@@ -28,11 +28,12 @@ public record WatchSnapshot(long tick, String takenOn, List<Player> players, Lis
 
     /**
      * One player as the page shows it: its state, its goal and what it is doing, its candidates, its own recent lines,
-     * what it said lately (the last of them its last words), its habits and notes, and the model tokens it used today.
+     * what it said lately (the last of them its last words), its habits and notes, the model tokens it used today, and
+     * what it was told lately on the Wire, as an onlooker may read it (F-34c: nothing narrower than public in words).
      */
     public record Player(String id, String name, boolean connected, float health, int food, String goal, String progress, String doing,
                          String status, String dimension, int x, int y, int z, List<Candidate> candidates, List<String> lines,
-                         List<String> talk, List<String> habits, List<String> notes, long tokensToday) {
+                         List<String> talk, List<String> habits, List<String> notes, long tokensToday, List<String> told) {
         public Player {
             Objects.requireNonNull(id);
             Objects.requireNonNull(name);
@@ -41,6 +42,14 @@ public record WatchSnapshot(long tick, String takenOn, List<Player> players, Lis
             talk = last(talk, TALK);
             habits = List.copyOf(habits);
             notes = last(notes, NOTES);
+            told = told == null ? List.of() : last(told, TOLD);
+        }
+
+        /** One without what it was told. */
+        public Player(String id, String name, boolean connected, float health, int food, String goal, String progress, String doing,
+                      String status, String dimension, int x, int y, int z, List<Candidate> candidates, List<String> lines,
+                      List<String> talk, List<String> habits, List<String> notes, long tokensToday) {
+            this(id, name, connected, health, food, goal, progress, doing, status, dimension, x, y, z, candidates, lines, talk, habits, notes, tokensToday, List.of());
         }
     }
 
@@ -112,6 +121,7 @@ public record WatchSnapshot(long tick, String takenOn, List<Player> players, Lis
                 .append(", \"habits\": ").append(strings(p.habits()))
                 .append(", \"notes\": ").append(strings(p.notes()))
                 .append(", \"tokensToday\": ").append(p.tokensToday())
+                .append(", \"told\": ").append(strings(p.told()))
                 .append('}');
         return out.toString();
     }
