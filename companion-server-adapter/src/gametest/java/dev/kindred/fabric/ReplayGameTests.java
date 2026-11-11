@@ -157,6 +157,17 @@ public final class ReplayGameTests implements FabricGameTest {
     }
 
     /**
+     * The replay's own server policy, in its own runtime's edits.properties: world edits on, and the dragon fight on only
+     * for a replay whose recorded goal is the dragon, as its recording server had it (the goal is refused otherwise: all 26
+     * of the corpus's dragon scenes failed "Its goal, DRAGON, accepted" in every run up to #157's gate). The fight is
+     * the runtime's own setting, read from this file when it starts, so no other replay's runtime ever sees it on.
+     */
+    static String edits(JsonObject state) {
+        boolean dragon = state.has("goal") && "DRAGON".equals(state.get("goal").getAsString());
+        return "autonomousEdits=true\nprotectionKnown=true\n" + (dragon ? "dragonFight=true\n" : "");
+    }
+
+    /**
      * One run of a replay: the player made from its state where it died, its goal given, the ticks run. Staged: the
      * scene's mobs are held still (no AI) from the structure's placing until the player is in place, then all let go on
      * the same tick, so each run starts from the recorded positions; no mob is moved and none given a target. The
@@ -179,7 +190,7 @@ public final class ReplayGameTests implements FabricGameTest {
         var runtime = new PlayerRuntime(server, directory, NativePlayerSaves::read, writer -> writer);
         try {
             Files.createDirectories(directory);
-            Files.writeString(directory.resolve("edits.properties"), "autonomousEdits=true\nprotectionKnown=true\n");
+            Files.writeString(directory.resolve("edits.properties"), edits(state));
         } catch (java.io.IOException error) {
             throw new RuntimeException("Replay edit policy could not be saved", error);
         }
