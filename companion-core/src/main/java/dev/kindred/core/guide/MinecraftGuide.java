@@ -32,7 +32,7 @@ public final class MinecraftGuide {
     /** At least {@code count} of a need in hand when an objective begins, and why. */
     public record Requirement(Need need, int count, String why) { }
 
-    private static final Map<Need, Recipe> RECIPES = new EnumMap<>(Map.of(
+    private static final Map<Need, Recipe> RECIPES = ordered(Map.of(
             Need.BOW, new Recipe(Need.BOW, 1, Map.of(Need.STRING, 3, Need.STICKS, 3), true),
             Need.ARROWS, new Recipe(Need.ARROWS, 4, Map.of(Need.FLINT, 1, Need.STICKS, 1, Need.FEATHERS, 1), true),
             Need.STICKS, new Recipe(Need.STICKS, 4, Map.of(), false),
@@ -42,7 +42,7 @@ public final class MinecraftGuide {
             // A golden helmet: five ingots, and as good as an iron one, so wearing it costs no protection.
             Need.GOLD_ARMOR, new Recipe(Need.GOLD_ARMOR, 1, Map.of(Need.GOLD, 5), true)));
 
-    private static final Map<Need, String> SOURCES = new EnumMap<>(Map.ofEntries(
+    private static final Map<Need, String> SOURCES = ordered(Map.ofEntries(
             Map.entry(Need.STRING, "spiders (none to two a kill; calm in daylight) and cobwebs broken with a sword"),
             Map.entry(Need.FEATHERS, "chickens (none to two a kill)"),
             Map.entry(Need.FLINT, "gravel dug up (one in ten; gravel set down and dug again until it drops)"),
@@ -86,5 +86,12 @@ public final class MinecraftGuide {
     /** What an objective needs in hand before it begins; empty for those the route's own stages provide for. */
     public static List<Requirement> requirements(Objective objective) {
         return REQUIREMENTS.getOrDefault(Objects.requireNonNull(objective), List.of());
+    }
+
+    /** A map in the needs' own order, as the enum map kept it. */
+    private static <V> Map<Need, V> ordered(Map<Need, V> entries) {
+        var map = new java.util.TreeMap<Need, V>(Need::compare);
+        map.putAll(entries);
+        return java.util.Collections.unmodifiableMap(map);
     }
 }
