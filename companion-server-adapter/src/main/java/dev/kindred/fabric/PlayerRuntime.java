@@ -6456,7 +6456,8 @@ final class PlayerRuntime {
             var doingThen = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
             replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(goalOf(entry)),
                     entry.campaign == null ? "no goal" : entry.campaign.progress(), doingThen, entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
-                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString()));
+                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString(),
+                    memoryOf(entry)));
         }
         teamCoordinator.handlePlayerDeath(entry.data.id());
         entry.hazardInterrupted = false;
@@ -13899,7 +13900,7 @@ final class PlayerRuntime {
                     String.valueOf(goalOf(entry)), campaign == null ? "no goal" : campaign.progress(),
                     entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
                     campaign == null ? "" : String.valueOf(campaign.stance()), campaign == null ? "" : String.valueOf(campaign.preferences().habits()),
-                    "stuck"));
+                    "stuck", memoryOf(entry)));
         }
     };
 
@@ -14319,6 +14320,14 @@ final class PlayerRuntime {
      * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
      * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
      */
+    /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
+    private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
+        var campaign = entry.campaign;
+        if (campaign == null) return null;
+        long tick = server.getTicks();
+        return origin -> campaign.memoryIn(origin, DeathReplays.WIDTH, DeathReplays.HEIGHT, tick);
+    }
+
     private void captureSpell(Entry entry) {
         var campaign = entry.campaign;
         // With rescues on, the rescue keeps the spell's scene as it asks, as before (F-29); this keeps it otherwise.
@@ -14328,7 +14337,8 @@ final class PlayerRuntime {
         entry.spellsCaptured = spells;
         replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
                 String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
-                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks",
+                memoryOf(entry)));
     }
 
     void captureReplays(DeathReplays replays) {
