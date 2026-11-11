@@ -62,7 +62,9 @@ class WorldKnowledgeCapTest {
         fill(knowledge);
         double perCall = (System.nanoTime() - start) / 20_000.0 / 1000.0;
         assertTrue(knowledge.count(WorldKnowledge.Kind.LOG) <= CAP, "within the cap");
-        // Bound: well under a tick's share. Measured warm at 1.6 to 4.4 µs a call on this machine; 50 µs allows a slow CI one.
+        // The mean over all 20,000 calls, on purpose: the cost bounded is the amortised one, a sort of the kind's entries to drop
+        // a tenth every EVICT inserts, and a median would read the plain puts and miss the sorts. Bound: well under a tick's
+        // share. Measured warm at 1.6 to 4.4 µs a call on this machine; 50 µs allows a slow CI one.
         assertTrue(perCall < 50, "remember() at the cap: " + perCall + " µs a call, amortised");
     }
 
