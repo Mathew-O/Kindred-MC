@@ -925,6 +925,10 @@ in `kindred/replays/<world>/<player>-<tick>/` as `replay.snbt` and `replay.json`
 beside its result. Taking the copy takes less than a server tick; writing it happens off the tick. Nothing in the world
 or the player changes.
 
+With replays on, a player stuck long enough for its goal's watchdog to count a spell (three minutes with no progress)
+has that scene kept the same way, as a `spell` replay: the corpus plays it again and it passes if the player gets out
+within three minutes, moving more than eight blocks or climbing three. It is still one capture a minute at most.
+
 A replay that is to be kept as a test goes into the gametest resources (see the conventions in
 [validation](validation.md)), and the suite plays it three times by the real runtime: it passes if the player is
 alive at the end. A replay that plays its death again two times of three is kept with the fix that makes it pass three
