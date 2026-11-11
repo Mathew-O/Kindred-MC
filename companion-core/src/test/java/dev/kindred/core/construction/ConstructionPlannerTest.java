@@ -293,6 +293,25 @@ class ConstructionPlannerTest {
         assertEquals(ConstructionPlanner.Kind.BLOCKED, next(blocks, cells, new Pos(0, 1, 0)).kind());
     }
 
+    /** The plan's own way to a spot it can walk to, step by step, for a failed walk's diagnostics; none where it cannot (F-22c59). */
+    @Test
+    void theWayThePlanWalksToASpotIsItsOwnStepByStep() {
+        var cells = BuildTestSites.flat();
+        cells.put(new Pos(2, 1, 0), BuildTestSites.solid("minecraft:stone"));
+        var site = new BuildSite(cells);
+        var route = ConstructionPlanner.walkRoute(site, new Pos(0, 1, 0), new Pos(3, 1, 0), Set.of());
+        assertEquals(new Pos(0, 1, 0), route.getFirst());
+        assertEquals(new Pos(3, 1, 0), route.getLast());
+        assertTrue(ConstructionPlanner.walkable(site, new Pos(0, 1, 0), Set.of()).containsAll(route), "every step one it can walk to");
+        for (int i = 0; i + 1 < route.size(); i++) {
+            Pos a = route.get(i), b = route.get(i + 1);
+            assertEquals(1, Math.abs(a.x() - b.x()) + Math.abs(a.z() - b.z()), "one step at a time: " + route);
+        }
+        assertEquals(List.of(new Pos(0, 1, 0)), ConstructionPlanner.walkRoute(site, new Pos(0, 1, 0), new Pos(0, 1, 0), Set.of()));
+        cells.put(new Pos(9, 1, 9), BuildTestSites.solid("minecraft:stone"));
+        assertTrue(ConstructionPlanner.walkRoute(new BuildSite(cells), new Pos(0, 1, 0), new Pos(9, 1, 9), Set.of()).isEmpty(), "none into a block");
+    }
+
     @Test
     void withNothingInHandOrPartOutOfSightItWaits() {
         var blocks = List.of(block(2, 1, 0, "minecraft:stone_bricks"));

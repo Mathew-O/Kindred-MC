@@ -577,6 +577,39 @@ public final class ConstructionPlanner {
         return seen;
     }
 
+    /**
+     * The way {@link #walkable(BuildSite, Pos, Set)} reaches {@code goal} from {@code feet}, both ends included; empty
+     * when it does not. For the diagnostics of a walk the plan counted on and the navigator found no way for (#153's CI:
+     * a hut's floor, "expanded 6000") (F-22c59).
+     */
+    public static List<Pos> walkRoute(BuildSite site, Pos feet, Pos goal, Set<Pos> scaffold) {
+        var parent = new java.util.HashMap<Pos, Pos>();
+        var queue = new ArrayDeque<Pos>();
+        parent.put(feet, feet);
+        queue.add(feet);
+        int budget = WALK_BUDGET;
+        while (!queue.isEmpty() && budget-- > 0) {
+            Pos at = queue.poll();
+            if (at.equals(goal)) {
+                var route = new ArrayList<Pos>();
+                for (Pos p = at; ; p = parent.get(p)) {
+                    route.add(p);
+                    if (p.equals(feet)) break;
+                }
+                java.util.Collections.reverse(route);
+                return route;
+            }
+            if (scaffold.contains(at.down()) && site.cell(at.down().down()).map(Cell::floor).orElse(false) && parent.putIfAbsent(at.down(), at) == null) {
+                queue.add(at.down());
+            }
+            for (Face f : SIDES) {
+                Pos to = stepTo(site, at, f);
+                if (to != null && parent.putIfAbsent(to, at) == null) queue.add(to);
+            }
+        }
+        return List.of();
+    }
+
     private static final List<Face> SIDES = List.of(Face.NORTH, Face.SOUTH, Face.WEST, Face.EAST);
 
     /** Where one step from {@code at} toward {@code f} lands: up one, level, or down as far as {@link #MAX_DROP}; or null. */

@@ -438,6 +438,8 @@ final class BuildRunner {
         if (player.isOnGround()) airWaits = 0;
         var site = snapshot(world);
         Pos feet = standing(player, site);
+        planSite = site;
+        planFeet = feet;
         // A block a pillar step of its scaffold put down is its scaffold, however the step ended. Counted only when the
         // step ended completed, a block it put down before it was stopped or planned again was nobody's: stood on top
         // of it, its scaffold's one known block under it was "out of reach to take down", and a house cabin was left
@@ -1005,6 +1007,11 @@ final class BuildRunner {
             lastStance = to;
         }
         if ("native_goto".equals(task.skill()) && task.label().contains(OVER)) overFailed = completed ? 0 : overFailed + 1;
+        if ("native_goto".equals(task.skill()) && !completed && task.label().startsWith("To ") && reason.contains("No walkable route")
+                && routeLogs < ROUTE_LOGS) {
+            routeLogs++;
+            logPlannedRoute(task, world);
+        }
         // A break refused for nothing solid there is a block already gone, as the step wanted: no failure, and no longer
         // its scaffold. Counted as one, a cabin taking its scaffold down stopped short with eight in a row, "Down the
         // scaffold: Nothing solid to break" (CI run 384, and a full local suite on 5 November) (F-22c9).
@@ -1188,6 +1195,42 @@ final class BuildRunner {
 
     /** On the spot, near its middle (the walk there stops within 0.4 of it). */
     /** Break {@code target}, collecting the drop; the block it stands on with the leave to step down onto what is below. */
+    /** The site and spot of the latest plan, for the diagnostics of a walk it counted on. */
+    private BuildSite planSite;
+    private Pos planFeet;
+    private int routeLogs;
+    private static final int ROUTE_LOGS = 4;
+
+    /**
+     * A walk the plan counted on that the navigator found no way for: the plan's own way there, and the first step of
+     * it the navigator will not take, with what it makes of either end. A hut's builder on #153's CI was sent to a spot
+     * on its floor the plan could walk to and the navigator could not, 6,000 nodes searched, eight times in a row; which
+     * step they differ on could not be told (F-22c59's diagnostics).
+     */
+    private void logPlannedRoute(PortalRunCampaign.Task task, ServerWorld world) {
+        if (planSite == null || planFeet == null) return;
+        Pos goal = new Pos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z")));
+        var route = ConstructionPlanner.walkRoute(planSite, planFeet, goal, scaffold);
+        if (route.isEmpty()) {
+            KindredMod.LOGGER.info("Build walk with no way in the plan either: from {} toward {} [{}]", planFeet, goal, task.label());
+            return;
+        }
+        var navigator = new NativeNavigator(world).throughDoors();
+        String first = "none: the navigator takes every step of it";
+        for (int i = 0; i + 1 < route.size(); i++) {
+            BlockPos a = blockPos(route.get(i)), b = blockPos(route.get(i + 1));
+            if (navigator.moves(a).stream().noneMatch(m -> m.to().equals(b))) {
+                first = a.toShortString() + " to " + b.toShortString() + " (from standable " + navigator.standable(a) + ", to standable "
+                        + navigator.standable(b) + "; under it " + world.getBlockState(b.down()) + ", in it " + world.getBlockState(b) + ", above it "
+                        + world.getBlockState(b.up()) + "; the navigator's moves from there "
+                        + navigator.moves(a).stream().map(m -> m.to().toShortString()).toList() + ")";
+                break;
+            }
+        }
+        KindredMod.LOGGER.info("Build walk the plan has a way for and the navigator not: {} steps from {} toward {} [{}]; the first it will not take: {}; the way {}",
+                route.size() - 1, planFeet, goal, task.label(), first, route.size() <= 24 ? route : route.subList(0, 24) + " …");
+    }
+
     /** Whether a block stands at {@code at}, for the diagnostics; null for no cell. */
     private static Boolean there(ServerWorld world, Pos at) {
         return at == null ? null : !world.getBlockState(blockPos(at)).isAir();
