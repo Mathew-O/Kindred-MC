@@ -1,0 +1,117 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 125906,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -561,
+  59,
+  -31
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.957176905881397,
+  8.176759275064242,
+  16.259466479961013
+ ],
+ "yaw": -790.3232,
+ "pitch": 14.337162,
+ "health": 4.799999,
+ "food": 7,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 8
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 44
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 15
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 5906,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "STRONGHOLD",
+ "stage": "Wood: fight back - Back off from skeleton (tried elsewhere 3 times)",
+ "task": "try elsewhere, toward 22, 80, -11",
+ "stance": "PRESS_ON",
+ "habits": "[MORE_FOOD]",
+ "cause": "Echo was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[07:17:48] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:17:49] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:18:06] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:18:06] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:18:07] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:18:35] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:18:35] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:18:37] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:18:37] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:18:37] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:18:38] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:19:47] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [try elsewhere, toward 22, 80, -11]",
+  "[07:19:47] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[07:19:47] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:19:48] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+  "[07:19:49] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[07:19:49] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+  "[07:19:50] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton]",
+  "[07:19:52] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [try elsewhere, toward 22, 80, -11]",
+  "[07:19:52] [Server thread/INFO]: Echo died at -545, 67, -15: Echo was shot by Skeleton (tick 125906, day, under the sky, hunger 6, armour 0, holding dirt, no shield; doing \"try elsewhere, toward 22, 80, -11\" in \"Wood: fight back - Back off from skeleton (tried elsewhere 3 times)\"; stance PRESS_ON, focus NONE, habits [MORE_FOOD])"
+ ],
+ "corpus": {
+  "run": "factions-110-d5057a4",
+  "seed": "110",
+  "build": "d5057a4",
+  "replay": "",
+  "source": "claude/corpus-data-factions110-1110@0445d5b:factions-110-d5057a4/110/replays/world/Echo-125906",
+  "class": "death: skeleton",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}

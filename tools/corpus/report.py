@@ -7,7 +7,8 @@ usage: report.py [RESULTS_XML ...] [--baseline FILE] [--write-baseline] [--sha S
 Each RESULTS_XML is one `runCorpus` run's report (companion-server-adapter/build/corpus-results.xml by default); give
 three for the daily number. A scene that passes every run passes; one that fails every run fails; one that does both is
 intermittent, and an intermittent scene never counts as a pass. A scene with no result in a run counts as failed there.
-Staged scenes (a contract fixture run as a scene, `"fixture"` in its file) are listed apart.
+Staged scenes (a contract fixture run as a scene, `"fixture"` in its file) are listed apart, and when scenes
+come from more than one game mode (`corpus.mode`, survival when unset) each mode's pass rate is given apart.
 
 The gate: a scene that passed in the baseline (tools/corpus/baseline.json, the last runs on main, with their sha) now
 fails in two or more of the runs given, or in the one run when only one is given, is flagged. With confirming runs
@@ -66,6 +67,14 @@ def main():
         by_class.setdefault(c, Counter())[s] += 1
     for c, k in sorted(by_class.items(), key=lambda kv: -sum(kv[1].values())):
         lines.append(f"| {c} | {k['pass']} | {k['intermittent']} | {k['fail']} | {sum(k.values())} |")
+    by_mode = {}
+    for sid, s in status.items():
+        by_mode.setdefault(scenes[sid].get("corpus", {}).get("mode", "survival"), Counter())[s] += 1
+    if len(by_mode) > 1:
+        lines += ["", "| Mode | Pass | Intermittent | Fail | Scenes | Pass rate |", "| --- | --- | --- | --- | --- | --- |"]
+        for m, k in sorted(by_mode.items()):
+            n = sum(k.values())
+            lines.append(f"| {m} | {k['pass']} | {k['intermittent']} | {k['fail']} | {n} | {100.0 * k['pass'] / max(1, n):.1f}% |")
     if staged:
         lines += ["", "Staged scenes (contract fixtures run as scenes):"]
         lines += [f"- {sid}: {status[sid]} ({scenes[sid]['fixture']})" for sid in staged]

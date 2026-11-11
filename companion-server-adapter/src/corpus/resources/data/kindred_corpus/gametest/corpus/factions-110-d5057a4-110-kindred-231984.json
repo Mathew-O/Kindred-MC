@@ -1,0 +1,117 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 231984,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  5,
+  64,
+  46
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.5964266289266,
+  8.0,
+  16.422520555977442
+ ],
+ "yaw": 508.5536,
+ "pitch": 18.159489,
+ "health": 5.5,
+ "food": 4,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 11
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 64
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 8
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:jungle_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:bamboo",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 15984,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "STRONGHOLD",
+ "stage": "Wood: fight back - Back off from skeleton the way it came",
+ "task": "Back off from skeleton the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[07:40:20] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]",
+  "[07:40:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[07:40:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:40:22] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+  "[07:40:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:40:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:40:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:40:25] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[07:40:25] [Server thread/INFO]: Kindred native_place BLOCKED: Another faction's land, or a safe zone [Take cover from skeleton]",
+  "[07:40:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[07:40:26] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[07:40:26] [Server thread/INFO]: Kindred native_place BLOCKED: Another faction's land, or a safe zone [Take cover from skeleton]",
+  "[07:40:26] [Server thread/INFO]: Kindred native_place BLOCKED: Another faction's land, or a safe zone [Take cover from skeleton]",
+  "[07:40:27] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:40:27] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:40:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+  "[07:40:28] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[07:40:28] [Server thread/INFO]: Kindred native_place BLOCKED: Another faction's land, or a safe zone [Take cover from skeleton]",
+  "[07:40:28] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from skeleton the way it came]",
+  "[07:40:28] [Server thread/INFO]: Kindred died at 21, 72, 62: Kindred was shot by Skeleton (tick 231984, night, under the sky, hunger 4, armour 0, holding dirt, no shield; doing \"Back off from skeleton the way it came\" in \"Wood: fight back - Back off from skeleton the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "factions-110-d5057a4",
+  "seed": "110",
+  "build": "d5057a4",
+  "replay": "",
+  "source": "claude/corpus-data-factions110-1110@0445d5b:factions-110-d5057a4/110/replays/world/Kindred-231984",
+  "class": "death: skeleton",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}
