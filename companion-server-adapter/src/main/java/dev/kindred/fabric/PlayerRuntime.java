@@ -5783,9 +5783,12 @@ final class PlayerRuntime {
         PortalRunCampaign.Task task = null;
         double weight = decision.weight();
         if (!home && !goal && !fighting) {
-            // Without a goal of its own, the bed it carries for a night with home out of reach, and taken back up in the
-            // morning, as a goal's player does on its way (E-70a).
-            boolean carried = decision.plan() == dev.kindred.core.survival.Nights.Plan.CARRIED
+            // Without a goal or work of its own, the bed it carries for a night with home out of reach, and taken back up in
+            // the morning, as a goal's player does on its way (E-70a). A player with work of its own (a build, its base, a
+            // ranch or a field) keeps the night life-first gives it (F-25c9): the bed in its pack is the one its build sets
+            // down, and dug in beside its build it would build nothing (the house fixtures on #216's head).
+            boolean ownWork = entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled();
+            boolean carried = !ownWork && decision.plan() == dev.kindred.core.survival.Nights.Plan.CARRIED
                     || entry.campaign != null && entry.campaign.carriedBed(world) != null;
             if (carried) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();

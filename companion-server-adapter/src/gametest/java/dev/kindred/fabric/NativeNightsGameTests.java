@@ -327,6 +327,68 @@ public final class NativeNightsGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * A builder with no goal, at night, with a bed in its build's bill (E-70a): it builds on, and does not dig in for the
+     * night with the bed. Work of its own keeps the night life-first gives it (F-25c9); the bed in its pack is the one
+     * its build sets down. Before, on #216's first head, it took that bed for one it carried with home out of reach, dug
+     * in beside its build and built nothing ("No way to reach minecraft:oak_planks", the house fixtures run after these).
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "nights-builder", tickLimit = 19500)
+    public void aBuilderAtNightWithABedInItsBillBuildsOnAndDoesNotDigIn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 19500);
+        var cabin = dev.kindred.core.construction.Houses.of(dev.kindred.core.construction.Houses.Stage.CABIN, "oak", "cobblestone");
+        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos origin = o.add(4, 2, 4);
+        int[] lowest = {Integer.MAX_VALUE};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    for (int x = -8; x <= 24; x++) for (int z = -8; z <= 24; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    // The cabin's bill, as the house fixture gives it: its bed among it.
+                    net.minecraft.item.ItemStack[] bill = {
+                            new net.minecraft.item.ItemStack(net.minecraft.item.Items.OAK_PLANKS, 64), new net.minecraft.item.ItemStack(net.minecraft.item.Items.OAK_PLANKS, 34),
+                            new net.minecraft.item.ItemStack(net.minecraft.item.Items.COBBLESTONE, 54), new net.minecraft.item.ItemStack(net.minecraft.item.Items.OAK_LOG, 12),
+                            new net.minecraft.item.ItemStack(net.minecraft.item.Items.OAK_STAIRS, 42), new net.minecraft.item.ItemStack(net.minecraft.item.Items.OAK_SLAB, 7),
+                            new net.minecraft.item.ItemStack(net.minecraft.item.Items.OAK_DOOR, 1), new net.minecraft.item.ItemStack(net.minecraft.item.Items.RED_BED, 1),
+                            new net.minecraft.item.ItemStack(net.minecraft.item.Items.CRAFTING_TABLE, 1), new net.minecraft.item.ItemStack(net.minecraft.item.Items.FURNACE, 1),
+                            new net.minecraft.item.ItemStack(net.minecraft.item.Items.CHEST, 2), new net.minecraft.item.ItemStack(net.minecraft.item.Items.TORCH, 1),
+                            new net.minecraft.item.ItemStack(net.minecraft.item.Items.DIRT, 64), new net.minecraft.item.ItemStack(net.minecraft.item.Items.BREAD, 8)};
+                    for (int slot = 0; slot < bill.length; slot++) inventory.setStack(slot, bill[slot]);
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(origin.getX() + 3.5, origin.getY(), origin.getZ() + 10.5, 180, 0);
+                    // Night, as the suite's earlier fixtures can leave it.
+                    world.setWeather(12_000, 0, false, false);
+                    world.setTimeOfDay(14_000);
+                    context.assertTrue(f.runtime.startBuild(f.source, f.id, cabin, origin, 0) == 1, "Build started");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body: " + f.runtime.lifeNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
+                    lowest[0] = Math.min(lowest[0], player.getBlockY());
+                    context.assertTrue(lowest[0] >= origin.getY() - 1, "Never dug in below its build: down to " + lowest[0] + " / " + f.runtime.lifeNote(f.id));
+                    context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(), "Built: " + f.runtime.buildStatus(f.id).orElse("")
+                            + " / " + f.runtime.lifeNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(lowest[0] >= origin.getY() - 1, "Never dug in below its build: down to " + lowest[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     /** Stone from five below {@code feet} (absolute) to just under it, eleven across, and air above: ground to dig in, put back as the test ends. */
     static void pad(TestContext context, BlockPos feet) {
         var world = context.getWorld();
