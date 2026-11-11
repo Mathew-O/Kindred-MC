@@ -65,6 +65,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c50](evidence/F-22c50.md) (2026-11-11, CI): main's runs are no longer cancelled by the next push; pull requests' still are.
 - [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
 - [F-22c60](evidence/F-22c60.md) (2026-11-11, diagnostics): a drop worth walking back for, left lying, says which check left it; portal and obsidian-pickup classes 98 of 98, 3 runs.
+- [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
