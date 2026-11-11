@@ -19,6 +19,13 @@
     "SmallFireballTerritoryMixin",
     "FireTerritoryMixin",
     "PortalBorderMixin",
+    "EndermanPickUpTerritoryMixin",
+    "EndermanPlaceTerritoryMixin",
+    "RavagerTerritoryMixin",
+    "WitherTerritoryMixin",
+    "SilverfishTerritoryMixin",
+    "BreakDoorTerritoryMixin",
+    "DoorInteractGoalAccessor",
     "SmithingTransformAccessor",
     "PlayerSaveHandlerMixin"
   ],
