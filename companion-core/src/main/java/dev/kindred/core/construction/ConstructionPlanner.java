@@ -41,7 +41,7 @@ public final class ConstructionPlanner {
     /** For a block whose state is the way the player faces, the look stays this many degrees inside the quarter. */
     static final double FACING_MARGIN = 35;
     /** The highest drop it walks off, as the navigator does without a water bucket. */
-    static final int MAX_DROP = 3;
+    public static final int MAX_DROP = 3;
     /** Spots weighed in working out where it can walk. */
     static final int WALK_BUDGET = 40_000;
     /** How far from a target a scaffold column may stand. */
