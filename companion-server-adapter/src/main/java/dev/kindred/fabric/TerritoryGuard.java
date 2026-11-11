@@ -27,6 +27,9 @@ public final class TerritoryGuard {
 
     static void deactivate(FactionsService service) { ACTIVE.remove(service); }
 
+    /** Test-only and read-only: whether {@code service} is guarding its world now. */
+    static boolean activeForTest(FactionsService service) { return ACTIVE.contains(service); }
+
     /** The faction worlds of {@code world}'s server: usually one; every one of them must allow a change. */
     private static java.util.List<FactionsService> of(World world) {
         if (ACTIVE.isEmpty() || !(world instanceof ServerWorld server) || !server.getServer().isOnThread()) return java.util.List.of();
