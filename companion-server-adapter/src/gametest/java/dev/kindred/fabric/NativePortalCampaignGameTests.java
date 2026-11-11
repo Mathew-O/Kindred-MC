@@ -1093,7 +1093,12 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                         || ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) > 0, "The poured water hardened the lava"))
                 .createAndAdd(() -> {
                     var inventory = f.player().getInventory();
-                    context.assertTrue(ItemMoves.count(inventory, Items.OBSIDIAN) == 1, "The obsidian was mined and picked up");
+                    // Where any obsidian lies, and what the goal is doing, when it was not picked up (F-22c60's diagnostics).
+                    var lying = context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(lava).expand(10),
+                            d -> d.getStack().isOf(Items.OBSIDIAN)).stream().map(d -> d.getBlockPos().toShortString()).toList();
+                    context.assertTrue(ItemMoves.count(inventory, Items.OBSIDIAN) == 1, "The obsidian was mined and picked up: held "
+                            + ItemMoves.count(inventory, Items.OBSIDIAN) + ", lying at " + lying + ", the lava's cell " + context.getWorld().getBlockState(lava)
+                            + ", the player at " + f.player().getBlockPos().toShortString() + "; " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                     context.assertTrue(ItemMoves.count(inventory, Items.WATER_BUCKET) == 1 && ItemMoves.count(inventory, Items.BUCKET) == 0,
                             "The water was taken back into the bucket");
                 })
