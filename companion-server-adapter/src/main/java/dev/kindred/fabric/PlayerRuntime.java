@@ -5994,6 +5994,14 @@ final class PlayerRuntime {
         return entry.campaign.bedUrgent() ? "urgent" : "standing";
     }
 
+    /** The chore of its carried bed (E-70a), for fixtures; empty when it has no campaign. */
+    String bedChoreForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.campaign == null || entry.nativeBody == null) return "";
+        return entry.campaign.bedChoreForTest(entry.nativeBody.entity().getServerWorld());
+    }
+
     /** Its home bed as remembered (E-70a), for fixtures; null when none. */
     BlockPos homeBed(UUID id) {
         requireThread();

@@ -6877,6 +6877,8 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return Optional.empty();
+        // Called by the runtime for a player with no goal too, whose plan never runs: the server's tick, as the plan has it.
+        lastTick = Math.max(lastTick, world.getServer().getTicks());
         boolean sleepable = dev.kindred.core.survival.Nights.sleepTime(world.getTimeOfDay(), world.isThundering());
         seeCarriedBed(world);
         if (carriedBedAt != null && (!world.isChunkLoaded(carriedBedAt) || !world.getBlockState(carriedBedAt).isIn(BlockTags.BEDS))) carriedBedAt = null;
@@ -6891,8 +6893,12 @@ final class PortalRunCampaign {
                 carriedBedAt = null;
                 return Optional.empty();
             }
+            // A morning chore: never ahead of a fight, a mob about or its being hurt (seed 101 of the E-70a batch: Echo,
+            // hurt, in a zombie fight, walked for its bed and died). Danger only, not hunger: a hungry player takes up its
+            // bed before it goes off after food, rather than leave an earned bed behind.
+            if (!safeForChore(player)) return Optional.empty();
             if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 4.5 * 4.5) return Optional.of(new Task("native_break", coords(carriedBedAt, Map.of("carried_bed", "true")), "Take its bed back up in the morning"));
-            return Optional.of(go(carriedBedAt, 2.0, true, "Back to its bed to take it up"));
+            return toBedStand(player, "Back to its bed to take it up");
         }
         if (!bedNights || homeInReach || stronghold.spawnByPortal(player) || bedTries >= BED_TRIES) return Optional.empty();
         if (nightWork(player)) {
@@ -6909,7 +6915,9 @@ final class PortalRunCampaign {
                 bedTries++;
                 return Optional.of(new Task("native_sleep", coords(carriedBedAt, Map.of()), "Sleep in the bed it carries"));
             }
-            return Optional.of(go(carriedBedAt, 1.5, true, "To the bed it carries"));
+            // Not while hurt or in a fight: the pocket's way to its bed is a step or two, but never ahead of fighting back.
+            if (player.hurtTime > 0 || player.getAttacker() != null) return Optional.empty();
+            return toBedStand(player, "To the bed it carries");
         }
         int slot = bedSlot(player);
         if (slot < 0) {
@@ -6956,6 +6964,71 @@ final class PortalRunCampaign {
         bedGoingAt = foot;
         return Optional.of(new Task("native_bed", Map.of("x", String.valueOf(foot.getX()), "y", String.valueOf(foot.getY() - 1),
                 "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), "Set its bed down in its pocket for the night"));
+    }
+
+    /**
+     * Safe to see to a chore: no hostile mob within 16 blocks, at least half its health, not in water or lava, not on
+     * fire and its breath full. {@link #calm} without the hunger: a chore is not put off for want of food.
+     */
+    private static boolean safeForChore(ServerPlayerEntity player) {
+        if (player.isTouchingWater() || player.isInLava() || player.isOnFire() || player.getAir() < player.getMaxAir()
+                || player.getHealth() < player.getMaxHealth() / 2) return false;
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 8, 16), HostileEntity::isAlive).isEmpty();
+    }
+
+    /** Until when the walk to its bed is set aside after getting nowhere, and how often it has been. */
+    private long bedWalkAsideUntil = -1;
+    private int bedWalkAsides, bedWalkTries, bedWalks;
+    private double bedWalkBest = Double.MAX_VALUE;
+    private static final int BED_WALK_TRIES = 6, BED_WALK_ASIDES = 3;
+    private static final long BED_WALK_ASIDE = 2400;
+
+    /**
+     * To a cell it can stand in with its bed within reach, never at the bed itself, which no walk can stand on (seed 101
+     * of the E-70a batch: 811 walks refused in 36 s toward a bed head). With no such cell, or walks that bring it no nearer,
+     * the chore is set aside a while; set aside {@value #BED_WALK_ASIDES} times, the bed is left where it stands.
+     */
+    private Optional<Task> toBedStand(ServerPlayerEntity player, String label) {
+        if (lastTick < bedWalkAsideUntil) return Optional.empty();
+        var world = player.getServerWorld();
+        BlockPos stand = null;
+        double best = Double.MAX_VALUE;
+        Vec3d bed = Vec3d.ofCenter(carriedBedAt);
+        for (BlockPos cell : BlockPos.iterate(carriedBedAt.add(-3, -2, -3), carriedBedAt.add(3, 1, 3))) {
+            if (!world.isChunkLoaded(cell) || !standable(world, cell)) continue;
+            if (Vec3d.ofBottomCenter(cell).add(0, 1.62, 0).squaredDistanceTo(bed) > 4.0 * 4.0) continue;
+            double d = cell.getSquaredDistance(player.getBlockPos());
+            if (d < best) {
+                best = d;
+                stand = cell.toImmutable();
+            }
+        }
+        double now = Math.sqrt(player.getBlockPos().getSquaredDistance(carriedBedAt));
+        if (now < bedWalkBest - 0.5) {
+            bedWalkBest = now;
+            bedWalkTries = 0;
+        }
+        if (stand == null || ++bedWalkTries > BED_WALK_TRIES) {
+            bedWalkTries = 0;
+            bedWalkBest = Double.MAX_VALUE;
+            if (++bedWalkAsides >= BED_WALK_ASIDES) {
+                event("left its bed where it stands at " + carriedBedAt.toShortString() + ": no way to it");
+                carriedBedAt = null;
+                bedWalkAsides = 0;
+                return Optional.empty();
+            }
+            bedWalkAsideUntil = lastTick + BED_WALK_ASIDE;
+            event("its bed at " + carriedBedAt.toShortString() + " set aside a while: " + (stand == null ? "nowhere to stand by it" : "no nearer"));
+            return Optional.empty();
+        }
+        bedWalks++;
+        return Optional.of(go(stand, 0.5, false, label));
+    }
+
+    /** The chore of its bed, for fixtures: walks given toward it, times set aside, and whether the bed still stands. */
+    String bedChoreForTest(ServerWorld world) {
+        return "walks=" + bedWalks + " asides=" + bedWalkAsides + " aside=" + (lastTick < bedWalkAsideUntil) + " bed=" + carriedBed(world)
+                + " events=" + lastEvents(2);
     }
 
     private static int bedSlot(ServerPlayerEntity player) {

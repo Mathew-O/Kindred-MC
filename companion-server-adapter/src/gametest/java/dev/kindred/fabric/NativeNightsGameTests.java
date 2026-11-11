@@ -389,6 +389,182 @@ public final class NativeNightsGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Hurt at daybreak with a zombie over its pocket (E-70a, seed 101 of the batch on eec4e0f): taking its bed back up is a
+     * morning chore, so it waits until it is calm (the zombie gone, healed) and then takes the bed up. Before, the chore
+     * came ahead of the fight: Echo, hurt in a zombie fight, walked for its bed, the walk refused 811 times, and died.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "nights-bed-hurt", tickLimit = 8000)
+    public void hurtAtDaybreakWithAZombieAboutItLeavesItsBedTillItIsCalm(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8000);
+        BlockPos[] away = {null}, slept = {null};
+        net.minecraft.entity.mob.ZombieEntity[] zombie = {null};
+        int[] walksAtDawn = {-1};
+        boolean[] walkedUnsafe = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sleeper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    away[0] = carriedNight(context, f, 900);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isSleeping(), "Asleep in the bed it carries: " + f.runtime.lifeNote(f.id));
+                    slept[0] = player.getSleepingPosition().orElseThrow();
+                    // Hurt, and a zombie on the ground over its pocket (setup): it burns once the sun is up.
+                    player.setHealth(8);
+                    var z = EntityType.ZOMBIE.create(context.getWorld());
+                    z.refreshPositionAndAngles(away[0].getX() + 0.5, away[0].getY(), away[0].getZ() + 2.5, 0, 0);
+                    z.setPersistent();
+                    context.getWorld().spawnEntity(z);
+                    zombie[0] = z;
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(context.getWorld().isDay() && !player.isSleeping(), "Morning");
+                    walksAtDawn[0] = walks(f.runtime.bedChoreForTest(f.id));
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body: " + f.runtime.bedChoreForTest(f.id));
+                    boolean unsafe = zombie[0].isAlive() && zombie[0].squaredDistanceTo(player) < 16 * 16 || player.getHealth() < 10;
+                    if (unsafe && walks(f.runtime.bedChoreForTest(f.id)) > walksAtDawn[0]) walkedUnsafe[0] = true;
+                    if (unsafe && !context.getWorld().getBlockState(slept[0]).isIn(net.minecraft.registry.tag.BlockTags.BEDS)) walkedUnsafe[0] = true;
+                    context.assertTrue(!walkedUnsafe[0], "Not for its bed while hurt or the zombie about: " + f.runtime.bedChoreForTest(f.id)
+                            + " / health " + player.getHealth());
+                    context.assertTrue(player.getInventory().count(net.minecraft.item.Items.WHITE_BED) == 1, "Its bed taken up once calm: "
+                            + f.runtime.bedChoreForTest(f.id) + " / health " + player.getHealth() + " / zombie " + zombie[0].isAlive());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(!walkedUnsafe[0], "Not for its bed while hurt or the zombie about");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Hungry at daybreak with nothing to eat (E-70a): hunger is no danger, so it takes its bed up before it goes off after
+     * food, rather than walk off and leave an earned bed behind.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "nights-bed-hungry", tickLimit = 6000)
+    public void hungryAtDaybreakItTakesItsBedUpBeforeGoingForFood(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 8000);
+        BlockPos[] slept = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Hungry"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> carriedNight(context, f, 900))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isSleeping(), "Asleep in the bed it carries: " + f.runtime.lifeNote(f.id));
+                    slept[0] = player.getSleepingPosition().orElseThrow();
+                    // Hungry, its bread gone (setup).
+                    player.getInventory().removeStack(2);
+                    player.getHungerManager().setFoodLevel(6);
+                    player.getHungerManager().setSaturationLevel(0);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    context.assertTrue(player.getInventory().count(net.minecraft.item.Items.WHITE_BED) == 1, "Its bed taken up, hungry as it is: "
+                            + f.runtime.bedChoreForTest(f.id) + " / " + f.runtime.lifeNote(f.id) + " / food " + player.getHungerManager().getFoodLevel());
+                    context.assertTrue(!context.getWorld().getBlockState(slept[0]).isIn(net.minecraft.registry.tag.BlockTags.BEDS), "Not left standing");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its bed with no cell to stand in by it (E-70a): it does not walk for it again and again; the chore is set aside, and
+     * after a few tries given up, the bed left where it stands. Before, a walk toward the bed head itself was refused about
+     * twenty times a second until the player died.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "nights-bed-walled", tickLimit = 12000)
+    public void itsBedWalledInItSetsTheChoreAsideAndGivesItUpWithoutLooping(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 12000);
+        BlockPos[] away = {null}, slept = {null};
+        ServerPlayerEntity[] person = new ServerPlayerEntity[1];
+        long[] dayAt = {-1};
+        ticked(context, person, 12000);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Walled"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    // A person up for the night (not lying down), so the night does not pass the moment the AI player sleeps.
+                    person[0] = MockPlayers.survival(context, "NightOwl", new BlockPos(2, 2, 2));
+                    away[0] = carriedNight(context, f, 900);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isSleeping(), "Asleep in the bed it carries: " + f.runtime.lifeNote(f.id));
+                    slept[0] = player.getSleepingPosition().orElseThrow();
+                })
+                .createAndAdd(() -> {
+                    // The fixture's doing: it is woken, moved up onto the ground, and every open cell round its bed filled.
+                    var player = f.player();
+                    var world = context.getWorld();
+                    player.wakeUp();
+                    player.refreshPositionAndAngles(away[0].getX() + 4.5, away[0].getY(), away[0].getZ() + 0.5, 0, 0);
+                    for (BlockPos cell : BlockPos.iterate(slept[0].add(-3, -2, -3), slept[0].add(3, 2, 3))) {
+                        if (cell.getY() < away[0].getY() && world.getBlockState(cell).isAir()) world.setBlockState(cell, Blocks.STONE.getDefaultState());
+                    }
+                    world.setTimeOfDay(1_000);
+                    dayAt[0] = world.getServer().getTicks();
+                })
+                .createAndAdd(() -> {
+                    String chore = f.runtime.bedChoreForTest(f.id);
+                    context.assertTrue(walks(chore) <= 1, "No walk after walk toward a bed it cannot stand by: " + chore);
+                    context.assertTrue(chore.contains("asides=1") || chore.contains("aside=true"), "The chore set aside: " + chore);
+                })
+                .createAndAdd(() -> {
+                    String chore = f.runtime.bedChoreForTest(f.id);
+                    context.assertTrue(walks(chore) <= 1, "No walk after walk: " + chore);
+                    context.assertTrue(chore.contains("bed=null"), "Given up, the bed left where it stands: " + chore
+                            + " after " + (context.getWorld().getServer().getTicks() - dayAt[0]) + " ticks");
+                    context.assertTrue(context.getWorld().getBlockState(slept[0]).isIn(net.minecraft.registry.tag.BlockTags.BEDS), "The bed still standing");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Setup for a carried bed's night: a player with no goal, a white bed, a stone pickaxe and cobblestone, some
+     * {@code off} blocks east of the test on ground it can dig, at nightfall, playing. Returns where it stands.
+     */
+    private static BlockPos carriedNight(TestContext context, NativePaidSkillsGameTests.Fixture f, int off) {
+        var player = f.player();
+        BlockPos at = context.getAbsolutePos(new BlockPos(3, 2, 3)).add(off, 0, 0);
+        pad(context, at);
+        player.getInventory().clear();
+        player.getInventory().setStack(0, new net.minecraft.item.ItemStack(net.minecraft.item.Items.STONE_PICKAXE));
+        player.getInventory().setStack(1, new net.minecraft.item.ItemStack(net.minecraft.item.Items.COBBLESTONE, 32));
+        player.getInventory().setStack(2, new net.minecraft.item.ItemStack(net.minecraft.item.Items.BREAD, 16));
+        player.getInventory().setStack(20, new net.minecraft.item.ItemStack(net.minecraft.item.Items.WHITE_BED));
+        player.getHungerManager().setFoodLevel(20);
+        player.getHungerManager().setSaturationLevel(5);
+        player.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+        context.getWorld().setWeather(12_000, 0, false, false);
+        context.getWorld().setTimeOfDay(13_000);
+        context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+        context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Its own play resumed");
+        return at;
+    }
+
+    /** The walks toward its bed a chore line counts. */
+    private static int walks(String chore) {
+        var m = java.util.regex.Pattern.compile("walks=(\\d+)").matcher(chore);
+        return m.find() ? Integer.parseInt(m.group(1)) : 0;
+    }
+
     /** Stone from five below {@code feet} (absolute) to just under it, eleven across, and air above: ground to dig in, put back as the test ends. */
     static void pad(TestContext context, BlockPos feet) {
         var world = context.getWorld();
