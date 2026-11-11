@@ -7755,10 +7755,14 @@ final class PlayerRuntime {
             // A faction walk (M-06i): a refusal backs it off and, after three, sets the place aside; a walk that went
             // somewhere forgets its refusals.
             var factionMove = entry.factionPlay.move;
+            boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
+                    && entry.dispatchSource.startsWith("factionCandidates");
+            if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
-                    entry.factionPlay.refused(factionMove.target(), server.getTicks());
+                    var walker = entry.nativeBody.entity();
+                    entry.factionPlay.refused(factionMove.target(), server.getTicks(), walker.getBlockPos(), FactionsPlayer.atSurface(walker));
                     // The weighed copy of this walk is not dispatched again while it waits.
                     entry.cachedRoutineCandidates = List.of();
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
@@ -9284,6 +9288,8 @@ final class PlayerRuntime {
             return null;
         }
         if (play.waiting(move.target(), tick)) return null;
+        // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up.
+        if (play.paused(tick, player.getBlockPos(), FactionsPlayer.atSurface(player))) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9487,6 +9493,22 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? 0 : entry.factionPlay.refusals(target);
+    }
+
+    /** The fixture's AI player's faction walks that came back refused, and the refusals its back-off counted. */
+    int[] factionBlockedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+    }
+
+    /** Whether the fixture's AI player's faction walks all wait now, where it stands. */
+    boolean factionPausedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
+        var body = entry.nativeBody.entity();
+        return entry.factionPlay.paused(server.getTicks(), body.getBlockPos(), FactionsPlayer.atSurface(body));
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
