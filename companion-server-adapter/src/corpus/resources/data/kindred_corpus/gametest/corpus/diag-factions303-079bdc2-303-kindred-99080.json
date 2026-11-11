@@ -1,0 +1,277 @@
+{
+ "kind": "spell",
+ "player": "Kindred",
+ "tick": 99080,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -214,
+  60,
+  63
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.49110624683317,
+  8.0,
+  16.58998236557025
+ ],
+ "yaw": 95.18765,
+ "pitch": 6.8755813,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 12.8,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 14
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 48
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cooked_porkchop",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 35
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 48
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 3
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 42
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 55
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 51
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:lava_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 10
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:egg",
+    "count": 1
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 2
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 3079,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - dig toward elsewhere: clear -199, 69, 79",
+ "task": "dig toward elsewhere: clear -199, 69, 79",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+ "log": [
+  "[08:37:13] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -199, 66, 82]",
+  "[08:37:13] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -199, 65, 81]",
+  "[08:37:13] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -199, 66, 81]",
+  "[08:37:14] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+  "[08:37:14] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -199, 67, 81]",
+  "[08:37:15] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 66, 81]",
+  "[08:37:15] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 67, 81]",
+  "[08:37:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+  "[08:37:16] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 68, 81]",
+  "[08:37:16] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 67, 80]",
+  "[08:37:17] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 68, 80]",
+  "[08:37:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+  "[08:37:17] [Server thread/INFO]: Kindred native_swap COMPLETED [Ready a torch]",
+  "[08:37:18] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 69, 80]",
+  "[08:37:21] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 68, 79]",
+  "[08:37:21] [Server thread/INFO]: Kindred native_faction COMPLETED [from factionCandidates:9244]",
+  "[08:37:22] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 69, 79]",
+  "[08:37:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+  "[08:37:23] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -198, 70, 79]",
+  "[08:38:30] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -222, 68, 79 [try elsewhere, toward -222, 68, 79]"
+ ],
+ "corpus": {
+  "run": "diag-factions303-079bdc2",
+  "seed": "303",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-factions303-1111@c5b3e43:diag-factions303-079bdc2/303/replays/world/Kindred-99080",
+  "class": "stuck: hemmed in",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166): passes if out within its 3600 ticks; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}

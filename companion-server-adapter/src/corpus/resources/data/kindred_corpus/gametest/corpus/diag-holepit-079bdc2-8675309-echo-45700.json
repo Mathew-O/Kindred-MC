@@ -1,0 +1,322 @@
+{
+ "kind": "spell",
+ "player": "Echo",
+ "tick": 45700,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  23,
+  11,
+  69
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.563798296129917,
+  8.0,
+  16.988548300295164
+ ],
+ "yaw": -187.269,
+ "pitch": 18.18667,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 9.6,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:cooked_porkchop",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:gray_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 38
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 118
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 10
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 36
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 6
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 25
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 47
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 8
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 19
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 36
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 55
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 46
+    }
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 21699,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward 15, 19, 87",
+ "task": "try elsewhere, toward 15, 19, 87",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+ "log": [
+  "[07:47:43] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 20, 82]",
+  "[07:47:43] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 19, 82]",
+  "[07:47:43] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+  "[07:47:43] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 20, 83]",
+  "[07:47:44] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 19, 83]",
+  "[07:47:44] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+  "[07:47:44] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 20, 84]",
+  "[07:47:44] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 19, 84]",
+  "[07:47:44] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+  "[07:47:44] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 20, 85]",
+  "[07:47:44] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 19, 85]",
+  "[07:47:44] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+  "[07:47:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 20, 86]",
+  "[07:47:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 19, 86]",
+  "[07:47:45] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+  "[07:47:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 20, 87]",
+  "[07:47:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 19, 87]",
+  "[07:47:45] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for iron: advance]",
+  "[07:47:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 20, 88]",
+  "[07:47:46] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for iron: clear 39, 19, 88]"
+ ],
+ "corpus": {
+  "run": "diag-holepit-079bdc2",
+  "seed": "8675309",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-holepit-1111@4a9f0ff:diag-holepit-079bdc2/8675309/replays/world/Echo-45700",
+  "class": "stuck: mining for a find",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166): passes if out within its 3600 ticks"
+ }
+}

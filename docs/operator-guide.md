@@ -826,8 +826,10 @@ In a faction world:
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
   `/faction unclaim` gives it up (no refund); `/faction map` shows the land round you; `/faction coins` your balance
   (500 at your first sight on a faction world). On claimed land only its faction's members break, place, open or use
-  anything; explosions and fire break nothing there; water, lava, pistons, hoppers, dispensers and droppers reach
-  nothing over its border; an outsider's arrow sets nothing off.
+  anything; explosions and fire break nothing there, and no mob changes a block there of its own accord (an enderman
+  takes or sets down nothing, a ravager tramples no leaves, a silverfish hides in no stone, a wither tears through
+  nothing, a zombie breaks no door; M-06d1); water, lava, pistons, hoppers, dispensers and droppers reach nothing over
+  its border; an outsider's arrow sets nothing off.
 - Spawn and the border (M-06f): `/faction admin hub` makes spawn's chunks within `safeRadius` (64) blocks a safe zone,
   sets the border (`border`, 8,000, across round 0 0 with a 20-block warning; the Nether an eighth, the End the same)
   and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.

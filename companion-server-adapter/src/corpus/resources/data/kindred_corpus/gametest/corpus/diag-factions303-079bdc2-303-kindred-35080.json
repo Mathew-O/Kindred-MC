@@ -1,0 +1,104 @@
+{
+ "kind": "spell",
+ "player": "Kindred",
+ "tick": 35080,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -430,
+  58,
+  308
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.65057180974742,
+  8.0,
+  16.67500541090527
+ ],
+ "yaw": -77.96581,
+ "pitch": 10.694781,
+ "health": 20.0,
+ "food": 19,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:beef",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 8
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:porkchop",
+    "count": 4
+   }
+  }
+ ],
+ "selected": 2,
+ "timeOfDay": 11079,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: no progress here for a while - try elsewhere, toward 1, 99, 48",
+ "task": "try elsewhere, toward 1, 99, 48",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+ "log": [
+  "[08:15:23] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[08:15:24] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[08:15:25] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[08:15:25] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[08:15:26] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[08:15:27] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[08:15:28] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[08:15:28] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -428, 70, 308 [Climb toward the surface for logs: back the way it came]",
+  "[08:15:28] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -416, 65, 309]",
+  "[08:15:29] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]",
+  "[08:15:29] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -429, 70, 308 [Climb toward the surface for logs: back the way it came]",
+  "[08:15:29] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -416, 66, 309]",
+  "[08:15:29] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+  "[08:15:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+  "[08:15:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk toward the trees seen at -442, 70, 339]",
+  "[08:16:19] [Server thread/INFO]: Kindred native_goto COMPLETED [try elsewhere, toward -468, 68, 341]",
+  "[08:17:07] [Server thread/INFO]: Kindred native_goto COMPLETED [try elsewhere, toward -468, 71, 316]",
+  "[08:17:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk toward the trees seen at -436, 69, 336]",
+  "[08:17:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+  "[08:17:13] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk toward the trees seen at -408, 69, 322]"
+ ],
+ "corpus": {
+  "run": "diag-factions303-079bdc2",
+  "seed": "303",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-factions303-1111@c5b3e43:diag-factions303-079bdc2/303/replays/world/Kindred-35080",
+  "class": "stuck: hole or pit",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166): passes if out within its 3600 ticks; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}
