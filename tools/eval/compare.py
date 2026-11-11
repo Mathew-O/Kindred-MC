@@ -159,6 +159,11 @@ def from_markdown(text, name):
             "scenarios": [scenario.group(1)] if scenario else [], "perSeed": per_seed, "fromMarkdown": True}
 
 
+def free_runs(summary):
+    """The seeds of a summary run with free travel or free items allowed, as words; none for an old summary."""
+    return ["%s seed %s (%s)" % (summary["build"], seed, " and ".join(free)) for seed, free in sorted(summary.get("freeSwitches", {}).items())]
+
+
 def load(path):
     """A summary.json, or failing that its build's summary.md (the older iterations kept only that)."""
     path = Path(path)
@@ -190,6 +195,10 @@ def main():
     parser.add_argument("--out")
     args = parser.parse_args()
     a, b = load(args.a), load(args.b)
+    refused = free_runs(a) + free_runs(b)
+    if refused:
+        # A teleport or a free item never counts (mod-support decision 6): the comparison, the ladder's step, is refused.
+        raise SystemExit("Refused: %s; a run with free travel or free items allowed is not earned and no ladder counts it." % "; ".join(refused))
     seeds = sorted(set(a["seeds"]) & set(b["seeds"]))
     lines = ["# %s against %s" % (b["build"], a["build"]), "",
              "On the %d seeds both ran (%s). %s: %s; %s: %s." % (len(seeds), ", ".join(seeds), a["build"], " and ".join(a["kinds"]),
