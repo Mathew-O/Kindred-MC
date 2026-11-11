@@ -32,6 +32,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
 - F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
+- F-35c1, no walk to the portal out of a night shelter: [evidence](evidence/F-35c1.md).
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
