@@ -4433,6 +4433,7 @@ final class PlayerRuntime {
                 if (!running || entries.get(id) != entry || entry.atlas != null) return;
                 entry.atlas = dev.kindred.core.atlas.Atlas.restore(failure == null ? snapshot : null, PRIORS);
                 entry.atlasSavedAt = server.getTicks();
+                entry.atlasRecall = failure == null && snapshot != null; // F-30d: read back from its file, so seen before this start.
             }));
             return;
         }
@@ -4488,6 +4489,7 @@ final class PlayerRuntime {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
         entry.campaign.atlas(atlasOn ? entry.atlas : null);
+        if (entry.atlasRecall && atlasOn && entry.atlas != null) { entry.campaign.recall(entry.atlas); entry.atlasRecall = false; }
         entry.campaign.recipes(rescueBook, rescueSkills);
         entry.campaign.customs(customs);
         entry.campaign.pursue(goalOf(entry));
@@ -6627,6 +6629,7 @@ final class PlayerRuntime {
             if (goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
                 entry.campaign.atlas(atlasOn ? entry.atlas : null); // What it sees goes into its atlas from the first look (F-30).
+                if (entry.atlasRecall && atlasOn && entry.atlas != null) { entry.campaign.recall(entry.atlas); entry.atlasRecall = false; }
                 entry.campaign.observe(body.entity());
             }
         }
@@ -9309,16 +9312,26 @@ final class PlayerRuntime {
      * {@code faction.defend}, {@code faction.scout}), where, and a line; every fact the faction's to know.
      */
     private void factionSay(Entry entry, UUID body, String kind, String where, String line) {
-        var faction = projected().factions().of(body).orElse(null);
-        if (faction == null) return;
-        var facts = new java.util.LinkedHashMap<String, dev.kindred.core.wire.Fact>();
-        if (!where.isEmpty()) facts.put("where", dev.kindred.core.wire.Fact.of(where, dev.kindred.core.wire.Visibility.FACTION));
-        facts.put("what", dev.kindred.core.wire.Fact.of(line, dev.kindred.core.wire.Visibility.FACTION));
+        var message = factionMessage(entry, body, kind, where, line, List.of());
+        if (message == null) return;
         try {
-            wire.send(dev.kindred.core.wire.Message.of(kind, entry.data.id(), dev.kindred.core.wire.Scope.faction(faction.id().toString()), facts, List.of()));
+            wire.send(message);
         } catch (RuntimeException refused) {
             KindredMod.LOGGER.warn("{}'s {} not sent on its faction's channel", entry.data.displayName(), kind, refused);
         }
+    }
+
+    /**
+     * The faction message for {@code kind} resting on {@code eventIds} (the Record's events it tells of; none for a walk
+     * it sets out on), or null when the player is in no faction (as it would be had its join been refused).
+     */
+    private dev.kindred.core.wire.Message factionMessage(Entry entry, UUID body, String kind, String where, String line, List<Long> eventIds) {
+        var faction = projected().factions().of(body).orElse(null);
+        if (faction == null) return null;
+        var facts = new java.util.LinkedHashMap<String, dev.kindred.core.wire.Fact>();
+        if (!where.isEmpty()) facts.put("where", dev.kindred.core.wire.Fact.of(where, dev.kindred.core.wire.Visibility.FACTION));
+        facts.put("what", dev.kindred.core.wire.Fact.of(line, dev.kindred.core.wire.Visibility.FACTION));
+        return dev.kindred.core.wire.Message.of(kind, entry.data.id(), dev.kindred.core.wire.Scope.faction(faction.id().toString()), facts, eventIds);
     }
 
     /** The view it decides from: the ledgers' public facts, its own sightings, its spare stock, its personality. */
@@ -9373,27 +9386,30 @@ final class PlayerRuntime {
         String world = player.getServerWorld().getRegistryKey().getValue().toString();
         BlockPos pos = player.getBlockPos();
         String name = entry.data.displayName();
+        // What it founds, joins, claims or captures: its events held here, then written and its faction told citing them.
+        var drafts = new ArrayList<dev.kindred.core.record.WorldEvent>();
+        java.util.function.Consumer<List<dev.kindred.core.record.WorldEvent>> held = drafts::addAll;
         FactionsService.Reply reply = switch (kind) {
             case FOUND -> {
                 var pick = FactionsPlayer.nameFor(name, entry.factionPlay.foundings);
                 var colours = dev.kindred.core.factions.FactionColour.values();
                 String colour = colours[Math.floorMod(id.hashCode(), colours.length)].id();
-                var r = factions.request(id, "create", List.of(pick[0], pick[1], colour), world, pos, this::playerByName, this::factionName);
+                var r = factions.request(id, "create", List.of(pick[0], pick[1], colour), world, pos, this::playerByName, this::factionName, held);
                 if (!r.accepted()) entry.factionPlay.foundings++;
                 yield r;
             }
             case JOIN -> {
                 var faction = projected().factions().get(UUID.fromString(target)).orElse(null);
                 yield faction == null ? FactionsService.Reply.refused("That faction is gone")
-                        : factions.request(id, "join", List.of(faction.name()), world, pos, this::playerByName, this::factionName);
+                        : factions.request(id, "join", List.of(faction.name()), world, pos, this::playerByName, this::factionName, held);
             }
             case INVITE -> {
                 var other = server.getPlayerManager().getPlayer(UUID.fromString(target));
                 yield other == null ? FactionsService.Reply.refused("That player has gone")
                         : factions.request(id, "invite", List.of(other.getGameProfile().getName()), world, pos, this::playerByName, this::factionName);
             }
-            case CLAIM -> factions.request(id, "claim", List.of(), world, pos, this::playerByName, this::factionName);
-            case CAPTURE -> factions.request(id, "capture", List.of(), world, pos, this::playerByName, this::factionName);
+            case CLAIM -> factions.request(id, "claim", List.of(), world, pos, this::playerByName, this::factionName, held);
+            case CAPTURE -> factions.request(id, "capture", List.of(), world, pos, this::playerByName, this::factionName, held);
             case SELL -> {
                 // Only the kinds it chose to sell, each a lot worth selling (FactionPlay.MIN_LOT); none named, all its spare.
                 var slots = FactionsPlayer.spareSlots(player, target.isEmpty() ? null : java.util.Set.of(target.split(",")));
@@ -9422,10 +9438,30 @@ final class PlayerRuntime {
                 case CAPTURE -> "faction.capture";
                 default -> null;
             };
-            if (said != null) factionSay(entry, id, said, kind == dev.kindred.core.factions.FactionPlay.Kind.CLAIM || kind == dev.kindred.core.factions.FactionPlay.Kind.CAPTURE
-                    ? dev.kindred.core.factions.Territory.Chunk.at(world, pos.getX(), pos.getZ()).key() : "", line);
+            String where = kind == dev.kindred.core.factions.FactionPlay.Kind.CLAIM || kind == dev.kindred.core.factions.FactionPlay.Kind.CAPTURE
+                    ? dev.kindred.core.factions.Territory.Chunk.at(world, pos.getX(), pos.getZ()).key() : "";
+            if (said != null && !drafts.isEmpty()) {
+                // Written first; told only once the Record holds it, citing exactly its events (F-34).
+                recordAndTell(List.copyOf(drafts), eventIds -> factionMessage(entry, id, said, where, line, eventIds), null);
+                drafts.clear();
+            }
         }
+        record(drafts); // A refusal holds none; anything held and not told is written as it would have been.
         return new NativeFactionAction.Reply(reply.accepted(), line);
+    }
+
+    /** A fixture's AI player (by its companion id) chooses one faction act and does it now, as its own native_faction step would. */
+    NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target) {
+        return factionActForTest(player, kind, target, 0);
+    }
+
+    /** As above, with the act's amount: a purchase's count, a bid's coins in hundredths. */
+    NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target, long amount) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) throw new IllegalStateException("No connected body");
+        entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, amount, "a fixture's act");
+        return factionAct(entry, kind, target, amount);
     }
 
     /** A fixture's AI player (by its companion id) weighs the faction world now; what it chose is left for its turn. */
@@ -14206,6 +14242,11 @@ final class PlayerRuntime {
         // this thread, and every write-then-callback begun before now is stale from here on (recordThen).
         stopping = true;
         ++stopEpoch;
+        if (onStopBegin != null) {
+            var action = onStopBegin;
+            onStopBegin = null;
+            action.run();
+        }
         if (replays != null) replays.close();
         // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
         for (var raced : racePace.entrySet()) {
@@ -14329,6 +14370,13 @@ final class PlayerRuntime {
                     campaign == null ? List.of() : campaign.rescues()));
         }
         return Optional.empty();
+    }
+
+    /** The tick its goal last gained something, 0 with none or no goal: read only, for a corpus scene's pass (F-27a). */
+    long goalProgressTick(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? 0 : entry.campaign.lastGain();
     }
 
     /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
@@ -16254,15 +16302,38 @@ final class PlayerRuntime {
                        java.util.function.Consumer<dev.kindred.core.wire.Delivery> sent) {
         requireThread();
         java.util.function.Consumer<dev.kindred.core.wire.Delivery> done = sent == null ? d -> { } : sent;
+        // The stop barrier stops the tell, never the events: what was decided is the Record's (its ordered writer, which
+        // the stop waits on), so an audit never finds a claim with no event; only the message resting on it goes unsent.
+        // Stopped (the Record closed), nothing is decided to write: no act runs once the runtime has stopped.
+        if (!running) {
+            lateWritesRefused++;
+            KindredMod.LOGGER.warn("Kindred stopped: {} event(s) not written and nothing told: the Record is closed", drafts.size());
+            done.accept(null);
+            return;
+        }
+        if (stopping) {
+            lateTellsRefused++;
+            KindredMod.LOGGER.warn("Kindred stopping: {} event(s) written, nothing told of them", drafts.size());
+            record(drafts);
+            done.accept(null);
+            return;
+        }
         SqliteCompanionStore database = store;
         if (database == null || drafts.isEmpty()) {
             KindredMod.LOGGER.warn("Nothing recorded, so nothing told: {}", database == null ? "World Record not open" : "no events");
             done.accept(null);
             return;
         }
+        long epoch = stopEpoch;
         record(drafts);
         @SuppressWarnings("unchecked") var write = (CompletableFuture<List<dev.kindred.core.record.WorldEvent>>) recordFlush;
         write.whenComplete((written, failure) -> handBack(() -> {
+            // A write begun before the stop may land; what would be told of it is dropped, and its caller not called back.
+            if (epoch != stopEpoch) {
+                lateCallbacksDropped++;
+                KindredMod.LOGGER.warn("Kindred stopped: a tell resting on {} event(s) dropped after the stop", drafts.size());
+                return;
+            }
             if (failure != null || written == null || !running) {
                 done.accept(null);
                 return;
@@ -16306,10 +16377,15 @@ final class PlayerRuntime {
     /** From the first line of stop() until the next start(): no write-then-callback is begun. */
     private boolean stopping;
     /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
-    private int lateWritesRefused, lateCallbacksDropped;
+    private int lateWritesRefused, lateCallbacksDropped, lateTellsRefused;
 
-    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it}. */
-    int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped}; }
+    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it, tells refused as it stops (their events written)}. */
+    int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped, lateTellsRefused}; }
+
+    /** Test-only: run once just as the next stop begins, after its barrier is set (a fixture's act "as it stops"). */
+    void onStopBeginForTest(Runnable action) { onStopBegin = action; }
+
+    private Runnable onStopBegin;
 
     /**
      * A sale's intent the Record holds with neither its sale nor its cancel is ambiguous: the server stopped between
@@ -16888,6 +16964,8 @@ final class PlayerRuntime {
         /** Its atlas of this world (F-30), kept across goals; read from its file once, saved once a game minute and at the end. */
         dev.kindred.core.atlas.Atlas atlas;
         private boolean atlasLoading;
+        /** F-30d: its atlas was read back from its file and its sightings are yet to be recalled by its campaign. */
+        private boolean atlasRecall;
         private long atlasSavedAt;
         private int memorySaved = -1;
         private final dev.kindred.core.PlayerDecisionLoop mind;

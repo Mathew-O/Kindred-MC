@@ -414,7 +414,7 @@ public final class ConstructionPlanner {
     static boolean doorStep(Pos ground, Map<Pos, BlockSpec> wanted) {
         for (var e : wanted.entrySet()) {
             Pos door = e.getKey();
-            if (!e.getValue().block().endsWith("_door") || "upper".equals(e.getValue().property("half"))) continue;
+            if (!dev.kindred.core.Capabilities.current().is(VanillaIds.DOORS, e.getValue().block()) || "upper".equals(e.getValue().property("half"))) continue;
             int dy = door.y() - ground.y();
             if ((dy == 0 || dy == 1) && Math.abs(door.x() - ground.x()) + Math.abs(door.z() - ground.z()) == 1) return true;
         }
@@ -569,7 +569,7 @@ public final class ConstructionPlanner {
         var keep = new HashSet<>(clear);
         var footing = new java.util.HashMap<Pos, Cell>();
         for (var b : blocks) {
-            if (!b.spec().block().endsWith("_stairs") || !keep.contains(b.at().up())) continue;
+            if (!dev.kindred.core.Capabilities.current().is(VanillaIds.STAIRS, b.spec().block()) || !keep.contains(b.at().up())) continue;
             var cell = site.cell(b.at());
             if (cell.isPresent() && cell.get().kind() == BuildSite.Kind.SOLID && cell.get().state().sameAs(b.spec()) && !cell.get().floor()) {
                 footing.put(b.at(), new Cell(BuildSite.Kind.SOLID, cell.get().state(), true));
@@ -771,7 +771,7 @@ public final class ConstructionPlanner {
     /** A wooden door, either half: a way through for a player, unlike an iron one. */
     static boolean doorway(BlockSpec spec) {
         String id = spec.block();
-        return id.endsWith("_door") && !id.endsWith("_trapdoor") && !id.equals(VanillaIds.IRON_DOOR);
+        return dev.kindred.core.Capabilities.current().is(VanillaIds.DOORS, id) && !id.equals(VanillaIds.IRON_DOOR);
     }
 
     private static boolean sealedIn(BuildSite site, Pos stance, Pos placing, Map<Pos, BlockSpec> wanted, Box box) {
