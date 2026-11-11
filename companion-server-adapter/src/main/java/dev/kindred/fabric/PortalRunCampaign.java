@@ -315,6 +315,13 @@ final class PortalRunCampaign {
     int deaths() { return deathCount; }
     int stuckSpells() { return stuckSpells; }
 
+    /**
+     * The tick its goal last gained something (material progress, the watchdog's measure less new ground), 0 if none yet
+     * (F-27a). New ground is left out: a replay's goal starts with no ground seen, so its first step anywhere would count.
+     */
+    long lastGain() { return lastGain; }
+    private long lastGain;
+
     /** How many places in a row the watchdog has given up on, the latest included (0 once it gets on). */
     int stuckLevel() { return stuckLevel; }
     Optional<Death> lastDeath() { return Optional.ofNullable(deathsSeen.peekLast()); }
@@ -541,6 +548,27 @@ final class PortalRunCampaign {
 
     dev.kindred.core.atlas.Atlas atlas() { return atlas; }
 
+    /** An atlas read back from its file at this start, its sightings to be remembered again at the next look (F-30d). */
+    private dev.kindred.core.atlas.Atlas recall;
+
+    /**
+     * F-30d: what the player saw before this start, as its atlas kept it, put back into what its plan remembers, once,
+     * at its next look round: the ores, lava, water and trees it saw in the world it stands in. Only what it perceived
+     * (the atlas holds nothing else), and each checked against the world before use; without a restart there is no
+     * atlas read from a file, so nothing is recalled.
+     */
+    void recall(dev.kindred.core.atlas.Atlas from) { recall = from; }
+
+    private void recallSightings(ServerPlayerEntity player) {
+        var from = recall;
+        recall = null;
+        if (from == null) return;
+        var key = player.getServerWorld().getRegistryKey().getValue();
+        var recalled = AtlasRecall.recallable(from, key.getPath()); // As the atlas keeps it (place()).
+        for (var r : recalled) knowledge.recall(key.toString(), r.kind(), new BlockPos(r.x(), r.y(), r.z()));
+        if (!recalled.isEmpty()) KindredMod.LOGGER.info("{} recalls {} sighting(s) its atlas kept from before this start", player.getName().getString(), recalled.size());
+    }
+
     /** The atlas's name for what WorldKnowledge has seen, or none for what it does not keep. */
     static dev.kindred.core.atlas.Atlas.Resource resource(WorldKnowledge.Kind kind) {
         return switch (kind) {
@@ -640,6 +668,7 @@ final class PortalRunCampaign {
     /** Bounded perception each tick; cheap enough to run while other work proceeds. */
     void observe(ServerPlayerEntity player) {
         atlasWorld = player.getServerWorld();
+        if (recall != null) recallSightings(player);
         knowledge.scan(player);
     }
 
@@ -1093,6 +1122,14 @@ final class PortalRunCampaign {
      */
     Optional<Task> next(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         Optional<Task> given = nextTask(body, policy, tick);
+        // A step the deep-water stop would end on its first tick is not given out (F-25c4de): with no way out of the water
+        // it can reach, the plan's own step was given, stopped "In deep water; up for air first" and given again, about
+        // thirteen times a second in a sealed pool. Held instead, the spell's watchdog counts the time as it would any
+        // spell with nothing feasible.
+        if (given.isPresent() && DEEP_WATER_STOP.equals(stopFor(body.entity(), given.get()))) {
+            progress = stageLabel(stage) + ": in deep water with no way out it can reach";
+            given = Optional.empty();
+        }
         lastGiven = given.orElse(null);
         return given;
     }
@@ -1190,6 +1227,7 @@ final class PortalRunCampaign {
         boolean newGround = seenCells.size() < 100_000
                 && seenCells.add(BlockPos.asLong(lastFeet.getX() >> 3, lastFeet.getY() >> 3, lastFeet.getZ() >> 3));
         if (gainedSomething()) {
+            lastGain = tick;
             stuckClock = 0;
             stuckLevel = 0;
             relocate = null;
@@ -3319,6 +3357,11 @@ final class PortalRunCampaign {
      * the methods available. Rebuilt once a second, so the plan follows the world as the player learns it.
      */
     private WorldFacts facts(ServerPlayerEntity player) {
+        // F-30d: what it saw before this start, back in its memory before its first plan is made from it.
+        if (recall != null) {
+            recallSightings(player);
+            facts = null;
+        }
         if (facts != null && lastTick - factsTick < 20) return facts;
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -7260,6 +7303,8 @@ final class PortalRunCampaign {
         return null;
     }
 
+    static final String DEEP_WATER_STOP = "In deep water; up for air first";
+
     String stopFor(ServerPlayerEntity player, Task running) {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         // Sinking or swimming in a task that will not take it out of the water (a wait, a seal, a fight): up for air first.
@@ -7277,7 +7322,7 @@ final class PortalRunCampaign {
                 && (player.getAir() < player.getMaxAir() * 2 / 3 && !running.label().startsWith(OVERHEAD + ": reseal ")
                         || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running) && !fillingBucket(running)
                                 && !"native_fight".equals(running.skill()) && !overheadStep(running))) {
-            return "In deep water; up for air first";
+            return DEEP_WATER_STOP;
         }
         // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.
         if (running != null && running.label().startsWith(OUT_OF_REACH)) {
