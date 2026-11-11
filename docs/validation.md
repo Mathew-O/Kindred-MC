@@ -38,6 +38,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06i: faction acts told resting on the Record](evidence/M-06i.md#faction-acts-told-resting-on-the-record-2026-11-11-claudem06i-faction-tell-1111).
 
+## Factions an operator's choice (M-06i) — 11 November 2026 (`claude/m06i-playable-1111`)
+
+- [M-06i: Factions an operator's choice](evidence/M-06i.md#factions-an-operators-choice-2026-11-11-claudem06i-playable-1111).
+
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
 - Build: `./gradlew build`.
@@ -56,7 +60,8 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 ## Entries by ID
 
-- (none yet)
+- [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
+- [F-22c60](evidence/F-22c60.md) (2026-11-11, diagnostics): a drop worth walking back for, left lying, says which check left it; portal and obsidian-pickup classes 98 of 98, 3 runs.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

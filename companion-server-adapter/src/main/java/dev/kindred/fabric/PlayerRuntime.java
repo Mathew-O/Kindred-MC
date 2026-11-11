@@ -545,8 +545,12 @@ final class PlayerRuntime {
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         webs = new KnowledgeWebs(server::getTicks);
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs, null,
-                PlayerRuntime::now);
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs,
+                (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
+                    var said = Text.literal(words);
+                    person.sendMessage(said, false);
+                    if (heardForFixtures != null) heardForFixtures.accept(person, said);
+                }, PlayerRuntime::now);
         // A player's faction for the Wire (M-06i): the Factions ledger's, its AI players by their bodies.
         setFactionOf(this::factionKey);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
@@ -596,6 +600,9 @@ final class PlayerRuntime {
         socials.setVoice(voice);
         voice.setManner(socials::manner);
         voice.setSwearing(socials::maySwear); // E-18b: a rough player's reply may swear to someone who said yes.
+        // F-34: a line said on an AI player's behalf on the Wire, in its own voice when a model is on; else the plain line.
+        wire.voice((sender, person, message, plain, prefix, say) -> running && voice.phraseWire(sender, person, message, plain, prefix,
+                words -> { if (running) say.accept(words); }));
         // Whoever may command a native player is talked with as its owner (F-18a); a legacy companion keeps its owner.
         socials.setControllers((player, participant) -> {
             Entry entry = entries.get(participant.id());
@@ -14681,7 +14688,8 @@ final class PlayerRuntime {
      * The world's game mode chosen (M-00), operators only, and saved in mode.properties. It is announced to everyone
      * online with its rules, and each AI player's playstyle follows it (the profile it maps onto, not a second setting
      * beside it). From then on only its matches, and duels, may be proposed. A match already proposed or running plays
-     * on under its own rules. Factions is declared but not playable yet.
+     * on under its own rules. Factions turns the territory guard on (and the borders once the hub is set); any other mode
+     * turns it off. Claims and coins stay in the Record either way.
      */
     int setWorldMode(ServerCommandSource source, dev.kindred.core.match.GameModes.WorldMode mode) {
         requireThread();
@@ -14695,8 +14703,14 @@ final class PlayerRuntime {
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
         }
+        if (factionsWorld()) {
+            TerritoryGuard.activate(factions);
+            factions.applyBorders();
+        } else {
+            TerritoryGuard.deactivate(factions);
+        }
         Path file = metadataDirectory.resolve("mode.properties");
-        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
+        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt, builder or factions.\nmode=" + mode.key() + "\n";
         // In order: two saves left to run side by side could finish the older last and keep it.
         modeSaved = modeSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
@@ -16546,8 +16560,8 @@ final class PlayerRuntime {
     /**
      * An evaluation run's faction world (M-06i's scenario): the world's mode set to Factions for this run as an
      * operator's choice would set it (each AI player's playstyle, the territory guard, the borders) under the settings
-     * read from config/kindred/factions.properties, the mode not yet being an operator's choice. Not saved: the run's
-     * world is thrown away.
+     * read from config/kindred/factions.properties. Not saved, unlike an operator's {@code /kindred mode factions}: the
+     * run's world is thrown away.
      */
     void factionsWorldForEval() {
         requireThread();
@@ -16592,7 +16606,7 @@ final class PlayerRuntime {
                 .thenApplyAsync(events -> dev.kindred.core.factions.FactionsAudit.check(events, settings));
     }
 
-    /** A fixture's faction world under {@code settings}, the mode not yet being playable for operators. */
+    /** A fixture's faction world under {@code settings}, without the world's mode (an operator's choice) set. */
     void factionsWorldForTest(dev.kindred.core.factions.FactionSettings settings) {
         requireThread();
         factionsForTest = true;
