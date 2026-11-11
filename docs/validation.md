@@ -31,6 +31,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+- F-35d, the route planners in core behind a terrain of per-cell facts: [evidence](evidence/F-35d.md).
 - F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
 - F-35c1, no walk to the portal out of a night shelter: [evidence](evidence/F-35c1.md).
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
@@ -41,6 +42,11 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
+- M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## The gather's best-tool question asked once per kind of block (M-06k) — 11 November 2026 (`claude/m06k-gather-tool-cache-1111`)
+
+- [M-06k: the gather's best-tool question asked once per kind of block](evidence/M-06k.md#the-gathers-best-tool-question-asked-once-per-kind-of-block-2026-11-11-claudem06k-gather-tool-cache-1111).
 
 ## An AI player's own trade and defence, native (M-06i) — 11 November 2026 (`claude/m06i-trade-fixtures-1111`)
 

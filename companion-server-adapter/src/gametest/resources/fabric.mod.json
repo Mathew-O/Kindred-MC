@@ -132,6 +132,7 @@
       "dev.kindred.fabric.NativeCaveLedgeGameTests",
       "dev.kindred.fabric.NativeDeepPortalGameTests",
       "dev.kindred.fabric.NativeAuctionScreenGameTests",
+      "dev.kindred.fabric.NativeMarketScreenGameTests",
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
       "dev.kindred.fabric.NativeFactionRefusedLogsGameTests",
@@ -196,6 +197,7 @@
       "dev.kindred.fabric.NativeKnowledgeGameTests",
       "dev.kindred.fabric.NativeCostGameTests",
       "dev.kindred.fabric.NativeCraftHelperGameTests",
+      "dev.kindred.fabric.NativeGatherTargetGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
       "dev.kindred.fabric.NativeOutingGameTests",
       "dev.kindred.fabric.NativeAttentionGameTests"
