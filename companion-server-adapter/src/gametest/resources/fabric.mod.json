@@ -89,6 +89,7 @@
       "dev.kindred.fabric.NativeObstructedPortalGameTests",
       "dev.kindred.fabric.NativeCavernLedgeGameTests",
       "dev.kindred.fabric.NativeLakeBedClimbGameTests",
+      "dev.kindred.fabric.NativeSeabedWaterGameTests",
       "dev.kindred.fabric.NativeTripWoodGameTests",
       "dev.kindred.fabric.NativeCastWaterLostGameTests",
       "dev.kindred.fabric.NativeCoverClimbGameTests",

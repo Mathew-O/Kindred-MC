@@ -45,12 +45,20 @@ final class AuctionHouse {
     private final MarketDesk desk;
     private final MarketDesk.Holds holds;
     private final Set<String> delivering = new HashSet<>();
+    /** Test-only: run right after a delivery's begin is asked for, before it comes back (a fixture stops the runtime there). */
+    private Runnable afterBeginForTest = () -> { };
+
+    void afterBeginForTest(Runnable then) { afterBeginForTest = then == null ? () -> { } : then; }
+
+    /** Whether the runtime is running: a stopped one hands nothing over (the stop barrier). */
+    private final java.util.function.BooleanSupplier live;
     private long clockOffset;
     private int next;
 
     AuctionHouse(MinecraftServer server, Supplier<Ledgers> ledgers, MarketDesk.Recorder recorder, Supplier<FactionSettings> settings,
-                 MarketDesk desk) {
+                 MarketDesk desk, java.util.function.BooleanSupplier live) {
         this.server = server;
+        this.live = live;
         this.ledgers = ledgers;
         this.recorder = recorder;
         this.settings = settings;
@@ -154,10 +162,17 @@ final class AuctionHouse {
                         delivering.remove(delivery.id());
                         holds.release(delivery.to());
                     });
+            afterBeginForTest.run();
         }
     }
 
     private void handOver(AuctionBook.Delivery delivery) {
+        // A delivery's begin written, then the runtime stopped: nothing is handed over by a late callback; the Record
+        // holds it begun and not delivered, and the next start reports it for an operator (never handed twice).
+        if (!live.getAsBoolean()) {
+            KindredMod.LOGGER.warn("Delivery {} begun as the runtime stopped: not handed over; reconcile at the next start", delivery.id());
+            return;
+        }
         var player = server.getPlayerManager().getPlayer(delivery.to());
         if (player == null) {
             holds.release(delivery.to());
