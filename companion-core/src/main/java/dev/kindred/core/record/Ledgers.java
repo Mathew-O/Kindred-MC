@@ -29,6 +29,9 @@ import java.util.UUID;
 public record Ledgers(Map<UUID, MatchRegistry.Stored> matches, Map<String, String> claims, Map<UUID, Integer> deaths, FactionBook factions,
                       PowerBook power, Coins.Book coins, SafeZones.Book safe, MarketBook market,
                       AuctionBook auctions, Capture.Book captures) {
+    /** The once-a-game-day check that the ledgers agree with a rebuild from the Record, itself an event. */
+    public static final String CHECK = "ledger_check";
+
     public static final Ledgers EMPTY = new Ledgers(MatchLedger.INSTANCE.empty(), ClaimLedger.INSTANCE.empty(), DeathLedger.INSTANCE.empty(),
             FactionLedger.INSTANCE.empty(), PowerLedger.INSTANCE.empty(), Coins.INSTANCE.empty(),
             SafeZones.INSTANCE.empty(), MarketLedger.INSTANCE.empty(), Auctions.INSTANCE.empty(),

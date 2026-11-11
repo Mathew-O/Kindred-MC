@@ -695,8 +695,11 @@ final class PlayerRuntime {
             }
             java.util.Properties properties = new java.util.Properties();
             try (var in = java.nio.file.Files.newInputStream(file)) { properties.load(in); }
+            // Free travel and free items (mod-support decision 6): forbidden unless the operator wrote "allow".
             return new EditPolicy.ServerPolicy(Boolean.parseBoolean(properties.getProperty("autonomousEdits", "false")),
-                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")));
+                    Boolean.parseBoolean(properties.getProperty("protectionKnown", "false")),
+                    "allow".equalsIgnoreCase(properties.getProperty("teleport", "forbid").trim()),
+                    "allow".equalsIgnoreCase(properties.getProperty("freeItems", "forbid").trim()));
         } catch (Exception failure) {
             KindredMod.LOGGER.error("Kindred edit policy could not be read; autonomous edits stay disabled", failure);
             return EditPolicy.ServerPolicy.deferredD4();
@@ -14498,7 +14501,11 @@ final class PlayerRuntime {
 
     private final dev.kindred.core.wire.Wording onlookerWording = new dev.kindred.core.wire.Wording();
 
-    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page may read it. */
+    private static List<String> lastOf(List<String> lines, int most) {
+        return List.copyOf(lines.subList(Math.max(0, lines.size() - most), lines.size()));
+    }
+
+    /** What an AI player was told lately on the Wire (F-34c), oldest first, as an onlooker of the watch page or the K panel may read it. */
     private List<String> toldLately(UUID ai) {
         var inbox = wire.inbox(ai);
         var out = new ArrayList<String>();
@@ -16044,7 +16051,7 @@ final class PlayerRuntime {
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
-                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "ledger_check", null,
+                    if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
                     // three game days compacted on the writer, a batch at a time, never on the tick.
@@ -16149,7 +16156,7 @@ final class PlayerRuntime {
                     for (var e : open.values()) {
                         String id = e.kind().equals(dev.kindred.core.market.MarketLedger.BUY) ? e.get("purchase", "") : e.subject();
                         KindredMod.LOGGER.error("Market {} {} by {} is unfinished: reconcile its items and coins by hand", e.kind(), id, e.actor());
-                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), "market.uncertain", e.actor(), id, "",
+                        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), e.world(), MarketDesk.UNCERTAIN, e.actor(), id, "",
                                 java.util.Map.of("items", e.get("items", ""), "cents", e.get("cents", ""))));
                     }
                 }));
@@ -16545,11 +16552,37 @@ final class PlayerRuntime {
             String world = player != null ? player.getServerWorld().getRegistryKey().getValue().toString() : source.getWorld().getRegistryKey().getValue().toString();
             BlockPos pos = player != null ? player.getBlockPos() : BlockPos.ofFloored(source.getPosition());
             reply = factions.request(who, verb.toLowerCase(java.util.Locale.ROOT), args, world, pos, this::playerByName, this::factionName);
+            if (reply.accepted() && verb.equalsIgnoreCase("home") && player != null) reply = homeTravel(player, reply);
         }
         for (String line : reply.lines()) {
             if (reply.accepted()) feedback(source, line); else reject(source, line);
         }
         return reply;
+    }
+
+    /**
+     * {@code /faction home} with free travel allowed on this server (mod-support decision 6): whoever asks is taken to its
+     * faction's home, by the rule announced to everyone (D6). Forbidden (the default), home is only told. An AI player
+     * never travels this way: no recorded skill uses it, and the lead approves one first.
+     */
+    private FactionsService.Reply homeTravel(ServerPlayerEntity player, FactionsService.Reply told) {
+        if (!teleportAllowed()) return told;
+        // An AI player's body, by its entry or by its kind: never taken.
+        if (entryForPlayer(player.getUuid()) != null || player instanceof PreparedNativePlayer) return told;
+        var faction = factions.book().of(player.getUuid()).orElse(null);
+        if (faction == null || faction.home().isEmpty()) return told;
+        String home = faction.home();
+        int split = home.lastIndexOf(':');
+        String[] xyz = split < 0 ? new String[0] : home.substring(split + 1).split(",");
+        var world = split < 0 ? null : server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD,
+                net.minecraft.util.Identifier.tryParse(home.substring(0, split))));
+        if (world == null || xyz.length != 3) return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        try {
+            player.teleport(world, Integer.parseInt(xyz[0]) + 0.5, Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]) + 0.5, player.getYaw(), player.getPitch());
+        } catch (NumberFormatException failure) {
+            return FactionsService.Reply.refused(faction.name() + "'s home is not a place: " + home);
+        }
+        return FactionsService.Reply.told(List.of("Teleported to " + faction.name() + "'s home (teleporting is allowed on this server, for everyone alike)."));
     }
 
     /** An online player's id by name, a person or an AI player. */
@@ -17513,7 +17546,10 @@ final class PlayerRuntime {
     record PanelBot(UUID id, String name, boolean connected, String phase, boolean stopped, boolean busy,
                     String playstyle, String collaboration, dev.kindred.core.survival.SurvivalGoal goal, String status,
                     String goalProgress, float health, int food, BlockPos position, String dimension, String task,
-                    UUID bodyId, String skin) { }
+                    UUID bodyId, String skin, List<String> told) {
+        /** The most it shows of what it was told lately (F-34c), newest last. */
+        static final int TOLD = 5;
+    }
 
     /** Native players this actor may control, as plain values for the panel. */
     List<PanelBot> panelBots(Actor actor) {
@@ -17532,7 +17568,8 @@ final class PlayerRuntime {
                     player != null ? player.getHealth() : 0f, player != null ? player.getHungerManager().getFoodLevel() : 0,
                     player != null ? player.getBlockPos().toImmutable() : null,
                     player != null ? player.getServerWorld().getRegistryKey().getValue().getPath() : entry.data.dimension(),
-                    busy ? entry.skillId : "", entry.data.entityId(), KindredSkins.choiceOf(entry.data.entityId())));
+                    busy ? entry.skillId : "", entry.data.entityId(), KindredSkins.choiceOf(entry.data.entityId()),
+                    lastOf(toldLately(entry.data.id()), PanelBot.TOLD)));
         }
         bots.sort(java.util.Comparator.comparing(PanelBot::name, String.CASE_INSENSITIVE_ORDER));
         return bots;
@@ -17547,7 +17584,7 @@ final class PlayerRuntime {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
         if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's AI edit policy.");
-        EditPolicy.ServerPolicy next = new EditPolicy.ServerPolicy(enabled, true);
+        EditPolicy.ServerPolicy next = edits.withEdits(enabled);
         edits = next; // Revocation applies to the next mutation check immediately.
         Path file = metadataDirectory.resolve("edits.properties");
         String content = policyFile(enabled, dragonFight, bases);
@@ -17575,8 +17612,63 @@ final class PlayerRuntime {
                 + "# dragonFight lets them fight the Ender Dragon; bases lets them choose, site and build their own bases;\n"
                 + "# maxNativePlayers is how many native AI players the server allows (default " + DEFAULT_NATIVE_PLAYERS + ", at most "
                 + MAX_NATIVE_PLAYERS + ").\n"
+                + "# teleport and freeItems are allow or forbid: free travel and free items for every player alike, announced to all (D6).\n"
                 + "autonomousEdits=" + edits + "\nprotectionKnown=true\ndragonFight=" + dragon + "\nbases=" + bases + "\n"
+                + "teleport=" + (this.edits.teleport() ? "allow" : "forbid") + "\nfreeItems=" + (this.edits.freeItems() ? "allow" : "forbid") + "\n"
                 + (maxNativePlayers == DEFAULT_NATIVE_PLAYERS ? "" : "maxNativePlayers=" + maxNativePlayers + "\n");
+    }
+
+    /** Whether free travel is allowed on this server, for every player alike (mod-support decision 6). */
+    boolean teleportAllowed() { return edits.teleport(); }
+
+    /** Whether free items are allowed on this server, for every player alike (mod-support decision 6). */
+    boolean freeItemsAllowed() { return edits.freeItems(); }
+
+    /**
+     * Records the server's switch for free travel ({@code teleport}) or free items ({@code freeItems}) in edits.properties;
+     * operators only. The new rule is announced to every player online in the same words (D6), and to the operator.
+     */
+    int setFreeSwitch(ServerCommandSource source, String which, boolean allowed) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!source.hasPermissionLevel(2)) return reject(source, "Only an operator may change the server's rule for free travel and free items.");
+        boolean travel = switch (which) {
+            case "teleport" -> true;
+            case "freeItems" -> false;
+            default -> throw new IllegalArgumentException("Not a switch: " + which);
+        };
+        edits = travel ? edits.withTeleport(allowed) : edits.withFreeItems(allowed);
+        Path file = metadataDirectory.resolve("edits.properties");
+        String content = policyFile(edits.autonomousEditsEnabled(), dragonFight, bases);
+        CompletableFuture.runAsync(() -> {
+            try {
+                Files.createDirectories(metadataDirectory);
+                Files.writeString(file, content, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new CompletionException(failure);
+            }
+        }).whenComplete((ignored, failure) -> handBack(() -> {
+            if (failure != null) {
+                KindredMod.LOGGER.error("Kindred free travel and items rule could not be saved", failure);
+                reject(source, "The rule applies now but could not be saved; it resets on restart.");
+            }
+        }));
+        // The audit: who changed which switch, and when, in the World Record (D6).
+        var by = source.getPlayer();
+        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", EditPolicy.POLICY_SET,
+                by == null ? null : by.getUuid(), which, "", Map.of("allowed", String.valueOf(allowed), "by", source.getName())));
+        String line = edits.announcement().get(travel ? 0 : 1);
+        for (ServerPlayerEntity listener : server.getPlayerManager().getPlayerList()) listener.sendMessage(Text.literal(line), false);
+        KindredMod.LOGGER.info("Rule announced to every player: {}", line);
+        feedback(source, line);
+        return 1;
+    }
+
+    /** The standing rule for free travel and free items, as announced (D6). */
+    int tellFreeSwitches(ServerCommandSource source) {
+        requireThread();
+        for (String line : edits.announcement()) feedback(source, line);
+        return 1;
     }
 
     boolean dragonFightAllowed() { return dragonFight; }
