@@ -1462,6 +1462,9 @@ final class PortalRunCampaign {
     /** Whether rescues are on for this player: the bridge says so each look (F-29b). */
     void rescueOn(boolean on) { rescueOn = on; }
 
+    /** Whether rescues are asked for this goal's stuck spells: its rescue then keeps the spell's scene itself. */
+    boolean rescueOn() { return rescueOn; }
+
     /** The server's rescue recipes, shared by every player, and the skills a plan may use (F-29d). */
     void recipes(dev.kindred.core.rescue.RescueRecipes book, java.util.Set<String> installed) {
         recipes = book;
