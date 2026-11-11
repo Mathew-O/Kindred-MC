@@ -1,5 +1,7 @@
 package dev.kindred.core.team;
 
+import dev.kindred.core.VanillaIds;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +26,7 @@ public final class FarmHomeProjects {
 
         SharedTask craftHoeTask = SharedTask.open(
                 craftHoeId, id, "Craft Agricultural Hoe", "native_craft",
-                Map.of("recipe", "stone_hoe", "reserved_item", "minecraft:cobblestone", "reserved_count", "2"),
+                Map.of("recipe", "stone_hoe", "reserved_item", VanillaIds.COBBLESTONE, "reserved_count", "2"),
                 Set.of()
         );
 
@@ -36,7 +38,7 @@ public final class FarmHomeProjects {
 
         SharedTask sowCropsTask = SharedTask.open(
                 sowCropsId, id, "Sow Wheat Seeds on Farmland", "native_plant",
-                Map.of("item", "minecraft:wheat_seeds", "reserved_item", "minecraft:wheat_seeds", "reserved_count", "1"),
+                Map.of("item", VanillaIds.WHEAT_SEEDS, "reserved_item", VanillaIds.WHEAT_SEEDS, "reserved_count", "1"),
                 Set.of(tillSoilId)
         );
 
@@ -62,13 +64,13 @@ public final class FarmHomeProjects {
 
         SharedTask craftBedTask = SharedTask.open(
                 craftBedId, id, "Craft Wool Bed", "native_craft",
-                Map.of("recipe", "white_bed", "reserved_item", "minecraft:white_wool", "reserved_count", "3"),
+                Map.of("recipe", "white_bed", "reserved_item", VanillaIds.WHITE_WOOL, "reserved_count", "3"),
                 Set.of()
         );
 
         SharedTask placeBedTask = SharedTask.open(
                 placeBedId, id, "Place Bed in Shelter", "native_place",
-                Map.of("block", "minecraft:white_bed"),
+                Map.of("block", VanillaIds.WHITE_BED),
                 Set.of(craftBedId)
         );
 

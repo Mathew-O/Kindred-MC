@@ -222,6 +222,18 @@ final class KindredWire {
         return null;
     }
 
+    /**
+     * Team talk's facts from the AI player {@code from} (F-34c), on its team's scope (in a match on no team, its side's),
+     * as {@code build} makes the message for that scope; null when it is on neither or not on the roster.
+     */
+    Delivery sendTeam(UUID from, java.util.function.Function<dev.kindred.core.wire.Scope, Message> build) {
+        for (Listener l : roster()) {
+            if (!l.id().equals(from)) continue;
+            return dev.kindred.core.wire.TeamState.scopeOf(l).map(scope -> send(build.apply(scope))).orElse(null);
+        }
+        return null;
+    }
+
     /** Where a teammate's update goes once the Wire delivers it: the receiving AI player and the update. */
     void onState(java.util.function.BiConsumer<UUID, dev.kindred.core.social.PeerUpdate> sink) {
         stateSink = sink == null ? (r, u) -> { } : sink;

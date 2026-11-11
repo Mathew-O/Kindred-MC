@@ -40,6 +40,7 @@
     <h2>Weighing</h2><ul class="candidates"></ul>
     <h2>Said</h2><div class="said"></div><ul class="talk"></ul>
     <h2>Habits and notes</h2><ul class="notes"></ul>
+    <h2>Told</h2><ul class="told"></ul>
   </div>
 </template>
 <script>
@@ -70,6 +71,7 @@
       card.querySelector(".said").textContent = p.lastWords;
       list(card.querySelector(".talk"), p.talk.slice(0, -1));
       list(card.querySelector(".notes"), p.habits.concat(p.notes));
+      list(card.querySelector(".told"), (p.told || []).slice().reverse());
       return card;
     }));
   }

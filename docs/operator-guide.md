@@ -927,7 +927,9 @@ of three; one that does not is left out.
 
 `./gradlew :companion-server-adapter:runCorpus` plays every kept death again from its own ground and state, one test a
 scene. It takes about 25 minutes on four cores. `python3 tools/corpus/report.py <results.xml>...` prints the share that
-come through. `tools/corpus/gate.sh` runs it three times and compares the result with `tools/corpus/baseline.json`.
+come through. `tools/corpus/gate.sh` runs it three times and compares the result with `tools/corpus/baseline.json`. It
+then runs any scene that newly fails alone, on the change and on main, before saying the change broke it.
+`KINDRED_CORPUS_ONLY=<id>,<id>` in the environment runs only those scenes.
 Nothing in a world is touched: the corpus runs in its own GameTest server.
 
 ### The simulator (F-28)
@@ -977,6 +979,9 @@ for each player, with:
 - what it weighed at its last decision, with each candidate's priority and score;
 - what it said last, and the lines before that;
 - its habits and notes;
+- what it was told lately on the Wire, its last ten: a message whose every fact is public in full, and of anything
+  narrower (its team's, its faction's, its side's, its own) only who it came from, the channel and the kind, as
+  "[faction] Ada: need (kept to its faction)", so a page on a stream never shows a team's or a faction's facts;
 - a feed of highlights: deaths, the stages of its run, rescues, habits taken up, matches starting and ending.
 
 It reads once a second. The same data is served as JSON, each request with the token, as `Authorization: Bearer <token>`

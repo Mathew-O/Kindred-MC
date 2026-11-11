@@ -473,6 +473,86 @@ public final class NativeBuildGameTests implements FabricGameTest {
     }
 
     /**
+     * Up its own scaffold column, eight high, when the plan finds it blocked: down the column, digging out the block
+     * underfoot, rather than walks to the ground a drop of more than three below that the navigator cannot take. In
+     * #123's CI (run 42758107947, the life-first cabin; also #113, #117, #119) the builder, four up its own column, had its
+     * plan come back "No way to reach minecraft:oak_stairs"; its walks over to the ground were "no walkable route" eight
+     * times and the cabin stopped short of its roof. Staged: a wall nine high with two top blocks to place eight apart, two
+     * cobblestone held; once the first is placed from its scaffold, its last cobblestone is taken from it, so the plan is
+     * blocked ("Nothing in hand to place") while it stands high on its own column. It must be back on the ground within
+     * a minute, and the build must not stop on its failed steps.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildBlockedOnScaffold", tickLimit = 6000)
+    public void blockedUpItsOwnScaffoldItComesDownTheColumn(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
+        var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
+        for (int x = 0; x <= 8; x++) for (int y = 0; y <= 8; y++) blocks.add(new dev.kindred.core.construction.Blueprint.Block(
+                new dev.kindred.core.construction.Pos(x, y, 0), dev.kindred.core.construction.BlockSpec.parse("minecraft:cobblestone")));
+        var wall = new dev.kindred.core.construction.Blueprint("wall", "fixture", "Kindred", "fixture", blocks);
+        BlockPos[] origin = new BlockPos[1];
+        long[] takenAt = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -8; x <= 16; x++) for (int z = -8; z <= 16; z++) {
+                        for (int y = -3; y <= 1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    origin[0] = o.add(4, 2, 4);
+                    for (int x = 0; x <= 8; x++) for (int y = 0; y <= 8; y++) {
+                        if (y == 8 && (x == 0 || x == 8)) continue; // The two left to place, eight apart.
+                        world.setBlockState(origin[0].add(x, y, 0), Blocks.COBBLESTONE.getDefaultState());
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 2));
+                    inventory.setStack(2, new ItemStack(Items.DIRT, 64));
+                    inventory.setStack(3, new ItemStack(Items.STONE_PICKAXE));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = origin[0].add(8, 0, 2);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.startBuild(f.source, f.id, wall, origin[0], 0) == 1, "Build started"))
+                .createAndAdd(() -> {
+                    // Staged, once: the first top block placed, its last cobblestone taken from it while it stands high.
+                    var world = context.getWorld();
+                    var player = f.player();
+                    boolean placed = world.getBlockState(origin[0].add(0, 8, 0)).isOf(Blocks.COBBLESTONE)
+                            || world.getBlockState(origin[0].add(8, 8, 0)).isOf(Blocks.COBBLESTONE);
+                    if (takenAt[0] < 0 && placed && player.isOnGround() && player.getBlockY() >= origin[0].getY() + 5) {
+                        var inventory = player.getInventory();
+                        for (int s = 0; s < inventory.size(); s++) if (inventory.getStack(s).isOf(Items.COBBLESTONE)) inventory.setStack(s, ItemStack.EMPTY);
+                        takenAt[0] = world.getTime();
+                        KindredMod.LOGGER.info("Build fixture: its last cobblestone taken at {} up its scaffold: {}", player.getBlockPos().toShortString(),
+                                f.runtime.buildStatus(f.id).orElse(""));
+                    }
+                    context.assertTrue(takenAt[0] >= 0, "Up its scaffold with the first top placed: " + f.runtime.buildStatus(f.id).orElse("")
+                            + " at " + player.getBlockPos().toShortString());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    String last = String.valueOf(f.runtime.nativeLastResult(f.id));
+                    context.assertTrue(!last.contains("steps failed one after another"), "The build stopped: " + last);
+                    context.assertTrue(player.isOnGround() && player.getBlockY() == origin[0].getY(), "Down on the ground: at "
+                            + player.getBlockPos().toShortString() + " (ground " + origin[0].getY() + "); " + f.runtime.buildStatus(f.id).orElse("") + " / " + last);
+                    context.assertTrue(context.getWorld().getTime() - takenAt[0] <= 1200, "Down within a minute");
+                })
+                .createAndAdd(() -> {
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A bed to build, two of its three wool held, and the third lying beside the player, not to be picked up for four
      * seconds (staged: a player's toss is two): it waits by it, picks it up once it may, makes the bed and puts it in.
      * Before, each look at the drop while it waited counted as a try, the plan being asked again every few ticks, and
