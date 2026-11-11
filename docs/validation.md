@@ -38,6 +38,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 
+## The gather's best-tool question asked once per kind of block (M-06k) — 11 November 2026 (`claude/m06k-gather-tool-cache-1111`)
+
+- [M-06k: the gather's best-tool question asked once per kind of block](evidence/M-06k.md#the-gathers-best-tool-question-asked-once-per-kind-of-block-2026-11-11-claudem06k-gather-tool-cache-1111).
+
 ## An AI player's own trade and defence, native (M-06i) — 11 November 2026 (`claude/m06i-trade-fixtures-1111`)
 
 - [M-06i: an AI player's own trade and defence, native](evidence/M-06i.md#an-ai-players-own-trade-and-defence-native-2026-11-11-claudem06i-trade-fixtures-1111).
