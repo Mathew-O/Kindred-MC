@@ -2,7 +2,8 @@
 
 Status: draft, 2026-11-08. Every version below was read from Modrinth's API for Minecraft 1.21.1 and Fabric on that
 date. Proven on a fresh server the same day: hashes, loading, start, stop, backup, and a pre-generation sample (see
-`docs/evidence/M-06j.md`). The faction world's own steps wait for the mode to be playable (M-06i).
+`docs/evidence/M-06j.md`). The admin checklist's console steps were walked on a fresh server on 2026-11-11
+(`docs/evidence/M-06j1.md`); the items a real client or a long run is needed for are listed there.
 
 Kindred's Factions rules live in the Kindred jar itself; this pack is the server's `mods` folder and configuration
 around it, kept as a manifest. Nothing here is bundled: each mod is downloaded from its own release by the index's
@@ -39,9 +40,9 @@ Kindred itself: the `companion-server-adapter` jar built from this repository at
 1. Java 21; the Fabric server launcher for Minecraft 1.21.1 with Fabric Loader 0.19.5.
 2. Each mod in the index into `mods/`, its SHA-512 checked; the Kindred jar beside them.
 3. `server.properties`, `config/kindred/factions.properties` and `config/textile_backup.json5` from here. Memory on a 12 GB host: `-Xms8G -Xmx10G`.
-4. Start once, stop; set the world's mode: `<world>/kindred/mode.properties` with `mode=factions` (or
-   `/aiplayer mode world factions` once the mode is playable; it is not until M-06i lands).
-5. Start; as an operator: `/faction admin hub` (the safe zone round spawn, the border set in every dimension, the
+4. Start; choose the mode at the console: `aiplayer mode world factions` (kept in `<world>/kindred/mode.properties`
+   across restarts).
+5. As an operator: `/faction admin hub` (the safe zone round spawn, the border set in every dimension, the
    hub built).
 6. Pre-generate with Chunky (below), then back up (below), then open the whitelist.
 

@@ -200,7 +200,7 @@ The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, an
 - A world plays its own mode's matches, and duels, which both players opt into. Proposing another kind is refused with the reason.
 - Everyone online is told the mode and its rules when it is chosen, and so is each person who joins: play, building, fighting, items, deaths and winning. `/aiplayer mode rules <mode or match>` shows any mode's or match's rules.
 - Each person invited to a match is told that match's rules before its [Join].
-- Factions is not playable yet (M-06).
+- Factions is an operator's choice like the others (`/aiplayer mode world factions`, M-06); see below.
 - **Co-op Survival keeps AI players to the humans' pace (M-01e).** The pace is the furthest of vanilla's story advancements any human in the world has earned: stone, iron, diamond, enchanting, the Nether, the End. It is kept in `kindred/pace.properties`. An AI player's base waits on it: a house until someone has smelted iron, a manor until someone has enchanted an item; a first cabin never waits. So does a goal's trip into another world: into the Nether once someone has entered the Nether, into the End (and so to the dragon) once someone has entered the End; it waits by the portal, and the way home is never held. Gathering, tools and armour are not held back. Until a human has earned one of them, nothing is held back. The server log says when it is waiting for the group (`<name> base: Keeping to the group's pace: ...`).
 
 **Duels (M-00a).** Players fight one another only inside a match they joined (D7), and only on a server that allows PvP at all (`pvp=true` in `server.properties`; with it off, no duel is proposed or started). `/aiplayer match duel <first> <second>` proposes a duel between two players, AI players or humans online:
@@ -488,6 +488,8 @@ KINDRED_VOICE=off                              optional; the fixed replies only,
 ```
 
 Cost: each reply is one request on the chat lane, apart from the planning lane, with an eight-second deadline and 120 output tokens at most. It is reserved at about 1,000 tokens and settled to what it used. Replies count against the same rates (six a minute per player, twelve in all) and the same daily budgets as the strategist's advice: `KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS` (steady pace 50,000) and `KINDRED_STRATEGIST_DAILY_TOKENS` (steady pace 100,000). Nonstop chat with one player spends the player's steady budget in about six to eight minutes; after that the fixed replies carry on, and the log's one "budget is spent" line says so. Raise the two budgets for a chattier server, or set `KINDRED_VOICE=off`. The log says `Kindred voice on` at start and, for each reply, `<Echo> Chopping logs for a table. (to Steve, 1,180 in / 22 out, 1.4 s)`, or `Echo voice: no line (<why>); the fixed reply instead (...)`. The last six lines between a player and each speaker go with the next request for five minutes, in memory only, and the count of replies is kept in the player's model-context file as `conversations`.
+
+News an AI player sends on the Wire (its faction's, its team's, its side's) is said to the people who hear it in its own words too when the voice is on: the same chat lane, rates and budgets as a reply, one request for each person who hears it. What it says is kept only if every fact of the news is in it as given and it adds no number of its own; otherwise, or when its lane is busy or out of budget, they hear the plain line (`[faction] Echo: raid planned: target birch's east wall, when dusk.`), as with the voice off. The log says `Echo voice: its words for faction.raid_planned dropped a fact or added one; the plain line instead` when that happens.
 
 #### Asks in chat (E-20b)
 Whoever may command a native player (its controller or an operator) can also ask it in chat to come over ("Echo, come here"), wait a moment, stop, or toss them some of an item it carries ("Echo, toss me some bread"). The model's reply carries the ask. The player says its reply, then does what the matching command does, through the same code and with the speaker's own authority, so every check the command makes is made again:
@@ -797,10 +799,34 @@ A player that comes by a villager at work (not a nitwit, a child, one asleep or 
 
 ## Factions mode: factions and power (M-06c)
 
-Factions mode is not yet playable for operators (`/aiplayer mode world factions` is refused until claims and safe zones
-land, M-06d and M-06f). Its settings are in `config/kindred/factions.properties`, written with the rulebook's defaults
+Factions mode is an operator's choice (`/aiplayer mode world factions`), kept in `kindred/mode.properties`; it is never
+on by itself. Choosing it turns on the territory rules (and the borders once `/faction admin hub` has set the hub);
+another mode turns them off, and the factions, claims and coins stay. Who may fight is told to everyone on joining:
+only members of different factions, never in safe zones; joining a faction is joining the match, and a person may
+leave it any time. A person in no faction is never a target, and an AI player in no faction strikes no person. Its settings are in `config/kindred/factions.properties`, written with the rulebook's defaults
 on the first start (10 members, power 0 to 10 starting at 10, −2 a qualifying PvP death, +1 an online hour, 80 chunks,
 500-block spawn exclusion, an 8,000-block border); an unknown key or a bad value is logged and the defaults apply.
+
+### Setting up a Factions server (M-06j1)
+
+Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-06j1.md)):
+
+1. Build the server from `packs/factions/` (its README): the seven mods by the index's links, each checked against its
+   SHA-512; the Fabric server launcher for 1.21.1 with Loader 0.19.5; the Kindred jar; the pack's `server.properties`,
+   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first.
+2. Start it, then at the console: `aiplayer mode world factions`, then `faction admin hub` (the safe zone, the borders,
+   the hub built). The mode is kept across restarts.
+3. Pre-generate with Chunky (the README's commands); `spark tps` after should read 20. Use
+   `spark heapsummary --save-to-file`, never the default, which uploads to spark's public paste site.
+4. AI players: `aiplayer native create <name>` puts one where the command stands. The console stands at world spawn,
+   inside the hub once it is built, so create the first with
+   `execute positioned ~20 ~ ~20 positioned over world_surface run aiplayer native create <name>`, and the rest beside it
+   with `execute at <first> positioned ~2 ~ ~ positioned over world_surface run ...`. Act for one with
+   `/faction as <player> <request>` (`create`, `invite`, `join`, `claim`, `coins`, `shop price <item>`, `ah list`, ...).
+5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
+   `aiplayer native connect <UUID>` for each.
+6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
+   read from the console.
 
 In a faction world:
 
@@ -816,19 +842,29 @@ In a faction world:
   killer within 20 minutes, and the killer's account not first seen in the last hour. Online time restores 1 power an hour,
   kept to the second across logouts and restarts (written every five minutes, at a logout and at a stop).
 - Every change is an event in the World Record (F-31); factions and power are rebuilt from it at startup.
+- Disk: the World Record (`kindred/companions.sqlite` and its `-wal`) grows with the number of players and what they do, and nothing
+  is pruned but settled action history. Measured with 3 AI players on seed 101 at 72 game days a real day (dragon goal, a build of
+  2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
+  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
+  for a long run; a figure for eight players is to follow.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
   `/faction unclaim` gives it up (no refund); `/faction map` shows the land round you; `/faction coins` your balance
   (500 at your first sight on a faction world). On claimed land only its faction's members break, place, open or use
-  anything; explosions and fire break nothing there; water, lava, pistons, hoppers, dispensers and droppers reach
-  nothing over its border; an outsider's arrow sets nothing off.
+  anything; explosions and fire break nothing there, and no mob changes a block there of its own accord (an enderman
+  takes or sets down nothing, a ravager tramples no leaves, a silverfish hides in no stone, a wither tears through
+  nothing, a zombie breaks no door; M-06d1); water, lava, pistons, hoppers, dispensers and droppers reach nothing over
+  its border; an outsider's arrow sets nothing off.
 - Spawn and the border (M-06f): `/faction admin hub` makes spawn's chunks within `safeRadius` (64) blocks a safe zone,
   sets the border (`border`, 8,000, across round 0 0 with a 20-block warning; the Nether an eighth, the End the same)
   and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.
   In a safe zone nobody's hit lands on a player and only operators change blocks. A Nether portal that would lead
   beyond the border takes nobody anywhere.
-- The market (M-06g): `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
+- The market (M-06g): bare `/shop` or `/market` opens its chest screen for a person at a client (M-06g1): what it
+  sells with what it pays and asks, and your own stacks with what each fetches; click one, then confirm to buy one,
+  sixteen or sixty-four, or to sell the stack. The price is quoted again at the confirming click and a moved price asks
+  again; clicks never move items. As text: `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
   `/shop buy <item> <count>` (raw materials the market stocks), `/shop price [item]`, `/market top` (the day's movers),
   `/market history <item>`; operators `/market baseline <item> <hundredths> <mass|ordinary|scarce> [nobuy]` to price a
   pending item. Prices fall as the market fills and drift back over hours; a sale of many walks down the price; made

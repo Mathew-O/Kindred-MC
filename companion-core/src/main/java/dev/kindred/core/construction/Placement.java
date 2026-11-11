@@ -1,5 +1,6 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.Capabilities;
 import dev.kindred.core.VanillaIds;
 
 import dev.kindred.core.construction.Pos.Face;
@@ -68,19 +69,21 @@ public final class Placement {
     public static Rule rule(BlockSpec spec) {
         String id = spec.block();
         if (WALL.contains(id)) return Rule.WALL;
-        if (ON_TOP.contains(id) || id.endsWith("_carpet") || id.endsWith("_pressure_plate")
+        Capabilities facts = Capabilities.current();
+        if (ON_TOP.contains(id) || facts.isAny(id, VanillaIds.WOOL_CARPETS, VanillaIds.PRESSURE_PLATES)
+                || id.equals(VanillaIds.MOSS_CARPET)
                 || id.equals(VanillaIds.LANTERN) && !"true".equals(spec.property("hanging"))
                 || id.equals(VanillaIds.SOUL_LANTERN) && !"true".equals(spec.property("hanging"))) return Rule.ON_TOP;
-        if (GRAVITY.contains(id) || id.endsWith("_concrete_powder")) return Rule.GRAVITY;
-        if (id.endsWith("_stairs") && spec.property("half") != null) return Rule.STAIRS;
-        if (id.endsWith("_slab")) return "double".equals(spec.property("type")) ? Rule.UNSUPPORTED : Rule.SLAB;
-        if (id.endsWith("_glazed_terracotta") || FACING_PLAYER.contains(id) && !"left".equals(spec.property("type"))
+        if (GRAVITY.contains(id) || facts.is(VanillaIds.CONCRETE_POWDERS, id)) return Rule.GRAVITY;
+        if (facts.is(VanillaIds.STAIRS, id) && spec.property("half") != null) return Rule.STAIRS;
+        if (facts.is(VanillaIds.SLABS, id)) return "double".equals(spec.property("type")) ? Rule.UNSUPPORTED : Rule.SLAB;
+        if (facts.is(VanillaIds.GLAZED_TERRACOTTAS, id) || FACING_PLAYER.contains(id) && !"left".equals(spec.property("type"))
                 && !"right".equals(spec.property("type"))) return spec.property("facing") == null ? Rule.FULL : Rule.FACING_PLAYER;
-        if (id.endsWith("_fence_gate")) return Rule.FACING_AWAY;
-        if (id.endsWith("_door") && !id.endsWith("_trapdoor") && spec.property("facing") != null) {
+        if (facts.is(VanillaIds.FENCE_GATES, id)) return Rule.FACING_AWAY;
+        if (facts.is(VanillaIds.DOORS, id) && spec.property("facing") != null) {
             return "upper".equals(spec.property("half")) ? Rule.COMPANION : Rule.DOOR;
         }
-        if (id.endsWith("_bed") && spec.property("facing") != null) return "head".equals(spec.property("part")) ? Rule.COMPANION : Rule.BED;
+        if (facts.is(VanillaIds.BEDS, id) && spec.property("facing") != null) return "head".equals(spec.property("part")) ? Rule.COMPANION : Rule.BED;
         if (id.equals(VanillaIds.HOPPER)) {
             Face facing = face(spec.property("facing") == null ? "down" : spec.property("facing"));
             return facing == null || facing == Face.UP ? Rule.UNSUPPORTED : Rule.HOPPER;

@@ -159,6 +159,12 @@ public final class Digger {
         tunnelled.add(cell.asLong());
     }
 
+    /** The cells it cleared, read-only: for a replay's copy of the goal's memory (F-27a). */
+    public Set<Long> dugCells() { return java.util.Collections.unmodifiableSet(dug); }
+
+    /** The cells its tunnels advanced into, read-only (F-27a). */
+    public Set<Long> tunnelledCells() { return java.util.Collections.unmodifiableSet(tunnelled); }
+
     /** The cells its tunnels advanced into, forgotten: a dead end paced once more is fine after a move elsewhere. */
     public void forgetTunnelled() { tunnelled.clear(); }
 

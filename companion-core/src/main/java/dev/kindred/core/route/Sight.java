@@ -45,6 +45,9 @@ public final class Sight {
 
     private final ArrayDeque<Cell> caveBacklog = new ArrayDeque<>();
     private final Map<Kind, Map<Long, Cell>> known = new EnumMap<>(Kind.class);
+    /** The columns where it saw still water open to the air, the last {@value #WATER_COLUMNS} (F-35j). */
+    private final java.util.LinkedHashSet<Long> waterColumns = new java.util.LinkedHashSet<>();
+    public static final int WATER_COLUMNS = 16_384;
     private final List<int[]> sweep = new ArrayList<>();
     private int cursor;
     private int index;
@@ -59,8 +62,14 @@ public final class Sight {
     /** Everything forgotten and the sweep begun again: a new dimension. */
     public void reset() {
         for (var map : known.values()) map.clear();
+        waterColumns.clear();
         sweep.clear();
         caveBacklog.clear();
+    }
+
+    /** A column's key, as the game keys a chunk position: x in the low half, z in the high. */
+    private static long column(int x, int z) {
+        return (x & 0xFFFFFFFFL) | ((z & 0xFFFFFFFFL) << 32);
     }
 
     /** Whether a kind is remembered only once a sight line reaches it, not on its exposure alone. */
@@ -240,7 +249,7 @@ public final class Sight {
     }
 
     /** A log beside something built: a cabin's post, not a tree. */
-    private static boolean builtIn(SightWorld world, Cell log) {
+    public static boolean builtIn(SightWorld world, Cell log) {
         for (Side side : Side.values()) {
             Cell next = log.offset(side);
             if (!world.columnLoaded(next.x() >> 4, next.z() >> 4)) continue;
@@ -324,10 +333,51 @@ public final class Sight {
     public void onFirstSight(BiConsumer<Kind, Cell> listener) { firstSight = listener; }
 
     public void remember(Kind kind, Cell pos) {
+        // Water it saw, by column, past the cap on blocks of a kind: a sea fills that cap long before it has looked round.
+        if (kind == Kind.WATER) {
+            long column = column(pos.x(), pos.z());
+            waterColumns.remove(column);
+            waterColumns.add(column);
+            if (waterColumns.size() > WATER_COLUMNS) waterColumns.remove(waterColumns.iterator().next());
+        }
         var map = known.get(kind);
         long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
         if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
         if (map.put(key, pos) == null && firstSight != null) firstSight.accept(kind, pos);
+    }
+
+    /**
+     * F-30d: a block of a kind it saw before this start, as its atlas kept it, remembered again without telling the
+     * listener (it has it already). Checked against the world before any use, as everything remembered is.
+     */
+    public void recall(Kind kind, Cell pos) {
+        var map = known.get(kind);
+        long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
+        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
+        map.putIfAbsent(key, pos);
+    }
+
+    /**
+     * Whether a walk from {@code from} to {@code to} would end in open water it saw (F-35j). Within its sight
+     * ({@value #HORIZONTAL_RADIUS} blocks), every column within two of the end is still water open to the air that it saw;
+     * beyond, the last {@code run} columns along the line out to the edge of its sight are. Nothing is read from the world:
+     * a column it has not seen is not water to it, and land seen beyond a strait breaks the run, so a crossing to land it
+     * can see is not open water.
+     */
+    public boolean seenOpenWaterToward(Cell from, Cell to, int run) {
+        double dx = to.x() - from.x(), dz = to.z() - from.z();
+        double far = Math.hypot(dx, dz);
+        if (far <= HORIZONTAL_RADIUS) {
+            for (int ox = -2; ox <= 2; ox++) for (int oz = -2; oz <= 2; oz++) {
+                if (!waterColumns.contains(column(to.x() + ox, to.z() + oz))) return false;
+            }
+            return true;
+        }
+        for (int i = HORIZONTAL_RADIUS - run + 1; i <= HORIZONTAL_RADIUS; i++) {
+            int x = (int) Math.floor(from.x() + 0.5 + dx * i / far), z = (int) Math.floor(from.z() + 0.5 + dz * i / far);
+            if (!waterColumns.contains(column(x, z))) return false;
+        }
+        return true;
     }
 
     public void forget(Cell pos) {

@@ -30,21 +30,37 @@ public final class SafeZones implements Ledger<SafeZones.Book> {
     public static final SafeZones INSTANCE = new SafeZones();
 
     /** Each zone's chunks, by name. */
-    public record Book(Map<String, Set<String>> zones) {
+    public static final class Book {
         public static final Book EMPTY = new Book(Map.of());
 
-        public Book {
+        private final Map<String, Set<String>> zones;
+        /**
+         * Every zone's chunks, gathered once: the book never changes, and the territory guard asks for them on every
+         * block a player in a faction world may work (diag-factions303: 5.7% of the server thread's samples, the set
+         * rebuilt on each question).
+         */
+        private final Set<String> chunks;
+
+        public Book(Map<String, Set<String>> zones) {
             var copy = new java.util.TreeMap<String, Set<String>>();
             zones.forEach((name, chunks) -> copy.put(name, Set.copyOf(chunks)));
-            zones = Collections.unmodifiableMap(copy);
+            this.zones = Collections.unmodifiableMap(copy);
+            var all = new TreeSet<String>();
+            copy.values().forEach(all::addAll);
+            this.chunks = Collections.unmodifiableSet(all);
         }
 
+        /** Each zone by name, and its chunks. */
+        public Map<String, Set<String>> zones() { return zones; }
+
         /** Every chunk of every zone. */
-        public Set<String> chunks() {
-            var all = new TreeSet<String>();
-            zones.values().forEach(all::addAll);
-            return Collections.unmodifiableSet(all);
-        }
+        public Set<String> chunks() { return chunks; }
+
+        @Override public boolean equals(Object other) { return other instanceof Book book && zones.equals(book.zones); }
+
+        @Override public int hashCode() { return zones.hashCode(); }
+
+        @Override public String toString() { return "Book[zones=" + zones + "]"; }
     }
 
     @Override public String name() { return "safe zones"; }

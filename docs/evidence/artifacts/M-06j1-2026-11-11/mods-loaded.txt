@@ -1,0 +1,28 @@
+ - Mod 'Textile Backup' (textile_backup) 3.1.3-1.21 recommends any version of modmenu, which is missing!
+	 - You should install any version of modmenu for the optimal experience.
+[13:24:22] [main/INFO]: Loading 64 mods:
+	- chunky 1.4.23
+	- cloth-config 15.0.140
+	- fabric-api 0.116.17+1.21.1
+	- fabricloader 0.19.5
+	- ferritecore 7.0.3
+	- java 21
+	- kindred 0.1.0-SNAPSHOT
+	- lithium 0.15.4+mc1.21.1
+	- minecraft 1.21.1
+	- spark 1.10.109
+	- textile_backup 3.1.3-1.21
+ - Mod 'Textile Backup' (textile_backup) 3.1.3-1.21 recommends any version of modmenu, which is missing!
+	 - You should install any version of modmenu for the optimal experience.
+[13:34:23] [main/INFO]: Loading 64 mods:
+	- chunky 1.4.23
+	- cloth-config 15.0.140
+	- fabric-api 0.116.17+1.21.1
+	- fabricloader 0.19.5
+	- ferritecore 7.0.3
+	- java 21
+	- kindred 0.1.0-SNAPSHOT
+	- lithium 0.15.4+mc1.21.1
+	- minecraft 1.21.1
+	- spark 1.10.109
+	- textile_backup 3.1.3-1.21

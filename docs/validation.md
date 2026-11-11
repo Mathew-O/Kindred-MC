@@ -35,8 +35,32 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35e, the campaign's climb, dig down, tunnel and giving up, in core: [evidence](evidence/F-35e.md).
 - F-35d, the route planners in core behind a terrain of per-cell facts: [evidence](evidence/F-35d.md).
 - F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
+- F-35c1, no walk to the portal out of a night shelter: [evidence](evidence/F-35c1.md).
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
+- F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
+- F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
+- F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
+- E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
+- M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
+- M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
+- M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## An AI player's own trade and defence, native (M-06i) — 11 November 2026 (`claude/m06i-trade-fixtures-1111`)
+
+- [M-06i: an AI player's own trade and defence, native](evidence/M-06i.md#an-ai-players-own-trade-and-defence-native-2026-11-11-claudem06i-trade-fixtures-1111).
+
+## Faction acts told resting on the Record (M-06i) — 11 November 2026 (`claude/m06i-faction-tell-1111`)
+
+- [M-06i: faction acts told resting on the Record](evidence/M-06i.md#faction-acts-told-resting-on-the-record-2026-11-11-claudem06i-faction-tell-1111).
+
+## The safe zones' chunks gathered once (M-06f) — 11 November 2026 (`claude/m06i-safe-chunks-1111`)
+
+- [M-06f: the safe zones' chunks gathered once](evidence/M-06f.md#the-safe-zones-chunks-gathered-once-2026-11-11-claudem06i-safe-chunks-1111).
+
+## Factions an operator's choice (M-06i) — 11 November 2026 (`claude/m06i-playable-1111`)
+
+- [M-06i: Factions an operator's choice](evidence/M-06i.md#factions-an-operators-choice-2026-11-11-claudem06i-playable-1111).
 
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
@@ -56,7 +80,13 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 ## Entries by ID
 
-- (none yet)
+- [F-22c31](evidence/F-22c31.md) (2026-11-09, diagnostics): the voice fixture's "same gather" failure names the action that ran instead, the work line and what was said.
+- [F-22c50](evidence/F-22c50.md) (2026-11-11, CI): main's runs are no longer cancelled by the next push; pull requests' still are.
+- [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
+- [F-22c59](evidence/F-22c59.md) (2026-11-11, diagnostics): a build walk the plan counted on and the navigator found no way for logs the plan's way and the first step the navigator will not take.
+- [F-22c60](evidence/F-22c60.md) (2026-11-11, diagnostics): a drop worth walking back for, left lying, says which check left it; portal and obsidian-pickup classes 98 of 98, 3 runs.
+- [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
+- [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

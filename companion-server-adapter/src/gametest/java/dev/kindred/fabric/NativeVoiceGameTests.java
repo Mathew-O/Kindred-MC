@@ -18,6 +18,7 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -159,6 +160,59 @@ public final class NativeVoiceGameTests implements FabricGameTest {
         }
     }
 
+    /**
+     * F-34: Echo tells its faction a raid is planned; its owner, of the faction, hears it in Echo's own words, which the
+     * model was asked for with the plain line and the facts; when the model's words drop a fact, the owner hears the
+     * plain line instead; the model is never asked for a person's own words.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voiceWire", tickLimit = 1200)
+    public void aFactionLineFromItIsSaidInItsOwnWordsOrThePlainLine(TestContext context) {
+        var t = new Talk(context, false);
+        var f = t.f;
+        int[] before = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> t.quiet(context))
+                .createAndAdd(() -> {
+                    t.listen();
+                    f.runtime.setFactionOf(id -> id.equals(f.id) || id.equals(t.owner.getUuid()) ? "oak" : "");
+                    t.stub.answer = conversation -> Stub.says("Raid on birch's east wall at dusk, be there.");
+                    before[0] = t.stub.asked.size();
+                    var d = f.runtime.wire().send(dev.kindred.core.wire.Message.of("faction.raid_planned", f.id, dev.kindred.core.wire.Scope.faction("oak"),
+                            raid("birch's east wall", "dusk"), List.of()));
+                    context.assertTrue(d.sent() && d.phrase().size() == 1, "Said to the owner: " + d);
+                })
+                .createAndAdd(() -> {
+                    var heard = t.heardBy(t.owner).stream().map(Heard::text).toList();
+                    context.assertTrue(heard.contains("[faction] Echo: Raid on birch's east wall at dusk, be there."), "In its own words: " + heard);
+                    var asked = t.stub.asked.get(before[0]);
+                    context.assertTrue(asked.text().contains("The plain line: \"raid planned:") && asked.text().contains("- target: \"birch's east wall\"")
+                            && !asked.mayAsk(), "Asked with the plain line and the facts, and no ask: " + asked.text());
+                    t.stub.answer = conversation -> Stub.says("Raid tonight, be there.");
+                    var d = f.runtime.wire().send(dev.kindred.core.wire.Message.of("faction.raid_planned", f.id, dev.kindred.core.wire.Scope.faction("oak"),
+                            raid("birch's gate", "dawn"), List.of()));
+                    context.assertTrue(d.sent(), "Sent again: " + d);
+                })
+                .createAndAdd(() -> {
+                    var heard = t.heardBy(t.owner).stream().map(Heard::text).toList();
+                    context.assertTrue(heard.contains("[faction] Echo: raid planned: target birch's gate, when dawn."),
+                            "Words that dropped the facts: the plain line instead: " + heard);
+                    context.assertTrue(heard.stream().noneMatch(line -> line.contains("Raid tonight")), "Never the model's words that dropped them");
+                    t.cleanup(context);
+                })
+                .completeIfSuccessful();
+    }
+
+    /** A raid's facts, the target then when, in that order (the plain line says them so). */
+    private static Map<String, dev.kindred.core.wire.Fact> raid(String target, String when) {
+        var facts = new java.util.LinkedHashMap<String, dev.kindred.core.wire.Fact>();
+        facts.put("target", dev.kindred.core.wire.Fact.of(target, dev.kindred.core.wire.Visibility.FACTION));
+        facts.put("when", dev.kindred.core.wire.Fact.of(when, dev.kindred.core.wire.Visibility.FACTION));
+        return facts;
+    }
+
     private static boolean idle(NativePaidSkillsGameTests.Fixture f) {
         String phase = f.runtime.nativeActivityStatus(Actor.console(), f.id).phase();
         return phase.equals("IDLE") || phase.equals("UNLOADED");
@@ -223,8 +277,12 @@ public final class NativeVoiceGameTests implements FabricGameTest {
                             "After the typing delay (" + SpeechTiming.delayMillis(line) + " ms), within the deadline: " + took + " ms");
                     context.assertTrue(t.heardBy(far[0]).isEmpty(), "Nothing to a player forty blocks off: " + t.heard);
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    // With what ran instead, its kind and state, and the work line: on #77's CI (run 42544269231) the action was
+                    // another task's, and which could not be told from its id alone (F-22c31's diagnostics).
                     context.assertTrue(f.runtime.nativeActivityStatus(Actor.console(), f.id).work().startsWith("Running native_gather")
-                            && action != null && action.taskId().equals(task[0]), "The same gather goes on: " + (action == null ? null : action.taskId()));
+                            && action != null && action.taskId().equals(task[0]), "The same gather goes on: " + (action == null ? null
+                            : action.taskId() + " (" + action.kind() + ", " + action.state() + ", " + action.detail() + ")") + " for " + task[0]
+                            + "; at work on " + f.runtime.nativeActivityStatus(Actor.console(), f.id).work() + "; said " + f.runtime.said(f.id));
                     t.cleanup(context);
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

@@ -62,6 +62,8 @@ final class WorldKnowledge {
 
     /** What it has seen and how it sees, the core's (F-35f); this class answers its world facts from the live world. */
     private final Sight sight = new Sight();
+    /** The columns of still water it saw that it keeps, the core's (F-35j). */
+    static final int WATER_COLUMNS = Sight.WATER_COLUMNS;
     private String dimension = "";
 
     WorldKnowledge() { }
@@ -153,6 +155,11 @@ final class WorldKnowledge {
         return Sight.trunkFoot(new WorldSight(world, null), cell(log)).map(WorldKnowledge::pos);
     }
 
+    /** A log beside something built, a cabin's post and not a tree: the core's rule (F-35f), see {@link Sight#builtIn}. */
+    static boolean builtIn(ServerWorld world, BlockPos log) {
+        return Sight.builtIn(new WorldSight(world, null), cell(log));
+    }
+
     /** Completed sweeps of the surroundings so far; a new one starts around wherever the player then is. */
     int sweeps() { return sight.sweeps(); }
 
@@ -162,6 +169,18 @@ final class WorldKnowledge {
     }
 
     void remember(Kind kind, BlockPos pos) { sight.remember(sight(kind), cell(pos)); }
+
+    /**
+     * F-30d: a block of a kind it saw before this start in {@code world} (a dimension's id), as its atlas kept it,
+     * remembered again without telling the atlas (it has it already). Checked against the world before any use, as
+     * everything remembered is; nothing for a world other than the one it is in.
+     */
+    void recall(String world, Kind kind, BlockPos pos) {
+        // Of the world it is in: the first sweep's change of world would otherwise forget it at once.
+        if (dimension.isEmpty()) dimension = world;
+        if (!world.equals(dimension)) return;
+        sight.recall(sight(kind), cell(pos));
+    }
 
     void forget(BlockPos pos) { sight.forget(cell(pos)); }
 
@@ -173,6 +192,17 @@ final class WorldKnowledge {
     }
 
     List<BlockPos> all(Kind kind) { return sight.all(sight(kind)).stream().map(WorldKnowledge::pos).toList(); }
+
+    /**
+     * Whether a walk from {@code from} to {@code to} would end in open water it saw (F-35j). Within its sight
+     * ({@value #HORIZONTAL_RADIUS} blocks), every column within two of the end is still water open to the air that it saw;
+     * beyond, the last {@code run} columns along the line out to the edge of its sight are. Nothing is read from the world:
+     * a column it has not seen is not water to it, and land seen beyond a strait breaks the run, so a crossing to land it
+     * can see is not open water.
+     */
+    boolean seenOpenWaterToward(BlockPos from, BlockPos to, int run) {
+        return sight.seenOpenWaterToward(cell(from), cell(to), run);
+    }
 
     /** Lowest-scoring remembered block of a kind that still matches the world and the caller's filter. */
     Optional<BlockPos> best(ServerWorld world, Kind kind, java.util.function.ToDoubleFunction<BlockPos> score, Predicate<BlockPos> filter) {

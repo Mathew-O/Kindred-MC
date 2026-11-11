@@ -122,9 +122,9 @@ public final class VanillaIds {
     public static final Group CHEST_CROPS = group("#kindred:storage/crops", false,
             "minecraft:sugar_cane", "minecraft:hay_block", "minecraft:kelp", "minecraft:dried_kelp");
 
-    /** Timber not caught by the wood suffixes. */
+    /** Timber not caught by the wood tags (the mushroom stem was filed as timber by its "_stem" ending). */
     public static final Group CHEST_TIMBER = group("#kindred:storage/timber", false,
-            "minecraft:stick", "minecraft:bamboo");
+            "minecraft:stick", "minecraft:bamboo", "minecraft:mushroom_stem");
 
     // ---- Single ids moved here from core by name (F-38). Each says the tag or component it would use. ----
 
@@ -698,6 +698,260 @@ public final class VanillaIds {
             "minecraft:ladder", "minecraft:vine", "minecraft:scaffolding", "minecraft:weeping_vines",
             "minecraft:weeping_vines_plant", "minecraft:twisting_vines", "minecraft:twisting_vines_plant",
             "minecraft:cave_vines", "minecraft:cave_vines_plant");
+
+    // ---- Shapes and kinds core used to tell by an id's ending (F-38): each is its tag's vanilla 1.21.1 item members,
+    // which on vanilla are exactly the ids that ending matched (checked against the generated registry). ----
+
+    /** #minecraft:doors as in vanilla 1.21.1 (item tag): doors, wooden, iron and copper. */
+    public static final Group DOORS = group("#minecraft:doors", true,
+            "minecraft:acacia_door", "minecraft:bamboo_door", "minecraft:birch_door", "minecraft:cherry_door",
+            "minecraft:copper_door", "minecraft:crimson_door", "minecraft:dark_oak_door",
+            "minecraft:exposed_copper_door", "minecraft:iron_door", "minecraft:jungle_door",
+            "minecraft:mangrove_door", "minecraft:oak_door", "minecraft:oxidized_copper_door",
+            "minecraft:spruce_door", "minecraft:warped_door", "minecraft:waxed_copper_door",
+            "minecraft:waxed_exposed_copper_door", "minecraft:waxed_oxidized_copper_door",
+            "minecraft:waxed_weathered_copper_door", "minecraft:weathered_copper_door");
+
+    /** #minecraft:trapdoors as in vanilla 1.21.1 (item tag): trapdoors. */
+    public static final Group TRAPDOORS = group("#minecraft:trapdoors", true,
+            "minecraft:acacia_trapdoor", "minecraft:bamboo_trapdoor", "minecraft:birch_trapdoor",
+            "minecraft:cherry_trapdoor", "minecraft:copper_trapdoor", "minecraft:crimson_trapdoor",
+            "minecraft:dark_oak_trapdoor", "minecraft:exposed_copper_trapdoor", "minecraft:iron_trapdoor",
+            "minecraft:jungle_trapdoor", "minecraft:mangrove_trapdoor", "minecraft:oak_trapdoor",
+            "minecraft:oxidized_copper_trapdoor", "minecraft:spruce_trapdoor", "minecraft:warped_trapdoor",
+            "minecraft:waxed_copper_trapdoor", "minecraft:waxed_exposed_copper_trapdoor",
+            "minecraft:waxed_oxidized_copper_trapdoor", "minecraft:waxed_weathered_copper_trapdoor",
+            "minecraft:weathered_copper_trapdoor");
+
+    /** #minecraft:beds as in vanilla 1.21.1 (item tag): the sixteen beds. */
+    public static final Group BEDS = group("#minecraft:beds", true,
+            "minecraft:black_bed", "minecraft:blue_bed", "minecraft:brown_bed", "minecraft:cyan_bed",
+            "minecraft:gray_bed", "minecraft:green_bed", "minecraft:light_blue_bed", "minecraft:light_gray_bed",
+            "minecraft:lime_bed", "minecraft:magenta_bed", "minecraft:orange_bed", "minecraft:pink_bed",
+            "minecraft:purple_bed", "minecraft:red_bed", "minecraft:white_bed", "minecraft:yellow_bed");
+
+    /** #minecraft:stairs as in vanilla 1.21.1 (item tag): stairs. */
+    public static final Group STAIRS = group("#minecraft:stairs", true,
+            "minecraft:acacia_stairs", "minecraft:andesite_stairs", "minecraft:bamboo_mosaic_stairs",
+            "minecraft:bamboo_stairs", "minecraft:birch_stairs", "minecraft:blackstone_stairs",
+            "minecraft:brick_stairs", "minecraft:cherry_stairs", "minecraft:cobbled_deepslate_stairs",
+            "minecraft:cobblestone_stairs", "minecraft:crimson_stairs", "minecraft:cut_copper_stairs",
+            "minecraft:dark_oak_stairs", "minecraft:dark_prismarine_stairs", "minecraft:deepslate_brick_stairs",
+            "minecraft:deepslate_tile_stairs", "minecraft:diorite_stairs", "minecraft:end_stone_brick_stairs",
+            "minecraft:exposed_cut_copper_stairs", "minecraft:granite_stairs", "minecraft:jungle_stairs",
+            "minecraft:mangrove_stairs", "minecraft:mossy_cobblestone_stairs", "minecraft:mossy_stone_brick_stairs",
+            "minecraft:mud_brick_stairs", "minecraft:nether_brick_stairs", "minecraft:oak_stairs",
+            "minecraft:oxidized_cut_copper_stairs", "minecraft:polished_andesite_stairs",
+            "minecraft:polished_blackstone_brick_stairs", "minecraft:polished_blackstone_stairs",
+            "minecraft:polished_deepslate_stairs", "minecraft:polished_diorite_stairs",
+            "minecraft:polished_granite_stairs", "minecraft:polished_tuff_stairs",
+            "minecraft:prismarine_brick_stairs", "minecraft:prismarine_stairs", "minecraft:purpur_stairs",
+            "minecraft:quartz_stairs", "minecraft:red_nether_brick_stairs", "minecraft:red_sandstone_stairs",
+            "minecraft:sandstone_stairs", "minecraft:smooth_quartz_stairs", "minecraft:smooth_red_sandstone_stairs",
+            "minecraft:smooth_sandstone_stairs", "minecraft:spruce_stairs", "minecraft:stone_brick_stairs",
+            "minecraft:stone_stairs", "minecraft:tuff_brick_stairs", "minecraft:tuff_stairs",
+            "minecraft:warped_stairs", "minecraft:waxed_cut_copper_stairs",
+            "minecraft:waxed_exposed_cut_copper_stairs", "minecraft:waxed_oxidized_cut_copper_stairs",
+            "minecraft:waxed_weathered_cut_copper_stairs", "minecraft:weathered_cut_copper_stairs");
+
+    /** #minecraft:slabs as in vanilla 1.21.1 (item tag): slabs. */
+    public static final Group SLABS = group("#minecraft:slabs", true,
+            "minecraft:acacia_slab", "minecraft:andesite_slab", "minecraft:bamboo_mosaic_slab",
+            "minecraft:bamboo_slab", "minecraft:birch_slab", "minecraft:blackstone_slab", "minecraft:brick_slab",
+            "minecraft:cherry_slab", "minecraft:cobbled_deepslate_slab", "minecraft:cobblestone_slab",
+            "minecraft:crimson_slab", "minecraft:cut_copper_slab", "minecraft:cut_red_sandstone_slab",
+            "minecraft:cut_sandstone_slab", "minecraft:dark_oak_slab", "minecraft:dark_prismarine_slab",
+            "minecraft:deepslate_brick_slab", "minecraft:deepslate_tile_slab", "minecraft:diorite_slab",
+            "minecraft:end_stone_brick_slab", "minecraft:exposed_cut_copper_slab", "minecraft:granite_slab",
+            "minecraft:jungle_slab", "minecraft:mangrove_slab", "minecraft:mossy_cobblestone_slab",
+            "minecraft:mossy_stone_brick_slab", "minecraft:mud_brick_slab", "minecraft:nether_brick_slab",
+            "minecraft:oak_slab", "minecraft:oxidized_cut_copper_slab", "minecraft:petrified_oak_slab",
+            "minecraft:polished_andesite_slab", "minecraft:polished_blackstone_brick_slab",
+            "minecraft:polished_blackstone_slab", "minecraft:polished_deepslate_slab",
+            "minecraft:polished_diorite_slab", "minecraft:polished_granite_slab", "minecraft:polished_tuff_slab",
+            "minecraft:prismarine_brick_slab", "minecraft:prismarine_slab", "minecraft:purpur_slab",
+            "minecraft:quartz_slab", "minecraft:red_nether_brick_slab", "minecraft:red_sandstone_slab",
+            "minecraft:sandstone_slab", "minecraft:smooth_quartz_slab", "minecraft:smooth_red_sandstone_slab",
+            "minecraft:smooth_sandstone_slab", "minecraft:smooth_stone_slab", "minecraft:spruce_slab",
+            "minecraft:stone_brick_slab", "minecraft:stone_slab", "minecraft:tuff_brick_slab", "minecraft:tuff_slab",
+            "minecraft:warped_slab", "minecraft:waxed_cut_copper_slab", "minecraft:waxed_exposed_cut_copper_slab",
+            "minecraft:waxed_oxidized_cut_copper_slab", "minecraft:waxed_weathered_cut_copper_slab",
+            "minecraft:weathered_cut_copper_slab");
+
+    /** #minecraft:fence_gates as in vanilla 1.21.1 (item tag): fence gates. */
+    public static final Group FENCE_GATES = group("#minecraft:fence_gates", true,
+            "minecraft:acacia_fence_gate", "minecraft:bamboo_fence_gate", "minecraft:birch_fence_gate",
+            "minecraft:cherry_fence_gate", "minecraft:crimson_fence_gate", "minecraft:dark_oak_fence_gate",
+            "minecraft:jungle_fence_gate", "minecraft:mangrove_fence_gate", "minecraft:oak_fence_gate",
+            "minecraft:spruce_fence_gate", "minecraft:warped_fence_gate");
+
+    /** #minecraft:fences as in vanilla 1.21.1 (item tag): fences. */
+    public static final Group FENCES = group("#minecraft:fences", true,
+            "minecraft:acacia_fence", "minecraft:bamboo_fence", "minecraft:birch_fence", "minecraft:cherry_fence",
+            "minecraft:crimson_fence", "minecraft:dark_oak_fence", "minecraft:jungle_fence",
+            "minecraft:mangrove_fence", "minecraft:nether_brick_fence", "minecraft:oak_fence",
+            "minecraft:spruce_fence", "minecraft:warped_fence");
+
+    /** #minecraft:wool_carpets as in vanilla 1.21.1 (item tag): wool carpets (moss carpet is not one; see MOSS_CARPET). */
+    public static final Group WOOL_CARPETS = group("#minecraft:wool_carpets", true,
+            "minecraft:black_carpet", "minecraft:blue_carpet", "minecraft:brown_carpet", "minecraft:cyan_carpet",
+            "minecraft:gray_carpet", "minecraft:green_carpet", "minecraft:light_blue_carpet",
+            "minecraft:light_gray_carpet", "minecraft:lime_carpet", "minecraft:magenta_carpet",
+            "minecraft:orange_carpet", "minecraft:pink_carpet", "minecraft:purple_carpet", "minecraft:red_carpet",
+            "minecraft:white_carpet", "minecraft:yellow_carpet");
+
+    /** #minecraft:pressure_plates as in vanilla 1.21.1 (item tag): pressure plates. */
+    public static final Group PRESSURE_PLATES = group("#minecraft:pressure_plates", true,
+            "minecraft:acacia_pressure_plate", "minecraft:bamboo_pressure_plate", "minecraft:birch_pressure_plate",
+            "minecraft:cherry_pressure_plate", "minecraft:crimson_pressure_plate",
+            "minecraft:dark_oak_pressure_plate", "minecraft:heavy_weighted_pressure_plate",
+            "minecraft:jungle_pressure_plate", "minecraft:light_weighted_pressure_plate",
+            "minecraft:mangrove_pressure_plate", "minecraft:oak_pressure_plate",
+            "minecraft:polished_blackstone_pressure_plate", "minecraft:spruce_pressure_plate",
+            "minecraft:stone_pressure_plate", "minecraft:warped_pressure_plate");
+
+    /** #c:concrete_powders as in vanilla 1.21.1 (item tag): concrete powders. */
+    public static final Group CONCRETE_POWDERS = group("#c:concrete_powders", true,
+            "minecraft:black_concrete_powder", "minecraft:blue_concrete_powder", "minecraft:brown_concrete_powder",
+            "minecraft:cyan_concrete_powder", "minecraft:gray_concrete_powder", "minecraft:green_concrete_powder",
+            "minecraft:light_blue_concrete_powder", "minecraft:light_gray_concrete_powder",
+            "minecraft:lime_concrete_powder", "minecraft:magenta_concrete_powder", "minecraft:orange_concrete_powder",
+            "minecraft:pink_concrete_powder", "minecraft:purple_concrete_powder", "minecraft:red_concrete_powder",
+            "minecraft:white_concrete_powder", "minecraft:yellow_concrete_powder");
+
+    /** #c:glazed_terracottas as in vanilla 1.21.1 (item tag): glazed terracottas. */
+    public static final Group GLAZED_TERRACOTTAS = group("#c:glazed_terracottas", true,
+            "minecraft:black_glazed_terracotta", "minecraft:blue_glazed_terracotta",
+            "minecraft:brown_glazed_terracotta", "minecraft:cyan_glazed_terracotta",
+            "minecraft:gray_glazed_terracotta", "minecraft:green_glazed_terracotta",
+            "minecraft:light_blue_glazed_terracotta", "minecraft:light_gray_glazed_terracotta",
+            "minecraft:lime_glazed_terracotta", "minecraft:magenta_glazed_terracotta",
+            "minecraft:orange_glazed_terracotta", "minecraft:pink_glazed_terracotta",
+            "minecraft:purple_glazed_terracotta", "minecraft:red_glazed_terracotta",
+            "minecraft:white_glazed_terracotta", "minecraft:yellow_glazed_terracotta");
+
+    /** #c:ores as in vanilla 1.21.1 (item tag): ores, ancient debris among them. */
+    public static final Group ORES = group("#c:ores", true,
+            "minecraft:ancient_debris", "minecraft:coal_ore", "minecraft:copper_ore", "minecraft:deepslate_coal_ore",
+            "minecraft:deepslate_copper_ore", "minecraft:deepslate_diamond_ore", "minecraft:deepslate_emerald_ore",
+            "minecraft:deepslate_gold_ore", "minecraft:deepslate_iron_ore", "minecraft:deepslate_lapis_ore",
+            "minecraft:deepslate_redstone_ore", "minecraft:diamond_ore", "minecraft:emerald_ore",
+            "minecraft:gold_ore", "minecraft:iron_ore", "minecraft:lapis_ore", "minecraft:nether_gold_ore",
+            "minecraft:nether_quartz_ore", "minecraft:redstone_ore");
+
+    /** #minecraft:signs as in vanilla 1.21.1 (item tag): standing and wall signs. */
+    public static final Group SIGNS = group("#minecraft:signs", true,
+            "minecraft:acacia_sign", "minecraft:bamboo_sign", "minecraft:birch_sign", "minecraft:cherry_sign",
+            "minecraft:crimson_sign", "minecraft:dark_oak_sign", "minecraft:jungle_sign", "minecraft:mangrove_sign",
+            "minecraft:oak_sign", "minecraft:spruce_sign", "minecraft:warped_sign");
+
+    /** #minecraft:hanging_signs as in vanilla 1.21.1 (item tag): hanging signs. */
+    public static final Group HANGING_SIGNS = group("#minecraft:hanging_signs", true,
+            "minecraft:acacia_hanging_sign", "minecraft:bamboo_hanging_sign", "minecraft:birch_hanging_sign",
+            "minecraft:cherry_hanging_sign", "minecraft:crimson_hanging_sign", "minecraft:dark_oak_hanging_sign",
+            "minecraft:jungle_hanging_sign", "minecraft:mangrove_hanging_sign", "minecraft:oak_hanging_sign",
+            "minecraft:spruce_hanging_sign", "minecraft:warped_hanging_sign");
+
+    /** #c:seeds as in vanilla 1.21.1 (item tag): seeds. */
+    public static final Group SEEDS = group("#c:seeds", true,
+            "minecraft:beetroot_seeds", "minecraft:melon_seeds", "minecraft:pumpkin_seeds",
+            "minecraft:torchflower_seeds", "minecraft:wheat_seeds");
+
+    /** #minecraft:leaves as in vanilla 1.21.1 (item tag): leaves. */
+    public static final Group LEAVES = group("#minecraft:leaves", true,
+            "minecraft:acacia_leaves", "minecraft:azalea_leaves", "minecraft:birch_leaves", "minecraft:cherry_leaves",
+            "minecraft:dark_oak_leaves", "minecraft:flowering_azalea_leaves", "minecraft:jungle_leaves",
+            "minecraft:mangrove_leaves", "minecraft:oak_leaves", "minecraft:spruce_leaves");
+
+    /** #minecraft:swords as in vanilla 1.21.1 (item tag): swords. */
+    public static final Group SWORDS = group("#minecraft:swords", true,
+            "minecraft:diamond_sword", "minecraft:golden_sword", "minecraft:iron_sword", "minecraft:netherite_sword",
+            "minecraft:stone_sword", "minecraft:wooden_sword");
+
+    /** #minecraft:pickaxes as in vanilla 1.21.1 (item tag): pickaxes. */
+    public static final Group PICKAXES = group("#minecraft:pickaxes", true,
+            "minecraft:diamond_pickaxe", "minecraft:golden_pickaxe", "minecraft:iron_pickaxe",
+            "minecraft:netherite_pickaxe", "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe");
+
+    /** #minecraft:axes as in vanilla 1.21.1 (item tag): axes. */
+    public static final Group AXES = group("#minecraft:axes", true,
+            "minecraft:diamond_axe", "minecraft:golden_axe", "minecraft:iron_axe", "minecraft:netherite_axe",
+            "minecraft:stone_axe", "minecraft:wooden_axe");
+
+    /** #minecraft:shovels as in vanilla 1.21.1 (item tag): shovels. */
+    public static final Group SHOVELS = group("#minecraft:shovels", true,
+            "minecraft:diamond_shovel", "minecraft:golden_shovel", "minecraft:iron_shovel",
+            "minecraft:netherite_shovel", "minecraft:stone_shovel", "minecraft:wooden_shovel");
+
+    /** #minecraft:hoes as in vanilla 1.21.1 (item tag): hoes. */
+    public static final Group HOES = group("#minecraft:hoes", true,
+            "minecraft:diamond_hoe", "minecraft:golden_hoe", "minecraft:iron_hoe", "minecraft:netherite_hoe",
+            "minecraft:stone_hoe", "minecraft:wooden_hoe");
+
+    /** #minecraft:head_armor as in vanilla 1.21.1 (item tag): helmets, the turtle shell among them. */
+    public static final Group HEAD_ARMOR = group("#minecraft:head_armor", true,
+            "minecraft:chainmail_helmet", "minecraft:diamond_helmet", "minecraft:golden_helmet",
+            "minecraft:iron_helmet", "minecraft:leather_helmet", "minecraft:netherite_helmet",
+            "minecraft:turtle_helmet");
+
+    /** #minecraft:chest_armor as in vanilla 1.21.1 (item tag): chestplates. */
+    public static final Group CHEST_ARMOR = group("#minecraft:chest_armor", true,
+            "minecraft:chainmail_chestplate", "minecraft:diamond_chestplate", "minecraft:golden_chestplate",
+            "minecraft:iron_chestplate", "minecraft:leather_chestplate", "minecraft:netherite_chestplate");
+
+    /** #minecraft:leg_armor as in vanilla 1.21.1 (item tag): leggings. */
+    public static final Group LEG_ARMOR = group("#minecraft:leg_armor", true,
+            "minecraft:chainmail_leggings", "minecraft:diamond_leggings", "minecraft:golden_leggings",
+            "minecraft:iron_leggings", "minecraft:leather_leggings", "minecraft:netherite_leggings");
+
+    /** #minecraft:foot_armor as in vanilla 1.21.1 (item tag): boots. */
+    public static final Group FOOT_ARMOR = group("#minecraft:foot_armor", true,
+            "minecraft:chainmail_boots", "minecraft:diamond_boots", "minecraft:golden_boots", "minecraft:iron_boots",
+            "minecraft:leather_boots", "minecraft:netherite_boots");
+
+
+    // ---- Kinds of raw material and food (F-38): a mod's item of a kind Worth's table does not name is worth what that
+    // kind's vanilla members typically are. Each is the convention tag's vanilla 1.21.1 item members. ----
+
+    /** #c:gems as in vanilla 1.21.1 (item tag): gems. */
+    public static final Group GEMS = group("#c:gems", true,
+            "minecraft:amethyst_shard", "minecraft:diamond", "minecraft:emerald", "minecraft:lapis_lazuli",
+            "minecraft:prismarine_crystals", "minecraft:quartz");
+
+    /** #c:ingots as in vanilla 1.21.1 (item tag): ingots. */
+    public static final Group INGOTS = group("#c:ingots", true,
+            "minecraft:copper_ingot", "minecraft:gold_ingot", "minecraft:iron_ingot", "minecraft:netherite_ingot");
+
+    /** #c:raw_materials as in vanilla 1.21.1 (item tag): raw ores. */
+    public static final Group RAW_MATERIALS = group("#c:raw_materials", true,
+            "minecraft:raw_copper", "minecraft:raw_gold", "minecraft:raw_iron");
+
+    /** #c:nuggets as in vanilla 1.21.1 (item tag): nuggets. */
+    public static final Group NUGGETS = group("#c:nuggets", true,
+            "minecraft:gold_nugget", "minecraft:iron_nugget");
+
+    /** #c:dusts as in vanilla 1.21.1 (item tag): dusts. */
+    public static final Group DUSTS = group("#c:dusts", true,
+            "minecraft:glowstone_dust", "minecraft:redstone");
+
+    /** #c:foods as in vanilla 1.21.1 (item tag): foods. */
+    public static final Group FOODS = group("#c:foods", true,
+            "minecraft:apple", "minecraft:baked_potato", "minecraft:beef", "minecraft:beetroot",
+            "minecraft:beetroot_soup", "minecraft:bread", "minecraft:cake", "minecraft:carrot", "minecraft:chicken",
+            "minecraft:chorus_fruit", "minecraft:cod", "minecraft:cooked_beef", "minecraft:cooked_chicken",
+            "minecraft:cooked_cod", "minecraft:cooked_mutton", "minecraft:cooked_porkchop", "minecraft:cooked_rabbit",
+            "minecraft:cooked_salmon", "minecraft:cookie", "minecraft:dried_kelp", "minecraft:enchanted_golden_apple",
+            "minecraft:glow_berries", "minecraft:golden_apple", "minecraft:golden_carrot", "minecraft:honey_bottle",
+            "minecraft:melon_slice", "minecraft:mushroom_stew", "minecraft:mutton", "minecraft:ominous_bottle",
+            "minecraft:poisonous_potato", "minecraft:porkchop", "minecraft:potato", "minecraft:pufferfish",
+            "minecraft:pumpkin_pie", "minecraft:rabbit", "minecraft:rabbit_stew", "minecraft:rotten_flesh",
+            "minecraft:salmon", "minecraft:spider_eye", "minecraft:suspicious_stew", "minecraft:sweet_berries",
+            "minecraft:tropical_fish");
+
+
+    /** Moss carpet: placed on top like a carpet, but not in #minecraft:wool_carpets. Would be its block's shape. */
+    public static final String MOSS_CARPET = "minecraft:moss_carpet";
+
 
     // ---- Woods a build is made of: the eight it always used, each family named the vanilla way. Would be read from
     // the recipes that take each #minecraft:logs item, as the adapter does for the server's other woods. ----

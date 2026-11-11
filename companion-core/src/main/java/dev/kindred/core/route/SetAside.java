@@ -1,5 +1,6 @@
 package dev.kindred.core.route;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,6 +64,27 @@ public final class SetAside {
     /** The cell with key {@code key} set aside until {@code until}, whatever it was set aside until before. */
     public void put(long key, long until) {
         blockedUntil.put(key, until);
+    }
+
+    /** The cells set aside and until when, read-only: for a replay's copy of the goal's memory (F-27a). */
+    public Map<Long, Long> blockedUntil() { return Collections.unmodifiableMap(blockedUntil); }
+
+    /** The failures counted at each cell, read-only (F-27a). */
+    public Map<Long, Integer> failures() { return Collections.unmodifiableMap(failures); }
+
+    /** The columns' cells given up as unreachable and until when, read-only (F-27a). */
+    public Map<Long, Long> unreachableUntil() { return Collections.unmodifiableMap(unreachableUntil); }
+
+    /** Where the player stood when the cell with key {@code key} was given up as unreachable, or null (F-27a). */
+    public Cell unreachableFrom(long key) { return unreachableFrom.get(key); }
+
+    /** A replay's count of failures at the cell with key {@code key}, restored (F-27a). */
+    public void failures(long key, int count) { failures.put(key, count); }
+
+    /** A replay's unreachable cell restored (F-27a): until {@code until} at least, given up from {@code from} if known. */
+    public void unreachable(long key, long until, Cell from) {
+        unreachableUntil.merge(key, until, Math::max);
+        if (from != null) unreachableFrom.put(key, from);
     }
 
     /** Everything set aside looked at afresh: the cells, the columns and the failure counts. */
