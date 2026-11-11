@@ -35,6 +35,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
+- M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 
 ## Faction acts told resting on the Record (M-06i) — 11 November 2026 (`claude/m06i-faction-tell-1111`)
 
