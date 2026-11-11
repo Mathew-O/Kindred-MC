@@ -130,6 +130,7 @@
       "dev.kindred.fabric.NativeAuctionScreenGameTests",
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
+      "dev.kindred.fabric.NativeFactionTellGameTests",
       "dev.kindred.fabric.NativeFactionsEvalGameTests",
       "dev.kindred.fabric.NativeLimitGameTests",
       "dev.kindred.fabric.NativeHudGameTests",
