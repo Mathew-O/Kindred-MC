@@ -374,6 +374,28 @@ class ConstructionPlannerTest {
         assertEquals(bare.stance(), flowers.stance(), "the same spot as with no flowers: " + flowers);
     }
 
+    /**
+     * The eyes' line to a block three up and two along, a solid block three up and one along: the line crosses that block's
+     * cell for a thirtieth of a block, at its corner, and the server's look meets it. Sampled every eighth of a block, the
+     * line was counted clear; a hideout's last block in the way was planned from there, refused as out of sight, and its
+     * builder waited to the end of its ticks (#192's CI, run 43015365370: "the line to its middle meets cobblestone")
+     * (F-22c58).
+     */
+    @Test
+    void aLineThatClipsASolidBlocksCornerIsNotClear() {
+        var cells = BuildTestSites.flat();
+        cells.put(new Pos(0, 4, 1), BuildTestSites.solid("minecraft:cobblestone"));
+        cells.put(new Pos(0, 4, 2), BuildTestSites.solid("minecraft:dirt"));
+        var site = new BuildSite(cells);
+        double[] eye = {0.5, 1 + ConstructionPlanner.EYE, 0.5};
+        double[] middle = {0.5, 4.5, 2.5};
+        assertFalse(ConstructionPlanner.clearSight(site, eye, middle, new Pos(0, 4, 2), new Pos(0, 4, 2), true),
+                "the line crosses (0, 4, 1) at its corner");
+        cells.put(new Pos(0, 4, 1), Cell.AIR);
+        assertTrue(ConstructionPlanner.clearSight(new BuildSite(cells), eye, middle, new Pos(0, 4, 2), new Pos(0, 4, 2), true),
+                "with that block gone, clear");
+    }
+
     @Test
     void withNothingInHandOrPartOutOfSightItWaits() {
         var blocks = List.of(block(2, 1, 0, "minecraft:stone_bricks"));
