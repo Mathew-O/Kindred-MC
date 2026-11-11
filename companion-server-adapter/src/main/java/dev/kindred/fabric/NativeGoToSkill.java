@@ -209,6 +209,8 @@ final class NativeGoToSkill implements SkillBody {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld(), maxDrop).throughDoors();
         if (fall >= 0) navigator.fallingAtMost(fall);
+        // Gaps jumped as a player jumps them (MOVEMENT): one block at a run, two only with food to sprint the run-up.
+        if (hold < 0) navigator.jumpingGaps(player.getHungerManager().getFoodLevel() >= SPRINT_FOOD ? 2 : 1);
         if (safe) {
             safety = new NativeNavigator(player.getServerWorld());
             navigator.endingOnly(safety::safeStand);
@@ -506,6 +508,24 @@ final class NativeGoToSkill implements SkillBody {
         boolean inWater = player.isTouchingWater();
         boolean grounded = player.isOnGround();
         if (grounded || inWater) leapt = false;
+        // A gap to jump (MOVEMENT): the next waypoint two or three blocks on from the last, at the same level, no floor
+        // between. Lined up on the landing, at a run (a sprint for two), and the jump taken past the middle of the block
+        // it takes off from, held to the landing.
+        BlockPos from = index > 0 ? path.get(index - 1) : null;
+        int span = from == null ? 0 : Math.abs(next.getX() - from.getX()) + Math.abs(next.getZ() - from.getZ());
+        if (!inWater && from != null && next.getY() == from.getY() && span >= 2 && span <= 3
+                && (next.getX() == from.getX() || next.getZ() == from.getZ()) && !navigator.standable(from.add(Integer.signum(next.getX() - from.getX()), 0, Integer.signum(next.getZ() - from.getZ())))) {
+            double gx = next.getX() + 0.5 - pos.x, gz = next.getZ() + 0.5 - pos.z;
+            float yaw = (float) Math.toDegrees(Math.atan2(-gx, gz));
+            body.turnLeft(yaw);
+            // How far past the take-off block's middle it is, along the jump.
+            double sx = Integer.signum(next.getX() - from.getX()), sz = Integer.signum(next.getZ() - from.getZ());
+            double past = (pos.x - (from.getX() + 0.5)) * sx + (pos.z - (from.getZ() + 0.5)) * sz;
+            boolean takeOff = grounded && !leapt && past >= 0.15;
+            if (takeOff) leapt = true;
+            boolean run = span == 3 || player.getHungerManager().getFoodLevel() >= SPRINT_FOOD;
+            return body.walk(lease.get(), 1.0f, 0, takeOff, run, yaw, 10f);
+        }
         // The furthest of the next few waypoints reachable in a straight line over level, clear ground.
         BlockPos aim = next;
         boolean level = !inWater && onLevel(pos, next);
