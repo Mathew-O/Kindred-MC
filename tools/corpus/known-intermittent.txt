@@ -1,3 +1,4 @@
 # Scenes known to be intermittent on main though the baseline counts them as passing, one id a line, with why after
 # a "#". The report marks a flagged scene listed here as expected; the flag and block rules are unchanged, and a
 # listed scene confirmed by the gate still blocks. Cleared at the next re-baseline, which counts them as they are.
+e40a17-7bc5b42-707-sol-48263  # zombie death; main alone failed it 1 of 3 in CI GREEN's #208 confirmation and 1 of 3 in B's #211 confirmation (main 20337c11); the 811b0f7 baseline counts it a pass (6 of 6)
