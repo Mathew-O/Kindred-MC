@@ -1,0 +1,258 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 91358,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -437,
+    54,
+    -284
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.28731718852066,
+    16.52272464857043
+  ],
+  "yaw": 91.66783,
+  "pitch": -3.2627845,
+  "health": 10.033333,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [
+    {
+      "id": "minecraft:hunger",
+      "amplifier": 0,
+      "duration": 523
+    }
+  ],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 4
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 41
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 53
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 5
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 18
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 43
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 18
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 6
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 19358,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Take cover from skeleton",
+  "task": "Get out of the water: to dry ground",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          8,
+          12,
+          10
+        ],
+        "left": 2220
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          8,
+          12,
+          10
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "strandedAt": [
+      10,
+      10,
+      14
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 180,
+    "exploreHeading": "east",
+    "exploreStalls": 2,
+    "exploreFailures": 32,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 10714
+  },
+  "log": [
+    "[14:52:06] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:52:06] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:06] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:52:08] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+    "[14:52:08] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[14:52:10] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:52:10] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:52:10] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:52:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:52:12] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]",
+    "[14:52:12] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]",
+    "[14:52:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[14:52:13] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+    "[14:52:13] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[14:52:13] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]"
+  ]
+}

@@ -1,0 +1,675 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 108666,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -135,
+    40,
+    44
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.125000565939473,
+    8.200000047683716,
+    16.87006328418962
+  ],
+  "yaw": -134.6204,
+  "pitch": -81.273445,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.2,
+  "air": -13,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:egg",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 4
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cooked_chicken",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 35
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 24
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:orange_tulip",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:red_tulip",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 57
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 88
+        }
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 37
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:birch_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 35
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 12666,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: Get out of the water: open the way up at -119, 50, 60",
+  "task": "Get out of the water: open the way up at -119, 50, 60",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE, TORCH_AS_YOU_GO]",
+  "cause": "Kindred drowned",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        20,
+        11,
+        16
+      ],
+      [
+        19,
+        12,
+        16
+      ],
+      [
+        19,
+        10,
+        16
+      ],
+      [
+        19,
+        11,
+        16
+      ],
+      [
+        18,
+        16,
+        11
+      ],
+      [
+        18,
+        16,
+        12
+      ],
+      [
+        18,
+        16,
+        13
+      ],
+      [
+        18,
+        12,
+        15
+      ],
+      [
+        18,
+        12,
+        16
+      ],
+      [
+        18,
+        13,
+        14
+      ],
+      [
+        18,
+        13,
+        15
+      ],
+      [
+        18,
+        13,
+        16
+      ],
+      [
+        18,
+        14,
+        13
+      ],
+      [
+        18,
+        14,
+        14
+      ],
+      [
+        18,
+        14,
+        15
+      ],
+      [
+        18,
+        15,
+        12
+      ],
+      [
+        18,
+        15,
+        13
+      ],
+      [
+        18,
+        15,
+        14
+      ],
+      [
+        18,
+        11,
+        16
+      ],
+      [
+        9,
+        16,
+        16
+      ],
+      [
+        9,
+        16,
+        15
+      ],
+      [
+        9,
+        16,
+        14
+      ],
+      [
+        9,
+        12,
+        8
+      ],
+      [
+        9,
+        12,
+        12
+      ],
+      [
+        9,
+        12,
+        11
+      ],
+      [
+        9,
+        12,
+        10
+      ],
+      [
+        9,
+        12,
+        9
+      ],
+      [
+        9,
+        12,
+        7
+      ],
+      [
+        9,
+        12,
+        6
+      ],
+      [
+        9,
+        12,
+        5
+      ],
+      [
+        9,
+        12,
+        4
+      ],
+      [
+        9,
+        13,
+        13
+      ],
+      [
+        9,
+        13,
+        12
+      ],
+      [
+        9,
+        13,
+        11
+      ],
+      [
+        9,
+        12,
+        3
+      ],
+      [
+        9,
+        12,
+        2
+      ],
+      [
+        9,
+        12,
+        1
+      ],
+      [
+        9,
+        14,
+        14
+      ],
+      [
+        9,
+        14,
+        13
+      ],
+      [
+        9,
+        14,
+        12
+      ],
+      [
+        9,
+        15,
+        15
+      ],
+      [
+        9,
+        15,
+        14
+      ],
+      [
+        9,
+        15,
+        13
+      ],
+      [
+        9,
+        11,
+        3
+      ],
+      [
+        9,
+        11,
+        2
+      ],
+      [
+        9,
+        11,
+        11
+      ],
+      [
+        9,
+        11,
+        10
+      ],
+      [
+        9,
+        11,
+        9
+      ],
+      [
+        9,
+        11,
+        8
+      ],
+      [
+        9,
+        11,
+        7
+      ],
+      [
+        9,
+        11,
+        6
+      ],
+      [
+        9,
+        11,
+        5
+      ],
+      [
+        9,
+        11,
+        4
+      ]
+    ],
+    "tunnelled": [
+      [
+        9,
+        11,
+        3
+      ],
+      [
+        9,
+        11,
+        2
+      ],
+      [
+        9,
+        11,
+        10
+      ],
+      [
+        9,
+        11,
+        9
+      ],
+      [
+        9,
+        11,
+        8
+      ],
+      [
+        9,
+        11,
+        7
+      ],
+      [
+        9,
+        11,
+        6
+      ],
+      [
+        9,
+        11,
+        5
+      ],
+      [
+        9,
+        11,
+        4
+      ]
+    ],
+    "visitedCaves": [
+      [
+        19,
+        8,
+        16
+      ],
+      [
+        15,
+        16,
+        8
+      ],
+      [
+        15,
+        12,
+        12
+      ],
+      [
+        15,
+        12,
+        16
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        15,
+        4,
+        16
+      ],
+      [
+        7,
+        16,
+        16
+      ],
+      [
+        7,
+        16,
+        12
+      ],
+      [
+        7,
+        12,
+        12
+      ],
+      [
+        7,
+        12,
+        8
+      ],
+      [
+        7,
+        8,
+        8
+      ],
+      [
+        7,
+        8,
+        4
+      ],
+      [
+        7,
+        8,
+        0
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "FURNACE": [
+        [
+          20,
+          11,
+          16
+        ]
+      ],
+      "CAVE": [
+        [
+          19,
+          10,
+          16
+        ],
+        [
+          18,
+          15,
+          12
+        ],
+        [
+          18,
+          11,
+          16
+        ],
+        [
+          8,
+          16,
+          16
+        ],
+        [
+          8,
+          12,
+          12
+        ],
+        [
+          8,
+          11,
+          11
+        ],
+        [
+          8,
+          11,
+          6
+        ],
+        [
+          8,
+          11,
+          3
+        ]
+      ]
+    },
+    "strandedAt": [
+      18,
+      12,
+      15
+    ],
+    "strandedWalks": 3,
+    "strandedAgo": 1714,
+    "exploreStalls": 119,
+    "exploreFailures": 50,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 11206
+  },
+  "log": [
+    "[14:56:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:53] [Server thread/INFO]: Kindred native_smelt COMPLETED [Take smelted iron]",
+    "[14:56:53] [Server thread/INFO]: Kindred native_smelt COMPLETED [Cook 2 chicken]",
+    "[14:56:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:55] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:56] [Server thread/INFO]: Kindred native_smelt COMPLETED [Take smelted iron]",
+    "[14:56:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:57] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:58] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait by the furnace]",
+    "[14:56:58] [Server thread/INFO]: Kindred native_smelt COMPLETED [Take smelted iron]",
+    "[14:56:58] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft oak planks]",
+    "[14:56:58] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft oak planks]",
+    "[14:56:58] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft shield]",
+    "[14:56:58] [Server thread/INFO]: Kindred native_equip COMPLETED [from equipCandidate:3597]",
+    "[14:56:59] [Server thread/INFO]: Kindred native_break COMPLETED [Pick up the crafting table]",
+    "[14:57:00] [Server thread/INFO]: Kindred native_break COMPLETED [Clear the way to iron ore at -118, 50, 60]",
+    "[14:57:01] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -118, 50, 60]",
+    "[14:57:02] [Server thread/INFO]: Kindred native_break COMPLETED [Mine iron ore at -119, 51, 60]"
+  ]
+}

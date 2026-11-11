@@ -1,0 +1,71 @@
+seed	player	replay tick	stuck tick	x	y	z	bucket	replay
+101	Sol	26800	26640	-376	14	-146	hole or pit	Sol-26800
+101	Sol	107500	107320	-424	60	-219	hole or pit	Sol-107500
+101	Echo	75080	74920	-265	73	-193	busy-work loop	Echo-75080
+202	Sol	20940	20780	-112	40	-13	busy-work loop	Sol-20940
+202	Sol	25260	25100	-136	37	-13	busy-work loop	Sol-25260
+202	Sol	29720	29560	-135	34	-37	busy-work loop	Sol-29720
+202	Sol	33840	33680	-116	30	-40	busy-work loop	Sol-33840
+202	Echo	77540	77380	-136	19	35	mining for a find	Echo-77540
+202	Echo	110820	110660	-130	50	59	water loop	Echo-110820
+202	Echo	116900	116740	-118	48	59	water loop	Echo-116900
+202	Echo	129300	129140	-118	48	59	water loop	Echo-129300
+202	Echo	134060	133900	-118	49	60	water loop	Echo-134060
+202	Echo	138700	138540	-118	48	60	water loop	Echo-138700
+202	Echo	143360	143200	-118	49	59	water loop	Echo-143360
+20261030	Kindred	77460	77300	-185	56	104	hemmed in	Kindred-77460
+20261030	Kindred	81060	80900	-185	56	104	hemmed in	Kindred-81060
+20261030	Kindred	99600	99440	-164	60	106	hemmed in	Kindred-99600
+20261030	Kindred	105620	105460	-128	66	80	no walkable route	Kindred-105620
+20261030	Kindred	123080	122920	-154	60	79	hemmed in	Kindred-123080
+20261030	Kindred	126860	126700	-129	62	76	hemmed in	Kindred-126860
+20261030	Kindred	131420	131260	-17	81	20	water loop	Kindred-131420
+20261030	Sol	29680	29500	-14	16	-116	busy-work loop	Sol-29680
+20261030	Echo	143480	143320	-80	-52	90	busy-work loop	Echo-143480
+31102026	Sol	58640	58480	75	71	166	busy-work loop	Sol-58640
+31102026	Echo	82240	82080	-32	63	375	mining for a find	Echo-82240
+31102026	Echo	102580	102420	17	66	387	mining for a find	Echo-102580
+31102026	Echo	106260	106100	54	66	387	mining for a find	Echo-106260
+404	Kindred	54260	54080	-48	63	-67	water loop	Kindred-54260
+404	Kindred	59140	58980	-40	57	-61	mining for a find	Kindred-59140
+404	Kindred	73080	72920	-30	-53	-120	hemmed in	Kindred-73080
+404	Kindred	76700	76540	-30	-53	-120	hemmed in	Kindred-76700
+404	Kindred	80320	80160	-30	-53	-120	hemmed in	Kindred-80320
+404	Kindred	99080	98920	3	60	-67	hemmed in	Kindred-99080
+404	Kindred	103680	103520	-14	59	-67	busy-work loop	Kindred-103680
+404	Kindred	108100	107940	-14	61	-88	hemmed in	Kindred-108100
+404	Kindred	123080	122920	4	61	-62	hemmed in	Kindred-123080
+404	Kindred	127500	127320	9	63	-40	hemmed in	Kindred-127500
+404	Kindred	131200	131040	-13	65	-42	hemmed in	Kindred-131200
+404	Kindred	135240	135080	26	62	-55	hemmed in	Kindred-135240
+404	Echo	13600	13440	55	19	-96	busy-work loop	Echo-13600
+505	Echo	29000	28840	-53	20	-11	busy-work loop	Echo-29000
+505	Echo	36200	36040	-53	26	-19	busy-work loop	Echo-36200
+505	Echo	42760	42600	-51	29	-4	busy-work loop	Echo-42760
+606	Echo	46420	46260	303	-25	-48	waiting for daylight or a teammate	Echo-46420
+606	Echo	70440	70260	318	-54	-43	no walkable route	Echo-70440
+707	Kindred	42100	41940	-11	19	-95	busy-work loop	Kindred-42100
+707	Sol	28380	28220	142	34	-54	busy-work loop	Sol-28380
+707	Sol	43640	43460	87	63	84	no walkable route	Sol-43640
+707	Echo	80020	79860	117	63	1	mining for a find	Echo-80020
+8675309	Kindred	23500	23320	7	-17	40	busy-work loop	Kindred-23500
+8675309	Kindred	72660	72500	32	2	63	hemmed in	Kindred-72660
+8675309	Kindred	79780	79620	32	4	75	hemmed in	Kindred-79780
+8675309	Kindred	83380	83220	31	3	76	hemmed in	Kindred-83380
+8675309	Kindred	87020	86860	32	4	76	hemmed in	Kindred-87020
+8675309	Kindred	90640	90480	31	3	76	hemmed in	Kindred-90640
+8675309	Kindred	94280	94120	31	3	76	hemmed in	Kindred-94280
+8675309	Kindred	97900	97740	32	4	76	no walkable route	Kindred-97900
+8675309	Kindred	101520	101360	32	3	75	no walkable route	Kindred-101520
+8675309	Kindred	105140	104980	32	3	75	no walkable route	Kindred-105140
+8675309	Kindred	109060	108900	32	4	75	no walkable route	Kindred-109060
+8675309	Kindred	112700	112520	32	4	76	hemmed in	Kindred-112700
+8675309	Kindred	116320	116160	32	4	76	hemmed in	Kindred-116320
+8675309	Kindred	119960	119800	31	4	76	hemmed in	Kindred-119960
+8675309	Kindred	123600	123440	31	3	76	hemmed in	Kindred-123600
+8675309	Kindred	127220	127060	31	3	76	hemmed in	Kindred-127220
+8675309	Kindred	130860	130680	32	4	76	hemmed in	Kindred-130860
+8675309	Kindred	134460	134300	31	4	76	hemmed in	Kindred-134460
+8675309	Kindred	138100	137940	31	3	76	hemmed in	Kindred-138100
+8675309	Kindred	141720	141560	32	4	76	hemmed in	Kindred-141720
+8675309	Sol	55160	54980	-167	-54	289	busy-work loop	Sol-55160

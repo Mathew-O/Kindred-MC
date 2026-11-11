@@ -1,0 +1,884 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 100125,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -72,
+    -43,
+    11
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.373145553925838,
+    8.0,
+    16.956160525320577
+  ],
+  "yaw": -167.67964,
+  "pitch": 18.159492,
+  "health": 10.933336,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 84
+        }
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 16
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:sunflower",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 28
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 63
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cherry_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:oak_fence",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:pointed_dripstone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 26
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 9
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 7
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 5
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 6
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:rail",
+        "count": 2
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 21
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:name_tag",
+        "count": 1
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 19
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 6
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:cherry_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 24
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 23
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 4125,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from zombie",
+  "task": "Back off from zombie",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "Sol was slain by Zombie",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          17,
+          7,
+          17
+        ],
+        "left": 1498
+      },
+      {
+        "at": [
+          17,
+          8,
+          16
+        ],
+        "left": 1458
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          17,
+          7,
+          17
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          17,
+          8,
+          16
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [
+      [
+        16,
+        9,
+        18
+      ]
+    ],
+    "treesGivenUp": [
+      [
+        4,
+        0,
+        9
+      ],
+      [
+        0,
+        0,
+        9
+      ]
+    ],
+    "dug": [
+      [
+        16,
+        11,
+        18
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        16,
+        9,
+        17
+      ],
+      [
+        16,
+        9,
+        18
+      ],
+      [
+        16,
+        10,
+        17
+      ],
+      [
+        16,
+        10,
+        18
+      ],
+      [
+        16,
+        7,
+        16
+      ],
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        8,
+        17
+      ],
+      [
+        17,
+        7,
+        15
+      ],
+      [
+        17,
+        7,
+        16
+      ],
+      [
+        17,
+        7,
+        17
+      ],
+      [
+        17,
+        8,
+        16
+      ],
+      [
+        17,
+        5,
+        15
+      ],
+      [
+        17,
+        6,
+        15
+      ],
+      [
+        17,
+        6,
+        16
+      ],
+      [
+        18,
+        5,
+        16
+      ],
+      [
+        18,
+        5,
+        15
+      ],
+      [
+        18,
+        6,
+        15
+      ],
+      [
+        18,
+        3,
+        16
+      ],
+      [
+        18,
+        4,
+        16
+      ],
+      [
+        18,
+        4,
+        15
+      ],
+      [
+        7,
+        8,
+        32
+      ],
+      [
+        7,
+        7,
+        32
+      ],
+      [
+        7,
+        7,
+        31
+      ],
+      [
+        7,
+        4,
+        30
+      ],
+      [
+        7,
+        4,
+        29
+      ],
+      [
+        7,
+        4,
+        28
+      ],
+      [
+        7,
+        3,
+        29
+      ],
+      [
+        7,
+        3,
+        28
+      ],
+      [
+        7,
+        3,
+        27
+      ],
+      [
+        7,
+        6,
+        32
+      ],
+      [
+        7,
+        6,
+        31
+      ],
+      [
+        7,
+        6,
+        30
+      ],
+      [
+        7,
+        5,
+        31
+      ],
+      [
+        7,
+        5,
+        30
+      ],
+      [
+        7,
+        5,
+        29
+      ],
+      [
+        7,
+        0,
+        26
+      ],
+      [
+        7,
+        0,
+        25
+      ],
+      [
+        7,
+        0,
+        24
+      ],
+      [
+        7,
+        2,
+        28
+      ],
+      [
+        7,
+        2,
+        27
+      ],
+      [
+        7,
+        2,
+        26
+      ],
+      [
+        7,
+        1,
+        27
+      ],
+      [
+        7,
+        1,
+        26
+      ],
+      [
+        7,
+        1,
+        25
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        12,
+        3,
+        29
+      ],
+      [
+        12,
+        3,
+        25
+      ],
+      [
+        16,
+        7,
+        13
+      ],
+      [
+        16,
+        7,
+        17
+      ],
+      [
+        16,
+        3,
+        29
+      ],
+      [
+        16,
+        3,
+        25
+      ],
+      [
+        16,
+        3,
+        13
+      ],
+      [
+        4,
+        7,
+        29
+      ],
+      [
+        4,
+        3,
+        29
+      ],
+      [
+        4,
+        3,
+        25
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "IRON_ORE": [
+        [
+          17,
+          9,
+          16
+        ]
+      ],
+      "GRAVEL": [
+        [
+          15,
+          7,
+          25
+        ],
+        [
+          15,
+          6,
+          25
+        ],
+        [
+          16,
+          7,
+          25
+        ],
+        [
+          16,
+          6,
+          25
+        ],
+        [
+          17,
+          8,
+          26
+        ],
+        [
+          17,
+          7,
+          26
+        ],
+        [
+          17,
+          6,
+          25
+        ],
+        [
+          17,
+          5,
+          25
+        ],
+        [
+          18,
+          8,
+          26
+        ],
+        [
+          18,
+          8,
+          27
+        ],
+        [
+          18,
+          8,
+          28
+        ],
+        [
+          18,
+          7,
+          25
+        ],
+        [
+          19,
+          7,
+          28
+        ],
+        [
+          19,
+          6,
+          15
+        ]
+      ],
+      "CAVE": [
+        [
+          8,
+          3,
+          24
+        ],
+        [
+          9,
+          3,
+          25
+        ],
+        [
+          14,
+          5,
+          31
+        ],
+        [
+          15,
+          3,
+          27
+        ],
+        [
+          12,
+          4,
+          24
+        ],
+        [
+          15,
+          1,
+          7
+        ],
+        [
+          15,
+          1,
+          17
+        ],
+        [
+          16,
+          7,
+          16
+        ],
+        [
+          16,
+          8,
+          17
+        ],
+        [
+          16,
+          3,
+          27
+        ],
+        [
+          16,
+          4,
+          30
+        ],
+        [
+          19,
+          3,
+          24
+        ],
+        [
+          16,
+          3,
+          19
+        ],
+        [
+          18,
+          3,
+          16
+        ],
+        [
+          16,
+          1,
+          7
+        ],
+        [
+          16,
+          1,
+          17
+        ],
+        [
+          16,
+          0,
+          16
+        ],
+        [
+          20,
+          3,
+          22
+        ],
+        [
+          20,
+          5,
+          27
+        ],
+        [
+          2,
+          4,
+          21
+        ],
+        [
+          1,
+          4,
+          20
+        ],
+        [
+          5,
+          3,
+          22
+        ],
+        [
+          7,
+          4,
+          25
+        ],
+        [
+          7,
+          4,
+          30
+        ],
+        [
+          7,
+          1,
+          27
+        ]
+      ]
+    },
+    "strandedAt": [
+      17,
+      6,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 942,
+    "exploreStalls": 173,
+    "exploreFailures": 70,
+    "stuckSpells": 4,
+    "stuckLevel": 0,
+    "leftOut": 9671
+  },
+  "log": [
+    "[14:55:29] [Server thread/INFO]: Sol native_goto COMPLETED [Cast: dig toward the lava at -68, -21, 63: step up]",
+    "[14:55:29] [Server thread/INFO]: Sol native_break COMPLETED [Cast: dig toward the lava at -68, -21, 63: clear -56, -33, 28]",
+    "[14:55:29] [Server thread/INFO]: Sol native_break COMPLETED [Cast: dig toward the lava at -68, -21, 63: clear -56, -34, 29]",
+    "[14:55:29] [Server thread/INFO]: Sol native_break COMPLETED [Cast: dig toward the lava at -68, -21, 63: clear -56, -33, 29]",
+    "[14:55:29] [Server thread/INFO]: Sol native_goto COMPLETED [Cast: dig toward the lava at -68, -21, 63: step up]",
+    "[14:55:30] [Server thread/INFO]: Sol native_break COMPLETED [Cast: dig toward the lava at -68, -21, 63: clear -56, -32, 29]",
+    "[14:55:30] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Cast: dig toward the lava at -68, -21, 63: clear -56, -33, 30]",
+    "[14:55:30] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[14:55:30] [Server thread/INFO]: Sol native_swap COMPLETED [Ready a block]",
+    "[14:55:30] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from zombie: seal the passage]",
+    "[14:55:30] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:31] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:31] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:31] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:31] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:31] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:31] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:31] [Server thread/INFO]: Sol native_wait COMPLETED [Take cover from zombie: wait behind the seal]",
+    "[14:55:32] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie]",
+    "[14:55:32] [Server thread/INFO]: Sol died at -56, -35, 27: Sol was slain by Zombie (tick 100125, day, under cover, hunger 14, armour 6, holding cobbled_deepslate, a shield; doing \"Back off from zombie\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+  ]
+}

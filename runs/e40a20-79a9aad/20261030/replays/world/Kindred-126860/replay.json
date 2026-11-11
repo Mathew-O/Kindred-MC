@@ -1,0 +1,404 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 126860,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -145,
+    54,
+    60
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.593448277323404,
+    8.0,
+    16.78378665145999
+  ],
+  "yaw": 182.97025,
+  "pitch": 14.917908,
+  "health": 12.030001,
+  "food": 10,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 7
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 4
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 67
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 26
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 20
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:brown_mushroom",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 23
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 3
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 13
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 7
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:lava_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 46
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 5
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 3
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 6859,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - try elsewhere, toward 0, 125, -1",
+  "task": "try elsewhere, toward 0, 125, -1",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        14,
+        11,
+        26
+      ],
+      [
+        1,
+        12,
+        31
+      ],
+      [
+        1,
+        11,
+        31
+      ],
+      [
+        2,
+        12,
+        31
+      ],
+      [
+        2,
+        11,
+        31
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        1,
+        10,
+        28
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "WATER": [
+        [
+          9,
+          8,
+          31
+        ],
+        [
+          9,
+          8,
+          32
+        ],
+        [
+          8,
+          8,
+          32
+        ],
+        [
+          7,
+          8,
+          32
+        ]
+      ]
+    },
+    "strandedAt": [
+      19,
+      11,
+      20
+    ],
+    "strandedWalks": 3,
+    "strandedAgo": 24847,
+    "exploreStalls": 11,
+    "exploreFailures": 26,
+    "stuckSpells": 6,
+    "stuckLevel": 6,
+    "leftOut": 11843
+  },
+  "log": [
+    "[15:02:23] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:24] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:25] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:26] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:27] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:28] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:29] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:30] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:31] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[15:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -154, 62, 79]",
+    "[15:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -155, 61, 79]",
+    "[15:02:32] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -155, 62, 79]",
+    "[15:02:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:02:33] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -155, 63, 79]",
+    "[15:02:33] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -155, 62, 78]",
+    "[15:02:33] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -155, 63, 78]",
+    "[15:02:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+    "[15:02:53] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus cobblestone]",
+    "[15:03:30] [Server thread/INFO]: Kindred native_goto COMPLETED [try elsewhere, toward -131, 62, 78]",
+    "[15:03:48] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus dirt]"
+  ]
+}

@@ -1,0 +1,86 @@
+seed	player	stuck tick	x	y	z	bucket
+101	Sol	76960	-420	62	-259	water loop
+101	Echo	112800	-289	-54	-219	busy-work loop
+101	Echo	116420	-289	-54	-219	busy-work loop
+101	Echo	120020	-289	-54	-219	busy-work loop
+202	Kindred	11100	-119	49	84	busy-work loop
+202	Kindred	49200	-108	-16	124	no walkable route
+202	Kindred	59320	-136	-19	126	no walkable route
+202	Sol	55940	13	-24	5	hole or pit
+202	Sol	136100	-48	-54	5	mining for a find
+202	Echo	94480	-101	-54	54	busy-work loop
+20261030	Kindred	72500	-13	-47	-60	hole or pit
+20261030	Kindred	111040	-11	-48	-61	busy-work loop
+20261030	Kindred	117260	-13	-54	-64	busy-work loop
+20261030	Kindred	121620	-1	-48	-53	hole or pit
+20261030	Kindred	138240	-2	-54	-17	mining for a find
+20261030	Sol	69440	-116	-49	-36	hemmed in
+20261030	Sol	74820	-113	-54	-38	busy-work loop
+20261030	Sol	79640	-112	-53	-38	refused target repeated
+20261030	Sol	93920	-56	79	-36	hemmed in
+20261030	Sol	111780	-88	99	-39	busy-work loop
+20261030	Echo	23100	48	19	49	mining for a find
+20261030	Echo	47660	39	19	114	hole or pit
+20261030	Echo	106400	-14	-54	-60	busy-work loop
+303	Sol	26780	-233	18	39	busy-work loop
+303	Sol	51660	-200	67	58	hemmed in
+303	Sol	55800	-187	68	58	hemmed in
+303	Sol	59800	-208	68	58	no walkable route
+303	Sol	75000	-187	67	57	hemmed in
+303	Sol	79880	4	100	51	hemmed in
+303	Sol	84040	32	110	79	water loop
+303	Sol	98920	35	110	103	hemmed in
+303	Sol	104080	6	101	53	busy-work loop
+303	Sol	107880	-15	98	53	hole or pit
+303	Sol	122920	-31	89	55	hemmed in
+303	Sol	130120	8	97	52	hemmed in
+303	Echo	30480	116	28	79	no walkable route
+31102026	Kindred	59620	24	68	353	hole or pit
+31102026	Sol	123800	81	65	158	hole or pit
+31102026	Echo	11980	110	31	299	hole or pit
+31102026	Echo	97200	138	-54	478	busy-work loop
+404	Kindred	71160	-89	5	-20	no walkable route
+404	Kindred	80980	-103	63	-26	hemmed in
+404	Kindred	99040	-78	64	-25	hemmed in
+404	Kindred	103400	27	63	-54	water loop
+404	Kindred	107240	25	63	-76	water loop
+404	Sol	41640	38	16	-65	mining for a find
+404	Sol	47500	40	18	-58	hole or pit
+404	Sol	85800	78	-54	-68	busy-work loop
+404	Sol	92140	83	-51	-70	hemmed in
+404	Sol	98900	58	-50	-67	hole or pit
+404	Sol	102540	58	-49	-68	hole or pit
+404	Sol	106140	58	-49	-68	no walkable route
+404	Sol	120660	58	-49	-68	no walkable route
+404	Sol	124400	58	-49	-68	hole or pit
+404	Sol	128000	58	-49	-68	no walkable route
+404	Sol	131620	58	-49	-68	no walkable route
+505	Kindred	8320	-14	56	-51	busy-work loop
+505	Kindred	19480	-2	47	-35	hole or pit
+505	Kindred	23560	1	45	-34	water loop
+505	Kindred	27800	-13	57	-31	no walkable route
+505	Kindred	35540	-16	57	-51	busy-work loop
+505	Kindred	53660	-32	34	-24	no walkable route
+505	Echo	10540	-32	38	-4	hemmed in
+505	Echo	14160	-34	38	-4	hemmed in
+505	Echo	17780	-34	38	-4	hemmed in
+606	Sol	58640	196	-54	-75	busy-work loop
+707	Kindred	78340	58	-54	-203	mining for a find
+707	Sol	130020	-157	60	152	hemmed in
+707	Echo	57220	20	104	-245	hole or pit
+707	Echo	80260	21	106	-234	hole or pit
+707	Echo	101420	21	106	-234	hole or pit
+8675309	Sol	33700	17	56	61	mining for a find
+8675309	Sol	61620	115	27	145	busy-work loop
+8675309	Sol	97620	-24	-25	89	busy-work loop
+8675309	Sol	106120	0	-15	41	hole or pit
+8675309	Sol	110280	1	-16	41	hole or pit
+8675309	Sol	114640	1	-16	41	hole or pit
+8675309	Sol	118980	1	-15	41	hole or pit
+8675309	Sol	122680	-5	-16	47	hole or pit
+8675309	Sol	128840	3	-17	48	busy-work loop
+8675309	Sol	134040	25	-36	46	busy-work loop
+8675309	Sol	139440	24	-35	48	busy-work loop
+8675309	Sol	143400	25	-36	47	busy-work loop
+8675309	Echo	25340	66	19	42	mining for a find
+8675309	Echo	42040	72	17	81	mining for a find

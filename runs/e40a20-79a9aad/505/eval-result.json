@@ -1,0 +1,48 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 11.05, "tickMsWorst": 1798.72, "tickMsWorstAt": 96645, "ticksOver50ms": 228, "ticksOver200ms": 8, "heapMbMax": 1239, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 760, "stone_tools": 2640, "iron_ingot": 15340, "iron_pickaxe": 22020, "obsidian": 43269, "portal_lit": 44457},
+      "deaths": [
+        {"tick": 8671, "cause": "Kindred was slain by Zombie", "x": -43, "y": 28, "z": -21, "light": 0, "timeOfDay": 8833, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 60689, "cause": "Kindred tried to swim in lava to escape Zombie", "x": -67, "y": -31, "z": -6, "light": 15, "timeOfDay": 12851, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Done: heal before going on", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 2900, "iron_ingot": 14420, "iron_pickaxe": 23140, "obsidian": 39748, "portal_lit": 41023},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 940, "stone_tools": 2940, "iron_ingot": 5400, "iron_pickaxe": 12360},
+      "deaths": [
+        {"tick": 52590, "cause": "Echo was slain by Zombie", "x": 30, "y": 27, "z": -6, "light": 0, "timeOfDay": 4752, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28840, "x": -53, "y": 20, "z": -11, "attempt": 1}, {"tick": 36040, "x": -53, "y": 26, "z": -19, "attempt": 2}, {"tick": 42600, "x": -51, "y": 29, "z": -4, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

@@ -1,0 +1,460 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 76543,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -455,
+    16,
+    -188
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.717819220620243,
+    8.0,
+    16.88121050829116
+  ],
+  "yaw": -78.510796,
+  "pitch": 43.97135,
+  "health": 1.3333321,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 5
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 2,
+  "timeOfDay": 4543,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Fight spider",
+  "task": "Fight spider",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "Kindred was slain by Spider",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          15,
+          11,
+          16
+        ],
+        "left": 5969
+      },
+      {
+        "at": [
+          6,
+          9,
+          16
+        ],
+        "left": 2372
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          6,
+          9,
+          16
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        15,
+        8,
+        12
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        19,
+        4,
+        12
+      ],
+      [
+        23,
+        4,
+        12
+      ],
+      [
+        27,
+        4,
+        12
+      ],
+      [
+        27,
+        8,
+        12
+      ],
+      [
+        31,
+        12,
+        12
+      ],
+      [
+        31,
+        8,
+        12
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "IRON_ORE": [
+        [
+          19,
+          16,
+          27
+        ],
+        [
+          19,
+          16,
+          28
+        ],
+        [
+          27,
+          6,
+          29
+        ],
+        [
+          28,
+          6,
+          28
+        ],
+        [
+          19,
+          15,
+          28
+        ],
+        [
+          19,
+          15,
+          27
+        ]
+      ],
+      "CAVE": [
+        [
+          14,
+          13,
+          16
+        ],
+        [
+          14,
+          15,
+          15
+        ],
+        [
+          16,
+          12,
+          20
+        ],
+        [
+          15,
+          13,
+          18
+        ],
+        [
+          16,
+          9,
+          14
+        ],
+        [
+          15,
+          9,
+          16
+        ],
+        [
+          17,
+          11,
+          21
+        ],
+        [
+          22,
+          5,
+          18
+        ],
+        [
+          22,
+          6,
+          22
+        ],
+        [
+          22,
+          7,
+          24
+        ],
+        [
+          21,
+          12,
+          28
+        ],
+        [
+          20,
+          12,
+          26
+        ],
+        [
+          22,
+          12,
+          7
+        ],
+        [
+          20,
+          12,
+          8
+        ],
+        [
+          21,
+          8,
+          24
+        ],
+        [
+          22,
+          8,
+          10
+        ],
+        [
+          22,
+          10,
+          28
+        ],
+        [
+          22,
+          10,
+          32
+        ],
+        [
+          23,
+          7,
+          12
+        ],
+        [
+          23,
+          7,
+          26
+        ],
+        [
+          23,
+          7,
+          11
+        ],
+        [
+          25,
+          7,
+          28
+        ],
+        [
+          23,
+          5,
+          16
+        ],
+        [
+          23,
+          5,
+          20
+        ],
+        [
+          24,
+          12,
+          7
+        ],
+        [
+          26,
+          10,
+          9
+        ],
+        [
+          24,
+          8,
+          28
+        ],
+        [
+          23,
+          11,
+          7
+        ],
+        [
+          27,
+          5,
+          16
+        ],
+        [
+          27,
+          6,
+          13
+        ],
+        [
+          30,
+          12,
+          30
+        ],
+        [
+          27,
+          12,
+          7
+        ],
+        [
+          29,
+          12,
+          8
+        ],
+        [
+          27,
+          11,
+          8
+        ],
+        [
+          30,
+          10,
+          28
+        ],
+        [
+          27,
+          10,
+          32
+        ],
+        [
+          29,
+          8,
+          12
+        ],
+        [
+          31,
+          7,
+          18
+        ],
+        [
+          31,
+          7,
+          20
+        ],
+        [
+          31,
+          12,
+          7
+        ],
+        [
+          31,
+          12,
+          8
+        ],
+        [
+          31,
+          12,
+          29
+        ],
+        [
+          31,
+          15,
+          32
+        ],
+        [
+          31,
+          11,
+          9
+        ],
+        [
+          31,
+          11,
+          28
+        ],
+        [
+          31,
+          8,
+          14
+        ],
+        [
+          32,
+          8,
+          20
+        ],
+        [
+          32,
+          9,
+          24
+        ],
+        [
+          31,
+          8,
+          16
+        ]
+      ]
+    },
+    "strandedAt": [
+      15,
+      9,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 28,
+    "exploreHeading": "north",
+    "exploreStalls": 2,
+    "exploreFailures": 32,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 9837
+  },
+  "log": [
+    "[14:48:55] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3177]",
+    "[14:48:57] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[14:48:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:48:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:48:59] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[14:49:00] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:49:00] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:49:01] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[14:49:01] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[14:49:02] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:03] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:03] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:04] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:05] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:05] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:05] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:06] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:06] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[14:49:06] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal -440, 27, -172]",
+    "[14:49:06] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -449, 25, -172 [Back off from spider]"
+  ]
+}
