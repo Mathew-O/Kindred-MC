@@ -174,6 +174,18 @@ public final class NativeBringGameTests implements FabricGameTest {
         scene(context, false, false, false, false, true, true, false, false, false, true);
     }
 
+    /**
+     * As the first, Hal coming to take the hall's door off from beside the hall, in reach of the door but with the wall
+     * beside it between: Hal steps round to the door's front and takes it off from there. In REFACTOR's runs of this class
+     * on main 9972e80 (1 of 30), Hal's second try at a strolling librarian aimed its break of the door from where the
+     * hall's own cobblestone stood in the way; refused three times as out of sight, the bring was given up, "door went
+     * wrong three times over" (F-22c62). Staged: Hal stood there, once, as it comes to the door.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDoorAside", tickLimit = 12000)
+    public void aDoorInReachButBehindTheHallsWallIsTakenOffFromItsFront(TestContext context) {
+        scene(context, false, false, false, false, false, false, false, false, false, false, true);
+    }
+
     private static void scene(TestContext context, boolean make) {
         scene(context, make, false);
     }
@@ -215,6 +227,12 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated, boolean behind) {
+        scene(context, make, wander, river, mine, strolling, lake, slowed, derailed, seated, behind, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
+                              boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside) {
+        boolean[] asideOnce = {false};
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         boolean[] damped = {false};
@@ -403,6 +421,18 @@ public final class NativeBringGameTests implements FabricGameTest {
                         librarian[0].removeStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOWNESS);
                         KindredMod.LOGGER.info("Bring: the librarian sits in the boat behind its lectern, at {}",
                                 librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                    }
+                    // Staged, once, as Hal comes to take the hall's door off: Hal stood beside the hall, three blocks along its front
+                    // from the door and one out, in reach of the door but with the wall beside it between (F-22c62).
+                    if (doorAside && !asideOnce[0] && f.runtime.bringNote(f.id).contains("[DOOR]")) {
+                        asideOnce[0] = true;
+                        BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
+                        var player = f.player();
+                        player.refreshPositionAndAngles(door.getX() + 3.5, door.getY() - 1, door.getZ() + 1.5, 90, 0);
+                        player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        KindredMod.LOGGER.info("Bring: Hal stood beside the hall at {}, the door at {}, the wall beside it {}",
+                                player.getBlockPos().subtract(origin[0]).toShortString(), door.subtract(origin[0]).toShortString(),
+                                context.getWorld().getBlockState(door.east()));
                     }
                     // Staged: the boat Hal put down beside the librarian, stood empty past Hal's wait for it, stepped into by the
                     // librarian, as a strolling villager steps into one a moment late (F-22c32).
