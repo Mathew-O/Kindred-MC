@@ -182,6 +182,16 @@ final class PlayerRuntime {
         server.execute(once);
     }
 
+    /**
+     * As {@link #handBack}, never run inside its caller: queued even when already on the server thread (a write the
+     * ordered writer finished before its callback was registered), so a stop the caller makes next always comes first.
+     */
+    private void handBackLater(Runnable task) {
+        var once = new HandedBack(task);
+        handedBack.add(once);
+        server.send(new net.minecraft.server.ServerTask(server.getTicks(), once));
+    }
+
     /** A task handed back by both ways, run by whichever comes first. */
     private static final class HandedBack implements Runnable {
         private final Runnable task;
@@ -545,7 +555,10 @@ final class PlayerRuntime {
         initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
         peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         webs = new KnowledgeWebs(server::getTicks);
-        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), new dev.kindred.core.wire.Wording(), new WireMemberships(), webs,
+        // M-06e's notices in today's words after the channel's prefix (their line is the "what" fact).
+        var wording = new dev.kindred.core.wire.Wording().with(dev.kindred.core.factions.Capture.VULNERABLE, "{what}")
+                .with(dev.kindred.core.factions.Capture.SECURE, "{what}").with(FactionsService.CAPTURED, "{what}");
+        wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), wording, new WireMemberships(), webs,
                 (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
                     var said = Text.literal(words);
                     person.sendMessage(said, false);
@@ -553,6 +566,8 @@ final class PlayerRuntime {
                 }, PlayerRuntime::now);
         // A player's faction for the Wire (M-06i): the Factions ledger's, its AI players by their bodies.
         setFactionOf(this::factionKey);
+        // M-06e on the Wire: the notices' events written, then told, citing them; the notifier their one writer.
+        factions.onNotice((events, notices) -> recordAndTellAll(events, ids -> notices.stream().map(n -> noticeMessage(n, ids)).toList(), null));
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         wire.onState(peerRadio::teamState); // F-34c: a teammate's update into the receiver's ledger, and nowhere else.
         // F-34c: a match's titles to an AI player in it as the server's word to it alone; a person has them on screen.
@@ -9331,6 +9346,18 @@ final class PlayerRuntime {
         return dev.kindred.core.wire.Message.of(kind, entry.data.id(), dev.kindred.core.wire.Scope.faction(faction.id().toString()), facts, eventIds);
     }
 
+    /**
+     * A Factions notice as the server's message: to the whole server with every fact public, or to one faction with its
+     * facts the faction's; resting on {@code eventIds}.
+     */
+    static dev.kindred.core.wire.Message noticeMessage(FactionsService.Notice notice, List<Long> eventIds) {
+        var visibility = notice.faction() == null ? dev.kindred.core.wire.Visibility.PUBLIC : dev.kindred.core.wire.Visibility.FACTION;
+        var facts = new java.util.LinkedHashMap<String, dev.kindred.core.wire.Fact>();
+        notice.facts().forEach((k, v) -> facts.put(k, dev.kindred.core.wire.Fact.of(v, visibility)));
+        var scope = notice.faction() == null ? dev.kindred.core.wire.Scope.server() : dev.kindred.core.wire.Scope.faction(notice.faction().toString());
+        return dev.kindred.core.wire.Message.of(notice.kind(), null, scope, facts, eventIds);
+    }
+
     /** The view it decides from: the ledgers' public facts, its own sightings, its spare stock, its personality. */
     dev.kindred.core.factions.FactionPlay.View factionView(Entry entry, ServerPlayerEntity player) {
         var ledgers = projected();
@@ -16285,34 +16312,49 @@ final class PlayerRuntime {
      */
     void recordAndTell(List<dev.kindred.core.record.WorldEvent> drafts, java.util.function.Function<List<Long>, dev.kindred.core.wire.Message> tell,
                        java.util.function.Consumer<dev.kindred.core.wire.Delivery> sent) {
+        recordAndTellAll(drafts, ids -> {
+            var message = tell.apply(ids);
+            return message == null ? List.of() : List.of(message);
+        }, sent == null ? null : deliveries -> sent.accept(deliveries.isEmpty() ? null : deliveries.getFirst()));
+    }
+
+    /**
+     * As {@link #recordAndTell}, with every message {@code tell} makes from the written ids sent in order (M-06e's
+     * capture tells each side's faction, both resting on the same events); what the Wire did with each goes to
+     * {@code sent}, empty when nothing was sent.
+     */
+    void recordAndTellAll(List<dev.kindred.core.record.WorldEvent> drafts,
+                          java.util.function.Function<List<Long>, List<dev.kindred.core.wire.Message>> tell,
+                          java.util.function.Consumer<List<dev.kindred.core.wire.Delivery>> sent) {
         requireThread();
-        java.util.function.Consumer<dev.kindred.core.wire.Delivery> done = sent == null ? d -> { } : sent;
+        java.util.function.Consumer<List<dev.kindred.core.wire.Delivery>> done = sent == null ? d -> { } : sent;
         // The stop barrier stops the tell, never the events: what was decided is the Record's (its ordered writer, which
         // the stop waits on), so an audit never finds a claim with no event; only the message resting on it goes unsent.
         // Stopped (the Record closed), nothing is decided to write: no act runs once the runtime has stopped.
         if (!running) {
             lateWritesRefused++;
             KindredMod.LOGGER.warn("Kindred stopped: {} event(s) not written and nothing told: the Record is closed", drafts.size());
-            done.accept(null);
+            done.accept(List.of());
             return;
         }
         if (stopping) {
             lateTellsRefused++;
             KindredMod.LOGGER.warn("Kindred stopping: {} event(s) written, nothing told of them", drafts.size());
             record(drafts);
-            done.accept(null);
+            done.accept(List.of());
             return;
         }
         SqliteCompanionStore database = store;
         if (database == null || drafts.isEmpty()) {
             KindredMod.LOGGER.warn("Nothing recorded, so nothing told: {}", database == null ? "World Record not open" : "no events");
-            done.accept(null);
+            done.accept(List.of());
             return;
         }
         long epoch = stopEpoch;
         record(drafts);
         @SuppressWarnings("unchecked") var write = (CompletableFuture<List<dev.kindred.core.record.WorldEvent>>) recordFlush;
-        write.whenComplete((written, failure) -> handBack(() -> {
+        // Told later, never within this call: a stop made next by its caller drops the tell, however fast the write.
+        write.whenComplete((written, failure) -> handBackLater(() -> {
             // A write begun before the stop may land; what would be told of it is dropped, and its caller not called back.
             if (epoch != stopEpoch) {
                 lateCallbacksDropped++;
@@ -16320,11 +16362,14 @@ final class PlayerRuntime {
                 return;
             }
             if (failure != null || written == null || !running) {
-                done.accept(null);
+                done.accept(List.of());
                 return;
             }
-            var message = tell.apply(written.stream().map(dev.kindred.core.record.WorldEvent::id).toList());
-            done.accept(message == null ? null : wire.send(message));
+            var deliveries = new ArrayList<dev.kindred.core.wire.Delivery>();
+            for (var message : tell.apply(written.stream().map(dev.kindred.core.record.WorldEvent::id).toList())) {
+                if (message != null) deliveries.add(wire.send(message));
+            }
+            done.accept(List.copyOf(deliveries));
         }));
     }
 
