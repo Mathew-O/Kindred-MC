@@ -2652,6 +2652,7 @@ final class PlayerRuntime {
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
                 if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
+                if (replays != null && tick % 20 == 0) captureSpell(entry);
                 if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
                 if (tick % 20 == 0 && factionsWorld()) watchFactionLand(entry, entry.nativeBody.entity());
                 refreshTacticalObservation(entry, tick);
@@ -3791,9 +3792,11 @@ final class PlayerRuntime {
                     if (actualRecipe != null) {
                         BlockPos craftTable = entry.cachedCraftingTablePos;
                         if (actualRecipe.equals("oak_planks") && body.planCraft("oak_planks", craftTable).isEmpty()) {
-                            for (String logType : List.of("birch", "spruce", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo")) {
-                                if (body.planCraft(logType + "_planks", craftTable).isPresent()) {
-                                    actualRecipe = logType + "_planks";
+                            // F-38: the planks of whatever wood it holds, by the server's #minecraft:planks; vanilla's
+                            // woods in the order they were always tried, then any other the tag holds, by id.
+                            for (String planks : planksInTryOrder()) {
+                                if (body.planCraft(planks, craftTable).isPresent()) {
+                                    actualRecipe = planks;
                                     break;
                                 }
                             }
@@ -14163,6 +14166,23 @@ final class PlayerRuntime {
     }
 
     /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    /**
+     * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
+     * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
+     * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
+     */
+    private void captureSpell(Entry entry) {
+        var campaign = entry.campaign;
+        // With rescues on, the rescue keeps the spell's scene as it asks, as before (F-29); this keeps it otherwise.
+        if (campaign == null || campaign.rescueOn()) return;
+        int spells = campaign.stuckSpells();
+        if (spells <= entry.spellsCaptured) return;
+        entry.spellsCaptured = spells;
+        replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
+                String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+    }
+
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
@@ -16985,6 +17005,8 @@ final class PlayerRuntime {
         private String skillId;
         /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
         private String dispatchSource = "", pendingSource;
+        /** The goal's stuck spells already kept as replays (F-27a), so that each is kept once. */
+        private int spellsCaptured;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
@@ -18420,5 +18442,20 @@ final class PlayerRuntime {
         @Override public boolean isSettled(ActionLease lease) {
             return entity.getNavigation().isIdle() && !entity.getMoveControl().isMoving() && !entity.isUsingItem();
         }
+    }
+
+    private static final List<String> VANILLA_PLANKS_TRY_ORDER = List.of("birch", "spruce", "jungle", "acacia", "dark_oak",
+            "mangrove", "cherry", "bamboo");
+
+    /** Planks to try when oak's cannot be made: vanilla's woods first, as before, then the tag's others by id. */
+    static List<String> planksInTryOrder() {
+        var members = dev.kindred.core.Capabilities.current().members(dev.kindred.core.VanillaIds.PLANKS);
+        var tried = new java.util.LinkedHashSet<String>();
+        for (String wood : VANILLA_PLANKS_TRY_ORDER) {
+            String id = dev.kindred.core.VanillaIds.NAMESPACE + wood + "_planks";
+            if (members.contains(id)) tried.add(id);
+        }
+        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS)).sorted().forEach(tried::add);
+        return List.copyOf(tried);
     }
 }
