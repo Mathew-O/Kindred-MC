@@ -200,7 +200,7 @@ The log shows `<name> build: hut 5x5: N/112 placed - <next step>` as it goes, an
 - A world plays its own mode's matches, and duels, which both players opt into. Proposing another kind is refused with the reason.
 - Everyone online is told the mode and its rules when it is chosen, and so is each person who joins: play, building, fighting, items, deaths and winning. `/aiplayer mode rules <mode or match>` shows any mode's or match's rules.
 - Each person invited to a match is told that match's rules before its [Join].
-- Factions is not playable yet (M-06).
+- Factions is an operator's choice like the others (`/aiplayer mode world factions`, M-06); see below.
 - **Co-op Survival keeps AI players to the humans' pace (M-01e).** The pace is the furthest of vanilla's story advancements any human in the world has earned: stone, iron, diamond, enchanting, the Nether, the End. It is kept in `kindred/pace.properties`. An AI player's base waits on it: a house until someone has smelted iron, a manor until someone has enchanted an item; a first cabin never waits. So does a goal's trip into another world: into the Nether once someone has entered the Nether, into the End (and so to the dragon) once someone has entered the End; it waits by the portal, and the way home is never held. Gathering, tools and armour are not held back. Until a human has earned one of them, nothing is held back. The server log says when it is waiting for the group (`<name> base: Keeping to the group's pace: ...`).
 
 **Duels (M-00a).** Players fight one another only inside a match they joined (D7), and only on a server that allows PvP at all (`pvp=true` in `server.properties`; with it off, no duel is proposed or started). `/aiplayer match duel <first> <second>` proposes a duel between two players, AI players or humans online:
@@ -797,8 +797,11 @@ A player that comes by a villager at work (not a nitwit, a child, one asleep or 
 
 ## Factions mode: factions and power (M-06c)
 
-Factions mode is not yet playable for operators (`/aiplayer mode world factions` is refused until claims and safe zones
-land, M-06d and M-06f). Its settings are in `config/kindred/factions.properties`, written with the rulebook's defaults
+Factions mode is an operator's choice (`/aiplayer mode world factions`), kept in `kindred/mode.properties`; it is never
+on by itself. Choosing it turns on the territory rules (and the borders once `/faction admin hub` has set the hub);
+another mode turns them off, and the factions, claims and coins stay. Who may fight is told to everyone on joining:
+only members of different factions, never in safe zones; joining a faction is joining the match, and a person may
+leave it any time. A person in no faction is never a target, and an AI player in no faction strikes no person. Its settings are in `config/kindred/factions.properties`, written with the rulebook's defaults
 on the first start (10 members, power 0 to 10 starting at 10, −2 a qualifying PvP death, +1 an online hour, 80 chunks,
 500-block spawn exclusion, an 8,000-block border); an unknown key or a bad value is logged and the defaults apply.
 

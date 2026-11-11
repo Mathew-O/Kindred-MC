@@ -14624,7 +14624,8 @@ final class PlayerRuntime {
      * The world's game mode chosen (M-00), operators only, and saved in mode.properties. It is announced to everyone
      * online with its rules, and each AI player's playstyle follows it (the profile it maps onto, not a second setting
      * beside it). From then on only its matches, and duels, may be proposed. A match already proposed or running plays
-     * on under its own rules. Factions is declared but not playable yet.
+     * on under its own rules. Factions turns the territory guard on (and the borders once the hub is set); any other mode
+     * turns it off. Claims and coins stay in the Record either way.
      */
     int setWorldMode(ServerCommandSource source, dev.kindred.core.match.GameModes.WorldMode mode) {
         requireThread();
@@ -14638,8 +14639,14 @@ final class PlayerRuntime {
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
         }
+        if (factionsWorld()) {
+            TerritoryGuard.activate(factions);
+            factions.applyBorders();
+        } else {
+            TerritoryGuard.deactivate(factions);
+        }
         Path file = metadataDirectory.resolve("mode.properties");
-        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt or builder.\nmode=" + mode.key() + "\n";
+        String content = "# Kindred world mode (M-00): coop, speedrun, manhunt, builder or factions.\nmode=" + mode.key() + "\n";
         // In order: two saves left to run side by side could finish the older last and keep it.
         modeSaved = modeSaved.handle((ignored, earlier) -> null).thenRunAsync(() -> {
             try {
@@ -16408,8 +16415,8 @@ final class PlayerRuntime {
     /**
      * An evaluation run's faction world (M-06i's scenario): the world's mode set to Factions for this run as an
      * operator's choice would set it (each AI player's playstyle, the territory guard, the borders) under the settings
-     * read from config/kindred/factions.properties, the mode not yet being an operator's choice. Not saved: the run's
-     * world is thrown away.
+     * read from config/kindred/factions.properties. Not saved, unlike an operator's {@code /kindred mode factions}: the
+     * run's world is thrown away.
      */
     void factionsWorldForEval() {
         requireThread();
@@ -16454,7 +16461,7 @@ final class PlayerRuntime {
                 .thenApplyAsync(events -> dev.kindred.core.factions.FactionsAudit.check(events, settings));
     }
 
-    /** A fixture's faction world under {@code settings}, the mode not yet being playable for operators. */
+    /** A fixture's faction world under {@code settings}, without the world's mode (an operator's choice) set. */
     void factionsWorldForTest(dev.kindred.core.factions.FactionSettings settings) {
         requireThread();
         factionsForTest = true;

@@ -29,6 +29,10 @@
 
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 
+## Factions an operator's choice (M-06i) — 11 November 2026 (`claude/m06i-playable-1111`)
+
+- [M-06i: Factions an operator's choice](evidence/M-06i.md#factions-an-operators-choice-2026-11-11-claudem06i-playable-1111).
+
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
 - Build: `./gradlew build`.
