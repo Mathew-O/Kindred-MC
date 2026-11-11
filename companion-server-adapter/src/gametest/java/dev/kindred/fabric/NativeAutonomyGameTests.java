@@ -79,8 +79,45 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "autonomyMine", tickLimit = 400)
     public void scopedLogIsAutonomouslyMined(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        scopedLogMined(context, false);
+    }
+
+    /**
+     * As {@link #scopedLogIsAutonomouslyMined}, read only once a task after the mine has run: on #139's CI (run 42793316263)
+     * a routine's craft followed the mine within the second, and the test, reading the latest work and action record, read
+     * the craft's for good (F-22c52). The mine's completion is taken as it happens, every tick, and checked as strictly.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "autonomyMineThenMore", tickLimit = 1200)
+    public void scopedLogIsAutonomouslyMinedReadAfterItsNextTask(TestContext context) {
+        scopedLogMined(context, true);
+    }
+
+    private static void scopedLogMined(TestContext context, boolean afterNext) {
+        var f = afterNext ? new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1100)
+                : new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos target = target(context);
+        // The mine's own completion and its durable record, each taken the tick it shows: its work "Completed native_mine"
+        // with time charged to the paid activity, and its record a verified native_mine. A later task's work and record (a
+        // routine's craft of the log, within the same second as the mine on CI and here) do not overwrite either.
+        // Not checked for IDLE with it (F-22c52): the mine's completion stops the activity, and in that same server tick the
+        // patch mine's settle-wait for the falling drop starts the next work, so "IDLE" with "Completed native_mine" is
+        // never there to read at any tick, here 1 run in 6. The verified record shows the completion.
+        String[] minedWork = new String[1];
+        ActionRecord[] mined = new ActionRecord[1];
+        java.util.Set<java.util.UUID> mines = new java.util.HashSet<>();
+        boolean[] resumed = {false};
+        context.runAtEveryTick(() -> {
+            if (!resumed[0]) return;
+            var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+            if (minedWork[0] == null && activity.work().startsWith("Completed native_mine") && activity.chargedMillis() > 0) {
+                minedWork[0] = activity.work() + " (charged " + activity.chargedMillis() + " ms)";
+            }
+            var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+            if (action != null && action.kind().equals("native_mine")) {
+                if (action.state() == ActionRecord.State.VERIFIED) mines.add(action.actionId());
+                if (mined[0] == null && action.state() == ActionRecord.State.VERIFIED) mined[0] = action;
+            }
+        });
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready with enabled edits"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Logger"))
@@ -95,6 +132,7 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     f.player().getInventory().setStack(0, new ItemStack(Items.IRON_AXE));
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    resumed[0] = true;
                 })
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {})
@@ -103,13 +141,17 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {})
                 .createAndAdd(() -> {})
+                // The copy reads only once a task other than the mine has run since.
                 .createAndAdd(() -> {
-                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
-                    context.assertTrue(activity.phase().equals("IDLE") && activity.work().startsWith("Completed native_mine"),
-                            "Autonomous mine completes under paid activity session");
+                    if (!afterNext) return;
                     var action = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
-                    context.assertTrue(action != null && action.state() == ActionRecord.State.VERIFIED
-                            && action.kind().equals("native_mine"), "Durable action recorded and verified");
+                    context.assertTrue(action != null && !action.kind().equals("native_mine"), "A task after the mine: " + action);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(minedWork[0] != null, "Autonomous mine completes under paid activity session: "
+                            + f.runtime.nativeActivityStatus(Actor.console(), f.id));
+                    context.assertTrue(mined[0] != null, "Durable action recorded and verified: " + f.runtime.nativeActionStatus(Actor.console(), f.id).record());
+                    context.assertTrue(mines.size() == 1, "One verified mine of the log: " + mines);
                     context.assertTrue(context.getWorld().getBlockState(target).isAir(), "Scoped log block broken");
                     context.assertTrue(f.player().getInventory().getStack(0).getDamage() == 1, "Owned axe wears once");
                     f.runtime.stop();

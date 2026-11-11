@@ -58,7 +58,7 @@ public final class KitNames {
             this.jokes = jokes;
         }
 
-        /** The kind of an item by its id ("minecraft:diamond_pickaxe"), or none for what it does not name. */
+        /** The kind of an item by its id (minecraft:diamond_pickaxe), or none for what it does not name. */
         public static Optional<Kind> of(String item) {
             String path = item.substring(item.indexOf(':') + 1);
             for (Kind kind : values()) if (path.equals(kind.noun) || path.endsWith("_" + kind.noun)) return Optional.of(kind);
@@ -183,7 +183,7 @@ public final class KitNames {
     private static List<Theme> themes(Piece piece) {
         var out = new LinkedHashSet<Theme>();
         for (var telling : TELLING) {
-            if (piece.enchantments().containsKey("minecraft:" + telling.getKey())) out.add(telling.getValue());
+            if (piece.enchantments().containsKey(VanillaIds.NAMESPACE + telling.getKey())) out.add(telling.getValue());
         }
         out.add(switch (piece.material()) {
             case "netherite" -> Theme.ASH;

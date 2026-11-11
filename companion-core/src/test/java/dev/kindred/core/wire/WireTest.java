@@ -201,7 +201,7 @@ class WireTest {
         assertEquals(Delivery.Refusal.MODE, wire.send(Message.of("faction.need", wren.id(), Scope.faction("oak"), Map.of(), List.of()),
                 GameModes.WorldMode.COOP_SURVIVAL, roster, 2).refused().orElseThrow());
         assertEquals(Set.of(Channel.MATCH, Channel.PUBLIC, Channel.OPERATOR), ModeChannels.of(GameModes.WorldMode.SPEEDRUN));
-        assertEquals(Set.of(Channel.values()), ModeChannels.of(null));
+        assertEquals(Set.copyOf(Channel.values()), ModeChannels.of(null));
         var audit = wire.send(Message.of("operator.anomaly", null, Scope.operators(), facts("note", Fact.of("claim refused", Visibility.OPERATOR)),
                 List.of(9L)), GameModes.WorldMode.SPEEDRUN, roster, 3);
         assertEquals(List.of(op.id()), audit.receivers());

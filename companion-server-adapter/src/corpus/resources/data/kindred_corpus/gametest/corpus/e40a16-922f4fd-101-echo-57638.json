@@ -1,0 +1,88 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 57638,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -342,
+  31,
+  -154
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.71720845785103,
+  8.419999986886978,
+  16.60274443490752
+ ],
+ "yaw": 1171.5042,
+ "pitch": 9.368315,
+ "health": 2.7212715,
+ "food": 9,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 6
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 9638,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from zombie the way it came",
+ "task": "Climb toward the surface for food: back the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[03:53:32] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[03:53:37] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]",
+  "[03:53:40] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:53:43] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:53:44] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:53:45] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:53:46] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:53:49] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:53:51] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:53:54] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:53:55] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:53:57] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:53:57] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -317, 45, -101 [Back off from zombie]",
+  "[03:54:01] [Server thread/INFO]: Echo native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[03:54:02] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:54:03] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:54:04] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:54:08] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from zombie]",
+  "[03:54:10] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]",
+  "[03:54:10] [Server thread/INFO]: Echo died at -326, 39, -138: Echo was slain by Zombie (tick 57638, day, under cover, hunger 8, armour 0, holding diorite, no shield; doing \"Climb toward the surface for food: back the way it came\" in \"Wood: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [TORCH_AS_YOU_GO])"
+ ],
+ "corpus": {
+  "run": "e40a16-922f4fd",
+  "seed": "101",
+  "build": "922f4fd",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a16-922f4fd/101/replays/world/Echo-57638",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

@@ -1,5 +1,7 @@
 package dev.kindred.core.match;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Houses;
 
 import java.util.Collection;
@@ -25,12 +27,12 @@ import java.util.Optional;
 public final class GroupPace {
     /** The steps of the game, in order, each with the vanilla advancement that marks it. */
     public enum Step {
-        STONE("minecraft:story/mine_stone", "mined stone"),
-        IRON("minecraft:story/smelt_iron", "smelted iron"),
-        DIAMOND("minecraft:story/mine_diamond", "found a diamond"),
-        ENCHANTING("minecraft:story/enchant_item", "enchanted an item"),
-        NETHER("minecraft:story/enter_the_nether", "entered the Nether"),
-        END("minecraft:story/enter_the_end", "entered the End");
+        STONE(VanillaIds.ADV_STORY_MINE_STONE, "mined stone"),
+        IRON(VanillaIds.ADV_STORY_SMELT_IRON, "smelted iron"),
+        DIAMOND(VanillaIds.ADV_STORY_MINE_DIAMOND, "found a diamond"),
+        ENCHANTING(VanillaIds.ADV_STORY_ENCHANT_ITEM, "enchanted an item"),
+        NETHER(VanillaIds.ADV_STORY_ENTER_THE_NETHER, "entered the Nether"),
+        END(VanillaIds.ADV_STORY_ENTER_THE_END, "entered the End");
 
         /** The advancement that marks it. */
         public final String advancement;

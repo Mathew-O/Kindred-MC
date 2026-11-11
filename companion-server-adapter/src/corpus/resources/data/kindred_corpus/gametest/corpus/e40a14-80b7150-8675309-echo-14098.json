@@ -1,0 +1,239 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 14098,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  4,
+  -7,
+  21
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.455909159153002,
+  8.0,
+  16.460933521203742
+ ],
+ "yaw": 6739.587,
+ "pitch": -4.9999995,
+ "health": 19.245192,
+ "food": 20,
+ "saturation": 0.8,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [
+  {
+   "id": "minecraft:hunger",
+   "amplifier": 0,
+   "duration": 357
+  }
+ ],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:lilac",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 18
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:birch_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 16
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 13
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 62
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 11
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 2
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 25
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 31
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 9
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 81
+    }
+   }
+  }
+ ],
+ "selected": 1,
+ "timeOfDay": 14098,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Get out of the water: to dry ground",
+ "task": "Get out of the water: to dry ground",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo discovered the floor was lava",
+ "ticks": 1200,
+ "log": [
+  "[05:10:48] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[05:10:48] [Server thread/INFO]: Echo native_swap COMPLETED",
+  "[05:10:48] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+  "[05:10:52] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight zombie]",
+  "[05:10:52] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[05:10:53] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[05:10:54] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:10:55] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:10:55] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[05:10:56] [Server thread/INFO]: Echo native_fight COMPLETED [Fight creeper]",
+  "[05:10:56] [Server thread/INFO]: Echo native_swap COMPLETED",
+  "[05:10:57] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[05:10:57] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+  "[05:10:57] [Server thread/INFO]: Echo native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 49, 29, 36]",
+  "[05:10:59] [Server thread/INFO]: Echo native_fight COMPLETED [Fight drowned]",
+  "[05:10:59] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 15, 23, 43 is blocked [Get out of the water: to dry ground]",
+  "[05:11:00] [Server thread/INFO]: Echo native_eat COMPLETED",
+  "[05:11:00] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 15, 24, 44 is blocked [Get out of the water: to dry ground]",
+  "[05:11:03] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Get out of the water: to dry ground]",
+  "[05:11:03] [Server thread/INFO]: Echo died at 20, 1, 37: Echo discovered the floor was lava (tick 14098, night, under cover, hunger 17, armour 0, holding nothing, a shield; doing \"Get out of the water: to dry ground\" in \"Iron: Get out of the water: to dry ground\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40a14-80b7150",
+  "seed": "8675309",
+  "build": "80b7150",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a14-80b7150/8675309/replays/world/Echo-14098",
+  "class": "death: lava",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

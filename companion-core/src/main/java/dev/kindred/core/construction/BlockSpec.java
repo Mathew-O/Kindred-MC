@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
@@ -28,7 +30,7 @@ public record BlockSpec(String block, Map<String, String> properties) {
 
     public BlockSpec {
         block = Objects.requireNonNull(block).toLowerCase(Locale.ROOT);
-        if (!block.contains(":")) block = "minecraft:" + block;
+        if (!block.contains(":")) block = VanillaIds.NAMESPACE + block;
         if (!ID.matcher(block).matches()) throw new IllegalArgumentException("Not a block id: " + block);
         var sorted = new TreeMap<String, String>();
         for (var entry : properties.entrySet()) {
@@ -74,7 +76,7 @@ public record BlockSpec(String block, Map<String, String> properties) {
 
     /** Air in any of its forms. */
     public boolean air() {
-        return block.equals("minecraft:air") || block.equals("minecraft:cave_air") || block.equals("minecraft:void_air");
+        return block.equals(VanillaIds.AIR) || block.equals(VanillaIds.CAVE_AIR) || block.equals(VanillaIds.VOID_AIR);
     }
 
     /** The same block placed the same way: equal but for {@link #DERIVED} properties. */

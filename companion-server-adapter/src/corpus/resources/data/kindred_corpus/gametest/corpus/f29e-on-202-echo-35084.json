@@ -1,0 +1,223 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 35084,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -128,
+  23,
+  62
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.515300631394226,
+  8.0,
+  16.21438604537674
+ ],
+ "yaw": -65.41559,
+ "pitch": 17.414743,
+ "health": 14.633333,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 11
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 11
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:black_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 3
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 53
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 9
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:birch_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 56
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 9
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 2
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 39
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 5
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 11084,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from spider",
+ "task": "Back off from spider",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[22:30:53] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the furnace]",
+  "[22:30:53] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+  "[22:30:53] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the drop to settle]",
+  "[22:30:55] [Server thread/INFO]: Echo native_goto COMPLETED [Back to where it saw iron ore at -124, 39, 65]",
+  "[22:30:55] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -124, 39, 65 [Back to where it saw iron ore at -124, 39, 65]",
+  "[22:30:55] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -120, 29, 80 [Explore the cave toward iron]",
+  "[22:30:55] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -120, 30, 86 [Explore the cave toward iron]",
+  "[22:30:55] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -134, 35, 77]",
+  "[22:30:55] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -134, 34, 77]",
+  "[22:30:55] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[22:30:55] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+  "[22:30:55] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -133, 35, 76]",
+  "[22:30:56] [Server thread/INFO]: Echo native_swap COMPLETED",
+  "[22:30:56] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]",
+  "[22:30:56] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+  "[22:30:58] [Server thread/INFO]: Echo native_fight COMPLETED [Fight skeleton]",
+  "[22:30:59] [Server thread/INFO]: Echo native_fight COMPLETED [Fight zombie]",
+  "[22:31:00] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[22:31:00] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from spider]",
+  "[22:31:00] [Server thread/INFO]: Echo died at -112, 31, 78: Echo was slain by Spider (tick 35084, day, under cover, hunger 16, armour 0, holding stone_sword, a shield; doing \"Back off from spider\" in \"Iron: fight back - Back off from spider\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "f29e-on",
+  "seed": "202",
+  "build": "on",
+  "replay": "docs/evidence/eval/f29e-on/202/replays/world/Echo-35084",
+  "source": "docs/evidence/eval/f29e-on/202/replays/world/Echo-35084",
+  "class": "death: spider",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

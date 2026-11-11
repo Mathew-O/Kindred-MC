@@ -1,0 +1,73 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 73164,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -31,
+  31,
+  98
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.633296970683084,
+  8.0,
+  16.478515613651908
+ ],
+ "yaw": -156.43823,
+ "pitch": 18.159489,
+ "health": 0.5,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [],
+ "selected": 0,
+ "timeOfDay": 1164,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Back off from zombie the way it came",
+ "task": "Climb toward the surface for food: back the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[TORCH_AS_YOU_GO]",
+ "cause": "Kindred was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[13:34:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:13] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Recover dropped items near 44, 33, 59]",
+  "[13:34:13] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+  "[13:34:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:15] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:15] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -11, 30, 81 [Back off from zombie]",
+  "[13:34:17] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+  "[13:34:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+  "[13:34:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:20] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[13:34:20] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+  "[13:34:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+  "[13:34:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+  "[13:34:21] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[13:34:23] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]"
+ ],
+ "corpus": {
+  "run": "e40a15-dbf4e5c",
+  "seed": "8675309",
+  "build": "dbf4e5c",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a15-dbf4e5c/8675309/replays/world/Kindred-73164",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

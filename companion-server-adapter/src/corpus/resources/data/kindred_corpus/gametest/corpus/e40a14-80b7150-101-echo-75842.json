@@ -1,0 +1,311 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 75842,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -255,
+  27,
+  -67
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.059770474706454,
+  8.200000047683716,
+  16.69999998807907
+ ],
+ "yaw": -391.09845,
+ "pitch": -4.999991,
+ "health": 5.975,
+ "food": 9,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 8
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 7
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:leather",
+    "count": 4
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 49
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 5
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 51
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 8
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 2
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 14
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 61
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 21
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 3842,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Wood: fight back - Take cover from skeleton",
+ "task": "Climb toward the surface for food: back the way it came",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Echo was shot by Skeleton",
+ "ticks": 1200,
+ "log": [
+  "[05:51:11] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -240, 40, -47]",
+  "[05:51:12] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -240, 41, -47]",
+  "[05:51:12] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[05:51:12] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -240, 42, -47]",
+  "[05:51:12] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -240, 41, -46]",
+  "[05:51:12] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -240, 42, -46]",
+  "[05:51:12] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[05:51:13] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -240, 43, -46]",
+  "[05:51:13] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -241, 42, -46]",
+  "[05:51:13] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -241, 43, -46]",
+  "[05:51:13] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[05:51:14] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[05:51:14] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -238, 36, -51]",
+  "[05:51:14] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -238, 37, -51]",
+  "[05:51:14] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[05:51:15] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -238, 38, -51]",
+  "[05:51:15] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -238, 37, -52]",
+  "[05:51:15] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -238, 38, -52]",
+  "[05:51:16] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Climb toward the surface for food: back the way it came]",
+  "[05:51:16] [Server thread/INFO]: Echo died at -239, 35, -51: Echo was shot by Skeleton (tick 75842, day, under cover, hunger 9, armour 6, holding nothing, a shield; doing \"Climb toward the surface for food: back the way it came\" in \"Wood: fight back - Take cover from skeleton\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "e40a14-80b7150",
+  "seed": "101",
+  "build": "80b7150",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a14-80b7150/101/replays/world/Echo-75842",
+  "class": "death: skeleton",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

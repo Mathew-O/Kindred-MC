@@ -155,12 +155,16 @@ public final class NativeStorageGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.said(f.id).contains(told), "Told its team: " + f.runtime.said(f.id));
                     context.assertTrue(f.runtime.storedCount(wren[0], "minecraft:saddle") == 1 && f.runtime.storedCount(wren[0], "minecraft:name_tag") == 1,
                             "Wren's count changed with it");
+                    context.assertTrue(told(f, wren[0], f.id, dev.kindred.core.knowledge.KnowledgeWeb.Verb.STORED, "a saddle"),
+                            "And Wren was told it on the Wire, where and all (F-34c)");
                     take(inside, Items.NAME_TAG);
                     f.player().getInventory().setStack(6, new ItemStack(Items.RAIL, 7));
                 })
                 .createAndAdd(() -> {
                     String asked = "Did anyone take a name tag from our chest at " + where(context) + "?";
                     context.assertTrue(f.runtime.said(f.id).contains(asked), "Asked its team first: " + f.runtime.said(f.id));
+                    context.assertTrue(told(f, wren[0], f.id, dev.kindred.core.knowledge.KnowledgeWeb.Verb.MISSING, "a name tag"),
+                            "Wren was told what is gone and from where (F-34c)");
                     context.assertTrue(f.runtime.said(f.id).contains("I put 7 rails in our chest at " + where(context) + "."), "And told what it put in");
                     context.assertTrue(f.runtime.storedCount(wren[0], "minecraft:rail") == 7, "Wren counts the rails");
                 })
@@ -175,6 +179,16 @@ public final class NativeStorageGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** Whether {@code receiver}'s web holds, told by {@code sender}, a {@code verb} relation that names {@code what} (F-34c's team talk). */
+    private static boolean told(NativePaidSkillsGameTests.Fixture f, UUID receiver, UUID sender, dev.kindred.core.knowledge.KnowledgeWeb.Verb verb, String what) {
+        var web = f.runtime.webs().existing(receiver);
+        if (web.isEmpty()) return false;
+        var self = dev.kindred.core.knowledge.KnowledgeWeb.Viewer.of(new dev.kindred.core.wire.Listener(receiver, "", false,
+                java.util.Set.of(KindredWire.TEAM), "", "", "", false, null, null));
+        return web.get().about(self, dev.kindred.core.knowledge.WebFeed.entityOf(sender, false), verb, f.source.getServer().getTicks()).stream()
+                .anyMatch(r -> r.object().contains(what) && r.provenance().how() == dev.kindred.core.wire.HowKnown.TOLD);
     }
 
     private static ServerPlayerEntity player(NativePaidSkillsGameTests.Fixture f, UUID id) {
@@ -219,6 +233,8 @@ public final class NativeStorageGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     String told = "I took 3 iron ingots from our chest at " + where(context) + ".";
                     context.assertTrue(f.runtime.said(wren[0]).contains(told), "Wren told the team: " + f.runtime.said(wren[0]));
+                    context.assertTrue(told(f, f.id, wren[0], dev.kindred.core.knowledge.KnowledgeWeb.Verb.TOOK, "3 iron ingots"),
+                            "Hal was told it on the Wire (F-34c)");
                     context.assertTrue(f.runtime.storedCount(f.id, "minecraft:iron_ingot") == 3, "Hal's count changed with it: "
                             + f.runtime.storedCount(f.id, "minecraft:iron_ingot"));
                 })

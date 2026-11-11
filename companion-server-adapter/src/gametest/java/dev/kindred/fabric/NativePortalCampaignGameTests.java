@@ -4506,6 +4506,76 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     }
 
     /**
+     * Badly hurt and out of food in a dead-end tunnel, with a zombie coming for it (its own AI on) and no way off: the goal's
+     * climb for food is stopped for the zombie and the zombie is fought, rather than the player digging on by hand with the
+     * zombie at it (F-25c4dd). Below six health the goal starts no fight, and a mob after it stopped its work only when it
+     * would start one; in ReplayGameTests' echo-73670 on main `335da88` the hungry climb so went on with a zombie on the
+     * player. Staged: the stone tunnel of {@link #badlyHurtAndCorneredByAZombieItFightsItRatherThanBreakEachFightOff},
+     * five long, the zombie two blocks in front; health 5 with an iron chestplate (the replay's player had armour 6), food
+     * 10 and nothing to eat, a stone sword. It also fails on any fight broken off for its health while it has no way off.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "starvingCornered", tickLimit = 1200)
+    public void badlyHurtAndStarvingWithAZombieOnItItStopsItsClimbAndFights(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        String[] failed = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Knocked"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(6000);
+                    BlockPos p = f.player().getBlockPos().toImmutable();
+                    FixtureGround.keep(context, p.add(-2, -1, -2), p.add(6, 3, 2));
+                    for (BlockPos at : BlockPos.iterate(p.add(-2, -1, -2), p.add(6, 3, 2))) world.setBlockState(at, Blocks.STONE.getDefaultState());
+                    for (int x = 0; x <= 5; x++) {
+                        world.setBlockState(p.east(x), Blocks.AIR.getDefaultState());
+                        world.setBlockState(p.east(x).up(), Blocks.AIR.getDefaultState());
+                    }
+                    var z = net.minecraft.entity.EntityType.ZOMBIE.create(world);
+                    z.refreshPositionAndAngles(p.getX() + 2.5, p.getY(), p.getZ() + 0.5, 90, 0);
+                    z.setBaby(false);
+                    z.setPersistent();
+                    world.spawnEntity(z);
+                    zombie[0] = z;
+                    var player = f.player();
+                    player.refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, -90, 0);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_SWORD));
+                    player.equipStack(net.minecraft.entity.EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+                    player.setHealth(5);
+                    player.getHungerManager().setFoodLevel(10);
+                    player.getHungerManager().setSaturationLevel(0);
+                    context.runAtEveryTick(() -> {
+                        if (zombie[0] != null && zombie[0].isAlive()) zombie[0].setTarget(f.player());
+                        if (zombie[0] == null || failed[0] != null) return;
+                        var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                        if (record != null && record.detail() != null && record.detail().contains("Badly hurt; break off the fight")) {
+                            failed[0] = "A fight broken off for its health with no way off, the zombie "
+                                    + String.format("%.1f", f.player().distanceTo(zombie[0])) + " away";
+                        }
+                    });
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(failed[0] == null, failed[0] == null ? "" : failed[0]);
+                    context.assertTrue(!zombie[0].isAlive(), "The zombie still stands, at health " + zombie[0].getHealth() + ": "
+                            + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    zombie[0] = null;
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Stranded on a one-block pillar five blocks above the floor, with every way off a fall the navigator would not
      * take: the goal jumps down, taking vanilla fall damage it can afford, rather than wait for ever.
      */
