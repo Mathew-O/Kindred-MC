@@ -418,6 +418,64 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
     }
 
     /**
+     * The server's switch for free travel (mod-support decision 6): forbidden by default; an operator allowing it is
+     * announced and kept in the World Record with who changed it; and an AI player's {@code /faction home} still only tells
+     * it where home is, since no recorded skill travels that way.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "factionPlayFreeTravel", tickLimit = 2400)
+    public void freeTravelIsForbiddenByDefaultAndAnAiPlayerIsOnlyToldItsHome(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        UUID[] ada = new UUID[2];
+        BlockPos[] home = new BlockPos[1];
+        @SuppressWarnings("unchecked")
+        java.util.concurrent.CompletableFuture<List<WorldEvent>>[] audit = new java.util.concurrent.CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    f.runtime.factionsWorldForTest(WIDE);
+                    f.runtime.createNative(f.source, "Ada");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player() != null, "Ada's body");
+                    ada[0] = f.id;
+                    ada[1] = f.player().getUuid();
+                    context.assertTrue(!f.runtime.teleportAllowed() && !f.runtime.freeItemsAllowed(), "Forbidden by default");
+                    context.assertTrue(f.runtime.faction(f.source, ada[1], "create", List.of("Ada_Hold", "ADA")).accepted(), "Ada_Hold made");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.projected().factions().of(ada[1]).isPresent(), "Ada in Ada_Hold"))
+                .createAndAdd(() -> {
+                    home[0] = f.player().getBlockPos();
+                    context.assertTrue(f.runtime.faction(f.source, ada[1], "sethome", List.of()).accepted(), "Home set");
+                })
+                .createAndAdd(() -> context.assertTrue(!f.runtime.projected().factions().of(ada[1]).orElseThrow().home().isEmpty(), "Home kept"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.setFreeSwitch(f.source, "teleport", true) == 1, "Teleporting allowed by the operator");
+                    context.assertTrue(f.runtime.teleportAllowed() && !f.runtime.freeItemsAllowed(), "Only teleporting allowed");
+                    var player = f.player();
+                    player.refreshPositionAndAngles(home[0].getX() + 6.5, home[0].getY(), home[0].getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(() -> {
+                    BlockPos before = f.player().getBlockPos();
+                    var reply = f.runtime.faction(f.source, ada[1], "home", List.of());
+                    context.assertTrue(reply.accepted() && reply.lines().getFirst().contains("home:"), "Told where home is: " + reply.lines());
+                    context.assertTrue(f.player().getBlockPos().equals(before) && !before.equals(home[0]), "Not taken there: at " + f.player().getBlockPos().toShortString());
+                    audit[0] = f.runtime.worldEventsForTest(java.util.Set.of(dev.kindred.core.EditPolicy.POLICY_SET));
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(audit[0].isDone(), "The audit read");
+                    var events = audit[0].join();
+                    context.assertTrue(events.size() == 1 && events.getFirst().subject().equals("teleport")
+                            && "true".equals(events.getFirst().data().get("allowed")) && !events.getFirst().data().getOrDefault("by", "").isEmpty(),
+                            "The change in the World Record with who made it: " + events);
+                    context.assertTrue(f.runtime.setFreeSwitch(f.source, "teleport", false) == 1 && !f.runtime.teleportAllowed(), "Forbidden again");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * Night in a pocket dug under the stone of a safe zone, its way in open to the side and a stack of cobblestone
      * carried: the way in is not sealed, the zone's cells being no one's to change, and it waits for daylight. In
      * RUNNER 2's factions run on `d5057a4` (factions-e40a16seeds), on 505, Kindred proposed "Seal the shelter at ..."

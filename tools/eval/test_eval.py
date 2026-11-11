@@ -168,5 +168,37 @@ class PairedTest(unittest.TestCase):
         self.assertEqual(['goal=nether; ticks=144000'], s['scenarios'])
 
 
+
+class FreeSwitchTest(unittest.TestCase):
+    """A run with free travel or free items allowed is never earned, and no comparison (no ladder step) counts it."""
+
+    def run_dir(self, root, policy):
+        folder = Path(root) / 'b' / '101'
+        folder.mkdir(parents=True)
+        result = {'scenario': 'goal=nether; ticks=1200', 'kind': 'earned', 'build': 'x', 'seed': 101, 'ticks': 1200,
+                  'ticksRun': 1200, 'complete': True, 'policy': policy,
+                  'players': {'Kindred': {'stages': {}, 'deaths': [], 'deathsNotListed': 0, 'stuck': [], 'tokens': 0}}}
+        (folder / 'eval-result.json').write_text(json.dumps(result), encoding='utf-8')
+        return folder.parent
+
+    def test_01_teleport_allowed_is_staged_and_named(self):
+        with tempfile.TemporaryDirectory() as root:
+            s = score.score(self.run_dir(root, {'teleport': True, 'freeItems': False}), use_metrics=False)
+        self.assertEqual(['staged'], s['kinds'])
+        self.assertEqual({'101': ['teleport']}, s['freeSwitches'])
+        self.assertIn('Seed 101 ran with teleport allowed: not earned', score.markdown(s))
+
+    def test_02_both_forbidden_stays_earned(self):
+        with tempfile.TemporaryDirectory() as root:
+            s = score.score(self.run_dir(root, {'teleport': False, 'freeItems': False}), use_metrics=False)
+        self.assertEqual(['earned'], s['kinds'])
+        self.assertEqual({}, s['freeSwitches'])
+
+    def test_03_the_comparison_refuses_a_run_with_free_items(self):
+        a = {'build': 'A', 'seeds': ['101'], 'freeSwitches': {}}
+        b = {'build': 'B', 'seeds': ['101'], 'freeSwitches': {'101': ['freeItems']}}
+        self.assertEqual([], compare.free_runs(a))
+        self.assertEqual(['B seed 101 (freeItems)'], compare.free_runs(b))
+
 if __name__ == '__main__':
     unittest.main()
