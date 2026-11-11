@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -28,7 +30,10 @@ public final class BuildNeeds {
         }
     }
 
-    /** Woods with the whole family of planks, stairs, slabs, fences, gates, doors and trapdoors. */
+    /**
+     * Vanilla's building woods by name, as saves name them. Which woods a build may use on this server, a mod's
+     * included, is {@link Woods#known}; their parts are {@link Woods}' (F-38).
+     */
     public static final Set<String> WOODS = Set.of("oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry");
 
     /** What is gathered, not made: cut, mined or dug. */
@@ -43,50 +48,53 @@ public final class BuildNeeds {
      * planks (sticks, a crafting table) takes {@code wood}'s.
      */
     public static Optional<Recipe> recipe(String item, String wood) {
-        String id = item.startsWith("minecraft:") ? item.substring("minecraft:".length()) : item;
-        String planks = "minecraft:" + wood + "_planks";
-        for (String w : WOODS) {
-            String p = "minecraft:" + w + "_planks";
-            if (id.equals(w + "_planks")) return Optional.of(new Recipe(item(id), 4, Map.of("minecraft:" + w + "_log", 1), false));
-            if (id.equals(w + "_stairs")) return Optional.of(new Recipe(item(id), 4, Map.of(p, 6), true));
-            if (id.equals(w + "_slab")) return Optional.of(new Recipe(item(id), 6, Map.of(p, 3), true));
-            if (id.equals(w + "_fence")) return Optional.of(new Recipe(item(id), 3, Map.of(p, 4, "minecraft:stick", 2), true));
-            if (id.equals(w + "_fence_gate")) return Optional.of(new Recipe(item(id), 1, Map.of(p, 2, "minecraft:stick", 4), true));
-            if (id.equals(w + "_door")) return Optional.of(new Recipe(item(id), 3, Map.of(p, 6), true));
-            if (id.equals(w + "_trapdoor")) return Optional.of(new Recipe(item(id), 2, Map.of(p, 6), true));
+        String id = item.startsWith(VanillaIds.NAMESPACE) ? item.substring(VanillaIds.NAMESPACE.length()) : item;
+        String planks = Woods.planks(wood);
+        // A wood's family by what the game says its log and planks make (F-38); vanilla's as they always were.
+        String full = item.indexOf(':') >= 0 ? item : item(id);
+        for (var w : dev.kindred.core.Capabilities.current().woods()) {
+            String p = w.planks();
+            if (full.equals(w.planks())) return Optional.of(new Recipe(full, 4, Map.of(w.log(), 1), false));
+            if (full.equals(w.stairs())) return Optional.of(new Recipe(full, 4, Map.of(p, 6), true));
+            if (full.equals(w.slab())) return Optional.of(new Recipe(full, 6, Map.of(p, 3), true));
+            if (full.equals(w.fence())) return Optional.of(new Recipe(full, 3, Map.of(p, 4, VanillaIds.STICK, 2), true));
+            if (full.equals(w.fenceGate())) return Optional.of(new Recipe(full, 1, Map.of(p, 2, VanillaIds.STICK, 4), true));
+            if (full.equals(w.door())) return Optional.of(new Recipe(full, 3, Map.of(p, 6), true));
+            if (full.equals(w.trapdoor())) return Optional.of(new Recipe(full, 2, Map.of(p, 6), true));
         }
         // A bed: three wool of its colour over three planks (any planks; the build's own wood's are planned).
         for (String c : COLOURS) {
-            if (id.equals(c + "_bed")) return Optional.of(new Recipe(item(id), 1, Map.of("minecraft:" + c + "_wool", 3, planks, 3), true));
+            if (id.equals(c + "_bed")) return Optional.of(new Recipe(item(id), 1, Map.of(VanillaIds.NAMESPACE + c + "_wool", 3, planks, 3), true));
         }
         return Optional.ofNullable(switch (id) {
             case "stick" -> new Recipe(item(id), 4, Map.of(planks, 2), false);
             case "crafting_table" -> new Recipe(item(id), 1, Map.of(planks, 4), false);
             case "chest" -> new Recipe(item(id), 1, Map.of(planks, 8), true);
-            case "ladder" -> new Recipe(item(id), 3, Map.of("minecraft:stick", 7), true);
-            case "wooden_pickaxe" -> new Recipe(item(id), 1, Map.of(planks, 3, "minecraft:stick", 2), true);
-            case "cobblestone_stairs" -> new Recipe(item(id), 4, Map.of("minecraft:cobblestone", 6), true);
-            case "cobblestone_slab" -> new Recipe(item(id), 6, Map.of("minecraft:cobblestone", 3), true);
-            case "cobblestone_wall" -> new Recipe(item(id), 6, Map.of("minecraft:cobblestone", 6), true);
-            case "stone_brick_stairs" -> new Recipe(item(id), 4, Map.of("minecraft:stone_bricks", 6), true);
-            case "stone_brick_slab" -> new Recipe(item(id), 6, Map.of("minecraft:stone_bricks", 3), true);
-            case "stone_bricks" -> new Recipe(item(id), 4, Map.of("minecraft:stone", 4), false);
-            case "glass_pane" -> new Recipe(item(id), 16, Map.of("minecraft:glass", 6), true);
-            case "bookshelf" -> new Recipe(item(id), 1, Map.of(planks, 6, "minecraft:book", 3), true);
-            case "furnace" -> new Recipe(item(id), 1, Map.of("minecraft:cobblestone", 8), true);
+            case "ladder" -> new Recipe(item(id), 3, Map.of(VanillaIds.STICK, 7), true);
+            case "wooden_pickaxe" -> new Recipe(item(id), 1, Map.of(planks, 3, VanillaIds.STICK, 2), true);
+            case "cobblestone_stairs" -> new Recipe(item(id), 4, Map.of(VanillaIds.COBBLESTONE, 6), true);
+            case "cobblestone_slab" -> new Recipe(item(id), 6, Map.of(VanillaIds.COBBLESTONE, 3), true);
+            case "cobblestone_wall" -> new Recipe(item(id), 6, Map.of(VanillaIds.COBBLESTONE, 6), true);
+            case "stone_brick_stairs" -> new Recipe(item(id), 4, Map.of(VanillaIds.ICON_STONE, 6), true);
+            case "stone_brick_slab" -> new Recipe(item(id), 6, Map.of(VanillaIds.ICON_STONE, 3), true);
+            case "stone_bricks" -> new Recipe(item(id), 4, Map.of(VanillaIds.STONE, 4), false);
+            case "glass_pane" -> new Recipe(item(id), 16, Map.of(VanillaIds.GLASS, 6), true);
+            case "bookshelf" -> new Recipe(item(id), 1, Map.of(planks, 6, VanillaIds.BOOK, 3), true);
+            case "furnace" -> new Recipe(item(id), 1, Map.of(VanillaIds.COBBLESTONE, 8), true);
             // Redstone parts of functional builds (M-01d).
-            case "hopper" -> new Recipe(item(id), 1, Map.of("minecraft:iron_ingot", 5, "minecraft:chest", 1), true);
+            case "hopper" -> new Recipe(item(id), 1, Map.of(VanillaIds.IRON_INGOT, 5, VanillaIds.CHEST, 1), true);
             default -> null;
         });
     }
 
-    private static String item(String id) { return "minecraft:" + id; }
+    private static String item(String id) { return VanillaIds.NAMESPACE + id; }
 
     /** Whether a player gathers {@code item} itself: logs it cuts, cobblestone it mines, wool it shears or hunts from sheep. */
     public static boolean gathered(String item) {
-        String id = item.startsWith("minecraft:") ? item.substring("minecraft:".length()) : item;
+        String id = item.startsWith(VanillaIds.NAMESPACE) ? item.substring(VanillaIds.NAMESPACE.length()) : item;
         if (GATHERED.contains(id)) return true;
-        for (String w : WOODS) if (id.equals(w + "_log")) return true;
+        String full = item.indexOf(':') >= 0 ? item : item(id);
+        for (var w : dev.kindred.core.Capabilities.current().woods()) if (full.equals(w.log())) return true;
         for (String c : COLOURS) if (id.equals(c + "_wool")) return true;
         return false;
     }
@@ -121,8 +129,8 @@ public final class BuildNeeds {
         var crafts = new ArrayList<Recipe>();
         var unobtainable = new LinkedHashSet<String>();
         for (var e : shortfall.entrySet()) meet(e.getKey(), e.getValue(), have, store, take, gather, crafts, unobtainable, wood, 0);
-        if (gather.containsKey("minecraft:cobblestone") && !pickaxe) {
-            meet("minecraft:wooden_pickaxe", 1, have, store, take, gather, crafts, unobtainable, wood, 0);
+        if (gather.containsKey(VanillaIds.COBBLESTONE) && !pickaxe) {
+            meet(VanillaIds.WOODEN_PICKAXE, 1, have, store, take, gather, crafts, unobtainable, wood, 0);
         }
         return new Plan(take, gather, crafts, unobtainable);
     }
@@ -237,6 +245,6 @@ public final class BuildNeeds {
     }
 
     private static String name(String item) {
-        return (item.startsWith("minecraft:") ? item.substring("minecraft:".length()) : item).replace('_', ' ');
+        return (item.startsWith(VanillaIds.NAMESPACE) ? item.substring(VanillaIds.NAMESPACE.length()) : item).replace('_', ' ');
     }
 }

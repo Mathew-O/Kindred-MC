@@ -1,5 +1,7 @@
 package dev.kindred.core.survival;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Pos;
 
 import java.util.Comparator;
@@ -21,11 +23,11 @@ import java.util.UUID;
 public final class Ranch {
     /** The animals a pen is for, each with the food it follows and is bred with, as vanilla has them. */
     public enum Kind {
-        COW("minecraft:cow", List.of("minecraft:wheat")),
-        SHEEP("minecraft:sheep", List.of("minecraft:wheat")),
-        PIG("minecraft:pig", List.of("minecraft:carrot", "minecraft:potato", "minecraft:beetroot")),
-        CHICKEN("minecraft:chicken", List.of("minecraft:wheat_seeds", "minecraft:melon_seeds", "minecraft:pumpkin_seeds",
-                "minecraft:beetroot_seeds", "minecraft:torchflower_seeds"));
+        COW(VanillaIds.COW, List.of(VanillaIds.WHEAT)),
+        SHEEP(VanillaIds.SHEEP, List.of(VanillaIds.WHEAT)),
+        PIG(VanillaIds.PIG, List.of(VanillaIds.CARROT, VanillaIds.POTATO, VanillaIds.BEETROOT)),
+        CHICKEN(VanillaIds.CHICKEN, List.of(VanillaIds.WHEAT_SEEDS, VanillaIds.MELON_SEEDS, VanillaIds.PUMPKIN_SEEDS,
+                VanillaIds.BEETROOT_SEEDS, VanillaIds.TORCHFLOWER_SEEDS));
 
         public final String entity;
         public final List<String> food;
@@ -492,9 +494,11 @@ public final class Ranch {
                     : new Step.Wait(true, "Wait for the " + kind.noun() + " to come in");
         }
         waitingSince = -1;
+        // The one already in shut in whenever it is out for the next, until the next is lined up at the gate's front: shut
+        // only for one far off, the gate stood open as the player led the second up, the first walked out of it and on
+        // through the pasture, down its way in, and hemmed the player in there (#98's CI) (F-22c43).
+        if (seen.gateOpen() && adultsIn > 0 && !lined) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
         if (apart > FOLLOWING) {
-            // The one already in is shut in before it walks off for the next.
-            if (seen.gateOpen() && adultsIn > 0) return gate(seen, false, outside(), false, "Shut the gate on the " + kind.noun() + " inside");
             return go(animal.at(), 3, true, 0, "Walk up to a " + kind.noun() + " with " + foodName());
         }
         if (apart > LAGGING) {
@@ -585,6 +589,6 @@ public final class Ranch {
     }
 
     private String foodName() {
-        return kind.food.getFirst().substring("minecraft:".length()).replace('_', ' ');
+        return kind.food.getFirst().substring(VanillaIds.NAMESPACE.length()).replace('_', ' ');
     }
 }

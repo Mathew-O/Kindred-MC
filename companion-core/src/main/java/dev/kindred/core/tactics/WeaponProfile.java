@@ -1,5 +1,7 @@
 package dev.kindred.core.tactics;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -92,23 +94,23 @@ public record WeaponProfile(
     /** The item's id in a standard form. */
     public String normalizedItemId() {
         String clean = itemId.toLowerCase(java.util.Locale.ROOT);
-        if (clean.startsWith("minecraft:")) {
+        if (clean.startsWith(VanillaIds.NAMESPACE)) {
             return clean;
         }
-        return "minecraft:" + clean;
+        return VanillaIds.NAMESPACE + clean;
     }
 
     /** What kind of weapon it is (sword, axe, bow...). */
     public WeaponCategory category() {
         return switch (normalizedItemId()) {
-            case "minecraft:wooden_sword", "minecraft:stone_sword", "minecraft:iron_sword",
-                    "minecraft:golden_sword", "minecraft:diamond_sword", "minecraft:netherite_sword" -> WeaponCategory.SWORD;
-            case "minecraft:wooden_axe", "minecraft:stone_axe", "minecraft:iron_axe",
-                    "minecraft:golden_axe", "minecraft:diamond_axe", "minecraft:netherite_axe" -> WeaponCategory.AXE;
-            case "minecraft:trident" -> WeaponCategory.TRIDENT;
-            case "minecraft:mace" -> WeaponCategory.MACE;
-            case "minecraft:bow" -> WeaponCategory.BOW;
-            case "minecraft:crossbow" -> WeaponCategory.CROSSBOW;
+            case VanillaIds.WOODEN_SWORD, VanillaIds.STONE_SWORD, VanillaIds.IRON_SWORD,
+                    VanillaIds.GOLDEN_SWORD, VanillaIds.DIAMOND_SWORD, VanillaIds.NETHERITE_SWORD -> WeaponCategory.SWORD;
+            case VanillaIds.WOODEN_AXE, VanillaIds.STONE_AXE, VanillaIds.IRON_AXE,
+                    VanillaIds.GOLDEN_AXE, VanillaIds.DIAMOND_AXE, VanillaIds.NETHERITE_AXE -> WeaponCategory.AXE;
+            case VanillaIds.TRIDENT -> WeaponCategory.TRIDENT;
+            case VanillaIds.MACE -> WeaponCategory.MACE;
+            case VanillaIds.BOW -> WeaponCategory.BOW;
+            case VanillaIds.CROSSBOW -> WeaponCategory.CROSSBOW;
             default -> isSword ? WeaponCategory.SWORD : (isAxe ? WeaponCategory.AXE : WeaponCategory.OTHER_TOOL);
         };
     }
@@ -142,8 +144,8 @@ public record WeaponProfile(
     public boolean hasUnknownEnchantments() {
         for (String ench : enchantments.keySet()) {
             String clean = ench.toLowerCase(java.util.Locale.ROOT);
-            if (clean.startsWith("minecraft:")) {
-                clean = clean.substring("minecraft:".length());
+            if (clean.startsWith(VanillaIds.NAMESPACE)) {
+                clean = clean.substring(VanillaIds.NAMESPACE.length());
             }
             if (!SUPPORTED_ENCHANTMENTS.contains(clean)) {
                 return true;

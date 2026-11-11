@@ -20,10 +20,10 @@ public final class Brewing {
 
     /** The potions a run brews, in the order it wants them, each with what it is brewed from the awkward base with. */
     public enum Potion {
-        FIRE_RESISTANCE("minecraft:fire_resistance", "minecraft:magma_cream"),
-        STRENGTH("minecraft:strength", "minecraft:blaze_powder"),
-        SLOW_FALLING("minecraft:slow_falling", "minecraft:phantom_membrane"),
-        HEALING("minecraft:healing", "minecraft:glistering_melon_slice");
+        FIRE_RESISTANCE(VanillaIds.FIRE_RESISTANCE, VanillaIds.MAGMA_CREAM),
+        STRENGTH(VanillaIds.STRENGTH, VanillaIds.BLAZE_POWDER),
+        SLOW_FALLING(VanillaIds.SLOW_FALLING, VanillaIds.PHANTOM_MEMBRANE),
+        HEALING(VanillaIds.HEALING, VanillaIds.GLISTERING_MELON_SLICE);
 
         /** Its id as a potion's contents name it. */
         public final String id;
@@ -43,8 +43,8 @@ public final class Brewing {
     public record Brew(String bottles, String ingredient, String yields, String why) { }
 
     /**
-     * The next brew, from what it holds ({@code held}: items by id, and potions by their contents' id, "minecraft:water"
-     * for a water bottle, "minecraft:awkward" for an awkward one): the first potion it wants and has fewer than {@link
+     * The next brew, from what it holds ({@code held}: items by id, and potions by their contents' id, minecraft:water
+     * for a water bottle, minecraft:awkward for an awkward one): the first potion it wants and has fewer than {@link
      * #KEEP} of whose ingredient it holds; its awkward potions brewed into it if it has three, else its water bottles made
      * awkward with nether wart, three at a time. None when it has nothing to brew it with. Glass bottles are filled at
      * water first (the adapter's step, before this one).
@@ -52,11 +52,11 @@ public final class Brewing {
     public static Optional<Brew> next(Map<String, Integer> held, Map<String, Integer> potions) {
         for (Potion p : Potion.values()) {
             if (potions.getOrDefault(p.id, 0) >= KEEP || held.getOrDefault(p.ingredient, 0) < 1) continue;
-            if (potions.getOrDefault("minecraft:awkward", 0) >= KEEP) {
-                return Optional.of(new Brew("minecraft:awkward", p.ingredient, p.id, "Three awkward potions brewed into " + name(p.id)));
+            if (potions.getOrDefault(VanillaIds.AWKWARD, 0) >= KEEP) {
+                return Optional.of(new Brew(VanillaIds.AWKWARD, p.ingredient, p.id, "Three awkward potions brewed into " + name(p.id)));
             }
-            if (potions.getOrDefault("minecraft:water", 0) >= KEEP && held.getOrDefault("minecraft:nether_wart", 0) >= 1) {
-                return Optional.of(new Brew("minecraft:water", "minecraft:nether_wart", "minecraft:awkward",
+            if (potions.getOrDefault(VanillaIds.WATER, 0) >= KEEP && held.getOrDefault(VanillaIds.NETHER_WART, 0) >= 1) {
+                return Optional.of(new Brew(VanillaIds.WATER, VanillaIds.NETHER_WART, VanillaIds.AWKWARD,
                         "Three water bottles made awkward with nether wart, for " + name(p.id)));
             }
             return Optional.empty();
@@ -66,12 +66,12 @@ public final class Brewing {
 
     /** How many glass bottles to fill at water before brewing: up to three, while it has awkward ones to make and none filled. */
     public static int toFill(Map<String, Integer> held, Map<String, Integer> potions) {
-        if (potions.getOrDefault("minecraft:water", 0) >= KEEP || potions.getOrDefault("minecraft:awkward", 0) >= KEEP) return 0;
-        if (held.getOrDefault("minecraft:nether_wart", 0) < 1) return 0;
+        if (potions.getOrDefault(VanillaIds.WATER, 0) >= KEEP || potions.getOrDefault(VanillaIds.AWKWARD, 0) >= KEEP) return 0;
+        if (held.getOrDefault(VanillaIds.NETHER_WART, 0) < 1) return 0;
         boolean wanted = false;
         for (Potion p : Potion.values()) if (potions.getOrDefault(p.id, 0) < KEEP && held.getOrDefault(p.ingredient, 0) >= 1) wanted = true;
         if (!wanted) return 0;
-        return Math.min(KEEP - potions.getOrDefault("minecraft:water", 0), held.getOrDefault("minecraft:glass_bottle", 0));
+        return Math.min(KEEP - potions.getOrDefault(VanillaIds.WATER, 0), held.getOrDefault(VanillaIds.GLASS_BOTTLE, 0));
     }
 
     /** Whether the stand needs blaze powder put in: none left of its fuel. */

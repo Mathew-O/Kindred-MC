@@ -13,7 +13,6 @@ import com.anthropic.models.messages.StructuredOutputConfig;
 import com.anthropic.models.messages.TextBlockParam;
 import com.anthropic.models.messages.ThinkingConfigDisabled;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import dev.kindred.core.guide.Need;
 import dev.kindred.core.guide.Objective;
 import dev.kindred.core.guide.Want;
 import dev.kindred.core.survival.PlanPreferences;
@@ -79,9 +78,12 @@ public final class ClaudeStrategist implements Strategist {
             @JsonPropertyDescription(ChroniclePrompt.LINE) List<Long> lines,
             @JsonPropertyDescription(ChroniclePrompt.SAY) String text) { }
 
-    /** A follow-up for the player's queue (F-19e). */
+    /**
+     * A follow-up for the player's queue (F-19e). Its need is a need's name: needs are data (F-38), named in the guide
+     * the prompt carries, and a name not in the set is dropped by {@link Want#parse}.
+     */
     public record FollowUp(
-            @JsonPropertyDescription(StrategistPrompt.QUEUE_NEED) Need need,
+            @JsonPropertyDescription(StrategistPrompt.QUEUE_NEED) String need,
             @JsonPropertyDescription(StrategistPrompt.QUEUE_COUNT) int count,
             @JsonPropertyDescription(StrategistPrompt.QUEUE_FOR) Objective task,
             @JsonPropertyDescription(StrategistPrompt.QUEUE_WHY) String why) { }
@@ -185,7 +187,7 @@ public final class ClaudeStrategist implements Strategist {
             var places = r.avoid() == null ? List.<StrategyAdvice.Place>of()
                     : r.avoid().stream().filter(Objects::nonNull).map(s -> new StrategyAdvice.Place(s.x(), s.y(), s.z())).toList();
             var queue = r.queue() == null ? List.<Want>of() : r.queue().stream().filter(Objects::nonNull)
-                    .flatMap(f -> Want.parse(name(f.need()), f.count(), name(f.task()), f.why()).stream()).toList();
+                    .flatMap(f -> Want.parse(f.need(), f.count(), name(f.task()), f.why()).stream()).toList();
             var advice = StrategyAdvice.validated(r.stance() == null ? null : r.stance().name(), places, r.note(), r.reason(), reported,
                     name(r.focus()), name(r.habit()), name(r.retire()), queue, name(r.approach()));
             return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));

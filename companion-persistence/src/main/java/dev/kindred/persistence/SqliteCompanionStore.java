@@ -1495,7 +1495,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 12) {
+            if (schemaVersion < 0 || schemaVersion > 13) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1510,6 +1510,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 10) migrate(10, "V10__expression.sql");
             if (schemaVersion < 11) migrate(11, "V11__rough_talk.sql");
             if (schemaVersion < 12) migrate(12, "V12__world_record.sql");
+            if (schemaVersion < 13) migrate(13, "V13__action_fold.sql");
         }
         recover();
     }
@@ -1527,6 +1528,12 @@ public final class SqliteCompanionStore {
                     // The World Record is append-only (F-31): the database itself refuses an update or a delete.
                     statement.execute("CREATE TRIGGER world_events_append_only_update BEFORE UPDATE ON world_events BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
                     statement.execute("CREATE TRIGGER world_events_append_only_delete BEFORE DELETE ON world_events BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
+                }
+                if (version == 13) {
+                    // Settled action history may be compacted (the action fold); every other kind stays append-only.
+                    statement.execute("DROP TRIGGER IF EXISTS world_events_append_only_delete");
+                    statement.execute("CREATE TRIGGER world_events_append_only_delete BEFORE DELETE ON world_events WHEN OLD.kind <> '"
+                            + ActionLedgerView.ACTION + "' BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
                 }
                 statement.execute("PRAGMA user_version = " + version);
             }
@@ -1711,7 +1718,7 @@ public final class SqliteCompanionStore {
         data.put("sequence", String.valueOf(sequence));
         data.put("detail", detail.length() > 4_000 ? detail.substring(0, 4_000) : detail);
         if (detail.length() > 4_000) data.put("truncated", "1");
-        insertWorldEvent(WorldEvent.recorded(-1, at.toEpochMilli(), "", "journal", id, type.length() > WorldEvent.MAX_TEXT ? type.substring(0, WorldEvent.MAX_TEXT) : type, "", data));
+        insertWorldEvent(WorldEvent.recorded(-1, at.toEpochMilli(), "", dev.kindred.core.record.ActionLedgerView.JOURNAL, id, type.length() > WorldEvent.MAX_TEXT ? type.substring(0, WorldEvent.MAX_TEXT) : type, "", data));
         return new JournalEvent(sequence, id, Instant.ofEpochMilli(at.toEpochMilli()), type, detail);
     }
 
@@ -1763,6 +1770,12 @@ public final class SqliteCompanionStore {
         List<WorldEvent> copy = List.copyOf(drafts);
         if (copy.isEmpty()) return CompletableFuture.completedFuture(List.of());
         for (WorldEvent draft : copy) if (draft.id() != 0) throw new IllegalArgumentException("Only an unwritten event is recorded");
+        // Only a registered kind is written (F-31, event kinds as a registry): all or none, the batch refused, not the tick.
+        for (WorldEvent draft : copy) {
+            if (!dev.kindred.core.record.EventKinds.known(draft.kind())) {
+                return CompletableFuture.failedFuture(new IllegalArgumentException("Unregistered event kind " + draft.kind()));
+            }
+        }
         return submit(() -> transaction(() -> {
             var written = new ArrayList<WorldEvent>(copy.size());
             for (WorldEvent draft : copy) written.add(insertWorldEvent(draft));
@@ -1808,6 +1821,72 @@ public final class SqliteCompanionStore {
             try (ResultSet rows = query.executeQuery()) { while (rows.next()) out.add(readWorldEvent(rows)); }
             return out;
         }
+    }
+
+    /** What one fold did: the actions folded, the events they had, and how long the writer spent on it. */
+    public record ActionFold(int actions, int eventsRemoved, long millis) { }
+
+    /** The lowest action subject's first event id the next fold looks after (actions skipped before it stay skipped). */
+    private long foldCursor;
+
+    /**
+     * The action fold (F-31, from F-33's month-long cost check): on the ordered writer, the history of up to {@code max}
+     * settled actions whose last event is older than {@code olderThanMs} replaced, in one transaction, by one
+     * {@link ActionLedgerView#FOLDED} event each: its final state, revision, kind and outcome, how many events it replaces
+     * ({@code folded}) and when the first was ({@code first_ms}). Settled is verified, failed or cancelled; an action
+     * that was ever uncertain, or is not settled, is left whole. The action ledger's own table is never touched, so the
+     * agreement check still agrees. Only {@code action} events are ever deleted; every other kind stays as written.
+     */
+    public CompletableFuture<ActionFold> foldSettledActions(long olderThanMs, int max) {
+        if (max < 1) throw new IllegalArgumentException("A fold takes at least one action");
+        return submit(() -> {
+            long start = System.nanoTime();
+            var candidates = new ArrayList<String>();
+            var firstIds = new ArrayList<Long>();
+            try (PreparedStatement query = database.prepareStatement("SELECT subject, MIN(id) FROM world_events WHERE kind = ? GROUP BY subject"
+                    + " HAVING MAX(real_time_ms) < ? AND MIN(id) > ? ORDER BY MIN(id) LIMIT ?")) {
+                query.setString(1, ActionLedgerView.ACTION);
+                query.setLong(2, olderThanMs);
+                query.setLong(3, foldCursor);
+                query.setInt(4, max);
+                try (ResultSet rows = query.executeQuery()) {
+                    while (rows.next()) { candidates.add(rows.getString(1)); firstIds.add(rows.getLong(2)); }
+                }
+            }
+            if (candidates.size() < max) foldCursor = 0; // Back to the start next time: newly settled actions behind it.
+            else foldCursor = firstIds.getLast();
+            int[] counts = new int[2];
+            transaction(() -> {
+                for (String subject : candidates) {
+                    var events = new ArrayList<WorldEvent>();
+                    try (PreparedStatement query = database.prepareStatement("SELECT * FROM world_events WHERE kind = ? AND subject = ? ORDER BY id")) {
+                        query.setString(1, ActionLedgerView.ACTION);
+                        query.setString(2, subject);
+                        try (ResultSet rows = query.executeQuery()) { while (rows.next()) events.add(readWorldEvent(rows)); }
+                    }
+                    if (events.isEmpty()) continue;
+                    WorldEvent last = events.getLast();
+                    boolean settled = ActionLedgerView.settled(last.get("state", ""));
+                    boolean wasUncertain = events.stream().anyMatch(e -> ActionRecord.State.UNCERTAIN.name().equals(e.get("state", "")));
+                    if (!settled || wasUncertain) continue;
+                    try (PreparedStatement delete = database.prepareStatement("DELETE FROM world_events WHERE kind = ? AND subject = ? AND id <= ?")) {
+                        delete.setString(1, ActionLedgerView.ACTION);
+                        delete.setString(2, subject);
+                        delete.setLong(3, last.id());
+                        delete.executeUpdate();
+                    }
+                    var data = new java.util.LinkedHashMap<String, String>(last.data());
+                    data.put("folded", String.valueOf(events.size()));
+                    data.put("first_ms", String.valueOf(events.getFirst().realTimeMs()));
+                    insertWorldEvent(new WorldEvent(0, last.tick(), last.realTimeMs(), last.world(), ActionLedgerView.FOLDED, last.actor(), last.subject(),
+                            last.place(), data, last.howKnown()));
+                    counts[0]++;
+                    counts[1] += events.size();
+                }
+                return null;
+            });
+            return new ActionFold(counts[0], counts[1], (System.nanoTime() - start) / 1_000_000);
+        });
     }
 
     /**

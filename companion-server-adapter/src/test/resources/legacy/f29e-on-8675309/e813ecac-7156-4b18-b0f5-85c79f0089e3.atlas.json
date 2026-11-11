@@ -1,0 +1,3116 @@
+{
+  "chunks": [
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 5,
+      "last": 66459,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 17,
+            "y": 70,
+            "z": 92
+          },
+          "count": 35,
+          "last": 163
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 5,
+      "last": 55519,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 11,
+            "y": 70,
+            "z": 82
+          },
+          "count": 32,
+          "last": 163
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 4,
+      "last": 126039,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 22,
+            "y": 70,
+            "z": 78
+          },
+          "count": 34,
+          "last": 164
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 6,
+      "last": 135539,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 28,
+            "y": 76,
+            "z": 107
+          },
+          "count": 42,
+          "last": 165
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 5,
+      "last": 136134,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "LAVA",
+          "at": {
+            "dimension": "overworld",
+            "x": 42,
+            "y": 57,
+            "z": 95
+          },
+          "count": 1,
+          "last": 136134
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 44,
+            "y": 70,
+            "z": 92
+          },
+          "count": 42,
+          "last": 166
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 4,
+      "last": 125979,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 9,
+            "y": 63,
+            "z": 74
+          },
+          "count": 42,
+          "last": 173
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 6,
+      "last": 124079,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 10,
+            "y": 73,
+            "z": 110
+          },
+          "count": 32,
+          "last": 168
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 4,
+      "last": 126399,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 41,
+            "y": 70,
+            "z": 77
+          },
+          "count": 49,
+          "last": 168
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 6,
+      "last": 144159,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 41,
+            "y": 58,
+            "z": 110
+          },
+          "count": 20,
+          "last": 118857
+        },
+        {
+          "resource": "LAVA",
+          "at": {
+            "dimension": "overworld",
+            "x": 38,
+            "y": 57,
+            "z": 104
+          },
+          "count": 64,
+          "last": 119018
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 47,
+            "y": 77,
+            "z": 110
+          },
+          "count": 48,
+          "last": 169
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 5,
+      "last": 132019,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -11,
+            "y": 73,
+            "z": 81
+          },
+          "count": 26,
+          "last": 177
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 3,
+      "last": 55390,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 26,
+            "y": 62,
+            "z": 51
+          },
+          "count": 93,
+          "last": 55390
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 20,
+            "y": 63,
+            "z": 58
+          },
+          "count": 23,
+          "last": 190
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 7,
+      "last": 135499,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 26,
+            "y": 88,
+            "z": 124
+          },
+          "count": 33,
+          "last": 191
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 5,
+      "last": 68779,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 54,
+            "y": 73,
+            "z": 89
+          },
+          "count": 35,
+          "last": 179
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 4,
+      "last": 131959,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -10,
+            "y": 63,
+            "z": 75
+          },
+          "count": 48,
+          "last": 192
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 6,
+      "last": 132079,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": -1,
+            "y": 47,
+            "z": 111
+          },
+          "count": 1,
+          "last": 11546
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -1,
+            "y": 70,
+            "z": 111
+          },
+          "count": 35,
+          "last": 180
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 3,
+      "last": 55402,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 2,
+            "y": 62,
+            "z": 61
+          },
+          "count": 188,
+          "last": 55402
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 11,
+            "y": 63,
+            "z": 62
+          },
+          "count": 11,
+          "last": 202
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 7,
+      "last": 134339,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 0,
+            "y": 47,
+            "z": 113
+          },
+          "count": 2,
+          "last": 11607
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 4,
+            "y": 90,
+            "z": 127
+          },
+          "count": 32,
+          "last": 205
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 3,
+      "last": 49072,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 32,
+            "y": 62,
+            "z": 49
+          },
+          "count": 3,
+          "last": 49072
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 42,
+            "y": 70,
+            "z": 53
+          },
+          "count": 28,
+          "last": 183
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 7,
+      "last": 119059,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 38,
+            "y": 86,
+            "z": 126
+          },
+          "count": 48,
+          "last": 206
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 4,
+      "last": 126719,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 49,
+            "y": 71,
+            "z": 77
+          },
+          "count": 42,
+          "last": 184
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 6,
+      "last": 123679,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 61,
+            "y": 75,
+            "z": 109
+          },
+          "count": 27,
+          "last": 185
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 3,
+      "last": 131879,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -1,
+            "y": 62,
+            "z": 61
+          },
+          "count": 41,
+          "last": 47918
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -15,
+            "y": 70,
+            "z": 62
+          },
+          "count": 33,
+          "last": 207
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 7,
+      "last": 132359,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": -16,
+            "y": 41,
+            "z": 117
+          },
+          "count": 3,
+          "last": 5996
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -10,
+            "y": 91,
+            "z": 126
+          },
+          "count": 19,
+          "last": 214
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 3,
+      "last": 126499,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 60,
+            "y": 63,
+            "z": 55
+          },
+          "count": 29,
+          "last": 213
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 7,
+      "last": 120499,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 52,
+            "y": 85,
+            "z": 124
+          },
+          "count": 35,
+          "last": 214
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 8,
+      "last": 57270,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 27,
+            "y": 97,
+            "z": 142
+          },
+          "count": 41,
+          "last": 57270
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 8,
+      "last": 134159,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 3,
+            "y": 99,
+            "z": 140
+          },
+          "count": 31,
+          "last": 57262
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 8,
+      "last": 411,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 43,
+            "y": 95,
+            "z": 139
+          },
+          "count": 14,
+          "last": 411
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 8,
+      "last": 120519,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 48,
+            "y": 92,
+            "z": 139
+          },
+          "count": 33,
+          "last": 418
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 8,
+      "last": 57269,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": -7,
+            "y": 29,
+            "z": 143
+          },
+          "count": 5,
+          "last": 45918
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -13,
+            "y": 100,
+            "z": 135
+          },
+          "count": 34,
+          "last": 57269
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 5,
+      "last": 1383,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -32,
+            "y": 73,
+            "z": 90
+          },
+          "count": 32,
+          "last": 1383
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 4,
+      "last": 125799,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -18,
+            "y": 63,
+            "z": 68
+          },
+          "count": 36,
+          "last": 1402
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 6,
+      "last": 124399,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -31,
+            "y": 72,
+            "z": 108
+          },
+          "count": 47,
+          "last": 1387
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 3,
+      "last": 131759,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -21,
+            "y": 72,
+            "z": 60
+          },
+          "count": 38,
+          "last": 1416
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 7,
+      "last": 83239,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -17,
+            "y": 85,
+            "z": 124
+          },
+          "count": 55,
+          "last": 1421
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 5,
+      "last": 69719,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 69,
+            "y": 70,
+            "z": 95
+          },
+          "count": 47,
+          "last": 2273
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 4,
+      "last": 126819,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 71,
+            "y": 71,
+            "z": 79
+          },
+          "count": 34,
+          "last": 2277
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 6,
+      "last": 123599,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 67,
+            "y": 73,
+            "z": 103
+          },
+          "count": 41,
+          "last": 2278
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 3,
+      "last": 2295,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 78,
+            "y": 69,
+            "z": 57
+          },
+          "count": 21,
+          "last": 2295
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 7,
+      "last": 121099,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 67,
+            "y": 80,
+            "z": 125
+          },
+          "count": 38,
+          "last": 2308
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 8,
+      "last": 121279,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "IRON",
+          "at": {
+            "dimension": "overworld",
+            "x": 70,
+            "y": 57,
+            "z": 136
+          },
+          "count": 1,
+          "last": 115142
+        },
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 73,
+            "y": 59,
+            "z": 141
+          },
+          "count": 11,
+          "last": 114736
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 69,
+            "y": 79,
+            "z": 143
+          },
+          "count": 28,
+          "last": 3139
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 2,
+      "last": 48996,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 33,
+            "y": 62,
+            "z": 47
+          },
+          "count": 4,
+          "last": 48996
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 5,
+      "last": 10979,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -41,
+            "y": 73,
+            "z": 91
+          },
+          "count": 36,
+          "last": 10979
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 4,
+      "last": 125719,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -38,
+            "y": 72,
+            "z": 64
+          },
+          "count": 46,
+          "last": 10987
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 6,
+      "last": 124479,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -44,
+            "y": 75,
+            "z": 111
+          },
+          "count": 53,
+          "last": 10988
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 3,
+      "last": 131679,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -39,
+            "y": 70,
+            "z": 61
+          },
+          "count": 45,
+          "last": 11001
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 7,
+      "last": 83499,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -36,
+            "y": 93,
+            "z": 127
+          },
+          "count": 24,
+          "last": 57820
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 9,
+      "last": 60819,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": -3,
+            "y": 95,
+            "z": 144
+          },
+          "count": 26,
+          "last": 60558
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -6,
+            "y": 118,
+            "z": 156
+          },
+          "count": 36,
+          "last": 58472
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 10,
+      "last": 58476,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": -3,
+            "y": 42,
+            "z": 164
+          },
+          "count": 1,
+          "last": 11899
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -4,
+            "y": 121,
+            "z": 170
+          },
+          "count": 42,
+          "last": 58476
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 8,
+      "last": 57288,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -28,
+            "y": 101,
+            "z": 139
+          },
+          "count": 14,
+          "last": 57288
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 9,
+      "last": 57263,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 24,
+            "y": 108,
+            "z": 159
+          },
+          "count": 52,
+          "last": 57263
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 9,
+      "last": 57282,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 33,
+            "y": 35,
+            "z": 158
+          },
+          "count": 14,
+          "last": 31092
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 35,
+            "y": 106,
+            "z": 155
+          },
+          "count": 25,
+          "last": 57282
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 10,
+      "last": 57291,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 46,
+            "y": 48,
+            "z": 163
+          },
+          "count": 1,
+          "last": 36891
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 33,
+            "y": 108,
+            "z": 173
+          },
+          "count": 27,
+          "last": 57291
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 9,
+      "last": 61059,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 0,
+            "y": 89,
+            "z": 150
+          },
+          "count": 9,
+          "last": 57831
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 3,
+            "y": 115,
+            "z": 152
+          },
+          "count": 16,
+          "last": 58476
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 11,
+      "last": 57298,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 45,
+            "y": 41,
+            "z": 186
+          },
+          "count": 6,
+          "last": 50953
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 34,
+            "y": 108,
+            "z": 184
+          },
+          "count": 31,
+          "last": 57298
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 10,
+      "last": 57272,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 25,
+            "y": 45,
+            "z": 171
+          },
+          "count": 1,
+          "last": 31184
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 23,
+            "y": 111,
+            "z": 173
+          },
+          "count": 20,
+          "last": 57272
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 10,
+      "last": 60199,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 5,
+            "y": 44,
+            "z": 164
+          },
+          "count": 3,
+          "last": 31448
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 3,
+            "y": 119,
+            "z": 165
+          },
+          "count": 15,
+          "last": 58483
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 11,
+      "last": 57290,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 20,
+            "y": 111,
+            "z": 190
+          },
+          "count": 10,
+          "last": 57290
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 12,
+      "last": 52299,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 37,
+            "y": 27,
+            "z": 193
+          },
+          "count": 1,
+          "last": 31317
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 9,
+      "last": 57281,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -29,
+            "y": 111,
+            "z": 146
+          },
+          "count": 44,
+          "last": 57281
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 9,
+      "last": 57809,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -42,
+            "y": 111,
+            "z": 149
+          },
+          "count": 3,
+          "last": 57809
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 2,
+      "last": 48010,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -17,
+            "y": 63,
+            "z": 44
+          },
+          "count": 34,
+          "last": 48010
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 2,
+      "last": 55436,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 15,
+            "y": 62,
+            "z": 47
+          },
+          "count": 126,
+          "last": 55436
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 2,
+      "last": 49681,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -1,
+            "y": 62,
+            "z": 46
+          },
+          "count": 7,
+          "last": 49681
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 2,
+      "last": 55422,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 31,
+            "y": 62,
+            "z": 47
+          },
+          "count": 70,
+          "last": 55422
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 10,
+      "last": 50761,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 58,
+            "y": 37,
+            "z": 175
+          },
+          "count": 1,
+          "last": 50761
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 12,
+      "last": 52559,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 13,
+      "last": 52219,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 14,
+      "last": 52000,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 46,
+            "y": 31,
+            "z": 227
+          },
+          "count": 2,
+          "last": 52000
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 9,
+      "last": 55958,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 51,
+            "y": 95,
+            "z": 159
+          },
+          "count": 27,
+          "last": 55958
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 11,
+      "last": 57281,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 11,
+            "y": 111,
+            "z": 191
+          },
+          "count": 3,
+          "last": 57281
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 10,
+      "last": 58482,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -27,
+            "y": 116,
+            "z": 174
+          },
+          "count": 26,
+          "last": 58482
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 11,
+      "last": 57289,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -11,
+            "y": 111,
+            "z": 182
+          },
+          "count": 2,
+          "last": 57289
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 11,
+      "last": 57298,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -27,
+            "y": 111,
+            "z": 190
+          },
+          "count": 6,
+          "last": 57298
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 8,
+      "last": 57816,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -48,
+            "y": 108,
+            "z": 143
+          },
+          "count": 32,
+          "last": 57816
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 10,
+      "last": 57817,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -35,
+            "y": 111,
+            "z": 173
+          },
+          "count": 5,
+          "last": 57817
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 5,
+      "last": 126979,
+      "visited": true,
+      "biome": "minecraft:old_growth_birch_forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 6,
+      "last": 127139,
+      "visited": true,
+      "biome": "minecraft:old_growth_birch_forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 7,
+      "last": 127279,
+      "visited": true,
+      "biome": "minecraft:old_growth_birch_forest",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 90,
+            "y": 62,
+            "z": 113
+          },
+          "count": 2,
+          "last": 81102
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 5,
+      "last": 123259,
+      "visited": true,
+      "biome": "minecraft:old_growth_birch_forest",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 107,
+            "y": 62,
+            "z": 94
+          },
+          "count": 70,
+          "last": 82208
+        },
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": 102,
+            "y": 66,
+            "z": 93
+          },
+          "count": 2,
+          "last": 78880
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 7,
+      "last": 127259,
+      "visited": true,
+      "biome": "minecraft:old_growth_birch_forest",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 111,
+            "y": 62,
+            "z": 114
+          },
+          "count": 17,
+          "last": 82172
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 6,
+      "last": 127179,
+      "visited": true,
+      "biome": "minecraft:old_growth_birch_forest",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 109,
+            "y": 62,
+            "z": 111
+          },
+          "count": 97,
+          "last": 82179
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 7,
+      "z": 6,
+      "last": 82195,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 127,
+            "y": 62,
+            "z": 111
+          },
+          "count": 256,
+          "last": 82195
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 7,
+      "z": 5,
+      "last": 82223,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 127,
+            "y": 62,
+            "z": 86
+          },
+          "count": 240,
+          "last": 82223
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 8,
+      "z": 6,
+      "last": 82240,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 139,
+            "y": 62,
+            "z": 111
+          },
+          "count": 176,
+          "last": 82240
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 8,
+      "z": 5,
+      "last": 82165,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 130,
+            "y": 62,
+            "z": 95
+          },
+          "count": 29,
+          "last": 82165
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 7,
+      "z": 7,
+      "last": 82183,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 127,
+            "y": 62,
+            "z": 116
+          },
+          "count": 66,
+          "last": 82183
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 8,
+      "z": 7,
+      "last": 82215,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": 142,
+            "y": 62,
+            "z": 121
+          },
+          "count": 122,
+          "last": 82215
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -4,
+      "z": 7,
+      "last": 83579,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -5,
+      "z": 7,
+      "last": 83679,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 7,
+      "last": 131119,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -7,
+      "z": 7,
+      "last": 83899,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -7,
+      "z": 8,
+      "last": 84179,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -8,
+      "z": 8,
+      "last": 95679,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -8,
+      "z": 7,
+      "last": 95739,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -115,
+            "y": 62,
+            "z": 112
+          },
+          "count": 3,
+          "last": 84254
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -8,
+      "z": 6,
+      "last": 124999,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -117,
+            "y": 62,
+            "z": 111
+          },
+          "count": 8,
+          "last": 84223
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -9,
+      "z": 6,
+      "last": 84380,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -139,
+            "y": 62,
+            "z": 111
+          },
+          "count": 7,
+          "last": 84380
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -9,
+      "z": 8,
+      "last": 95639,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -9,
+      "z": 7,
+      "last": 95559,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -139,
+            "y": 62,
+            "z": 112
+          },
+          "count": 28,
+          "last": 85434
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -10,
+      "z": 6,
+      "last": 84501,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -152,
+            "y": 62,
+            "z": 109
+          },
+          "count": 32,
+          "last": 84501
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -10,
+      "z": 8,
+      "last": 85199,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -11,
+      "z": 6,
+      "last": 84468,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -161,
+            "y": 62,
+            "z": 111
+          },
+          "count": 170,
+          "last": 84468
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -11,
+      "z": 8,
+      "last": 85159,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -175,
+            "y": 62,
+            "z": 131
+          },
+          "count": 1,
+          "last": 84479
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -10,
+      "z": 7,
+      "last": 85279,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -156,
+            "y": 62,
+            "z": 121
+          },
+          "count": 32,
+          "last": 84483
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -11,
+      "z": 7,
+      "last": 84489,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -170,
+            "y": 62,
+            "z": 127
+          },
+          "count": 102,
+          "last": 84489
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -12,
+      "z": 8,
+      "last": 84499,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "WATER",
+          "at": {
+            "dimension": "overworld",
+            "x": -189,
+            "y": 62,
+            "z": 129
+          },
+          "count": 11,
+          "last": 84499
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -7,
+      "z": 6,
+      "last": 124839,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 6,
+      "last": 131199,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -5,
+      "z": 6,
+      "last": 124659,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -4,
+      "z": 6,
+      "last": 124559,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "TREES",
+          "at": {
+            "dimension": "overworld",
+            "x": -49,
+            "y": 68,
+            "z": 105
+          },
+          "count": 2,
+          "last": 124342
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 8,
+      "last": 127359,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 9,
+      "last": 127779,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 10,
+      "last": 127859,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 11,
+      "last": 112379,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 12,
+      "last": 112179,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "IRON",
+          "at": {
+            "dimension": "overworld",
+            "x": 96,
+            "y": 32,
+            "z": 199
+          },
+          "count": 4,
+          "last": 106963
+        },
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 102,
+            "y": 21,
+            "z": 206
+          },
+          "count": 5,
+          "last": 105807
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 13,
+      "last": 128419,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 12,
+      "last": 128059,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 12,
+      "last": 106385,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 75,
+            "y": 21,
+            "z": 197
+          },
+          "count": 4,
+          "last": 106385
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 13,
+      "last": 106511,
+      "visited": false,
+      "sightings": [
+        {
+          "resource": "IRON",
+          "at": {
+            "dimension": "overworld",
+            "x": 69,
+            "y": 23,
+            "z": 223
+          },
+          "count": 3,
+          "last": 106511
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 11,
+      "last": 127959,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "IRON",
+          "at": {
+            "dimension": "overworld",
+            "x": 83,
+            "y": 21,
+            "z": 188
+          },
+          "count": 1,
+          "last": 106438
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 10,
+      "last": 112979,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 9,
+      "last": 127739,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 9,
+      "last": 121959,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": [
+        {
+          "resource": "COAL",
+          "at": {
+            "dimension": "overworld",
+            "x": 76,
+            "y": 59,
+            "z": 144
+          },
+          "count": 1,
+          "last": 114452
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 8,
+      "last": 127379,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -8,
+      "z": 5,
+      "last": 125079,
+      "visited": true,
+      "biome": "minecraft:plains",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -8,
+      "z": 4,
+      "last": 125159,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -7,
+      "z": 4,
+      "last": 125339,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 4,
+      "last": 131379,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -5,
+      "z": 4,
+      "last": 125519,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -4,
+      "z": 4,
+      "last": 125599,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 4,
+      "last": 126919,
+      "visited": true,
+      "biome": "minecraft:beach",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 13,
+      "last": 128399,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 14,
+      "last": 128479,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 6,
+      "z": 15,
+      "last": 128499,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 5,
+      "z": 15,
+      "last": 128599,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 4,
+      "z": 15,
+      "last": 128919,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 3,
+      "z": 15,
+      "last": 129039,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "z": 15,
+      "last": 129139,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "z": 15,
+      "last": 129339,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "z": 15,
+      "last": 129419,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 15,
+      "last": 129519,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "z": 14,
+      "last": 129739,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -2,
+      "z": 14,
+      "last": 129839,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -3,
+      "z": 14,
+      "last": 129919,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -4,
+      "z": 14,
+      "last": 130019,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -5,
+      "z": 14,
+      "last": 130079,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 14,
+      "last": 130159,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 13,
+      "last": 130239,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 12,
+      "last": 130459,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 11,
+      "last": 130559,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 10,
+      "last": 130639,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 9,
+      "last": 130759,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 8,
+      "last": 130959,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 5,
+      "last": 131299,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -6,
+      "z": 3,
+      "last": 131439,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -5,
+      "z": 3,
+      "last": 131499,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    },
+    {
+      "dimension": "overworld",
+      "x": -4,
+      "z": 3,
+      "last": 131619,
+      "visited": true,
+      "biome": "minecraft:forest",
+      "sightings": []
+    }
+  ],
+  "danger": [
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "y": 2,
+      "z": 10,
+      "harms": [
+        {
+          "time": 47850,
+          "night": false,
+          "weight": 3
+        },
+        {
+          "time": 47850,
+          "night": false,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "y": 2,
+      "z": 10,
+      "harms": [
+        {
+          "time": 31476,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 36810,
+          "night": true,
+          "weight": 1
+        },
+        {
+          "time": 36834,
+          "night": true,
+          "weight": 1
+        },
+        {
+          "time": 36900,
+          "night": true,
+          "weight": 1
+        },
+        {
+          "time": 37290,
+          "night": true,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "y": 2,
+      "z": 9,
+      "harms": [
+        {
+          "time": 31248,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 31358,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 31381,
+          "night": false,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "y": 1,
+      "z": 9,
+      "harms": [
+        {
+          "time": 46441,
+          "night": true,
+          "weight": 1
+        },
+        {
+          "time": 46461,
+          "night": true,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "y": 2,
+      "z": 10,
+      "harms": [
+        {
+          "time": 36723,
+          "night": true,
+          "weight": 1
+        },
+        {
+          "time": 36744,
+          "night": true,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "y": 2,
+      "z": 8,
+      "harms": [
+        {
+          "time": 11914,
+          "night": false,
+          "weight": 3
+        },
+        {
+          "time": 11914,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 46243,
+          "night": true,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 2,
+      "y": 1,
+      "z": 13,
+      "harms": [
+        {
+          "time": 52158,
+          "night": false,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 0,
+      "y": 2,
+      "z": 7,
+      "harms": [
+        {
+          "time": 53391,
+          "night": false,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": 1,
+      "y": 2,
+      "z": 6,
+      "harms": [
+        {
+          "time": 4873,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 4890,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 4952,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 4975,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 4995,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 5015,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 5344,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 5457,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 5475,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 6043,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 6056,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 6079,
+          "night": false,
+          "weight": 3
+        },
+        {
+          "time": 6079,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 63618,
+          "night": true,
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "dimension": "overworld",
+      "x": -1,
+      "y": 2,
+      "z": 7,
+      "harms": [
+        {
+          "time": 53221,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 53232,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 53252,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 53276,
+          "night": false,
+          "weight": 1
+        },
+        {
+          "time": 53315,
+          "night": false,
+          "weight": 1
+        }
+      ]
+    }
+  ],
+  "shelters": [
+    {
+      "at": {
+        "dimension": "overworld",
+        "x": 34,
+        "y": 64,
+        "z": 105
+      },
+      "kind": "seal"
+    }
+  ]
+}
