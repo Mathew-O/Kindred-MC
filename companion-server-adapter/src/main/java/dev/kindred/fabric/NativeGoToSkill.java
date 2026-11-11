@@ -103,6 +103,30 @@ final class NativeGoToSkill implements SkillBody {
         if (player.getPos().distanceTo(Vec3d.ofBottomCenter(target)) > 160) throw new IllegalArgumentException("Goto target is too far for one route");
     }
 
+    /** Ticks a walk to the water's surface treads there for its breath before it ends regardless (F-25c4de). */
+    static final int TREAD_TICKS = 100;
+    private int treading;
+
+    /**
+     * At the water's surface short of breath, the walk goes on swimming up until its air is full (F-25c4de): a walk to the
+     * top water cell under open air ended on arrival there, the swimming stopped, and the body sank back a hand's breadth
+     * with its eyes under. In the failure corpus 20 drowning scenes failed 6 of 6 so on 084dde5, the walk up for air
+     * "completed" 10–15 times a second while the player drowned 0.8 below the surface. Only for a walk that ends in
+     * water at a cell with open air straight above it; a walk under a ceiling or onto dry ground ends as before. At most
+     * {@link #TREAD_TICKS}, then it ends as it would have. Returns the step to go on with, or null to end.
+     */
+    private Step treadForBreath(net.minecraft.server.network.ServerPlayerEntity player) {
+        if (!player.isTouchingWater() || player.getAir() >= player.getMaxAir() || treading >= TREAD_TICKS) return null;
+        var world = player.getServerWorld();
+        if (!world.getFluidState(target).isIn(net.minecraft.registry.tag.FluidTags.WATER)) return null;
+        BlockPos up = target.up();
+        var overhead = world.getBlockState(up);
+        if (!overhead.getFluidState().isEmpty() || !overhead.getCollisionShape(world, up).isEmpty()) return null;
+        treading++;
+        if (!body.move(lease.get(), 0, 0, true, false, player.getYaw())) return null;
+        return Step.running(Map.of("treading", String.valueOf(treading), "air", String.valueOf(player.getAir())), true);
+    }
+
     /** Whether a body standing there has arrived. */
     boolean goalReached(BlockPos feet) {
         if (Math.sqrt(feet.getSquaredDistance(target)) > range + 0.01) return false;
@@ -241,6 +265,8 @@ final class NativeGoToSkill implements SkillBody {
             return Step.blocked("Could not take hotbar slot " + hold + " in hand", true);
         }
         if (goalReached(feet) && (!centre || reached(player.getPos(), target) && reached(atRest(player), target)) && (player.isOnGround() || player.isTouchingWater())) {
+            var tread = treadForBreath(player);
+            if (tread != null) return tread;
             body.stopInputs();
             shutOnArrival(player);
             return Step.completed(Map.of("arrived", feet.toShortString()));
@@ -272,6 +298,8 @@ final class NativeGoToSkill implements SkillBody {
         if (index < path.size() - 1 && reached(pos, path.get(index + 1))) index++;
         BlockPos next = path.get(index);
         if (index == path.size() - 1 && reached(pos, next) && (!centre || reached(atRest(player), next))) {
+            var tread = treadForBreath(player);
+            if (tread != null) return tread;
             body.stopInputs();
             if (pathComplete) {
                 shutOnArrival(player);
