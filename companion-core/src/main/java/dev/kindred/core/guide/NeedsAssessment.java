@@ -1,7 +1,6 @@
 package dev.kindred.core.guide;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,14 +45,14 @@ public final class NeedsAssessment {
     public static List<Chunk> chunks(List<Want> wants, Map<Need, Integer> held) {
         Objects.requireNonNull(wants);
         Objects.requireNonNull(held);
-        var total = new EnumMap<Need, Integer>(Need.class);
-        var first = new EnumMap<Need, Want>(Need.class);
+        var total = new java.util.TreeMap<Need, Integer>(Need::compare);
+        var first = new java.util.TreeMap<Need, Want>(Need::compare);
         for (Want want : wants) {
             total.merge(want.need(), want.count(), Math::max);
             first.putIfAbsent(want.need(), want);
         }
-        var usedFor = new EnumMap<Need, Set<Need>>(Need.class);
-        var objectiveOf = new EnumMap<Need, Objective>(Need.class);
+        var usedFor = new java.util.TreeMap<Need, Set<Need>>(Need::compare);
+        var objectiveOf = new java.util.TreeMap<Need, Objective>(Need::compare);
         var gathers = new ArrayList<Chunk>();
         var crafts = new ArrayList<Chunk>();
         // Need's order puts each product before its inputs, so an input's total is complete when it is reached.

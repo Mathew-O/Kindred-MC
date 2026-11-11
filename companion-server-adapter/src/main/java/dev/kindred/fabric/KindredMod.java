@@ -105,9 +105,9 @@ public final class KindredMod implements ModInitializer {
             if (customs != null) customs.tick(server.getTicks());
         });
         // F-38: core asks the server's own tags what things are, once they are bound and after each reload.
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> KindredCapabilities.refresh());
+        ServerLifecycleEvents.SERVER_STARTED.register(KindredCapabilities::refresh);
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
-            if (success) KindredCapabilities.refresh();
+            if (success) KindredCapabilities.refresh(server);
         });
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             runtime = new PlayerRuntime(server);

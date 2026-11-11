@@ -1,0 +1,42 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 14.31, "tickMsWorst": 1530.67, "tickMsWorstAt": 5838, "ticksOver50ms": 836, "ticksOver200ms": 8, "heapMbMax": 1102, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 2280, "stone_tools": 3120, "iron_ingot": 10540, "iron_pickaxe": 23500, "obsidian": 69268, "portal_lit": 70389},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2240, "stone_tools": 4140, "iron_ingot": 10120, "iron_pickaxe": 22540, "obsidian": 35377},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 26780, "x": -233, "y": 18, "z": 39, "attempt": 1}, {"tick": 51660, "x": -200, "y": 67, "z": 58, "attempt": 1}, {"tick": 55800, "x": -187, "y": 68, "z": 58, "attempt": 1}, {"tick": 59800, "x": -208, "y": 68, "z": 58, "attempt": 2}, {"tick": 75000, "x": -187, "y": 67, "z": 57, "attempt": 3}, {"tick": 79880, "x": 4, "y": 100, "z": 51, "attempt": 4}, {"tick": 84040, "x": 32, "y": 110, "z": 79, "attempt": 5}, {"tick": 98920, "x": 35, "y": 110, "z": 103, "attempt": 6}, {"tick": 104080, "x": 6, "y": 101, "z": 53, "attempt": 7}, {"tick": 107880, "x": -15, "y": 98, "z": 53, "attempt": 8}, {"tick": 122920, "x": -31, "y": 89, "z": 55, "attempt": 9}, {"tick": 130120, "x": 8, "y": 97, "z": 52, "attempt": 10}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2640, "stone_tools": 3200, "iron_ingot": 13820, "iron_pickaxe": 99060, "obsidian": 116825},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30480, "x": 116, "y": 28, "z": 79, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
