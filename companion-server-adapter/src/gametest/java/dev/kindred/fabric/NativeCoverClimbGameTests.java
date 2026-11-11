@@ -125,4 +125,71 @@ public final class NativeCoverClimbGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+    /**
+     * The same cut with no zombie: hurt and out of food, it climbs for food out of the cut, and once up through the stone,
+     * the sky over it, it does not walk back down to the cut's floor to look for animals there; it goes on up to the top.
+     * In #194's CI (attempt 1) and in every run of the first test since, the climb reached two up (−56), the goal took
+     * that for the surface and looked for animals instead, and the look's walks took it back down to the floor (−58),
+     * where, the sky three blocks off, it still counted as up: north, south, north, south, the climb never taken again
+     * (F-22c65). Staged: as the first, the zombie left out.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "hungryUp", tickLimit = 2400)
+    public void upOutOfTheCutForFoodItDoesNotWalkBackDownToItsFloor(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        int[] startY = {0};
+        int[] highest = {Integer.MIN_VALUE};
+        String[] backDown = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Covered"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(player != null, "Its body");
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 6; z++) for (int y = 1; y <= 6; y++) {
+                        boolean open = x == 1 && (z == 3 || z == 2) && (y == 2 || y == 3)
+                                || x >= 2 && z == 3 && (y == 3 || y == 4);
+                        boolean hard = x <= 1 && (y <= 3 || y == 5);
+                        context.setBlockState(x, y, z, open ? Blocks.AIR : hard ? Blocks.OBSIDIAN : Blocks.STONE);
+                    }
+                    var at = context.getAbsolute(new net.minecraft.util.math.Vec3d(1.5, 2, 3.5));
+                    player.refreshPositionAndAngles(at.x, at.y, at.z, 90, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 32));
+                    inventory.selectedSlot = 0;
+                    player.setHealth(4);
+                    player.getHungerManager().setFoodLevel(8);
+                    context.getWorld().setTimeOfDay(1000);
+                    startY[0] = player.getBlockY();
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(player != null && player.isAlive(), "Its body, alive");
+                    highest[0] = Math.max(highest[0], player.getBlockY());
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    // Up two or more and then back on the cut's floor, still hungry: the walk back down the climb was for.
+                    if (backDown[0] == null && highest[0] >= startY[0] + 2 && player.getBlockY() <= startY[0] && player.isOnGround()) {
+                        backDown[0] = "Back down on the cut's floor after climbing to " + highest[0] + ": at " + player.getBlockPos().toShortString() + "; " + progress;
+                    }
+                    context.assertTrue(backDown[0] == null, String.valueOf(backDown[0]));
+                    // On top of the stone, under the sky: up out of it.
+                    context.assertTrue(player.getBlockY() >= startY[0] + 5 && player.isOnGround(), "Not up on top yet: at "
+                            + player.getBlockPos().toShortString() + ", highest " + highest[0] + "; " + progress);
+                })
+                .createAndAdd(() -> {
+                    f.runtime.stop();
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }
