@@ -1,0 +1,48 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 17.40, "tickMsWorst": 1241.80, "tickMsWorstAt": 5838, "ticksOver50ms": 1706, "ticksOver200ms": 11, "heapMbMax": 996, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1460, "stone_tools": 4580, "iron_ingot": 7920, "iron_pickaxe": 14980, "obsidian": 105273, "portal_lit": 107325},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 74360, "x": -3, "y": -54, "z": 40, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2560, "stone_tools": 5000, "iron_ingot": 14800, "iron_pickaxe": 40400, "obsidian": 58025},
+      "deaths": [
+        {"tick": 58641, "cause": "Sol tried to swim in lava", "x": -71, "y": -22, "z": 155, "light": 15, "timeOfDay": 10803, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 90962, "cause": "Sol was slain by Spider", "x": -31, "y": 68, "z": -35, "light": 4, "timeOfDay": 19124, "dimension": "minecraft:overworld", "hunger": 15, "underSky": true, "stage": "Iron: fight back - Back off from spider the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 128720, "x": -109, "y": 11, "z": 101, "attempt": 1}, {"tick": 134880, "x": -115, "y": 23, "z": 123, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 4800, "stone_tools": 6220, "iron_ingot": 12720, "iron_pickaxe": 24560},
+      "deaths": [
+        {"tick": 80465, "cause": "Echo was slain by Slime", "x": -89, "y": -51, "z": -123, "light": 0, "timeOfDay": 8627, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: outmatched - Hole up: recover behind the wall", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 64220, "x": -93, "y": -54, "z": -105, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

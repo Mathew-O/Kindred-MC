@@ -1,0 +1,87 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 11660,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -34,
+    55,
+    168
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.64449196608537,
+    8.0,
+    16.861939775784037
+  ],
+  "yaw": -542.66516,
+  "pitch": 18.15941,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 8
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 11659,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - climb away from here: step aside",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[07:05:19] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[07:05:20] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[07:05:21] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[07:05:21] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[07:05:21] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -18, 63, 208 [try elsewhere, toward -18, 63, 208]",
+    "[07:05:21] [Server thread/INFO]: Echo native_goto COMPLETED [climb away from here: step aside]"
+  ]
+}

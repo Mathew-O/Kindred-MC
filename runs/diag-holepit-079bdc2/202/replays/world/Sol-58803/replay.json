@@ -1,0 +1,325 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 58803,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -87,
+    -30,
+    139
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.69999998807907,
+    8.932284493186955,
+    16.42108278689716
+  ],
+  "yaw": -84.22639,
+  "pitch": 18.159071,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 4.6000004,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 19
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 32
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:magma_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 2
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:glow_ink_sac",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 13
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:pointed_dripstone",
+        "count": 19
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 121
+        }
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 47
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:dripstone_block",
+        "count": 13
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 11
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 7
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 16
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 16
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cooked_beef",
+        "count": 2
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:cherry_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 14
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 10803,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: heal before going on",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol tried to swim in lava",
+  "ticks": 1200,
+  "log": [
+    "[07:18:12] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -76, -8, 141]",
+    "[07:18:12] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -78, -9, 140]",
+    "[07:18:13] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -77, -9, 140]",
+    "[07:18:13] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -79, -8, 140]",
+    "[07:18:14] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -78, -8, 140]",
+    "[07:18:14] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -77, -8, 140]",
+    "[07:18:14] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -76, -8, 140]",
+    "[07:18:15] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -79, -7, 140]",
+    "[07:18:15] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -78, -7, 140]",
+    "[07:18:15] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -77, -7, 140]",
+    "[07:18:16] [Server thread/INFO]: Sol native_break COMPLETED [Cast: clear -76, -7, 140]",
+    "[07:18:16] [Server thread/INFO]: Sol native_cast COMPLETED [Cast obsidian at -78, -9, 140]",
+    "[07:18:18] [Server thread/INFO]: Sol native_goto COMPLETED [Cast: walk to the lava]",
+    "[07:18:18] [Server thread/INFO]: Sol native_bucket COMPLETED [Cast: fill a bucket with lava]",
+    "[07:18:22] [Server thread/INFO]: Sol native_goto COMPLETED [Cast: step closer]",
+    "[07:18:22] [Server thread/INFO]: Sol native_cast COMPLETED [Cast obsidian at -77, -9, 140]",
+    "[07:18:25] [Server thread/INFO]: Sol native_goto COMPLETED [Cast: walk to the lava]",
+    "[07:18:25] [Server thread/INFO]: Sol native_bucket CANCELLED: Hazard/threat detected: urgent retreat required [Cast: fill a bucket with lava]",
+    "[07:18:26] [Server thread/INFO]: Sol native_retreat BLOCKED: Retreat destination became obstructed, unsupported or unavailable [from evaluateEssentialSurvivalCandidates:3021]",
+    "[07:18:26] [Server thread/INFO]: Sol native_wait CANCELLED: Hazard/threat detected: urgent retreat required [Rest to heal]"
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 6920,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    80,
+    66,
+    232
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.495880239106555,
+    8.0,
+    16.491383052142254
+  ],
+  "yaw": -270.069,
+  "pitch": 8.136706,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 5
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:azalea",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 2
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 6919,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Stone: no progress here for a while - try elsewhere, toward 75, 74, 248",
+  "task": "try elsewhere, toward 75, 74, 248",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+  "log": [
+    "[07:03:28] [Server thread/INFO]: Sol native_attack COMPLETED [Hunt rabbit]",
+    "[07:03:28] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[07:03:28] [Server thread/INFO]: Sol native_attack COMPLETED [Hunt rabbit]",
+    "[07:03:28] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up food]",
+    "[07:03:28] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up food]",
+    "[07:03:28] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up food]",
+    "[07:03:30] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to logs at 99, 73, 248]",
+    "[07:03:31] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to logs at 99, 74, 248]",
+    "[07:03:31] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to logs at 99, 74, 248]",
+    "[07:03:32] [Server thread/INFO]: Sol native_break COMPLETED [Mine logs at 98, 76, 248]",
+    "[07:03:34] [Server thread/INFO]: Sol native_break COMPLETED [Mine logs at 99, 74, 248]",
+    "[07:03:34] [Server thread/INFO]: Sol native_craft COMPLETED [Craft oak planks]",
+    "[07:03:34] [Server thread/INFO]: Sol native_craft COMPLETED [Craft stick]",
+    "[07:03:35] [Server thread/INFO]: Sol native_break COMPLETED [Mine logs at 99, 75, 248]",
+    "[07:03:35] [Server thread/INFO]: Sol native_craft COMPLETED [Craft oak planks]",
+    "[07:03:36] [Server thread/INFO]: Sol native_craft COMPLETED [Craft crafting table]",
+    "[07:03:36] [Server thread/INFO]: Sol native_craft COMPLETED [Craft oak planks]",
+    "[07:03:36] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[07:03:36] [Server thread/INFO]: Sol native_craft COMPLETED [Craft wooden pickaxe]",
+    "[07:03:37] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]"
+  ]
+}

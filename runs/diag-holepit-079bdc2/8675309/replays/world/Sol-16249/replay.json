@@ -1,0 +1,189 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 16249,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    50,
+    0,
+    3
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.484793900021955,
+    8.249187078744681,
+    16.172195297287566
+  ],
+  "yaw": -179.47952,
+  "pitch": 8.96533,
+  "health": 16.999998,
+  "food": 17,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 5
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:birch_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 17
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 11
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 53
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 38
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 19
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 15
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 6
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 16249,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from skeleton",
+  "task": "Back off from skeleton the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "log": [
+    "[07:42:23] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to coal ore at 29, 27, 54]",
+    "[07:42:24] [Server thread/INFO]: Sol native_break COMPLETED [Mine coal ore at 29, 27, 54]",
+    "[07:42:24] [Server thread/INFO]: Sol native_break COMPLETED [Mine coal ore at 29, 26, 54]",
+    "[07:42:25] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to iron ore at 45, 31, 57]",
+    "[07:42:26] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Walk to iron ore at 40, 24, 38]",
+    "[07:42:27] [Server thread/INFO]: Sol native_fight COMPLETED [Fight skeleton]",
+    "[07:42:28] [Server thread/INFO]: Sol native_fight COMPLETED [Fight skeleton]",
+    "[07:42:28] [Server thread/INFO]: Sol native_break CANCELLED: In deep water; up for air first [Tunnel past liquid toward iron: clear 44, 23, 28]",
+    "[07:42:28] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[07:42:29] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at 49, 29, 36]",
+    "[07:42:30] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at 41, 24, 39]",
+    "[07:42:31] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at 45, 31, 57]",
+    "[07:42:34] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 74, 14, 27 is blocked [Back to where it saw iron ore at 74, 14, 27]",
+    "[07:42:38] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 64, 23, 17 is blocked [Get out of the water: to dry ground]",
+    "[07:42:41] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 63, 23, 17 is blocked [Get out of the water: to dry ground]",
+    "[07:42:44] [Server thread/INFO]: Sol native_goto BLOCKED: Route to 64, 23, 18 is blocked [Get out of the water: to dry ground]",
+    "[07:42:44] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[07:42:46] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[07:42:46] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]",
+    "[07:42:47] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from skeleton the way it came]"
+  ]
+}

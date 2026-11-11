@@ -1,0 +1,47 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 12.30, "tickMsWorst": 1678.40, "tickMsWorstAt": 92426, "ticksOver50ms": 254, "ticksOver200ms": 6, "heapMbMax": 865, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1200, "stone_tools": 2640, "iron_ingot": 13620, "iron_pickaxe": 27020, "diamond": 55100, "obsidian": 90700, "portal_lit": 92425},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 27020, "x": 211, "y": 18, "z": -48, "attempt": 1}, {"tick": 33180, "x": 211, "y": 53, "z": -50, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1260, "stone_tools": 2720, "iron_ingot": 10740, "iron_pickaxe": 72860},
+      "deaths": [
+        {"tick": 48421, "cause": "Sol drowned", "x": 177, "y": 12, "z": -123, "light": 0, "timeOfDay": 583, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52100, "x": 184, "y": 80, "z": -18, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1360, "stone_tools": 2780, "iron_ingot": 10760},
+      "deaths": [
+        {"tick": 73172, "cause": "Echo drowned", "x": 176, "y": 12, "z": -123, "light": 0, "timeOfDay": 1334, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 22600, "x": 193, "y": 19, "z": -87, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

@@ -1,0 +1,25 @@
+seed	player	replay tick	stuck tick	bucket	replay
+202	Echo	64400	64220	mining for a find	Echo-64400
+202	Kindred	74540	74360	mining for a find	Kindred-74540
+202	Sol	128880	128720	busy-work loop	Sol-128880
+202	Sol	135040	134880	busy-work loop	Sol-135040
+31102026	Echo	108000	107840	mining for a find	Echo-108000
+31102026	Echo	11660	11480	hole or pit	Echo-11660
+31102026	Sol	10600	10440	busy-work loop	Sol-10600
+31102026	Sol	126580	126420	busy-work loop	Sol-126580
+31102026	Sol	6920	6740	busy-work loop	Sol-6920
+404	Echo	28260	28100	no walkable route	Echo-28260
+404	Echo	72860	72700	mining for a find	Echo-72860
+404	Sol	121500	121340	mining for a find	Sol-121500
+404	Sol	136420	136240	mining for a find	Sol-136420
+606	Echo	22760	22600	mining for a find	Echo-22760
+606	Kindred	27180	27020	busy-work loop	Kindred-27180
+606	Kindred	33340	33180	busy-work loop	Kindred-33340
+606	Sol	52260	52100	hole or pit	Sol-52260
+8675309	Echo	34560	34380	mining for a find	Echo-34560
+8675309	Echo	45700	45540	mining for a find	Echo-45700
+8675309	Echo	51440	51280	mining for a find	Echo-51440
+8675309	Echo	70060	69900	waiting for daylight or a teammate	Echo-70060
+8675309	Kindred	111140	110980	mining for a find	Kindred-111140
+8675309	Kindred	65820	65660	busy-work loop	Kindred-65820
+8675309	Kindred	85640	85480	busy-work loop	Kindred-85640

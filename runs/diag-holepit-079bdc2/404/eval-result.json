@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 14.10, "tickMsWorst": 3357.79, "tickMsWorstAt": 1, "ticksOver50ms": 554, "ticksOver200ms": 13, "heapMbMax": 1190, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 840, "stone_tools": 2620, "iron_ingot": 5340, "iron_pickaxe": 37700, "diamond": 108040, "obsidian": 63422, "portal_lit": 66143},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 420, "stone_tools": 2040, "iron_ingot": 4000, "iron_pickaxe": 12980, "obsidian": 106021},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 121340, "x": -68, "y": -54, "z": -231, "attempt": 1}, {"tick": 136240, "x": -94, "y": -54, "z": -232, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 380, "stone_tools": 1820, "iron_ingot": 5800, "iron_pickaxe": 21740, "diamond": 65800},
+      "deaths": [
+        {"tick": 49026, "cause": "Echo tried to swim in lava to escape Skeleton", "x": -28, "y": -55, "z": -64, "light": 15, "timeOfDay": 1188, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28100, "x": 53, "y": 37, "z": -105, "attempt": 1}, {"tick": 72700, "x": 41, "y": -38, "z": -120, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
