@@ -3895,13 +3895,13 @@ final class PortalRunCampaign {
 
     /** For fixtures: how many logs-kept-out lines it has logged, and the last. */
     int logsKeptOutLinesForTest() { return logsKeptOutLines; }
+    String logsKeptOutLastForTest() { return logsKeptOutLast; }
 
     /** For fixtures: what its plan is made from, worked out afresh where the player stands. */
     WorldFacts factsForTest(ServerPlayerEntity player) {
         facts = null;
         return facts(player);
     }
-    String logsKeptOutLastForTest() { return logsKeptOutLast; }
 
     /**
      * Diagnostic only, no decision reads it: stuck, short of logs and its gather finding none, while logs stand within
