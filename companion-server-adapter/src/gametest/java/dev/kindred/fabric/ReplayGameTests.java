@@ -59,6 +59,13 @@ public final class ReplayGameTests implements FabricGameTest {
     private static final java.util.Map<PlayerRuntime, Long> LIVE = new java.util.concurrent.ConcurrentHashMap<>();
     /** Each replay runtime's test, to stop it as soon as its test has ended, passed or failed. */
     private static final java.util.Map<PlayerRuntime, net.minecraft.test.GameTestState> TESTS = new java.util.concurrent.ConcurrentHashMap<>();
+    /** Each replay's mobs held still until its player is in place: given their AI back however the test ended. */
+    private static final java.util.Map<PlayerRuntime, java.util.List<net.minecraft.entity.mob.MobEntity>> HELD = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static void release(PlayerRuntime runtime) {
+        var mobs = HELD.remove(runtime);
+        if (mobs != null) for (var mob : mobs) if (mob.isAlive()) mob.setAiDisabled(false);
+    }
 
     /** The test a context belongs to: TestContext keeps it private, and its end is what a finally would follow. */
     private static net.minecraft.test.GameTestState testOf(TestContext context) {
@@ -86,15 +93,16 @@ public final class ReplayGameTests implements FabricGameTest {
     }
 
     /**
-     * The server's difficulty and weather as they were before the replays now running set theirs, put back once the last
+     * The server's difficulty, weather and time of day as they were before the replays now running set theirs, put back once the last
      * of them has ended. A replay sets both server-wide to its record; left so, the contract suite's later batches ran on
      * a replay's easy difficulty or in its rain, and a shield fixture and a crystal's blast fixture failed (CI on #164).
      */
     private static net.minecraft.world.Difficulty difficultyBefore;
     private static boolean rainingBefore, thunderingBefore;
     private static int clearBefore, rainBefore;
+    private static long timeBefore;
 
-    private static void remember(net.minecraft.server.MinecraftServer server, net.minecraft.server.world.ServerWorld world) {
+    static void remember(net.minecraft.server.MinecraftServer server, net.minecraft.server.world.ServerWorld world) {
         if (!LIVE.isEmpty() || difficultyBefore != null) return;
         difficultyBefore = server.getSaveProperties().getDifficulty();
         rainingBefore = world.isRaining();
@@ -102,12 +110,14 @@ public final class ReplayGameTests implements FabricGameTest {
         var properties = server.getSaveProperties().getMainWorldProperties();
         clearBefore = properties.getClearWeatherTime();
         rainBefore = properties.getRainTime();
+        timeBefore = world.getTimeOfDay();
     }
 
-    private static void restoreIfNoneLeft(net.minecraft.server.MinecraftServer server) {
+    static void restoreIfNoneLeft(net.minecraft.server.MinecraftServer server) {
         if (!LIVE.isEmpty() || difficultyBefore == null) return;
         server.setDifficulty(difficultyBefore, true);
         server.getOverworld().setWeather(clearBefore, rainBefore, rainingBefore, thunderingBefore);
+        server.getOverworld().setTimeOfDay(timeBefore);
         difficultyBefore = null;
     }
 
@@ -118,6 +128,7 @@ public final class ReplayGameTests implements FabricGameTest {
             if (live.getValue() >= tick && (test == null || !test.isCompleted())) continue;
             it.remove();
             TESTS.remove(live.getKey());
+            release(live.getKey());
             if (live.getKey().running()) live.getKey().stop();
         }
     }
@@ -181,7 +192,8 @@ public final class ReplayGameTests implements FabricGameTest {
         // The scene's mobs held still until the player is in it (below): with their AI on from the structure's placing,
         // they moved for the 40 ticks the ground settles and the seconds the player takes to be made, different each
         // run, and the player's first choice (fight this one, back off from that one) differed with them.
-        var held = new ArrayList<net.minecraft.entity.mob.MobEntity>();
+        var held = new java.util.concurrent.CopyOnWriteArrayList<net.minecraft.entity.mob.MobEntity>();
+        HELD.put(runtime, held);
         // A name of its own for each replay and run: with one name for every replay of a player, the next batch's clashed
         // with a player a failed run had left in the world.
         String name = "R" + Integer.toHexString(state.get("player").getAsString().hashCode() * 31 + (int) state.get("tick").getAsLong() & 0xfffffff) + "_" + run;
@@ -235,7 +247,7 @@ public final class ReplayGameTests implements FabricGameTest {
                         var difficulty = net.minecraft.world.Difficulty.byName(state.get("difficulty").getAsString());
                         if (difficulty != null) server.setDifficulty(difficulty, true);
                     }
-                    for (var mob : held) if (mob.isAlive()) mob.setAiDisabled(false);
+                    release(runtime);
                     runtime.observeRun(new RunObserver() {
                         @Override public void died(String p, ServerPlayerEntity b, String cause, String stage, String stance, String habits, String task) { died[0] = true; }
                         @Override public void ended(String p, String skill, String result, String label) { if ("COMPLETED".equals(result)) completed[0]++; }

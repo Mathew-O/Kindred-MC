@@ -136,6 +136,7 @@
       "dev.kindred.fabric.NativeRanchGameTests",
       "dev.kindred.fabric.NativeEvalGameTests",
       "dev.kindred.fabric.ReplayGameTests",
+      "dev.kindred.fabric.ReplayWorldStateGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",
       "dev.kindred.fabric.NativeHouseGameTests",
       "dev.kindred.fabric.NativeBaseGameTests",
