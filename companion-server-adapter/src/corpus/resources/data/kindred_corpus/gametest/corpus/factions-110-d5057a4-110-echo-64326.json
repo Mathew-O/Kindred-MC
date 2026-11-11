@@ -1,0 +1,96 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 64326,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  88,
+  45,
+  -82
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.52212280112002,
+  8.049125568806822,
+  16.476034847242232
+ ],
+ "yaw": 1049.5734,
+ "pitch": -4.999251,
+ "health": 18.5,
+ "food": 6,
+ "saturation": 0.0,
+ "air": 7,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 3
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 2
+   }
+  }
+ ],
+ "selected": 3,
+ "timeOfDay": 16326,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "STRONGHOLD",
+ "stage": "Wood: Get out of the water: up for air",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo drowned",
+ "ticks": 1200,
+ "log": [
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:59] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:59] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:59] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:59] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:59] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:59] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required",
+  "[07:04:59] [Server thread/INFO]: Echo died at 104, 53, -66: Echo drowned (tick 64326, night, under cover, hunger 6, armour 0, holding nothing, no shield; doing \"native_goto\" in \"Wood: Get out of the water: up for air\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "factions-110-d5057a4",
+  "seed": "110",
+  "build": "d5057a4",
+  "replay": "",
+  "source": "claude/corpus-data-factions110-1110@0445d5b:factions-110-d5057a4/110/replays/world/Echo-64326",
+  "class": "death: drowned",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state"
+ }
+}

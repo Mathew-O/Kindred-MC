@@ -121,32 +121,7 @@ final class KindredPanelService {
             root.add("roster", roster);
             JsonArray list = new JsonArray();
             for (var bot : bots) {
-                JsonObject json = new JsonObject();
-                json.addProperty("id", bot.id().toString());
-                json.addProperty("name", bot.name());
-                json.addProperty("connected", bot.connected());
-                json.addProperty("phase", bot.phase());
-                json.addProperty("stopped", bot.stopped());
-                json.addProperty("busy", bot.busy());
-                json.addProperty("playstyle", bot.playstyle());
-                json.addProperty("collaboration", bot.collaboration());
-                json.addProperty("goal", bot.goal().name());
-                json.addProperty("goalLabel", bot.goal().label());
-                json.addProperty("goalProgress", bot.goalProgress());
-                json.addProperty("status", bot.status());
-                json.addProperty("task", bot.task() == null ? "" : bot.task());
-                if (bot.bodyId() != null) json.addProperty("bodyId", bot.bodyId().toString());
-                json.addProperty("skin", bot.skin());
-                json.addProperty("health", bot.health());
-                json.addProperty("food", bot.food());
-                json.addProperty("dimension", bot.dimension());
-                if (bot.position() != null) {
-                    json.addProperty("x", bot.position().getX());
-                    json.addProperty("y", bot.position().getY());
-                    json.addProperty("z", bot.position().getZ());
-                }
-                Long cap = caps.get(bot.id());
-                if (cap != null) json.addProperty("capHours", cap / 3_600_000L);
+                JsonObject json = botJson(bot, caps.get(bot.id()));
                 list.add(json);
             }
             root.add("bots", list);
@@ -154,6 +129,42 @@ final class KindredPanelService {
         };
         runtime.nativeCaps(bots.stream().map(PlayerRuntime.PanelBot::id).toList())
                 .whenComplete((caps, failure) -> player.server.execute(() -> reply.accept(caps == null ? java.util.Map.of() : caps)));
+    }
+
+    /**
+     * One AI player as the panel's state carries it: its state, goal, place, cap, and what it was told lately on the
+     * Wire, as an onlooker may read it (F-34c: nothing narrower than public in words).
+     */
+    static JsonObject botJson(PlayerRuntime.PanelBot bot, Long cap) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", bot.id().toString());
+        json.addProperty("name", bot.name());
+        json.addProperty("connected", bot.connected());
+        json.addProperty("phase", bot.phase());
+        json.addProperty("stopped", bot.stopped());
+        json.addProperty("busy", bot.busy());
+        json.addProperty("playstyle", bot.playstyle());
+        json.addProperty("collaboration", bot.collaboration());
+        json.addProperty("goal", bot.goal().name());
+        json.addProperty("goalLabel", bot.goal().label());
+        json.addProperty("goalProgress", bot.goalProgress());
+        json.addProperty("status", bot.status());
+        json.addProperty("task", bot.task() == null ? "" : bot.task());
+        if (bot.bodyId() != null) json.addProperty("bodyId", bot.bodyId().toString());
+        json.addProperty("skin", bot.skin());
+        json.addProperty("health", bot.health());
+        json.addProperty("food", bot.food());
+        json.addProperty("dimension", bot.dimension());
+        if (bot.position() != null) {
+            json.addProperty("x", bot.position().getX());
+            json.addProperty("y", bot.position().getY());
+            json.addProperty("z", bot.position().getZ());
+        }
+        if (cap != null) json.addProperty("capHours", cap / 3_600_000L);
+        JsonArray told = new JsonArray();
+        for (String line : bot.told()) told.add(line);
+        json.add("told", told);
+        return json;
     }
 
     private static UUID parse(String raw) {
