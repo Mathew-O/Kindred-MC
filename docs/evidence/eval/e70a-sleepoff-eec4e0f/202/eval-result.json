@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; sleep=off",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 11.52, "tickMsWorst": 1337.86, "tickMsWorstAt": 5838, "ticksOver50ms": 748, "ticksOver200ms": 6, "heapMbMax": 985, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 840, "stone_tools": 1760, "iron_ingot": 6620, "iron_pickaxe": 22200},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 59180, "x": -59, "y": -32, "z": -68, "attempt": 1}, {"tick": 73700, "x": -59, "y": -32, "z": -68, "attempt": 2}, {"tick": 77300, "x": -59, "y": -32, "z": -68, "attempt": 3}, {"tick": 80900, "x": -59, "y": -32, "z": -68, "attempt": 4}, {"tick": 95440, "x": -59, "y": -32, "z": -68, "attempt": 5}, {"tick": 99040, "x": -59, "y": -32, "z": -68, "attempt": 6}, {"tick": 102640, "x": -59, "y": -32, "z": -68, "attempt": 7}, {"tick": 106240, "x": -59, "y": -32, "z": -68, "attempt": 8}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1172,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2100, "stone_tools": 4240, "iron_ingot": 6160},
+      "deaths": [
+        {"tick": 9324, "cause": "Sol was slain by Zombie", "x": -130, "y": 37, "z": 65, "light": 0, "timeOfDay": 9486, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 27400, "x": -123, "y": 40, "z": 77, "attempt": 1}, {"tick": 31060, "x": -125, "y": 40, "z": 78, "attempt": 2}, {"tick": 35840, "x": -128, "y": 38, "z": 89, "attempt": 3}, {"tick": 42140, "x": -126, "y": 37, "z": 79, "attempt": 4}, {"tick": 45740, "x": -127, "y": 39, "z": 79, "attempt": 5}, {"tick": 54400, "x": -123, "y": 36, "z": 77, "attempt": 6}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2614,
+      "chunkMinutes": 13900.9
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2100, "stone_tools": 2880, "iron_ingot": 12740, "iron_pickaxe": 27320, "obsidian": 91841},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5941,
+      "chunkMinutes": 34680.0
+    }
+  }
+}
