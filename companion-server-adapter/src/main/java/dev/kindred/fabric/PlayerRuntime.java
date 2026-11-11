@@ -16798,6 +16798,22 @@ final class PlayerRuntime {
         return refusal == null ? 1 : reject(source, refusal);
     }
 
+    /**
+     * Bare {@code /shop} or {@code /market} for a person at a client: the market's chest screen (M-06g1,
+     * {@link MarketScreenHandler}), its buys and sales the desk's own, as {@code /shop buy} and {@code /shop sell}.
+     */
+    int openMarketScreen(ServerCommandSource source) {
+        requireThread();
+        var player = source.getPlayer();
+        if (player == null || player instanceof PreparedNativePlayer) return reject(source, "Only a person at a client opens the market's screen; /shop help");
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        if (!factionsWorld()) return reject(source, "This world does not play Factions.");
+        player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
+                (syncId, inventory, p) -> new MarketScreenHandler(syncId, inventory, market, player, () -> ready && running && factionsWorld()),
+                Text.literal("Market")));
+        return 1;
+    }
+
     /** The market's counter (M-06g). */
     MarketDesk market() {
         requireThread();

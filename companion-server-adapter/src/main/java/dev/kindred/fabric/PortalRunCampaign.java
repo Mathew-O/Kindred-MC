@@ -1575,6 +1575,12 @@ final class PortalRunCampaign {
     /** For fixtures (F-29b): whether a move elsewhere is under way, and whether it was begun early for a rescue. */
     boolean relocatingForTest() { return relocate != null; }
 
+    /** The cell the goal's gather would go for first (its first {@code nearest}, with the one rule {@link #gatherable}). */
+    Optional<BlockPos> gatherTargetForTest(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
+        var player = body.entity();
+        return knowledge.nearest(player.getServerWorld(), kind, player.getBlockPos(), gatherable(body, kind, radius, also));
+    }
+
     boolean relocatingEarlyForTest() { return relocate != null && relocateEarly; }
 
     /** For fixtures: the watchdog gives a spot up after {@code ticks} of no progress rather than three minutes. */
@@ -3991,16 +3997,25 @@ final class PortalRunCampaign {
         return player.getServerWorld().canPlayerModifyAt(player, pos) && TerritoryGuard.mayChange(player, pos);
     }
 
-    /** A block of {@code kind} the goal would go and gather from where the player stands now: the one rule for both. */
+    /**
+     * A block of {@code kind} the goal would go and gather from where the player stands now: the one rule for both.
+     * Whether an owned tool harvests a block depends on the kind of block and the inventory alone, so it is asked once
+     * per kind of block for the predicate's life: one gather's search, or one stop's, within a tick, the inventory
+     * unchanged through it. On seed 110 Factions the searches it filters were 9.4% of the server thread's samples, the
+     * best-tool question 2.8% (M-06k); the answers are the same.
+     */
     private Predicate<BlockPos> gatherable(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
         var player = body.entity();
+        var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
+        var harvest = new java.util.HashMap<BlockState, Boolean>();
         return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
                 && also.test(p)
-                && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
-                && harvestable(body, p) && mayWork(player, p)
-                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());
+                && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(world, p))
+                && mayWork(player, p)
+                && harvest.computeIfAbsent(world.getBlockState(p), state -> NativeBreakAction.bestTool(body, state) != -2)
+                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(world, p).isPresent());
     }
 
     /**
