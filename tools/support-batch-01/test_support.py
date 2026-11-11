@@ -165,6 +165,26 @@ class SupportToolsTest(unittest.TestCase):
         self.put('gradle.properties', 'minecraft_version=1.21.1\nloader_version=0.19.5\nfabric_version=0.116.17+1.21.1\nmod_version=0.1.0\n')
         self.put('gradle/wrapper/gradle-wrapper.properties', 'distributionUrl=https://example.invalid/gradle-8.14.3-bin.zip\ndistributionSha256Sum=' + 'a' * 64 + '\n')
 
+    def gametest_fixture(self, listed):
+        self.put(support.GAMETEST_MOD, json.dumps({'entrypoints': {'fabric-gametest': listed}}))
+        self.put(support.GAMETEST_SOURCES + '/dev/kindred/fabric/AGameTests.java', 'package dev.kindred.fabric;\nclass AGameTests { @GameTest public void a() {} }\n')
+        self.put(support.GAMETEST_SOURCES + '/dev/kindred/fabric/Helper.java', 'package dev.kindred.fabric;\nclass Helper {}\n')
+        self.put(support.GAMETEST_SOURCES + '/dev/kindred/fabric/NativeDuelBenchmarkGameTests.java', 'package dev.kindred.fabric;\nclass NativeDuelBenchmarkGameTests { @GameTest public void d() {} }\n')
+
+    def test_28c_every_gametest_class_is_registered_and_nothing_registered_is_missing(self):
+        self.gametest_fixture(['dev.kindred.fabric.AGameTests']); self.assertEqual([], support.entrypoints(self.root)['problems'])
+        # A narrowed list, left from a local run: the class not registered fails it.
+        self.gametest_fixture(['dev.kindred.fabric.ZzRepro'])
+        problems = support.entrypoints(self.root)['problems']
+        self.assertIn('dev.kindred.fabric.AGameTests has GameTests but is not registered', problems)
+        self.assertIn('dev.kindred.fabric.ZzRepro is registered but has no GameTest source', problems)
+        self.gametest_fixture(['dev.kindred.fabric.AGameTests', 'dev.kindred.fabric.AGameTests', 'dev.kindred.fabric.NativeDuelBenchmarkGameTests'])
+        problems = support.entrypoints(self.root)['problems']
+        self.assertIn('dev.kindred.fabric.AGameTests is registered twice', problems)
+        self.assertIn('dev.kindred.fabric.NativeDuelBenchmarkGameTests runs apart from the suite but is registered', problems)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(1, support.main(['--root', str(self.root), 'entrypoints']))
+
     def test_29_manifest_matches_pinned_properties_and_checksum(self):
         self.manifest_fixture(); self.assertEqual([], support.manifest(self.root)['problems'])
 
