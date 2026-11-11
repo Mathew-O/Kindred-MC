@@ -259,9 +259,58 @@ public final class Worth {
     private static Info info(String item) {
         Info known = ITEMS.get(id(item));
         if (known != null || id(item).startsWith(VanillaIds.NAMESPACE)) return known;
-        // F-38: an item vanilla's table does not name (a mod's) is worth what it is made of, by the server's recipes.
+        // F-38: an item vanilla's table does not name (a mod's) is worth what it is made of, by the server's recipes; else,
+        // gathered raw, what it is turned into; else what its kind's vanilla members typically are.
         double minutes = derived(id(item), 0, new java.util.HashSet<>());
-        return minutes > 0 ? new Info(id(item), 1, minutes, DERIVED_USEFUL, null) : null;
+        if (minutes <= 0) minutes = turnedInto(id(item));
+        if (minutes > 0) return new Info(id(item), 1, minutes, DERIVED_USEFUL, null);
+        return peers(id(item));
+    }
+
+    /**
+     * Minutes one of a raw {@code item} is worth by what the server's recipes turn it, alone, into (a mod's raw ore smelted
+     * to its ingot, a block broken back into nine): the most any such recipe's output is worth, by the table, the output's
+     * own recipes or its kind, over the inputs it takes; 0 for none.
+     */
+    private static double turnedInto(String item) {
+        double best = 0;
+        for (var recipe : Capabilities.current().recipesUsing(item)) {
+            if (recipe.inputs().size() != 1 || recipe.output().equals(item)) continue;
+            Info out = ITEMS.get(recipe.output());
+            double each = out != null ? out.minutes() * out.per() : derived(recipe.output(), 1, new java.util.HashSet<>(java.util.Set.of(item)));
+            if (each <= 0 && out == null) {
+                Info kind = peers(recipe.output());
+                each = kind == null ? 0 : kind.minutes();
+            }
+            if (each > 0) best = Math.max(best, each * recipe.makes() / recipe.inputs().get(item));
+        }
+        return best;
+    }
+
+    /** The kinds a raw item or food is told by, each its convention tag, for an item no table, recipe or smelting gives a worth. */
+    private static final List<VanillaIds.Group> KINDS = List.of(VanillaIds.GEMS, VanillaIds.INGOTS, VanillaIds.RAW_MATERIALS,
+            VanillaIds.NUGGETS, VanillaIds.DUSTS, VanillaIds.FOODS);
+
+    /**
+     * What one of an item is worth by its kind (F-38): the median of what the table makes the kind's vanilla members, those
+     * it names; food counts toward food. Null for an item of no such kind.
+     */
+    private static Info peers(String item) {
+        Capabilities facts = Capabilities.current();
+        for (VanillaIds.Group kind : KINDS) {
+            if (!facts.is(kind, item)) continue;
+            List<Double> worths = new java.util.ArrayList<>();
+            for (String member : kind.ids()) {
+                Info known = ITEMS.get(member);
+                if (known != null) worths.add(known.minutes() * known.per());
+            }
+            if (worths.isEmpty()) continue;
+            java.util.Collections.sort(worths);
+            int n = worths.size();
+            double median = n % 2 == 1 ? worths.get(n / 2) : (worths.get(n / 2 - 1) + worths.get(n / 2)) / 2;
+            return new Info(item, 1, median, DERIVED_USEFUL, kind == VanillaIds.FOODS ? FOOD : null);
+        }
+        return null;
     }
 
     /** How many of an item worked out from its recipes a run counts as useful. */

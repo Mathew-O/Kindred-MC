@@ -262,6 +262,42 @@ def tracker(root: Path) -> dict:
             'scope': 'Checks tracker syntax, ID order and dated links; does not certify evidence or acceptance criteria.'}
 
 
+GAMETEST_SOURCES = 'companion-server-adapter/src/gametest/java'
+GAMETEST_MOD = 'companion-server-adapter/src/gametest/resources/fabric.mod.json'
+# GameTest classes run apart from the regression suite, each named here with its reason, and run with
+# tools/run-apart.sh <Class> [-Dkindred.x=y], which puts the entrypoint list back after (F-22c61).
+RUN_APART = {
+    'dev.kindred.fabric.NativeDuelBenchmarkGameTests': 'the baseline-duel benchmark (E-41b), run alone with -Dkindred.duels',
+    'dev.kindred.fabric.NativeMeleeMechanicsGameTests': 'the melee mechanics trials (E-41b), run alone with -Dkindred.trials',
+}
+
+
+def entrypoints(root: Path) -> dict:
+    """Every GameTest class is registered for the suite, and nothing registered is missing: a narrowed list left
+    over from a local run would otherwise run a fraction of the suite and pass (F-22c61)."""
+    data = json.loads(read_bytes(root / GAMETEST_MOD))
+    listed = data.get('entrypoints', {}).get('fabric-gametest', [])
+    if not isinstance(listed, list) or not all(isinstance(name, str) for name in listed):
+        raise ValueError('fabric-gametest entrypoints must be a list of class names')
+    classes = {}
+    for path in sorted((root / GAMETEST_SOURCES).rglob('*.java')):
+        text = read_bytes(path).decode()
+        if not re.search(r'@(?:net\.minecraft\.test\.)?GameTest\b', text):
+            continue
+        package = re.search(r'^package ([\w.]+);', text, re.M)
+        classes[(package.group(1) + '.' if package else '') + path.stem] = str(path.relative_to(root))
+    unlisted = sorted(name for name in classes if name not in listed and name not in RUN_APART)
+    missing = sorted(name for name in listed if name not in classes)
+    duplicated = sorted({name for name in listed if listed.count(name) > 1})
+    apart_listed = sorted(name for name in RUN_APART if name in listed)
+    problems = [f'{name} has GameTests but is not registered' for name in unlisted]
+    problems += [f'{name} is registered but has no GameTest source' for name in missing]
+    problems += [f'{name} is registered twice' for name in duplicated]
+    problems += [f'{name} runs apart from the suite but is registered' for name in apart_listed]
+    return {'registered': len(listed), 'classes': len(classes), 'run_apart': sorted(RUN_APART), 'problems': problems,
+            'scope': 'Static: the GameTest classes under the gametest sources against fabric.mod.json; runs nothing.'}
+
+
 def manifest(root: Path) -> dict:
     data = json.loads(read_bytes(root / 'release-manifest.json'))
     props = dict(re.findall(r'^([\w.]+)=(.+)$', read_bytes(root / 'gradle.properties').decode(), re.M))
@@ -329,7 +365,7 @@ def main(argv=None) -> int:
     p = sub.add_parser('compare'); p.add_argument('before', type=Path); p.add_argument('after', type=Path)
     p = sub.add_parser('bundle'); p.add_argument('output', type=Path); p.add_argument('inputs', nargs='+')
     p = sub.add_parser('links'); p.add_argument('inputs', nargs='+')
-    for command in ('tracker', 'manifest', 'preflight'):
+    for command in ('tracker', 'manifest', 'preflight', 'entrypoints'):
         sub.add_parser(command)
     p = sub.add_parser('jar'); p.add_argument('file', type=Path)
     args = parser.parse_args(argv); root = args.root.resolve()
@@ -341,6 +377,7 @@ def main(argv=None) -> int:
         elif args.command == 'links': result = links(root, args.inputs)
         elif args.command == 'tracker': result = tracker(root)
         elif args.command == 'manifest': result = manifest(root)
+        elif args.command == 'entrypoints': result = entrypoints(root)
         elif args.command == 'jar': result = jar(args.file)
         else: result = preflight(root)
         print(json.dumps(result, indent=2, sort_keys=True))

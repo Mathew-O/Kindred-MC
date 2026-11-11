@@ -137,10 +137,7 @@ public record ProgressionObservation(
 
     /** Whether it carries a bed. */
     public boolean hasBedItem() {
-        for (String item : inventory.itemCounts().keySet()) {
-            if (item.endsWith("_bed")) return true;
-        }
-        return false;
+        return inventory.has(VanillaIds.BEDS, 1);
     }
 
     /** Whether it carries a hoe. */

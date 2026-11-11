@@ -4433,6 +4433,7 @@ final class PlayerRuntime {
                 if (!running || entries.get(id) != entry || entry.atlas != null) return;
                 entry.atlas = dev.kindred.core.atlas.Atlas.restore(failure == null ? snapshot : null, PRIORS);
                 entry.atlasSavedAt = server.getTicks();
+                entry.atlasRecall = failure == null && snapshot != null; // F-30d: read back from its file, so seen before this start.
             }));
             return;
         }
@@ -4488,6 +4489,7 @@ final class PlayerRuntime {
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
         keepMemory(entry);
         entry.campaign.atlas(atlasOn ? entry.atlas : null);
+        if (entry.atlasRecall && atlasOn && entry.atlas != null) { entry.campaign.recall(entry.atlas); entry.atlasRecall = false; }
         entry.campaign.recipes(rescueBook, rescueSkills);
         entry.campaign.customs(customs);
         entry.campaign.pursue(goalOf(entry));
@@ -6454,7 +6456,8 @@ final class PlayerRuntime {
             var doingThen = entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : entry.activeBuildTask != null ? entry.activeBuildTask.label() : "nothing";
             replays.capture(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("death", String.valueOf(goalOf(entry)),
                     entry.campaign == null ? "no goal" : entry.campaign.progress(), doingThen, entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
-                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString()));
+                    entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), player.getDamageTracker().getDeathMessage().getString(),
+                    memoryOf(entry)));
         }
         teamCoordinator.handlePlayerDeath(entry.data.id());
         entry.hazardInterrupted = false;
@@ -6627,6 +6630,7 @@ final class PlayerRuntime {
             if (goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
                 entry.campaign.atlas(atlasOn ? entry.atlas : null); // What it sees goes into its atlas from the first look (F-30).
+                if (entry.atlasRecall && atlasOn && entry.atlas != null) { entry.campaign.recall(entry.atlas); entry.atlasRecall = false; }
                 entry.campaign.observe(body.entity());
             }
         }
@@ -9449,11 +9453,16 @@ final class PlayerRuntime {
 
     /** A fixture's AI player (by its companion id) chooses one faction act and does it now, as its own native_faction step would. */
     NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target) {
+        return factionActForTest(player, kind, target, 0);
+    }
+
+    /** As above, with the act's amount: a purchase's count, a bid's coins in hundredths. */
+    NativeFactionAction.Reply factionActForTest(UUID player, dev.kindred.core.factions.FactionPlay.Kind kind, String target, long amount) {
         requireThread();
         var entry = entries.get(player);
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) throw new IllegalStateException("No connected body");
-        entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, 0, "a fixture's act");
-        return factionAct(entry, kind, target, 0);
+        entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, amount, "a fixture's act");
+        return factionAct(entry, kind, target, amount);
     }
 
     /** A fixture's AI player (by its companion id) weighs the faction world now; what it chose is left for its turn. */
@@ -13891,7 +13900,7 @@ final class PlayerRuntime {
                     String.valueOf(goalOf(entry)), campaign == null ? "no goal" : campaign.progress(),
                     entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
                     campaign == null ? "" : String.valueOf(campaign.stance()), campaign == null ? "" : String.valueOf(campaign.preferences().habits()),
-                    "stuck"));
+                    "stuck", memoryOf(entry)));
         }
     };
 
@@ -14311,6 +14320,14 @@ final class PlayerRuntime {
      * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
      * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
      */
+    /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
+    private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
+        var campaign = entry.campaign;
+        if (campaign == null) return null;
+        long tick = server.getTicks();
+        return origin -> campaign.memoryIn(origin, DeathReplays.WIDTH, DeathReplays.HEIGHT, tick);
+    }
+
     private void captureSpell(Entry entry) {
         var campaign = entry.campaign;
         // With rescues on, the rescue keeps the spell's scene as it asks, as before (F-29); this keeps it otherwise.
@@ -14320,7 +14337,8 @@ final class PlayerRuntime {
         entry.spellsCaptured = spells;
         replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
                 String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
-                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks",
+                memoryOf(entry)));
     }
 
     void captureReplays(DeathReplays replays) {
@@ -14362,6 +14380,13 @@ final class PlayerRuntime {
                     campaign == null ? List.of() : campaign.rescues()));
         }
         return Optional.empty();
+    }
+
+    /** The tick its goal last gained something, 0 with none or no goal: read only, for a corpus scene's pass (F-27a). */
+    long goalProgressTick(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null || entry.campaign == null ? 0 : entry.campaign.lastGain();
     }
 
     /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
@@ -16949,6 +16974,8 @@ final class PlayerRuntime {
         /** Its atlas of this world (F-30), kept across goals; read from its file once, saved once a game minute and at the end. */
         dev.kindred.core.atlas.Atlas atlas;
         private boolean atlasLoading;
+        /** F-30d: its atlas was read back from its file and its sightings are yet to be recalled by its campaign. */
+        private boolean atlasRecall;
         private long atlasSavedAt;
         private int memorySaved = -1;
         private final dev.kindred.core.PlayerDecisionLoop mind;
