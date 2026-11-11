@@ -7,3 +7,4 @@
 
 Both bases have `tools/corpus` at 32d4852b and do **not** include #164 (e835ed8a, F-27a: replays start as recorded,
 mobs held, batches by world state, runtimes stopped).
+- `pr157-99e536cc/`: #157 (F-35e/F-35f) at 99e536cc, main a60f9193 merged in (with #164). Pass 113, intermittent 61, fail 101, of 275; 1 flagged, `e40a17-7bc5b42-707-sol-48263`, which passed alone 3/3 on the branch and 3/3 on main a60f9193.
