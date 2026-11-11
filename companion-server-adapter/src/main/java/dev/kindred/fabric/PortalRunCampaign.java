@@ -3382,9 +3382,13 @@ final class PortalRunCampaign {
             if (below && source.getKey() == WorldFacts.Source.TREE) continue;
             // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight, and
             // nor are logs left hanging out of reach (sky-island run 12 explored the void for nine minutes for those).
+            // Nor, in a faction world, a tree on land it may not work (a safe zone, another faction's claim): its gather
+            // refuses those logs, and a plan that still counted them chose the gather again and again (M-06i, seed 110).
+            // Outside a faction world the territory guard allows everything.
             boolean tree = source.getKey() == WorldFacts.Source.TREE;
             knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
-                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)))
+                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)
+                                && TerritoryGuard.mayChange(player, p)))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
         // A generator counts from the moment its water is in: the lava that finishes it is already in hand.
@@ -3892,6 +3896,12 @@ final class PortalRunCampaign {
     /** For fixtures: how many logs-kept-out lines it has logged, and the last. */
     int logsKeptOutLinesForTest() { return logsKeptOutLines; }
     String logsKeptOutLastForTest() { return logsKeptOutLast; }
+
+    /** For fixtures: what its plan is made from, worked out afresh where the player stands. */
+    WorldFacts factsForTest(ServerPlayerEntity player) {
+        facts = null;
+        return facts(player);
+    }
 
     /**
      * Diagnostic only, no decision reads it: stuck, short of logs and its gather finding none, while logs stand within
