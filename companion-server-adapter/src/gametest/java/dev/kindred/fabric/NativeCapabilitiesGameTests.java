@@ -19,7 +19,7 @@ public final class NativeCapabilitiesGameTests implements FabricGameTest {
 
     @GameTest(templateName = EMPTY_STRUCTURE)
     public void theServersTagsAndToolsMatchVanillaIdsOnAVanillaServer(TestContext context) {
-        Capabilities facts = KindredCapabilities.refresh();
+        Capabilities facts = KindredCapabilities.refresh(context.getWorld().getServer());
         List<String> problems = new ArrayList<>();
         for (VanillaIds.Group group : VanillaIds.groups()) {
             if (!group.exact()) continue;

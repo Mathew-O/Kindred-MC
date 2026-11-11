@@ -1,0 +1,19 @@
+# F-38: the vanilla needs, as data. One line each, in the order that puts what is crafted before what it is
+# crafted from (NeedsAssessment relies on it). Fields, split on " | ":
+#   name | word | plural ("s" adds an s, "-" never) | cap | what satisfies it (a tag or ids) | how it is got
+# Profiles may add needs later; a name here is how saves and the strategist know a need, so it never changes.
+BOW | bow | s | 1 | minecraft:bow | craft
+ARROWS | arrow | s | 64 | minecraft:arrow | craft
+SHIELD | shield | s | 1 | minecraft:shield | craft
+WATER_BUCKET | water bucket | s | 1 | minecraft:water_bucket | fill
+BED | bed | s | 4 | #minecraft:beds | craft
+STRING | string | - | 16 | minecraft:string | hunt
+FEATHERS | feather | s | 16 | minecraft:feather | hunt
+WOOL | wool | - | 16 | #minecraft:wool | shear
+FLINT | flint | - | 16 | minecraft:flint | gather
+STICKS | stick | s | 32 | minecraft:stick | craft
+BLOCKS | block | s | 128 | #kindred:building_blocks | gather
+FOOD | food | - | 32 | the food component | hunt
+GOLD_ARMOR | piece of gold armour | s | 1 | minecraft:golden_helmet minecraft:golden_chestplate minecraft:golden_leggings minecraft:golden_boots | craft
+GOLD | gold ingot | s | 16 | minecraft:gold_ingot | smelt
+IRON_SWORD | iron sword | s | 1 | minecraft:iron_sword | craft
