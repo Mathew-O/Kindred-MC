@@ -157,6 +157,17 @@ public final class ReplayGameTests implements FabricGameTest {
     }
 
     /**
+     * The replay's own server policy, in its own runtime's edits.properties: world edits on, and the dragon fight on only
+     * for a replay whose recorded goal is the dragon, as its recording server had it (the goal is refused otherwise: all 26
+     * of the corpus's dragon scenes failed "Its goal, DRAGON, accepted" in every run up to #157's gate). The fight is
+     * the runtime's own setting, read from this file when it starts, so no other replay's runtime ever sees it on.
+     */
+    static String edits(JsonObject state) {
+        boolean dragon = state.has("goal") && "DRAGON".equals(state.get("goal").getAsString());
+        return "autonomousEdits=true\nprotectionKnown=true\n" + (dragon ? "dragonFight=true\n" : "");
+    }
+
+    /**
      * One run of a replay: the player made from its state where it died, its goal given, the ticks run. Staged: the
      * scene's mobs are held still (no AI) from the structure's placing until the player is in place, then all let go on
      * the same tick, so each run starts from the recorded positions; no mob is moved and none given a target. The
@@ -179,7 +190,7 @@ public final class ReplayGameTests implements FabricGameTest {
         var runtime = new PlayerRuntime(server, directory, NativePlayerSaves::read, writer -> writer);
         try {
             Files.createDirectories(directory);
-            Files.writeString(directory.resolve("edits.properties"), "autonomousEdits=true\nprotectionKnown=true\n");
+            Files.writeString(directory.resolve("edits.properties"), edits(state));
         } catch (java.io.IOException error) {
             throw new RuntimeException("Replay edit policy could not be saved", error);
         }
@@ -203,8 +214,11 @@ public final class ReplayGameTests implements FabricGameTest {
         boolean[] died = {false}, stopped = {false};
         long[] began = {-1};
         boolean stuck = "stuck".equals(state.get("kind").getAsString());
-        // A stuck spell kept by the watchdog (F-27a): out of where it was within the spell's budget, by distance or height.
+        // A stuck spell kept by the watchdog (F-27a): out of it within the spell's budget, by its goal's own progress, or by
+        // leaving the 8 blocks round where it was caught and staying out for the budget's second half. Moving alone was not
+        // out: a loop walking between two places ("to the wall", "back the way it came") moved it 8 blocks and passed.
         boolean spell = "spell".equals(state.get("kind").getAsString());
+        long[] outSince = {-1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> {
                     context.assertTrue(runtime.isReady(), "Ready");
@@ -268,13 +282,27 @@ public final class ReplayGameTests implements FabricGameTest {
                         }
                         throw new net.minecraft.test.GameTestException("Replay " + run + ": died again, as it did (" + state.get("cause").getAsString() + ")");
                     }
-                    // A stuck spell's scene passes the moment it is out, within its budget; at the budget's end still in, it fails.
-                    if (spell && (body.getPos().distanceTo(from[0]) > 8 || body.getY() - from[0].y >= 3)) {
-                        runtime.stop();
-                        return;
+                    if (spell) {
+                        // Its goal's own progress: something gained since the scene began.
+                        if (runtime.goalProgressTick(id[0]) > 0) {
+                            KindredMod.LOGGER.info("Replay {} of {}: out of its stuck spell, its goal gained something after {} ticks", run, name, context.getTick() - began[0]);
+                            runtime.stop();
+                            return;
+                        }
+                        boolean out = body.getPos().distanceTo(from[0]) > 8;
+                        if (!out) outSince[0] = -1;
+                        else if (outSince[0] < 0) outSince[0] = context.getTick();
                     }
                     context.assertTrue(context.getTick() - began[0] >= ticks, "Still running");
-                    if (spell) throw new net.minecraft.test.GameTestException("Replay " + run + ": still where it was stuck after " + ticks + " ticks");
+                    if (spell) {
+                        if (outSince[0] >= 0 && context.getTick() - outSince[0] >= ticks / 2) {
+                            KindredMod.LOGGER.info("Replay {} of {}: out of its stuck spell, out of its 8 blocks for the last {} ticks", run, name, context.getTick() - outSince[0]);
+                            runtime.stop();
+                            return;
+                        }
+                        throw new net.minecraft.test.GameTestException("Replay " + run + ": still in its stuck spell after " + ticks + " ticks"
+                                + (outSince[0] >= 0 ? " (out of its 8 blocks only for the last " + (context.getTick() - outSince[0]) + ")" : ""));
+                    }
                     if (stuck) {
                         context.assertTrue(body.getPos().distanceTo(from[0]) > 8 || completed[0] > 0, "Replay " + run + ": stuck where it was");
                     }
