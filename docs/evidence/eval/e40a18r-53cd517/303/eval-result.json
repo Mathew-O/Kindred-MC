@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 16.61, "tickMsWorst": 1607.21, "tickMsWorstAt": 74431, "ticksOver50ms": 946, "ticksOver200ms": 9, "heapMbMax": 1140, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 800, "stone_tools": 1840, "iron_ingot": 7080, "iron_pickaxe": 16960, "obsidian": 55494, "portal_lit": 62651},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 6980, "stone_tools": 7820, "iron_ingot": 17340, "iron_pickaxe": 50960, "obsidian": 93685},
+      "deaths": [
+        {"tick": 99156, "cause": "Sol was obliterated by a sonically-charged shriek", "x": -25, "y": -53, "z": 115, "light": 1, "timeOfDay": 3318, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: heal before going on (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 97300, "x": -22, "y": -54, "z": 114, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3420, "stone_tools": 4140, "iron_ingot": 8800, "iron_pickaxe": 69100, "obsidian": 71815, "portal_lit": 74430},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28200, "x": 89, "y": 31, "z": -55, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
