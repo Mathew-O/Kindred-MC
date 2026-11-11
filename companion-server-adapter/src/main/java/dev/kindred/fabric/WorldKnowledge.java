@@ -342,6 +342,21 @@ final class WorldKnowledge {
         if (map.put(key, pos.toImmutable()) == null && firstSight != null) firstSight.accept(kind, pos.toImmutable());
     }
 
+    /**
+     * F-30d: a block of a kind it saw before this start in {@code world} (a dimension's id), as its atlas kept it,
+     * remembered again without telling the atlas (it has it already). Checked against the world before any use, as
+     * everything remembered is; nothing for a world other than the one it is in.
+     */
+    void recall(String world, Kind kind, BlockPos pos) {
+        // Of the world it is in: the first sweep's change of world would otherwise forget it at once.
+        if (dimension.isEmpty()) dimension = world;
+        if (!world.equals(dimension)) return;
+        var map = known.get(kind);
+        long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
+        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
+        map.putIfAbsent(key, pos.toImmutable());
+    }
+
     void forget(BlockPos pos) {
         for (var map : known.values()) map.remove(pos.asLong());
         known.get(Kind.CAVE).remove(cell(pos));

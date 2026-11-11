@@ -46,7 +46,8 @@ final class DeathReplays implements AutoCloseable {
     /** A stuck spell's budget, the goal's watchdog's three minutes: a {@code "spell"} scene passes if out within it. */
     static final int SPELL_TICKS = 3600;
     /** A {@code "spell"} scene's pass: out of where it was stuck within its budget. */
-    static final String SPELL_PASS = "out within " + SPELL_TICKS + " ticks: moved more than 8 blocks, or its feet 3 or more blocks higher";
+    static final String SPELL_PASS = "out within " + SPELL_TICKS + " ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last "
+            + (SPELL_TICKS / 2) + " ticks";
     /** A capture at most once a minute for each player; its vitals as they were ten seconds before. */
     private static final long GAP = 1200, BEFORE = 200;
     private static final int KEPT_VITALS = 16, LOG_LINES = 20;
@@ -230,7 +231,7 @@ final class DeathReplays implements AutoCloseable {
             String snbt = NbtHelper.toNbtProviderString(scene.templateNbt()).lines().map(String::strip).collect(java.util.stream.Collectors.joining("\n"));
             Files.writeString(folder.resolve("replay.snbt"), snbt, StandardCharsets.UTF_8);
             Files.writeString(folder.resolve("replay.json"), new GsonBuilder().setPrettyPrinting().create().toJson(state), StandardCharsets.UTF_8);
-            KindredMod.LOGGER.info("{} death replay written to {} ({} KB)", player, folder, snbt.length() / 1024);
+            KindredMod.LOGGER.info("{} {} replay written to {} ({} KB)", player, copied.get("kind"), folder, snbt.length() / 1024);
         } catch (IOException | RuntimeException failure) {
             KindredMod.LOGGER.warn("{} death replay not written to {}: {}", player, folder, failure.toString());
         }

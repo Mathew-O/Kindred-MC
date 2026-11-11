@@ -452,7 +452,7 @@ final class StrongholdLeg {
             case SEEK_FOOD -> shared(PortalRunPlanner.Action.SEEK_FOOD, "", step, p, body, policy);
             case GATHER_STONE -> overworld(player) ? shared(PortalRunPlanner.Action.GATHER_STONE, "", step, p, body, policy) : Optional.empty();
             case CRAFT -> campaign.craft(body, step.item());
-            case ENTER_PORTAL -> enterPortal(player);
+            case ENTER_PORTAL -> enterPortal(body);
             case FIND_FORTRESS -> fortress != null && fortress.getSquaredDistance(player.getBlockPos()) > 6 * 6 ? toFortress(body) : explore(body, "a fortress");
             case FIGHT_BLAZE -> fight(player, BlazeEntity.class, 32, "Fight blaze");
             case SEEK_BLAZE -> seekBlaze(body);
@@ -472,8 +472,22 @@ final class StrongholdLeg {
         return campaign.realize(new PortalRunPlanner.Step(action, item, Math.max(1, step.count()), PortalRunPlanner.Stage.DONE, step.why()), p, body, policy);
     }
 
-    /** Into the portal and stand in it until it takes the player across. */
-    private Optional<PortalRunCampaign.Task> enterPortal(ServerPlayerEntity player) {
+    /** Nearer than this, the walk into the portal is asked for as one walk; farther, a leg at a time (F-35c). */
+    private static final int PORTAL_NEAR = 6;
+    /** The longest leg of a walk to a far portal, well inside what one route goes (160). */
+    private static final int PORTAL_LEG = 96;
+    static final String TO_PORTAL = "Walk to the portal";
+    /** How far off the portal was when its last leg was given out, or -1 (F-35c). */
+    private double portalWalkFrom = -1;
+
+    /**
+     * Into the portal and stand in it until it takes the player across. A portal far off or deep (cast at the lava's
+     * level, the player on the surface) is walked to a leg at a time; a leg that got it no closer is followed by a way
+     * made there, down a stair or through the rock as a player digs. Asked for as one walk, it was refused every time:
+     * e40c2-d640518's 707 "Goto target is too far for one route" 555 times, and "No walkable route" on three seeds.
+     */
+    private Optional<PortalRunCampaign.Task> enterPortal(NativePlayerBody body) {
+        var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         if (world.getBlockState(feet).isOf(Blocks.NETHER_PORTAL)) {
@@ -486,7 +500,20 @@ final class StrongholdLeg {
         if (portal == null) return Optional.empty();
         // The portal's lowest block: its feet cell.
         while (world.getBlockState(portal.down()).isOf(Blocks.NETHER_PORTAL)) portal = portal.down();
-        return Optional.of(PortalRunCampaign.go(portal, 0.4, false, PortalRunCampaign.INTO_PORTAL));
+        double off = Math.sqrt(feet.getSquaredDistance(portal));
+        if (off <= PORTAL_NEAR) {
+            portalWalkFrom = -1;
+            return Optional.of(PortalRunCampaign.go(portal, 0.4, false, PortalRunCampaign.INTO_PORTAL));
+        }
+        boolean stalled = portalWalkFrom >= 0 && off > portalWalkFrom - 2;
+        portalWalkFrom = -1;
+        BlockPos toward = off > PORTAL_LEG ? PortalRunCampaign.legToward(feet, portal, PORTAL_LEG) : portal;
+        if (!stalled) {
+            portalWalkFrom = off;
+            return Optional.of(PortalRunCampaign.go(toward, 2, true, TO_PORTAL));
+        }
+        BlockPos leg = toward;
+        return campaign.buildRoute(body, leg, pos -> pos.getSquaredDistance(leg) <= 3 * 3, false, "Make a way to the portal");
     }
 
     private Optional<PortalRunCampaign.Task> fight(ServerPlayerEntity player, Class<? extends LivingEntity> type, double range, String label) {
