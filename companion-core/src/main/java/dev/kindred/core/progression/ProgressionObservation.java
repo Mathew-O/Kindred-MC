@@ -1,5 +1,8 @@
 package dev.kindred.core.progression;
 
+import dev.kindred.core.Capabilities;
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.InventorySummary;
 
 import java.util.Objects;
@@ -57,7 +60,7 @@ public record ProgressionObservation(
     ) {
         this(companionId, tick, inventory, hasNearbyCraftingTable, hasNearbyFurnace,
                 hasSmeltOutputWaiting, canSmelt, isNight, hasShelter, hasAssignedStonePatch,
-                hasAssignedLogPatch, false, false, false, "minecraft:overworld", false);
+                hasAssignedLogPatch, false, false, false, VanillaIds.OVERWORLD, false);
     }
 
     public ProgressionObservation(
@@ -78,23 +81,23 @@ public record ProgressionObservation(
     ) {
         this(companionId, tick, inventory, hasNearbyCraftingTable, hasNearbyFurnace,
                 hasSmeltOutputWaiting, canSmelt, isNight, hasShelter, hasAssignedStonePatch,
-                hasAssignedLogPatch, hasNearbyFarmland, hasNearbyBed, hasCultivatedFarm, "minecraft:overworld", false);
+                hasAssignedLogPatch, hasNearbyFarmland, hasNearbyBed, hasCultivatedFarm, VanillaIds.OVERWORLD, false);
     }
 
     public ProgressionObservation {
         Objects.requireNonNull(companionId, "companionId");
         Objects.requireNonNull(inventory, "inventory");
-        currentDimension = currentDimension != null ? currentDimension : "minecraft:overworld";
+        currentDimension = currentDimension != null ? currentDimension : VanillaIds.OVERWORLD;
     }
 
     /** Whether the player is in the Nether. */
     public boolean isInNether() {
-        return "minecraft:the_nether".equals(currentDimension);
+        return VanillaIds.THE_NETHER.equals(currentDimension);
     }
 
     /** Whether the player is in the Overworld. */
     public boolean isInOverworld() {
-        return "minecraft:overworld".equals(currentDimension);
+        return VanillaIds.OVERWORLD.equals(currentDimension);
     }
 
     /** How many of an item it carries. */
@@ -105,6 +108,26 @@ public record ProgressionObservation(
     /** Whether it carries at least this many of an item. */
     public boolean has(String itemId, int amount) {
         return inventory.has(itemId, amount);
+    }
+
+    /** How many it carries of what is in this group. */
+    public int count(VanillaIds.Group group) {
+        return inventory.count(group);
+    }
+
+    /** Whether it carries at least this many of what is in this group. */
+    public boolean has(VanillaIds.Group group, int amount) {
+        return inventory.has(group, amount);
+    }
+
+    /** Whether it carries a tool of this kind at this tier or better. */
+    public boolean hasTool(String kind, int minimumTier) {
+        return inventory.hasTool(kind, minimumTier);
+    }
+
+    /** Whether it carries a tool of this kind with a tier from {@code minimumTier} to {@code maximumTier}. */
+    public boolean hasTool(String kind, int minimumTier, int maximumTier) {
+        return inventory.hasTool(kind, minimumTier, maximumTier);
     }
 
     /** Whether it has a bed placed nearby. */
@@ -122,8 +145,6 @@ public record ProgressionObservation(
 
     /** Whether it carries a hoe. */
     public boolean hasHoe() {
-        return has("minecraft:wooden_hoe", 1) || has("minecraft:stone_hoe", 1)
-                || has("minecraft:iron_hoe", 1) || has("minecraft:diamond_hoe", 1)
-                || has("minecraft:golden_hoe", 1) || has("minecraft:netherite_hoe", 1);
+        return hasTool(Capabilities.Tool.HOE, 0);
     }
 }

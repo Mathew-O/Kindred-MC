@@ -7,6 +7,17 @@
   earned or staged. Two builds are compared on the seeds both ran, and a difference is worth noting only when the two
   ranges do not overlap. Summaries go under `docs/evidence/eval/<name>/summary.md`; logs and worlds are never
   committed.
+- **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
+  `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
+  touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
+  flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
+  run alone ×3 on the branch and ×3 on main's tip (`KINDRED_CORPUS_ONLY`). It blocks only if the branch fails it 2 of 3
+  or more and main passes it 2 of 3 or more; otherwise it is cleared, and the report lists both. The baseline is six
+  runs on main's tip, recorded with its sha: pass is 6 of 6, fail is 0 of 6, anything else intermittent. It is renewed
+  at least once a day. The daily number is the baseline's pass rate: passing, failing and intermittent, an intermittent
+  scene never a pass, and staged scenes and each game mode listed apart. A scene is never removed or loosened to pass
+  the gate.
 - **Death replays (F-27).** A death captured in a run (`replay.snbt` and `replay.json` under
   `kindred/replays/<world>/<player>-<tick>/`, or a seed's `replays/` folder from `run.py`) becomes a test under the
   gametest resources: the structure as `data/kindred_gametest/gametest/structure/replays/<id>.snbt` and the state as
@@ -16,21 +27,52 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
-## F-35c: the walk into a far or deep portal, 2026-11-10
-
-- Build: `./gradlew build`.
-- Native: `NativeDeepPortalGameTests` alone, 0 of 3 before ("Goto target is too far for one route"), 3 of 3 after; with `NativeStrongholdGameTests`, `NativeNetherGameTests`, `NativeEndGameTests`, `NativeFollowUpGameTests` and `NativeCoopPaceGameTests`, 3 runs, 27 of 27 each. With `NativePortalCampaignGameTests` and the fixture's ground put back as it ends: 3 runs, 123 of 123 each.
-- Not run: a ten-seed batch.
-
-## F-35b: a cave pocket up a wall climbed to once, 2026-11-09
-
-- Build: `./gradlew build`.
-- Native: `NativeCaveLedgeGameTests` alone, 0 of 3 before (the fix taken out), passing after; with `NativeCavernLedgeGameTests`, `NativeLakeBedClimbGameTests`, `NativeStairGameTests`, `NativeStrandedReturnGameTests` and `NativePortalCampaignGameTests`, 3 runs, 101 of 101 each. With the rim-of-a-cavern fixes (no bridge out over a drop, a fall ends the climb, the let-go pocket set aside for `cave()`'s choice alone) and `NativeBranchMineGameTests` added: 3 runs, 103 of 103 each; the rim fixture failed 3 of 3 alone before them.
+- F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
+- F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
 - Build: `./gradlew build`.
 - Native: `NativeNavigationGameTests` (the gap fixture: 0 of 3 before, passing after) with `NativeRanchGameTests`, `NativeHouseGameTests`, `NativeBuildGameTests` and `NativeLakeBedClimbGameTests` alone, 3 runs, 20 of 20 each.
+
+## A dark passage sealed from two or more mobs (F-25c4dc) — 10 November 2026 (`claude/survival-1110-seal`)
+
+- **[F-25c4dc](evidence/F-25c4dc.md):** underground in the dark, with two or more mobs after it along a passage one wide and none
+  in reach, it seals the passage on their side, feet then head, and waits behind it; the seal is held as F-25c4cy's cover
+  while a hostile is within six and 200 ticks after (product; the kept replay `kindred-43985-707`).
+  - `NativePassageSealGameTests` (staged, as it says): two zombies, with a shield, 0 of 3 without the change and 3 of 3 with it;
+    one zombie, fought and not sealed out, 3 of 3 both.
+  - Eleven classes that fight, take cover and climb (with `ReplayGameTests`), 3 runs: 129 of 129 each; the seal fired only in
+    its own fixture.
+  - The ten-seed measure against e40a17 is to come (RUNNER 2's survival-1).
+
+## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
+
+- **[F-22c45](evidence/F-22c45.md):** taking its scaffold down, the last block down a hollow is taken down from the hollow's floor when a
+  scaffold of its own blocks takes it back out (product; #121's run 42750254641: "out of reach to take down" until the build stopped).
+  - `ConstructionPlannerTest`'s new case, CI's end state staged: fails without the change with CI's message, passes with it; none to
+    spare and water in the way stay refused. `neverABreakFromWhereItCouldNotWalkBackToTheBuild` unchanged. 21 of 21.
+  - Build, house, life-first, seed-build and base classes, 3 runs: 21, 22 and 22 of 22, the new path firing in none (the one failure
+    the life-first cabin's door, another intermittent).
+  - `./gradlew build`: green, JUnit 1,113 tests, 0 failures, 7 skipped.
+
+## The autonomous log mine read as it happens (F-22c52) — 10 November 2026 (`claude/ci-green-1110-minelatch`)
+
+- **[F-22c52](evidence/F-22c52.md):** the fixture takes the mine's completion, charged, and its one verified record on the tick
+  each shows (fixture only; #139's run 42793316263 and #137's run 42793187025: a routine's craft followed within the second,
+  and the latest work and record were the craft's for good).
+  - The copy that reads after the next task: 0 of 3 with the old read (throwaway edit, reverted), 9 of 9 in each of 6 runs latched.
+  - No product code changed. `./gradlew build`: green, JUnit 1,121 tests, 0 failures, 7 skipped.
+
+## A mob in reach stops the badly hurt goal's work (F-25c4dd) — 10 November 2026 (`claude/survival-1110-cornered`)
+
+- **[F-25c4dd](evidence/F-25c4dd.md):** a mob on foot in reach stops the goal's running work whatever the player's health (product;
+  `ReplayGameTests`' `echo-73670` on main `335da88`: the hungry climb dug on by hand with a zombie on the player).
+  - The new fixture in `NativePortalCampaignGameTests` (staged, as it says): 0 of 3 without the fix, 3 of 3 with it.
+  - Thirteen classes that fight, take cover, shelter and climb, with `ReplayGameTests`, 3 runs: 131 of 131 each.
+  - `ReplayGameTests`, 6 runs alone and in the 3 class runs: `echo-73670` lived 27 of 27 with the fix; on main, 11 of 12 in 4 runs (the
+    replay's figure), 100 of 102 over every run here. Too few deaths to tell the two apart.
+  - `./gradlew build`: green, JUnit 1,109 tests, 0 failures, 7 skipped.
 
 ## Cover kept from a mob (F-25c4cy) — 9 November 2026 (`claude/cover-climb-1109`)
 
@@ -56,6 +98,19 @@
     `NativeObstructedPortalGameTests`, `NativeTeamPortalGameTests`, `NativeBucketGameTests`, `NativeRescueRecipesGameTests`):
     107 of 107 in each of three runs.
   - **Build:** `./gradlew build` successful; JUnit 1,081 tests, 0 failures, 7 skipped.
+
+## E-40, rung c's second probe (`e40c2-d640518`) — 10 November 2026 (`claude/e40c2-1110`)
+
+- **The evaluation:** all ten seeds, 288,000 ticks each, earned, on `d640518` (main with #83, #91, #96 and #98),
+  `goal=dragon`, the strategist off, worlds kept; run by RUNNER 2 (`claude/e40-evals-runner2-1110`). The container
+  restarted twice; five seeds were re-run from the start, and each counted seed is one uninterrupted run.
+  - Iron pickaxe 10 of 10 (median 26.7 min); obsidian 10 of 10; a portal lit on 7 of 10 (median 81.0 min); the
+    Nether 3 of 10; a fortress seen on 1; blaze rods 0 of 10.
+  - Deaths 0.62 a game hour [0.25 to 1.75], 34, none in the Nether. Stuck spells 15.5 [3 to 35].
+  - The causes, by seed, are in [E-40](evidence/E-40.md#rung-cs-second-probe-e40c2-d640518-the-dragon-goal-ten-seeds):
+    the walk to a deep or far lit portal fails on four seeds; the trip's food holds the teammates; in the Nether one
+    player alone finds no fortress, or one it cannot reach.
+  - [Summary](evidence/eval/e40c2-d640518/summary.md), [notes](evidence/eval/e40c2-d640518/notes.md).
 
 ## E-40, iteration 17 (`e40a17-7bc5b42`, batch 25) — 9 November 2026 (`claude/e40-iter17-1109`)
 
@@ -198,6 +253,17 @@ jobs were re-run once.
   - Each failed job was re-run once, and both passed; PR #37 was merged as `f3b717a`. The scaffolding left out of reach
     is not yet reproduced alone.
 
+## E-40, batch 25: a cast whose water is not taken back (F-25c4cx) — 9 November 2026 (`claude/cast-outcome-1109`)
+
+- **The fixture** (F-25c4cx, [evidence](evidence/F-25c4cx.md)): `NativeCastWaterLostGameTests.aCastWhoseWaterIsLostUnderGravelCountsAndTheFrameGoesOn`,
+  staged as it says (the thick-rock cast scene with a water source in the floor of its open end; the first cast's poured
+  water set to gravel the tick its obsidian forms).
+  - On `e7e0b57`, without the fix: fails 3 of 3, the player blocked with "Cast outcome requires reconciliation: Obsidian
+    cast", as on 31102026.
+  - With the fix: passes 3 of 3, the cast completed, a bucket filled at the room's water and the next frame cell cast.
+- **The cast route's classes** (`NativeCastWaterLostGameTests`, `NativePortalCampaignGameTests`, `NativeBucketGameTests`,
+  `NativeFrameReturnGameTests`, `NativeHalfCastFrameGameTests`, `NativeObstructedPortalGameTests`,
+  `NativeRescueRecipesGameTests`, `NativeTeamPortalGameTests`): 105 of 105 in each of three runs.
 ## E-40, batch 25: a sword in the backpack taken to hand (F-25c4cv) — 9 November 2026 (`claude/backoff-1109`)
 
 - **The fixture** (F-25c4cv, [evidence](evidence/F-25c4cv.md)): `NativeWeaponToHandGameTests.aSwordInItsBackpackIsTakenToHandAndFoughtWith`,
@@ -709,6 +775,11 @@ From iteration 11 (`e40a11-744c636`): two of the three seeds without a lit porta
 - Build: `./gradlew build`.
 - JUnit: `WheatPlotTest`, `RanchChoiceTest` (one new case each).
 - Native: `NativeOwnRanchGameTests` alone, 3 runs, 6 of 6 each. Control (the pigs' choice off): 0 of 1.
+
+## M-01a: its horse ridden on its travels, 2026-11-09
+
+- Build: `./gradlew build`.
+- Native: `NativeHorseGameTests` with `NativeBoatGameTests` and `NativeOwnRanchGameTests` alone, 3 runs, 10 of 10 each. Control (`onItsHorse` off): 0 of 1.
 
 ## M-01a: a horse of its own, 2026-11-08
 
@@ -3548,6 +3619,12 @@ After the block's first merge from main, CI on PR #25 found:
   ending not completed is logged. No decision changed. `:companion-core:test --tests *Ranch*` green;
   `NativeOwnRanchGameTests` and `NativeRanchGameTests`, 3 runs, 9 of 9 each, the new lines printed.
 
+- **[F-22c43](evidence/F-22c43.md):** cattle loose in the pasture keep out of its way in, behind a door and a fence; the
+  pen's gate shut while the next is fetched (product; #98's run 42574813864: the player hemmed in under the pasture's
+  east wall by its own cows, "Both cows penned: 0").
+  - The new fixture (a cow following wheat toward the way in): 0 of 3 before, as CI; 3 of 3 after. `CompoundsTest`,
+    `ConstructionPlanner*`, `Ranch*` pass. `NativeCompoundGameTests` 7 of 7 (the pasture build 3 of 3);
+    `NativeRanchGameTests`, 3 runs, 3 of 3 each.
 - **[F-22c44](evidence/F-22c44.md):** a pasture doorway left a block short is shut from the block's own drop, picked up
   where it lies (product; #101's run 42584569435: "Nothing in hand to place", a plank short, for good).
   - The staged fixture (a doorway plank left lying): 0 of 3 before, as CI; 3 of 3 after.
@@ -3555,3 +3632,9 @@ After the block's first merge from main, CI on PR #25 found:
     `NativeLifeFirstGameTests`, `NativeBuildGameTests`, `NativeRanchGameTests`, `NativeOwnRanchGameTests`, 1 run, 24 of 25.
     The one failure is the life-first night fixture's hut, "built but for 13 oak planks", as on #87's CI before the
     change.
+
+- **[F-25c4db](evidence/F-25c4db.md):** a shield in the off hand is raised between swings against a mob (product; the kept
+  replay `kindred-43985-707`: three zombies fought with a shield that never came up).
+  - The new fixture (a zombie, a stone sword and a shield): 0 of 3 before (the shield up 0 of ~42 ticks); 3 of 3 after.
+  - The fight classes (combat, encounter, edge fight, water fight, duel benchmark), 1 run: 12 of 12.
+  - Side figure, 707 restored, 3 runs of `ReplayGameTests` on main: 7 of 9 before, 9 of 9 after.

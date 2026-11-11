@@ -75,7 +75,7 @@ public final class ReplayGameTests implements FabricGameTest {
     }
 
     /** One run of a replay: the player made from its state where it died, its goal given, the ticks run. */
-    private static void play(TestContext context, JsonObject replay, int run, int ticks) {
+    static void play(TestContext context, JsonObject replay, int run, int ticks) {
         var world = context.getWorld();
         var server = world.getServer();
         JsonObject state = replay;
@@ -106,6 +106,8 @@ public final class ReplayGameTests implements FabricGameTest {
         boolean[] died = {false}, stopped = {false};
         long[] began = {-1};
         boolean stuck = "stuck".equals(state.get("kind").getAsString());
+        // A stuck spell kept by the watchdog (F-27a): out of where it was within the spell's budget, by distance or height.
+        boolean spell = "spell".equals(state.get("kind").getAsString());
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(runtime.isReady(), "Ready"))
                 // Its ground settled before a cell to make it in is chosen: a structure just placed settles for some
@@ -152,7 +154,13 @@ public final class ReplayGameTests implements FabricGameTest {
                         }
                         throw new net.minecraft.test.GameTestException("Replay " + run + ": died again, as it did (" + state.get("cause").getAsString() + ")");
                     }
+                    // A stuck spell's scene passes the moment it is out, within its budget; at the budget's end still in, it fails.
+                    if (spell && (body.getPos().distanceTo(from[0]) > 8 || body.getY() - from[0].y >= 3)) {
+                        runtime.stop();
+                        return;
+                    }
                     context.assertTrue(context.getTick() - began[0] >= ticks, "Still running");
+                    if (spell) throw new net.minecraft.test.GameTestException("Replay " + run + ": still where it was stuck after " + ticks + " ticks");
                     if (stuck) {
                         context.assertTrue(body.getPos().distanceTo(from[0]) > 8 || completed[0] > 0, "Replay " + run + ": stuck where it was");
                     }

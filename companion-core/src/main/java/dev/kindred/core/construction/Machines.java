@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.List;
 
 /**
@@ -20,16 +22,16 @@ public final class Machines {
     public static Blueprint smelter() {
         var blocks = List.of(
                 // The output chest, on the ground in front.
-                new Blueprint.Block(new Pos(0, 0, 1), BlockSpec.parse("minecraft:chest[facing=south,type=single]")),
+                new Blueprint.Block(new Pos(0, 0, 1), BlockSpec.parse(VanillaIds.CHEST + "[facing=south,type=single]")),
                 // Under the furnace, into the output chest.
-                new Blueprint.Block(new Pos(0, 0, 0), BlockSpec.parse("minecraft:hopper[facing=south]")),
-                new Blueprint.Block(new Pos(0, 1, 0), BlockSpec.parse("minecraft:furnace[facing=south]")),
+                new Blueprint.Block(new Pos(0, 0, 0), BlockSpec.parse(VanillaIds.HOPPER + "[facing=south]")),
+                new Blueprint.Block(new Pos(0, 1, 0), BlockSpec.parse(VanillaIds.FURNACE + "[facing=south]")),
                 // The fuel: into the furnace's side, from the chest above it.
-                new Blueprint.Block(new Pos(1, 1, 0), BlockSpec.parse("minecraft:hopper[facing=west]")),
-                new Blueprint.Block(new Pos(1, 2, 0), BlockSpec.parse("minecraft:chest[facing=south,type=single]")),
+                new Blueprint.Block(new Pos(1, 1, 0), BlockSpec.parse(VanillaIds.HOPPER + "[facing=west]")),
+                new Blueprint.Block(new Pos(1, 2, 0), BlockSpec.parse(VanillaIds.CHEST + "[facing=south,type=single]")),
                 // What it smelts: into the furnace's top, from the chest above it.
-                new Blueprint.Block(new Pos(0, 2, 0), BlockSpec.parse("minecraft:hopper[facing=down]")),
-                new Blueprint.Block(new Pos(0, 3, 0), BlockSpec.parse("minecraft:chest[facing=south,type=single]")));
+                new Blueprint.Block(new Pos(0, 2, 0), BlockSpec.parse(VanillaIds.HOPPER + "[facing=down]")),
+                new Blueprint.Block(new Pos(0, 3, 0), BlockSpec.parse(VanillaIds.CHEST + "[facing=south,type=single]")));
         return new Blueprint("auto-smelter", Generators.SOURCE + "smelter", "Kindred", "Kindred's own", blocks);
     }
 

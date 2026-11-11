@@ -118,6 +118,22 @@ class FactionPlayTest {
     }
 
     @Test
+    void aKindIsSoldOnlyOnceItsSpareMakesALotWorthSelling() {
+        found(self, "Red", "RED");
+        var under = new FactionPlay.Spare("minecraft:cobblestone", 64, FactionPlay.MIN_LOT - 1);
+        var at = new FactionPlay.Spare("minecraft:cobbled_deepslate", 256, FactionPlay.MIN_LOT);
+        var over = new FactionPlay.Spare("minecraft:andesite", 320, 3 * FactionPlay.MIN_LOT);
+        var none = FactionPlay.decide(view(person(50, 0, 50, 50), 300 * Coins.CENT, Optional.empty(), Optional.empty(), List.of(under), List.of(), Map.of(),
+                AuctionBook.EMPTY, List.of()));
+        assertTrue(none.stream().noneMatch(c -> c.kind() == FactionPlay.Kind.SELL), "under a lot, it keeps it for now: " + none);
+        var some = FactionPlay.decide(view(person(50, 0, 50, 50), 300 * Coins.CENT, Optional.empty(), Optional.empty(), List.of(under, at, over), List.of(),
+                Map.of(), AuctionBook.EMPTY, List.of()));
+        var sell = some.stream().filter(c -> c.kind() == FactionPlay.Kind.SELL).findFirst().orElseThrow();
+        assertEquals("minecraft:cobbled_deepslate,minecraft:andesite", sell.target(), "a lot at the least and over it; not the kind under it");
+        assertEquals(4 * FactionPlay.MIN_LOT, sell.amount(), "what those lots pay");
+    }
+
+    @Test
     void itScoutsAndCapturesOnlyAnExposedEnemyBorderItSaw() {
         UUID mine = found(self, "Red", "RED");
         UUID blueLeader = UUID.randomUUID();

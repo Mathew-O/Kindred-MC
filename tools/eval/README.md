@@ -4,9 +4,9 @@ Three scripts, Python 3 standard library only, run a build of Kindred MC unatten
 
 | Script | What it does |
 | --- | --- |
-| `run.py` | Builds a git ref (or takes a built jar), and for each seed starts a fresh Fabric server in `run/eval/<build>/<seed>/` with the jar and the pinned Fabric API, its world from the seed and `KINDRED_EVAL` set to the scenario. The mod plays the scenario with no one at the console and stops the server; the script keeps the server's whole console (`console.txt`), `latest.log`, `eval-result.json` and the jar's name (in `run.json`), and removes the world. With `--keep-world` it keeps the world's region files as the run left them (`world-kept/`), so a stuck place can be staged from its own ground; they are for diagnosis only. |
+| `run.py` | Builds a git ref (or takes a built jar), and for each seed starts a fresh Fabric server in `run/eval/<build>/<seed>/` with the jar and the pinned Fabric API, its world from the seed and `KINDRED_EVAL` set to the scenario. The mod plays the scenario with no one at the console and stops the server; the script keeps the server's whole console (`console.txt`), `latest.log`, `eval-result.json` and the jar's name (in `run.json`), and removes the world. With `--keep-world` it keeps the world's region files as the run left them (`world-kept/`), so a stuck place can be staged from its own ground, and the world's companion database (`world-kept/kindred/companions.sqlite` with its WAL), to measure what the World Record and the ledgers hold; both are for diagnosis only. |
 | `score.py` | Turns a build's results into `summary.md` and `summary.json`: per seed and per player the stage reached, the time to each stage, deaths a game hour by cause, stuck spells and stuck game minutes (three for each spell, the watchdog's minutes of no progress before it gives a spot up), rescue plans and how many got the player out, `RunMetrics`' measures (from `console.txt`, the whole run: `latest.log` starts again at midnight), tokens, and the social lanes' lines (between AI players, said first to people, a meeting noted with nobody to hear) with the lines a game minute (E-51, E-53); then medians and ranges across the seeds. A time to a stage is over every seed, a seed that never reached the stage counted as later than any that did, so its median or the top of its range can read "not reached". A run some of whose starters never came into the world is named and left out, and a seed run on another jar than its build's is said so. |
-| `compare.py` | Puts two builds' summaries side by side on the seeds both ran, and calls a difference worth noting only when the two ranges do not overlap; times to a stage (iron, diamonds, the portal) are compared the same way, over every seed. |
+| `compare.py` | Puts two builds' summaries side by side on the seeds both ran. First, paired by seed (F-26c): for the portal, the Nether, stuck minutes, deaths an hour and the minutes to an iron pickaxe and to the portal (a seed that never reached a stage counted as the run's length), each seed's difference, how many seeds it helped and hurt, the median difference with a bootstrap 95% interval, and an exact two-sided sign test. Then the unpaired ranges, a difference worth noting only when they do not overlap. An older build with only a `summary.md` is read from its per-seed table (furthest stage, deaths an hour, stuck spells), with no times to a stage. |
 
 ```
 tools/eval/run.py --ref HEAD --seeds 101,102,103,104,105,106,107,108,109,110 --scenario "goal=nether; ticks=144000" --parallel 2
@@ -45,7 +45,9 @@ operator guide.
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says
-  so at the top. A staged run is not earned progress.
+  so at the top. A staged run is not earned progress. A run on a server that allowed free travel or free items
+  (`/aiplayer teleport|freeitems allow`) at any point is never earned: `eval-result.json` records both under `policy`,
+  `score.py` names the seed, and `compare.py` refuses the comparison, so no ladder counts a teleport or a free item.
 - **The model players.** `strategist=on` needs the strategist configured as in play (`KINDRED_STRATEGIST=on` and a key
   in your environment); `run.py` passes the key and the `KINDRED_STRATEGIST*` settings to a server only when its
   scenario says `strategist=on` or `voice=on`, and never writes them to a file. The voice has no switch of its own: it
@@ -117,6 +119,22 @@ and the set-up before the run's start not counted; the heap at most), and `score
 falls every 6,000 ticks and its time counts in its tick, so a worst tick at a multiple of 6,000 is the save. That
 is the measurement a larger run is qualified by. Run such a run one server at a time (`--parallel 1`), so no other
 server shares its cores.
+
+## Stuck spells and deaths by kind (F-26c)
+
+`score.py` puts every stuck spell and every death in a bucket and prints the build's distribution in `summary.md` (and
+`stuckKinds` and `deathKinds` in `summary.json`, per player and for the build). The rules are tables at the top of the
+script, `STUCK_RULES` and `DEATH_RULES`, tested by `python3 -m unittest discover -s tools/eval`.
+
+- **A death** goes to the first rule it matches: lava, drowning, fall (by the game's cause), starving with a mob near
+  (a mob killed it at hunger 6 or less), cornered (a mob killed it while it was backing off, taking cover or holing up),
+  dark melee (a mob that does not shoot killed it at light 7 or less), else other.
+- **A stuck spell** is read from the player's last 60 console lines before the watchdog gave the spot up (its "Goal made
+  no progress ... near" line there, or the spell's tick placed on the console's clock): the bucket whose lines match most
+  often, at least three times, of water loop, no walkable route (BLOCKED lines only), the same refusal repeated, hole or
+  pit, hemmed in. Failing those, ordinary work that went on through the spell (`STUCK_QUIET_RULES`): waiting for daylight
+  or a teammate, or mining for a find. Failing those, a busy-work loop when one step, its numbers aside, came six times or
+  more; else other. A run with no console has its spells counted as unmatched.
 
 ## Conventions
 

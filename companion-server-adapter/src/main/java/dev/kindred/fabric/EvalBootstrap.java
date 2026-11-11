@@ -89,6 +89,8 @@ final class EvalBootstrap implements RunObserver {
         if (finished || runtime == null) return;
         lastTick = server.getTicks();
         seed = server.getOverworld().getSeed();
+        // Free travel or free items allowed at any point makes the run not earned (mod-support decision 6).
+        record.policy(runtime.teleportAllowed(), runtime.freeItemsAllowed());
         switch (phase) {
             case 0 -> { // The runtime's records loaded: set the world up as an operator would, then the starters one by one.
                 if (!runtime.isReady()) return;

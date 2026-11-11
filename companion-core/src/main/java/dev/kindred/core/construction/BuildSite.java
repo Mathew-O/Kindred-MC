@@ -1,5 +1,7 @@
 package dev.kindred.core.construction;
 
+import dev.kindred.core.VanillaIds;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -44,11 +46,11 @@ public final class BuildSite {
             Objects.requireNonNull(state);
         }
 
-        public static final Cell AIR = new Cell(Kind.AIR, BlockSpec.of("minecraft:air"), false);
+        public static final Cell AIR = new Cell(Kind.AIR, BlockSpec.of(VanillaIds.AIR), false);
 
         /** Feet and head may be in it. */
         public boolean passable() {
-            return kind == Kind.AIR || kind == Kind.REPLACEABLE && !state.block().equals("minecraft:water") || kind == Kind.PASSABLE;
+            return kind == Kind.AIR || kind == Kind.REPLACEABLE && !state.block().equals(VanillaIds.WATER) || kind == Kind.PASSABLE;
         }
 
         /** A placed block may go into it. */

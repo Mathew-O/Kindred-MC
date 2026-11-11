@@ -1,5 +1,7 @@
 package dev.kindred.core.match;
 
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.construction.Blueprint;
 import dev.kindred.core.construction.Generators;
 import dev.kindred.core.construction.Pos;
@@ -152,17 +154,17 @@ public final class BuildBattle {
             case COTTAGE -> {
                 var hut = Generators.hut(5 + 2 * random.nextInt(2), 5 + 2 * random.nextInt(2), 3);
                 String wood = pickOf(random, "oak", "spruce", "birch", "dark_oak");
-                String stone = pickOf(random, "minecraft:cobblestone", "minecraft:stone_bricks", "minecraft:bricks", "minecraft:mossy_cobblestone");
-                yield hut.recolored(Map.of("minecraft:oak_planks", "minecraft:" + wood + "_planks", "minecraft:oak_log", "minecraft:" + wood + "_log",
-                        "minecraft:oak_stairs", "minecraft:" + wood + "_stairs", "minecraft:oak_slab", "minecraft:" + wood + "_slab",
-                        "minecraft:cobblestone", stone), "cottage of " + wood);
+                String stone = pickOf(random, VanillaIds.COBBLESTONE, VanillaIds.ICON_STONE, VanillaIds.BRICKS, VanillaIds.MOSSY_COBBLESTONE);
+                yield hut.recolored(Map.of(VanillaIds.OAK_PLANKS, VanillaIds.NAMESPACE + wood + "_planks", VanillaIds.ICON_WOOD, VanillaIds.NAMESPACE + wood + "_log",
+                        VanillaIds.OAK_STAIRS, VanillaIds.NAMESPACE + wood + "_stairs", VanillaIds.OAK_SLAB, VanillaIds.NAMESPACE + wood + "_slab",
+                        VanillaIds.COBBLESTONE, stone), "cottage of " + wood);
             }
             case WATCHTOWER -> Generators.tower(5 + 2 * random.nextInt(2), 7 + random.nextInt(4),
-                    pickOf(random, "minecraft:stone_bricks", "minecraft:cobblestone", "minecraft:deepslate_bricks", "minecraft:polished_andesite"));
-            case PYRAMID -> Generators.pyramid(7 + 2 * random.nextInt(3), pickOf(random, "minecraft:sandstone", "minecraft:red_sandstone", "minecraft:smooth_sandstone"));
+                    pickOf(random, VanillaIds.ICON_STONE, VanillaIds.COBBLESTONE, VanillaIds.DEEPSLATE_BRICKS, VanillaIds.POLISHED_ANDESITE));
+            case PYRAMID -> Generators.pyramid(7 + 2 * random.nextInt(3), pickOf(random, VanillaIds.SANDSTONE, VanillaIds.RED_SANDSTONE, VanillaIds.SMOOTH_SANDSTONE));
             case LIGHTHOUSE -> {
-                String band = pickOf(random, "minecraft:red_concrete", "minecraft:blue_concrete", "minecraft:black_concrete");
-                yield Generators.lighthouse(8 + random.nextInt(4), "minecraft:white_concrete", band);
+                String band = pickOf(random, VanillaIds.RED_CONCRETE, VanillaIds.BLUE_CONCRETE, VanillaIds.BLACK_CONCRETE);
+                yield Generators.lighthouse(8 + random.nextInt(4), VanillaIds.WHITE_CONCRETE, band);
             }
         };
     }

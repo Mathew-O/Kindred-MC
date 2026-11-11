@@ -79,6 +79,42 @@ class ConstructionPlannerTest {
         assertNotEquals(b.up(), second.stance(), "not from over the block now gone");
     }
 
+    /**
+     * As {@link #theLastTwoBlocksOfAFloorSideBySideAreBrokenNotWalkedBetween}, with a block higher up still in the way that
+     * it cannot reach from anywhere it can stand. F-22c8's "one it can break from where it stands first" looked only in
+     * the topmost layer still in the way, that block's, and found none. So the nearest came first again: the block
+     * underfoot, from on the other, and there the other was underfoot. On #121's CI (run 42798198875, the compound farm
+     * ward, the floor of its way under the wall with more of the build above) it walked between the two 1,961 and 1,960
+     * times and broke neither (F-22c54). The layer looked in first is now the topmost it can break any of.
+     */
+    @Test
+    void theLastTwoBlocksOfAFloorAreBrokenNotWalkedBetweenWithAHigherBlockOutOfReach() {
+        var cells = BuildTestSites.flat();
+        var clear = new ArrayList<Pos>();
+        for (int x = -10; x <= 10; x++) for (int z = -10; z <= 10; z++) cells.put(new Pos(x, 1, z), BuildTestSites.STONE);
+        for (int x = 0; x <= 3; x++) for (int z = 0; z <= 2; z++) {
+            clear.add(new Pos(x, 1, z));
+            cells.put(new Pos(x, 1, z), Cell.AIR);
+        }
+        Pos a = new Pos(1, 1, 1), b = new Pos(2, 1, 1);
+        cells.put(a, BuildTestSites.STONE);
+        cells.put(b, BuildTestSites.STONE);
+        // Higher up, in the way and out of reach from every spot it can stand on.
+        Pos high = new Pos(8, 12, 8);
+        cells.put(high, BuildTestSites.STONE);
+        clear.add(high);
+        Pos onA = a.up();
+        var first = ConstructionPlanner.next(List.of(), clear, new BuildSite(cells), onA, ALL, Set.of());
+        assertEquals(ConstructionPlanner.Kind.BREAK, first.kind(), first.toString());
+        assertEquals(b, first.target(), "the one it can break from where it stands: " + first);
+        assertEquals(onA, first.stance(), "from where it stands");
+        cells.put(b, Cell.AIR);
+        var second = ConstructionPlanner.next(List.of(), clear, new BuildSite(cells), onA, ALL, Set.of());
+        assertEquals(ConstructionPlanner.Kind.BREAK, second.kind());
+        assertEquals(a, second.target(), "then the one under it");
+        assertNotEquals(onA, second.stance(), "from beside it");
+    }
+
     @Test
     void aSpotWhereTheServerRefusedTheStepIsNotTriedAgain() {
         var blocks = List.of(block(3, 1, 0, "minecraft:cobblestone"));
@@ -236,6 +272,53 @@ class ConstructionPlannerTest {
         var step = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, ALL, Set.of(new Pos(0, 4, 0)));
         assertTrue(step.kind() != ConstructionPlanner.Kind.BREAK || step.stance().y() >= 4, "never from below the edge: " + step);
         assertEquals(ConstructionPlanner.Kind.BLOCKED, step.kind(), "out of reach from where it can come back: " + step);
+    }
+
+    /**
+     * The last of its scaffold down in a trench three deep beside the build, the build done, the player back up on the
+     * ground: the trench's floor is walkable one way only, a drop of three. With blocks to spare it goes down and takes
+     * the block down from the trench's floor, since a scaffold of its own blocks takes it back up (F-22c45). With none to
+     * spare, the block it gets back is one, short of the two it needs, and the trench is refused as before. #121's CI
+     * (run 42750254641): its last column in a hollow three below the ground, it climbed out on F-22c40's scaffold to take
+     * the others down and was left "out of reach to take down" until the build stopped.
+     */
+    @Test
+    void theLastScaffoldDownATrenchIsTakenDownFromItsFloorWithBlocksToPillarBackOut() {
+        var cells = BuildTestSites.flat();
+        // Ground three high everywhere, but a trench two long along x 5 and 6 at z 0, its floor the stone at y 0.
+        for (int x = -20; x <= 20; x++) for (int z = -20; z <= 20; z++) for (int y = 1; y <= 3; y++) {
+            boolean trench = (x == 5 || x == 6) && z == 0;
+            cells.put(new Pos(x, y, z), trench ? BuildSite.Cell.AIR : BuildTestSites.STONE);
+        }
+        // The build, done: a wall two high along z -1.
+        var blocks = new java.util.ArrayList<Blueprint.Block>();
+        for (int x = -2; x <= 2; x++) for (int y = 4; y <= 5; y++) {
+            blocks.add(block(x, y, -1, "minecraft:cobblestone"));
+            cells.put(new Pos(x, y, -1), BuildTestSites.solid("minecraft:cobblestone"));
+        }
+        // Its last scaffold block, on the trench's floor at its far end.
+        Pos last = new Pos(6, 1, 0);
+        cells.put(last, BuildTestSites.solid("minecraft:dirt"));
+        var scaffold = Set.of(last);
+        var feet = new Pos(4, 4, 0);
+        var site = new BuildSite(cells);
+        assertTrue(ConstructionPlanner.walkable(site, feet, scaffold).contains(new Pos(5, 1, 0)), "the trench's floor, a drop of three");
+        var stuck = ConstructionPlanner.next(blocks, List.of(), site, feet, ALL, scaffold);
+        assertEquals(ConstructionPlanner.Kind.BLOCKED, stuck.kind(), "with no blocks counted, as before: " + stuck);
+        var none = ConstructionPlanner.next(blocks, List.of(), site, feet, ALL, scaffold, Set.of(), 0);
+        assertEquals(ConstructionPlanner.Kind.BLOCKED, none.kind(), "none to spare: one back, two needed: " + none);
+        var down = ConstructionPlanner.next(blocks, List.of(), site, feet, ALL, scaffold, Set.of(), 1);
+        assertEquals(ConstructionPlanner.Kind.BREAK, down.kind(), "one to spare and one back: two, enough: " + down);
+        assertEquals(last, down.target());
+        // From the trench's floor beside it, or (F-22c47) from on top of it: either way a spot it climbs back out of.
+        assertTrue(new Pos(5, 1, 0).equals(down.stance()) || last.up().equals(down.stance()), "from the trench's floor beside it, or on top of it: " + down);
+        // Never down into water: the same trench with water standing a block deep at its far end.
+        cells.put(new Pos(5, 2, 0), new BuildSite.Cell(BuildSite.Kind.REPLACEABLE, BlockSpec.of("minecraft:water"), false));
+        var wet = ConstructionPlanner.next(blocks, List.of(), new BuildSite(cells), feet, ALL, scaffold, Set.of(), 8);
+        // However many to spare: never a stance on the trench's floor under the water, nor a block into the water. (It may
+        // instead step down onto its column's own top beside the water, and take the column down from there, F-22c47.)
+        assertNotEquals(new Pos(5, 1, 0), wet.stance(), "not down under the water: " + wet);
+        assertNotEquals(new Pos(5, 2, 0), wet.target(), "nothing into the water: " + wet);
     }
 
     @Test

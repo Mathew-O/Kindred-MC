@@ -254,4 +254,46 @@ public final class NativeCombatGameTests implements FabricGameTest {
         zombie.discard();
         context.complete();
     }
+
+    /**
+     * A player with a shield in its off hand fights a zombie that comes at it (F-25c4db): its shield comes up while its
+     * swing recovers, and down for each swing, as a player fights, and the zombie is killed. In the kept replay
+     * kindred-43985-707 Kindred fought three zombies with a shield in its off hand that never once came up.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "combatShield", tickLimit = 600)
+    public void aShieldInTheOffHandIsRaisedBetweenSwingsAgainstAZombie(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        ZombieEntity[] zombie = new ZombieEntity[1];
+        int[] raised = {0}, watched = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Shielded"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_SWORD));
+                    player.getInventory().selectedSlot = 0;
+                    player.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+                    // Three and a half blocks off, out of reach; a helmet, so the sun does not finish it first.
+                    zombie[0] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(3.5, 2.0, 7.0));
+                    zombie[0].equipStack(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+                    context.assertTrue(f.runtime.nativeFight(f.source, f.id, zombie[0].getUuid(), 0) == 1, "Fight requested");
+                })
+                .createAndAdd(() -> {
+                    // Watched every tick of the fight, until the zombie is dead.
+                    var player = f.player();
+                    if (player != null && zombie[0].isAlive()) {
+                        watched[0]++;
+                        if (player.isBlocking()) raised[0]++;
+                    }
+                    context.assertTrue(!zombie[0].isAlive(), "The zombie killed");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(raised[0] > 0, "The shield up between swings: up " + raised[0] + " of " + watched[0] + " ticks");
+                    context.assertTrue(f.player().getOffHandStack().isOf(Items.SHIELD), "The shield still in the off hand");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }

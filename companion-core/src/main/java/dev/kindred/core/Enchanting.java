@@ -27,9 +27,9 @@ public final class Enchanting {
 
     /** What a run enchants, in the order it does: its weapons first, then its armour, then its pickaxe. */
     public enum Kind {
-        SWORD("sword", "minecraft:sharpness"), BOW("bow", "minecraft:power"), CHESTPLATE("chestplate", "minecraft:protection"),
-        LEGGINGS("leggings", "minecraft:protection"), HELMET("helmet", "minecraft:protection"), BOOTS("boots", "minecraft:feather_falling"),
-        PICKAXE("pickaxe", "minecraft:efficiency");
+        SWORD("sword", VanillaIds.SHARPNESS), BOW("bow", VanillaIds.POWER), CHESTPLATE("chestplate", VanillaIds.PROTECTION),
+        LEGGINGS("leggings", VanillaIds.PROTECTION), HELMET("helmet", VanillaIds.PROTECTION), BOOTS("boots", VanillaIds.FEATHER_FALLING),
+        PICKAXE("pickaxe", VanillaIds.EFFICIENCY);
 
         /** What a player calls it. */
         public final String noun;
@@ -41,7 +41,7 @@ public final class Enchanting {
             this.wants = wants;
         }
 
-        /** The kind of an item by its id ("minecraft:diamond_sword"), or none for what a run does not enchant. */
+        /** The kind of an item by its id (minecraft:diamond_sword), or none for what a run does not enchant. */
         public static Optional<Kind> of(String item) {
             String path = item.substring(item.indexOf(':') + 1);
             for (Kind kind : values()) if (path.equals(kind.noun) || path.endsWith("_" + kind.noun)) return Optional.of(kind);
@@ -93,10 +93,10 @@ public final class Enchanting {
         if (enchantment == null) return 0;
         if (enchantment.equals(kind.wants)) return 3;
         return switch (enchantment) {
-            case "minecraft:unbreaking" -> 2;
-            case "minecraft:protection", "minecraft:feather_falling", "minecraft:fire_protection", "minecraft:projectile_protection" ->
+            case VanillaIds.UNBREAKING -> 2;
+            case VanillaIds.PROTECTION, VanillaIds.FEATHER_FALLING, VanillaIds.FIRE_PROTECTION, VanillaIds.PROJECTILE_PROTECTION ->
                     kind == Kind.BOOTS || kind == Kind.HELMET || kind == Kind.CHESTPLATE || kind == Kind.LEGGINGS ? 2 : 1;
-            case "minecraft:looting", "minecraft:fortune", "minecraft:infinity", "minecraft:sweeping_edge" -> 2;
+            case VanillaIds.LOOTING, VanillaIds.FORTUNE, VanillaIds.INFINITY, VanillaIds.SWEEPING_EDGE -> 2;
             default -> 1;
         };
     }

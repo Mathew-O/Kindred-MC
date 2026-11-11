@@ -104,6 +104,11 @@ public final class KindredMod implements ModInitializer {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (customs != null) customs.tick(server.getTicks());
         });
+        // F-38: core asks the server's own tags what things are, once they are bound and after each reload.
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> KindredCapabilities.refresh());
+        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
+            if (success) KindredCapabilities.refresh();
+        });
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             runtime = new PlayerRuntime(server);
             runtime.start();
@@ -216,6 +221,7 @@ public final class KindredMod implements ModInitializer {
             }
             if (runtime != null) runtime.finishShutdown();
             runtime = null;
+            KindredCapabilities.clear();
             PlayerSaves.drain();
             if (customs != null) {
                 customs.close();

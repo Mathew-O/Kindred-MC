@@ -1,5 +1,8 @@
 package dev.kindred.core.progression;
 
+import dev.kindred.core.Capabilities;
+import dev.kindred.core.VanillaIds;
+
 import dev.kindred.core.TaskPreferences;
 
 import java.util.ArrayList;
@@ -45,9 +48,9 @@ public final class ProgressionPolicy {
 
         int planksCount = getPlanksCount(obs);
         int logsCount = getLogsCount(obs);
-        int sticksCount = obs.count("minecraft:stick");
-        int cobbleCount = obs.count("minecraft:cobblestone");
-        int ironIngotCount = obs.count("minecraft:iron_ingot");
+        int sticksCount = obs.count(VanillaIds.STICK);
+        int cobbleCount = obs.count(VanillaIds.COBBLESTONE);
+        int ironIngotCount = obs.count(VanillaIds.IRON_INGOT);
 
         switch (id) {
             case GATHER_WOOD -> {
@@ -81,7 +84,7 @@ public final class ProgressionPolicy {
                 }
             }
             case CRAFT_CRAFTING_TABLE -> {
-                if (!obs.hasNearbyCraftingTable() && !obs.has("minecraft:crafting_table", 1)) {
+                if (!obs.hasNearbyCraftingTable() && !obs.has(VanillaIds.CRAFTING_TABLE, 1)) {
                     if (planksCount >= 4) {
                         return java.util.Optional.of(new ProgressionRecommendation(
                                 id, "native_craft", Map.of("recipe", "crafting_table"),
@@ -93,9 +96,9 @@ public final class ProgressionPolicy {
                 }
             }
             case DEPLOY_CRAFTING_TABLE -> {
-                if (obs.has("minecraft:crafting_table", 1) && !obs.hasNearbyCraftingTable()) {
+                if (obs.has(VanillaIds.CRAFTING_TABLE, 1) && !obs.hasNearbyCraftingTable()) {
                     return java.util.Optional.of(new ProgressionRecommendation(
-                            id, "native_place", Map.of("block", "minecraft:crafting_table"),
+                            id, "native_place", Map.of("block", VanillaIds.CRAFTING_TABLE),
                             TaskPreferences.Priority.PROJECT, 60.8 + needBonus,
                             new TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.8),
                             "Advancing milestone: Deploy Crafting Table"
@@ -122,10 +125,9 @@ public final class ProgressionPolicy {
                 }
             }
             case MINE_COBBLESTONE -> {
-                if (obs.hasAssignedStonePatch() && (obs.has("minecraft:wooden_pickaxe", 1)
-                        || obs.has("minecraft:stone_pickaxe", 1) || obs.has("minecraft:iron_pickaxe", 1))) {
+                if (obs.hasAssignedStonePatch() && obs.hasTool(Capabilities.Tool.PICKAXE, 1, 3)) {
                     return java.util.Optional.of(new ProgressionRecommendation(
-                            id, "native_mine", Map.of("resource", "minecraft:stone"),
+                            id, "native_mine", Map.of("resource", VanillaIds.STONE),
                             TaskPreferences.Priority.PROJECT, 60.0 + needBonus,
                             new TaskPreferences.Affinities(0.0, 0.0, 0.0, 1.0),
                             "Advancing milestone: Mine Cobblestone"
@@ -152,7 +154,7 @@ public final class ProgressionPolicy {
                 }
             }
             case CRAFT_FURNACE -> {
-                if (obs.hasNearbyCraftingTable() && !obs.hasNearbyFurnace() && !obs.has("minecraft:furnace", 1)) {
+                if (obs.hasNearbyCraftingTable() && !obs.hasNearbyFurnace() && !obs.has(VanillaIds.FURNACE, 1)) {
                     if (cobbleCount >= 8) {
                         return java.util.Optional.of(new ProgressionRecommendation(
                                 id, "native_craft", Map.of("recipe", "furnace"),
@@ -164,9 +166,9 @@ public final class ProgressionPolicy {
                 }
             }
             case DEPLOY_FURNACE -> {
-                if (obs.has("minecraft:furnace", 1) && !obs.hasNearbyFurnace()) {
+                if (obs.has(VanillaIds.FURNACE, 1) && !obs.hasNearbyFurnace()) {
                     return java.util.Optional.of(new ProgressionRecommendation(
-                            id, "native_place", Map.of("block", "minecraft:furnace"),
+                            id, "native_place", Map.of("block", VanillaIds.FURNACE),
                             TaskPreferences.Priority.PROJECT, 61.2 + needBonus,
                             new TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.8),
                             "Advancing milestone: Deploy Furnace"
@@ -243,7 +245,7 @@ public final class ProgressionPolicy {
             case SECURE_SHELTER -> {
                 if (obs.isNight() && !obs.hasShelter() && cobbleCount >= 1) {
                     return java.util.Optional.of(new ProgressionRecommendation(
-                            id, "native_place", Map.of("block", "minecraft:cobblestone"),
+                            id, "native_place", Map.of("block", VanillaIds.COBBLESTONE),
                             TaskPreferences.Priority.URGENT, 95.0 + needBonus,
                             new TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.0),
                             "Emergency night shelter barricade"
@@ -277,9 +279,9 @@ public final class ProgressionPolicy {
                 }
             }
             case ESTABLISH_FARM -> {
-                if (obs.hasHoe() && obs.hasNearbyFarmland() && obs.has("minecraft:wheat_seeds", 1)) {
+                if (obs.hasHoe() && obs.hasNearbyFarmland() && obs.has(VanillaIds.WHEAT_SEEDS, 1)) {
                     return java.util.Optional.of(new ProgressionRecommendation(
-                            id, "native_plant", Map.of("item", "minecraft:wheat_seeds"),
+                            id, "native_plant", Map.of("item", VanillaIds.WHEAT_SEEDS),
                             TaskPreferences.Priority.PROJECT, 62.0 + needBonus,
                             new TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.8),
                             "Advancing milestone: Sow Seeds on Farmland"
@@ -294,8 +296,7 @@ public final class ProgressionPolicy {
                 }
             }
             case CRAFT_BED -> {
-                int woolCount = obs.count("minecraft:white_wool") + obs.count("minecraft:black_wool")
-                        + obs.count("minecraft:red_wool") + obs.count("minecraft:yellow_wool");
+                int woolCount = obs.count(VanillaIds.BED_WOOL);
                 if (obs.hasNearbyCraftingTable() && woolCount >= 3 && planksCount >= 3) {
                     return java.util.Optional.of(new ProgressionRecommendation(
                             id, "native_craft", Map.of("recipe", "white_bed"),
@@ -306,7 +307,7 @@ public final class ProgressionPolicy {
                 }
             }
             case ENTER_NETHER -> {
-                if (!obs.isInNether() && obs.has("minecraft:flint_and_steel", 1)) {
+                if (!obs.isInNether() && obs.has(VanillaIds.FLINT_AND_STEEL, 1)) {
                     return java.util.Optional.of(new ProgressionRecommendation(
                             id, "native_ignite_portal", Map.of(),
                             TaskPreferences.Priority.PROJECT, 65.0 + needBonus,
@@ -329,7 +330,7 @@ public final class ProgressionPolicy {
                 if (obs.isInNether()) {
                     if (obs.hasAssignedNetherWartPatch()) {
                         return java.util.Optional.of(new ProgressionRecommendation(
-                                id, "native_gather", Map.of("count", "1", "slot", "0", "resource", "minecraft:nether_wart"),
+                                id, "native_gather", Map.of("count", "1", "slot", "0", "resource", VanillaIds.NETHER_WART),
                                 TaskPreferences.Priority.PROJECT, 67.0 + needBonus,
                                 new TaskPreferences.Affinities(0.0, 0.0, 0.0, 0.8),
                                 "Advancing milestone: Gather Nether Wart from assigned patch"
@@ -350,18 +351,11 @@ public final class ProgressionPolicy {
 
     /** How many logs of any kind it carries. */
     private static int getLogsCount(ProgressionObservation obs) {
-        return obs.count("minecraft:oak_log") + obs.count("minecraft:birch_log")
-                + obs.count("minecraft:spruce_log") + obs.count("minecraft:jungle_log")
-                + obs.count("minecraft:acacia_log") + obs.count("minecraft:dark_oak_log")
-                + obs.count("minecraft:mangrove_log") + obs.count("minecraft:cherry_log");
+        return obs.count(VanillaIds.LOGS);
     }
 
     /** How many planks of any kind it carries. */
     private static int getPlanksCount(ProgressionObservation obs) {
-        return obs.count("minecraft:oak_planks") + obs.count("minecraft:birch_planks")
-                + obs.count("minecraft:spruce_planks") + obs.count("minecraft:jungle_planks")
-                + obs.count("minecraft:acacia_planks") + obs.count("minecraft:dark_oak_planks")
-                + obs.count("minecraft:mangrove_planks") + obs.count("minecraft:cherry_planks")
-                + obs.count("minecraft:bamboo_planks");
+        return obs.count(VanillaIds.PLANKS);
     }
 }
