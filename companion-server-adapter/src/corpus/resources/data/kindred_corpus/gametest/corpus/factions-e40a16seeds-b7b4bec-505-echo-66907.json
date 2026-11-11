@@ -1,0 +1,273 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 66907,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  24,
+  11,
+  -312
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.570122647180334,
+  8.0,
+  16.948254064005198
+ ],
+ "yaw": -7.28664,
+ "pitch": 43.210487,
+ "health": 18.066668,
+ "food": 20,
+ "saturation": 2.8000002,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cocoa_beans",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 18
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 114
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:jungle_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 24
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:acacia_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 6
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 42
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 50
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 54
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 12
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 4
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 2
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 18
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 66
+    }
+   }
+  },
+  {
+   "slot": 36,
+   "stack": {
+    "id": "minecraft:iron_boots",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 18907,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 40, 19, -296",
+ "task": "Dig out of the wall: out from under the falling gravel to 40, 19, -296",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Echo suffocated in a wall",
+ "ticks": 1200,
+ "log": [
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:58] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:59] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:59] [Server thread/INFO]: Echo native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 40, 19, -296]",
+  "[13:30:59] [Server thread/INFO]: Echo died at 40, 19, -296: Echo suffocated in a wall (tick 66907, night, under cover, hunger 19, armour 2, holding stone_pickaxe, a shield; doing \"Dig out of the wall: out from under the falling gravel to 40, 19, -296\" in \"Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 40, 19, -296\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "factions-e40a16seeds-b7b4bec",
+  "seed": "505",
+  "build": "b7b4bec",
+  "replay": "",
+  "source": "claude/corpus-data-factions-b7b4bec-1110@03b73b6:factions-e40a16seeds-b7b4bec/505/replays/world/Echo-66907",
+  "class": "death: suffocation",
+  "mode": "factions",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; the faction match is not restored (a replay keeps no mode state), so the scene plays as survival on the same ground and state; recorded on b7b4bec, which still had the walk set-aside of #120"
+ }
+}
