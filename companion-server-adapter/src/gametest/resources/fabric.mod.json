@@ -12,6 +12,7 @@
       "dev.kindred.fabric.CompanionGameTests",
       "dev.kindred.fabric.PlayerArchitectureGameTests",
       "dev.kindred.fabric.NativeCapabilitiesGameTests",
+      "dev.kindred.fabric.NativeTaggedWoodGameTests",
       "dev.kindred.fabric.NativePlayerBodyGameTests",
       "dev.kindred.fabric.NativePlayerLifecycleGameTests",
       "dev.kindred.fabric.NativePlayerRuntimeGameTests",

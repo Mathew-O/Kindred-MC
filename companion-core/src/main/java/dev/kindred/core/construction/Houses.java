@@ -262,7 +262,7 @@ public final class Houses {
             this.stone = stone;
         }
 
-        String planks() { return VanillaIds.NAMESPACE + wood + "_planks"; }
+        String planks() { return Woods.planks(wood); }
 
         void put(int x, int y, int z, String spec) { at.put(new Pos(x, y, z), BlockSpec.parse(spec)); }
 
@@ -280,7 +280,7 @@ public final class Houses {
             for (int y = from; y <= to; y++) for (int x = 0; x < width; x++) for (int z = 0; z < depth; z++) {
                 if (!edge(x, z)) continue;
                 boolean corner = (x == 0 || x == width - 1) && (z == 0 || z == depth - 1);
-                put(x, y, z, corner ? VanillaIds.NAMESPACE + wood + "_log[axis=y]" : stone);
+                put(x, y, z, corner ? Woods.log(wood) + "[axis=y]" : stone);
             }
         }
 
@@ -299,8 +299,8 @@ public final class Houses {
         /** A door in the wall at ({@code x}, {@code z}), hung from outside facing in. */
         void door(int x, int y, int z) {
             String facing = z == depth - 1 ? "north" : z == 0 ? "south" : x == 0 ? "east" : "west";
-            put(x, y, z, VanillaIds.NAMESPACE + wood + "_door[facing=" + facing + ",half=lower,hinge=left,open=false]");
-            put(x, y + 1, z, VanillaIds.NAMESPACE + wood + "_door[facing=" + facing + ",half=upper,hinge=left,open=false]");
+            put(x, y, z, Woods.door(wood) + "[facing=" + facing + ",half=lower,hinge=left,open=false]");
+            put(x, y + 1, z, Woods.door(wood) + "[facing=" + facing + ",half=upper,hinge=left,open=false]");
         }
 
         /** A window: a cell of wall left open. */
@@ -322,7 +322,7 @@ public final class Houses {
             var way = Placement.face(facing);
             var at = new Pos(x, y, z);
             for (int k = 0; k < steps; k++) {
-                put(at.x(), at.y(), at.z(), VanillaIds.NAMESPACE + wood + "_stairs[facing=" + facing + ",half=bottom]");
+                put(at.x(), at.y(), at.z(), Woods.stairs(wood) + "[facing=" + facing + ",half=bottom]");
                 // Head room over each step.
                 for (int h = 1; h <= 2; h++) open.add(at.add(0, h, 0));
                 at = at.offset(way).up();
@@ -336,7 +336,7 @@ public final class Houses {
 
         /** Stairs along the north and south eaves facing in, planks under each course, slabs along an odd ridge. */
         void gableRoof(int eaves) {
-            String stair = VanillaIds.NAMESPACE + wood + "_stairs[facing=%s,half=bottom]", slab = VanillaIds.NAMESPACE + wood + "_slab[type=bottom]";
+            String stair = Woods.stairs(wood) + "[facing=%s,half=bottom]", slab = Woods.slab(wood) + "[type=bottom]";
             for (int x = 0; x < width; x++) {
                 put(x, eaves, 0, stair.formatted("south"));
                 put(x, eaves, depth - 1, stair.formatted("north"));
@@ -364,7 +364,7 @@ public final class Houses {
 
         /** As {@link #gableRoof}, the ridge running north to south: stairs along the west and east eaves facing in. */
         void gableRoofAlongZ(int eaves) {
-            String stair = VanillaIds.NAMESPACE + wood + "_stairs[facing=%s,half=bottom]", slab = VanillaIds.NAMESPACE + wood + "_slab[type=bottom]";
+            String stair = Woods.stairs(wood) + "[facing=%s,half=bottom]", slab = Woods.slab(wood) + "[type=bottom]";
             for (int z = 0; z < depth; z++) {
                 put(0, eaves, z, stair.formatted("east"));
                 put(width - 1, eaves, z, stair.formatted("west"));
