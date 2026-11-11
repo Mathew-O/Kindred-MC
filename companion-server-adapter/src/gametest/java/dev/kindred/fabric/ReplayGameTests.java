@@ -79,7 +79,36 @@ public final class ReplayGameTests implements FabricGameTest {
     /** Every server tick, any replay past its test's time is stopped: the finally of a test that timed out. */
     private static void watch() {
         if (WATCHING.compareAndSet(false, true))
-            net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> stopFinished(server.getTicks()));
+            net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+                stopFinished(server.getTicks());
+                restoreIfNoneLeft(server);
+            });
+    }
+
+    /**
+     * The server's difficulty and weather as they were before the replays now running set theirs, put back once the last
+     * of them has ended. A replay sets both server-wide to its record; left so, the contract suite's later batches ran on
+     * a replay's easy difficulty or in its rain, and a shield fixture and a crystal's blast fixture failed (CI on #164).
+     */
+    private static net.minecraft.world.Difficulty difficultyBefore;
+    private static boolean rainingBefore, thunderingBefore;
+    private static int clearBefore, rainBefore;
+
+    private static void remember(net.minecraft.server.MinecraftServer server, net.minecraft.server.world.ServerWorld world) {
+        if (!LIVE.isEmpty() || difficultyBefore != null) return;
+        difficultyBefore = server.getSaveProperties().getDifficulty();
+        rainingBefore = world.isRaining();
+        thunderingBefore = world.isThundering();
+        var properties = server.getSaveProperties().getMainWorldProperties();
+        clearBefore = properties.getClearWeatherTime();
+        rainBefore = properties.getRainTime();
+    }
+
+    private static void restoreIfNoneLeft(net.minecraft.server.MinecraftServer server) {
+        if (!LIVE.isEmpty() || difficultyBefore == null) return;
+        server.setDifficulty(difficultyBefore, true);
+        server.getOverworld().setWeather(clearBefore, rainBefore, rainingBefore, thunderingBefore);
+        difficultyBefore = null;
     }
 
     private static void stopFinished(long tick) {
@@ -145,6 +174,7 @@ public final class ReplayGameTests implements FabricGameTest {
         }
         runtime.start();
         watch();
+        remember(server, world);
         LIVE.put(runtime, (long) server.getTicks() + ticks + 600 + 20);
         var test = testOf(context);
         if (test != null) TESTS.put(runtime, test);
