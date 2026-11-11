@@ -156,6 +156,9 @@ public final class NativeCoverClimbGameTests implements FabricGameTest {
                     player.refreshPositionAndAngles(at.x, at.y, at.z, 90, 0);
                 })
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                // The cover as built, its light too: built a tick before, the light not yet worked out, one copy of
+                // three read the sky over its floor and took the floor for where it was last under the sky.
+                .createAndAdd(() -> context.assertTrue(!context.getWorld().isSkyVisible(f.player().getBlockPos().up()), "Under its cover"))
                 .createAndAdd(() -> {
                     var player = f.player();
                     var inventory = player.getInventory();
