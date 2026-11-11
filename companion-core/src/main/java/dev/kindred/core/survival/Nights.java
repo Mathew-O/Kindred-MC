@@ -20,6 +20,11 @@ public final class Nights {
     public static final long MARGIN = 600;
     /** The longest walk home it will start for the night: three minutes. Farther, home is out of reach for tonight. */
     public static final long LONGEST_WALK = 3_600;
+    /**
+     * How long a person's night waits for an AI player on its way to bed: half a minute. Past it, an AI player not yet in
+     * bed is left out of the count, so a person's night is never held for longer.
+     */
+    public static final long TO_BED_LIMIT = 600;
     /** A walking pace when none is known yet, in blocks a second. */
     public static final double WALKING = 4.3;
 

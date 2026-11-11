@@ -91,7 +91,9 @@ final class NativeSleepAction extends NativeRecordedAction {
 
             boolean canSleep = world.isNight() || world.isThundering()
                     || (world.getTimeOfDay() % 24000L >= 12542L && world.getTimeOfDay() % 24000L <= 23460L);
-            if (!canSleep) {
+            // By day, only to set where it wakes after a death at its own bed (E-70a: home again after a night away), as
+            // a person's use of a bed by day sets it; vanilla's own use, which sleeps only at night.
+            if (!canSleep && !"true".equals(args.get("anchor"))) {
                 return Step.blocked("Sleeping is only possible at night or during thunderstorms", true);
             }
             if (player.getEyePos().squaredDistanceTo(target.getX() + 0.5, target.getY() + 0.5, target.getZ() + 0.5) > 25.0) {

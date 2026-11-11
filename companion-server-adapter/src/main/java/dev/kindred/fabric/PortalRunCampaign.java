@@ -2516,6 +2516,13 @@ final class PortalRunCampaign {
                 return pickup;
             }
         }
+        // Its night in the bed it carries, home out of reach (E-70a), and the bed back up in the morning: before the
+        // night's other work, so it is asleep rather than mining on.
+        Optional<Task> bedded = carriedBedNight(body);
+        if (bedded.isPresent()) {
+            progress = stageLabel(stage) + ": " + bedded.get().label();
+            return bedded;
+        }
         // Nights on the surface belong to skeletons: get below ground, and leave surface jobs for daylight. A player that
         // learned to shelter early counts the last of the afternoon as night already.
         var here = player.getServerWorld();
@@ -4027,7 +4034,7 @@ final class PortalRunCampaign {
         return explore(player, what);
     }
 
-    private static boolean underground(ServerPlayerEntity player) {
+    static boolean underground(ServerPlayerEntity player) {
         var world = player.getServerWorld();
         // The Nether has a roof everywhere and no surface to climb to: none of the Overworld's below-ground rules apply.
         if (!world.getDimension().hasSkyLight()) return false;
@@ -6657,6 +6664,11 @@ final class PortalRunCampaign {
      * nothing walks or shoots in. A spot with more openings than a staircase or tunnel leaves is a cave and is left.
      */
     private Optional<Task> seal(NativePlayerBody body) {
+        return seal(body, java.util.Set.of());
+    }
+
+    /** As {@link #seal(NativePlayerBody)}, leaving {@code keep} open (the room dug for its bed, E-70a). */
+    private Optional<Task> seal(NativePlayerBody body, java.util.Set<BlockPos> keep) {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
@@ -6672,7 +6684,7 @@ final class PortalRunCampaign {
         }
         var open = new java.util.LinkedHashSet<BlockPos>();
         for (BlockPos cell : occupied) {
-            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down())) open.add(gap);
+            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down()) && !keep.contains(gap)) open.add(gap);
         }
         if (open.isEmpty() || open.size() > 2 + 2 * occupied.size()) return Optional.empty();
         for (BlockPos cell : open) {
@@ -6695,6 +6707,168 @@ final class PortalRunCampaign {
     /** Whether it is dug in for the night: night, its shelter sealed, and it inside it. */
     boolean dugInForTheNight(ServerPlayerEntity player) {
         return night(player.getServerWorld()) && nightShelterAt != null && sheltered(player) && inNightShelter(player);
+    }
+
+    // ------------------------------------------------------------------ nights in its own bed (E-70a)
+
+    /** Whether its nights are spent in bed (E-70a), and whether its home bed is in reach tonight: the runtime's say. */
+    private boolean bedNights, homeInReach;
+    /** The head of the bed it set down for the night, to take back up in the morning; null when none of its stands. */
+    private BlockPos carriedBedAt;
+    /** The foot it last set its bed down at, until the bed is seen there. */
+    private BlockPos bedGoingAt;
+    /** The times it has lain down tonight in the bed it carries and not fallen asleep (a mob about, say). */
+    private int bedTries;
+    /** The two cells, beside its pocket, its bed goes in tonight: chosen before the pocket is sealed, so left open. */
+    private List<BlockPos> bedRoomFor;
+    private Direction bedRoomWay;
+    /** A night spent holed up with no bed to sleep in: a bed is wanted first thing (E-70a). */
+    private boolean bedUrgent;
+    /** Lying down in the bed it carries more often than this in a night, it gives the night up to its other work. */
+    private static final int BED_TRIES = 4;
+
+    /** The runtime's say on its nights (E-70a): spent in bed, and whether its home bed is in reach tonight. */
+    void nights(boolean inBed, boolean homeInReach) {
+        this.bedNights = inBed;
+        this.homeInReach = homeInReach;
+    }
+
+    /** A bed is a standing want while its nights are spent in bed (E-70a). */
+    boolean bedWanted() { return bedNights; }
+
+    /** A night was spent holed up for want of a bed: one is wanted first thing (E-70a). */
+    boolean bedUrgent() { return bedNights && bedUrgent; }
+
+    /** The head of the bed it set down for the night and has not taken back up yet, or null; one just set down counts. */
+    BlockPos carriedBed(ServerWorld world) {
+        seeCarriedBed(world);
+        return carriedBedAt;
+    }
+
+    /** Its bed seen where it set it down: its head kept, the half whose breaking drops the bed where it stands. */
+    private void seeCarriedBed(ServerWorld world) {
+        if (bedGoingAt == null || !world.isChunkLoaded(bedGoingAt) || !world.getBlockState(bedGoingAt).isIn(BlockTags.BEDS)) return;
+        var state = world.getBlockState(bedGoingAt);
+        carriedBedAt = state.get(net.minecraft.block.BedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? bedGoingAt
+                : bedGoingAt.offset(state.get(net.minecraft.block.BedBlock.FACING)).toImmutable();
+        bedGoingAt = null;
+    }
+
+    /**
+     * Its night with home out of reach, in the bed it carries (E-70a): dug in and its pocket sealed, as for any night,
+     * then its own bed set down in the pocket (its spawn moves there, as vanilla moves it), slept in, and in the morning
+     * taken back up. With no bed to hand, nothing here: the night is the hole-up it always was, and a bed is wanted
+     * first thing. Never a bed it did not set down itself, never in the Nether or the End, and never while its spawn is
+     * the bed it set by the End portal.
+     */
+    Optional<Task> carriedBedNight(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return Optional.empty();
+        boolean sleepable = dev.kindred.core.survival.Nights.sleepTime(world.getTimeOfDay(), world.isThundering());
+        seeCarriedBed(world);
+        if (carriedBedAt != null && (!world.isChunkLoaded(carriedBedAt) || !world.getBlockState(carriedBedAt).isIn(BlockTags.BEDS))) carriedBedAt = null;
+        if (bedSlot(player) >= 0) bedUrgent = false;
+        // Morning: its bed back up, unless it was left far behind.
+        if (!sleepable) {
+            bedTries = 0;
+            bedGoingAt = null;
+            bedRoomFor = null;
+            if (carriedBedAt == null || player.isSleeping()) return Optional.empty();
+            if (carriedBedAt.getSquaredDistance(player.getBlockPos()) > 24 * 24) {
+                carriedBedAt = null;
+                return Optional.empty();
+            }
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 4.5 * 4.5) return Optional.of(new Task("native_break", coords(carriedBedAt, Map.of("carried_bed", "true")), "Take its bed back up in the morning"));
+            return Optional.of(go(carriedBedAt, 2.0, true, "Back to its bed to take it up"));
+        }
+        if (!bedNights || homeInReach || stronghold.spawnByPortal(player) || bedTries >= BED_TRIES) return Optional.empty();
+        if (player.isSleeping()) return Optional.of(new Task("native_wait", Map.of("seconds", "2"), "Asleep in the bed it carries"));
+        if (carriedBedAt != null) {
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 3.0 * 3.0) {
+                bedTries++;
+                return Optional.of(new Task("native_sleep", coords(carriedBedAt, Map.of()), "Sleep in the bed it carries"));
+            }
+            return Optional.of(go(carriedBedAt, 1.5, true, "To the bed it carries"));
+        }
+        int slot = bedSlot(player);
+        if (slot < 0) {
+            bedUrgent = true; // Holed up as before, and a bed wanted first thing.
+            return Optional.empty();
+        }
+        // In a sealed pocket first: dug in, and the way in closed.
+        if (!sheltered(player)) {
+            Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night, its bed with it");
+            if (dig.isPresent()) nightShelterAt = player.getBlockPos();
+            return dig;
+        }
+        if (!player.isOnGround()) return Optional.empty();
+        BlockPos feet = player.getBlockPos();
+        // Where the bed goes, chosen before the pocket is sealed: room beside it, or two cells to dig along a way that keeps
+        // the pocket sealed. Those are left open by the seal.
+        if (bedRoomFor == null || !bedRoomFor.getFirst().equals(feet.offset(bedRoomWay)) && !bedRoomFor.contains(feet)) {
+            bedRoomFor = null;
+            for (Direction way : Direction.Type.HORIZONTAL) {
+                BlockPos foot = feet.offset(way), head = foot.offset(way);
+                if (bedRoom(world, foot) && bedRoom(world, head) || enclosedForBed(world, feet, foot, head)) {
+                    bedRoomFor = List.of(foot.toImmutable(), head.toImmutable());
+                    bedRoomWay = way;
+                    break;
+                }
+            }
+            if (bedRoomFor == null) return Optional.empty(); // Nowhere to set it down tonight: the night as before.
+        }
+        var room = List.of(bedRoomFor.getFirst(), bedRoomFor.getFirst().up(), bedRoomFor.getLast(), bedRoomFor.getLast().up());
+        Optional<Task> seal = seal(body, java.util.Set.copyOf(room));
+        if (seal.isPresent()) return seal;
+        // The cells over the bed too: the one over its foot puts its head's cell in sight to dig, and a bed with ground
+        // over either half is one vanilla will not let it lie in.
+        for (BlockPos cell : room) {
+            // Dug without going after what drops, so it stays in its pocket.
+            if (!world.getBlockState(cell).isAir()) return Optional.of(clearAt(cell, "Room for its bed at " + cell.toShortString()));
+        }
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready the bed it carries"));
+        BlockPos foot = bedRoomFor.getFirst();
+        if (!bedRoom(world, foot) || !bedRoom(world, bedRoomFor.getLast())) {
+            bedRoomFor = null;
+            return Optional.empty();
+        }
+        bedGoingAt = foot;
+        return Optional.of(new Task("native_bed", Map.of("x", String.valueOf(foot.getX()), "y", String.valueOf(foot.getY() - 1),
+                "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), "Set its bed down in its pocket for the night"));
+    }
+
+    private static int bedSlot(ServerPlayerEntity player) {
+        for (int slot = 0; slot < 36; slot++) if (player.getInventory().getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.BEDS)) return slot;
+        return -1;
+    }
+
+    /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
+    private static boolean bedRoom(ServerWorld world, BlockPos pos) {
+        return world.isChunkLoaded(pos) && world.getBlockState(pos).isAir() && world.getFluidState(pos).isEmpty()
+                && world.getBlockState(pos.up()).isAir() && world.getBlockState(pos.down()).isSideSolidFullSquare(world, pos.down(), Direction.UP);
+    }
+
+    /**
+     * Whether {@code first} and {@code second}, beside the pocket at {@code feet}, can be dug out for a bed, with the cells
+     * over them (vanilla lets no one lie in a bed with ground over it), and leave the pocket sealed: each air or solid ground
+     * that breaks (no fluid, no block entity, nothing unbreakable), the bed's two on a solid floor, and everything round
+     * them, other than the pocket and each other, solid ground with no fluid.
+     */
+    private static boolean enclosedForBed(ServerWorld world, BlockPos feet, BlockPos first, BlockPos second) {
+        var pocket = java.util.Set.of(feet, feet.up(), first, first.up(), second, second.up());
+        for (BlockPos cell : List.of(first, first.up(), second, second.up())) {
+            if (!world.isChunkLoaded(cell) || !world.getFluidState(cell).isEmpty() || world.getBlockEntity(cell) != null) return false;
+            var state = world.getBlockState(cell);
+            if (!state.isAir() && (state.getHardness(world, cell) < 0 || state.getHardness(world, cell) > 5)) return false;
+            if ((cell.equals(first) || cell.equals(second)) && !world.getBlockState(cell.down()).isSideSolidFullSquare(world, cell.down(), Direction.UP)) return false;
+            for (Direction side : Direction.values()) {
+                BlockPos next = cell.offset(side);
+                if (pocket.contains(next) || side == Direction.DOWN) continue;
+                if (passable(world, next) || !world.getFluidState(next).isEmpty()) return false;
+            }
+        }
+        return true;
     }
 
     private boolean inNightShelter(ServerPlayerEntity player) {
@@ -7679,8 +7853,13 @@ final class PortalRunCampaign {
 
     /** Hunt the nearest adult animal of {@code kind} in sight (chickens for their feathers), picking up what it drops. */
     Optional<Task> huntFor(ServerPlayerEntity player, Class<? extends PassiveEntity> kind, String what) {
+        return huntFor(player, kind, what, 24);
+    }
+
+    /** As {@link #huntFor(ServerPlayerEntity, Class, String)}, for an animal up to {@code reach} blocks off. */
+    Optional<Task> huntFor(ServerPlayerEntity player, Class<? extends PassiveEntity> kind, String what, int reach) {
         var world = player.getServerWorld();
-        var animals = world.getEntitiesByClass(kind, player.getBoundingBox().expand(24, 8, 24),
+        var animals = world.getEntitiesByClass(kind, player.getBoundingBox().expand(reach, 8, reach),
                 animal -> animal.isAlive() && !animal.isBaby() && !blocked(animal.getBlockPos()) && player.canSee(animal));
         if (animals.isEmpty()) return Optional.empty();
         PassiveEntity nearest = animals.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
