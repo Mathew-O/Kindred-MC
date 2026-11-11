@@ -38,6 +38,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06f: the safe zones' chunks gathered once](evidence/M-06f.md#the-safe-zones-chunks-gathered-once-2026-11-11-claudem06i-safe-chunks-1111).
 
+## Factions an operator's choice (M-06i) — 11 November 2026 (`claude/m06i-playable-1111`)
+
+- [M-06i: Factions an operator's choice](evidence/M-06i.md#factions-an-operators-choice-2026-11-11-claudem06i-playable-1111).
+
 ## F-35a: a walk jumps a one- or two-block gap, 2026-11-09
 
 - Build: `./gradlew build`.
