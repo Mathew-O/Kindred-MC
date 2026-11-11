@@ -511,7 +511,7 @@ final class PlayerRuntime {
         this.metadataDirectory = metadataDirectory;
         this.factions = new FactionsService(server, dev.kindred.core.factions.FactionSettings.DEFAULTS, this::projected, this::record);
         this.market = new MarketDesk(server, this::projected, this::recordThen);
-        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market);
+        this.auctions = new AuctionHouse(server, this::projected, this::recordThen, () -> factions.settings(), market, () -> running && !stopping);
         this.hud = new FactionsHud(factions, market, hudSections);
         factions.panelNotices(hud::notice);
         this.strategist = StrategistBridge.fromEnvironment(metadataDirectory);
@@ -712,6 +712,7 @@ final class PlayerRuntime {
     }
 
     void start() {
+        stopping = false; // A runtime started again begins a new epoch: its writes and callbacks are live.
         Path directory = metadataDirectory;
         long currentStartupGen = ++startupGeneration;
         // Only paths and immutable values cross into filesystem/database workers.
@@ -2652,6 +2653,7 @@ final class PlayerRuntime {
         for (Entry entry : entries.values()) {
             if (entry.nativeBody != null && entry.nativeBody.connected()) {
                 if (replays != null && tick % 20 == 0) replays.note(entry.data.displayName(), entry.nativeBody.entity(), tick);
+                if (replays != null && tick % 20 == 0) captureSpell(entry);
                 if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
                 if (tick % 20 == 0 && factionsWorld()) watchFactionLand(entry, entry.nativeBody.entity());
                 refreshTacticalObservation(entry, tick);
@@ -3791,9 +3793,11 @@ final class PlayerRuntime {
                     if (actualRecipe != null) {
                         BlockPos craftTable = entry.cachedCraftingTablePos;
                         if (actualRecipe.equals("oak_planks") && body.planCraft("oak_planks", craftTable).isEmpty()) {
-                            for (String logType : List.of("birch", "spruce", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo")) {
-                                if (body.planCraft(logType + "_planks", craftTable).isPresent()) {
-                                    actualRecipe = logType + "_planks";
+                            // F-38: the planks of whatever wood it holds, by the server's #minecraft:planks; vanilla's
+                            // woods in the order they were always tried, then any other the tag holds, by id.
+                            for (String planks : planksInTryOrder()) {
+                                if (body.planCraft(planks, craftTable).isPresent()) {
+                                    actualRecipe = planks;
                                     break;
                                 }
                             }
@@ -7499,6 +7503,15 @@ final class PlayerRuntime {
     /** Report state changes once, persist checkpoints on pause, and release the lease on every terminal state. */
     private void observeRunner(Entry entry) {
         if (entry.runner == null) return;
+        // An outcome its goal could not settle for itself, its ceiling opened under the water and the fill or the reseal not
+        // gone as planned: blocked for reconciliation, as an uncertain action is, and never tried again (F-35g).
+        if (entry.nativeState != null && entry.campaign != null && !entry.reconciliationBlocked) {
+            var unsettled = entry.campaign.reconciliation();
+            if (unsettled.isPresent()) {
+                nativeFailure(server.getCommandSource(), entry, "Goal outcome requires reconciliation", new IllegalStateException(unsettled.get()));
+                return;
+            }
+        }
         SkillRunner.State state = entry.runner.state();
         if (state == entry.lastRunnerState) return;
         entry.lastRunnerState = state;
@@ -14096,6 +14109,10 @@ final class PlayerRuntime {
     void stop() {
         requireThread();
         ready = false;
+        // The stop barrier first: whatever stop() itself waits on (the store's last writes) may hand callbacks back on
+        // this thread, and every write-then-callback begun before now is stale from here on (recordThen).
+        stopping = true;
+        ++stopEpoch;
         if (replays != null) replays.close();
         // A race ends with the server: each AI runner's own pace back before anything is saved (M-03a).
         for (var raced : racePace.entrySet()) {
@@ -14163,6 +14180,23 @@ final class PlayerRuntime {
     }
 
     /** Its players' deaths kept as replays into {@code replays}' folder from now on (F-27); the mod decides when. */
+    /**
+     * With replays on, a stuck spell's scene kept as the goal's watchdog counts it (F-27a): where it was when three
+     * minutes had passed with no progress, for the corpus to play again as a stuck scene ({@code "spell"}), when no
+     * rescue keeps it. Off with replays off; one a minute at most, as any capture. Nothing here changes the player or the world.
+     */
+    private void captureSpell(Entry entry) {
+        var campaign = entry.campaign;
+        // With rescues on, the rescue keeps the spell's scene as it asks, as before (F-29); this keeps it otherwise.
+        if (campaign == null || campaign.rescueOn()) return;
+        int spells = campaign.stuckSpells();
+        if (spells <= entry.spellsCaptured) return;
+        entry.spellsCaptured = spells;
+        replays.capture(entry.data.displayName(), entry.nativeBody.entity(), server.getTicks(), new DeathReplays.Context("spell",
+                String.valueOf(goalOf(entry)), campaign.progress(), entry.activeCampaignTask != null ? entry.activeCampaignTask.label() : "nothing",
+                String.valueOf(campaign.stance()), String.valueOf(campaign.preferences().habits()), "no progress for " + DeathReplays.SPELL_TICKS + " ticks"));
+    }
+
     void captureReplays(DeathReplays replays) {
         requireThread();
         this.replays = replays;
@@ -16110,19 +16144,72 @@ final class PlayerRuntime {
         @Override public net.minecraft.server.MinecraftServer server() { return server; }
     }
 
+    /**
+     * F-34: events written to the World Record, then a message that rests on them sent on the Wire, citing exactly the
+     * ids the ordered writer gave them, on this thread. Never before they are written, and on a failed write nothing is
+     * said: a message never cites an event the Record does not hold. {@code tell} makes the message from those ids;
+     * null for none. What the Wire did with it, or null when nothing was sent, goes to {@code sent}.
+     */
+    void recordAndTell(List<dev.kindred.core.record.WorldEvent> drafts, java.util.function.Function<List<Long>, dev.kindred.core.wire.Message> tell,
+                       java.util.function.Consumer<dev.kindred.core.wire.Delivery> sent) {
+        requireThread();
+        java.util.function.Consumer<dev.kindred.core.wire.Delivery> done = sent == null ? d -> { } : sent;
+        SqliteCompanionStore database = store;
+        if (database == null || drafts.isEmpty()) {
+            KindredMod.LOGGER.warn("Nothing recorded, so nothing told: {}", database == null ? "World Record not open" : "no events");
+            done.accept(null);
+            return;
+        }
+        record(drafts);
+        @SuppressWarnings("unchecked") var write = (CompletableFuture<List<dev.kindred.core.record.WorldEvent>>) recordFlush;
+        write.whenComplete((written, failure) -> handBack(() -> {
+            if (failure != null || written == null || !running) {
+                done.accept(null);
+                return;
+            }
+            var message = tell.apply(written.stream().map(dev.kindred.core.record.WorldEvent::id).toList());
+            done.accept(message == null ? null : wire.send(message));
+        }));
+    }
+
     /** Events written to the World Record, then {@code written} or {@code failed} run on this thread. */
     void recordThen(List<dev.kindred.core.record.WorldEvent> drafts, Runnable written, java.util.function.Consumer<Throwable> failed) {
         requireThread();
+        // Stop revokes synchronously and invalidates late callbacks: a write asked for after the stop (a callback of
+        // work begun before it) is not tried, and neither callback runs. What it would have finished stays unfinished in
+        // the Record, reported for an operator at the next start, never replayed (M-06h's intent and delivery rules).
+        if (!running || stopping) {
+            lateWritesRefused++;
+            KindredMod.LOGGER.warn("Kindred stopped: {} event(s) not written, their work left for reconciliation: {}", drafts.size(),
+                    drafts.isEmpty() ? "" : drafts.getFirst().kind());
+            return;
+        }
         if (store == null) {
             failed.accept(new IllegalStateException("World Record not open"));
             return;
         }
+        long epoch = stopEpoch;
         record(drafts);
         var write = recordFlush;
         write.whenComplete((ignored, failure) -> handBack(() -> {
+            if (epoch != stopEpoch) {
+                lateCallbacksDropped++;
+                KindredMod.LOGGER.warn("Kindred stopped: a callback of {} event(s) dropped after the stop", drafts.size());
+                return;
+            }
             if (failure == null) written.run(); else failed.accept(failure);
         }));
     }
+
+    /** Bumped as each stop begins: a write-then-callback begun under an earlier epoch drops its callback. */
+    private long stopEpoch;
+    /** From the first line of stop() until the next start(): no write-then-callback is begun. */
+    private boolean stopping;
+    /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
+    private int lateWritesRefused, lateCallbacksDropped;
+
+    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it}. */
+    int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped}; }
 
     /**
      * A sale's intent the Record holds with neither its sale nor its cancel is ambiguous: the server stopped between
@@ -16985,6 +17072,8 @@ final class PlayerRuntime {
         private String skillId;
         /** The routine that proposed the running task (M-01), and the one handed to the next dispatch. */
         private String dispatchSource = "", pendingSource;
+        /** The goal's stuck spells already kept as replays (F-27a), so that each is kept once. */
+        private int spellsCaptured;
         /** The running skill's arguments, as it was started with them. */
         private Map<String, String> skillArgs = Map.of();
         private UUID glanceTarget;
@@ -18420,5 +18509,20 @@ final class PlayerRuntime {
         @Override public boolean isSettled(ActionLease lease) {
             return entity.getNavigation().isIdle() && !entity.getMoveControl().isMoving() && !entity.isUsingItem();
         }
+    }
+
+    private static final List<String> VANILLA_PLANKS_TRY_ORDER = List.of("birch", "spruce", "jungle", "acacia", "dark_oak",
+            "mangrove", "cherry", "bamboo");
+
+    /** Planks to try when oak's cannot be made: vanilla's woods first, as before, then the tag's others by id. */
+    static List<String> planksInTryOrder() {
+        var members = dev.kindred.core.Capabilities.current().members(dev.kindred.core.VanillaIds.PLANKS);
+        var tried = new java.util.LinkedHashSet<String>();
+        for (String wood : VANILLA_PLANKS_TRY_ORDER) {
+            String id = dev.kindred.core.VanillaIds.NAMESPACE + wood + "_planks";
+            if (members.contains(id)) tried.add(id);
+        }
+        members.stream().filter(id -> !id.equals(dev.kindred.core.VanillaIds.OAK_PLANKS)).sorted().forEach(tried::add);
+        return List.copyOf(tried);
     }
 }
