@@ -165,6 +165,8 @@ public final class ReplayGameTests implements FabricGameTest {
     /** For fixtures: called with a replay's goal and what was dropped once its memory is put back, by the replay's player. */
     static final java.util.Map<String, java.util.function.BiConsumer<PortalRunCampaign, java.util.List<String>>> ON_RESTORE =
             new java.util.concurrent.ConcurrentHashMap<>();
+    /** For fixtures: the replays' players whose scene's memory must be put back, or the replay fails at its start. */
+    static final java.util.Set<String> MUST_RESTORE = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     /** The scene box's size along {@code axis} as recorded, or the recorder's own when the scene has none. */
     private static int sizeOf(JsonObject state, int axis, int otherwise) {
@@ -280,7 +282,9 @@ public final class ReplayGameTests implements FabricGameTest {
                                 dropped.isEmpty() ? "" : ": " + String.join("; ", dropped.subList(0, Math.min(8, dropped.size()))));
                         var hook = ON_RESTORE.get(state.get("player").getAsString());
                         if (hook != null) hook.accept(campaign, dropped);
+                        MUST_RESTORE.remove(state.get("player").getAsString());
                     }
+                    context.assertFalse(MUST_RESTORE.remove(state.get("player").getAsString()), "Its scene's memory put back");
                     from[0] = body.getPos();
                     began[0] = context.getTick();
                 })
@@ -485,13 +489,14 @@ public final class ReplayGameTests implements FabricGameTest {
      *
      * Technical: F-27a, the harness half of the goal's memory. STAGED: a scene made as the recorder writes one (above), its
      * memory setting the tree's three logs aside; passes if the replay's goal has each set aside once its memory is put
-     * back, nothing dropped, and the player lives the scene's 300 ticks.
+     * back (a replay that puts back nothing fails at its start), nothing dropped, and the player lives the scene's 300 ticks.
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "replayMemory", tickLimit = 1400)
     public void aScenesMemoryIsPutBackIntoItsReplaysGoal(TestContext context) {
         String memory = "{\"version\":1,\"blocked\":[{\"at\":[20,4,16],\"left\":1000000},{\"at\":[20,5,16],\"left\":1000000},{\"at\":[20,6,16],\"left\":1000000}]}";
         var scene = pennedScene(context, "Minded", 4242, memory);
         BlockPos log = context.getAbsolutePos(BlockPos.ORIGIN.up()).add(20, 4, 16).toImmutable();
+        MUST_RESTORE.add("Minded");
         ON_RESTORE.put("Minded", (campaign, dropped) -> {
             ON_RESTORE.remove("Minded");
             for (int dy = 0; dy < 3; dy++) context.assertTrue(campaign.blocked(log.up(dy)), "The tree's log " + dy + " up set aside again");
