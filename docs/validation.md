@@ -37,6 +37,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
+- M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 
 ## An AI player's own trade and defence, native (M-06i) — 11 November 2026 (`claude/m06i-trade-fixtures-1111`)
 

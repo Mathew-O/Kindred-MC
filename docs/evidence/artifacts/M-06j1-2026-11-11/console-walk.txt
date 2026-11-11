@@ -1,0 +1,295 @@
+> aiplayer
+[13:24:51] [Server thread/INFO]: Kindred AI players: native create <name>; native list; native status|stop|resume|connect|disconnect <UUID>; native wait <1..4>|eat <0..8>|equip <0..35> <UUID>; native walk <direction> <1..3> <UUID>; native patch <from> <to> <block> <UUID>; native mine <target> <hotbar slot> <UUID> (explicit edit policy required). Legacy bodies: /aiplayer create <name>; follow, stay
+> faction
+[13:24:54] [Server thread/INFO]: /faction create <name> <tag> [colour] | invite|uninvite|kick|promote|demote|leader <player> | join <faction> | leave | ally|truce|enemy <faction> | sethome | home | colour <dye> | disband | info [faction] | list | power [player] | claim | unclaim | capture | map | coins
+> kindred
+[13:24:57] [Server thread/INFO]: Unknown or incomplete command, see below for error
+[13:24:57] [Server thread/INFO]: kindred<--[HERE]
+> aiplayer mode world factions
+[13:25:14] [Server thread/INFO]: This world now plays Factions; AI players play at OPTIMAL_SURVIVAL.
+[13:25:14] [Server thread/INFO]: World mode: Factions
+> faction admin hub
+[13:25:19] [Server thread/INFO]: The hub is a safe zone (62 chunks); the border 8000 across; 878 blocks of hub built.
+> worldborder get
+[13:25:33] [Server thread/INFO]: The world border is currently 8000 block(s) wide
+> aiplayer native create Ada
+[13:25:44] [Server thread/INFO]: Make room on solid ground in an already loaded area.
+> aiplayer native create Bram
+[13:25:50] [Server thread/INFO]: Make room on solid ground in an already loaded area.
+> aiplayer native create Cara
+[13:25:56] [Server thread/INFO]: Make room on solid ground in an already loaded area.
+> aiplayer native list
+[13:26:02] [Server thread/INFO]: No native AI players are available to your controls.
+> faction list
+[13:26:05] [Server thread/INFO]: Only a player makes faction requests; an operator uses /faction as <player> ...
+> execute positioned ~20 ~ ~20 positioned over world_surface run aiplayer native create Ada
+[13:26:23] [Server thread/INFO]: Make room on solid ground in an already loaded area.
+> execute positioned ~24 ~ ~20 positioned over world_surface run aiplayer native create Bram
+[13:26:31] [Server thread/INFO]: Allocating a native AI identity; autonomous work remains disabled.
+[13:26:31] [Server thread/INFO]: Allocated Bram (0e8b306c-2e42-45c4-bc86-7fe6e355a5f6). Preparing its native body.
+[13:26:31] [Server thread/INFO]: Bram[Kindred native player] logged in with entity id 17 at (-7.5, 57.0, -60.5)
+[13:26:31] [Server thread/INFO]: Bram joined the game
+[13:26:31] [Server thread/INFO]: Bram (0e8b306c-2e42-45c4-bc86-7fe6e355a5f6): Native body established with a verified save; autonomous progression remains disabled. Player decision: Stopped or unavailable.
+> execute positioned ~28 ~ ~20 positioned over world_surface run aiplayer native create Cara
+[13:26:39] [Server thread/INFO]: Make room on solid ground in an already loaded area.
+> list
+[13:26:47] [Server thread/INFO]: There are 1 of a max of 30 players online: Bram
+> execute at Bram positioned ~2 ~ ~ positioned over world_surface run aiplayer native create Ada
+[13:26:56] [Server thread/INFO]: Allocating a native AI identity; autonomous work remains disabled.
+[13:26:56] [Server thread/INFO]: Allocated Ada (e5d944ab-f337-4f02-b371-4412488bb0c7). Preparing its native body.
+[13:26:56] [Server thread/INFO]: Ada[Kindred native player] logged in with entity id 377 at (-6.5, 62.0, -61.5)
+[13:26:56] [Server thread/INFO]: Ada joined the game
+[13:26:56] [Server thread/INFO]: Ada (e5d944ab-f337-4f02-b371-4412488bb0c7): Native body established with a verified save; autonomous progression remains disabled. Player decision: Awaiting local decision.
+> execute at Bram positioned ~-2 ~ ~ positioned over world_surface run aiplayer native create Cara
+[13:27:04] [Server thread/INFO]: Allocating a native AI identity; autonomous work remains disabled.
+[13:27:04] [Server thread/INFO]: Allocated Cara (6e303369-d50e-410b-8499-1aaf539f0cec). Preparing its native body.
+[13:27:04] [Server thread/INFO]: Cara[Kindred native player] logged in with entity id 380 at (-8.5, 58.0, -60.5)
+[13:27:04] [Server thread/INFO]: Cara joined the game
+[13:27:04] [Server thread/INFO]: Cara (6e303369-d50e-410b-8499-1aaf539f0cec): Native body established with a verified save; autonomous progression remains disabled. Player decision: Awaiting local decision.
+> list
+[13:27:12] [Server thread/INFO]: There are 3 of a max of 30 players online: Bram, Ada, Cara
+> faction as Ada coins
+[13:27:21] [Server thread/INFO]: Coins: 500.00
+> faction as Ada create Red RED red
+[13:27:24] [Server thread/INFO]: Founded Red [RED]
+> faction as Ada invite Bram
+[13:27:28] [Server thread/INFO]: Invited
+> faction as Bram join Red
+[13:27:32] [Server thread/INFO]: Joined Red
+> faction as Cara create Blue BLU blue
+[13:27:36] [Server thread/INFO]: Founded Blue [BLU]
+> faction as Ada list
+[13:27:40] [Server thread/INFO]: Red [RED] 2/10 members, power 20, claims 0 / 20
+[13:27:40] [Server thread/INFO]: Blue [BLU] 1/10 members, power 10, claims 0 / 10
+> faction as Ada info Red
+[13:27:43] [Server thread/INFO]: Red [RED] 2/10 members, power 20, claims 0 / 20
+[13:27:43] [Server thread/INFO]:  Ada (leader), power 10
+[13:27:43] [Server thread/INFO]:  Bram (member), power 10
+> faction as Ada power
+[13:27:46] [Server thread/INFO]: Ada: power 10 / 10
+> faction as Ada claim
+[13:27:59] [Server thread/INFO]: A safe zone is never claimed
+> spreadplayers 800 800 0 1 false Ada
+[13:28:05] [Server thread/INFO]: Spread 1 player(s) around 800.5, 800.5 with an average distance of 0.00 blocks apart
+[13:28:05] [Server thread/WARN]: Can't keep up! Is the server overloaded? Running 2183ms or 43 ticks behind
+> faction as Ada claim
+[13:28:13] [Server thread/INFO]: Claimed minecraft:overworld:49:50 for Red (1 / 20)
+> faction as Ada map
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----@-----
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: -----------
+[13:28:18] [Server thread/INFO]: @ here, + yours, # another faction's, s safe, - wilderness
+> faction as Ada coins
+[13:28:21] [Server thread/INFO]: Coins: 400.00
+> faction as Ada info Red
+[13:28:24] [Server thread/INFO]: Red [RED] 2/10 members, power 20, claims 1 / 20
+[13:28:24] [Server thread/INFO]:  Ada (leader), power 10
+[13:28:24] [Server thread/INFO]:  Bram (member), power 10
+> spreadplayers 815 800 0 1 false Cara
+[13:28:27] [Server thread/INFO]: Spread 1 player(s) around 815.5, 800.5 with an average distance of 0.00 blocks apart
+[13:28:32] [Server thread/INFO]: Cara picked up 1 minecraft:melon_seeds
+> faction as Cara claim
+[13:28:37] [Server thread/INFO]: Leave a chunk between your land and another faction's
+> faction as Ada shop price iron_ingot
+[13:28:49] [Server thread/INFO]: minecraft:iron_ingot: pays 5.09, asks 6.90, +0.0% today
+> faction as Ada shop price diamond
+[13:28:52] [Server thread/INFO]: minecraft:diamond: pays 25.50, not sold, +0.0% today
+> faction as Ada shop price oak_planks
+[13:28:55] [Server thread/INFO]: minecraft:oak_planks: pays 0.10, not sold
+> market top
+[13:28:58] [Server thread/INFO]: No trades yet
+> faction as Cara shop sell hand
+[13:29:01] [Server thread/INFO]: Sold for 0.08 coins
+> faction as Cara shop sell all
+[13:29:05] [Server thread/INFO]: Would pay 0.00 coins for 0 kinds of item. /shop sell all confirm to sell.
+> faction as Ada ah list
+[13:29:09] [Server thread/INFO]: Nothing open
+> shop
+[13:29:12] [Server thread/INFO]: Only a player sells and buys; an operator uses /faction as <player> shop ...
+> ah
+[13:29:15] [Server thread/INFO]: Nothing open
+> chunky world minecraft:overworld
+[13:29:41] [Server thread/INFO]: [Chunky] World changed to minecraft:overworld.
+> chunky center 0 0
+[13:29:43] [Server thread/INFO]: [Chunky] Center changed to 0, 0.
+> chunky shape square
+[13:29:45] [Server thread/INFO]: [Chunky] Shape changed to square.
+> chunky radius 64
+[13:29:47] [Server thread/INFO]: [Chunky] Radius changed to 64.
+> chunky start
+[13:29:49] [Server thread/INFO]: [Chunky] Task started in minecraft:overworld for the square region centered at 0, 0 with radius 64.
+[13:29:49] [Server thread/INFO]: [Chunky] Task finished for minecraft:overworld. Processed: 81 chunks (100.00%), Total time: 0:00:00
+[13:30:28] [Server thread/INFO]: Cara native_goto COMPLETED [from evaluateEssentialSurvivalCandidates:3056]
+[13:30:28] [Server thread/INFO]: Cara picked up 1 minecraft:wheat_seeds
+[13:30:28] [Server thread/INFO]: Cara picked up 1 minecraft:wheat_seeds
+[13:30:29] [Server thread/INFO]: Cara native_goto COMPLETED [from evaluateEssentialSurvivalCandidates:3056]
+> chunky progress
+[13:30:29] [Server thread/INFO]: [Chunky] No tasks running.
+> spark tps
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡] TPS from last 5s, 10s, 1m, 5m, 15m:
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡]  *20.0, *20.0, *20.0, 19.86, 19.95
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡] 
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡] Tick durations (min/med/95%ile/max ms) from last 10s, 1m:
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡]  9.0/12.5/18.0/33.0;  9.0/13.0/18.3/74.4
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡] 
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡] CPU usage from last 10s, 1m, 15m:
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡]  12%, 11%, 18%  (system)
+[13:30:32] [spark-worker-pool-1-thread-1/INFO]: [⚡]  12%, 11%, 18%  (process)
+> chunky radius 256
+[13:30:44] [Server thread/INFO]: [Chunky] Radius changed to 256.
+> chunky start
+[13:30:46] [Server thread/INFO]: [Chunky] Task started in minecraft:overworld for the square region centered at 0, 0 with radius 256.
+[13:30:47] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 64 chunks (5.88%), ETA: 0:00:36, Rate: 27.9 cps, Current: 1, 10
+[13:30:49] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 82 chunks (7.53%), ETA: 0:00:44, Rate: 22.6 cps, Current: 0, 12
+[13:30:50] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 169 chunks (15.52%), ETA: 0:00:22, Rate: 40.5 cps, Current: 7, 13
+[13:30:51] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 218 chunks (20.02%), ETA: 0:00:21, Rate: 40.4 cps, Current: 13, 8
+[13:30:52] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 452 chunks (41.51%), ETA: 0:00:09, Rate: 69.8 cps, Current: 15, 5
+[13:30:53] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 486 chunks (44.63%), ETA: 0:00:09, Rate: 63.9 cps, Current: 12, -6
+[13:30:55] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 514 chunks (47.20%), ETA: 0:00:10, Rate: 54.6 cps, Current: 14, -9
+[13:30:56] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 552 chunks (50.69%), ETA: 0:00:10, Rate: 52.4 cps, Current: 15, -7
+[13:30:57] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 815 chunks (74.84%), ETA: 0:00:03, Rate: 69.8 cps, Current: -16, -2
+[13:30:58] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 831 chunks (76.31%), ETA: 0:00:03, Rate: 64.7 cps, Current: -16, 0
+[13:30:59] [Server thread/INFO]: [Chunky] Task running for minecraft:overworld. Processed: 931 chunks (85.49%), ETA: 0:00:02, Rate: 67.1 cps, Current: -14, 16
+[13:31:00] [Server thread/INFO]: [Chunky] Task finished for minecraft:overworld. Processed: 1089 chunks (100.00%), Total time: 0:00:13
+> chunky world minecraft:the_nether
+[13:32:16] [Server thread/INFO]: [Chunky] World changed to minecraft:the_nether.
+> chunky radius 64
+[13:32:18] [Server thread/INFO]: [Chunky] Radius changed to 64.
+> chunky start
+[13:32:20] [Server thread/INFO]: [Chunky] Task started in minecraft:the_nether for the square region centered at 0, 0 with radius 64.
+[13:32:23] [Server thread/INFO]: [Chunky] Task running for minecraft:the_nether. Processed: 31 chunks (38.27%), ETA: 0:00:00, Rate: 221.4 cps, Current: 0, 3
+[13:32:23] [Server thread/INFO]: [Chunky] Task finished for minecraft:the_nether. Processed: 81 chunks (100.00%), Total time: 0:00:02
+> spark tps
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡] TPS from last 5s, 10s, 1m, 5m, 15m:
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡]  20.0, 20.0, *20.0, 19.86, 19.95
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡] 
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡] Tick durations (min/med/95%ile/max ms) from last 10s, 1m:
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡]  9.5/12.4/19.4/23.6;  9.0/11.9/18.7/51.1
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡] 
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡] CPU usage from last 10s, 1m, 15m:
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡]  8%, 12%, 18%  (system)
+[13:33:00] [spark-worker-pool-1-thread-3/INFO]: [⚡]  9%, 12%, 17%  (process)
+> execute in minecraft:the_nether run worldborder get
+[13:33:19] [Server thread/INFO]: The world border is currently 8000 block(s) wide
+> execute in minecraft:the_end run worldborder get
+[13:33:21] [Server thread/INFO]: The world border is currently 8000 block(s) wide
+> faction as Ada list
+[13:33:23] [Server thread/INFO]: Red [RED] 2/10 members, power 20, claims 1 / 20
+[13:33:23] [Server thread/INFO]: Blue [BLU] 1/10 members, power 10, claims 0 / 10
+> faction as Ada info Red
+[13:33:26] [Server thread/INFO]: Red [RED] 2/10 members, power 20, claims 1 / 20
+[13:33:26] [Server thread/INFO]:  Ada (leader), power 10
+[13:33:26] [Server thread/INFO]:  Bram (member), power 10
+> faction as Cara info Blue
+[13:33:29] [Server thread/INFO]: Blue [BLU] 1/10 members, power 10, claims 0 / 10
+[13:33:29] [Server thread/INFO]:  Cara (leader), power 10
+> faction as Ada coins
+[13:33:32] [Server thread/INFO]: Coins: 400.00
+> faction as Cara coins
+[13:33:35] [Server thread/INFO]: Coins: 500.08
+> faction as Bram power
+[13:33:37] [Server thread/INFO]: Bram: power 10 / 10
+> faction as Ada map
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----@-----
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: -----------
+[13:33:39] [Server thread/INFO]: @ here, + yours, # another faction's, s safe, - wilderness
+> stop
+[13:34:08] [Server thread/INFO]: Stopping the server
+[13:34:08] [Server thread/INFO]: Stopping server
+[13:34:08] [Server thread/INFO]: Saving players
+[13:34:08] [Server thread/INFO]: Saving worlds
+[13:34:08] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[13:34:09] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[13:34:09] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[13:34:09] [Server thread/INFO]: [Textile Backup] Warning! Server backup will begin shortly. You may experience some lag.
+[13:34:09] [Server thread/INFO]: [Textile Backup] Backup started by: Server Shutdown on: 2026.11.11_13-34-09
+[13:34:09] [Server thread/INFO]: [Textile Backup] Starting backup
+[13:34:09] [Server thread/INFO]: [Textile Backup] Compression took: 00.375 seconds.
+[13:34:09] [Server thread/INFO]: [Textile Backup] Done!
+--- restart
+> list
+[13:34:40] [Server thread/INFO]: There are 0 of a max of 30 players online: 
+> aiplayer mode world
+[13:34:48] [Server thread/INFO]: Factions (this world's mode):
+[13:34:48] [Server thread/INFO]:  Play: survival in factions: found or join one, claim land by its power, earn coins at the market
+[13:34:48] [Server thread/INFO]:  Building: the server's edit policy; claimed land only by its faction, the same for people and AI players
+[13:34:48] [Server thread/INFO]:  Fighting: only between members of different factions, never in safe zones; joining a faction is joining the match; leave it any time
+[13:34:48] [Server thread/INFO]:  Items: none handed out
+[13:34:48] [Server thread/INFO]:  Deaths: respawn as usual; a death to another faction costs two power
+[13:34:48] [Server thread/INFO]:  Winning: no end: the factions' standing by land and power
+> faction as Ada list
+[13:34:51] [Server thread/INFO]: No player online by that name
+> faction as Ada info Red
+[13:34:54] [Server thread/INFO]: No player online by that name
+> faction as Cara info Blue
+[13:34:57] [Server thread/INFO]: No player online by that name
+> faction as Ada coins
+[13:35:00] [Server thread/INFO]: No player online by that name
+> faction as Cara coins
+[13:35:02] [Server thread/INFO]: No player online by that name
+> faction as Bram power
+[13:35:04] [Server thread/INFO]: No player online by that name
+> faction as Cara claim
+[13:35:06] [Server thread/INFO]: No player online by that name
+> worldborder get
+[13:35:10] [Server thread/INFO]: The world border is currently 8000 block(s) wide
+> aiplayer native list
+[13:35:20] [Server thread/INFO]: Ada (e5d944ab-f337-4f02-b371-4412488bb0c7): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required. Player decision: Awaiting local decision.
+[13:35:20] [Server thread/INFO]: Cara (6e303369-d50e-410b-8499-1aaf539f0cec): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required. Player decision: Awaiting local decision.
+[13:35:20] [Server thread/INFO]: Bram (0e8b306c-2e42-45c4-bc86-7fe6e355a5f6): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required. Player decision: Awaiting local decision.
+> aiplayer native connect e5d944ab-f337-4f02-b371-4412488bb0c7
+[13:35:23] [Server thread/INFO]: Native body is offline; explicit connect is required. Player decision: Awaiting local decision.
+[13:35:23] [Server thread/INFO]: Ada[Kindred native player] logged in with entity id 51 at (799.5, 90.0, 801.5)
+[13:35:23] [Server thread/INFO]: Ada joined the game
+[13:35:23] [Server thread/INFO]: Native body connected; stopped. Resume explicitly. Player decision: Awaiting local decision.
+> aiplayer native connect 0e8b306c-2e42-45c4-bc86-7fe6e355a5f6
+[13:35:29] [Server thread/INFO]: Native body is offline; explicit connect is required. Player decision: Awaiting local decision.
+[13:35:29] [Server thread/INFO]: Bram[Kindred native player] logged in with entity id 356 at (-7.5, 57.0, -60.5)
+[13:35:29] [Server thread/INFO]: Bram joined the game
+[13:35:29] [Server thread/INFO]: Native body connected; stopped. Resume explicitly. Player decision: Awaiting local decision.
+> aiplayer native connect 6e303369-d50e-410b-8499-1aaf539f0cec
+[13:35:35] [Server thread/INFO]: Native body is offline; explicit connect is required. Player decision: Awaiting local decision.
+[13:35:35] [Server thread/INFO]: Cara[Kindred native player] logged in with entity id 569 at (814.5, 81.9375, 802.3657164468527)
+[13:35:35] [Server thread/INFO]: Cara joined the game
+[13:35:35] [Server thread/INFO]: Native body connected; stopped. Resume explicitly. Player decision: Awaiting local decision.
+> list
+[13:35:41] [Server thread/INFO]: There are 3 of a max of 30 players online: Ada, Bram, Cara
+> faction as Ada list
+[13:35:53] [Server thread/INFO]: Red [RED] 2/10 members, power 20, claims 1 / 20
+[13:35:53] [Server thread/INFO]: Blue [BLU] 1/10 members, power 10, claims 0 / 10
+> faction as Ada info Red
+[13:35:56] [Server thread/INFO]: Red [RED] 2/10 members, power 20, claims 1 / 20
+[13:35:56] [Server thread/INFO]:  Ada (leader), power 10
+[13:35:56] [Server thread/INFO]:  Bram (member), power 10
+> faction as Cara info Blue
+[13:35:59] [Server thread/INFO]: Blue [BLU] 1/10 members, power 10, claims 0 / 10
+[13:35:59] [Server thread/INFO]:  Cara (leader), power 10
+> faction as Ada coins
+[13:36:02] [Server thread/INFO]: Coins: 400.00
+> faction as Cara coins
+[13:36:04] [Server thread/INFO]: Coins: 500.08
+> faction as Bram power
+[13:36:06] [Server thread/INFO]: Bram: power 10 / 10
+> faction as Cara claim
+[13:36:08] [Server thread/INFO]: Leave a chunk between your land and another faction's
+> faction as Ada claim
+[13:36:12] [Server thread/INFO]: Already yours
+> faction as Cara shop price iron_ingot
+[13:36:16] [Server thread/INFO]: minecraft:iron_ingot: pays 5.09, asks 6.90, +0.0% today
