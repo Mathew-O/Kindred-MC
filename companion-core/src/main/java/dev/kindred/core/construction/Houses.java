@@ -48,11 +48,13 @@ public final class Houses {
     /** The functional blocks a base of each stage holds, by kind: what makes it more than walls. */
     public static Map<String, Integer> functions(Blueprint base) {
         var out = new LinkedHashMap<String, Integer>();
+        var facts = dev.kindred.core.Capabilities.current();
         for (var b : base.blocks()) {
             String id = b.spec().block();
-            if (FUNCTIONAL.contains(id) || id.endsWith("_bed") && "foot".equals(b.spec().property("part"))
-                    || id.endsWith("_door") && "lower".equals(b.spec().property("half"))) {
-                out.merge(id.endsWith("_bed") ? "bed" : id.endsWith("_door") ? "door" : id, 1, Integer::sum);
+            boolean bed = facts.is(VanillaIds.BEDS, id), door = facts.is(VanillaIds.DOORS, id);
+            if (FUNCTIONAL.contains(id) || bed && "foot".equals(b.spec().property("part"))
+                    || door && "lower".equals(b.spec().property("half"))) {
+                out.merge(bed ? "bed" : door ? "door" : id, 1, Integer::sum);
             }
         }
         return out;

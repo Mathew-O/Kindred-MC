@@ -124,6 +124,7 @@
       "dev.kindred.fabric.NativeWorldRecordGameTests",
       "dev.kindred.fabric.NativeFactionPowerGameTests",
       "dev.kindred.fabric.NativeTerritoryGameTests",
+      "dev.kindred.fabric.NativeMobGriefGameTests",
       "dev.kindred.fabric.NativeSafeZoneGameTests",
       "dev.kindred.fabric.NativeMarketGameTests",
       "dev.kindred.fabric.NativeAuctionGameTests",
@@ -133,8 +134,10 @@
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
       "dev.kindred.fabric.NativeFactionTellGameTests",
+      "dev.kindred.fabric.NativeFactionTradeGameTests",
       "dev.kindred.fabric.NativeFactionsModeGameTests",
       "dev.kindred.fabric.NativeFactionsEvalGameTests",
+      "dev.kindred.fabric.NativeFactionBackOffGameTests",
       "dev.kindred.fabric.NativeLimitGameTests",
       "dev.kindred.fabric.NativeHudGameTests",
       "dev.kindred.fabric.NativeMatchFrameworkGameTests",
@@ -144,6 +147,7 @@
       "dev.kindred.fabric.NativeEvalGameTests",
       "dev.kindred.fabric.ReplayGameTests",
       "dev.kindred.fabric.NativeSwimUpGameTests",
+      "dev.kindred.fabric.NativeLogsKeptOutGameTests",
       "dev.kindred.fabric.ReplayWorldStateGameTests",
       "dev.kindred.fabric.NativeStuckSpellReplayGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",
@@ -189,7 +193,8 @@
       "dev.kindred.fabric.NativeCostGameTests",
       "dev.kindred.fabric.NativeCraftHelperGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
-      "dev.kindred.fabric.NativeOutingGameTests"
+      "dev.kindred.fabric.NativeOutingGameTests",
+      "dev.kindred.fabric.NativeAttentionGameTests"
     ]
   },
   "depends": {

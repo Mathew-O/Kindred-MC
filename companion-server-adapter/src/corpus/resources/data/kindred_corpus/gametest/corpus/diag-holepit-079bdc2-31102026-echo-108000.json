@@ -1,0 +1,325 @@
+{
+ "kind": "spell",
+ "player": "Echo",
+ "tick": 108000,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  79,
+  56,
+  465
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.61975022744646,
+  8.0,
+  16.500000160897287
+ ],
+ "yaw": 90.00001,
+ "pitch": 6.087498,
+ "health": 20.0,
+ "food": 19,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:cooked_rabbit",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 3
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 2
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 41
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 14
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 223
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 29
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 4
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:rabbit",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 39
+    }
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cactus",
+    "count": 3
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 40
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 3
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 1,
+ "timeOfDay": 11999,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward 95, 64, 457",
+ "task": "try elsewhere, toward 95, 64, 457",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: moved more than 8 blocks, or its feet 3 or more blocks higher",
+ "log": [
+  "[07:29:03] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel for water: let what falls settle]",
+  "[07:29:03] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 99, 64, 481]",
+  "[07:29:04] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+  "[07:29:04] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 98, 65, 481]",
+  "[07:29:04] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 98, 64, 481]",
+  "[07:29:04] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel for water: let what falls settle]",
+  "[07:29:04] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 98, 64, 481]",
+  "[07:29:05] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+  "[07:29:05] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 97, 65, 481]",
+  "[07:29:05] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 97, 64, 481]",
+  "[07:29:05] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel for water: let what falls settle]",
+  "[07:29:05] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 97, 64, 481]",
+  "[07:29:06] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+  "[07:29:06] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+  "[07:29:06] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 95, 65, 481]",
+  "[07:29:06] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 95, 64, 481]",
+  "[07:29:06] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel for water: let what falls settle]",
+  "[07:29:07] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 95, 64, 481]",
+  "[07:29:07] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+  "[07:29:07] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 94, 65, 481]"
+ ],
+ "corpus": {
+  "run": "diag-holepit-079bdc2",
+  "seed": "31102026",
+  "build": "079bdc2",
+  "replay": "",
+  "source": "claude/corpus-data-diag-holepit-1111@4a9f0ff:diag-holepit-079bdc2/31102026/replays/world/Echo-108000",
+  "class": "stuck: mining for a find",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166): passes if out within its 3600 ticks"
+ }
+}
