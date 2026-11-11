@@ -27,6 +27,8 @@
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+- F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
+
 ## A dark passage sealed from two or more mobs (F-25c4dc) — 10 November 2026 (`claude/survival-1110-seal`)
 
 - **[F-25c4dc](evidence/F-25c4dc.md):** underground in the dark, with two or more mobs after it along a passage one wide and none

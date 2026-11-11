@@ -7496,6 +7496,15 @@ final class PlayerRuntime {
     /** Report state changes once, persist checkpoints on pause, and release the lease on every terminal state. */
     private void observeRunner(Entry entry) {
         if (entry.runner == null) return;
+        // An outcome its goal could not settle for itself, its ceiling opened under the water and the fill or the reseal not
+        // gone as planned: blocked for reconciliation, as an uncertain action is, and never tried again (F-35g).
+        if (entry.nativeState != null && entry.campaign != null && !entry.reconciliationBlocked) {
+            var unsettled = entry.campaign.reconciliation();
+            if (unsettled.isPresent()) {
+                nativeFailure(server.getCommandSource(), entry, "Goal outcome requires reconciliation", new IllegalStateException(unsettled.get()));
+                return;
+            }
+        }
         SkillRunner.State state = entry.runner.state();
         if (state == entry.lastRunnerState) return;
         entry.lastRunnerState = state;

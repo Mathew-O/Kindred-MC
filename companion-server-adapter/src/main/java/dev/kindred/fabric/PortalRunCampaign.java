@@ -128,6 +128,40 @@ final class PortalRunCampaign {
     private long underWaterTick;
     private Direction underWaterHeading;
     /**
+     * Where its climb last began along under the water, and where and when that climb was given up, the water over its
+     * tunnel too wide to get out from under (F-35g).
+     */
+    private BlockPos underWaterFrom, underWaterGaveUpAt;
+    private long underWaterGaveUpTick = Long.MIN_VALUE / 2;
+    /**
+     * How far along under the water a climb goes, with no dry ceiling over it, before it is given up: a leg of its branch
+     * mine, {@link #BRANCH_LEG}, the longest straight run the campaign digs. That is more than the 707 lake's 18 blocks
+     * across, which a climb is known to get out from under (F-25c4cq); 606's sea in E-40's iteration 18 (`e40a18`) was
+     * open water for forty blocks round Kindred (F-35g).
+     */
+    static final int UNDER_WATER_REACH = BRANCH_LEG;
+    /** The steps of filling its bucket from the water over its head (F-35g), and the progress line's words for them. */
+    private enum Overhead { OPEN, FILL, SEAL, DRAIN }
+    static final String OVERHEAD = "Water over its head";
+    /** How far over its ceiling water it saw may lie for it to open its ceiling to it: the sea's four blocks, and as many again. */
+    static final int OVERHEAD_DEPTH = 8;
+    /** Ticks a tunnel resealed under the water is given to drain before what is left in it is taken as something to reconcile. */
+    static final int OVERHEAD_DRAIN = 400;
+    private Overhead overhead;
+    private BlockPos overheadOpening, overheadSource;
+    private long overheadTick;
+    private int overheadBuckets;
+    private boolean overheadOpenFailed;
+    /** Why it closed the opening with its bucket still empty, its own choice and nothing to reconcile; null once filled. */
+    private String overheadLeft;
+    /** Why its fill or its reseal did not go, if one did not; null while both have. */
+    private String overheadFault;
+    /**
+     * An outcome it cannot settle for itself: its ceiling opened under the sea and the fill or the reseal not gone as
+     * planned (F-35g). Set once and never cleared here: the runtime blocks the player for reconciliation on it.
+     */
+    private String reconcile;
+    /**
      * When the water step last climbed toward the surface: the top of that staircase is still part of the climb. Long ago
      * at first as half the least long, as {@link #surfaceClimbTick}: the least long itself overflowed the hold's test.
      */
@@ -619,6 +653,7 @@ final class PortalRunCampaign {
             if (blocked.size() >= 5) blocked.removeFirst();
             blocked.addLast("at " + tick / 20 + "s: " + task.label() + (why == null || why.isBlank() ? "" : " - " + why));
         }
+        if (task != null && task.label().startsWith(OVERHEAD + ": ")) overheadFinished(task, completed, why);
         // The site's clearing walked there, or tried to: that place is tried, whether the walk got there or not (F-25c4aj).
         if (task != null && clearWalk != null && "native_goto".equals(task.skill()) && clearWalk.equals(position(task.args()))) {
             clearTriedFrom.add(clearWalk.asLong());
@@ -1120,6 +1155,12 @@ final class PortalRunCampaign {
 
     private Optional<Task> nextTask(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         if (spellStart == 0) spellStart = tick;
+        // An opening under the water whose fill or reseal did not go as planned: nothing more until it is reconciled (F-35g).
+        if (reconcile != null) {
+            progress = stageLabel(stage) + ": held for reconciliation - " + reconcile;
+            lastActive = false;
+            return Optional.empty();
+        }
         // The dragon goal is won once it has seen the dragon die and is out of the End: nothing of the run is left to
         // do (staged dragon run 6, home after the credits, started over on iron with no portal of its own about).
         if (goal == SurvivalGoal.DRAGON && stronghold.endFight().dragonKilled() && body.entity().getWorld().getRegistryKey() != net.minecraft.world.World.END) {
@@ -2263,6 +2304,14 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": stuck in a wall - " + trapped.get().label();
             return trapped;
         }
+        // Its ceiling opened under the water for the water over it: filled from, closed again and let drain before anything
+        // else, the way up out of the water included, which only lets the water in for longer (F-35g).
+        Optional<Task> opened = overhead(body);
+        if (opened.isPresent()) {
+            progress = stageLabel(stage) + ": " + opened.get().label();
+            return opened;
+        }
+        if (reconcile != null) return Optional.empty();
         // In deep water nothing else matters until it can breathe and stand: but a log it wants that it can cut from where
         // it swims, with breath to spare, it cuts there, treading water (F-25c4as).
         Optional<Task> air = surface(body);
@@ -3211,6 +3260,9 @@ final class PortalRunCampaign {
                     // blind at depth (live run 55 met a skeleton doing that at Y=12).
                     // Out at the top of its staircase with the ground still two or more blocks over its feet, the climb goes
                     // on: there its head is in the open, and a walk to look about led back down the stair (F-25c4ah).
+                    // The water it saw over its head first, one block of its own ceiling between: opened, filled from and
+                    // closed again, rather than a climb that the same water refuses every step of (F-35g).
+                    .or(() -> waterOverhead(body))
                     .or(() -> fillWater(body)).or(() -> !underground(player)
                             && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos())) ? Optional.<Task>empty()
                             : night(player.getServerWorld()) ? lavaMeanwhile(body).or(() -> daylightBelow(body))
@@ -4330,6 +4382,7 @@ final class PortalRunCampaign {
             }
             if (!refused) {
                 underWaterHeading = null;
+                underWaterFrom = null;
                 return Optional.of(go(landing, 0.4, false, label + ": step up"));
             }
             digDirection = digDirection.rotateYClockwise();
@@ -4339,6 +4392,25 @@ final class PortalRunCampaign {
         // corridor's ceiling, went round once a second for eighteen minutes between a step up with no way on, the wall
         // and the way back (F-25c4ah).
         if (waterOver && !swimming) {
+            // So far along under the water from where it began with still no dry ground over its head, or about where it
+            // last found that so: the water is too wide to get out from under this way, and the climb ends there, handed
+            // back to what the goal does next. On 606 in E-40's iteration 18 (`e40a18`) Kindred, in its tunnel under the
+            // open sea, went to and fro under it through 12 stuck spells (F-35g).
+            if (underWaterFrom == null || lastTick - underWaterTick > 600) underWaterFrom = feet.toImmutable();
+            boolean gaveUp = underWaterGaveUpAt != null && underWaterGaveUpAt.getSquaredDistance(feet) <= 24 * 24
+                    && lastTick - underWaterGaveUpTick < 2400;
+            int along = Math.max(Math.abs(feet.getX() - underWaterFrom.getX()), Math.abs(feet.getZ() - underWaterFrom.getZ()));
+            if (gaveUp || along >= UNDER_WATER_REACH) {
+                if (!gaveUp) {
+                    underWaterGaveUpAt = feet.toImmutable();
+                    underWaterGaveUpTick = lastTick;
+                    event("the water over its tunnel at " + feet.toShortString() + " too wide to get out from under: " + along
+                            + " blocks along under it with no dry ground over its head; the climb handed back");
+                }
+                underWaterAt = feet.toImmutable();
+                underWaterTick = lastTick;
+                return Optional.empty();
+            }
             underWaterAt = feet.toImmutable();
             underWaterTick = lastTick;
             if (underWaterHeading == null) underWaterHeading = digDirection;
@@ -4416,6 +4488,11 @@ final class PortalRunCampaign {
         // steps aside again, and back, for good (F-25c4cq).
         BlockPos wall = feet.offset(toWall, nearest - 1);
         if (wall.equals(asideFrom) && feet.equals(asideTo) && lastTick - asideTick < 1200) return Optional.empty();
+        // Nor over to the wall of the cell it has just gone out from under the water from: there the water over it sends it
+        // out from under the water again, to here, and back, for good. On 606 in E-40's iteration 18 (`e40a18`) Kindred went
+        // "out from under the water" to 196, 56, -126 and "to the wall" back to 195 some thirty times each a stuck spell,
+        // through 12 of them (F-35g).
+        if (wall.equals(underWaterAt) && lastTick - underWaterTick < 1200) return Optional.empty();
         digDirection = toWall;
         return Optional.of(go(wall, 0.4, false, label + ": to the wall"));
     }
@@ -5228,6 +5305,179 @@ final class PortalRunCampaign {
         }
         return Optional.of(go(water, 2.5, false, "Walk to water at " + water.toShortString()));
     }
+
+    /**
+     * The water it wants one block over its head (F-35g): that block of its own ceiling opened, its bucket filled from the
+     * source behind it, a block of its own put back at once, and its tunnel let drain, as a player under the sea gets its
+     * water without swimming up for it. In E-40's iteration 18 (`e40a18`) on 606 Kindred, at feet Y=56 in its tunnel under
+     * one block of the seabed's dirt and four of the sea, had every step up refused for the water over it, and went "out
+     * from under the water" and "to the wall" between two cells some thirty times each a stuck spell, through 12 of them.
+     * <ul>
+     * <li>Only for water it knows is there: water it saw, a sighting of its own sweep's sight lines ({@link WorldKnowledge}),
+     * in the column over its ceiling, as a player knows the sea it saw from the shore or swam over is over its head. What
+     * lies under that water is never read before the block is opened; opened, the cell behind it is in plain sight, and
+     * only a still source there is filled from, as a bucket takes nothing else.</li>
+     * <li>Only with a block to put back, an empty bucket and room for the full one, its breath full and no hostile mob it
+     * sees within {@value #COVER_MOB_NEAR} blocks; never under sand or gravel, which would come down with the water.</li>
+     * <li>The climb's rule never to open a way into water stays for everything else.</li>
+     * </ul>
+     */
+    private Optional<Task> waterOverhead(NativePlayerBody body) {
+        if (overhead != null || reconcile != null) return Optional.empty();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (!underground(player) || !player.isOnGround() || player.isTouchingWater() || player.getAir() < player.getMaxAir()) return Optional.empty();
+        if (!passable(world, feet) || !passable(world, feet.up())) return Optional.empty();
+        BlockPos ceiling = feet.up(2);
+        BlockState roof = world.getBlockState(ceiling);
+        if (passable(world, ceiling) || !roof.getFluidState().isEmpty() || roof.getBlock() instanceof net.minecraft.block.FallingBlock
+                || blocked(ceiling) || !mayWork(player, ceiling) || !breakableNow(body, ceiling)) return Optional.empty();
+        // Water it can fill from where it stands is filled from there, as ever.
+        if (knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> eyeDistance(player, p) <= 4.0).isPresent()) return Optional.empty();
+        boolean seen = knowledge.nearest(world, WorldKnowledge.Kind.WATER, ceiling, p -> p.getX() == ceiling.getX() && p.getZ() == ceiling.getZ()
+                && p.getY() > ceiling.getY() && p.getY() - ceiling.getY() <= OVERHEAD_DEPTH).isPresent();
+        if (!seen) return Optional.empty();
+        var inventory = player.getInventory();
+        int bucket = slotOf(body, Items.BUCKET);
+        if (bucket < 0 || inventory.getStack(bucket).getCount() > 1 && inventory.getEmptySlot() < 0) return Optional.empty();
+        int block = wayBlockSlot(inventory);
+        if (block < 0) return Optional.empty();
+        if (!world.getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(COVER_MOB_NEAR),
+                mob -> mob.isAlive() && player.canSee(mob)).isEmpty()) return Optional.empty();
+        if (block >= 9) return Optional.of(swapToHotbar(body, block, "Ready a block"));
+        overhead = Overhead.OPEN;
+        overheadOpening = ceiling.toImmutable();
+        overheadSource = ceiling.up().toImmutable();
+        overheadTick = lastTick;
+        overheadBuckets = ItemMoves.count(inventory, Items.WATER_BUCKET);
+        overheadOpenFailed = false;
+        overheadLeft = null;
+        overheadFault = null;
+        event("opens its ceiling at " + ceiling.toShortString() + " for the water it saw over it", false);
+        return Optional.of(openOverhead(ceiling));
+    }
+
+    /**
+     * The next step with its ceiling opened for the water over it (F-35g), or none: the bucket filled from the source behind
+     * the opening, the opening closed with a block of its own, then a wait while what came in drains from the cells it
+     * stood in. A fill or a reseal that did not go is an outcome it cannot settle for itself: it is held for
+     * reconciliation, never tried again. Closed again with its bucket still empty, its own choice, it lets that place be:
+     * when what it opened onto, in plain sight once open, is no source its bucket takes, or when its breath goes under the
+     * water let in before it has filled the bucket.
+     */
+    private Optional<Task> overhead(NativePlayerBody body) {
+        if (overhead == null || reconcile != null) return Optional.empty();
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos opening = overheadOpening;
+        if (overhead == Overhead.OPEN) {
+            if (passable(world, opening)) {
+                overhead = Overhead.FILL;
+                overheadTick = lastTick;
+            } else if (overheadOpenFailed || lastTick - overheadTick > 600) {
+                // Not opened: nothing let in, nothing to put back; that block let be a while.
+                blockedUntil.merge(opening.asLong(), lastTick + 2400, Math::max);
+                overhead = null;
+                return Optional.empty();
+            } else {
+                return Optional.of(openOverhead(opening));
+            }
+        }
+        if (overhead == Overhead.FILL) {
+            if (overheadFault != null || ItemMoves.count(player.getInventory(), Items.WATER_BUCKET) > overheadBuckets) {
+                overhead = Overhead.SEAL;
+            } else if (player.getAir() < player.getMaxAir() * 5 / 6) {
+                // Its breath going under the water let in: closed again first, the bucket left for another time.
+                overheadLeft = "its breath going";
+                overhead = Overhead.SEAL;
+            } else if (lastTick - overheadTick <= 30 && !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
+                    player.getBoundingBox().expand(1.0, 1.5, 1.0), net.minecraft.entity.Entity::isAlive).isEmpty()) {
+                // The block's drop come down to it taken up before the bucket and the reseal: taken up during either, the
+                // inventory changed under it and the reseal was refused (the fixture, 1 run of 3 at first).
+                return Optional.of(new Task("native_wait", Map.of("seconds", "1"), OVERHEAD + ": let its drop come to it"));
+            } else if (world.getBlockState(overheadSource).isOf(Blocks.WATER) && world.getFluidState(overheadSource).isStill()
+                    && NativeBucketAction.fillAim(player, overheadSource).isPresent()) {
+                return Optional.of(new Task("native_bucket", coords(overheadSource, Map.of("mode", "fill")),
+                        OVERHEAD + ": fill a bucket at " + overheadSource.toShortString()));
+            } else if (lastTick - overheadTick <= 40) {
+                return Optional.of(new Task("native_wait", Map.of("seconds", "1"), OVERHEAD + ": look into the opening"));
+            } else {
+                overheadLeft = "no water its bucket takes behind it";
+                overhead = Overhead.SEAL;
+            }
+        }
+        if (overhead == Overhead.SEAL) {
+            if (passable(world, opening)) {
+                if (overheadFault != null && overheadFault.startsWith("reseal")) return holdFor(overheadFault);
+                Optional<Task> seal = placeBlock(body, opening, OVERHEAD + ": reseal " + opening.toShortString());
+                return seal.isPresent() ? seal : holdFor("reseal of " + opening.toShortString() + " not possible from where it stands");
+            }
+            overhead = Overhead.DRAIN;
+            overheadTick = lastTick;
+        }
+        if (overheadFault != null) return holdFor(overheadFault);
+        // Closed, and its breath going in what came in: the way up for air and the rest of the plan first, the drain watched
+        // still. Kept to its own steps under the water instead, it drowns: on the fixture, its fill given out again each
+        // time it was stopped for deep water, it drowned 3 of 3.
+        if (PlayerRuntime.inDeepWater(player) && player.getAir() < player.getMaxAir() * 2 / 3) return Optional.empty();
+        // Its own cells: under the opening, and where it has stood about it.
+        var own = new java.util.ArrayList<BlockPos>(List.of(opening.down(), opening.down(2)));
+        for (BlockPos cell : trail) {
+            if (Math.abs(cell.getX() - opening.getX()) <= 3 && Math.abs(cell.getZ() - opening.getZ()) <= 3
+                    && cell.getY() >= opening.getY() - 2 && cell.getY() < opening.getY()) {
+                own.add(cell);
+                own.add(cell.up());
+            }
+        }
+        BlockPos wet = own.stream().filter(cell -> cell.getY() < opening.getY() && world.getFluidState(cell).isIn(FluidTags.WATER)).findFirst().orElse(null);
+        if (wet != null) {
+            if (lastTick - overheadTick > OVERHEAD_DRAIN) {
+                return holdFor("water still in its tunnel at " + wet.toShortString() + " " + OVERHEAD_DRAIN + " ticks after it resealed");
+            }
+            return Optional.of(new Task("native_wait", Map.of("seconds", "1"), OVERHEAD + ": let the tunnel drain"));
+        }
+        if (overheadLeft != null) {
+            event("opened its ceiling at " + opening.toShortString() + " and closed it again, its bucket empty: " + overheadLeft, false);
+            blockedUntil.merge(opening.asLong(), lastTick + 24_000, Math::max);
+        } else {
+            event("filled a bucket from the water over its head at " + overheadSource.toShortString() + "; resealed, its tunnel dry", false);
+        }
+        overhead = null;
+        return Optional.empty();
+    }
+
+    /** The block over its head opened, its drop left to come down to it (F-35g). */
+    private static Task openOverhead(BlockPos ceiling) {
+        return clearAt(ceiling, OVERHEAD + ": open " + ceiling.toShortString());
+    }
+
+    /** A step of filling its bucket from the water over its head (F-35g). */
+    static boolean overheadStep(Task task) {
+        return task != null && task.label().startsWith(OVERHEAD + ": ");
+    }
+
+    /** Its fill or its reseal over the water, gone or not (F-35g): one that did not is the fault to reconcile. */
+    private void overheadFinished(Task task, boolean completed, String why) {
+        if (overhead == null || completed) return;
+        String reason = why == null || why.isBlank() ? "no reason given" : why;
+        String label = task.label();
+        if (label.startsWith(OVERHEAD + ": open ")) overheadOpenFailed = true;
+        else if (label.startsWith(OVERHEAD + ": fill ") && overheadFault == null) overheadFault = "fill from " + overheadSource.toShortString() + " did not go: " + reason;
+        else if (label.startsWith(OVERHEAD + ": reseal ")) overheadFault = "reseal of " + overheadOpening.toShortString() + " did not go: " + reason;
+    }
+
+    /** Held for reconciliation over its opening under the water: said once, and nothing more done (F-35g). */
+    private Optional<Task> holdFor(String why) {
+        reconcile = "its ceiling opened under the water at " + overheadOpening.toShortString() + ": " + why;
+        overhead = null;
+        event("held for reconciliation: " + reconcile);
+        progress = stageLabel(stage) + ": held for reconciliation - " + reconcile;
+        return Optional.empty();
+    }
+
+    /** What the goal cannot settle for itself and asks to be reconciled (F-35g); none in the ordinary way of things. */
+    Optional<String> reconciliation() { return Optional.ofNullable(reconcile); }
 
     /**
      * Night on the surface belongs to skeletons, so a player below ground with the water it wants up there waits for
@@ -6903,10 +7153,12 @@ final class PortalRunCampaign {
         // has no way out of the water to give first, and stopped, it was given out again at once. On 404 in E-40's iteration
         // 11 (`e40a11-744c636`) Sol, in an aquifer's pool with a creeper after it, had 2,097 of its 2,101 strikes stopped so,
         // and every other step stopped for the mob attacking it, through eight stuck spells (F-25c4cb).
+        // So do the steps of filling its bucket from the water over its head, which close the water out again; and closing
+        // it, whatever its breath: that is what stops the water coming in (F-35g).
         if (running != null && !surfacing(running) && PlayerRuntime.inDeepWater(player)
-                && (player.getAir() < player.getMaxAir() * 2 / 3
+                && (player.getAir() < player.getMaxAir() * 2 / 3 && !running.label().startsWith(OVERHEAD + ": reseal ")
                         || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running) && !fillingBucket(running)
-                                && !"native_fight".equals(running.skill()))) {
+                                && !"native_fight".equals(running.skill()) && !overheadStep(running))) {
             return "In deep water; up for air first";
         }
         // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.
