@@ -1,0 +1,42 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 9.72, "tickMsWorst": 2188.65, "tickMsWorstAt": 75972, "ticksOver50ms": 98, "ticksOver200ms": 9, "heapMbMax": 1180, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 360, "stone_tools": 1900, "iron_ingot": 7860, "iron_pickaxe": 21620},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 33800, "x": 195, "y": 56, "z": -126, "attempt": 1}, {"tick": 48420, "x": 197, "y": 56, "z": -132, "attempt": 2}, {"tick": 54640, "x": 189, "y": 56, "z": -129, "attempt": 3}, {"tick": 58700, "x": 197, "y": 56, "z": -128, "attempt": 4}, {"tick": 73520, "x": 195, "y": 56, "z": -126, "attempt": 5}, {"tick": 77800, "x": 186, "y": 56, "z": -126, "attempt": 6}, {"tick": 95920, "x": 186, "y": 56, "z": -129, "attempt": 7}, {"tick": 100400, "x": 193, "y": 56, "z": -127, "attempt": 8}, {"tick": 104280, "x": 186, "y": 56, "z": -126, "attempt": 9}, {"tick": 108100, "x": 186, "y": 56, "z": -126, "attempt": 10}, {"tick": 122660, "x": 185, "y": 56, "z": -126, "attempt": 11}, {"tick": 127040, "x": 195, "y": 56, "z": -126, "attempt": 12}, {"tick": 130900, "x": 186, "y": 55, "z": -119, "attempt": 13}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 980, "stone_tools": 2400, "iron_ingot": 6980, "iron_pickaxe": 16100, "obsidian": 47065, "portal_lit": 75971},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 50680, "x": 288, "y": -54, "z": -58, "attempt": 1}, {"tick": 61020, "x": 287, "y": -54, "z": -59, "attempt": 1}, {"tick": 65320, "x": 290, "y": -54, "z": -61, "attempt": 1}, {"tick": 71580, "x": 292, "y": -53, "z": -64, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1380, "stone_tools": 2820, "iron_ingot": 9120, "iron_pickaxe": 33200, "obsidian": 59736, "portal_lit": 60960},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

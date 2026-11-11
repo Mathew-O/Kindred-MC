@@ -91,6 +91,21 @@ public final class EvalRecord {
      */
     private String server;
 
+    /** The server's switches for free travel and free items over the run (mod-support decision 6); allowed at any point is allowed. */
+    private boolean teleport, freeItems;
+
+    /** Records the server's switches for free travel and free items; once allowed in a run, the run stays not earned. */
+    public void policy(boolean teleport, boolean freeItems) {
+        this.teleport |= teleport;
+        this.freeItems |= freeItems;
+    }
+
+    /**
+     * Whether the run is earned progress: its scenario earned (nothing handed out or kept) and neither free travel nor free
+     * items allowed on the server at any point. A teleport or a free item never counts as earned.
+     */
+    public boolean earned() { return scenario.earned() && !teleport && !freeItems; }
+
     /** The server's load over the run, as the file will hold it (the measurement a larger run is qualified by). */
     public void server(double tickMsMean, double tickMsWorst, long worstAtTick, int ticksOver50ms, int ticksOver200ms, long heapMbMax, int samples) {
         server = String.format(java.util.Locale.ROOT, ",\n  \"server\": {\"tickMsMean\": %.2f, \"tickMsWorst\": %.2f, \"tickMsWorstAt\": %d, "
@@ -135,7 +150,8 @@ public final class EvalRecord {
     public String toJson(String build, long seed, long ticksRun, boolean complete) {
         var out = new StringBuilder(4096);
         out.append("{\n  \"scenario\": ").append(Json.string(scenario.asText()))
-                .append(",\n  \"kind\": ").append(Json.string(scenario.earned() ? "earned" : "staged"))
+                .append(",\n  \"kind\": ").append(Json.string(earned() ? "earned" : "staged"))
+                .append(",\n  \"policy\": {\"teleport\": ").append(teleport).append(", \"freeItems\": ").append(freeItems).append('}')
                 .append(",\n  \"build\": ").append(Json.string(build))
                 .append(",\n  \"seed\": ").append(seed)
                 .append(",\n  \"ticks\": ").append(scenario.ticks())

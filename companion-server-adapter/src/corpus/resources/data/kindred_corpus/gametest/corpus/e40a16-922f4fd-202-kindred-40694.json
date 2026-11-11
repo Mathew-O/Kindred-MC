@@ -1,0 +1,251 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 40694,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -196,
+  8,
+  -10
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.548737582736436,
+  8.0,
+  16.835434844845274
+ ],
+ "yaw": -422.6817,
+ "pitch": 5.792988,
+ "health": 2.5000095,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 3
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 53
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:egg",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 52
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 90
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cherry_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 6
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:dripstone_block",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 15
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 2
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 37
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 7
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 14
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:cherry_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 16694,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "Back off from zombie",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Kindred was doomed to fall by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[03:49:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[03:49:35] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:37] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:40] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:44] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:48] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:50] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:49:58] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:50:01] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:50:06] [Server thread/INFO]: Kindred native_goto COMPLETED [Hole up: back into the passage]",
+  "[03:50:07] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -179, 20, 35 [Hole up: back into the passage]",
+  "[03:50:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[03:50:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[03:50:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[03:50:13] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:50:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+  "[03:50:21] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[03:50:22] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie]"
+ ],
+ "corpus": {
+  "run": "e40a16-922f4fd",
+  "seed": "202",
+  "build": "922f4fd",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a16-922f4fd/202/replays/world/Kindred-40694",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

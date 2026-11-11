@@ -458,7 +458,12 @@ final class NativeFightAction extends NativeRecordedAction {
         // half as much again (an iron sword's kill on a zombie takes three of those, not four). A creeper keeps to hit
         // and run, and in water or on a ladder a jump is no fall.
         // A blow on a raised shield only disables it (with an axe): no jump for a critical there.
-        boolean jumping = jumps(player, target) && !target.isBlocking();
+        // With a shield, against a mob that strikes in reach (not a creeper, run from as before): up while the swing
+        // recovers, down for each swing, as a player fights; no jump for a critical, which needs it down. In the kept
+        // replay kindred-43985-707, three zombies on Kindred in a dead end, its shield never once came up (F-25c4db).
+        boolean shielding = player.getOffHandStack().isOf(Items.SHIELD) && !player.getItemCooldownManager().isCoolingDown(Items.SHIELD)
+                && !(target instanceof CreeperEntity) && target instanceof net.minecraft.entity.mob.HostileEntity;
+        boolean jumping = jumps(player, target) && !target.isBlocking() && !shielding;
         boolean airborne = !player.isOnGround();
         boolean jump = jumping && !airborne && player.getAttackCooldownProgress(0.5f) >= JUMP_AT;
         // With an edge behind (lava, a drop), a hit would knock the player over it: a player sidesteps round the mob
@@ -469,6 +474,10 @@ final class NativeFightAction extends NativeRecordedAction {
         moved = body.move(issuedLease, step[0], step[1], jump && !stepping, false, yaw);
         if (moved && jump && !stepping) jumpedAt = player.getServerWorld().getTime();
         decision = stepping ? "sidestep off the edge" : jump && !stepping ? "jump for a critical" : "wait for the swing";
+        if (shielding && !ready) {
+            guard(true);
+            decision = stepping ? "sidestep off the edge, the shield up" : "the shield up while the swing recovers";
+        }
         boolean falling = airborne && player.getVelocity().y < 0 && player.fallDistance > 0;
         if (moved && ready && (!jumping || falling)) {
             guard(false); // The shield comes down for the swing.

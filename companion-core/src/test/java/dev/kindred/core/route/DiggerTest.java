@@ -61,7 +61,7 @@ class DiggerTest {
     }
 
     /** A body at {@code feet} with a pickaxe that breaks any stone in reach (three blocks), and the steps as their labels. */
-    static final class Body implements Digger.Body<String> {
+    static class Body implements Digger.Body<String> {
         final Scene world;
         final Cell feet;
         final Map<Long, Long> aside = new HashMap<>();
@@ -208,5 +208,31 @@ class DiggerTest {
         assertFalse(ledger.blocked(ore.asLong(), 8800));
         ledger.clear();
         assertFalse(ledger.unreachable(ore, 0, feet));
+    }
+
+    /**
+     * Under water too wide to get out from under (F-35g): a climb in a corridor whose ceiling has water over it every way
+     * up goes along under it, and once twenty blocks along from where that began with still no dry ground over its head,
+     * hands the climb back, said once; and not again nearby a while after.
+     */
+    @Test
+    void aClimbUnderWaterTooWideHandsBackOnceItIsALegAlongUnderIt() {
+        var scene = new Scene();
+        for (int x = -10; x <= 10; x++) for (int z = -2; z <= 2; z++) scene.set(x, 3, z, Block.WATER);
+        for (int x = -10; x <= 10; x++) scene.set(x, 0, 0, Block.AIR).set(x, 1, 0, Block.AIR);
+        var digger = new Digger();
+        var events = new java.util.ArrayList<String>();
+        class Told extends Body {
+            Told(Cell feet) { super(scene, feet); }
+            @Override public void event(String line) { events.add(line); }
+        }
+        var first = digger.climb(new Told(new Cell(-10, 0, 0)), "Up");
+        assertTrue(first.isPresent() && first.get().contains("out from under the water"), "along under it at first: " + first);
+        assertTrue(events.isEmpty());
+        assertEquals(Optional.empty(), digger.climb(new Told(new Cell(10, 0, 0)), "Up"), "twenty along: handed back");
+        assertEquals(1, events.size(), "said once: " + events);
+        assertTrue(events.getFirst().contains("too wide to get out from under: 20 blocks along"), events.getFirst());
+        assertEquals(Optional.empty(), digger.climb(new Told(new Cell(9, 0, 0)), "Up"), "nearby, not again");
+        assertEquals(1, events.size());
     }
 }

@@ -51,6 +51,26 @@ class AuctionsTest {
     }
 
     @Test
+    void aDeliveryBegunIsOwedNoLongerSoARestartNeverHandsItOverAgain() {
+        apply(list(ana, "minecraft:diamond", 10_000, 0, 24));
+        String id = book.of(ana).getFirst().id();
+        apply(Auctions.bid(book, coins, S, ben, id, 12_000, at()));
+        now += 25 * 3_600_000L;
+        apply(Auctions.close(Auctions.due(book, now).getFirst(), coins, S, at()));
+        var delivery = book.owedTo(ben).getFirst();
+        // Its begin written, then a stop or a crash before its receipt: owed no longer, so not begun again.
+        var begun = WorldEvent.recorded(0, now, "", Auctions.DELIVERING, ben, delivery.id(), "", Map.of());
+        book = Auctions.INSTANCE.apply(book, begun);
+        assertTrue(book.owedTo(ben).isEmpty(), "begun: no longer owed");
+        // The same from the Record alone, as a restart rebuilds it.
+        var rebuilt = AuctionBook.EMPTY;
+        for (var e : record) rebuilt = Auctions.INSTANCE.apply(rebuilt, e);
+        assertEquals(delivery, rebuilt.owedTo(ben).getFirst(), "owed before its begin");
+        assertTrue(Auctions.INSTANCE.apply(rebuilt, begun).owed().isEmpty(), "and not after it");
+        assertTrue(Auctions.INSTANCE.kinds().contains(Auctions.DELIVERING), "the begin is folded");
+    }
+
+    @Test
     void capsBidsAndBuyNow() {
         for (int i = 0; i < 5; i++) apply(list(ana, "minecraft:dirt", 100, 0, 1));
         assertEquals("At most 5 listings at a time", list(ana, "minecraft:dirt", 100, 0, 1).reason());

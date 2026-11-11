@@ -38,7 +38,13 @@ public final class KnowledgeWeb {
 
     /** How two things stand. */
     public enum Verb {
-        OWNS, LIVES_AT, CLAIMED, SAW_AT, NEEDS, HAS_SPARE, PROMISED, OWES, ALLIED, ENEMY, FEARS, FRIENDS_WITH, MEMBER_OF;
+        OWNS, LIVES_AT, CLAIMED, SAW_AT, NEEDS, HAS_SPARE, PROMISED, OWES, ALLIED, ENEMY, FEARS, FRIENDS_WITH, MEMBER_OF,
+        /** F-32b, from the peer ledger: what a player is doing, given and received items, a thing seen happen between them. */
+        DOING, GAVE, RECEIVED, WITNESSED,
+        /** F-32b, from the atlas: a resource found at a place, a place to shelter, a stretch of ground explored. */
+        FOUND, SHELTERS_AT, EXPLORED,
+        /** F-34c, team talk: what a teammate put into or took out of the team's store, and what it found gone from one. */
+        STORED, TOOK, MISSING;
 
         public String id() { return name().toLowerCase(Locale.ROOT); }
     }
@@ -213,6 +219,9 @@ public final class KnowledgeWeb {
     }
 
     public int size() { return relations.size(); }
+
+    /** Every relation held, open or closed, in the order added: for readers that need the whole web (F-32b's legacy reading). */
+    public java.util.Collection<Relation> all() { return java.util.Collections.unmodifiableCollection(relations.values()); }
 
     public Optional<Relation> get(long id) { return Optional.ofNullable(relations.get(id)); }
 

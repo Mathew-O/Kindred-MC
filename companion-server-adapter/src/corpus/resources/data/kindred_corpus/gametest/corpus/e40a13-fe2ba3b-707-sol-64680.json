@@ -1,0 +1,215 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 64680,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  14,
+  20,
+  -203
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.614309996560486,
+  8.0,
+  16.421987136399338
+ ],
+ "yaw": -133.68156,
+ "pitch": 10.614668,
+ "health": 7.1328745,
+ "food": 13,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 30
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 37
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:spruce_log",
+    "count": 2
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 112
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:spruce_sapling",
+    "count": 2
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 14
+    }
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 21
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 2
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 18
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:bow",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 72
+    }
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:spruce_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 21
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 16680,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie",
+ "task": "Back off from zombie",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was slain by Zombie",
+ "ticks": 1200,
+ "log": [
+  "[02:46:00] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+  "[02:46:00] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:00] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:01] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:01] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:01] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:01] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:02] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:02] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:02] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:02] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:03] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:03] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:03] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:04] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:04] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:04] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[02:46:04] [Server thread/INFO]: Sol native_goto COMPLETED [Hole up: back into the passage]",
+  "[02:46:04] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie]",
+  "[02:46:04] [Server thread/INFO]: Sol died at 30, 28, -187: Sol was slain by Zombie (tick 64680, night, under cover, hunger 12, armour 0, holding stone_sword, no shield; doing \"Back off from zombie\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "e40a13-fe2ba3b",
+  "seed": "707",
+  "build": "fe2ba3b",
+  "replay": "",
+  "source": "claude/corpus-data-1110@44234a0:e40a13-fe2ba3b/707/replays/world/Sol-64680",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

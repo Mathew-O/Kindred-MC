@@ -1,0 +1,357 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 203865,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  68,
+  15,
+  114
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.083012058639113,
+  8.0,
+  16.046751136289885
+ ],
+ "yaw": 87.375946,
+ "pitch": 18.128304,
+ "health": 12.185001,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 19
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 46
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:fishing_rod",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 24
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 28
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 2
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 32
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 52
+    }
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 3
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:dripstone_block",
+    "count": 2
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 23
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 4
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:spider_eye",
+    "count": 7
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 5
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 36
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:oak_fence",
+    "count": 1
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:rail",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 34
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 3
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 3
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 2
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:pufferfish",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 36,
+   "stack": {
+    "id": "minecraft:leather_boots",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 31
+    }
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 20
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 65
+    }
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 11865,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: inventory full - Drop surplus granite",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was slain by Spider",
+ "ticks": 1200,
+ "log": [
+  "[06:16:26] [Server thread/INFO]: Sol native_traverse COMPLETED [Rescue: walk east 4: a block east]",
+  "[06:16:26] [Server thread/INFO]: Sol native_walk COMPLETED [Rescue: walk east 4: a block east]",
+  "[06:16:26] [Server thread/INFO]: Sol native_pillar COMPLETED [Rescue: pillar 3]",
+  "[06:16:27] [Server thread/INFO]: Sol native_pillar COMPLETED [Rescue: pillar 3]",
+  "[06:16:27] [Server thread/INFO]: Sol native_pillar COMPLETED [Rescue: pillar 3]",
+  "[06:16:28] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up food]",
+  "[06:16:29] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[06:16:47] [Server thread/INFO]: Sol native_fish COMPLETED [Fish for food]",
+  "[06:16:48] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up food]",
+  "[06:16:48] [Server thread/INFO]: Sol native_eat COMPLETED",
+  "[06:17:01] [Server thread/INFO]: Sol native_fish CANCELLED: A hostile mob is attacking; fight back first [Fish for food]",
+  "[06:17:03] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[06:17:04] [Server thread/INFO]: Sol native_fight COMPLETED [Fight spider]",
+  "[06:17:05] [Server thread/INFO]: Sol native_fight COMPLETED [Fight spider]",
+  "[06:17:06] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+  "[06:17:10] [Server thread/INFO]: Sol native_fight COMPLETED [Fight skeleton]",
+  "[06:17:11] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+  "[06:17:12] [Server thread/INFO]: Sol native_swap COMPLETED",
+  "[06:17:12] [Server thread/INFO]: Sol native_eat CANCELLED: The player died",
+  "[06:17:12] [Server thread/INFO]: Sol died at 84, 23, 130: Sol was slain by Spider (tick 203865, day, under cover, hunger 16, armour 7, holding rotten_flesh, a shield; doing \"native_eat\" in \"Iron: inventory full - Drop surplus granite\"; stance PRESS_ON, focus NONE, habits [])"
+ ],
+ "corpus": {
+  "run": "f29e-on-4h",
+  "seed": "202",
+  "build": "4h",
+  "replay": "docs/evidence/eval/f29e-on-4h/202/replays/world/Sol-203865",
+  "source": "docs/evidence/eval/f29e-on-4h/202/replays/world/Sol-203865",
+  "class": "death: spider",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held"
+ }
+}

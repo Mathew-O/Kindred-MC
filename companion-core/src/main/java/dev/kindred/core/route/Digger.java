@@ -73,6 +73,8 @@ public final class Digger {
         T swap(int slot, String label);
         /** One of its own blocks put into {@code cell}, or nothing when it cannot place one there. */
         Optional<T> fill(Cell cell, String label);
+        /** A line for its log of what the dig found and why it stopped; nothing by default. */
+        default void event(String line) {}
     }
 
     /** Branch mining: legs this long, side steps this wide (two solid blocks between legs, each wall seen). */
@@ -83,6 +85,8 @@ public final class Digger {
      * often as the diamond legs at Y=-55 (F-25c4ac).
      */
     public static final int LAVA_BRANCH_LEG = 48, LAVA_BRANCH_STEP = 16;
+    /** How far along under water over its head a climb goes, with no dry ground over it, before handing back (F-35g). */
+    public static final int UNDER_WATER_REACH = BRANCH_LEG;
 
     /** The deepest drop a step down lands after: the navigator's safe drop. */
     private static final int MAX_SAFE_DROP = Navigator.MAX_SAFE_DROP;
@@ -102,6 +106,9 @@ public final class Digger {
     private Cell underWaterAt;
     private long underWaterTick;
     private Side underWaterHeading;
+    /** Where its way along under the water began, and where and when it last found the water too wide (F-35g). */
+    private Cell underWaterFrom, underWaterGaveUpAt;
+    private long underWaterGaveUpTick = Long.MIN_VALUE / 2;
     /** Whether the last staircase step down it chose was the step itself, not a block cleared for it. */
     private boolean steppedDown;
     private Cell settleAt;
@@ -577,6 +584,7 @@ public final class Digger {
             }
             if (!refused) {
                 underWaterHeading = null;
+                underWaterFrom = null;
                 return Optional.of(body.go(landing, 0.4, false, label + ": step up"));
             }
             heading = heading.clockwise();
@@ -586,6 +594,25 @@ public final class Digger {
         // corridor's ceiling, went round once a second for eighteen minutes between a step up with no way on, the wall
         // and the way back (F-25c4ah).
         if (waterOver && !swimming) {
+            // So far along under the water from where it began with still no dry ground over its head, or about where it
+            // last found that so: the water is too wide to get out from under this way, and the climb ends there, handed
+            // back to what the goal does next. On 606 in E-40's iteration 18 (`e40a18`) Kindred, in its tunnel under the
+            // open sea, went to and fro under it through 12 stuck spells (F-35g).
+            if (underWaterFrom == null || now - underWaterTick > 600) underWaterFrom = feet;
+            boolean gaveUp = underWaterGaveUpAt != null && underWaterGaveUpAt.squaredDistance(feet) <= 24 * 24
+                    && now - underWaterGaveUpTick < 2400;
+            int along = Math.max(Math.abs(feet.x() - underWaterFrom.x()), Math.abs(feet.z() - underWaterFrom.z()));
+            if (gaveUp || along >= UNDER_WATER_REACH) {
+                if (!gaveUp) {
+                    underWaterGaveUpAt = feet;
+                    underWaterGaveUpTick = now;
+                    body.event("the water over its tunnel at " + feet.x() + ", " + feet.y() + ", " + feet.z() + " too wide to get out from under: "
+                            + along + " blocks along under it with no dry ground over its head; the climb handed back");
+                }
+                underWaterAt = feet;
+                underWaterTick = now;
+                return Optional.empty();
+            }
             underWaterAt = feet;
             underWaterTick = now;
             if (underWaterHeading == null) underWaterHeading = heading;
@@ -664,6 +691,11 @@ public final class Digger {
         // steps aside again, and back, for good (F-25c4cq).
         Cell wall = feet.add(toWall.dx * (nearest - 1), 0, toWall.dz * (nearest - 1));
         if (wall.equals(asideFrom) && feet.equals(asideTo) && now - asideTick < 1200) return Optional.empty();
+        // Nor over to the wall of the cell it has just gone out from under the water from: there the water over it sends it
+        // out from under the water again, to here, and back, for good. On 606 in E-40's iteration 18 (`e40a18`) Kindred went
+        // "out from under the water" to 196, 56, -126 and "to the wall" back to 195 some thirty times each a stuck spell,
+        // through 12 of them (F-35g).
+        if (wall.equals(underWaterAt) && now - underWaterTick < 1200) return Optional.empty();
         heading = toWall;
         return Optional.of(body.go(wall, 0.4, false, label + ": to the wall"));
     }

@@ -46,6 +46,140 @@ def cause_of(message):
     return "other"
 
 
+# Every stuck spell and every death put in a bucket (F-26c), each rule a row: the first rule a death matches is its
+# bucket; a stuck spell goes to the bucket whose lines match most often in the player's last STUCK_WINDOW console lines
+# before the watchdog gave the spot up, at least STUCK_LEAST times (ties to the earlier row), else "other".
+STUCK_WINDOW, STUCK_LEAST = 60, 3
+STUCK_RULES = [
+    ("water loop", re.compile(r"out from under the water|get out of the water|swim|in the water|surface for air", re.I)),
+    ("no walkable route", re.compile(r"BLOCKED: (No walkable route|Route to .* is blocked)")),
+    ("refused target repeated", None),  # the same refusal, its numbers aside, STUCK_LEAST times or more
+    ("hole or pit", re.compile(r"climb toward the surface|pillar up|climb out|step up|out of the hole|\bpit\b", re.I)),
+    ("hemmed in", re.compile(r"no way on from here|climb to find another way|waiting for a feasible step|look round for a way on|boxed in", re.I)),
+]
+# Read only where no rule above reaches STUCK_LEAST: ordinary work that went on through a spell, not a failure of its own.
+STUCK_QUIET_RULES = [
+    ("waiting for daylight or a teammate", re.compile(r"Wait for daylight|Wait for the team's|nothing to do before daylight")),
+    ("mining for a find", re.compile(r"Branch mine for|Tunnel for (coal|water|iron|lava)|Dig down toward lava|Dig for stone")),
+]
+# Failing every rule, a spell whose commonest step (its numbers aside) came BUSY_LEAST times or more is busy work in a
+# loop: placing and picking up a table, readying a torch, the same step over and over without progress.
+BUSY, BUSY_LEAST = "busy-work loop", 6
+STUCK_KINDS = [name for name, _ in STUCK_RULES + STUCK_QUIET_RULES] + [BUSY, "other"]
+STEP = re.compile(r"^\w+ (?:goal at -?\d+ -?\d+ -?\d+: )?")
+REFUSED = re.compile(r"refused: (.*)")
+STUCK_AT = re.compile(r"Goal made no progress for \d+ ticks near (-?\d+), (-?\d+), (-?\d+)")
+CLOCK = re.compile(r"^\[(\d\d):(\d\d):(\d\d)\]")
+TICK_MARK = re.compile(r"Evaluation run: thinking at tick (\d+)")
+RANGED = ("skeleton", "stray", "bogged", "pillager", "blaze", "ghast")
+RETREAT = re.compile(r"back off|take cover|hole up|flee|run from|cornered", re.I)
+DEATH_RULES = [
+    ("lava", lambda d, kind: kind == "lava"),
+    ("drowning", lambda d, kind: kind == "drowning"),
+    ("fall", lambda d, kind: kind == "fall"),
+    ("starving with a mob near", lambda d, kind: is_mob(kind) and d.get("hunger", 20) <= 6),
+    ("cornered", lambda d, kind: is_mob(kind) and bool(RETREAT.search(d.get("stage", "") or ""))),
+    ("dark melee", lambda d, kind: is_mob(kind) and kind not in RANGED and d.get("light", 15) <= 7),
+]
+DEATH_KINDS = [name for name, _ in DEATH_RULES] + ["other"]
+NOT_MOBS = {"drowning", "fall", "lava", "fire", "starvation", "suffocation", "explosion", "other"}
+
+
+def is_mob(kind):
+    return kind not in NOT_MOBS
+
+
+def death_kind(death):
+    """A death record's bucket (F-26c), by the first rule in DEATH_RULES it matches."""
+    kind = cause_of(death.get("cause", ""))
+    return next((name for name, rule in DEATH_RULES if rule(death, kind)), "other")
+
+
+def stuck_kind(lines):
+    """A stuck spell's bucket (F-26c) from the player's console lines before it, by STUCK_RULES."""
+    counts = []
+    for name, pattern in STUCK_RULES:
+        if pattern is None:
+            refusals = {}
+            for line in lines:
+                m = REFUSED.search(line)
+                if m:
+                    key = re.sub(r"-?\d+", "N", m.group(1))
+                    refusals[key] = refusals.get(key, 0) + 1
+            counts.append(max(refusals.values(), default=0))
+        else:
+            counts.append(sum(1 for line in lines if pattern.search(line)))
+    best = max(counts)
+    if best >= STUCK_LEAST:
+        return STUCK_RULES[counts.index(best)][0]
+    quiet = [sum(1 for line in lines if pattern.search(line)) for _, pattern in STUCK_QUIET_RULES]
+    if max(quiet) >= STUCK_LEAST:
+        return STUCK_QUIET_RULES[quiet.index(max(quiet))][0]
+    steps = {}
+    for line in lines:
+        key = re.sub(r"\(tried elsewhere \d+ times?\)", "", re.sub(r"-?\d+", "N", STEP.sub("", line))).strip()
+        steps[key] = steps.get(key, 0) + 1
+    return BUSY if max(steps.values(), default=0) >= BUSY_LEAST else "other"
+
+
+def stuck_kinds_of(log, players):
+    """Each player's stuck spells by bucket, from the run's console. A spell's moment is the watchdog's "Goal made no
+    progress ... near x, y, z" line at its spot when there is one, else its tick placed on the console's clock between
+    the run's tick marks ("/tick sprint", "thinking at tick N"); its lines are the player's last STUCK_WINDOW before
+    then. {} when there is no console."""
+    if log is None:
+        return {}
+    clock, marks, watchdog, lines = 0, [], {}, {name: [] for name in players}
+    previous = None
+    for raw in log.read_text(encoding="utf-8", errors="replace").splitlines():
+        stamp = CLOCK.match(raw)
+        if stamp:
+            now = int(stamp.group(1)) * 3600 + int(stamp.group(2)) * 60 + int(stamp.group(3))
+            if previous is not None and now < previous - 3600:
+                clock += 86400  # past midnight
+            previous = now
+        when = clock + (previous or 0)
+        body = raw.split("]: ", 1)[-1]
+        if "Evaluation run: /tick sprint" in body:
+            marks.append((when, 0))
+        mark = TICK_MARK.search(body)
+        if mark:
+            marks.append((when, int(mark.group(1))))
+        at = STUCK_AT.search(body)
+        if at:
+            watchdog.setdefault(tuple(int(v) for v in at.groups()), []).append(when)
+            continue
+        name = body.split(" ", 1)[0]
+        if name in lines:
+            lines[name].append((when, body))
+
+    def moment(tick):
+        for (a, ta), (b, tb) in zip(marks, marks[1:]):
+            if ta <= tick <= tb:
+                return a + (b - a) * (tick - ta) / max(1, tb - ta)
+        return marks[-1][0] if marks else None
+
+    found = {}
+    for name, p in players.items():
+        kinds = []
+        for spell in p["stuck"]:
+            seen = watchdog.get((spell["x"], spell["y"], spell["z"]))
+            when = seen.pop(0) if seen else moment(spell["tick"])
+            if when is None:
+                continue
+            before = [body for t, body in lines[name] if t <= when][-STUCK_WINDOW:]
+            kinds.append(stuck_kind(before))
+        found[name] = kinds
+    return found
+
+
+def tally(kinds, names):
+    counts = {name: 0 for name in names}
+    for k in kinds:
+        counts[k] = counts.get(k, 0) + 1
+    return counts
+
+
 def spread(values):
     """The median and the range of values; None where there are none."""
     values = [v for v in values if v is not None]
@@ -150,6 +284,7 @@ def score(build_dir, use_metrics=True):
     per_seed, kinds, scenarios, short, other_jars = {}, set(), set(), {}, {}
     build_info = build_dir / "build.json"
     build_jar = json.loads(build_info.read_text(encoding="utf-8")).get("jar") if build_info.is_file() else None
+    free_runs = {}
     for folder in seeds:
         run_info = folder / "run.json"
         jar = json.loads(run_info.read_text(encoding="utf-8")).get("jar") if run_info.is_file() else None
@@ -161,7 +296,12 @@ def score(build_dir, use_metrics=True):
             note = result["build"][result["build"].index(SHORT) + len(SHORT):].split(";")[0].rstrip(")")
             short[folder.name] = note.lstrip(": ")
             continue
-        kinds.add(result["kind"])
+        # Free travel or free items allowed (mod-support decision 6): never earned, whatever the file's kind says.
+        policy = result.get("policy", {})
+        free = [name for name in ("teleport", "freeItems") if policy.get(name)]
+        if free:
+            free_runs[folder.name] = free
+        kinds.add("staged" if free else result["kind"])
         scenarios.add(result["scenario"])
         hours = max(result["ticksRun"], 1) / TICKS_PER_HOUR
         players, best = {}, -1
@@ -194,6 +334,13 @@ def score(build_dir, use_metrics=True):
                              "spellsOutByRecipe": sum(1 for r in lines if r["line"].endswith(": out by its recipe")),
                              "tokens": p.get("tokens", 0),
                              "metrics": metrics.get(str(log_of(folder)), {}).get(name)}
+        # F-26c: every death and every stuck spell in a bucket; a listed spell with no watchdog line found is "unmatched".
+        found = stuck_kinds_of(log_of(folder), result["players"])
+        for name, p in result["players"].items():
+            players[name]["deathKinds"] = tally((death_kind(d) for d in p["deaths"]), DEATH_KINDS)
+            kinds_found = found.get(name, [])[:len(p["stuck"])]
+            players[name]["stuckKinds"] = tally(kinds_found, STUCK_KINDS)
+            players[name]["stuckKinds"]["unmatched"] = len(p["stuck"]) - len(kinds_found)
         chatter = chatter_of(log_of(folder))
         minutes = max(result["ticksRun"], 1) / 1200
         chatter["linesPerMinute"] = round((chatter["talkLines"] + chatter["unaskedLines"]) / minutes, 3)
@@ -230,14 +377,23 @@ def score(build_dir, use_metrics=True):
         firsts = [min((p["minutesTo"][stage] for p in s["players"].values() if stage in p["minutesTo"]), default=None) for s in per_seed.values()]
         team["minutesTo_" + stage] = by_end(firsts)
         team["reached_" + stage] = sum(1 for f in firsts if f is not None)
+    # F-26c: the build's stuck spells and deaths by bucket, over every seed.
+    stuck_kinds, death_kinds = tally([], STUCK_KINDS + ["unmatched"]), tally([], DEATH_KINDS)
+    for s in per_seed.values():
+        for p in s["players"].values():
+            for k, n in p["stuckKinds"].items():
+                stuck_kinds[k] = stuck_kinds.get(k, 0) + n
+            for k, n in p["deathKinds"].items():
+                death_kinds[k] = death_kinds.get(k, 0) + n
     causes = {}
     for s in per_seed.values():
         for p in s["players"].values():
             for cause, n in p["causes"].items():
                 causes[cause] = causes.get(cause, 0) + n
     return {"build": build_dir.name, "jar": build_jar, "otherJars": other_jars, "seeds": sorted(per_seed), "missing": missing, "short": short,
-            "kinds": sorted(kinds), "scenarios": sorted(scenarios),
-            "team": team, "deathCauses": dict(sorted(causes.items(), key=lambda kv: -kv[1])), "perSeed": per_seed}
+            "freeSwitches": free_runs, "kinds": sorted(kinds), "scenarios": sorted(scenarios),
+            "team": team, "deathCauses": dict(sorted(causes.items(), key=lambda kv: -kv[1])),
+            "stuckKinds": stuck_kinds, "deathKinds": death_kinds, "perSeed": per_seed}
 
 
 def stuck_minutes(spells):
@@ -252,6 +408,19 @@ def fmt(s, unit=""):
     return "%s%s [%s to %s] (n=%d)" % (s["median"], unit, s["min"], s["max"], s["n"])
 
 
+def distribution(summary):
+    """F-26c: the build's stuck spells and deaths by bucket, as two lines and their shares."""
+    out = []
+    for key, label in (("stuckKinds", "Stuck spells by kind"), ("deathKinds", "Deaths by kind")):
+        counts = summary.get(key)
+        if not counts:
+            continue
+        total = sum(counts.values())
+        shown = ["%s %d (%d%%)" % (k, n, round(100 * n / total)) for k, n in counts.items() if n] if total else []
+        out += ["%s, all seeds (F-26c): %s." % (label, ", ".join(shown) or "none"), ""]
+    return out
+
+
 def markdown(summary):
     lines = ["# Evaluation summary: %s" % summary["build"], ""]
     kind = " and ".join(summary["kinds"]) or "none"
@@ -259,6 +428,8 @@ def markdown(summary):
                                                            "; ".join(summary["scenarios"]) or "none"))
     if "staged" in summary["kinds"]:
         lines.append("These runs are staged (something was kept or edits were off): they are not earned progress.")
+    for seed, free in summary.get("freeSwitches", {}).items():
+        lines.append("Seed %s ran with %s allowed: not earned, and no ladder counts it." % (seed, " and ".join(free)))
     if summary["missing"]:
         lines.append("No result from: %s." % ", ".join(summary["missing"]))
     for seed, came in summary.get("short", {}).items():
@@ -294,7 +465,9 @@ def markdown(summary):
             lines.append("| First to %s, game minutes (a seed not reaching it counted as later than all) | %s |"
                          % (stage, fmt_by_end(t["minutesTo_" + stage])))
     lines += ["", "Stages: " + ", ".join("%d %s" % (i, s) for i, s in enumerate(STAGES)) + ".", "",
-              "Deaths by cause, all seeds: " + (", ".join("%s %d" % kv for kv in summary["deathCauses"].items()) or "none") + ".", "",
+              "Deaths by cause, all seeds: " + (", ".join("%s %d" % kv for kv in summary["deathCauses"].items()) or "none") + ".", ""]
+    lines += distribution(summary)
+    lines += [
               "| Seed | Ticks run | Team furthest | Deaths/h | Per player: furthest, deaths, stuck spells, RunMetrics (done/blocked, worst repeat, recovered %, walks in vain) |",
               "| --- | --- | --- | --- | --- |"]
     for seed, s in summary["perSeed"].items():

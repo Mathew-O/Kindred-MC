@@ -1,0 +1,45 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 12.47, "tickMsWorst": 1049.64, "tickMsWorstAt": 5838, "ticksOver50ms": 561, "ticksOver200ms": 20, "heapMbMax": 1167, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 2560, "stone_tools": 2880, "iron_ingot": 73300, "iron_pickaxe": 91800},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 59900, "x": -453, "y": 68, "z": -265, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 940, "stone_tools": 2720, "iron_ingot": 6540, "iron_pickaxe": 20920, "diamond": 112840},
+      "deaths": [
+        {"tick": 22699, "cause": "Sol was slain by Zombie", "x": -424, "y": 26, "z": -134, "light": 0, "timeOfDay": 22861, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 31580, "cause": "Sol was slain by Zombie", "x": -276, "y": 24, "z": -237, "light": 0, "timeOfDay": 7742, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 57300, "x": -493, "y": 64, "z": -283, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2760, "stone_tools": 3840, "iron_ingot": 9860, "iron_pickaxe": 18820, "obsidian": 31865, "portal_lit": 33903},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}
