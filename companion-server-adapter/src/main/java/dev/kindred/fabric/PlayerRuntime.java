@@ -731,6 +731,10 @@ final class PlayerRuntime {
         CompletableFuture.supplyAsync(() -> readPace(directory)).whenComplete((step, failure) -> handBack(() -> {
             if (step != null && startupGeneration == currentStartupGen) groupStep = dev.kindred.core.match.GroupPace.further(Optional.ofNullable(groupStep), Optional.of(step)).orElse(null);
         }));
+        // Whether AI players not in bed still count toward a person's night (E-70a): the operator's aiPlayersCountForSleep.
+        CompletableFuture.supplyAsync(() -> readLeave(directory, "aiPlayersCountForSleep")).whenComplete((count, failure) -> handBack(() -> {
+            if (count != null && startupGeneration == currentStartupGen) SleepCount.aiPlayersCount(count);
+        }));
         startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases"), readWorldMode(directory),
                 readNativeLimit(directory)))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
