@@ -1172,3 +1172,49 @@ iteration 3's 232.
    falling water, or a block set to stop the flow).
 2. Then the ten seeds again, and on to rung b.
 3. **Keep the session busy while an evaluation runs.** The container is reclaimed when the session goes idle.
+
+## Handoff, 11 November 2026: Session A's Factions pack (F-31, M-06c to M-06l)
+
+**Merged** (the lead merges on green; Session A checks each in memory first: merge-tree onto current main and
+`support.py tracker`):
+- #113, #136 (M-06i: the shelter sealed only where it may), #140 (M-06l: the HUD as sections), #141.
+- #139 (`f411a32`, carrying #137): F-31's event kinds a registry; the Record writes only registered kinds.
+- #161 (`109fd04`), M-06h: a stop mid-handover writes nothing after it; the stop barrier (`stopping`, `stopEpoch`)
+  in `PlayerRuntime`. On the way, a duplication on crash-restart found and fixed: a begun delivery stayed owed and was
+  handed over twice; `Auctions` now folds `auction.delivering`.
+- #162 (`5f0e115`), M-06i evidence: the shelter fix on ten seeds (`b7b4bec`, then main `32d3de6`), the stuck time by
+  cause and seed.
+- #176 (`ccda814`), M-06i: Factions an operator's choice (`/aiplayer mode world factions`, kept in `mode.properties`,
+  the territory guard on with it and off with any other mode); D7's stricter reading told on joining: PvP only between
+  members of different factions, never in safe zones, joining a faction is joining the match.
+
+**Open, green or on CI:**
+- #178, M-06i: an AI player's found, join, claim and capture told to its faction citing exactly the Record's events
+  (through `recordAndTell`); `recordAndTell` given #161's barrier, which stops the tell, never the events.
+- #185, M-06f: the safe zones' chunks gathered once. `SafeZones.Book.chunks()` rebuilt a sorted set of every zone's
+  chunks on each territory check, asked for every water cell the goal's search tests: in a faction world the thinking
+  cost grew with each day's known water (diag-factions303 and 110). A question 3.8 to 4.1 µs at the 63-chunk hub and
+  1.1 ms at 5,171 chunks before, about 100 ns after; on 303 under JFR the call went from 2.22% of the server thread's
+  samples to 0.00%, mean tick 16.75 to 9.2 ms. RUNNER 2 re-runs diag-factions110 on its head (`0edc678`).
+
+**Read and handed on, nothing changed:**
+- diag-factions303 and 110: the hole-or-pit spells are survival loops (the logs climb, the water tunnel, a bamboo
+  canopy at one spot on 110), not faction work; no territory refusal in either run (LOOPS).
+- Faction walks are refused far more than they finish: 62 to 521 on 303, 44 to 564 on 110 (MOVEMENT's basin slice,
+  `claude/movement-1111-basin`). `FactionsPlayer.destination()` was tested as the cause and ruled out.
+
+**Pack readiness for the month run (M-06k), what stays open, in order:**
+1. Native fixtures for the AI's own sell, buy, bid and defend (M-06i).
+2. Wants from its plans, so it buys and bids and not only sells (M-06i).
+3. The base site from M-01c's chosen ground (M-06i). Sightings across a restart went to Session B (F-30d, merged).
+4. The eight-player hitches attributed (M-06k), with #185's numbers as the new baseline.
+5. M-06j: the in-world checklist on a fresh server now that Factions can be chosen; the operator guide's section; the
+   full pre-generation timed on the owner's machine (the owner's).
+6. Mob griefing other than explosions (M-06d), the market's chest-GUI browser (M-06g), the HUD's screenshots (M-06l),
+   a real client's pass over `/ah` (M-06h).
+
+**Decisions taken without asking (each reversible):**
+- D7: a person in no faction is never a target (the lead's reading; the owner may loosen it).
+- No self-merge: Session A's PRs are merged by the lead, as instructed, after Session A's "ready: green and clean".
+
+**Next dependency:** #178 and #185 merged; then item 1 above, fixture first.

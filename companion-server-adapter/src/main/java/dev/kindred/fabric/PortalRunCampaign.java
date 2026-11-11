@@ -1093,6 +1093,14 @@ final class PortalRunCampaign {
      */
     Optional<Task> next(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         Optional<Task> given = nextTask(body, policy, tick);
+        // A step the deep-water stop would end on its first tick is not given out (F-25c4de): with no way out of the water
+        // it can reach, the plan's own step was given, stopped "In deep water; up for air first" and given again, about
+        // thirteen times a second in a sealed pool. Held instead, the spell's watchdog counts the time as it would any
+        // spell with nothing feasible.
+        if (given.isPresent() && DEEP_WATER_STOP.equals(stopFor(body.entity(), given.get()))) {
+            progress = stageLabel(stage) + ": in deep water with no way out it can reach";
+            given = Optional.empty();
+        }
         lastGiven = given.orElse(null);
         return given;
     }
@@ -7260,6 +7268,8 @@ final class PortalRunCampaign {
         return null;
     }
 
+    static final String DEEP_WATER_STOP = "In deep water; up for air first";
+
     String stopFor(ServerPlayerEntity player, Task running) {
         if (running != null && player.isInsideWall() && !running.label().startsWith("Dig out of")) return "Stuck in a wall; dig out first";
         // Sinking or swimming in a task that will not take it out of the water (a wait, a seal, a fight): up for air first.
@@ -7277,7 +7287,7 @@ final class PortalRunCampaign {
                 && (player.getAir() < player.getMaxAir() * 2 / 3 && !running.label().startsWith(OVERHEAD + ": reseal ")
                         || !running.skill().equals("native_goto") && !climbingOut(running) && !gathering(running) && !fillingBucket(running)
                                 && !"native_fight".equals(running.skill()) && !overheadStep(running))) {
-            return "In deep water; up for air first";
+            return DEEP_WATER_STOP;
         }
         // Getting out of a hoglin's reach gives way to fighting it once it is on the player, still in reach.
         if (running != null && running.label().startsWith(OUT_OF_REACH)) {
