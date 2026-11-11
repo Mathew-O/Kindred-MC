@@ -696,6 +696,10 @@ public final class ConstructionPlanner {
             if (at.equals(support) || at.equals(target)) continue;
             var cell = site.cell(at);
             if (cell.isEmpty() || !cell.get().passable() && cell.get().kind() != BuildSite.Kind.REPLACEABLE) return false;
+            // No bar to the feet but in the eyes' way: a torch, a sign, a flower. The server's look at a block meets its
+            // shape first and refuses the break as out of sight; seen through one, a hideout's last block in the way was
+            // refused from every spot it was planned from (#148's CI; F-22c56's diagnostics) (F-22c58).
+            if (cell.get().kind() == BuildSite.Kind.PASSABLE) return false;
         }
         return true;
     }

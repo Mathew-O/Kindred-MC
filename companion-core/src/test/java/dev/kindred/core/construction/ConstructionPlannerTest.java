@@ -293,6 +293,28 @@ class ConstructionPlannerTest {
         assertEquals(ConstructionPlanner.Kind.BLOCKED, next(blocks, cells, new Pos(0, 1, 0)).kind());
     }
 
+    /**
+     * A block in the way of the build, and a torch on the wall between it and the eyes. A torch is no bar to the feet,
+     * but the server's look at a block meets the torch's own shape first, and it refuses the break as out of sight. The
+     * break is planned from a spot whose line to the block's middle passes no such cell. Seen through it, a hideout's
+     * last block in the way was refused from every spot the plan gave and its builder waited to the end (#148's CI,
+     * run 42843095037; F-22c56) (F-22c58).
+     */
+    @Test
+    void aBlockInTheWayIsNotBrokenFromWhereATorchStandsInTheEyesLineToIt() {
+        var cells = BuildTestSites.flat();
+        cells.put(new Pos(2, 1, 0), BuildTestSites.solid("minecraft:dirt"));
+        var blocks = List.of(block(2, 1, 0, "minecraft:cobblestone"));
+        var open = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.BREAK, open.kind(), open.toString());
+        assertEquals(new Pos(0, 1, 0), open.stance(), "with nothing between, from where it stands: " + open);
+        cells.put(new Pos(1, 2, 0), new Cell(Kind.PASSABLE, BlockSpec.parse("minecraft:wall_torch[facing=east]"), false));
+        var lit = next(blocks, cells, new Pos(0, 1, 0));
+        assertEquals(ConstructionPlanner.Kind.BREAK, lit.kind(), lit.toString());
+        assertEquals(new Pos(2, 1, 0), lit.target());
+        assertNotEquals(new Pos(0, 1, 0), lit.stance(), "not through the torch: " + lit);
+    }
+
     @Test
     void withNothingInHandOrPartOutOfSightItWaits() {
         var blocks = List.of(block(2, 1, 0, "minecraft:stone_bricks"));
