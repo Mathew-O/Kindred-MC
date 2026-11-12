@@ -160,6 +160,7 @@
       "dev.kindred.fabric.ReplayGameTests",
       "dev.kindred.fabric.NativeSwimUpGameTests",
       "dev.kindred.fabric.NativeLogsKeptOutGameTests",
+      "dev.kindred.fabric.NativeKnownLogsKeptOutGameTests",
       "dev.kindred.fabric.ReplayWorldStateGameTests",
       "dev.kindred.fabric.NativeStuckSpellReplayGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",

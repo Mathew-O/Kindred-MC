@@ -6661,6 +6661,13 @@ final class PlayerRuntime {
     }
 
     /** The build a player is on, if any, as a line of progress. */
+    /** For fixtures: how many trips out for what it lacks the current build has made; -1 with no build. */
+    int buildTripsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.build == null ? -1 : entry.build.trips();
+    }
+
     Optional<String> buildStatus(UUID id) {
         requireThread();
         Entry entry = id != null ? entries.get(id) : null;
