@@ -16,8 +16,9 @@ import net.minecraft.util.math.BlockPos;
  * portal goal's iron step, a travel step, its third white wool brought the End fight's bed up as a follow-up;
  * {@code craftAtTable("white_bed")} set its carried table down, the bed could not be made there ("not the makings": no
  * planks), and "take workstations along" picked the table up, 35 times in that spell. STAGED: Sol's moment as near as
- * its log tells, on the field: the portal goal, a stone pickaxe and sword, bread, cobblestone, three white wool, six oak
- * logs and no planks, and the crafting table it carries; nothing else given, and the bed, if made, made by it. Passes if
+ * its log tells, on the field: the portal goal, a stone pickaxe and sword, bread, cobblestone, three white wool, one oak
+ * log and no planks (one log, four planks, is under a shield's six, so the route wants no spare sticks from it), the crafting table it carries, an empty bucket and eight sticks (so the route's step is the water's,
+ * a travel step); nothing else given, and the bed, if made, made by it. Passes if
  * within 600 ticks it holds a white bed, or 600 ticks pass with its table set down at most once; fails at three
  * placements, the loop.
  */
@@ -47,8 +48,14 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                     inventory.setStack(2, new ItemStack(Items.BREAD, 16));
                     inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 32));
                     inventory.setStack(4, new ItemStack(Items.WHITE_WOOL, 3));
-                    inventory.setStack(5, new ItemStack(Items.OAK_LOG, 6));
+                    inventory.setStack(5, new ItemStack(Items.OAK_LOG, 1));
                     inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE, 1));
+                    // Its route on a travel step, as Sol's was ("Fill a bucket with water"): an empty bucket to fill, and sticks
+                    // enough, and one log only, so that no "Craft planks for spare sticks" comes first. Without them the first version's route
+                    // crafted planks for sticks, a craft step on which the pickup never runs, and the bed was made: it
+                    // passed 3 of 3 on main and showed nothing.
+                    inventory.setStack(7, new ItemStack(Items.BUCKET, 1));
+                    inventory.setStack(8, new ItemStack(Items.STICK, 8));
                     var held = new StringBuilder();
                     for (int s = 0; s < 36; s++) {
                         var stack = inventory.getStack(s);
