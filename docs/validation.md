@@ -74,6 +74,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
 
+## The hitches attributed by cause (M-06k) — 12 November 2026 (`claude/m06k-hitches-1112`)
+
+- [M-06k: the hitches attributed by cause](evidence/M-06k.md#the-hitches-attributed-by-cause-2026-11-12-claudem06k-hitches-1112).
+
 ## The gather's best-tool question asked once per kind of block (M-06k) — 11 November 2026 (`claude/m06k-gather-tool-cache-1111`)
 
 - [M-06k: the gather's best-tool question asked once per kind of block](evidence/M-06k.md#the-gathers-best-tool-question-asked-once-per-kind-of-block-2026-11-11-claudem06k-gather-tool-cache-1111).
