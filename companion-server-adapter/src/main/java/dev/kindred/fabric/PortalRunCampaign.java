@@ -3272,7 +3272,23 @@ final class PortalRunCampaign {
     /** Craft at a crafting table: one close by, else one it carries set down, else one made from four planks. */
     Optional<Task> craftAtTable(NativePlayerBody body, String item) {
         Optional<Task> made = craft(body, item);
-        if (made.isPresent() || tableNear(body)) return made;
+        if (made.isPresent()) return made;
+        // What it holds makes it, or would with its logs as planks, before a table is set down for it (F-25c7a): on seed
+        // 303 Sol, with the wool for a bed and logs but no planks, set its table down for the bed, could not make it
+        // there, and "take workstations along" picked the table straight back up, 35 times in one stuck spell.
+        String recipe = item.equals("planks") ? planksRecipe(body) : item.equals("boat") ? boatRecipe(body) : item;
+        var makings = recipe == null ? dev.kindred.core.guide.Makings.Choice.NONE : body.makings(recipe);
+        if (makings == dev.kindred.core.guide.Makings.Choice.PLANKS_FIRST) return craft(body, "planks");
+        if (tableNear(body)) return made;
+        if (makings == dev.kindred.core.guide.Makings.Choice.NONE) {
+            long now = body.entity().getServerWorld().getTime();
+            Long said = unmakeable.get("table:" + item);
+            if (said == null || now - said >= 1_200) {
+                unmakeable.put("table:" + item, now);
+                KindredMod.LOGGER.info("{} sets no table down for {}: not the makings", body.entity().getName().getString(), item);
+            }
+            return Optional.empty();
+        }
         if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) return placeTable(body);
         return craft(body, "crafting_table");
     }
