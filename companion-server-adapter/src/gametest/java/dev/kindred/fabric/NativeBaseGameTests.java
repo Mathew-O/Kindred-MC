@@ -31,7 +31,11 @@ public final class NativeBaseGameTests implements FabricGameTest {
         BlockPos o = origin(context);
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
         BlockPos home = o.add(16, 7, 16);
-        int[] trips = {-1}, stoneLeft = {0};
+        int[] trips = {-1}, stoneLeft = {0}, deepLeft = {0};
+        // Where its staircase for stone stops: six under the cabin's floor (BuildRunner's STONE_DEPTH). It digs along
+        // there, and takes no stone below it, kept or not (CI on #219: a player that knew the stone its pit laid open
+        // mined 19 of its 62 a layer under the field, and the field's own stone came up short).
+        int digDepth = home.getY() - 6;
         // Kept as it builds: whether its cabin ever ended short and was put off to try again.
         boolean[] endedShort = {false};
         context.createTimedTaskRunner()
@@ -46,6 +50,9 @@ public final class NativeBaseGameTests implements FabricGameTest {
                     context.getWorld().setTimeOfDay(1000);
                     for (int x = -40; x <= 72; x++) for (int z = -40; z <= 72; z++) for (int y = 0; y <= 3; y++) {
                         if (world.getBlockState(o.add(x, y, z)).isOf(Blocks.STONE)) stoneLeft[0]++;
+                    }
+                    for (int x = -40; x <= 72; x++) for (int z = -40; z <= 72; z++) for (int y = o.getY() - 4; y < digDepth; y++) {
+                        if (world.getBlockState(new BlockPos(o.getX() + x, y, o.getZ() + z)).isOf(Blocks.STONE)) deepLeft[0]++;
                     }
                     var player = f.player();
                     var inventory = player.getInventory();
@@ -83,14 +90,18 @@ public final class NativeBaseGameTests implements FabricGameTest {
                     context.assertTrue(Math.abs(origin.getX() + 3 - home.getX()) <= 4 && Math.abs(origin.getZ() + 3 - home.getZ()) <= 4
                             && origin.getY() == home.getY(), "Sited by home: " + origin.toShortString());
                     exact(context, cabin, origin);
-                    int logsLeft = 0, stone = 0;
+                    int logsLeft = 0, stone = 0, deep = 0;
+                    for (int x = -40; x <= 72; x++) for (int z = -40; z <= 72; z++) for (int y = o.getY() - 4; y < digDepth; y++) {
+                        if (world.getBlockState(new BlockPos(o.getX() + x, y, o.getZ() + z)).isOf(Blocks.STONE)) deep++;
+                    }
                     for (BlockPos trunk : trunks) for (int y = 0; y < 6; y++) if (world.getBlockState(trunk.up(y)).isOf(Blocks.OAK_LOG)) logsLeft++;
                     for (int x = -40; x <= 72; x++) for (int z = -40; z <= 72; z++) for (int y = 0; y <= 3; y++) {
                         if (world.getBlockState(o.add(x, y, z)).isOf(Blocks.STONE)) stone++;
                     }
-                    KindredMod.LOGGER.info("Base: a cabin at {} in {} trip(s); {} stone mined, {} of 12 logs left", origin.toShortString(), trips[0],
-                            stoneLeft[0] - stone, logsLeft);
+                    KindredMod.LOGGER.info("Base: a cabin at {} in {} trip(s); {} stone mined, {} below where it digs to, {} of 12 logs left",
+                            origin.toShortString(), trips[0], stoneLeft[0] - stone, deepLeft[0] - deep, logsLeft);
                     context.assertTrue(logsLeft < 12, "Logs cut: " + (12 - logsLeft));
+                    context.assertTrue(deep == deepLeft[0], "No stone mined below where it digs to: " + (deepLeft[0] - deep));
                     context.assertTrue(stoneLeft[0] - stone >= 50, "Stone mined for the walls: " + (stoneLeft[0] - stone));
                     context.assertTrue(trips[0] == 1, "The shortfall fetched in one trip: " + trips[0]);
                     context.assertTrue(!endedShort[0], "Built at the first go, never ended short and tried again");
