@@ -80,6 +80,7 @@
       "dev.kindred.fabric.NativeSpireGameTests",
       "dev.kindred.fabric.NativeWaterFightGameTests",
       "dev.kindred.fabric.NativeToldTreesGameTests",
+      "dev.kindred.fabric.NativeUnreachableLogsGameTests",
       "dev.kindred.fabric.NativeNightWalkGameTests",
       "dev.kindred.fabric.NativeWaterEdgeGameTests",
       "dev.kindred.fabric.NativeWaterExitGameTests",
