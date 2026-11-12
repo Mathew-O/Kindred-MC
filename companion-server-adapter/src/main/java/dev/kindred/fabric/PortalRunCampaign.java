@@ -3979,18 +3979,7 @@ final class PortalRunCampaign {
             if (gone) givenUp++;
             if (out) unreachableCount++;
             if (why.size() >= 8) continue;
-            String reason = !knows ? "not known"
-                    : aside ? (coverHeld.contains(log.asLong()) ? "set aside: cover held" : "set aside until " + cellsAside.blockedUntil().get(log.asLong()) + " after " + cellsAside.failures().getOrDefault(log.asLong(), 0) + " failures")
-                    : out ? "unreachable until " + cellsAside.unreachableUntil().get(log.asLong()) + " from " + (cellsAside.unreachableFrom(log.asLong()) == null ? "-" : pos(cellsAside.unreachableFrom(log.asLong())).toShortString())
-                    : dangerous(log) ? "dangerous"
-                    : log.equals(feet.down()) ? "its own support"
-                    : log.getSquaredDistance(feet) > radius * radius ? "beyond " + radius
-                    : !also.test(log) ? "the step's own filter"
-                    : !harvestable(body, log) ? "not harvestable"
-                    : !mayWork(player, log) ? "may not work here"
-                    : log.getY() > feet.getY() + TRUNK_REACH ? "above its trunk reach"
-                    : trunkFoot(world, log).isEmpty() ? (WorldKnowledge.builtIn(world, log) ? "built in" : "no trunk foot")
-                    : "usable, " + approaches.getOrDefault(log.asLong(), 0) + " approaches";
+            String reason = !knows ? "not known" : keptOut(body, log, radius, p -> also.test(p) ? null : "the step's own filter").text();
             why.add(log.toShortString() + " " + reason + (gone ? ", tree given up" : ""));
         }
         if (logs == 0) return;
@@ -3999,6 +3988,79 @@ final class PortalRunCampaign {
                 + feet.toShortString() + ": " + isKnown + " known, " + setAsideCount + " set aside, " + givenUp + " given up, "
                 + unreachableCount + " unreachable; " + String.join("; ", why);
         KindredMod.LOGGER.info("{} (spell {})", logsKeptOutLast, stuckSpells);
+    }
+
+    /** The first of the gather's rules that keeps a log out, and what it says of it ("until 123 after 2 failures"). */
+    record KeptOut(String rule, String detail) {
+        String text() { return detail.isEmpty() ? rule : rule + " " + detail; }
+    }
+
+    /**
+     * Which of {@link #gatherable}'s rules first keeps {@code log} out of a gather of logs within {@code radius} from where
+     * the player stands, in its order, with {@code filtered} naming the caller's own rule for a log it keeps out (null for
+     * one it lets in). Diagnostic only: the gather itself asks {@link #gatherable}.
+     */
+    private KeptOut keptOut(NativePlayerBody body, BlockPos log, int radius, java.util.function.Function<BlockPos, String> filtered) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        long at = log.asLong();
+        if (!world.isChunkLoaded(log)) return new KeptOut("not loaded", "");
+        if (!world.getBlockState(log).isIn(BlockTags.LOGS)) return new KeptOut("no longer a log", "");
+        if (blocked(log)) {
+            return coverHeld.contains(at) ? new KeptOut("set aside: cover held", "")
+                    : new KeptOut("set aside", "until " + cellsAside.blockedUntil().get(at) + " after " + cellsAside.failures().getOrDefault(at, 0) + " failures");
+        }
+        if (unreachable(log)) {
+            var from = cellsAside.unreachableFrom(at);
+            return new KeptOut("unreachable", "until " + cellsAside.unreachableUntil().get(at) + " from " + (from == null ? "-" : pos(from).toShortString()));
+        }
+        if (dangerous(log)) return new KeptOut("dangerous", "");
+        if (log.equals(feet.down())) return new KeptOut("its own support", "");
+        if (log.getSquaredDistance(feet) > radius * radius) return new KeptOut("beyond " + radius, "");
+        if (log.getY() < feet.getY() && !Digger.landingWithin(new WorldDig(world), cell(log), cell(feet))) return new KeptOut("no landing under it", "");
+        String own = filtered.apply(log);
+        if (own != null) return new KeptOut(own, "");
+        if (!mayWork(player, log)) return new KeptOut("may not work here", "");
+        if (!harvestable(body, log)) return new KeptOut("not harvestable", "");
+        if (log.getY() > feet.getY() + TRUNK_REACH) return new KeptOut("above its trunk reach", "");
+        if (trunkFoot(world, log).isEmpty()) return new KeptOut(WorldKnowledge.builtIn(world, log) ? "built in" : "no trunk foot", "");
+        return new KeptOut("usable", approaches.getOrDefault(at, 0) + " approaches");
+    }
+
+    /** For fixtures: how many known-logs-kept-out lines it has logged, and the last. */
+    private int knownLogsLines;
+    private String knownLogsLast;
+    int knownLogsLinesForTest() { return knownLogsLines; }
+    String knownLogsLastForTest() { return knownLogsLast; }
+
+    /**
+     * Diagnostic only, no decision reads it: a gather of logs within {@code radius} came back empty while it knows
+     * logs, so a line, after {@code prefix}, of how many it knows, how many each rule kept out ({@link #keptOut}, the
+     * caller's own named by {@code filtered}), and the nearest eight with theirs; false, with no line, when it knows no logs. For the
+     * cabin fixture on #219's CI (capM-2): its build went "Explore west for logs" with a tree 21 blocks east, and
+     * nothing said why the build's gather had passed it over. The caller logs it once a trip.
+     */
+    boolean knownLogsKeptOut(NativePlayerBody body, int radius, java.util.function.Function<BlockPos, String> filtered, String prefix) {
+        BlockPos feet = body.entity().getBlockPos();
+        var known = new java.util.ArrayList<>(knowledge.all(WorldKnowledge.Kind.LOG));
+        if (known.isEmpty()) return false;
+        known.sort(java.util.Comparator.comparingDouble(p -> p.getSquaredDistance(feet)));
+        var rules = new java.util.TreeMap<String, Integer>();
+        var nearest = new java.util.ArrayList<String>();
+        for (BlockPos log : known) {
+            var kept = keptOut(body, log, radius, filtered);
+            rules.merge(kept.rule(), 1, Integer::sum);
+            if (nearest.size() < 8) {
+                nearest.add(log.toShortString() + " (" + Math.round(Math.sqrt(log.getSquaredDistance(feet))) + " off) " + kept.text()
+                        + (treesGivenUp.contains(BlockPos.asLong(log.getX() >> 2, 0, log.getZ() >> 2)) ? ", tree given up" : ""));
+            }
+        }
+        knownLogsLines++;
+        knownLogsLast = prefix + ": its gather within " + radius + " found no logs, with " + known.size() + " known from " + feet.toShortString()
+                + ", kept out by " + rules + "; nearest: " + String.join("; ", nearest);
+        KindredMod.LOGGER.info("{}", knownLogsLast);
+        return true;
     }
 
     private Optional<Task> gatherFrom(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,

@@ -345,6 +345,124 @@ public final class NativeStorageGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * F-30d2 and F-30d2a: who it saw at a store of its own, and what it had counted in it, are kept across a restart.
+     * Rue puts its things away in its chest; in a manhunt, stopped and away from it, it sees Hal open the chest and take
+     * the saddle; the match is stopped and the server's runtime stops and starts before it goes to look. After it,
+     * connected again and set going, it goes to look: the counts it kept, against what it sees, show the saddle gone, and
+     * it says who it saw take it, to itself, as it plays alone (Hal is not connected). Before, both were lost in a restart:
+     * its first look only counted what was there, and it said nothing. Staged: the ground, the chest, what it holds, both
+     * players' places, the manhunt (so that Hal is not on its side) and Hal's take.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "storeSeenRestart", tickLimit = 6000)
+    public void whoItSawTakeFromItsChestBeforeARestartItNamesWhenItLooksAfterIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        boolean pvp = server.isPvpEnabled();
+        UUID[] hal = new UUID[1];
+        UUID[] match = new UUID[1];
+        BlockPos far = new BlockPos(5, 2, 30);
+        int[] waited = {0};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Rue"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Hal"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
+                            "Both established");
+                    for (var status : statuses) if (!status.id().equals(f.id)) hal[0] = status.id();
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -2; x <= 12; x++) for (int z = -2; z <= 36; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    world.setBlockState(context.getAbsolutePos(far), Blocks.CHEST.getDefaultState());
+                    world.setTimeOfDay(1000);
+                    var rue = f.player();
+                    BlockPos at = context.getAbsolutePos(new BlockPos(5, 2, 28));
+                    rue.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+                    var inventory = rue.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.SADDLE));
+                    inventory.setStack(1, new ItemStack(Items.ENCHANTED_BOOK));
+                    inventory.setStack(2, new ItemStack(Items.ENCHANTED_BOOK));
+                    inventory.setStack(3, new ItemStack(Items.NAME_TAG));
+                    inventory.setStack(4, new ItemStack(Items.LEAD));
+                    rue.setHealth(20);
+                    rue.getHungerManager().setFoodLevel(20);
+                    var other = player(f, hal[0]);
+                    BlockPos away = context.getAbsolutePos(new BlockPos(5, 2, 2)).add(0, 0, -200);
+                    other.refreshPositionAndAngles(away.getX() + 0.5, away.getY() + 1, away.getZ() + 0.5, 0, 0);
+                    other.getInventory().clear();
+                    context.assertTrue(f.runtime.nativeStorage(f.source, f.id, context.getAbsolutePos(far)) == 1, "Rue's storage");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Rue playing"))
+                .createAndAdd(() -> context.assertTrue(f.player().getInventory().isEmpty() && count(chest(context, far), Items.ENCHANTED_BOOK) == 2,
+                        "Put away, all of it / " + f.runtime.nativeLastResult(f.id)))
+                .createAndAdd(() -> {
+                    server.setPvpEnabled(true);
+                    f.runtime.setDragonFightForTest(true);
+                    context.assertTrue(f.runtime.proposeManhunt(f.source, java.util.List.of(f.nativeId), java.util.List.of(player(f, hal[0]).getUuid())) == 1, "Proposed");
+                })
+                .createAndAdd(() -> {
+                    match[0] = f.runtime.matches().getFirst().id();
+                    context.assertTrue(f.runtime.startMatch(f.source, match[0]) == 1, "Started");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.matches().getFirst().state() == dev.kindred.core.match.MatchRegistry.State.RUNNING, "Running");
+                    // Both held: Rue sees, but does not go to look before the restart.
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", f.id) == 1, "Rue held");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", hal[0]) == 1, "Hal held");
+                    BlockPos off = context.getAbsolutePos(new BlockPos(5, 2, 4));
+                    f.player().refreshPositionAndAngles(off.getX() + 0.5, off.getY(), off.getZ() + 0.5, 0, 0);
+                    BlockPos by = context.getAbsolutePos(far.add(0, 0, 1));
+                    player(f, hal[0]).refreshPositionAndAngles(by.getX() + 0.5, by.getY(), by.getZ() + 0.5, 180, 0);
+                })
+                .createAndAdd(() -> {
+                    var other = player(f, hal[0]);
+                    context.assertTrue(f.player().canSee(other), "Rue sees Hal at its chest");
+                    other.openHandledScreen(chest(context, far));
+                    take(chest(context, far), Items.SADDLE);
+                })
+                .createAndAdd(() -> context.assertTrue(++waited[0] >= 40, "Hal at the chest for two seconds"))
+                .createAndAdd(() -> {
+                    var other = player(f, hal[0]);
+                    other.closeHandledScreen();
+                    BlockPos away = context.getAbsolutePos(new BlockPos(5, 2, 2)).add(0, 0, -200);
+                    other.refreshPositionAndAngles(away.getX() + 0.5, away.getY() + 1, away.getZ() + 0.5, 0, 0);
+                    var seen = f.runtime.seenAtStoresForTest(f.id);
+                    context.assertTrue(seen.size() == 1 && seen.getFirst().startsWith("Hal at " + context.getAbsolutePos(far).toShortString() + ", not on its side"),
+                            "Rue saw Hal at its chest: " + seen);
+                    context.assertTrue(f.runtime.stopMatch(f.source, match[0]) == 1, "The match stopped");
+                    server.setPvpEnabled(pvp);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped for the restart"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Restarted"))
+                // A restart never auto-spawns: Rue's body comes back when connected, stopped until set going; Hal stays away.
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "connect", f.id) == 1, "Rue connected again"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).stream().anyMatch(s -> s.id().equals(f.id)
+                        && s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()), "Rue established again"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.storesReadForTest(f.id), "What it knows of its stores read back"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Rue playing again"))
+                .createAndAdd(() -> {
+                    String saw = "I saw Hal take a saddle from my chest at " + where(context, far) + ".";
+                    context.assertTrue(f.runtime.said(f.id).contains(saw), "Named who it saw, after the restart: said " + f.runtime.said(f.id)
+                            + ", seen " + f.runtime.seenAtStoresForTest(f.id));
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.seenAtStoresForTest(f.id).isEmpty(), "Looked: the sighting answered");
+                    context.assertTrue(f.runtime.said(f.id).stream().noneMatch(line -> line.contains("moving the rest")), "Alone: nothing moved");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     private static ChestBlockEntity chest(TestContext context, BlockPos pos) {
         return (ChestBlockEntity) context.getWorld().getBlockEntity(context.getAbsolutePos(pos));
     }

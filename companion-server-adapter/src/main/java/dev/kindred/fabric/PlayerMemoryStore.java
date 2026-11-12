@@ -208,6 +208,91 @@ final class PlayerMemoryStore implements AutoCloseable {
         });
     }
 
+    /** Kindred's log, as {@link KindredMod#LOGGER} is, by name: so the stores' file can be read and written where no mod has started (its tests). */
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("Kindred");
+
+    private Path storesFile(UUID id) { return folder.resolve(id + ".stores.json"); }
+
+    /**
+     * Someone it saw open a store of its own (E-43), as it holds it in memory, kept across a restart (F-30d2): the store
+     * where it saw them, their name and id as seen, whether they were on its side then, and how many server ticks had
+     * passed since it saw them when it was written. A restart's down time does not count, as the server's ticks do not.
+     */
+    record StoreSighting(int x, int y, int z, String name, boolean teammate, String who, long age) { }
+
+    /**
+     * A container it keeps things in, as it knows it (E-43), kept across a restart (F-30d2a): its world and place, whose
+     * ({@code OWN} or {@code TEAM}), what it last counted there, and how many server ticks had passed since it last knew
+     * them when it was written.
+     */
+    record StoreCount(String world, int x, int y, int z, String whose, java.util.Map<String, Integer> counts, long age) { }
+
+    /**
+     * What it knows of its stores, in one world: those it saw at them and has not yet gone to look (F-30d2), and what it
+     * counted in each (F-30d2a). There is none of either in no file, or in a part a file does not have.
+     */
+    static final class StoreMemory {
+        String player = "";
+        List<StoreSighting> seen = new ArrayList<>();
+        List<StoreCount> stores = new ArrayList<>();
+    }
+
+    /**
+     * What it knows of its stores, or none (no file: it knows nothing of them); read off the game thread. A file that
+     * cannot be read is set aside as {@code .unreadable} and nothing of it is held, rather than a guess: what is not known
+     * is not counted or suspected. An entry that does not make sense is left out alone.
+     */
+    CompletableFuture<StoreMemory> loadStores(UUID id, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            Path file = storesFile(id);
+            if (!Files.isRegularFile(file)) return null;
+            try {
+                var read = gson.fromJson(Files.readString(file, StandardCharsets.UTF_8), StoreMemory.class);
+                if (read == null) throw new IllegalStateException("empty");
+                var kept = new StoreMemory();
+                kept.player = name;
+                for (var each : read.seen == null ? List.<StoreSighting>of() : read.seen) {
+                    if (each == null || each.name() == null || each.who() == null || each.age() < 0) continue;
+                    try {
+                        UUID.fromString(each.who());
+                    } catch (IllegalArgumentException notAnId) {
+                        continue;
+                    }
+                    kept.seen.add(each);
+                }
+                for (var each : read.stores == null ? List.<StoreCount>of() : read.stores) {
+                    if (each == null || each.world() == null || each.counts() == null || each.age() < 0
+                            || !("OWN".equals(each.whose()) || "TEAM".equals(each.whose()))) continue;
+                    if (each.counts().entrySet().stream().anyMatch(c -> c.getKey() == null || c.getValue() == null || c.getValue() <= 0)) continue;
+                    kept.stores.add(each);
+                }
+                return kept;
+            } catch (IOException | RuntimeException unreadable) {
+                LOG.warn("What {} knows of its stores could not be read; it is set aside and none is held: {}", name, unreadable.toString());
+                try {
+                    Files.move(file, file.resolveSibling(file.getFileName() + ".unreadable"), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException kept) {
+                    LOG.warn("What {} knows of its stores could not be set aside: {}", name, kept.toString());
+                }
+                return null;
+            }
+        }, io);
+    }
+
+    /** Write what it knows of its stores, a copy taken on the game thread: turned into its file off it, after any write before it. */
+    void saveStores(UUID id, StoreMemory memory) {
+        io.execute(() -> {
+            String json;
+            try {
+                json = gson.toJson(memory);
+            } catch (RuntimeException failed) {
+                LOG.warn("What {} knows of its stores could not be written: {}", memory.player, failed.toString());
+                return;
+            }
+            writeNow(storesFile(id), json, memory.player);
+        });
+    }
+
     private Path rapportFile(UUID id) { return folder.resolve(id + ".rapport.json"); }
 
     /** How this player stands with each it knows (E-24a), or none; read off the game thread. */

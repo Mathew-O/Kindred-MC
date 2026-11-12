@@ -6671,6 +6671,13 @@ final class PlayerRuntime {
     }
 
     /** The build a player is on, if any, as a line of progress. */
+    /** For fixtures: how many trips out for what it lacks the current build has made; -1 with no build. */
+    int buildTripsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.build == null ? -1 : entry.build.trips();
+    }
+
     Optional<String> buildStatus(UUID id) {
         requireThread();
         Entry entry = id != null ? entries.get(id) : null;
@@ -6938,6 +6945,7 @@ final class PlayerRuntime {
             applyDimensionTransit(entry, body);
             reconcileExpeditionArrival(entry);
             if (server.getTicks() % 10 == 0) {
+                keepStores(entry);
                 noteChestUse(entry, body.entity());
                 storageAskLapsed(entry);
             }
@@ -8116,6 +8124,7 @@ final class PlayerRuntime {
                     && entry.dispatchSource.startsWith("factionCandidates");
             if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
             if (factionWalk) entry.factionPlay.walksEnded++;
+            if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
@@ -9525,6 +9534,8 @@ final class PlayerRuntime {
                 if (stores.stream().anyMatch(store -> store.pos().equals(pos))) {
                     boolean mate = teammateOf(entry, self, other);
                     var before = entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), mate, server.getTicks(), other.getUuid()));
+                    entry.seenAtStoresDirty = true;
+                    if (before == null) saveStores(entry);
                     // Someone not on its side at its chest: it gives up a walk to go and look.
                     if (before == null && !mate) entry.sightingInterrupt = true;
                     entry.routineRefreshPending = true;
@@ -9618,6 +9629,7 @@ final class PlayerRuntime {
         long tick = server.getTicks();
         if (play.move == null && tick - play.decidedAt >= FactionsPlayer.DECIDE_TICKS) {
             play.decidedAt = tick;
+            play.decidedForTest(tick);
             play.chosen = factionChoose(entry, player);
             if (play.chosen != null && FactionsPlayer.moves(play.chosen, player)) {
                 play.move = play.chosen;
@@ -9662,10 +9674,15 @@ final class PlayerRuntime {
         // Its walk would end in open water it saw (F-35j): the place set aside at once, with no walk asked and no way made.
         // On Factions seed 303 the players' land is an island, and the places its faction play chose east of it were open
         // sea, refused leg after leg. Only what it saw counts; out of its sight the walk is asked as before.
-        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && seenOpenWater(entry, play, player, to, tick)) {
-            play.openWater(move.target(), tick);
+        // A place refused and waiting is not looked at as water until its wait is out (F-35j1): looked at a second later and
+        // seen as water, it was set aside and another chosen at once, each refusal's wait never served. Its way made out of
+        // a hollow (F-35h) goes on during the wait, below, as before.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && !play.waiting(move.target(), tick)
+                && seenOpenWater(entry, play, player, to, tick)) {
+            play.openWater(move.target(), tick, player.getBlockPos(), FactionsPlayer.atSurface(player));
             play.move = null;
-            play.decidedAt = Long.MIN_VALUE / 2;
+            // The next choice at the decision interval, not on the same tick: chosen at once, a coast of water it saw was
+            // set aside place by place, a search for each (F-35j1).
             return null;
         }
         // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
@@ -9988,7 +10005,19 @@ final class PlayerRuntime {
         return entry == null || entry.campaign == null ? -1 : entry.campaign.knowledge().sweeps();
     }
 
-    /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
+    /** For the fixtures (F-35j1): the AI player's last faction walks ended (target, tick) and its last choices' ticks. */
+    List<Map.Entry<String, Long>> factionWalksEndedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of() : List.copyOf(entry.factionPlay.endedForTest);
+    }
+
+    List<Long> factionDecisionsForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of() : List.copyOf(entry.factionPlay.decidedForTest);
+    }
+
     /** For the fixtures (F-35h2): whether the AI player's campaign has it dug in for the night where it stands now. */
     boolean dugInForTheNightForTest(UUID player) {
         requireThread();
@@ -9997,6 +10026,7 @@ final class PlayerRuntime {
                 && entry.campaign.dugInForTheNight(entry.nativeBody.entity());
     }
 
+    /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
     int[] factionOverWaterForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
@@ -12397,6 +12427,94 @@ final class PlayerRuntime {
     /** Someone it saw open a store of its own: who, whether on its side, and when. */
     private record SeenAtStore(String name, boolean teammate, long tick, UUID who) { }
 
+    /**
+     * F-30d2 and F-30d2a: what it knows of its stores, kept across a restart as it holds it in memory: who it saw at
+     * them and has not yet gone to look, and what it counted in each. Read back once a start off the thread, each with
+     * its age then, so it fades as it would have (down time does not count, as the server's ticks do not); what it has
+     * seen, looked into or changed since the start is newer and is kept over it. Written when it sees someone new or
+     * looks, and otherwise at most every ten seconds while something changed, once a minute while it knows anything, and
+     * at the stop; never before its file has been read back. With no file nothing is added: a fresh start is as before.
+     */
+    private void keepStores(Entry entry) {
+        if (!entry.storesRead) {
+            if (entry.storesReading) return;
+            entry.storesReading = true;
+            UUID id = entry.data.id();
+            memories.loadStores(id, entry.data.displayName()).whenComplete((read, failure) -> handBack(() -> {
+                entry.storesReading = false;
+                if (!running || entries.get(id) != entry || entry.storesRead) return;
+                entry.storesRead = true;
+                if (failure != null || read == null) return;
+                long now = server.getTicks();
+                int seen = 0, counted = 0;
+                for (var each : read.seen) {
+                    var back = new SeenAtStore(each.name(), each.teammate(), now - each.age(), UUID.fromString(each.who()));
+                    if (entry.seenAtStores.putIfAbsent(BlockPos.asLong(each.x(), each.y(), each.z()), back) == null) seen++;
+                }
+                for (var each : read.stores) {
+                    var place = new dev.kindred.core.team.Storage.Place(each.world(), each.x(), each.y(), each.z());
+                    if (entry.storage.restore(new dev.kindred.core.team.Storage.Store(place, dev.kindred.core.team.Storage.Whose.valueOf(each.whose()),
+                            each.counts(), now - each.age()))) counted++;
+                }
+                if (seen + counted > 0) {
+                    entry.routineRefreshPending = true;
+                    KindredMod.LOGGER.info("{} remembers {} seen at its stores and what is in {} of them, from before the restart",
+                            entry.data.displayName(), seen, counted);
+                }
+            }));
+            return;
+        }
+        long since = server.getTicks() - entry.storesSavedAt;
+        boolean changed = entry.seenAtStoresDirty || entry.storage.revision() != entry.storesSavedRevision;
+        boolean known = !entry.seenAtStores.isEmpty() || !entry.storage.stores().isEmpty();
+        if (changed && since >= 200 || known && since >= 1200) saveStores(entry);
+    }
+
+    /** What it knows of its stores, written as it is now with its ages; nothing before its file has been read back. */
+    private void saveStores(Entry entry) {
+        if (!entry.storesRead) return;
+        entry.seenAtStoresDirty = false;
+        long now = server.getTicks();
+        entry.storesSavedAt = now;
+        entry.storesSavedRevision = entry.storage.revision();
+        var out = new PlayerMemoryStore.StoreMemory();
+        out.player = entry.data.displayName();
+        for (var each : entry.seenAtStores.entrySet()) {
+            BlockPos pos = BlockPos.fromLong(each.getKey());
+            var seen = each.getValue();
+            out.seen.add(new PlayerMemoryStore.StoreSighting(pos.getX(), pos.getY(), pos.getZ(), seen.name(), seen.teammate(),
+                    seen.who().toString(), Math.max(0, now - seen.tick())));
+        }
+        for (var store : entry.storage.stores()) {
+            var place = store.place();
+            out.stores.add(new PlayerMemoryStore.StoreCount(place.world(), place.x(), place.y(), place.z(), store.whose().name(),
+                    new java.util.TreeMap<>(store.counts()), Math.max(0, now - store.seenAt())));
+        }
+        memories.saveStores(entry.data.id(), out);
+    }
+
+    /** Fixtures: who it saw at its stores, as "name at x, y, z, teammate or not, ticks ago"; empty for no such player. */
+    List<String> seenAtStoresForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null) return List.of();
+        long now = server.getTicks();
+        var out = new ArrayList<String>();
+        for (var each : entry.seenAtStores.entrySet()) {
+            var seen = each.getValue();
+            out.add(seen.name() + " at " + BlockPos.fromLong(each.getKey()).toShortString() + ", " + (seen.teammate() ? "teammate" : "not on its side")
+                    + ", " + (now - seen.tick()) + " ticks ago");
+        }
+        return out;
+    }
+
+    /** Fixtures: whether what it knows of its stores has been read back from its file this start. */
+    boolean storesReadForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry != null && entry.storesRead;
+    }
+
     /** What it asked its team of what is gone from a store, and until when it waits for a word. */
     private record StorageAsk(dev.kindred.core.team.Storage.Look look, long until) { }
 
@@ -12487,7 +12605,7 @@ final class PlayerRuntime {
         long now = server.getTicks();
         if (!worldEditsEnabled()) return null;
         // Going to look, or moving the rest out, keeps its own short wait; putting away and fetching the longer one.
-        entry.seenAtStores.values().removeIf(seen -> now - seen.tick() > 6000);
+        if (entry.seenAtStores.values().removeIf(seen -> now - seen.tick() > 6000)) entry.seenAtStoresDirty = true;
         boolean looking = entry.emptying != null || !entry.seenAtStores.isEmpty();
         if (looking ? now < entry.lookAt : now < entry.storeAt) return null;
         var world = player.getServerWorld();
@@ -12586,6 +12704,10 @@ final class PlayerRuntime {
         var place = storePlace(player, own.pos());
         var look = entry.storage.looked(place, own.whose(), seen, now);
         var since = entry.seenAtStores.remove(own.pos().asLong());
+        if (since != null) {
+            entry.seenAtStoresDirty = true;
+            saveStores(entry);
+        }
         if (!look.isShort()) return;
         // Gone while someone not on its side was seen at it (E-49): theirs to answer for, in its wariness of them.
         if (since != null && !since.teammate()) noteWariness(entry, since.who(), since.name(), dev.kindred.core.Trust.Event.TOOK_FROM_CHEST);
@@ -14879,6 +15001,9 @@ final class PlayerRuntime {
         peerRadio.saveAll(); // What each knows of the others (E-50).
         for (Entry entry : entries.values()) {
             if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
+            // F-30d2 and F-30d2a: with the ages as at the stop; nothing if it knows nothing, or its file was never read back.
+            if (entry.seenAtStoresDirty || entry.storage.revision() != entry.storesSavedRevision
+                    || !entry.seenAtStores.isEmpty() || !entry.storage.stores().isEmpty()) saveStores(entry);
         }
         memories.close();
         recipeStore.saveIfChanged(rescueBook);
@@ -17749,6 +17874,13 @@ final class PlayerRuntime {
         private List<OwnStore> ownStores;
         private long ownStoresAt, storeAt;
         private final Map<Long, SeenAtStore> seenAtStores = new HashMap<>();
+        /**
+         * F-30d2 and F-30d2a: whether what it knows of its stores (who it saw at them, what it counted in them) has been
+         * read back from its file this start, the read under way, and a write due for those it saw; when it last wrote,
+         * and its storage's revision then.
+         */
+        private boolean storesRead, storesReading, seenAtStoresDirty;
+        private long storesSavedAt, storesSavedRevision;
         private StorageAsk storageAsk;
         private final Set<Long> untrustedStores = new HashSet<>();
         /** How wary it is of each person, from what the game saw them do to it (E-49); kept for this session. */

@@ -391,6 +391,8 @@ final class BuildRunner {
     /** Walks out to look for what the trip still wants and has not seen; at most {@link #LOOKS} a trip. */
     private int looks;
     private static final int LOOKS = 4;
+    /** Whether this trip has said why its log gather passed over the logs it knows ({@link PortalRunCampaign#knownLogsKeptOut}). */
+    private boolean logsExplained;
 
     /** Whether {@code task} was one the build's needs gave (taken, crafted or gathered), not a placement. */
     boolean needsTask(PortalRunCampaign.Task task) {
@@ -776,6 +778,7 @@ final class BuildRunner {
         if (!wasOnTrip && needs.onTrip()) {
             trips++;
             looks = 0;
+            logsExplained = false;
             KindredMod.LOGGER.info("Build {}: out for the rest of the build, trip {}: {}", blueprint.name(), trips, bill.missing());
         }
         switch (next) {
@@ -848,6 +851,13 @@ final class BuildRunner {
                 var world = player.getServerWorld();
                 var task = supply.campaign().gather(body, kind, 64, what, p -> !onSite(pos(p)) && (kind != WorldKnowledge.Kind.LOG
                         || net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(p).getBlock()).toString().equals(log)));
+                // Diagnostic only, once a trip: none of the logs it knows would do, and why each was passed over.
+                if (task.isEmpty() && kind == WorldKnowledge.Kind.LOG && !logsExplained) {
+                    logsExplained = supply.campaign().knownLogsKeptOut(body, 64, p -> onSite(pos(p)) ? "on its site"
+                            : !net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(p).getBlock()).toString().equals(log)
+                            ? "not its wood (" + net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(p).getBlock()) + ")" : null,
+                            "Build " + blueprint.name() + ", trip " + trips + ", for " + log);
+                }
                 // None in sight: out over the ground to look, a few times, before the build ends without them.
                 if (task.isEmpty() && looks < LOOKS) {
                     task = supply.campaign().lookFor(body, what);
