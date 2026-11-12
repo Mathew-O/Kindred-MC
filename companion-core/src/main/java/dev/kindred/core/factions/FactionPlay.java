@@ -69,13 +69,24 @@ public final class FactionPlay {
      * What the player knows. {@code site} the chunk of the base site it chose (M-01c), if any; {@code standing} the
      * chunk it stands in; {@code healthy} whether it is fit to fight (health and food); {@code asks} the market's ask for
      * each wanted item, for its whole count, where it sells it; {@code nearby} the players it saw near it lately;
-     * {@code setAside} the places it could find no way to lately (chunk keys, or a home), not chosen again for a while.
+     * {@code setAside} the places it could find no way to lately (chunk keys, or a home), not chosen again for a while;
+     * {@code siteAlso} the second chunk its first base's ground covers, when no one chunk could hold it, claimed next.
      */
     public record View(UUID self, Personality personality, FactionBook factions, PowerBook powers, Map<String, String> claims, Set<String> safe,
                        Capture.Book captures, long coins, FactionSettings settings, long nowMs, Optional<Territory.Chunk> site,
                        Optional<Territory.Chunk> standing, boolean healthy, List<Spare> spare, List<Want> wants, Map<String, Long> asks,
-                       AuctionBook auctions, List<Sighting> seen, List<UUID> nearby, Set<String> setAside) {
+                       AuctionBook auctions, List<Sighting> seen, List<UUID> nearby, Set<String> setAside, Optional<Territory.Chunk> siteAlso) {
+        /** A view with its base's ground in one chunk. */
+        public View(UUID self, Personality personality, FactionBook factions, PowerBook powers, Map<String, String> claims, Set<String> safe,
+                    Capture.Book captures, long coins, FactionSettings settings, long nowMs, Optional<Territory.Chunk> site,
+                    Optional<Territory.Chunk> standing, boolean healthy, List<Spare> spare, List<Want> wants, Map<String, Long> asks,
+                    AuctionBook auctions, List<Sighting> seen, List<UUID> nearby, Set<String> setAside) {
+            this(self, personality, factions, powers, claims, safe, captures, coins, settings, nowMs, site, standing, healthy, spare, wants, asks,
+                    auctions, seen, nearby, setAside, Optional.empty());
+        }
+
         public View {
+            Objects.requireNonNull(siteAlso);
             Objects.requireNonNull(self);
             Objects.requireNonNull(personality);
             claims = Map.copyOf(claims);
@@ -196,11 +207,15 @@ public final class FactionPlay {
         });
         else {
             var centre = held.getFirst();
+            // Its first base's ground across two chunks: the other one first, so the base stands wholly on its land.
+            view.siteAlso().filter(also -> view.site().map(site -> held.contains(site)).orElse(false) && !view.claims().containsKey(also.key()))
+                    .ifPresent(candidates::add);
             for (var chunk : held) for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
                 var next = chunk.offset(d[0], d[1]);
                 if (!view.claims().containsKey(next.key()) && !candidates.contains(next)) candidates.add(next);
             }
-            candidates.sort(Comparator.comparingLong((Territory.Chunk c) -> (long) (c.x() - centre.x()) * (c.x() - centre.x()) + (long) (c.z() - centre.z()) * (c.z() - centre.z()))
+            int first = candidates.size() > 0 && view.siteAlso().map(candidates.getFirst()::equals).orElse(false) ? 1 : 0;
+            candidates.subList(first, candidates.size()).sort(Comparator.comparingLong((Territory.Chunk c) -> (long) (c.x() - centre.x()) * (c.x() - centre.x()) + (long) (c.z() - centre.z()) * (c.z() - centre.z()))
                     .thenComparingInt(Territory.Chunk::x).thenComparingInt(Territory.Chunk::z));
         }
         // Only once the claim's cost is there without touching the coins kept for the one after, beyond the first.

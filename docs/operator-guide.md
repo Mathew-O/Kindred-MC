@@ -1059,6 +1059,9 @@ Each seed's `eval-result.json` and `latest.log` are written as an evaluation run
 It found that last one in the planner, and a GameTest confirmed it on a real server. See
 [the evidence](evidence/F-28.md), which also records how its deaths an hour compare with a server's.
 
+Its ways up, down and along through rock, and the targets it gives up on, are the campaign's own (F-35e). What it
+still lacks for movement fidelity is listed, ranked against the corpus, in [its known gaps](../companion-sim/README.md#known-gaps).
+
 ## The watch page (E-48)
 
 A read-only web page that shows what each AI player is doing and weighing, for an operator, or for a stream. It is off

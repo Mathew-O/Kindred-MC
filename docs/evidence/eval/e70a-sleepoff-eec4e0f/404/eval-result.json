@@ -1,0 +1,54 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; sleep=off",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 13.23, "tickMsWorst": 3171.85, "tickMsWorstAt": 1, "ticksOver50ms": 584, "ticksOver200ms": 10, "heapMbMax": 976, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1860, "stone_tools": 5620, "iron_ingot": 11000, "iron_pickaxe": 54080, "diamond": 66520, "obsidian": 74760},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 125840, "x": 163, "y": 63, "z": -171, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5602,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 380, "stone_tools": 1240, "iron_ingot": 5440, "iron_pickaxe": 22880, "diamond": 40820, "obsidian": 32827},
+      "deaths": [
+        {"tick": 43300, "cause": "Sol was shot by Skeleton", "x": 126, "y": -53, "z": 20, "light": 0, "timeOfDay": 19462, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Obsidian: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 53060, "x": 39, "y": 76, "z": -47, "attempt": 1}, {"tick": 56740, "x": 37, "y": 74, "z": -49, "attempt": 2}, {"tick": 85640, "x": 117, "y": 25, "z": 28, "attempt": 1}, {"tick": 101140, "x": 105, "y": 58, "z": 26, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3244,
+      "chunkMinutes": 34675.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 3460, "iron_ingot": 9280, "iron_pickaxe": 38760},
+      "deaths": [
+        {"tick": 95973, "cause": "Echo was slain by Zombie", "x": 9, "y": 67, "z": -103, "light": 15, "timeOfDay": 135, "dimension": "minecraft:overworld", "hunger": 0, "underSky": true, "stage": "Iron: inventory full - Drop surplus cobblestone (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 35400, "x": 2, "y": 19, "z": -36, "attempt": 1}, {"tick": 60780, "x": -3, "y": 40, "z": -18, "attempt": 1}, {"tick": 80860, "x": 6, "y": 60, "z": -21, "attempt": 1}, {"tick": 126220, "x": 55, "y": 65, "z": -118, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4351,
+      "chunkMinutes": 34675.2
+    }
+  }
+}
