@@ -26,7 +26,7 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "tableLoop", tickLimit = 1600)
     public void stagedOnTheWayWithWoolAndLogsButNoPlanksItMakesItsBedOrSetsNoTableDownNotATableLoop(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
-        int[] placed = {0}, pickedUp = {0}, tables = {-1};
+        int[] placed = {0}, pickedUp = {0}, tables = {-1}, pickedBeforeBed = {-1};
         long[] since = {-1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
@@ -81,8 +81,18 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                                 + " - " + progress);
                     }
                     boolean bed = player.getInventory().count(Items.WHITE_BED) > 0;
+                    if (bed && pickedBeforeBed[0] < 0) pickedBeforeBed[0] = pickedUp[0];
                     context.assertTrue(bed || world.getTime() - since[0] >= 600, "Its bed made, or 600 ticks with no loop: " + (world.getTime() - since[0])
                             + " ticks, the table set down " + placed[0] + " times - " + progress);
+                })
+                // F-25c7b: the craft before the pickup, and the table taken along after it, none left standing.
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    if (player.getInventory().count(Items.WHITE_BED) == 0) return;
+                    context.assertTrue(pickedBeforeBed[0] == 0, "The table picked up " + pickedBeforeBed[0] + " times before its bed was made");
+                    int carried = player.getInventory().count(Items.CRAFTING_TABLE);
+                    int standing = tablesStanding(context);
+                    context.assertTrue(carried == 1 && standing == 0, "The table taken along after the bed: " + carried + " carried, " + standing + " standing");
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
@@ -91,6 +101,81 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                             player.getInventory().count(Items.WHITE_WOOL), player.getInventory().count(Items.OAK_LOG));
                     context.assertTrue(placed[0] <= 1 || player.getInventory().count(Items.WHITE_BED) > 0,
                             "No bed and the table set down " + placed[0] + " times");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /** Crafting tables standing within the fixture's ground. */
+    static int tablesStanding(TestContext context) {
+        var world = context.getWorld();
+        int n = 0;
+        for (BlockPos b : BlockPos.iterate(context.getAbsolutePos(new BlockPos(-16, -24, -16)), context.getAbsolutePos(new BlockPos(32, 12, 32)))) {
+            if (world.getBlockState(b).isOf(net.minecraft.block.Blocks.CRAFTING_TABLE)) n++;
+        }
+        return n;
+    }
+
+    /**
+     * In plain terms: a table kept down for a bed is taken along again once the bed can no longer be made there.
+     *
+     * Technical: F-25c7b's expiry. STAGED: as above, but with the bed's makings held outright (three white wool and
+     * three oak planks, no logs), and once its table is down the fixture takes the wool from its pack, as though spent
+     * elsewhere. The hold ({@code tableHeldFor}) ends with the makings, and "take workstations along" picks the table up
+     * as before. Passes if the table is carried again, none standing, within 200 ticks of the wool going, and no bed made.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "tableHoldExpiry", tickLimit = 1600)
+    public void stagedItsTableKeptDownForABedIsTakenAlongOnceTheBedCanNoLongerBeMade(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        long[] woolGone = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sol"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(-16, -24, -16)), context.getAbsolutePos(new BlockPos(32, 12, 32)));
+                    world.setTimeOfDay(1000);
+                    var player = f.player();
+                    BlockPos stand = context.getAbsolutePos(new BlockPos(8, 2, 8));
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 16));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 32));
+                    inventory.setStack(4, new ItemStack(Items.WHITE_WOOL, 3));
+                    inventory.setStack(5, new ItemStack(Items.OAK_PLANKS, 3));
+                    inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE, 1));
+                    inventory.setStack(7, new ItemStack(Items.BUCKET, 1));
+                    inventory.setStack(8, new ItemStack(Items.STICK, 8));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var inventory = f.player().getInventory();
+                    // The table down: the wool taken, as though spent elsewhere.
+                    context.assertTrue(inventory.count(Items.CRAFTING_TABLE) == 0 || inventory.count(Items.WHITE_BED) > 0, "Its table not down yet");
+                    context.assertTrue(inventory.count(Items.WHITE_BED) == 0, "The bed made before the wool could be taken: the staging missed");
+                    for (int s = 0; s < 36; s++) if (inventory.getStack(s).isOf(Items.WHITE_WOOL)) inventory.setStack(s, ItemStack.EMPTY);
+                    woolGone[0] = context.getWorld().getTime();
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    long waited = context.getWorld().getTime() - woolGone[0];
+                    int carried = player.getInventory().count(Items.CRAFTING_TABLE), standing = tablesStanding(context);
+                    if (waited > 200) {
+                        throw new net.minecraft.test.GameTestException("Its table not taken along " + waited + " ticks after the wool went: "
+                                + carried + " carried, " + standing + " standing");
+                    }
+                    context.assertTrue(carried == 1 && standing == 0, "Taken along: " + carried + " carried, " + standing + " standing, " + waited + " ticks");
+                    KindredMod.LOGGER.info("Table hold expiry: taken along {} ticks after the wool went; white beds {}", waited, player.getInventory().count(Items.WHITE_BED));
+                    context.assertTrue(player.getInventory().count(Items.WHITE_BED) == 0, "A bed made without the wool");
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

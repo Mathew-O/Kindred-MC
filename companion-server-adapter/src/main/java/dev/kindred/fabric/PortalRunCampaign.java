@@ -3103,7 +3103,7 @@ final class PortalRunCampaign {
     private Optional<Task> pickUpWorkstation(NativePlayerBody body, PortalRunSnapshot s) {
         var player = body.entity();
         var world = player.getServerWorld();
-        if (s.craftingTables() == 0) {
+        if (s.craftingTables() == 0 && !tableHeldFor(body)) {
             // Its own table, just used: whatever was set aside around here, this is in reach (live run 57 left one in
             // a branch tunnel where an earlier target had failed, and later lost its last pickaxe with no table).
             BlockPos feet = player.getBlockPos();
@@ -3299,8 +3299,34 @@ final class PortalRunCampaign {
             }
             return Optional.empty();
         }
-        if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) return placeTable(body);
+        if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) {
+            // Set down for this craft: kept down for it while what it holds still makes it (pickUpWorkstation).
+            tableFor = recipe;
+            tableForUntil = lastTick + TABLE_FOR_TICKS;
+            return placeTable(body);
+        }
         return craft(body, "crafting_table");
+    }
+
+    /**
+     * The recipe its table was last set down for, and until when that table is kept down for it (F-25c7a). On e40a21's
+     * 20261030 Sol (80040) the table went down for a white bed it had the makings of, and on the next pass "take
+     * workstations along", which comes before what is taken on the way, picked it up before the bed was made: 37 times a
+     * replay. Kept only while the makings are still held, so the hold ends with the craft, and never past
+     * {@link #TABLE_FOR_TICKS}.
+     */
+    private String tableFor;
+    private long tableForUntil;
+    private static final long TABLE_FOR_TICKS = 400;
+
+    /** Whether its table is still down for a craft it can make there now. */
+    private boolean tableHeldFor(NativePlayerBody body) {
+        if (tableFor == null) return false;
+        if (lastTick > tableForUntil || body.makings(tableFor) != dev.kindred.core.guide.Makings.Choice.HELD) {
+            tableFor = null;
+            return false;
+        }
+        return true;
     }
 
     /** Set down a crafting table it carries. */
