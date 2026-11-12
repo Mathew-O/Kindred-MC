@@ -135,6 +135,10 @@ tasks.named('runCorpus').configure {
         languageVersion = JavaLanguageVersion.of(21)
     })
     dependsOn tasks.named('gametestClasses')
+    // Every run from an empty world (F-27a): a world grown over many runs (1.8 GB in one checkout) kept every earlier
+    // scene's chunks and encounters, and timing-sensitive scenes passed less often in it than in a fresh one
+    // (docs/evidence/F-27a-fresh-world.md), so a run's result could depend on the checkout's history.
+    doFirst { delete layout.projectDirectory.dir('build/corpus/world'), layout.projectDirectory.dir('build/corpus/kindred') }
 }
 
 tasks.named('runGametest').configure {
