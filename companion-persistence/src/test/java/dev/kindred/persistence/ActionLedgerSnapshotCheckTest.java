@@ -139,10 +139,16 @@ class ActionLedgerSnapshotCheckTest {
         assertEquals(2, unrecorded.differing());
         close(store);
 
-        // An action named otherwise than as its id is written (upper case): read as the in-memory check reads it.
+        // An action named otherwise than as its id is written (upper case; the store writes none): not checked, and counted.
+        // The in-memory check, keyed by the id itself, reads it as that action's event and finds it differs; the stream
+        // does not read it another way, does not pass, and says it did not check it.
         sql(event(ActionLedgerView.ACTION, ids.get(3).toString().toUpperCase(), "state=CANCELLED&revision=9"));
         store = open();
-        same(store, "an id written another way");
+        assertFalse(store.checkActionLedger().join().agrees(), "The in-memory check: it differs");
+        var otherwise = store.checkActionLedgerFromSnapshot().join();
+        assertFalse(otherwise.agrees(), "Never a pass for what it did not check");
+        assertEquals(1, otherwise.unchecked());
+        assertEquals(java.util.List.of(ids.get(3).toString().toUpperCase()), otherwise.notChecked());
     }
 
     /** A copy of a real row under another id, column by column. */

@@ -1998,12 +1998,16 @@ public final class SqliteCompanionStore {
     }
 
     /**
-     * The action ledger's agreement check as a stream (F-31f): whether it agrees, the rows and events it read, and the
-     * first differences found (at most {@link #DIFFERENCES}), with how many there were.
+     * The action ledger's agreement check as a stream (F-31f): whether it agrees, the rows and events it read, the first
+     * differences found (at most {@link #DIFFERENCES}) with how many there were, and the actions it did not check: named,
+     * in a row or an event, other than as the store writes an action's id (the first few of them, and how many). Any
+     * action not checked means it does not agree: never a pass for what it did not look at.
      */
-    public record LedgerCheck(boolean agrees, long rows, long events, List<String> differences, long differing) {
+    public record LedgerCheck(boolean agrees, long rows, long events, List<String> differences, long differing,
+                              List<String> notChecked, long unchecked) {
         public LedgerCheck {
             differences = List.copyOf(differences);
+            notChecked = List.copyOf(notChecked);
         }
     }
 
@@ -2018,8 +2022,9 @@ public final class SqliteCompanionStore {
      * the writer's transactions, as the writer-held check saw it, every row written with its event in one transaction.
      * The writer is not held: writes go on while it reads. Streamed, a merge of the table in {@code action_id} order with
      * each action's events in {@code (subject, id)} order (V13's index), so that it holds one action at a time, not the
-     * ledger. Where a row or an event names an action other than as its id is written, it is read as the in-memory check
-     * reads it instead, on the same snapshot. Stopped by {@link #stopChecks}: then it completes with a
+     * ledger. A row or an event that names an action other than as the store writes its id (in upper case, say; the store
+     * writes none) is not checked, and counted: the check then does not agree, and says how many, never a load of the
+     * whole ledger to read it another way. Stopped by {@link #stopChecks}: then it completes with a
      * {@link java.util.concurrent.CancellationException}, never a verdict.
      */
     public CompletableFuture<LedgerCheck> checkActionLedgerFromSnapshot() {
@@ -2072,9 +2077,7 @@ public final class SqliteCompanionStore {
                     if (checksStopped) throw new java.util.concurrent.CancellationException("Stopped");
                     actions.setString(1, ActionLedgerView.ACTION);
                     folded.setString(1, ActionLedgerView.FOLDED);
-                    var check = merged(table.executeQuery(), actions.executeQuery(), folded.executeQuery());
-                    if (check == null) check = inMemory(reader);
-                    return check;
+                    return merged(table.executeQuery(), actions.executeQuery(), folded.executeQuery());
                 } finally {
                     checking.remove(table);
                     checking.remove(actions);
@@ -2118,8 +2121,9 @@ public final class SqliteCompanionStore {
         private final ResultSet actions, folded;
         private Read a, f;
         private long events;
-        /** Set when an action is named other than as the store writes its id. */
-        private boolean otherwise;
+        /** Actions named other than as the store writes an id: how many, and the first few. */
+        private long unchecked;
+        private final List<String> notChecked = new ArrayList<>();
 
         Groups(ResultSet actions, ResultSet folded) throws SQLException {
             this.actions = actions;
@@ -2155,7 +2159,11 @@ public final class SqliteCompanionStore {
                     }
                 }
                 if (!id) continue;
-                if (!canonical(subject)) otherwise = true;
+                if (!canonical(subject)) {
+                    unchecked++;
+                    if (notChecked.size() < DIFFERENCES) notChecked.add(subject);
+                    continue;
+                }
                 return new Group(subject, row);
             }
             return null;
@@ -2163,9 +2171,8 @@ public final class SqliteCompanionStore {
     }
 
     /**
-     * The merge of the table, in {@code action_id} order, with the Record's actions, in subject order: null where a row or
-     * an event names an action other than as the store writes its id (the in-memory check, keyed by the id itself, then
-     * decides).
+     * The merge of the table, in {@code action_id} order, with the Record's actions, in subject order. A row or an event
+     * naming an action other than as the store writes its id is left out of it, and counted as not checked.
      */
     private LedgerCheck merged(ResultSet table, ResultSet actions, ResultSet folded) throws SQLException {
         long rows = 0, differing = 0;
@@ -2175,9 +2182,13 @@ public final class SqliteCompanionStore {
         boolean row = table.next();
         while (group != null || row) {
             if (checksStopped) throw new java.util.concurrent.CancellationException("Stopped");
-            if (groups.otherwise) return null;
             String id = row ? table.getString(1) : null;
-            if (row && !canonical(id)) return null;
+            if (row && !canonical(id)) {
+                groups.unchecked++;
+                if (groups.notChecked.size() < DIFFERENCES) groups.notChecked.add(id);
+                row = table.next();
+                continue;
+            }
             int order = !row ? 1 : group == null ? -1 : binary(id, group.subject());
             String difference = null;
             if (order < 0) {
@@ -2199,43 +2210,7 @@ public final class SqliteCompanionStore {
                 if (differences.size() < DIFFERENCES) differences.add(difference);
             }
         }
-        if (groups.otherwise) return null;
-        return new LedgerCheck(differing == 0, rows, groups.events, differences, differing);
-    }
-
-    /** The in-memory check (as {@link #checkActionLedger}) on the reader's snapshot, for ids written another way. */
-    private LedgerCheck inMemory(Connection reader) throws SQLException {
-        var kept = new java.util.TreeMap<UUID, ActionLedgerView.Row>();
-        try (Statement query = reader.createStatement(); ResultSet rows = query.executeQuery("SELECT action_id, state, revision FROM action_ledger")) {
-            while (rows.next()) kept.put(UUID.fromString(rows.getString(1)), new ActionLedgerView.Row(rows.getString(2), rows.getLong(3)));
-        }
-        var events = new ArrayList<WorldEvent>();
-        try (var query = reader.prepareStatement("SELECT * FROM world_events WHERE kind IN (?, ?) ORDER BY id")) {
-            query.setString(1, ActionLedgerView.ACTION);
-            query.setString(2, ActionLedgerView.FOLDED);
-            checking.add(query);
-            try (ResultSet rows = query.executeQuery()) {
-                while (rows.next()) {
-                    if (checksStopped) throw new java.util.concurrent.CancellationException("Stopped");
-                    events.add(readWorldEvent(rows));
-                }
-            } finally {
-                checking.remove(query);
-            }
-        }
-        var agreement = ActionLedgerView.INSTANCE.check(events, Collections.unmodifiableMap(kept));
-        var differences = new ArrayList<String>();
-        long differing = 0;
-        var all = new java.util.TreeSet<UUID>(kept.keySet());
-        all.addAll(agreement.fromRecord().keySet());
-        for (UUID id : all) {
-            var mine = kept.get(id);
-            var theirs = agreement.fromRecord().get(id);
-            if (Objects.equals(mine, theirs)) continue;
-            differing++;
-            if (differences.size() < DIFFERENCES) differences.add(id + ": kept " + (mine == null ? "nothing" : mine) + ", the Record gives " + (theirs == null ? "nothing" : theirs));
-        }
-        return new LedgerCheck(agreement.agrees(), kept.size(), events.size(), differences, differing);
+        return new LedgerCheck(differing == 0 && groups.unchecked == 0, rows, groups.events, differences, differing, groups.notChecked, groups.unchecked);
     }
 
     private Optional<BudgetState> selectBudget(UUID id, Instant start) throws SQLException {

@@ -16942,11 +16942,13 @@ final class PlayerRuntime {
                     boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees) && actions.agrees();
                     var data = new java.util.LinkedHashMap<String, String>();
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
-                    data.put(dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.agrees() ? "agrees" : "differs");
+                    data.put(dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.agrees() ? "agrees" : actions.differing() > 0 ? "differs" : "not checked");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
-                    if (!actions.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record in {} of {} actions: {}",
+                    if (actions.differing() > 0) KindredMod.LOGGER.error("Ledger {} differs from the World Record in {} of {} actions: {}",
                             dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.differing(), actions.rows(), actions.differences());
+                    if (actions.unchecked() > 0) KindredMod.LOGGER.error("Ledger {} not checked against the World Record: {} actions named other than as an id is written: {}",
+                            dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.unchecked(), actions.notChecked());
                     if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
