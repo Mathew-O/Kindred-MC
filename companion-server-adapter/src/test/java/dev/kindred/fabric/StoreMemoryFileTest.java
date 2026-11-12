@@ -89,4 +89,60 @@ class StoreMemoryFileTest {
             assertEquals("{\"seen\": [ {\"x\": ", Files.readString(file(dir).resolveSibling(ID + ".stores.json.unreadable")), "Set aside as it was");
         }
     }
+
+    @Test
+    void closedOnlyOnceEveryWriteAskedForIsMade(@TempDir Path dir) throws Exception {
+        // F-30d3: the stop waits for this; a restart reads the file after it.
+        var store = new PlayerMemoryStore(dir);
+        var out = new PlayerMemoryStore.StoreMemory();
+        out.player = "Rue";
+        for (int i = 0; i < 200; i++) out.seen.add(new PlayerMemoryStore.StoreSighting(i, 64, 30, "Hal", false, HAL, i));
+        store.saveStores(ID, out);
+        store.closeAsync().get(10, TimeUnit.SECONDS);
+        assertTrue(Files.isRegularFile(file(dir)), "Written before it is closed");
+        try (var again = new PlayerMemoryStore(dir)) {
+            assertEquals(200, again.loadStores(ID, "Rue").get(10, TimeUnit.SECONDS).seen.size());
+        }
+        store.closeAsync().get(10, TimeUnit.SECONDS); // Closing again is done at once.
+    }
+
+    @Test
+    void writtenBeforeItsFileIsReadBackWhatTheFileHeldIsKeptAndTheNewerKeptOverIt(@TempDir Path dir) throws Exception {
+        // F-30d3: what it learned before the read-back, written merged with the file, so that neither is lost.
+        String other = "f41041bd-47d3-4020-a8ae-fd9283de5b2a";
+        try (var store = new PlayerMemoryStore(dir)) {
+            var before = new PlayerMemoryStore.StoreMemory();
+            before.player = "Rue";
+            before.seen.add(new PlayerMemoryStore.StoreSighting(1, 64, 1, "Hal", false, HAL, 10));
+            before.seen.add(new PlayerMemoryStore.StoreSighting(2, 64, 2, "Hal", false, HAL, 10));
+            before.stores.add(new PlayerMemoryStore.StoreCount("minecraft:overworld", 1, 64, 1, "OWN", Map.of("minecraft:saddle", 1), 10));
+            store.saveStores(ID, before);
+            var now = new PlayerMemoryStore.StoreMemory();
+            now.player = "Rue";
+            now.seen.add(new PlayerMemoryStore.StoreSighting(2, 64, 2, "Ivy", true, other, 1));
+            now.stores.add(new PlayerMemoryStore.StoreCount("minecraft:overworld", 3, 64, 3, "TEAM", Map.of("minecraft:bread", 4), 1));
+            store.saveStoresMerging(ID, now);
+            var back = load(store);
+            assertEquals(2, back.seen.size(), "Both stores' sightings");
+            assertTrue(back.seen.contains(new PlayerMemoryStore.StoreSighting(2, 64, 2, "Ivy", true, other, 1)), "The newer kept at its store");
+            assertTrue(back.seen.contains(new PlayerMemoryStore.StoreSighting(1, 64, 1, "Hal", false, HAL, 10)), "The file's kept where the newer has none");
+            assertEquals(2, back.stores.size(), "Both stores' counts");
+
+            var villagers = new PlayerMemoryStore.VillagerMemory();
+            villagers.player = "Rue";
+            villagers.seen.add(new PlayerMemoryStore.VillagerSeen(HAL, "LIBRARIAN", 1, java.util.List.of(), 5));
+            villagers.waits.add(new PlayerMemoryStore.VillagerWait(HAL, 100));
+            villagers.told.add(HAL);
+            store.saveVillagers(ID, villagers);
+            var newer = new PlayerMemoryStore.VillagerMemory();
+            newer.player = "Rue";
+            newer.seen.add(new PlayerMemoryStore.VillagerSeen(other, "FARMER", 2, java.util.List.of(), 1));
+            newer.waits.add(new PlayerMemoryStore.VillagerWait(HAL, 40));
+            store.saveVillagersMerging(ID, newer);
+            var kept = store.loadVillagers(ID, "Rue").get(10, TimeUnit.SECONDS);
+            assertEquals(2, kept.seen.size(), "Both villagers");
+            assertEquals(java.util.List.of(new PlayerMemoryStore.VillagerWait(HAL, 40)), kept.waits, "The newer wait kept over the file's");
+            assertEquals(java.util.List.of(HAL), kept.told, "Those told of, of both");
+        }
+    }
 }

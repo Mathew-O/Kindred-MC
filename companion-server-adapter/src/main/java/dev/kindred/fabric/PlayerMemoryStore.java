@@ -279,6 +279,50 @@ final class PlayerMemoryStore implements AutoCloseable {
         }, io);
     }
 
+    /**
+     * Write what it knows of its stores, before its file has been read back (F-30d3): on the store's thread, after that
+     * read, the file as it stands kept for every store and sighting this copy does not hold, this copy's kept over it.
+     * So what it learned before the read is written, and nothing the file held is lost.
+     */
+    void saveStoresMerging(UUID id, StoreMemory memory) {
+        io.execute(() -> {
+            var merged = new StoreMemory();
+            merged.player = memory.player;
+            merged.seen.addAll(memory.seen);
+            merged.stores.addAll(memory.stores);
+            var file = readQuietly(storesFile(id), StoreMemory.class);
+            if (file != null) {
+                var places = new java.util.HashSet<String>();
+                for (var each : memory.seen) places.add(each.x() + "," + each.y() + "," + each.z());
+                for (var each : file.seen == null ? List.<StoreSighting>of() : file.seen) {
+                    if (each != null && places.add(each.x() + "," + each.y() + "," + each.z())) merged.seen.add(each);
+                }
+                var stores = new java.util.HashSet<String>();
+                for (var each : memory.stores) stores.add(each.world() + "," + each.x() + "," + each.y() + "," + each.z());
+                for (var each : file.stores == null ? List.<StoreCount>of() : file.stores) {
+                    if (each != null && stores.add(each.world() + "," + each.x() + "," + each.y() + "," + each.z())) merged.stores.add(each);
+                }
+            }
+            String json;
+            try {
+                json = gson.toJson(merged);
+            } catch (RuntimeException failed) {
+                LOG.warn("What {} knows of its stores could not be written: {}", memory.player, failed.toString());
+                return;
+            }
+            writeNow(storesFile(id), json, memory.player);
+        });
+    }
+
+    /** A file as it stands, or none: one that cannot be read is left for its own read to set aside. On the store's thread only. */
+    private <T> T readQuietly(Path file, Class<T> type) {
+        try {
+            return Files.isRegularFile(file) ? gson.fromJson(Files.readString(file, StandardCharsets.UTF_8), type) : null;
+        } catch (IOException | RuntimeException unreadable) {
+            return null;
+        }
+    }
+
     /** Write what it knows of its stores, a copy taken on the game thread: turned into its file off it, after any write before it. */
     void saveStores(UUID id, StoreMemory memory) {
         io.execute(() -> {
@@ -291,6 +335,131 @@ final class PlayerMemoryStore implements AutoCloseable {
             }
             writeNow(storesFile(id), json, memory.player);
         });
+    }
+
+    private Path villagersFile(UUID id) { return folder.resolve(id + ".villagers.json"); }
+
+    /** One side of an offer as its trading screen showed it (F-30d3): an item and how many. */
+    record GoodsSeen(String item, int count) { }
+
+    /** An enchantment an offer's result carries, as its screen showed it (F-30d3). */
+    record EnchantSeen(String id, int level) { }
+
+    /** An offer as its trading screen showed it (E-45), kept across a restart (F-30d3): asks, gives, carries, uses of how many. */
+    record OfferSeen(GoodsSeen first, GoodsSeen second, GoodsSeen result, List<EnchantSeen> enchants, int uses, int maxUses) { }
+
+    /**
+     * A villager it has looked at (E-45), as memory holds it, kept across a restart (F-30d3): which, its profession and
+     * level, its offers as seen, and how many server ticks had passed since it looked when it was written.
+     */
+    record VillagerSeen(String villager, String profession, int level, List<OfferSeen> offers, long age) { }
+
+    /** A villager it lets be a while (F-30d3): which, and how many server ticks of the wait were left when it was written. */
+    record VillagerWait(String villager, long left) { }
+
+    /**
+     * What it knows of the villagers in one world (F-30d3): those it has looked at, those it lets be, and those it has told
+     * of once. There is none of any in no file, or in a part a file does not have.
+     */
+    static final class VillagerMemory {
+        String player = "";
+        List<VillagerSeen> seen = new ArrayList<>();
+        List<VillagerWait> waits = new ArrayList<>();
+        List<String> told = new ArrayList<>();
+    }
+
+    /**
+     * What it knows of the villagers, or none (no file: it knows none); read off the game thread. A file that cannot be
+     * read is set aside as {@code .unreadable} and nothing of it is held, rather than a guess. An entry that does not make
+     * sense (an id that is not one, a negative age or wait) is left out alone; whether its offers make sense is for the
+     * reader, which leaves out a villager whose offers do not.
+     */
+    CompletableFuture<VillagerMemory> loadVillagers(UUID id, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            Path file = villagersFile(id);
+            if (!Files.isRegularFile(file)) return null;
+            try {
+                var read = gson.fromJson(Files.readString(file, StandardCharsets.UTF_8), VillagerMemory.class);
+                if (read == null) throw new IllegalStateException("empty");
+                var kept = new VillagerMemory();
+                kept.player = name;
+                for (var each : read.seen == null ? List.<VillagerSeen>of() : read.seen) {
+                    if (each == null || !isId(each.villager()) || each.profession() == null || each.offers() == null || each.age() < 0) continue;
+                    kept.seen.add(each);
+                }
+                for (var each : read.waits == null ? List.<VillagerWait>of() : read.waits) {
+                    if (each != null && isId(each.villager()) && each.left() > 0) kept.waits.add(each);
+                }
+                for (var each : read.told == null ? List.<String>of() : read.told) if (isId(each)) kept.told.add(each);
+                return kept;
+            } catch (IOException | RuntimeException unreadable) {
+                LOG.warn("What {} knows of the villagers could not be read; it is set aside and none is held: {}", name, unreadable.toString());
+                try {
+                    Files.move(file, file.resolveSibling(file.getFileName() + ".unreadable"), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException kept) {
+                    LOG.warn("What {} knows of the villagers could not be set aside: {}", name, kept.toString());
+                }
+                return null;
+            }
+        }, io);
+    }
+
+    /**
+     * Write what it knows of the villagers, before its file has been read back (F-30d3): on the store's thread, after that
+     * read, the file as it stands kept for every villager this copy does not hold, this copy's kept over it, those told of
+     * of both. So what it learned before the read is written, and nothing the file held is lost.
+     */
+    void saveVillagersMerging(UUID id, VillagerMemory memory) {
+        io.execute(() -> {
+            var merged = new VillagerMemory();
+            merged.player = memory.player;
+            merged.seen.addAll(memory.seen);
+            merged.waits.addAll(memory.waits);
+            merged.told.addAll(memory.told);
+            var file = readQuietly(villagersFile(id), VillagerMemory.class);
+            if (file != null) {
+                var seen = new java.util.HashSet<String>();
+                for (var each : memory.seen) seen.add(each.villager());
+                for (var each : file.seen == null ? List.<VillagerSeen>of() : file.seen) if (each != null && seen.add(each.villager())) merged.seen.add(each);
+                var waits = new java.util.HashSet<String>();
+                for (var each : memory.waits) waits.add(each.villager());
+                for (var each : file.waits == null ? List.<VillagerWait>of() : file.waits) if (each != null && waits.add(each.villager())) merged.waits.add(each);
+                var told = new java.util.HashSet<>(memory.told);
+                for (var each : file.told == null ? List.<String>of() : file.told) if (each != null && told.add(each)) merged.told.add(each);
+            }
+            String json;
+            try {
+                json = gson.toJson(merged);
+            } catch (RuntimeException failed) {
+                LOG.warn("What {} knows of the villagers could not be written: {}", memory.player, failed.toString());
+                return;
+            }
+            writeNow(villagersFile(id), json, memory.player);
+        });
+    }
+
+    /** Write what it knows of the villagers, a copy taken on the game thread: turned into its file off it, after any write before it. */
+    void saveVillagers(UUID id, VillagerMemory memory) {
+        io.execute(() -> {
+            String json;
+            try {
+                json = gson.toJson(memory);
+            } catch (RuntimeException failed) {
+                LOG.warn("What {} knows of the villagers could not be written: {}", memory.player, failed.toString());
+                return;
+            }
+            writeNow(villagersFile(id), json, memory.player);
+        });
+    }
+
+    private static boolean isId(String text) {
+        if (text == null) return false;
+        try {
+            UUID.fromString(text);
+            return true;
+        } catch (IllegalArgumentException notAnId) {
+            return false;
+        }
     }
 
     private Path rapportFile(UUID id) { return folder.resolve(id + ".rapport.json"); }
@@ -445,6 +614,23 @@ final class PlayerMemoryStore implements AutoCloseable {
     /** Stops the background saving once the writes already asked for are done. */
     @Override
     public void close() {
+        closeAsync();
+    }
+
+    /**
+     * Stops the background saving, and is done once every write already asked for is (F-30d3): the store's one thread
+     * takes them in order, so a last task after them completes it. Its thread is a daemon, so a stop that did not wait
+     * for this could end the process with the last writes (an atlas, the stores, the villagers, at the stop) not made,
+     * and a runtime started again at once could read a file before its last write.
+     */
+    CompletableFuture<Void> closeAsync() {
+        var done = new CompletableFuture<Void>();
+        try {
+            io.execute(() -> done.complete(null));
+        } catch (java.util.concurrent.RejectedExecutionException closed) {
+            done.complete(null);
+        }
         io.shutdown();
+        return done;
     }
 }
