@@ -4289,6 +4289,9 @@ final class PortalRunCampaign {
             if (!world.isChunkLoaded(ahead)) continue;
             if (Math.hypot(ahead.getX() - anchor.getX(), ahead.getZ() - anchor.getZ()) > EXPLORE_RADIUS) continue;
             int surface = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ahead.getX(), ahead.getZ());
+            // A barrier column, which a survival player cannot see, sets no look's height: the top of the GameTest's own
+            // fence round a scene drew a hurt player's look up over a tree onto it, and off the canopy (F-22c66).
+            if (NativeNavigator.unseen(world.getBlockState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())))) continue;
             boolean onSurface = player.getBlockY() > surface - 8;
             if (onSurface && !world.getFluidState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())).isEmpty()) continue;
             BlockPos target = new BlockPos(ahead.getX(), onSurface ? surface : player.getBlockY(), ahead.getZ());
