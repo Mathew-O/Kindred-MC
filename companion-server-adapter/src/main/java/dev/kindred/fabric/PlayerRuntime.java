@@ -15097,6 +15097,13 @@ final class PlayerRuntime {
         return entry == null || entry.campaign == null ? 0 : entry.campaign.lastGain();
     }
 
+    /** Its native body, for a fixture to ask its campaign's steps as they would be asked; null without one. */
+    NativePlayerBody nativeBodyForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.nativeBody;
+    }
+
     /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
     PortalRunCampaign campaignForTest(UUID id) {
         requireThread();
