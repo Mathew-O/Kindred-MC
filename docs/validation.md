@@ -119,6 +119,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs.
 - [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs; the build green on the merged tree; the corpus gate passes, its three flagged scenes cleared by the lead (reasons in the evidence).
 - [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
+- [F-22c67](evidence/F-22c67.md) (2026-11-12, unreachable logs): logs in sight behind a wall it cannot cross are given up as a stand after one refused walk; the fixture 0 of 3 before, 9 of 9 after; told trees 5 of 5; 23 log-gathering classes 3 of 3; the corpus gate passes.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
