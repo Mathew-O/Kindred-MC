@@ -40,7 +40,7 @@ public final class MinecraftGuide {
     }
 
     /** Planks of any wood, as vanilla's tag names them. */
-    public static final String PLANKS = "#minecraft:planks";
+    public static final String PLANKS = dev.kindred.core.VanillaIds.PLANKS.tag();
 
     /** At least {@code count} of a need in hand when an objective begins, and why. */
     public record Requirement(Need need, int count, String why) { }
@@ -49,10 +49,10 @@ public final class MinecraftGuide {
             Need.BOW, new Recipe(Need.BOW, 1, Map.of(Need.STRING, 3, Need.STICKS, 3), true),
             Need.ARROWS, new Recipe(Need.ARROWS, 4, Map.of(Need.FLINT, 1, Need.STICKS, 1, Need.FEATHERS, 1), true),
             Need.STICKS, new Recipe(Need.STICKS, 4, Map.of(), false, Map.of(PLANKS, 2)),
-            Need.SHIELD, new Recipe(Need.SHIELD, 1, Map.of(), true, Map.of(PLANKS, 6, "minecraft:iron_ingot", 1)),
+            Need.SHIELD, new Recipe(Need.SHIELD, 1, Map.of(), true, Map.of(PLANKS, 6, dev.kindred.core.VanillaIds.IRON_INGOT, 1)),
             // Vanilla's sword takes a stick too, and STICKS is a need: left out of `inputs` for now (F-25c7a's evidence), as
             // putting it there would have the planner queue sticks for every iron sword.
-            Need.IRON_SWORD, new Recipe(Need.IRON_SWORD, 1, Map.of(), true, Map.of("minecraft:iron_ingot", 2)),
+            Need.IRON_SWORD, new Recipe(Need.IRON_SWORD, 1, Map.of(), true, Map.of(dev.kindred.core.VanillaIds.IRON_INGOT, 2)),
             Need.BED, new Recipe(Need.BED, 1, Map.of(Need.WOOL, 3), true, Map.of(PLANKS, 3)),
             // A golden helmet: five ingots, and as good as an iron one, so wearing it costs no protection.
             Need.GOLD_ARMOR, new Recipe(Need.GOLD_ARMOR, 1, Map.of(Need.GOLD, 5), true)));
