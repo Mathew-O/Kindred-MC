@@ -70,6 +70,9 @@ final class FollowUps {
 
     StrongholdRunPlanner.Provisions provisions() { return provisions; }
 
+    /** For fixtures: what the run lacks, as an assessment would have left it. */
+    void provisionsForTest(StrongholdRunPlanner.Provisions staged) { provisions = staged; }
+
     /** What the player holds of each need, counted from its own inventory. */
     static Map<Need, Integer> held(ServerPlayerEntity player, PortalRunSnapshot p) {
         var held = new java.util.TreeMap<Need, Integer>(Need::compare);

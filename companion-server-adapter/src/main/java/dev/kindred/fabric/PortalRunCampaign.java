@@ -1046,6 +1046,47 @@ final class PortalRunCampaign {
                 && lastTick - strandedTick <= STRANDED_FOR;
     }
 
+    /**
+     * Its fallback climb "to find another way" given again and again within a few blocks of where it began, nothing
+     * gained: it paces a ledge, every way off it a drop or water, the plan's own steps leading back onto it. On e40a20's
+     * 8675309 a shelf at the top of a cavern deeper than its scene held it for 63 minutes, the plan stepping down and the
+     * climb stepping up, the watchdog's move elsewhere coming only at each spell's end (F-35k).
+     */
+    private BlockPos pacedAt;
+    private int paced, pacedMoves;
+    private long pacedTick;
+    static final int PACED = 3;
+    /**
+     * Whole spells it must already have spent with nothing gained, each ended by a move elsewhere, before its climbs
+     * count for an early move: a climb given look after look where it has only now stopped is not a stranding
+     * (diag-holepit 202's branch mine ended in one, a block cleared overhead and the jump down refused, nothing tried
+     * elsewhere yet; an early move took it back where it had been stuck, 3 of 3, where main waited and passed).
+     */
+    static final int PACED_AFTER = 2;
+
+    private void paced(long tick) {
+        if (pacedAt != null && pacedAt.getSquaredDistance(lastFeet) <= 3 * 3 && tick - pacedTick <= STRANDED_FOR) {
+            paced++;
+        } else {
+            pacedAt = lastFeet;
+            paced = 1;
+        }
+        pacedTick = tick;
+    }
+
+    private boolean pacing() {
+        return paced >= PACED && pacedAt != null && pacedAt.getSquaredDistance(lastFeet) <= 3 * 3 && lastTick - pacedTick <= STRANDED_FOR
+                && stuckLevel >= PACED_AFTER;
+    }
+
+    /** Where it paced, looked at once a look: left more than eight blocks behind, its count is gone, not kept for a return. */
+    private void pacedWhere() {
+        if (pacedAt != null && pacedAt.getSquaredDistance(lastFeet) > 8 * 8) {
+            pacedAt = null;
+            paced = 0;
+        }
+    }
+
     /** How long a stranding lasts with no walk failing again. */
     private static final long STRANDED_FOR = 1200;
 
@@ -1228,6 +1269,7 @@ final class PortalRunCampaign {
                 && seenCells.add(BlockPos.asLong(lastFeet.getX() >> 3, lastFeet.getY() >> 3, lastFeet.getZ() >> 3));
         if (gainedSomething()) {
             lastGain = tick;
+            paced = 0;
             stuckClock = 0;
             stuckLevel = 0;
             relocate = null;
@@ -1290,6 +1332,15 @@ final class PortalRunCampaign {
             // The watchdog's spell is still three minutes: a move begun early for a rescue is counted as one only then.
             if (relocate != null && relocateEarly && stuckClock > stuckTicks) countSpell();
             else if (relocate == null && stuckClock > stuckTicks) startRelocating(groundBelow(body.entity()));
+            if (relocate == null && stuckClock <= stuckTicks && pacing()) {
+                // Pacing a ledge: its move elsewhere begins now, not at the end of the spell (F-35k). It is counted as a spell
+                // only then, as a move begun for a rescue is.
+                relocateFor(stuckLevel + 1 + pacedMoves++);
+                relocateEarly = true;
+                paced = 0;
+                KindredMod.LOGGER.info("{} paces a ledge at {} with every way off it a drop or water; trying {} now", body.entity().getName().getString(),
+                        lastFeet.toShortString(), relocate.toShortString());
+            }
             Optional<Task> away = relocateStep(body);
             // A step that keeps failing ends this move elsewhere, as it would end any plan step; the next stuck spell tries another heading.
             if (away.isPresent() && setAside.getOrDefault(away.get(), Long.MIN_VALUE) > tick) {
@@ -2192,6 +2243,26 @@ final class PortalRunCampaign {
             Optional<Task> along = tunnelStraight(body, way, floor, "dig toward elsewhere");
             if (along.isPresent()) return along;
         }
+        // Neither tunnel goes, a drop or water each way: a way made toward it, bridged, stepped or dug, to somewhere at least
+        // eight blocks nearer, as a player stranded on a ledge over a cavern makes one. Without it, on a shelf at the top of
+        // a cavern deeper than the scene, its walk elsewhere was refused for no way (three positions searched), its tunnels
+        // turned at every drop, and its climb away stepped it up onto the same shelf and back, spell after spell, ten in a
+        // row (e40a20's 8675309, F-35k).
+        // A way is planned from the ground: off it a moment (its own pillar's jump), the move waits to land, not ends.
+        var self = body.entity();
+        if (!self.isOnGround() && !self.isTouchingWater()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "make a way elsewhere: land first"));
+        double nearer = Math.max(3, distance - 8);
+        BlockPos elsewhere = relocate;
+        // Not with a mob at hand, nor an archer that sees it: a bridge out over a cavern is no place to be shot at (a skeleton
+        // knocked it off one at night). A cavern always has a mob somewhere in it, so only these hold the way: waiting for
+        // every mob within 16 to go, it waited out the spell.
+        boolean threatened = !self.getServerWorld().getEntitiesByClass(HostileEntity.class, self.getBoundingBox().expand(16, 8, 16),
+                mob -> mob.isAlive() && (mob.squaredDistanceTo(self) <= 6 * 6
+                        || mob instanceof net.minecraft.entity.mob.AbstractSkeletonEntity && mob.canSee(self))).isEmpty();
+        // The move is kept meanwhile: the plan's own steps (a fight, cover) have the turn until then.
+        if (threatened) return Optional.empty();
+        Optional<Task> made = buildRoute(body, elsewhere, cell -> cell.getSquaredDistance(elsewhere) <= nearer * nearer, true, "make a way elsewhere");
+        if (made.isPresent()) return made;
         // Water or lava on either way (a flooded cave), or a block it cannot break: up and out instead (live run 54 tried
         // 18 times), but not over to a wall, which takes it back along the way for the tunnel to bring it here again.
         digDirection = major;
@@ -2285,6 +2356,7 @@ final class PortalRunCampaign {
     private Optional<Task> plan(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
+        pacedWhere();
         atlasWorld = body.entity().getServerWorld();
         holdCover(body.entity().getServerWorld());
         // A pickaxe broken below ground with none left (E-46's trouble), seen as a player sees a tool break: vanilla
@@ -2665,6 +2737,7 @@ final class PortalRunCampaign {
         if (underground(player)) {
             Optional<Task> up = climb(body, "Climb to find another way");
             if (up.isPresent()) {
+                paced(tick);
                 blockedUntil.merge(lastFeet.asLong(), lastTick + 2400, Math::max); // A dead end: do not step back down into it.
                 progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
                 return up;
@@ -3389,9 +3462,13 @@ final class PortalRunCampaign {
             if (below && source.getKey() == WorldFacts.Source.TREE) continue;
             // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight, and
             // nor are logs left hanging out of reach (sky-island run 12 explored the void for nine minutes for those).
+            // Nor, in a faction world, a tree on land it may not work (a safe zone, another faction's claim): its gather
+            // refuses those logs, and a plan that still counted them chose the gather again and again (M-06i, seed 110).
+            // Outside a faction world the territory guard allows everything.
             boolean tree = source.getKey() == WorldFacts.Source.TREE;
             knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
-                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)))
+                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)
+                                && TerritoryGuard.mayChange(player, p)))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
         // A generator counts from the moment its water is in: the lava that finishes it is already in hand.
@@ -3900,6 +3977,12 @@ final class PortalRunCampaign {
     int logsKeptOutLinesForTest() { return logsKeptOutLines; }
     String logsKeptOutLastForTest() { return logsKeptOutLast; }
 
+    /** For fixtures: what its plan is made from, worked out afresh where the player stands. */
+    WorldFacts factsForTest(ServerPlayerEntity player) {
+        facts = null;
+        return facts(player);
+    }
+
     /**
      * Diagnostic only, no decision reads it: stuck, short of logs and its gather finding none, while logs stand within
      * eight blocks, a line saying what kept each out (known to it or not, set aside, given up, unreachable, and the
@@ -4010,7 +4093,11 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
         var harvest = new java.util.HashMap<BlockState, Boolean>();
+        // Nor a block below its feet whose breaking would leave no ground within a safe drop under it, the dig-down's own
+        // landing rule (landingWithin): on a floor one block thick over a drop, mined from round where it stood, it
+        // stepped into the hole and fell thirty blocks (#224's CI, the back-off fixture's sky island; F-35l).
         return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
+                && (p.getY() >= feet.getY() || landingWithin(world, p, feet))
                 && also.test(p)
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(world, p))
                 && mayWork(player, p)
@@ -6877,6 +6964,8 @@ final class PortalRunCampaign {
         var player = body.entity();
         var world = player.getServerWorld();
         if (world.getRegistryKey() != net.minecraft.world.World.OVERWORLD) return Optional.empty();
+        // Called by the runtime for a player with no goal too, whose plan never runs: the server's tick, as the plan has it.
+        lastTick = Math.max(lastTick, world.getServer().getTicks());
         boolean sleepable = dev.kindred.core.survival.Nights.sleepTime(world.getTimeOfDay(), world.isThundering());
         seeCarriedBed(world);
         if (carriedBedAt != null && (!world.isChunkLoaded(carriedBedAt) || !world.getBlockState(carriedBedAt).isIn(BlockTags.BEDS))) carriedBedAt = null;
@@ -6891,8 +6980,12 @@ final class PortalRunCampaign {
                 carriedBedAt = null;
                 return Optional.empty();
             }
+            // A morning chore: never ahead of a fight, a mob about or its being hurt (seed 101 of the E-70a batch: Echo,
+            // hurt, in a zombie fight, walked for its bed and died). Danger only, not hunger: a hungry player takes up its
+            // bed before it goes off after food, rather than leave an earned bed behind.
+            if (!safeForChore(player)) return Optional.empty();
             if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 4.5 * 4.5) return Optional.of(new Task("native_break", coords(carriedBedAt, Map.of("carried_bed", "true")), "Take its bed back up in the morning"));
-            return Optional.of(go(carriedBedAt, 2.0, true, "Back to its bed to take it up"));
+            return toBedStand(player, "Back to its bed to take it up");
         }
         if (!bedNights || homeInReach || stronghold.spawnByPortal(player) || bedTries >= BED_TRIES) return Optional.empty();
         if (nightWork(player)) {
@@ -6909,7 +7002,9 @@ final class PortalRunCampaign {
                 bedTries++;
                 return Optional.of(new Task("native_sleep", coords(carriedBedAt, Map.of()), "Sleep in the bed it carries"));
             }
-            return Optional.of(go(carriedBedAt, 1.5, true, "To the bed it carries"));
+            // Not while hurt or in a fight: the pocket's way to its bed is a step or two, but never ahead of fighting back.
+            if (player.hurtTime > 0 || player.getAttacker() != null) return Optional.empty();
+            return toBedStand(player, "To the bed it carries");
         }
         int slot = bedSlot(player);
         if (slot < 0) {
@@ -6956,6 +7051,71 @@ final class PortalRunCampaign {
         bedGoingAt = foot;
         return Optional.of(new Task("native_bed", Map.of("x", String.valueOf(foot.getX()), "y", String.valueOf(foot.getY() - 1),
                 "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), "Set its bed down in its pocket for the night"));
+    }
+
+    /**
+     * Safe to see to a chore: no hostile mob within 16 blocks, at least half its health, not in water or lava, not on
+     * fire and its breath full. {@link #calm} without the hunger: a chore is not put off for want of food.
+     */
+    private static boolean safeForChore(ServerPlayerEntity player) {
+        if (player.isTouchingWater() || player.isInLava() || player.isOnFire() || player.getAir() < player.getMaxAir()
+                || player.getHealth() < player.getMaxHealth() / 2) return false;
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 8, 16), HostileEntity::isAlive).isEmpty();
+    }
+
+    /** Until when the walk to its bed is set aside after getting nowhere, and how often it has been. */
+    private long bedWalkAsideUntil = -1;
+    private int bedWalkAsides, bedWalkTries, bedWalks;
+    private double bedWalkBest = Double.MAX_VALUE;
+    private static final int BED_WALK_TRIES = 6, BED_WALK_ASIDES = 3;
+    private static final long BED_WALK_ASIDE = 2400;
+
+    /**
+     * To a cell it can stand in with its bed within reach, never at the bed itself, which no walk can stand on (seed 101
+     * of the E-70a batch: 811 walks refused in 36 s toward a bed head). With no such cell, or walks that bring it no nearer,
+     * the chore is set aside a while; set aside {@value #BED_WALK_ASIDES} times, the bed is left where it stands.
+     */
+    private Optional<Task> toBedStand(ServerPlayerEntity player, String label) {
+        if (lastTick < bedWalkAsideUntil) return Optional.empty();
+        var world = player.getServerWorld();
+        BlockPos stand = null;
+        double best = Double.MAX_VALUE;
+        Vec3d bed = Vec3d.ofCenter(carriedBedAt);
+        for (BlockPos cell : BlockPos.iterate(carriedBedAt.add(-3, -2, -3), carriedBedAt.add(3, 1, 3))) {
+            if (!world.isChunkLoaded(cell) || !standable(world, cell)) continue;
+            if (Vec3d.ofBottomCenter(cell).add(0, 1.62, 0).squaredDistanceTo(bed) > 4.0 * 4.0) continue;
+            double d = cell.getSquaredDistance(player.getBlockPos());
+            if (d < best) {
+                best = d;
+                stand = cell.toImmutable();
+            }
+        }
+        double now = Math.sqrt(player.getBlockPos().getSquaredDistance(carriedBedAt));
+        if (now < bedWalkBest - 0.5) {
+            bedWalkBest = now;
+            bedWalkTries = 0;
+        }
+        if (stand == null || ++bedWalkTries > BED_WALK_TRIES) {
+            bedWalkTries = 0;
+            bedWalkBest = Double.MAX_VALUE;
+            if (++bedWalkAsides >= BED_WALK_ASIDES) {
+                event("left its bed where it stands at " + carriedBedAt.toShortString() + ": no way to it");
+                carriedBedAt = null;
+                bedWalkAsides = 0;
+                return Optional.empty();
+            }
+            bedWalkAsideUntil = lastTick + BED_WALK_ASIDE;
+            event("its bed at " + carriedBedAt.toShortString() + " set aside a while: " + (stand == null ? "nowhere to stand by it" : "no nearer"));
+            return Optional.empty();
+        }
+        bedWalks++;
+        return Optional.of(go(stand, 0.5, false, label));
+    }
+
+    /** The chore of its bed, for fixtures: walks given toward it, times set aside, and whether the bed still stands. */
+    String bedChoreForTest(ServerWorld world) {
+        return "walks=" + bedWalks + " asides=" + bedWalkAsides + " aside=" + (lastTick < bedWalkAsideUntil) + " bed=" + carriedBed(world)
+                + " events=" + lastEvents(2);
     }
 
     private static int bedSlot(ServerPlayerEntity player) {
@@ -7761,11 +7921,21 @@ final class PortalRunCampaign {
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
-    /** The nearest mob on foot after the player and in sight, close enough to strike it within a step. */
+    /** Closer than this, a shooter is a mob in reach (see {@link #onFootInReach}). */
+    static final double POINT_BLANK = 2.0;
+
+    /**
+     * The nearest mob on foot after the player and in sight, close enough to strike it within a step. A shooter counts
+     * once it stands closer than {@link #POINT_BLANK}: no block goes between them there, the cell it would go in holding
+     * the shooter or the player. In e40a20-79a9aad on 20261030 Echo, at 2.7 health with a skeleton 0.8 blocks off, tried
+     * cover into the skeleton's own cell ("Block placement produced no effect or was obstructed"), then, with no way off,
+     * rested to heal in its line of fire and was shot (4 of 6 replays on main b7027be).
+     */
     private static HostileEntity onFootInReach(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(3.0, 1.5, 3.0),
                         mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
-                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < 3.0 && player.canSee(mob))
+                                && (!(mob instanceof net.minecraft.entity.ai.RangedAttackMob) || player.distanceTo(mob) < POINT_BLANK)
+                                && player.distanceTo(mob) < 3.0 && player.canSee(mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 

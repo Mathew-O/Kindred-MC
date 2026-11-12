@@ -13,10 +13,13 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   committed.
 - **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
   `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
-  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes), each run from an empty corpus world
+  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
-  run alone ×3 on the branch and ×3 on main's tip (`KINDRED_CORPUS_ONLY`). It blocks only if the branch fails it 2 of 3
+  run alone ×3 on the branch and ×3 on main as the branch has it, its merge-base with origin/main, so merges that land
+  while the gate runs are not counted against it (`KINDRED_CORPUS_ONLY`; `--main-ref REF` picks another, and the report
+  names the one used). It blocks only if the branch fails it 2 of 3
   or more and main passes it 2 of 3 or more; otherwise it is cleared, and the report lists both. The baseline is six
   runs on main's tip, recorded with its sha: pass is 6 of 6, fail is 0 of 6, anything else intermittent. It is renewed
   at least once a day. The daily number is the baseline's pass rate: passing, failing and intermittent, an intermittent
@@ -39,11 +42,26 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
+- F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
+- F-35l, stone not mined from a thin floor over a drop round its feet: [evidence](evidence/F-35l.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - E-70a, nights in bed: in by dusk, the bed it carries, a person's night never held: [evidence](evidence/E-70a.md)
+- F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## An evaluation run's preset traits saved as one change (M-06i) — 12 November 2026 (`claude/m06i-eval-presets-1111`)
+
+- [M-06i: an evaluation run's preset traits saved as one change](evidence/M-06i.md#an-evaluation-runs-preset-traits-saved-as-one-change-2026-11-12-claudem06i-eval-presets-1111).
+
+## An AI player buys and bids for what its run lacks (M-06i) — 12 November 2026 (`claude/m06i-wants-1111`)
+
+- [M-06i: an AI player buys and bids for what its run lacks](evidence/M-06i.md#an-ai-player-buys-and-bids-for-what-its-run-lacks-2026-11-12-claudem06i-wants-1111).
+
+## A tree on land it may not work set aside in its plan (M-06i) — 11 November 2026 (`claude/m06i-refused-logs-1111`)
+
+- [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
 
 ## The gather's best-tool question asked once per kind of block (M-06k) — 11 November 2026 (`claude/m06k-gather-tool-cache-1111`)
 
@@ -86,10 +104,13 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c31](evidence/F-22c31.md) (2026-11-09, diagnostics): the voice fixture's "same gather" failure names the action that ran instead, the work line and what was said.
 - [F-22c50](evidence/F-22c50.md) (2026-11-11, CI): main's runs are no longer cancelled by the next push; pull requests' still are.
 - [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
+- [F-22c58](evidence/F-22c58.md) (2026-11-11): a block in the way is not planned to be broken through a torch, sign or flower in the eyes' line (break lines only); planner tests before and after; build classes 3 runs; corpus gate passed.
 - [F-22c59](evidence/F-22c59.md) (2026-11-11, diagnostics): a build walk the plan counted on and the navigator found no way for logs the plan's way and the first step the navigator will not take.
 - [F-22c60](evidence/F-22c60.md) (2026-11-11, diagnostics): a drop worth walking back for, left lying, says which check left it; portal and obsidian-pickup classes 98 of 98, 3 runs.
 - [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
+- [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
+- [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

@@ -146,6 +146,30 @@ final class FactionsService {
 
     void panelNotices(java.util.function.BiConsumer<UUID, String> sink) { panelNotices = sink; }
 
+    /**
+     * One of M-06e's notices for the Wire: its kind, the faction told ({@code null}: the whole server), and its facts in
+     * order, the line said in today's words under {@code what}.
+     */
+    record Notice(String kind, UUID faction, Map<String, String> facts) {
+        Notice {
+            facts = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(facts));
+        }
+    }
+
+    /**
+     * Where the notices go once a runtime takes them (F-34): the notices' events and the notices told of them. Set, it
+     * is the one writer of those events (written before anything is told), and nothing here writes or says them.
+     */
+    interface Notifier { void notify(List<WorldEvent> events, List<Notice> notices); }
+
+    private Notifier notifier;
+
+    /** The capture notice's kind on the Wire, each side's faction told. */
+    static final String CAPTURED = "faction.capture";
+
+    /** Sends the vulnerable, secure and capture notices through {@code notifier}; null for today's chat lines. */
+    void onNotice(Notifier notifier) { this.notifier = notifier; }
+
     PowerBook powers() { return ledgers.get().power(); }
 
     Factions.At at(String world) { return new Factions.At(server.getTicks(), now(), world); }
@@ -174,9 +198,20 @@ final class FactionsService {
             int before = exposedSeen.getOrDefault(faction.id(), 0);
             if (before == 0 && exposure.exposed() > 0 || before > 0 && exposure.exposed() == 0) {
                 boolean vulnerable = exposure.exposed() > 0;
-                events.add(dev.kindred.core.factions.Capture.notice(faction.id(), vulnerable, exposure, at("")));
-                broadcast(faction.name() + (vulnerable ? " is vulnerable: " + exposure.exposed() + " chunks exposed" : " is secure again"));
+                var notice = dev.kindred.core.factions.Capture.notice(faction.id(), vulnerable, exposure, at(""));
+                String line = faction.name() + (vulnerable ? " is vulnerable: " + exposure.exposed() + " chunks exposed" : " is secure again");
                 panelNotices.accept(faction.id(), faction.name() + (vulnerable ? " is vulnerable" : " is secure again"));
+                if (notifier != null) {
+                    // Each its own write: the notice's message cites the one event it rests on.
+                    var facts = new LinkedHashMap<String, String>();
+                    facts.put("faction", faction.name());
+                    if (vulnerable) facts.put("exposed", String.valueOf(exposure.exposed()));
+                    facts.put("what", line);
+                    notifier.notify(List.of(notice), List.of(new Notice(notice.kind(), null, facts)));
+                    continue;
+                }
+                events.add(notice);
+                broadcast(line);
             }
         }
         exposedSeen = seen;
@@ -395,11 +430,22 @@ final class FactionsService {
                 var decision = dev.kindred.core.factions.Capture.capture(book, powers(), ledgers.get().claims(), safe(), ledgers.get().captures(),
                         ledgers.get().coins().of(who), settings, who, chunk, at);
                 if (decision.accepted()) {
-                    recordWith.accept(decision.events());
                     var attacker = book.of(who).orElseThrow();
                     var loser = book.get(UUID.fromString(from)).orElseThrow();
-                    tellFaction(attacker.id(), attacker.name() + " captured " + chunk.key() + " from " + loser.name());
-                    tellFaction(loser.id(), attacker.name() + " captured your chunk " + chunk.key());
+                    String won = attacker.name() + " captured " + chunk.key() + " from " + loser.name();
+                    String lost = attacker.name() + " captured your chunk " + chunk.key();
+                    if (notifier != null) {
+                        // The notifier the one writer of the capture's events (not recordWith): written once, each side told once.
+                        panelNotices.accept(attacker.id(), won);
+                        panelNotices.accept(loser.id(), lost);
+                        notifier.notify(decision.events(), List.of(
+                                new Notice(CAPTURED, attacker.id(), captureFacts(attacker.name(), loser.name(), chunk.key(), won)),
+                                new Notice(CAPTURED, loser.id(), captureFacts(attacker.name(), loser.name(), chunk.key(), lost))));
+                    } else {
+                        recordWith.accept(decision.events());
+                        tellFaction(attacker.id(), won);
+                        tellFaction(loser.id(), lost);
+                    }
                 }
                 return new Reply(decision.accepted(), List.of(decision.reason()));
             }
@@ -433,6 +479,15 @@ final class FactionsService {
             }
             default -> { return Reply.refused("Unknown: /faction " + verb); }
         }
+    }
+
+    private static Map<String, String> captureFacts(String attacker, String loser, String chunk, String line) {
+        var facts = new LinkedHashMap<String, String>();
+        facts.put("attacker", attacker);
+        facts.put("defender", loser);
+        facts.put("chunk", chunk);
+        facts.put("what", line);
+        return facts;
     }
 
     /** The land round {@code pos}, eleven chunks across: + yours, # another faction's, s a safe zone, - the wilderness, @ here. */
