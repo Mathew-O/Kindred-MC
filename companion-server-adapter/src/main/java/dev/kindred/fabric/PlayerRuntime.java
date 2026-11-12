@@ -1653,6 +1653,20 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_throw_eye", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw)));
     }
 
+    /** The native player's running or last skill, by identity, and its runner's state, for fixtures: {@code [identity, state]}. */
+    String[] nativeTaskForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.runner == null) return new String[] {"", "IDLE"};
+        return new String[] {entry.nativeTask == null ? "" : Integer.toHexString(System.identityHashCode(entry.nativeTask)), entry.runner.state().name()};
+    }
+
+    /** The world identity a native player's claims are keyed by, for fixtures. */
+    UUID nativeWorldIdForTest(UUID id) {
+        requireThread();
+        return entries.get(id).data.worldId();
+    }
+
     /** What the native player's last skill reported (an eye's flight, a block's position), for fixtures. */
     Map<String, String> nativeLastResult(UUID id) {
         requireThread();
@@ -1770,6 +1784,14 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         directions, Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_bridge")) {
+                var direction = net.minecraft.util.math.Direction.byName(arguments.get("dir").trim());
+                if (direction == null) throw new IllegalArgumentException("Unknown bridge direction " + arguments.get("dir"));
+                task = new NativeBridgeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), this::handBack,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        direction, Integer.parseInt(arguments.get("n")), Integer.parseInt(arguments.get("slot")),
+                        NativeBridgeAction.Crouch.of(arguments.get("crouch")));
             } else if (skill.equals("native_clutch")) {
                 task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")));
@@ -2322,7 +2344,8 @@ final class PlayerRuntime {
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_bed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SLEEP
                         || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId)) && (intent == NativePlayerBody.Intent.PLACE
+                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId))
+                        && (intent == NativePlayerBody.Intent.PLACE
                         || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pearl".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -4653,6 +4676,7 @@ final class PlayerRuntime {
                     entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
                 }
             }
+            if ("native_bridge".equals(task.skill())) entry.campaign.bridgeEnded(completed ? Map.of() : entry.runner.lastProgress());
             entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
@@ -8144,6 +8168,15 @@ final class PlayerRuntime {
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
                     + (label.isEmpty() ? "" : " [" + label + "]"));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
+            if ("native_bridge".equals(entry.skillId) && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED)) {
+                var report = entry.runner.lastProgress();
+                try {
+                    runObserver.bridged(entry.data.displayName(), Long.parseLong(report.getOrDefault("blocks", "0")),
+                            Long.parseLong(report.getOrDefault("ticks", "0")));
+                } catch (NumberFormatException unreported) {
+                    // A run that ended before it reported (a refusal at its start) bridged nothing.
+                }
+            }
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
@@ -8185,7 +8218,7 @@ final class PlayerRuntime {
                             + (finishedLease != null ? " (action " + finishedLease.actionId() + ")" : ""), observed);
                 }
                 if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId)
-                        || "native_stair".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
+                        || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
                     entry.cachedCraftingTablePos = null;
                     entry.cachedFurnacePos = null;
                     primeWorkstationCaches(entry, entry.nativeBody);
@@ -15006,12 +15039,16 @@ final class PlayerRuntime {
             if (entry.seenAtStoresDirty || entry.storage.revision() != entry.storesSavedRevision
                     || !entry.seenAtStores.isEmpty() || !entry.storage.stores().isEmpty()) saveStores(entry);
         }
-        memories.close();
+        // F-31e: the memory files' last writes, waited for after the Record's, under the same bound; the time logged.
+        long memoryClosing = System.nanoTime();
+        CompletableFuture<Void> memoryWrites = memories.closeAsync().whenComplete((ignored, failure) -> KindredMod.LOGGER.info(
+                "Kindred memory files written at the stop in {} ms", (System.nanoTime() - memoryClosing) / 1_000_000));
         recipeStore.saveIfChanged(rescueBook);
         recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
-                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).handle((ignored, failure) -> null);
+                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).thenCompose(ignored -> memoryWrites)
+                .handle((ignored, failure) -> null);
         shutdown = writes.thenCompose(ignored -> startup.handle((loaded, failure) ->
                 loaded == null ? CompletableFuture.<Void>completedFuture(null) : loaded.store().closeAsync())
                 .thenCompose(future -> future));

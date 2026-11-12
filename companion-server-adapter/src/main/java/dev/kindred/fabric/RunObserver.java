@@ -22,6 +22,9 @@ interface RunObserver {
     /** A task ended: its skill, how ({@code COMPLETED}, {@code BLOCKED}, {@code CANCELLED}) and its label, if it had one. */
     default void ended(String player, String skill, String state, String label) { }
 
+    /** A bridge run ended (E-71a), however it ended: the blocks it placed and the ticks it took. */
+    default void bridged(String player, long blocks, long ticks) { }
+
     /** The run's result so far, as its file will hold it, for the watch page (E-48); none for a listener with no result. */
     default String resultSoFar() { return null; }
 }

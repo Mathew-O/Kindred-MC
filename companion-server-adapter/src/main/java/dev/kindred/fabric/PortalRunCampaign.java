@@ -701,7 +701,12 @@ final class PortalRunCampaign {
                 Direction first = Direction.byName(task.args().getOrDefault("dirs", "").split(",")[0]);
                 if (first != null) aside = aside.offset(first);
             }
-            cellsAside.until(aside.asLong(), tick + 1200);
+            // A bridge run sets aside the cell it stopped at, by its own report, and nothing when a hit stopped it.
+            if ("native_bridge".equals(task.skill())) {
+                aside = bridgeStop;
+                bridgeStop = null;
+            }
+            if (aside != null) cellsAside.until(aside.asLong(), tick + 1200);
         }
         // A walk back to a drop: one that ends by it, one more look round and on. One that ends short of it, refused or
         // stopped at the nearest it could get to, passes that drop over for the next nearest, three times at most. A kit
@@ -4789,7 +4794,9 @@ final class PortalRunCampaign {
         int edit = route.firstEdit();
         if (edit < 0) return needEdit ? Optional.empty() : Optional.of(go(route.steps().getLast().to(), 0.5, true, label));
         if (edit > 0) return Optional.of(go(route.steps().get(edit - 1).to(), 0.4, false, label + ": walk on"));
-        Optional<Task> change = route.steps().getFirst().kind() == NativeRoutePlanner.Kind.STAIR ? stairs(body, route, label)
+        var firstKind = route.steps().getFirst().kind();
+        Optional<Task> change = firstKind == NativeRoutePlanner.Kind.STAIR ? stairs(body, route, label)
+                : firstKind == NativeRoutePlanner.Kind.BRIDGE ? bridges(body, route, label)
                 : routeEdit(body, route.steps().getFirst(), label);
         lastRouteEdit = change.orElse(null);
         return change;
@@ -4848,6 +4855,57 @@ final class PortalRunCampaign {
         return Optional.of(new Task("native_stair", coords(feet, Map.of("dirs", String.join(",", directions), "slot", String.valueOf(slot))),
                 label + ": stairs up " + directions.size()));
     }
+
+    /**
+     * The route's bridge from where the player stands, as one run (E-71a): its straight run of bridge steps one after
+     * another, as many as the blocks in one hotbar slot cover, up to {@link NativeBridgeAction#MAX_RUN}. A turn ends the
+     * run; the next plan starts the next from where it stops. The crouch is the skill's own choice ({@code auto}).
+     */
+    private Optional<Task> bridges(NativePlayerBody body, NativeRoutePlanner.Route route, String label) {
+        var inventory = body.entity().getInventory();
+        int slot = wayBlockSlot(inventory);
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        int blocks = inventory.getStack(slot).getCount();
+        Direction along = null;
+        int run = 0;
+        for (var step : route.steps()) {
+            if (step.kind() != NativeRoutePlanner.Kind.BRIDGE || run == NativeBridgeAction.MAX_RUN || run >= blocks) break;
+            BlockPos from = step.from(), to = step.to();
+            int dx = to.getX() - from.getX(), dz = to.getZ() - from.getZ();
+            if (to.getY() != from.getY() || Math.abs(dx) + Math.abs(dz) != 1 || !step.cells().getFirst().equals(to.down())) break;
+            Direction heading = Direction.fromVector(dx, 0, dz);
+            if (along != null && heading != along) break;
+            along = heading;
+            run++;
+        }
+        if (run == 0) return routeEdit(body, route.steps().getFirst(), label);
+        BlockPos feet = route.steps().getFirst().from();
+        return Optional.of(new Task("native_bridge", coords(feet, Map.of("dir", along.asString(), "n", String.valueOf(run), "slot", String.valueOf(slot))),
+                label + ": bridge " + run));
+    }
+
+    /**
+     * Where a bridge run that stopped short stopped, and why (E-71a), from its end's report: a cell it was refused, by a
+     * claim or the policy, could make no way past or fell from is set aside for the next plan, so the same run is not
+     * started again from where it landed; one stopped by a hit is not, as the danger passes. A report it cannot read sets
+     * nothing aside.
+     */
+    void bridgeEnded(Map<String, String> report) {
+        bridgeStop = null;
+        String at = report.get("stopped_at"), reason = report.get("reason");
+        if (at == null || reason == null || !java.util.Set.of("claim", "policy", "no_blocks", "stuck", "fell").contains(reason)) return;
+        String[] parts = at.split(",\\s*");
+        if (parts.length != 3) return;
+        try {
+            bridgeStop = new BlockPos(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()), Integer.parseInt(parts[2].trim()));
+        } catch (NumberFormatException unreadable) {
+            bridgeStop = null;
+        }
+    }
+
+    /** The cell the last bridge run stopped at, to set aside, or null. */
+    private BlockPos bridgeStop;
 
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
     Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
@@ -6425,7 +6483,11 @@ final class PortalRunCampaign {
             for (int s = 0; s < 36 && slot < 0; s++) if (RESTING.contains(inventory.getStack(s).getItem())) slot = s;
         }
         if (slot < 0) return Optional.empty();
-        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        // The swap named for what the block is for: a block readied to take cover or hole up is that step, which a mob on
+        // it does not stop, as the weapon taken to hand is not (F-25c4cv). Readied under the one name, it was stopped "A
+        // hostile mob is attacking; fight back first" 25 to 35 times a run in the corpus's kindred-21883, never reached its
+        // hotbar, and it fought on outmatched until a zombie killed it (E-71e).
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, label + ": ready a block"));
         for (Direction side : Direction.values()) {
             BlockPos support = cell.offset(side.getOpposite());
             if (support.equals(feet) || support.equals(feet.up())) continue;

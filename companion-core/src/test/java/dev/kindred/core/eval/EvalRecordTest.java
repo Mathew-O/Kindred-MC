@@ -87,4 +87,16 @@ class EvalRecordTest {
         assertTrue(json.contains("\"chunkMinutes\": 9.6"), json);
         assertTrue(json.contains("\"days\": 2.500"), json);
     }
+
+    @Test
+    void bridgeBlocksAndTheirSecondsAreSummedPerPlayer() {
+        var record = new EvalRecord(EvalScenario.parse("starters=Kindred; goal=nether"));
+        assertTrue(record.toJson("b", 1, 1, true).contains("\"bridgeBlocks\": 0"), "none until a run ends");
+        record.bridged("Kindred", 12, 77);
+        record.bridged("Kindred", 5, 43);
+        record.bridged("Nobody", 3, 9);
+        String json = record.toJson("b", 1, 40, true);
+        assertTrue(json.contains("\"bridgeBlocks\": 17"), json);
+        assertTrue(json.contains("\"bridgeSeconds\": 6.0"), json);
+    }
 }

@@ -53,6 +53,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - E-70a, nights in bed: in by dusk, the bed it carries, a person's night never held: [evidence](evidence/E-70a.md)
 - E-70a1, a bed never propped in a floor cell the build set aside, the cabin finished: [evidence](evidence/E-70a1.md)
+- E-71a, timed-crouch bridging: upright to the edge, crouched for the click, held where a fall could kill: [evidence](evidence/E-71a.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
@@ -128,6 +129,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 ## Entries by ID
 
+- [E-71e1](evidence/E-71e.md) (2026-11-12, mobs): a block asked for as cover is readied under its step's name, so a mob on it does not stop the swap; the staged fixture 0 of 3 before, 3 of 3 after, and the corpus's kindred-21883 alone 2 of 3 failing on main, 3 of 3 passing with it.
 - [F-22c31](evidence/F-22c31.md) (2026-11-09, diagnostics): the voice fixture's "same gather" failure names the action that ran instead, the work line and what was said.
 - [F-22c50](evidence/F-22c50.md) (2026-11-11, CI): main's runs are no longer cancelled by the next push; pull requests' still are.
 - [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
@@ -140,6 +142,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs; 2026-11-12, a break's collection that ends with its own drop uncollected says why (pure line test 2 of 2).
 - [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs; the build green on the merged tree; the corpus gate passes, its three flagged scenes cleared by the lead (reasons in the evidence).
 - [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
+- [F-22c68](evidence/F-22c68.md) (2026-11-12, test only): the late toss-cap staging moves the server's tick only forward; from a start in a day's last 30 ticks the old line stops the server ("Backward tick"), the new one passes 3 of 3; NativeTrustGameTests 9 of 9, 3 runs.
 - [F-22c69](evidence/F-22c69.md) (2026-11-12, CI): the build job's limit from 90 to 120 minutes, the suite having outgrown 90; the GameTests' split across jobs to follow.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
