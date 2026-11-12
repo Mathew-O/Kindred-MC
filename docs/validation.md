@@ -59,6 +59,18 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## A crafting table set down only for a craft it can make there, and kept down for it (F-25c7a, F-25c7b) — 12 November 2026 (`claude/table-loop-1112`)
+
+- **[F-25c7a and F-25c7b](evidence/F-25c7a.md):** the take-and-place table loop of 18 of e40a21's 76 stuck spells.
+  - `craftAtTable` sets a table down only for what the player's holdings make there (core `Makings`), its logs made planks first. The guide's recipes name their planks and iron (`Recipe.others`).
+  - A table set down for a craft is kept down for it while the craft can be made there, at most 400 ticks.
+  - **`NativeTableLoopGameTests`** (staged, as it says): the table loop on main 32b304a, 3 of 3 failing (the table set down 14, 9 and 7 times, no bed); 3 of 3 passing after.
+    - The craft comes before the pickup, the table is conserved, and a staged expiry: 3 of 3.
+    - With `NativeRecipeGuardGameTests` and `NativeFollowUpGameTests`: 8 of 8, 3 runs; and once more after main 3196401 was merged in.
+  - **Core:** `MakingsTest` 7 of 7, `GuideRecipesTest` 4 of 4, `NeedsAssessmentTest` 5 of 5, `NeedRecordTest` 3 of 3.
+  - **Replays:** the 18 table-loop spells, 9 runs a side against main. Tables placed a run went from a mean of 78.6 to 3.6, and failed scene-runs from 36 to 23 of 162 (one-sided Fisher p = 0.042).
+  - **Corpus gate** on 70b8c31 (main 2281379): 3 runs, 4 flagged, 0 confirmed. It does not cover #263, merged since.
+
 ## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
 
 - [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
