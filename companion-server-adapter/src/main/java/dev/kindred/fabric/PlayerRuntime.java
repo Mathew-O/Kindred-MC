@@ -7976,6 +7976,7 @@ final class PlayerRuntime {
                     && entry.dispatchSource.startsWith("factionCandidates");
             if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
             if (factionWalk) entry.factionPlay.walksEnded++;
+            if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
@@ -9478,6 +9479,7 @@ final class PlayerRuntime {
         long tick = server.getTicks();
         if (play.move == null && tick - play.decidedAt >= FactionsPlayer.DECIDE_TICKS) {
             play.decidedAt = tick;
+            play.decidedForTest(tick);
             play.chosen = factionChoose(entry, player);
             if (play.chosen != null && FactionsPlayer.moves(play.chosen, player)) {
                 play.move = play.chosen;
@@ -9518,10 +9520,15 @@ final class PlayerRuntime {
         // Its walk would end in open water it saw (F-35j): the place set aside at once, with no walk asked and no way made.
         // On Factions seed 303 the players' land is an island, and the places its faction play chose east of it were open
         // sea, refused leg after leg. Only what it saw counts; out of its sight the walk is asked as before.
-        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && seenOpenWater(entry, play, player, to, tick)) {
-            play.openWater(move.target(), tick);
+        // A place refused and waiting is not looked at as water until its wait is out (F-35j1): looked at a second later and
+        // seen as water, it was set aside and another chosen at once, each refusal's wait never served. Its way made out of
+        // a hollow (F-35h) goes on during the wait, below, as before.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && !play.waiting(move.target(), tick)
+                && seenOpenWater(entry, play, player, to, tick)) {
+            play.openWater(move.target(), tick, player.getBlockPos(), FactionsPlayer.atSurface(player));
             play.move = null;
-            play.decidedAt = Long.MIN_VALUE / 2;
+            // The next choice at the decision interval, not on the same tick: chosen at once, a coast of water it saw was
+            // set aside place by place, a search for each (F-35j1).
             return null;
         }
         // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
@@ -9836,6 +9843,19 @@ final class PlayerRuntime {
     }
 
     /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
+    /** For the fixtures (F-35j1): the AI player's last faction walks ended (target, tick) and its last choices' ticks. */
+    List<Map.Entry<String, Long>> factionWalksEndedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of() : List.copyOf(entry.factionPlay.endedForTest);
+    }
+
+    List<Long> factionDecisionsForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of() : List.copyOf(entry.factionPlay.decidedForTest);
+    }
+
     int[] factionOverWaterForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
