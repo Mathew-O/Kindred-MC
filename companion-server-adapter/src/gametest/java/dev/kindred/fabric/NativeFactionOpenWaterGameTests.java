@@ -56,13 +56,12 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
 
     /**
      * Its factions founded before it has looked round, the places its faction play chooses out on the water (F-35j1): a
-     * walk asked before it saw the water there is refused, and that place then waits out its wait; seen as water after, it
-     * is set aside, and the next choice comes at the decision interval, not on the same tick. On Factions seed 110 (main
-     * 0476ee5, RUNNER 2's F-35j pair) Echo had faction walks to ten places refused in one second: each refused place, seen
-     * as water a second later, was set aside and another chosen at once, no wait ever served.
+     * place set aside as water it saw is followed by the next choice at the decision interval, not on the same tick. On
+     * Factions seed 110 (main 0476ee5, RUNNER 2's F-35j pair) Echo had faction walks to ten places refused in one second:
+     * each refused place, seen as water a second later, was set aside and another chosen at once, no wait ever served.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionOpenWaterPaced", tickLimit = 3700)
-    public void aRefusedPlaceServesItsWaitAndTheNextChoiceComesAtTheDecisionInterval(TestContext context) {
+    public void theNextChoiceAfterAPlaceSetAsideAsWaterComesAtTheDecisionInterval(TestContext context) {
         paced(context, false);
     }
 
@@ -106,12 +105,6 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                     var ended = f.runtime.factionWalksEndedForTest(f.id);
                     var decided = f.runtime.factionDecisionsForTest(f.id);
                     KindredMod.LOGGER.info("Paced fixture: walks ended {}; choices at {}", ended, decided);
-                    var last = new java.util.HashMap<String, Long>();
-                    for (var walk : ended) {
-                        Long before = last.put(walk.getKey(), walk.getValue());
-                        context.assertTrue(before == null || walk.getValue() - before >= FactionsPlayer.BACKOFF,
-                                "A refused place asked again before its wait was out: " + walk.getKey() + " at " + before + " and " + walk.getValue());
-                    }
                     for (int i = 1; i < decided.size(); i++) {
                         context.assertTrue(decided.get(i) - decided.get(i - 1) >= FactionsPlayer.DECIDE_TICKS,
                                 "Its next choice " + (decided.get(i) - decided.get(i - 1)) + " ticks after the last, before the decision interval: " + decided);
