@@ -52,6 +52,7 @@
       "dev.kindred.fabric.InventoryGameTests",
       "dev.kindred.fabric.NativeTacticalGameTests",
       "dev.kindred.fabric.NativeCombatGameTests",
+      "dev.kindred.fabric.NativeMobRhythmGameTests",
       "dev.kindred.fabric.NativeProgressionGameTests",
       "dev.kindred.fabric.NativeTeamGameTests",
       "dev.kindred.fabric.NativeFarmGameTests",
