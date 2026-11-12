@@ -96,7 +96,8 @@ public final class NativeNightShelterGameTests implements FabricGameTest {
      * next stand, and "light the way" put a torch there; it walked on into that cell, and its pillar up from there was
      * refused, "The cell it stands in is not open". About one run in 15 it did not find another way up before the test's
      * morning check gave up (F-22c70). Staged: the night held for 1500 ticks, as above, then morning. Fails once its way's
-     * pillar up is refused, "The cell it stands in is not open"; passes once it is back up at the surface.
+     * pillar up is refused, "The cell it stands in is not open"; passes once it is back up at the surface, having placed
+     * a torch.
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "nightShelterWayTorch", tickLimit = 4000)
     public void itsWayUpFromItsShelterIsNotBlockedByItsOwnTorch(TestContext context) {
@@ -108,6 +109,7 @@ public final class NativeNightShelterGameTests implements FabricGameTest {
         StringBuilder seen = new StringBuilder();
         String[] last = {""};
         String[] blockedAt = {null};
+        int[] lit = new int[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Nighthawk"))
@@ -125,6 +127,16 @@ public final class NativeNightShelterGameTests implements FabricGameTest {
                     if (feet.getY() <= surface - 2) down[0] = true;
                     String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
                     if (!goal.equals(last[0]) && seen.length() < 2500) seen.append(watched[0]).append(": ").append(goal.replaceAll("^.* - ", "")).append(" @ ").append(feet.toShortString()).append("; ");
+                    // A torch it placed: a torch where the step it was on said it would put one.
+                    if (!goal.equals(last[0]) && last[0].contains("Place a torch at ")) {
+                        String[] xyz = last[0].substring(last[0].indexOf("Place a torch at ") + "Place a torch at ".length()).split(",\\s*");
+                        try {
+                            BlockPos at = new BlockPos(Integer.parseInt(xyz[0].trim()), Integer.parseInt(xyz[1].trim()), Integer.parseInt(xyz[2].replaceAll("[^-0-9].*$", "").trim()));
+                            if (world.getBlockState(at).isOf(Blocks.TORCH) || world.getBlockState(at).isOf(Blocks.WALL_TORCH)) lit[0]++;
+                        } catch (RuntimeException unparsed) {
+                            // Not a position: nothing to count.
+                        }
+                    }
                     last[0] = goal;
                     // The pillar's refusal and the next decision come within a tick, so the refusal is read from the
                     // campaign's own list of steps refused lately, which keeps the last few.
@@ -139,6 +151,9 @@ public final class NativeNightShelterGameTests implements FabricGameTest {
                     context.assertTrue(blockedAt[0] == null, "Its pillar up refused on the way it is making, at " + blockedAt[0] + ": " + seen);
                     context.assertTrue(watched[0] > 1501 && down[0] && feet.getY() >= surface - 1, "Out of its shelter and up in the morning: " + seen);
                 })
+                // It still lights its shelter or its way, so a pass is not from never placing a torch. Counted as placed,
+                // not as left in its pack: a torch its way digs through is picked back up.
+                .createAndAdd(() -> context.assertTrue(lit[0] > 0, "A torch placed on its night and its way up: " + seen))
                 .createAndAdd(() -> {
                     var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
                     context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);

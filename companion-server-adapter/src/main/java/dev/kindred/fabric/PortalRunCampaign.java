@@ -3724,7 +3724,7 @@ final class PortalRunCampaign {
         spots.add(feet.up().offset(digDirection().getOpposite()));
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
-            if (onTheWay(spot)) continue;
+            if (onTheWay(spot, feet)) continue;
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
@@ -3732,9 +3732,24 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
-    /** A cell of the way it is making (F-22c70): no torch there while that way is the plan. */
-    boolean onTheWay(BlockPos cell) {
-        return lastTick <= wayCellsUntil && wayCells.contains(cell.asLong());
+    /**
+     * A cell of the way it is making (F-22c70): no torch there while that way is its plan. The way is its plan until the
+     * next one is made, or until the player stands more than {@link #WAY_LEFT} blocks from every cell of it.
+     */
+    boolean onTheWay(BlockPos cell, BlockPos feet) {
+        if (wayCells.isEmpty()) return false;
+        boolean near = false;
+        for (long key : wayCells) {
+            if (BlockPos.fromLong(key).getSquaredDistance(feet) <= WAY_LEFT * WAY_LEFT) {
+                near = true;
+                break;
+            }
+        }
+        if (!near) {
+            wayCells.clear();
+            return false;
+        }
+        return wayCells.contains(cell.asLong());
     }
 
     private static Map<String, String> coords(BlockPos pos, Map<String, String> extra) {
@@ -4805,7 +4820,6 @@ final class PortalRunCampaign {
             wayCells.add(step.to().up().asLong());
             for (BlockPos cell : step.cells()) wayCells.add(cell.asLong());
         }
-        wayCellsUntil = lastTick + WAY_CELLS_KEPT;
         int edit = route.firstEdit();
         if (edit < 0) return needEdit ? Optional.empty() : Optional.of(go(route.steps().getLast().to(), 0.5, true, label));
         if (edit > 0) return Optional.of(go(route.steps().get(edit - 1).to(), 0.4, false, label + ": walk on"));
@@ -4818,14 +4832,14 @@ final class PortalRunCampaign {
     /** The last change a made way asked for: if it fails, its cell is set aside so the next plan goes another way. */
     private Task lastRouteEdit;
     /**
-     * The cells of the way last planned to be made (F-22c70): where it stands, steps and digs. No torch goes in one while the
-     * plan is fresh: a torch put in the cell its way had just dug, its next stand, left it unable to pillar up from there
-     * ("The cell it stands in is not open"), sealed in below its portal (NativeNightShelterGameTests, about one run in 15).
+     * The cells of the way last planned to be made (F-22c70): every cell of it where it stands, steps and digs. No torch goes
+     * in one while it is the plan: a torch put in the cell its way had just dug, its next stand, left it unable to pillar up
+     * from there ("The cell it stands in is not open"), sealed in below its portal (NativeNightShelterGameTests, about one
+     * run in 15). Kept for the plan's own life, not a time: a long pillar or stair takes as long as it takes.
      */
     private final Set<Long> wayCells = new HashSet<>();
-    private long wayCellsUntil = Long.MIN_VALUE;
-    /** How long a planned way's cells are kept from torches: the next few decisions' steps along it. */
-    static final int WAY_CELLS_KEPT = 100;
+    /** Farther than this from every cell of its last way, the player has left it and the way's cells are no longer kept. */
+    static final int WAY_LEFT = 8;
 
     private Optional<Task> routeEdit(NativePlayerBody body, NativeRoutePlanner.Step step, String label) {
         var player = body.entity();
