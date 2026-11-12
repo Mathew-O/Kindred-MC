@@ -9608,6 +9608,10 @@ final class PlayerRuntime {
         // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
         // way is made toward any of them meanwhile (F-35i).
         if (play.paused(tick, player.getBlockPos(), FactionsPlayer.atSurface(player))) return null;
+        // Dug in for the night in its sealed shelter (the campaign's own knowing, as its portal walk has it, F-35c1): no
+        // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
+        // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
+        if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9945,6 +9949,14 @@ final class PlayerRuntime {
     }
 
     /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
+    /** For the fixtures (F-35h2): whether the AI player's campaign has it dug in for the night where it stands now. */
+    boolean dugInForTheNightForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry != null && entry.campaign != null && entry.nativeBody != null && entry.nativeBody.connected()
+                && entry.campaign.dugInForTheNight(entry.nativeBody.entity());
+    }
+
     int[] factionOverWaterForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);

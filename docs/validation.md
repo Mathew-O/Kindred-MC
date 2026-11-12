@@ -42,6 +42,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
 - F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
+- F-35h2, no faction walk out through its own night shelter's seal (Factions 110): [evidence](evidence/F-35h2.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
