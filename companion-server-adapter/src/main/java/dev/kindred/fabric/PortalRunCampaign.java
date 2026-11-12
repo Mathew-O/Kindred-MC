@@ -122,6 +122,12 @@ final class PortalRunCampaign {
     private final dev.kindred.core.route.Digger digger = new dev.kindred.core.route.Digger();
     /** Where a spell hurt and out of food last had open sky over its head (F-25c4ag); none outside such a spell. */
     private BlockPos hungryUpAt;
+    /**
+     * Whether such a spell has had it on top: under the sky with no rim beside it. From then on its looks are its own for
+     * the spell (F-22c65): on a hillside, a step up out from under a rim and the look down again, it climbed and looked
+     * by turns (the corpus's kindred-48005).
+     */
+    private boolean hungryOnTop;
     /** The steps of filling its bucket from the water over its head (F-35g), and the progress line's words for them. */
     private enum Overhead { OPEN, FILL, SEAL, DRAIN }
     static final String OVERHEAD = "Water over its head";
@@ -2486,13 +2492,40 @@ final class PortalRunCampaign {
             boolean below = underground(player);
             if (!below) hungryUpAt = feet.toImmutable();
             else if (hungryUpAt != null && feet.getY() >= hungryUpAt.getY() - 3 && feet.getSquaredDistance(hungryUpAt) <= 32 * 32) below = false;
+            boolean band = hungryUpAt != null && feet.getY() >= hungryUpAt.getY() - 3 && feet.getY() <= hungryUpAt.getY()
+                    && feet.getSquaredDistance(hungryUpAt) <= 32 * 32;
             Optional<Task> food = below ? wayUp(body, "Climb toward the surface for food")
                     : hunt(body).or(() -> fish(body)).or(() -> groundBelow(player) ? explore(body, "animals") : Optional.empty());
+            // Within a few blocks of where it last had the sky, and still below a rim beside it, a look for animals whose
+            // walk would take it lower than there is not taken (on top, with no rim, it looks as before): it climbs on, the
+            // climb held until it is above there or has no step left; with no step left, it looks as before. Two up in its
+            // own climb's shaft out of a cut, the sky over it, its looks walked it back down to the cut's floor, still
+            // counted as up, and looked again, north, south, the climb never taken again (F-22c65).
+            boolean rim = belowRim(player.getServerWorld(), feet);
+            if (feet.equals(hungryUpAt) && !rim && !hungryOnTop) {
+                hungryOnTop = true;
+                KindredMod.LOGGER.info("{} hungry and on top at {}: its looks its own for the spell", player.getName().getString(), feet.toShortString());
+            }
+            if (band && hungryUpAt != null && rim && !hungryOnTop) {
+                boolean look = food.isPresent() && food.get().label().startsWith("Explore ");
+                if (climbHeld(player) || look && lookGoesDown(player, food.get(), hungryUpAt)) {
+                    // A climbing step only: a walk back the way it came is no climb. Held, its way up chosen afresh each
+                    // step, the walk back and the stair took turns, and with them the look, which walked it down again,
+                    // until it fell (the corpus's kindred-48005 under the gate). Its stair instead; with no step of that
+                    // either, it looks as before.
+                    var up = wayUp(body, "Climb toward the surface for food");
+                    if (up.isPresent() && up.get().label().endsWith(": back the way it came")) up = climb(body, "Climb toward the surface for food");
+                    if (up.isPresent()) food = up.map(this::heldClimb);
+                }
+            }
             if (food.isPresent()) {
                 progress = stageLabel(stage) + ": hurt and out of food - " + food.get().label();
                 return food;
             }
-        } else hungryUpAt = null;
+        } else {
+            hungryUpAt = null;
+            hungryOnTop = false;
+        }
         // Advised to surface and recover: up out of the dark first, in daylight, then heal fully before going on.
         boolean recovering = stance() == StrategyAdvice.Stance.SURFACE_AND_RECOVER;
         if (recovering && underground(player) && !dark) {
@@ -4122,6 +4155,40 @@ final class PortalRunCampaign {
             }
         }
         return explore(player, what);
+    }
+
+    /**
+     * The last look for animals planned, by (feet, where it last had the sky, the look's target): searched once for them.
+     * The target too: a look west refused there, the look north from the same spot took the west one's answer and
+     * walked down unplanned (F-22c65).
+     */
+    private long lookPlannedFrom = Long.MIN_VALUE, lookPlannedAnchor = Long.MIN_VALUE, lookPlannedTarget = Long.MIN_VALUE;
+    private boolean lookPlannedDown;
+
+    /**
+     * Whether a look for animals, planned from where it stands, ends lower than {@code anchor}: one search of the
+     * navigator's, kept for that spot, that anchor and that look (F-22c65).
+     */
+    private boolean lookGoesDown(ServerPlayerEntity player, Task look, BlockPos anchor) {
+        BlockPos feet = player.getBlockPos();
+        BlockPos target = new BlockPos(Integer.parseInt(look.args().get("x")), Integer.parseInt(look.args().get("y")), Integer.parseInt(look.args().get("z")));
+        if (feet.asLong() == lookPlannedFrom && anchor.asLong() == lookPlannedAnchor && target.asLong() == lookPlannedTarget) return lookPlannedDown;
+        // As the walk itself searches: its node budget and reach, to within its range of the target.
+        var path = new NativeNavigator(player.getServerWorld(), NativeNavigator.MAX_SAFE_DROP).throughDoors()
+                .find(feet, target, at -> at.getSquaredDistance(target) <= 9, NativeNavigator.DEFAULT_MAX_NODES, 96);
+        BlockPos end = path.nodes().isEmpty() ? feet : path.nodes().getLast();
+        // Lower than there: a step down off its own stair's step onto a ledge of the cut, and back, came down past it to the
+        // cut's floor (F-22c65). A walk that goes nowhere, against a wall it cannot get past, ends level with it and is the
+        // look's own to give up (its stalls cut a way through), as on a cave's floor under a roof (F-25c4ag).
+        boolean down = end.getY() < anchor.getY();
+        lookPlannedFrom = feet.asLong();
+        lookPlannedAnchor = anchor.asLong();
+        lookPlannedTarget = target.asLong();
+        lookPlannedDown = down;
+        KindredMod.LOGGER.info("{} hungry look planned from {} ({} of {} nodes, ends {}{}), the sky last at {}: {}", player.getName().getString(),
+                feet.toShortString(), path.nodes().size(), path.expanded(), end.toShortString(), path.complete() ? "" : ", incomplete",
+                anchor.toShortString(), down ? "climbs on" : "looks");
+        return down;
     }
 
     static boolean underground(ServerPlayerEntity player) {

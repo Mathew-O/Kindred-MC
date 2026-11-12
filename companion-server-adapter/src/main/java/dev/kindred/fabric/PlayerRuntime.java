@@ -2584,6 +2584,35 @@ final class PlayerRuntime {
         return hash;
     }
 
+    /**
+     * E-71f: one tick of hearing. Lava and water by the client's own rule into its body's earshot (when the ambience is on),
+     * then everything heard
+     * since the last tick drained into what it has heard lately, as immutable kind, bearing and band. Cleared on a stop.
+     * Nothing in its decisions reads it yet; the reactions are E-71f's gated slice.
+     */
+    private void listen(Entry entry, long tick) {
+        var body = entry.nativeBody;
+        if (body == null || !body.connected() || body.entity() == null) return;
+        if (entry.snapshot().stopLatched()) {
+            body.clearHeard();
+            entry.heardLately.clear();
+            return;
+        }
+        if (hearingAmbienceOn) entry.ambience.listen(body.entity(), tick, body::hearAmbient);
+        for (var sound : body.drainHeard()) {
+            entry.heardLately.addLast(sound);
+            while (entry.heardLately.size() > dev.kindred.core.hearing.Earshot.CAPACITY) entry.heardLately.removeFirst();
+        }
+    }
+
+    /** A fixture's view of what the player (by its companion id) has heard lately, oldest first, and the ambience's mean cost in microseconds a tick. */
+    java.util.Map.Entry<List<dev.kindred.core.hearing.HeardSound>, Double> heardLatelyForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return java.util.Map.entry(List.of(), 0.0);
+        return java.util.Map.entry(List.copyOf(entry.heardLately), entry.ambience.meanMicros());
+    }
+
     private void refreshTacticalObservation(Entry entry, long tick) {
         if (entry.nativeBody == null || !entry.nativeBody.connected() || entry.nativeBody.entity() == null) {
             return;
@@ -2684,6 +2713,7 @@ final class PlayerRuntime {
                 if (atlasOn) keepAtlas(entry, entry.nativeBody.entity(), tick);
                 if (tick % 20 == 0 && factionsWorld()) watchFactionLand(entry, entry.nativeBody.entity());
                 refreshTacticalObservation(entry, tick);
+                listen(entry, tick);
                 SignalFrame frame = createSignalFrame(entry, tick);
                 entry.attentionSnapshot = entry.attention.observe(frame);
                 batch.add(new dev.kindred.core.attention.AttentionWorkScheduler.PlayerEntrySnapshot(
@@ -14024,6 +14054,14 @@ final class PlayerRuntime {
     /** The atlas on or off (F-30): on by default; {@code KINDRED_ATLAS=off} or a scenario turns it off, and then nothing reads it. */
     void atlas(boolean on) { atlasOn = on; }
 
+    /**
+     * Lava and water heard by the client's own rule (E-71f's {@link NativeAmbience}): off by default, on with
+     * {@code KINDRED_HEARING_AMBIENCE=on} at start or by a fixture. The sounds its connection is sent are heard either way.
+     */
+    void hearingAmbience(boolean on) { hearingAmbienceOn = on; }
+
+    private boolean hearingAmbienceOn;
+
     /** A player's atlas, for fixtures (F-30); none until its file is read, or with the atlas off. */
     /** The runtime's side of speaking first (E-53): who may speak, what each has to spare and needs, and the offer's toss. */
     /**
@@ -17886,6 +17924,9 @@ final class PlayerRuntime {
         private Long lastAttributedAttackSequence = null;
         final dev.kindred.core.tactics.StandardCombatPredictor tacticalPredictor = new dev.kindred.core.tactics.StandardCombatPredictor();
         dev.kindred.core.tactics.TacticalObservation lastTacticalObservation = null;
+        /** E-71f: the client's own rule for lava and water around its body, and what it has heard lately (the newest 64). Nothing reads it yet. */
+        final NativeAmbience ambience = new NativeAmbience();
+        final java.util.ArrayDeque<dev.kindred.core.hearing.HeardSound> heardLately = new java.util.ArrayDeque<>();
         dev.kindred.core.tactics.TacticalDecision lastTacticalDecision = null;
         long lastTacticalRefreshTick = -1L;
         long cachedWeaponFingerprint = Long.MIN_VALUE;
