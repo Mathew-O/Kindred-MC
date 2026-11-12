@@ -6,3 +6,4 @@ confirm-branch-2 (c277e849, only flagged): 1 min, peak 1271 MB, 1 required tests
 confirm-branch-3 (c277e849, only flagged): 0 min, peak 1637 MB, 1 required tests failed, fence-top 0, disk 13G
 confirm-main-1 (69c5d12b, only flagged): 1 min, peak 1470 MB, 1 required tests failed, fence-top 0, disk 13G
 confirm-main-2 (69c5d12b, only flagged): 0 min, peak 1634 MB, 1 required tests failed, fence-top 0, disk 13G
+confirm-main-3 (69c5d12b, only flagged): 0 min, peak 1234 MB, 1 required tests failed, fence-top 0, disk 13G
