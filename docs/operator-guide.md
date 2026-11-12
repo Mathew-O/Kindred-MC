@@ -979,7 +979,8 @@ come through. `tools/corpus/gate.sh` runs it three times and compares the result
 then runs any scene that newly fails alone, on the change and on main as the change has it (its merge-base with
 origin/main; `--main-ref REF` for another), before saying the change broke it.
 `KINDRED_CORPUS_ONLY=<id>,<id>` in the environment runs only those scenes.
-Nothing in a world is touched: the corpus runs in its own GameTest server.
+Nothing in a world is touched: the corpus runs in its own GameTest server. Each run starts from an empty corpus world: `build/corpus/world` and
+`build/corpus/kindred` are deleted first, so a run never depends on what earlier runs in that checkout left.
 
 ### The simulator (F-28)
 
