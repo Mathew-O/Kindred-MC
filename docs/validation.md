@@ -45,6 +45,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35h2, no faction walk out through its own night shelter's seal (Factions 110): [evidence](evidence/F-35h2.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
+- F-35j1, a refused faction walk's wait served and open water set aside counted toward the pause (Factions 110): [evidence](evidence/F-35j1.md).
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
 - F-35l, stone not mined from a thin floor over a drop round its feet: [evidence](evidence/F-35l.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
