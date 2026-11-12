@@ -109,6 +109,7 @@ final class EvalBootstrap implements RunObserver {
                 runtime.atlas(scenario.atlas());
                 runtime.rescue(scenario.rescue());
                 runtime.advice(scenario.advice());
+                runtime.nights(scenario.sleep());
                 if (worldRules) {
                     command(server, "gamerule keepInventory " + (scenario.keep() == EvalScenario.Keep.INVENTORY));
                     command(server, "gamerule doDaylightCycle true");
@@ -181,6 +182,7 @@ final class EvalBootstrap implements RunObserver {
                     note += (note.isEmpty() ? "" : "; ") + (scenario.strategist() ? "strategist" : "voice") + " asked for, the strategist not configured";
                 }
                 startTick = lastTick;
+                startDayTime = server.getOverworld().getTimeOfDay();
                 if (scenario.sprint()) command(server, "tick sprint " + scenario.ticks());
                 next(3);
             }
@@ -189,6 +191,7 @@ final class EvalBootstrap implements RunObserver {
                 if (run % LOOK == 0) {
                     look(server, runtime);
                     measure(server);
+                    chunks(server);
                 }
                 if (run % ATTENTION_REPORT == 0) attention(runtime, run);
                 if (run >= scenario.ticks()) {
@@ -387,8 +390,42 @@ final class EvalBootstrap implements RunObserver {
         return startTick < 0 ? 0 : Math.max(0, serverTick - startTick);
     }
 
+    /** The Overworld's time of day as the run began, to tell the days that passed over it; negative before. */
+    private long startDayTime = -1;
+    /** Each player's chunk at the last look, by its world: the world's key, then x and z. */
+    private final java.util.Map<String, Object[]> chunkAt = new java.util.HashMap<>();
+
+    /**
+     * Once a game second (E-70a's measure): each player's loaded area, the square of chunks the server's view distance
+     * keeps round the chunk it stands in, as the server keeps it. The chunks that came into it since the last look are
+     * its chunk-loads (all of them on its first look, after a death and in another world); the area times the second
+     * is its chunk-ticks. A player not in the world holds none.
+     */
+    private void chunks(MinecraftServer server) {
+        int r = server.getPlayerManager().getViewDistance(), side = 2 * r + 1;
+        long area = (long) side * side;
+        for (String name : scenario.everyone()) {
+            ServerPlayerEntity player = server.getPlayerManager().getPlayer(name);
+            if (player == null || !player.isAlive()) {
+                chunkAt.remove(name);
+                continue;
+            }
+            var key = player.getWorld().getRegistryKey();
+            int x = player.getChunkPos().x, z = player.getChunkPos().z;
+            Object[] last = chunkAt.get(name);
+            long loads = area;
+            if (last != null && last[0] == key) {
+                long overlap = (long) Math.max(0, side - Math.abs(x - (int) last[1])) * Math.max(0, side - Math.abs(z - (int) last[2]));
+                loads = area - overlap;
+            }
+            record.chunks(name, loads, area * LOOK);
+            chunkAt.put(name, new Object[] {key, x, z});
+        }
+    }
+
     private void end(MinecraftServer server, boolean complete) {
         finished = true;
+        if (startDayTime >= 0) record.days((server.getOverworld().getTimeOfDay() - startDayTime) / 24_000.0);
         if (measured > 0) record.server(tickNanosSum / measured / 1e6, worstTickNanos / 1e6, worstTickAt, over50, over200, heapMax / (1024 * 1024), measured);
         long run = startTick < 0 ? 0 : lastTick - startTick;
         String build = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("kindred")

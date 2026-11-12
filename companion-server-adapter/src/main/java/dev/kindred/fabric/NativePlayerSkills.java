@@ -116,7 +116,7 @@ final class NativePlayerSkills {
             case "native_harvest" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("slot", "replant"),
                     Set.of("harvest", "pickup"), Set.of(dev.kindred.core.EditPolicy.Kind.BREAK),
                     Duration.ofSeconds(10), Duration.ofSeconds(6), 0);
-            case "native_sleep" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(),
+            case "native_sleep" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("anchor"),
                     Set.of("sleep"), Set.of(),
                     Duration.ofSeconds(10), Duration.ofSeconds(5), 0);
             case "native_ignite_portal" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(),
@@ -132,7 +132,7 @@ final class NativePlayerSkills {
             case "native_goto" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("range", "partial", "nodes", "sprint", "drop", "avoid", "engage", "centre",
                     "centre_within", "hold", "leg", "safe", "fall", "horse", "ride_slot"), Set.of("move"), Set.of(),
                     Duration.ofSeconds(60), Duration.ofSeconds(10), 0);
-            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot", "over_lava"), Set.of("break", "pickup"),
+            case "native_break" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of("collect", "guarded", "underfoot", "over_lava", "carried_bed"), Set.of("break", "pickup"),
                     Set.of(dev.kindred.core.EditPolicy.Kind.BREAK), Duration.ofSeconds(30), Duration.ofSeconds(30), 0);
             case "native_discard" -> new SkillDescriptor(id, Set.of("slot", "count"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);

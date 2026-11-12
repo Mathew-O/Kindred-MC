@@ -96,4 +96,15 @@ class EvalScenarioTest {
         assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("starters=Kindred; founders=2; mode=factions"), "more founders than players");
         assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("founders=1"), "founders only in a faction world");
     }
+
+    @Test
+    void nightsInBedAreOnUnlessSaidAndOffReadsBack() {
+        assertTrue(EvalScenario.parse("goal=nether").sleep());
+        var off = EvalScenario.parse("goal=nether; sleep=off");
+        assertFalse(off.sleep());
+        assertTrue(off.asText().endsWith("; sleep=off"), off.asText());
+        assertEquals(off, EvalScenario.parse(off.asText()));
+        assertFalse(EvalScenario.parse("goal=nether").asText().contains("sleep"), "the default is not written");
+        assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("sleep=maybe"));
+    }
 }
