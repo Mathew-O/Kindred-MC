@@ -1,0 +1,730 @@
+[
+ {
+  "run": "e40a21-2354e67",
+  "seed": "31102026",
+  "player": "Echo",
+  "from": 67565,
+  "to": 71791,
+  "minutes": 3.5,
+  "start": [
+   90,
+   59,
+   500
+  ],
+  "end": [
+   91,
+   62,
+   499
+  ],
+  "top": [
+   [
+    "Fill a bucket with water - Climb toward the surface for water: clear N, N, N",
+    20
+   ],
+   [
+    "Climb toward the surface for water: clear N, N, N",
+    13
+   ],
+   [
+    "Fill a bucket with water - Climb toward the surface for water: let what falls settle",
+    8
+   ],
+   [
+    "Climb toward the surface for water: let what falls settle",
+    7
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "p157-before-6a6d882",
+  "seed": "303",
+  "player": "Kindred",
+  "from": 37352,
+  "to": 41206,
+  "minutes": 3.2,
+  "start": [
+   92,
+   10,
+   66
+  ],
+  "end": [
+   85,
+   10,
+   64
+  ],
+  "top": [
+   [
+    "make a way elsewhere: land first",
+    55
+   ],
+   [
+    "make a way elsewhere: walk on",
+    54
+   ],
+   [
+    "dig toward elsewhere: step down",
+    54
+   ],
+   [
+    "Tunnel past liquid toward lava: advance",
+    14
+   ]
+  ],
+  "kind": "other: make a way elsewhere: land first"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "505",
+  "player": "Sol",
+  "from": 117778,
+  "to": 122027,
+  "minutes": 3.5,
+  "start": [
+   46,
+   58,
+   56
+  ],
+  "end": [
+   44,
+   65,
+   52
+  ],
+  "top": [
+   [
+    "Climb toward the surface for logs: clear N, N, N",
+    28
+   ],
+   [
+    "Gather a log for spare sticks - Climb toward the surface for logs: clear N, N, N",
+    25
+   ],
+   [
+    "Walk to water at N, N, N",
+    22
+   ],
+   [
+    "Climb toward the surface for logs: let what falls settle",
+    11
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "31102026",
+  "player": "Echo",
+  "from": 115699,
+  "to": 119912,
+  "minutes": 3.5,
+  "start": [
+   61,
+   59,
+   448
+  ],
+  "end": [
+   59,
+   62,
+   447
+  ],
+  "top": [
+   [
+    "Fill a bucket with water - Climb toward the surface for water: clear N, N, N (tried elsewhere N times)",
+    25
+   ],
+   [
+    "Climb toward the surface for water: clear N, N, N",
+    16
+   ],
+   [
+    "Fill a bucket with water - Climb toward the surface for water: let what falls settle (tried elsewhere N times)",
+    7
+   ],
+   [
+    "Climb toward the surface for water: let what falls settle",
+    6
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "p157-before-6a6d882",
+  "seed": "31102026",
+  "player": "Echo",
+  "from": 116777,
+  "to": 121132,
+  "minutes": 3.6,
+  "start": [
+   -75,
+   58,
+   134
+  ],
+  "end": [
+   -72,
+   65,
+   134
+  ],
+  "top": [
+   [
+    "Gather logs for sticks - Climb toward the surface for logs: clear N, N, N",
+    16
+   ],
+   [
+    "Climb toward the surface for logs: clear N, N, N",
+    11
+   ],
+   [
+    "Gather logs for sticks - Climb toward the surface for logs: let what falls settle",
+    7
+   ],
+   [
+    "Gather logs for sticks - Climb toward the surface for logs: back the way it came",
+    5
+   ]
+  ],
+  "kind": "other: Gather logs for sticks - Climb toward the surface for logs: clear N, N"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "31102026",
+  "player": "Kindred",
+  "from": 19756,
+  "to": 23882,
+  "minutes": 3.4,
+  "start": [
+   88,
+   28,
+   326
+  ],
+  "end": [
+   92,
+   35,
+   326
+  ],
+  "top": [
+   [
+    "Fill a bucket with water - Climb toward the surface for water: clear N, N, N",
+    31
+   ],
+   [
+    "Climb toward the surface for water: clear N, N, N",
+    27
+   ],
+   [
+    "Fill a bucket with water - Climb toward the surface for water: step up",
+    10
+   ],
+   [
+    "Climb toward the surface for water: step up",
+    10
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "606",
+  "player": "Sol",
+  "from": 108294,
+  "to": 111973,
+  "minutes": 3.1,
+  "start": [
+   148,
+   -54,
+   -4
+  ],
+  "end": [
+   149,
+   -54,
+   -4
+  ],
+  "top": [
+   [
+    "from handOverStep:N",
+    16
+   ]
+  ],
+  "kind": "other: from handOverStep:N"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "505",
+  "player": "Sol",
+  "from": 115605,
+  "to": 119823,
+  "minutes": 3.5,
+  "start": [
+   46,
+   58,
+   56
+  ],
+  "end": [
+   46,
+   60,
+   54
+  ],
+  "top": [
+   [
+    "Walk to water at N, N, N",
+    22
+   ],
+   [
+    "Fill a bucket with water - Walk to water at N, N, N",
+    21
+   ],
+   [
+    "Gather a log for spare sticks - Climb toward the surface for logs: clear N, N, N",
+    15
+   ],
+   [
+    "Fill a bucket with water - Climb toward the surface for water: clear N, N, N",
+    12
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "31102026",
+  "player": "Sol",
+  "from": 91678,
+  "to": 95819,
+  "minutes": 3.5,
+  "start": [
+   247,
+   55,
+   395
+  ],
+  "end": [
+   243,
+   59,
+   395
+  ],
+  "top": [
+   [
+    "Fill a bucket with water - Climb toward the surface for water: clear N, N, N",
+    28
+   ],
+   [
+    "Climb toward the surface for water: clear N, N, N",
+    22
+   ],
+   [
+    "Fill a bucket with water - Climb toward the surface for water: let what falls settle",
+    9
+   ],
+   [
+    "Climb toward the surface for water: let what falls settle",
+    6
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "707",
+  "player": "Kindred",
+  "from": 139617,
+  "to": 143608,
+  "minutes": 3.3,
+  "start": [
+   24,
+   62,
+   -5
+  ],
+  "end": [
+   34,
+   62,
+   -5
+  ],
+  "top": [
+   [
+    "dig toward elsewhere: clear N, N, N",
+    15
+   ],
+   [
+    "no progress here for a while - dig toward elsewhere: clear N, N, N",
+    13
+   ],
+   [
+    "dig toward elsewhere: advance",
+    10
+   ],
+   [
+    "no progress here for a while - dig toward elsewhere: advance",
+    8
+   ]
+  ],
+  "kind": "other: dig toward elsewhere: clear N, N, N"
+ },
+ {
+  "run": "p157-before-6a6d882",
+  "seed": "31102026",
+  "player": "Kindred",
+  "from": 19822,
+  "to": 24979,
+  "minutes": 4.3,
+  "start": [
+   130,
+   59,
+   323
+  ],
+  "end": [
+   128,
+   66,
+   325
+  ],
+  "top": [
+   [
+    "Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: step up (tried elsewhere N time)",
+    36
+   ],
+   [
+    "Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: clear N, N, N (tried elsewhere N time)",
+    26
+   ],
+   [
+    "Climb toward the surface for logs: step up",
+    23
+   ],
+   [
+    "Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came (tried elsewhere N time)",
+    21
+   ]
+  ],
+  "kind": "other: Gather logs for a table and a wooden pickaxe - Climb toward the surfac"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "31102026",
+  "player": "Echo",
+  "from": 92640,
+  "to": 96320,
+  "minutes": 3.1,
+  "start": [
+   85,
+   62,
+   441
+  ],
+  "end": [
+   81,
+   68,
+   439
+  ],
+  "top": [
+   [
+    "Climb toward the surface for water: clear N, N, N",
+    18
+   ],
+   [
+    "Climb toward the surface for water: let what falls settle",
+    7
+   ],
+   [
+    "Climb toward the surface for water: back the way it came",
+    6
+   ],
+   [
+    "Climb toward the surface for water: step up",
+    5
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "8675309",
+  "player": "Kindred",
+  "from": 82778,
+  "to": 86486,
+  "minutes": 3.1,
+  "start": [
+   3,
+   -54,
+   62
+  ],
+  "end": [
+   6,
+   -54,
+   63
+  ],
+  "top": [
+   [
+    "fight back - Hold the passage against cave_spider",
+    1
+   ],
+   [
+    "inventory full - Drop surplus cobbled deepslate",
+    1
+   ],
+   [
+    "inventory full - Drop surplus cobblestone",
+    1
+   ],
+   [
+    "inventory full - Drop surplus spider eye",
+    1
+   ]
+  ],
+  "kind": "other: fight back - Hold the passage against cave_spider"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "202",
+  "player": "Sol",
+  "from": 21965,
+  "to": 27503,
+  "minutes": 4.6,
+  "start": [
+   -37,
+   36,
+   4
+  ],
+  "end": [
+   -42,
+   46,
+   -2
+  ],
+  "top": [
+   [
+    "Climb toward the surface for logs: step up",
+    23
+   ],
+   [
+    "Climb toward the surface for logs: back the way it came",
+    19
+   ],
+   [
+    "Gather logs for sticks - Climb toward the surface for logs: step up (tried elsewhere N time)",
+    5
+   ],
+   [
+    "Gather logs for sticks - Climb toward the surface for logs: back the way it came (tried elsewhere N time)",
+    4
+   ]
+  ],
+  "kind": "other: Climb toward the surface for logs: step up"
+ },
+ {
+  "run": "p157-before-6a6d882",
+  "seed": "303",
+  "player": "Echo",
+  "from": 19776,
+  "to": 26764,
+  "minutes": 5.8,
+  "start": [
+   131,
+   91,
+   -3
+  ],
+  "end": [
+   133,
+   95,
+   -10
+  ],
+  "top": [
+   [
+    "Place a crafting table",
+    33
+   ],
+   [
+    "on the way, for what comes later - Place a crafting table (tried elsewhere N time)",
+    32
+   ],
+   [
+    "take workstations along - Pick up the crafting table (tried elsewhere N time)",
+    32
+   ],
+   [
+    "Pick up the crafting table",
+    32
+   ]
+  ],
+  "kind": "build"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "505",
+  "player": "Kindred",
+  "from": 53120,
+  "to": 56720,
+  "minutes": 3.0,
+  "start": [
+   -80,
+   44,
+   -117
+  ],
+  "end": [
+   -75,
+   44,
+   -110
+  ],
+  "top": [
+   [
+    "Climb toward the surface for water: out from under the water: clear N, N, N",
+    28
+   ],
+   [
+    "Climb toward the surface for water: out from under the water: advance",
+    20
+   ],
+   [
+    "Climb toward water at N, N, N: out from under the water: clear N, N, N",
+    18
+   ],
+   [
+    "Climb toward water at N, N, N: clear N, N, N",
+    10
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "e40a21-2354e67",
+  "seed": "303",
+  "player": "Kindred",
+  "from": 67752,
+  "to": 71411,
+  "minutes": 3.0,
+  "start": [
+   -103,
+   -8,
+   22
+  ],
+  "end": [
+   -104,
+   -15,
+   27
+  ],
+  "top": [
+   [
+    "dig toward elsewhere: let what falls settle",
+    163
+   ],
+   [
+    "Dig down toward lava: clear N, N, N",
+    12
+   ],
+   [
+    "Explore the cave toward lava",
+    5
+   ],
+   [
+    "Look around",
+    3
+   ]
+  ],
+  "kind": "other: dig toward elsewhere: let what falls settle"
+ },
+ {
+  "run": "p157-before-6a6d882",
+  "seed": "303",
+  "player": "Echo",
+  "from": 68400,
+  "to": 74737,
+  "minutes": 5.3,
+  "start": [
+   120,
+   91,
+   -180
+  ],
+  "end": [
+   122,
+   95,
+   -187
+  ],
+  "top": [
+   [
+    "Place a crafting table",
+    31
+   ],
+   [
+    "Pick up the crafting table",
+    30
+   ],
+   [
+    "on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    26
+   ],
+   [
+    "take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    26
+   ]
+  ],
+  "kind": "build"
+ },
+ {
+  "run": "p157-after-ec581d5",
+  "seed": "31102026",
+  "player": "Echo",
+  "from": 68646,
+  "to": 72493,
+  "minutes": 3.2,
+  "start": [
+   -122,
+   61,
+   149
+  ],
+  "end": [
+   -125,
+   68,
+   153
+  ],
+  "top": [
+   [
+    "Climb toward the surface for water: clear N, N, N",
+    28
+   ],
+   [
+    "Climb toward the surface for water: let what falls settle",
+    10
+   ],
+   [
+    "Climb toward the surface for water: step up",
+    9
+   ],
+   [
+    "Fill a bucket with water - Climb toward the surface for water: clear N, N, N (tried elsewhere N times)",
+    7
+   ]
+  ],
+  "kind": "water"
+ },
+ {
+  "run": "p157-after-ec581d5",
+  "seed": "31102026",
+  "player": "Kindred",
+  "from": 100640,
+  "to": 104800,
+  "minutes": 3.5,
+  "start": [
+   -50,
+   0,
+   23
+  ],
+  "end": [
+   -48,
+   7,
+   22
+  ],
+  "top": [
+   [
+    "Gather logs for a crafting table - Climb toward the surface for logs: clear N, N, N",
+    10
+   ],
+   [
+    "Climb toward the surface for logs: step up",
+    7
+   ],
+   [
+    "Climb toward the surface for logs: clear N, N, N",
+    7
+   ],
+   [
+    "Gather logs for a crafting table - Climb toward the surface for logs: let what falls settle",
+    6
+   ]
+  ],
+  "kind": "table loop"
+ }
+]
