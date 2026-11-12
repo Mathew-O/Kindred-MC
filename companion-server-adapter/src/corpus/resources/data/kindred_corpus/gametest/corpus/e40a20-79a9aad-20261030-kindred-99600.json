@@ -1,0 +1,715 @@
+{
+ "kind": "spell",
+ "player": "Kindred",
+ "tick": 99600,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -181,
+  52,
+  90
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.683491608821242,
+  8.0,
+  16.675675552240747
+ ],
+ "yaw": 278.56888,
+ "pitch": 13.172441,
+ "health": 12.030001,
+ "food": 11,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:spruce_log",
+    "count": 3
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 4
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 14
+    }
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 21
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 23
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 6
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 29
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 7
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 3
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:lava_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 46
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 6
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:mossy_cobblestone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:spruce_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 0,
+ "timeOfDay": 3599,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward 0, 125, -1",
+ "task": "try elsewhere, toward 0, 125, -1",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+ "memory": {
+  "version": 1,
+  "blocked": [],
+  "failures": [
+   {
+    "at": [
+     20,
+     4,
+     14
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     16,
+     9,
+     17
+    ],
+    "n": 1
+   }
+  ],
+  "approaches": [],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    17,
+    5,
+    14
+   ],
+   [
+    17,
+    4,
+    14
+   ],
+   [
+    17,
+    7,
+    15
+   ],
+   [
+    17,
+    7,
+    16
+   ],
+   [
+    17,
+    6,
+    15
+   ],
+   [
+    17,
+    9,
+    16
+   ],
+   [
+    17,
+    9,
+    17
+   ],
+   [
+    17,
+    8,
+    15
+   ],
+   [
+    17,
+    8,
+    16
+   ],
+   [
+    17,
+    8,
+    17
+   ],
+   [
+    17,
+    10,
+    17
+   ],
+   [
+    16,
+    5,
+    14
+   ],
+   [
+    16,
+    5,
+    15
+   ],
+   [
+    16,
+    4,
+    14
+   ],
+   [
+    16,
+    7,
+    15
+   ],
+   [
+    16,
+    7,
+    17
+   ],
+   [
+    16,
+    6,
+    14
+   ],
+   [
+    16,
+    6,
+    15
+   ],
+   [
+    16,
+    9,
+    17
+   ],
+   [
+    16,
+    9,
+    16
+   ],
+   [
+    16,
+    8,
+    17
+   ],
+   [
+    16,
+    8,
+    16
+   ],
+   [
+    16,
+    10,
+    16
+   ],
+   [
+    15,
+    5,
+    14
+   ],
+   [
+    15,
+    4,
+    14
+   ],
+   [
+    14,
+    5,
+    14
+   ],
+   [
+    14,
+    4,
+    14
+   ],
+   [
+    13,
+    5,
+    14
+   ],
+   [
+    13,
+    4,
+    14
+   ],
+   [
+    12,
+    5,
+    14
+   ],
+   [
+    12,
+    4,
+    14
+   ],
+   [
+    11,
+    5,
+    14
+   ],
+   [
+    11,
+    4,
+    14
+   ],
+   [
+    10,
+    5,
+    14
+   ],
+   [
+    10,
+    4,
+    14
+   ],
+   [
+    9,
+    5,
+    14
+   ],
+   [
+    9,
+    4,
+    14
+   ],
+   [
+    8,
+    5,
+    14
+   ],
+   [
+    8,
+    4,
+    14
+   ],
+   [
+    7,
+    5,
+    14
+   ],
+   [
+    7,
+    4,
+    14
+   ],
+   [
+    6,
+    5,
+    14
+   ],
+   [
+    6,
+    4,
+    14
+   ],
+   [
+    5,
+    5,
+    14
+   ],
+   [
+    5,
+    4,
+    14
+   ],
+   [
+    4,
+    5,
+    14
+   ],
+   [
+    4,
+    4,
+    14
+   ],
+   [
+    3,
+    5,
+    14
+   ],
+   [
+    3,
+    4,
+    14
+   ],
+   [
+    2,
+    5,
+    14
+   ],
+   [
+    2,
+    4,
+    14
+   ],
+   [
+    1,
+    5,
+    14
+   ],
+   [
+    1,
+    4,
+    14
+   ],
+   [
+    0,
+    5,
+    14
+   ],
+   [
+    0,
+    4,
+    14
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    17,
+    4,
+    14
+   ],
+   [
+    17,
+    8,
+    14
+   ],
+   [
+    13,
+    4,
+    14
+   ],
+   [
+    13,
+    8,
+    14
+   ],
+   [
+    9,
+    4,
+    14
+   ],
+   [
+    5,
+    4,
+    14
+   ],
+   [
+    1,
+    4,
+    14
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "COAL_ORE": [
+    [
+     16,
+     4,
+     15
+    ],
+    [
+     16,
+     3,
+     14
+    ],
+    [
+     17,
+     3,
+     14
+    ]
+   ],
+   "CAVE": [
+    [
+     13,
+     4,
+     14
+    ],
+    [
+     9,
+     4,
+     14
+    ],
+    [
+     8,
+     4,
+     14
+    ]
+   ]
+  },
+  "exploreStalls": 11,
+  "exploreFailures": 26,
+  "stuckSpells": 3,
+  "stuckLevel": 3,
+  "leftOut": 10581
+ },
+ "log": [
+  "[14:56:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:56:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:56:55] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:56:56] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:56:58] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:56:59] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:57:00] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:57:00] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:57:01] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:57:03] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:57:04] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:57:05] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+  "[14:57:10] [Server thread/INFO]: Kindred native_break CANCELLED: Stopped or unavailable [Climb to find another way: clear -165, 61, 107]",
+  "[14:57:17] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -165, 60, 106]",
+  "[14:57:18] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -165, 61, 106]",
+  "[14:57:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+  "[14:57:18] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear -165, 62, 106]",
+  "[14:57:32] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus cobbled deepslate]",
+  "[14:57:32] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus diorite]",
+  "[14:57:32] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus raw copper]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "20261030",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/20261030/replays/world/Kindred-99600",
+  "class": "stuck: hemmed in",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166), with its goal's own memory of the box (#198, put back by #201): passes when its goal gains something or it stays out of the 8 blocks it was caught in for the budget's last half (#190)"
+ }
+}

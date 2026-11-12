@@ -1,0 +1,55 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; sleep=off",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 14.33, "tickMsWorst": 920.64, "tickMsWorstAt": 5838, "ticksOver50ms": 487, "ticksOver200ms": 11, "heapMbMax": 1029, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 680, "stone_tools": 1440, "iron_ingot": 16620, "iron_pickaxe": 24760, "obsidian": 55131},
+      "deaths": [
+        {"tick": 5337, "cause": "Kindred was shot by Skeleton", "x": 12, "y": 40, "z": -74, "light": 0, "timeOfDay": 5499, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 8668, "cause": "Kindred was blown up by Creeper", "x": -9, "y": 26, "z": -105, "light": 0, "timeOfDay": 8830, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 60660, "x": 207, "y": -54, "z": -76, "attempt": 1}, {"tick": 64300, "x": 207, "y": -54, "z": -76, "attempt": 2}, {"tick": 67900, "x": 207, "y": -54, "z": -77, "attempt": 3}, {"tick": 89340, "x": 202, "y": -54, "z": -78, "attempt": 1}, {"tick": 95700, "x": 209, "y": -54, "z": -76, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8449,
+      "chunkMinutes": 34670.4
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1100, "stone_tools": 4600, "iron_ingot": 8340, "iron_pickaxe": 29060, "obsidian": 77717, "portal_lit": 79630},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4310,
+      "chunkMinutes": 34680.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 980, "stone_tools": 1800, "iron_ingot": 29200, "iron_pickaxe": 41960},
+      "deaths": [
+        {"tick": 18380, "cause": "Echo was blown up by Creeper", "x": -4, "y": 19, "z": -120, "light": 0, "timeOfDay": 18542, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Interrupted: Fight creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5094,
+      "chunkMinutes": 34675.2
+    }
+  }
+}

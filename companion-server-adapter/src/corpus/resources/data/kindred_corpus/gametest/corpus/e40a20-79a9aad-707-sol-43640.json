@@ -1,0 +1,664 @@
+{
+ "kind": "spell",
+ "player": "Sol",
+ "tick": 43640,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  70,
+  55,
+  68
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.409506544590258,
+  8.0,
+  16.45326133758114
+ ],
+ "yaw": 438.37228,
+ "pitch": 18.144222,
+ "health": 20.0,
+ "food": 9,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 2
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 41
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 86
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 2
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:spruce_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 28
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 13
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 55
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:rotten_flesh",
+    "count": 2
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 3
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:spruce_log",
+    "count": 4
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 5
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 4
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 5
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 54
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:spruce_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 6,
+ "timeOfDay": 19639,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 2 times)",
+ "task": "Tunnel past liquid toward lava: advance",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+ "memory": {
+  "version": 1,
+  "blocked": [],
+  "failures": [],
+  "approaches": [
+   {
+    "at": [
+     8,
+     7,
+     20
+    ],
+    "n": 1
+   }
+  ],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    11,
+    11,
+    7
+   ],
+   [
+    10,
+    6,
+    17
+   ],
+   [
+    10,
+    5,
+    17
+   ],
+   [
+    10,
+    4,
+    17
+   ],
+   [
+    11,
+    6,
+    17
+   ],
+   [
+    11,
+    5,
+    17
+   ],
+   [
+    11,
+    7,
+    17
+   ],
+   [
+    13,
+    9,
+    17
+   ],
+   [
+    12,
+    6,
+    17
+   ],
+   [
+    12,
+    8,
+    17
+   ],
+   [
+    12,
+    7,
+    17
+   ],
+   [
+    12,
+    11,
+    7
+   ],
+   [
+    13,
+    8,
+    17
+   ],
+   [
+    13,
+    7,
+    17
+   ],
+   [
+    14,
+    8,
+    16
+   ],
+   [
+    14,
+    7,
+    16
+   ],
+   [
+    14,
+    9,
+    16
+   ],
+   [
+    15,
+    7,
+    17
+   ],
+   [
+    16,
+    8,
+    18
+   ],
+   [
+    16,
+    7,
+    18
+   ],
+   [
+    16,
+    9,
+    18
+   ],
+   [
+    4,
+    0,
+    17
+   ],
+   [
+    5,
+    0,
+    17
+   ],
+   [
+    5,
+    1,
+    17
+   ],
+   [
+    6,
+    0,
+    17
+   ],
+   [
+    6,
+    2,
+    17
+   ],
+   [
+    6,
+    1,
+    17
+   ],
+   [
+    7,
+    2,
+    17
+   ],
+   [
+    7,
+    1,
+    17
+   ],
+   [
+    7,
+    3,
+    17
+   ],
+   [
+    25,
+    10,
+    25
+   ],
+   [
+    25,
+    10,
+    26
+   ],
+   [
+    25,
+    9,
+    25
+   ],
+   [
+    25,
+    9,
+    26
+   ],
+   [
+    25,
+    9,
+    27
+   ],
+   [
+    8,
+    2,
+    17
+   ],
+   [
+    8,
+    4,
+    17
+   ],
+   [
+    8,
+    3,
+    17
+   ],
+   [
+    9,
+    5,
+    17
+   ],
+   [
+    25,
+    8,
+    26
+   ],
+   [
+    25,
+    8,
+    27
+   ],
+   [
+    25,
+    7,
+    27
+   ],
+   [
+    9,
+    7,
+    21
+   ],
+   [
+    9,
+    4,
+    17
+   ],
+   [
+    9,
+    3,
+    17
+   ]
+  ],
+  "tunnelled": [
+   [
+    16,
+    8,
+    16
+   ]
+  ],
+  "visitedCaves": [
+   [
+    10,
+    5,
+    16
+   ],
+   [
+    10,
+    1,
+    16
+   ],
+   [
+    14,
+    5,
+    16
+   ],
+   [
+    14,
+    9,
+    16
+   ],
+   [
+    22,
+    5,
+    24
+   ],
+   [
+    6,
+    1,
+    16
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "WATER": [
+    [
+     17,
+     7,
+     17
+    ],
+    [
+     6,
+     7,
+     21
+    ],
+    [
+     5,
+     7,
+     22
+    ],
+    [
+     5,
+     7,
+     23
+    ],
+    [
+     17,
+     7,
+     15
+    ],
+    [
+     18,
+     7,
+     15
+    ],
+    [
+     18,
+     7,
+     16
+    ],
+    [
+     15,
+     7,
+     17
+    ],
+    [
+     14,
+     7,
+     17
+    ],
+    [
+     16,
+     7,
+     17
+    ],
+    [
+     16,
+     7,
+     18
+    ]
+   ]
+  },
+  "strandedAt": [
+   17,
+   8,
+   16
+  ],
+  "strandedWalks": 1,
+  "strandedAgo": 17,
+  "exploreStalls": 1,
+  "exploreFailures": 9,
+  "stuckSpells": 2,
+  "stuckLevel": 2,
+  "leftOut": 4758
+ },
+ "log": [
+  "[16:03:10] [Server thread/INFO]: Sol native_goto COMPLETED [Get out of the water: to dry ground]",
+  "[16:03:10] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 170, 63, 36 [Cast: walk toward the lava at 172, 63, 35]",
+  "[16:03:10] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 172, 63, 39 [Cast: walk toward the lava at 174, 63, 38]",
+  "[16:03:10] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 172, 63, 39 [Cast: walk toward the lava at 174, 63, 38]",
+  "[16:03:12] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 37 [Cast: walk toward the lava at 173, 63, 36]",
+  "[16:03:12] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 37 [Cast: walk toward the lava at 173, 63, 36]",
+  "[16:03:12] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 38 [Cast: walk toward the lava at 174, 63, 37]",
+  "[16:03:12] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 38 [Cast: walk toward the lava at 174, 63, 37]",
+  "[16:03:14] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 170, 63, 36 [Cast: walk toward the lava at 173, 63, 35]",
+  "[16:03:14] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 170, 63, 36 [Cast: walk toward the lava at 173, 63, 35]",
+  "[16:03:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 38 [Cast: walk toward the lava at 174, 63, 36]",
+  "[16:03:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 38 [Cast: walk toward the lava at 174, 63, 36]",
+  "[16:03:18] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 37 [Cast: walk toward the lava at 174, 63, 35]",
+  "[16:03:18] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 171, 63, 37 [Cast: walk toward the lava at 174, 63, 35]",
+  "[16:03:19] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 170, 63, 36 [Cast: walk toward the lava at 174, 63, 34]",
+  "[16:03:19] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 170, 63, 36 [Cast: walk toward the lava at 174, 63, 34]",
+  "[16:03:20] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 170, 63, 35 [Cast: walk toward the lava at 174, 63, 33]",
+  "[16:03:20] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 170, 63, 35 [Cast: walk toward the lava at 174, 63, 33]",
+  "[16:03:57] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 111, 63, 84 [try elsewhere, toward 111, 63, 84]",
+  "[16:03:57] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward lava: advance]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "707",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/707/replays/world/Sol-43640",
+  "class": "stuck: no walkable route",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166), with its goal's own memory of the box (#198, put back by #201): passes when its goal gains something or it stays out of the 8 blocks it was caught in for the budget's last half (#190)"
+ }
+}
