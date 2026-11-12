@@ -64,3 +64,15 @@ For seed 110's bamboo loop: the follow-up to the logs-kept-out line (`F-27a-gath
     - **Order of fetching:** either side fetched cobblestone first in about half its runs, so the order is not this change's. On main, 4 of 6 runs went cobblestone first.
     - **The one failure (capM-2):** an explore walked off the fixture's raised field. Then came "Out of the ground for logs", up 3 stairs, explore west again and the barrier edge, about 200 times. Nothing in that loop touches the cap. In the runs with a temporary diagnostic, the trees' logs were known throughout.
     - **What it leaves open:** why the build's log gather came back empty that once. A diagnostic of the logs kept out follows separately. #235's barrier skip may remove the loop, and capM-2's pattern is to be checked against it once #235 merges.
+
+## Main merged in (f009244): the cap moves into the core's Sight
+- **Why:** main moved WorldKnowledge's memory into companion-core's `Sight` (F-35f, 47e306a and 5de6a60). The cap's eviction moves with it.
+  - `Sight.remember` now drops the farthest tenth of a full kind, measured from the feet of `Sight.scan`'s last call, the same place #219 measured from.
+  - `Sight.recall` still refuses at the cap, as before.
+  - `WorldKnowledge` keeps `centerAt`, `EVICT` and `maxPerKind` as delegations for `WorldKnowledgeCapTest`.
+- **The simulator's memory is now capped the same way:** `companion-sim` uses `Sight` too.
+- **Checks on the merge (aa92e0c):**
+  - `:companion-core:test`: 1010 tests passed.
+  - `:companion-sim:test`: 10 passed.
+  - `WorldKnowledgeCapTest`: 4 of 4.
+  - `NativeKnowledgeCapGameTests` and `NativeBaseGameTests` (the cabin): passed 3 of 3. Each cap run filled its log memory at tick 4 and knew all 3 of the tree's logs by tick 20, 1,803 known in all.
