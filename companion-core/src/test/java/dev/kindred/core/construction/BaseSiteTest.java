@@ -76,4 +76,31 @@ class BaseSiteTest {
         // And unknown ground is never built on.
         assertTrue(BaseSite.choose(new Field(3), 0, 0, 8, 9, 11, 10, List.of()).isEmpty());
     }
+
+    @Test
+    void withEverythingFittingTheChoiceIsTheSameAsWithoutTheRule() {
+        // Ground made uneven at random (seeded): the rule that lets every footprint through changes no choice.
+        var random = new java.util.Random(20261112L);
+        for (int trial = 0; trial < 200; trial++) {
+            var field = new Field(40);
+            for (int k = 0; k < 120; k++) field.set(random.nextInt(81) - 40, random.nextInt(81) - 40, 62 + random.nextInt(4), random.nextBoolean(), random.nextInt(12));
+            int ax = random.nextInt(21) - 10, az = random.nextInt(21) - 10, w = 5 + random.nextInt(5), d = 5 + random.nextInt(5);
+            var avoid = trial % 3 == 0 ? List.of(new BaseSite.Footprint(ax - 2, az - 2, ax + 2, az + 2)) : List.<BaseSite.Footprint>of();
+            assertEquals(BaseSite.choose(field, ax, az, 20, w, d, 5, avoid), BaseSite.choose(field, ax, az, 20, w, d, 5, avoid, footprint -> true),
+                    "trial " + trial);
+        }
+    }
+
+    @Test
+    void aSiteMayBeKeptToOneChunkAndTheNearestThatFitsIsChosen() {
+        // On flat ground the nearest site to (0, 0) straddles the chunk corner; kept to one chunk, a 9 by 9 goes wholly
+        // into one, the nearest such.
+        java.util.function.Predicate<BaseSite.Footprint> oneChunk = f -> f.minX() >> 4 == f.maxX() >> 4 && f.minZ() >> 4 == f.maxZ() >> 4;
+        var free = BaseSite.choose(new Field(40), 0, 0, 16, 9, 9, 6, List.of()).orElseThrow();
+        assertTrue(!oneChunk.test(new BaseSite.Footprint(free.x(), free.z(), free.x() + 8, free.z() + 8)), "the unruled site straddles: " + free);
+        var kept = BaseSite.choose(new Field(40), 0, 0, 16, 9, 9, 6, List.of(), oneChunk).orElseThrow();
+        assertTrue(oneChunk.test(new BaseSite.Footprint(kept.x(), kept.z(), kept.x() + 8, kept.z() + 8)), "the ruled site is in one chunk: " + kept);
+        // Nothing fits: nothing chosen.
+        assertEquals(Optional.empty(), BaseSite.choose(new Field(40), 0, 0, 16, 9, 9, 6, List.of(), f -> false));
+    }
 }

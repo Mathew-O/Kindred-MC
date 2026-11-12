@@ -1,0 +1,54 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; sleep=off",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 11.59, "tickMsWorst": 2416.57, "tickMsWorstAt": 1, "ticksOver50ms": 420, "ticksOver200ms": 8, "heapMbMax": 1093, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1240, "stone_tools": 3580, "iron_ingot": 14880, "iron_pickaxe": 25580, "obsidian": 41048, "portal_lit": 56365},
+      "deaths": [
+        {"tick": 67488, "cause": "Kindred was slain by Zombie", "x": 181, "y": -54, "z": 24, "light": 0, "timeOfDay": 19650, "dimension": "minecraft:overworld", "hunger": 5, "underSky": false, "stage": "Done: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3160,
+      "chunkMinutes": 34675.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1080, "stone_tools": 4540, "iron_ingot": 8480, "iron_pickaxe": 44620, "obsidian": 88002, "portal_lit": 95452},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 93020, "x": 312, "y": -54, "z": -17, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4194,
+      "chunkMinutes": 34680.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1440, "stone_tools": 3940, "iron_ingot": 13400, "iron_pickaxe": 37100},
+      "deaths": [
+        {"tick": 72340, "cause": "Echo was slain by Cave Spider", "x": 191, "y": -36, "z": -34, "light": 0, "timeOfDay": 502, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from cave_spider the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 25440, "x": 290, "y": 18, "z": -91, "attempt": 1}, {"tick": 43780, "x": 277, "y": 58, "z": -102, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5211,
+      "chunkMinutes": 34675.2
+    }
+  }
+}

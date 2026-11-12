@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 10.205,
+  "server": {"tickMsMean": 13.19, "tickMsWorst": 1438.39, "tickMsWorstAt": 5838, "ticksOver50ms": 544, "ticksOver200ms": 8, "heapMbMax": 1286, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 2020, "stone_tools": 3100, "iron_ingot": 10860, "iron_pickaxe": 40400},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 15620, "x": 153, "y": 18, "z": 97, "attempt": 1}, {"tick": 21940, "x": 153, "y": 18, "z": 112, "attempt": 1}, {"tick": 35540, "x": 156, "y": 17, "z": 102, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2800,
+      "chunkMinutes": 15042.5
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 920, "stone_tools": 1500, "iron_ingot": 6080, "iron_pickaxe": 52160, "obsidian": 58128, "portal_lit": 79294},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 66280, "x": 92, "y": 65, "z": -109, "attempt": 1}, {"tick": 70760, "x": 91, "y": 70, "z": -126, "attempt": 2}, {"tick": 75400, "x": 91, "y": 79, "z": -137, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2187,
+      "chunkMinutes": 34680.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 800, "stone_tools": 1660, "iron_ingot": 9380, "iron_pickaxe": 91580},
+      "deaths": [
+        {"tick": 65476, "cause": "Echo was slain by Zombie", "x": -63, "y": 61, "z": 138, "light": 0, "timeOfDay": 3260, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 104320, "x": -215, "y": 69, "z": -33, "attempt": 1}, {"tick": 117080, "x": -153, "y": 75, "z": -50, "attempt": 2}, {"tick": 132540, "x": -105, "y": 72, "z": -87, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5451,
+      "chunkMinutes": 34675.2
+    }
+  }
+}
