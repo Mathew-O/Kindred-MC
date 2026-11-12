@@ -4,3 +4,4 @@ f35j-109-before-973cc12 109 asked 160 completed 30 noroute 106 routeblocked 8 ca
 f35j-109-after-0476ee5 109 asked 214 completed 19 noroute 182 routeblocked 4 cancelled 9 otherBLOCKED 0 faction_completed 12
 f35j-110-before-973cc12 110 asked 112 completed 29 noroute 64 routeblocked 19 cancelled 0 otherBLOCKED 0 faction_completed 13
 f35j-110-after-0476ee5 110 asked 273 completed 23 noroute 208 routeblocked 34 cancelled 8 otherBLOCKED 0 faction_completed 10
+f35j1-110-affd0ac 110 asked 87 completed 17 noroute 57 routeblocked 13 cancelled 0 otherBLOCKED 0 faction_completed 18

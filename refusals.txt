@@ -1,0 +1,12 @@
+runs/f35j-110-before-973cc12/110/console.txt.gz
+  Echo: refusals 18 (No walkable route 14, Route to 4), within 2 s of previous 2
+  Kindred: refusals 14 (No walkable route 7, Route to 7), within 2 s of previous 2
+  Sol: refusals 51 (No walkable route 43, Route to 8), within 2 s of previous 6
+runs/f35j-110-after-0476ee5/110/console.txt.gz
+  Echo: refusals 211 (No walkable route 189, Route to 22), within 2 s of previous 115
+  Kindred: refusals 18 (No walkable route 12, Route to 6), within 2 s of previous 1
+  Sol: refusals 13 (No walkable route 7, Route to 6), within 2 s of previous 0
+runs/f35j1-110-affd0ac/110/console.txt.gz
+  Echo: refusals 28 (No walkable route 19, Route to 9), within 2 s of previous 2
+  Kindred: refusals 25 (No walkable route 25, Route to 0), within 2 s of previous 2
+  Sol: refusals 17 (No walkable route 13, Route to 4), within 2 s of previous 0
