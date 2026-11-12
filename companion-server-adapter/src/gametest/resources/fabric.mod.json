@@ -140,6 +140,7 @@
       "dev.kindred.fabric.NativeFactionRefusedLogsGameTests",
       "dev.kindred.fabric.NativeFactionTellGameTests",
       "dev.kindred.fabric.NativeFactionTradeGameTests",
+      "dev.kindred.fabric.NativeFactionWantsGameTests",
       "dev.kindred.fabric.NativeFactionsModeGameTests",
       "dev.kindred.fabric.NativeFactionsEvalGameTests",
       "dev.kindred.fabric.NativeFactionBackOffGameTests",

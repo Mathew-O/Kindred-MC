@@ -846,7 +846,7 @@ In a faction world:
   is pruned but settled action history. Measured with 3 AI players on seed 101 at 72 game days a real day (dragon goal, a build of
   2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
   The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
-  for a long run; a figure for eight players is to follow.
+  for a long run; for eight players and a month, see "A month-long run: what grows on disk" below.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
@@ -889,6 +889,37 @@ In a faction world:
   stand in, the standings, your faction's notices and the market's movers; H cycles full, compact and hidden. On an
   ordinary client the same essentials are in a sidebar, and crossing into other land is said once on the action bar.
   Nobody is sent another faction's private numbers.
+
+## A month-long run: what grows on disk
+
+Each figure names the run it was measured on. Sizes scale with the number of players and with what they do.
+
+- **`keepdb8-4c92b41`:** 8 AI players in Factions mode on seed 101, 6 game days, on main of 2026-11-11, with F-31b's fold and the gauge that counts every insert (#210).
+- **`keepdb-101-d640518`:** 3 AI players on seed 101 with the dragon goal, 12 game days, on a build of 2026-11-09 from before the fold.
+
+| What | Where | What bounds it | Measured |
+| --- | --- | --- | --- |
+| The World Record and ledgers | `<world>/kindred/companions.sqlite` | Nothing but F-31b's fold of settled action history (see F-31c) | **8 players:** 20.9 MB after day 1, 66.5 MB after day 6 (with its write-ahead log); about 12 MB a game day on days 1 and 2, then 6.2 to 8.9 (7.7 a day over days 3 to 6). **3 players, before the fold:** 11.3 MB after day 1, 40.5 MB after day 12; 1.3 to 1.8 MB a game day on days 8 to 12 |
+| Its write-ahead log | `companions.sqlite-wal` | SQLite's checkpoint every 1,000 pages. The store has one connection and one writer thread, so nothing holds the checkpoint off. Folded in and removed at a clean stop | About 4.2 MB at most: 4,173,592 bytes over 52,001 events in a probe; 4,169,472 on keepdb-101; none left after keepdb8's clean stop |
+| Region files | `<world>/region`, `entities`, `poi`, and the same under `DIM-1`, `DIM1` | Grow as new chunks are walked, so the world border bounds them | **8 players, 6 days:** overworld 27.1 MB region, 1.5 MB entities, 0.1 MB poi; Nether 15.0 MB region, 0.6 MB entities; no End. **3 players, 12 days:** 22.6 MB, overworld only |
+| The server log | `logs/latest.log`, rotated daily to `.log.gz` | Rotated, never deleted by the server | **8 players:** 1.46 MB of `latest.log` and a 0.44 MB `.gz` over the 6 days. **3 players, 12 days:** 4.9 MB (0.28 MB gzipped) |
+| Death and stuck replays | `kindred/replays/` (beside the world) | Written only with `KINDRED_REPLAYS=on` (on by default in evaluation runs); at most one a minute per player; never pruned | **8 players, 6 days:** 20 replays, 11.2 MB. **3 players, 12 days:** 3 replays, 2.0 MB. For a month run, leave it off or clear it by hand |
+| Encounter records | `kindred/encounters/<player>/` | Each fight's file stops at about 100 kB; the newest 50 are kept a player | 6.3 MB in 96 files for 8 players after 6 days; at most about 5 MB a player |
+| Players' memory, with each atlas | `<world>/kindred/memory/` | An atlas keeps at most 4,096 chunks, 1,024 danger cells and 64 shelters | 376 kB for 8 players: atlases 23 to 46 kB each, peers 8 to 10 kB each |
+| Settings and small files | `edits.properties`, `world.uuid`, `model-context/` | Fixed | Under 10 kB |
+
+**A month at 8 players.** The projection rests on these assumptions:
+- keepdb8's rate over days 3 to 6, 7.7 to 8.4 MB a game day, holds. On the 3-player run the rate fell again after day 8, so this is probably high.
+- Activity is the same as in that run.
+- The Record is stored as it is today (F-31c's option A).
+- No replays.
+
+| Span | Database | Region files | Logs (gzipped) |
+| --- | --- | --- | --- |
+| 30 game days | about 250 to 270 MB | grows with exploration; bounded by the border | under 5 MB |
+| 30 real days at the default 72 game days a day (2,160 game days) | about 16.5 to 18 GB | bounded by the border, not by time | about 0.2 GB |
+
+The database is the one thing that grows with time without a bound, and about 70% of its daily growth is the journal, kept twice (F-31c). The write-ahead log does not grow with time. The daily `Kindred cost:` log line gives the database's size and what was written, by kind, so a long run's growth can be read as it happens.
 
 ## Development native bodies
 Explicit development native bodies are available:
@@ -979,7 +1010,8 @@ come through. `tools/corpus/gate.sh` runs it three times and compares the result
 then runs any scene that newly fails alone, on the change and on main as the change has it (its merge-base with
 origin/main; `--main-ref REF` for another), before saying the change broke it.
 `KINDRED_CORPUS_ONLY=<id>,<id>` in the environment runs only those scenes.
-Nothing in a world is touched: the corpus runs in its own GameTest server.
+Nothing in a world is touched: the corpus runs in its own GameTest server. Each run starts from an empty corpus world: `build/corpus/world` and
+`build/corpus/kindred` are deleted first, so a run never depends on what earlier runs in that checkout left.
 
 ### The simulator (F-28)
 
