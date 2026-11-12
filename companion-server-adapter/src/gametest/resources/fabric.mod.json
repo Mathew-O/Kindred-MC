@@ -147,6 +147,7 @@
       "dev.kindred.fabric.NativeFactionsEvalGameTests",
       "dev.kindred.fabric.NativeFactionBackOffGameTests",
       "dev.kindred.fabric.NativeFactionBasinGameTests",
+      "dev.kindred.fabric.NativeFactionShelterGameTests",
       "dev.kindred.fabric.NativeFootingGameTests",
       "dev.kindred.fabric.NativeFactionOpenWaterGameTests",
       "dev.kindred.fabric.NativeLimitGameTests",

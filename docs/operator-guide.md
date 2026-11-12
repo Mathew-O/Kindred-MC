@@ -829,7 +829,8 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
 
 1. Build the server from `packs/factions/` (its README): the seven mods by the index's links, each checked against its
    SHA-512; the Fabric server launcher for 1.21.1 with Loader 0.19.5; the Kindred jar; the pack's `server.properties`,
-   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first.
+   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first: start the
+   pack once without the Kindred jar, stop it, archive `world/`, then add the jar (walked 2026-11-12).
 2. Start it, then at the console: `aiplayer mode world factions`, then `faction admin hub` (the safe zone, the borders,
    the hub built). The mode is kept across restarts.
 3. Pre-generate with Chunky (the README's commands); `spark tps` after should read 20. Use
@@ -839,10 +840,14 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    `execute positioned ~20 ~ ~20 positioned over world_surface run aiplayer native create <name>`, and the rest beside it
    with `execute at <first> positioned ~2 ~ ~ positioned over world_surface run ...`. Act for one with
    `/faction as <player> <request>` (`create`, `invite`, `join`, `claim`, `coins`, `shop price <item>`, `ah list`, ...).
+   The auction house works the same way: `/faction as <player> ah sell <start> [buyNow] [hours]` lists what the player
+   holds (25 coins a listing, five at a time, 48 hours unless given), `ah buy <id>` pays the buy-now price, and the seller
+   is paid it less 3%.
 5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
    `aiplayer native connect <UUID>` for each.
 6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
-   read from the console.
+   read from the console. The overworld's size, centre and warning distance are in `world/level.dat` once the server
+   has stopped (BorderSize, BorderCenterX/Z, BorderWarningBlocks).
 
 In a faction world:
 

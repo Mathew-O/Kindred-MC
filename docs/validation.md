@@ -42,6 +42,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
 - F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
+- F-35h2, no faction walk out through its own night shelter's seal (Factions 110): [evidence](evidence/F-35h2.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
 - F-35j1, a refused faction walk's wait served and open water set aside counted toward the pause (Factions 110): [evidence](evidence/F-35j1.md).
@@ -53,6 +54,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
+
+- [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
 
 ## A founder claims the ground its first base will stand on (M-06i) — 12 November 2026 (`claude/m06i-base-site-1111`)
 
@@ -118,6 +123,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
 - [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs.
+- [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs; the build green on the merged tree; the corpus gate passes, its three flagged scenes cleared by the lead (reasons in the evidence).
 - [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
