@@ -146,6 +146,7 @@
       "dev.kindred.fabric.NativeFactionBasinGameTests",
       "dev.kindred.fabric.NativeFactionOpenWaterGameTests",
       "dev.kindred.fabric.NativeLimitGameTests",
+      "dev.kindred.fabric.NativeHearingGameTests",
       "dev.kindred.fabric.NativeHudGameTests",
       "dev.kindred.fabric.NativeMatchFrameworkGameTests",
       "dev.kindred.fabric.NativeManhuntGameTests",
