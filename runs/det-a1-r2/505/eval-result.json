@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=24000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 24000,
+  "ticksRun": 24000,
+  "complete": true,
+  "days": 1.000,
+  "server": {"tickMsMean": 9.04, "tickMsWorst": 458.27, "tickMsWorstAt": 5838, "ticksOver50ms": 8, "ticksOver200ms": 1, "heapMbMax": 744, "samples": 1200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 640, "stone_tools": 2120},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 16820, "x": 2, "y": 46, "z": -36, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1475,
+      "chunkMinutes": 5780.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1280, "stone_tools": 3140, "iron_ingot": 9340},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1054,
+      "chunkMinutes": 5780.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 900, "stone_tools": 2700, "iron_ingot": 8220},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 509,
+      "chunkMinutes": 5780.0
+    }
+  }
+}

@@ -1,0 +1,84 @@
+===== a1-r1 vs a1-r2
+Echo: same for 2 lines; first difference at line 3, about tick 211 / 218
+   A: goal at -7 72 -7: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: native_goto COMPLETED [Approach pig]
+Kindred: same for 1 lines; first difference at line 2, about tick 105 / 109
+   A: goal at -7 72 -7: Wood: Stock some food while animals are around - Hunt pig
+   B: goal at -1 73 -3: Wood: Stock some food while animals are around - Hunt pig
+   last common: goal at 1 73 0: Wood: Stock some food while animals are around - Approach pig
+Sol: same for 1 lines; first difference at line 2, about tick 211 / 109
+   A: native_goto COMPLETED [Approach pig]
+   B: goal at -2 73 1: Wood: Stock some food while animals are around - Hunt pig
+   last common: goal at 4 73 3: Wood: Stock some food while animals are around - Approach pig
+FIRST: (105, 'Kindred')
+===== a1-r1 vs a1-r3
+Echo: same for 2 lines; first difference at line 3, about tick 211 / 200
+   A: goal at -7 72 -7: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: native_goto COMPLETED [Approach pig]
+Kindred: same for 1 lines; first difference at line 2, about tick 105 / 100
+   A: goal at -7 72 -7: Wood: Stock some food while animals are around - Hunt pig
+   B: goal at -3 73 -8: Wood: Stock some food while animals are around - Hunt pig
+   last common: goal at 1 73 0: Wood: Stock some food while animals are around - Approach pig
+Sol: same for 2 lines; first difference at line 3, about tick 211 / 100
+   A: goal at -7 72 -7: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: native_goto COMPLETED [Approach pig]
+FIRST: (100, 'Kindred')
+===== a1-r2 vs a1-r3
+Echo: same for 4 lines; first difference at line 5, about tick 218 / 200
+   A: native_goto COMPLETED [Approach pig]
+   B: goal at -7 73 -11: Wood: Stock some food while animals are around - Hunt pig
+   last common: native_goto COMPLETED [Approach pig]
+Kindred: same for 1 lines; first difference at line 2, about tick 109 / 100
+   A: goal at -1 73 -3: Wood: Stock some food while animals are around - Hunt pig
+   B: goal at -3 73 -8: Wood: Stock some food while animals are around - Hunt pig
+   last common: goal at 1 73 0: Wood: Stock some food while animals are around - Approach pig
+Sol: same for 1 lines; first difference at line 2, about tick 109 / 100
+   A: goal at -2 73 1: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: goal at 4 73 3: Wood: Stock some food while animals are around - Approach pig
+FIRST: (100, 'Kindred')
+===== a2-r1 vs a2-r2
+Echo: same for 1 lines; first difference at line 2, about tick 289 / 322
+   A: native_goto COMPLETED [Approach pig]
+   B: goal at 0 73 -5: Wood: Stock some food while animals are around - Hunt pig
+   last common: goal at 7 73 6: Wood: Stock some food while animals are around - Approach pig
+Kindred: same for 1 lines; first difference at line 2, about tick 217 / 81
+   A: native_goto COMPLETED [Approach pig]
+   B: goal at 0 73 -4: Wood: Stock some food while animals are around - Hunt pig
+   last common: goal at 1 73 0: Wood: Stock some food while animals are around - Approach pig
+Sol: same for 1 lines; first difference at line 2, about tick 289 / 242
+   A: native_goto COMPLETED [Approach pig]
+   B: goal at 1 73 -6: Wood: Stock some food while animals are around - Hunt pig
+   last common: goal at 4 73 3: Wood: Stock some food while animals are around - Approach pig
+FIRST: (81, 'Kindred')
+===== a2-r1 vs a2-r3
+Echo: same for 2 lines; first difference at line 3, about tick 434 / 367
+   A: goal at -6 73 -9: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: native_goto COMPLETED [Approach pig]
+Kindred: same for 2 lines; first difference at line 3, about tick 289 / 220
+   A: native_goto COMPLETED [Approach pig]
+   B: goal at -4 73 -10: Wood: Stock some food while animals are around - Hunt pig
+   last common: native_goto COMPLETED [Approach pig]
+Sol: same for 3 lines; first difference at line 4, about tick 434 / 367
+   A: goal at -5 72 -1: Wood: Stock some food while animals are around - Hunt pig
+   B: goal at -4 73 -12: Wood: Stock some food while animals are around - Hunt pig
+   last common: native_goto COMPLETED [Approach pig]
+FIRST: (220, 'Kindred')
+===== a2-r2 vs a2-r3
+Echo: same for 1 lines; first difference at line 2, about tick 322 / 367
+   A: goal at 0 73 -5: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: goal at 7 73 6: Wood: Stock some food while animals are around - Approach pig
+Kindred: same for 1 lines; first difference at line 2, about tick 81 / 220
+   A: goal at 0 73 -4: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: goal at 1 73 0: Wood: Stock some food while animals are around - Approach pig
+Sol: same for 1 lines; first difference at line 2, about tick 242 / 294
+   A: goal at 1 73 -6: Wood: Stock some food while animals are around - Hunt pig
+   B: native_goto COMPLETED [Approach pig]
+   last common: goal at 4 73 3: Wood: Stock some food while animals are around - Approach pig
+FIRST: (81, 'Kindred')

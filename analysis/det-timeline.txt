@@ -1,0 +1,8 @@
+14:50:40 arm1 r1 (builds 5cfe873)
+14:55:59 arm1 r1 exit 0
+14:55:59 jar /home/user/Kindred-MC/run/eval/src/5cfe873f27/companion-server-adapter/build/libs/kindred-mc-0.1.0-SNAPSHOT.jar 676611ec39e2deef
+15:00:14 arm1 r2 exit 0
+15:04:54 arm1 r3 exit 0
+15:04:54 arm2 start (3 at once)
+15:11:30 arm2 done
+15:11:30 ALL DONE

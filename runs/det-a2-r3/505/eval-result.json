@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=24000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 24000,
+  "ticksRun": 24000,
+  "complete": true,
+  "days": 1.000,
+  "server": {"tickMsMean": 13.27, "tickMsWorst": 1053.17, "tickMsWorstAt": 2186, "ticksOver50ms": 243, "ticksOver200ms": 5, "heapMbMax": 1182, "samples": 1200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 880, "stone_tools": 2400, "iron_ingot": 4980, "iron_pickaxe": 22600},
+      "deaths": [
+        {"tick": 23083, "cause": "Kindred fell from a high place", "x": -46, "y": -22, "z": -23, "light": 0, "timeOfDay": 23245, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: Mine iron ore (4/12) - Explore the cave toward iron", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1852,
+      "chunkMinutes": 5775.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1140, "stone_tools": 2740, "iron_ingot": 17380},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1172,
+      "chunkMinutes": 5780.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 2960, "iron_ingot": 9860, "iron_pickaxe": 23240},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1122,
+      "chunkMinutes": 5780.0
+    }
+  }
+}
