@@ -43,9 +43,14 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
+- F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## An AI player buys and bids for what its run lacks (M-06i) — 12 November 2026 (`claude/m06i-wants-1111`)
+
+- [M-06i: an AI player buys and bids for what its run lacks](evidence/M-06i.md#an-ai-player-buys-and-bids-for-what-its-run-lacks-2026-11-12-claudem06i-wants-1111).
 
 ## A tree on land it may not work set aside in its plan (M-06i) — 11 November 2026 (`claude/m06i-refused-logs-1111`)
 
