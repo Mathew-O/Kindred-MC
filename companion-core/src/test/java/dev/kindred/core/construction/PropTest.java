@@ -55,6 +55,35 @@ class PropTest {
         }
     }
 
+    /**
+     * A bed's foot over a floor plank the build set aside (refused while an animal stood in its cell): never propped in
+     * the plank's cell, which is still the build's, but waiting on that plank, named by the step's target (E-70a1).
+     * Not told what was set aside, the planner props the bed there: the defect that left a cabin one plank short, its
+     * prop walled in under the bed by the rest of the floor.
+     */
+    @Test
+    void aBedOverAFloorPlankSetAsideWaitsOnThePlankAndIsNeverProppedInItsCell() {
+        var cells = BuildTestSites.flat();
+        Pos owedPlank = new Pos(1, 1, 1);
+        for (int x = 0; x <= 2; x++) for (int z = 0; z <= 2; z++) {
+            Pos at = new Pos(x, 1, z);
+            if (!at.equals(owedPlank)) cells.put(at, BuildTestSites.solid("minecraft:oak_planks"));
+        }
+        var bed = List.of(new Blueprint.Block(new Pos(1, 2, 1), BlockSpec.parse("minecraft:red_bed[facing=north,part=foot]")));
+        var setAside = List.of(new Blueprint.Block(owedPlank, BlockSpec.of("minecraft:oak_planks")));
+        var held = Set.of("minecraft:red_bed", "minecraft:oak_planks", "minecraft:dirt");
+        Pos feet = new Pos(1, 1, 4);
+
+        var unaware = ConstructionPlanner.next(bed, List.of(), new BuildSite(cells), feet, held, Set.of());
+        assertEquals(ConstructionPlanner.Kind.SUPPORT, unaware.kind(), "the defect: " + unaware.reason());
+        assertEquals(owedPlank, unaware.target(), "propped in the plank's cell: " + unaware.reason());
+
+        var step = ConstructionPlanner.next(bed, List.of(), new BuildSite(cells), feet, held, Set.of(), Set.of(), 0, setAside);
+        assertEquals(ConstructionPlanner.Kind.BLOCKED, step.kind(), step.reason());
+        assertEquals(owedPlank, step.target(), step.reason());
+        assertTrue(step.reason().startsWith(ConstructionPlanner.WAITS_ON_SET_ASIDE), step.reason());
+    }
+
     @Test
     void aBlockWithAFaceToBeSetAgainstIsNotPropped() {
         var blocks = List.of(new Blueprint.Block(new Pos(3, 1, 0), BlockSpec.parse("minecraft:oak_log[axis=x]")),
