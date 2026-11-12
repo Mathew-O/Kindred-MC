@@ -46,6 +46,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## An evaluation run's preset traits saved as one change (M-06i) — 12 November 2026 (`claude/m06i-eval-presets-1111`)
+
+- [M-06i: an evaluation run's preset traits saved as one change](evidence/M-06i.md#an-evaluation-runs-preset-traits-saved-as-one-change-2026-11-12-claudem06i-eval-presets-1111).
+
 ## A tree on land it may not work set aside in its plan (M-06i) — 11 November 2026 (`claude/m06i-refused-logs-1111`)
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).

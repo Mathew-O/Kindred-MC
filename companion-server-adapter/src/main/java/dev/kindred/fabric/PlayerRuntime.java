@@ -16835,21 +16835,40 @@ final class PlayerRuntime {
 
     /**
      * An evaluation run's preset traits for one AI player (founders and joiners, M-06i), set as its administrator would
-     * set them and saved once; bounded weights only, nothing more.
+     * set them and saved once; bounded weights only, nothing more. The traits make one new personality, saved as one
+     * change: the store takes a profile one revision on, and one revision per trait was refused, leaving the player's
+     * profile ahead of its saved one for the rest of the run, so every later profile change of its was refused too.
+     * As the administrator's own change ({@link #socialSetting}): in effect at once, and a failed save stops the player
+     * for storage inspection.
      */
     void personalityForEval(UUID id, Map<Personality.Trait, Integer> traits) {
         requireThread();
         Entry entry = entries.get(id);
         if (entry == null || !entry.profileWrite.isDone()) return;
         SocialProfile previous = entry.profile;
-        SocialProfile changed = previous;
-        for (var t : traits.entrySet()) changed = changed.withTrait(t.getKey(), t.getValue());
+        Personality next = previous.personality();
+        for (var t : traits.entrySet()) next = next.withTrait(t.getKey(), t.getValue());
+        SocialProfile changed = previous.withPersonality(next);
         entry.profile = changed;
         socials.reset(id);
         entry.profileWrite = store.saveProfile(changed, previous.revision());
-        entry.profileWrite.whenComplete((saved, failure) -> {
-            if (failure != null) KindredMod.LOGGER.error("An evaluation run's preset traits for {} were not saved", id, failure);
-        });
+        entry.profileWrite.whenComplete((saved, failure) -> handBack(() -> {
+            if (!running || failure == null) return;
+            entry.metadataFault = true;
+            halt(entry, Actor.console(), "Profile save failed; companion stopped for storage inspection.");
+            KindredMod.LOGGER.error("An evaluation run's preset traits for {} were not saved", id, failure);
+        }));
+    }
+
+    /** For fixtures: the player's profile as the runtime holds it, and its last profile write. */
+    SocialProfile profileForTest(UUID id) {
+        requireThread();
+        return entries.get(id).profile;
+    }
+
+    CompletableFuture<SocialProfile> profileWriteForTest(UUID id) {
+        requireThread();
+        return entries.get(id).profileWrite;
     }
 
     /** The faction world's whole history audited against its locked rules (M-06i), read off the server thread. */
