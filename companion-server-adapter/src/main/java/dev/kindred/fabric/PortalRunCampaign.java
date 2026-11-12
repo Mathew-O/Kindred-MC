@@ -2,6 +2,10 @@ package dev.kindred.fabric;
 
 import dev.kindred.core.EditPolicy;
 import dev.kindred.core.guide.TaskQueue;
+import dev.kindred.core.route.Cell;
+import dev.kindred.core.route.DigTerrain;
+import dev.kindred.core.route.Digger;
+import dev.kindred.core.route.Side;
 import dev.kindred.core.guide.Worth;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
@@ -59,11 +63,9 @@ final class PortalRunCampaign {
 
     private static final double REACH = 4.3;
     /** Standing where a cut trunk stood, a player reaches the log this many blocks over its feet (eye 1.62, reach 4.3). */
-    private static final int TRUNK_REACH = 5;
+    private static final int TRUNK_REACH = dev.kindred.core.route.Sight.TRUNK_REACH;
     /** Iron is most common around Y=16; coal in caves well above deepslate, which has very little. */
     private static final int IRON_TOP = 56, IRON_TARGET = 16, COAL_TARGET = 48;
-    /** Branch mining: legs this long, side steps this wide (two solid blocks between legs, each wall seen). */
-    private static final int BRANCH_LEG = 20, BRANCH_STEP = 3;
     /** Exploration stays within this many blocks of where the run started, so the player can find its way back. */
     private static final int EXPLORE_RADIUS = 192;
     /**
@@ -85,7 +87,7 @@ final class PortalRunCampaign {
      * as lakes are wide: dense legs find a small vein, not a lake, and in the world saves of the live pair on a4df9b4
      * these found lava within 800 blocks mined five times as often as the diamond legs at Y=-55 (F-25c4ac).
      */
-    private static final int LAVA_TOP = -54, LAVA_TARGET = -57, LAVA_BRANCH_LEG = 48, LAVA_BRANCH_STEP = 16;
+    private static final int LAVA_TOP = -54, LAVA_TARGET = -57;
 
     private boolean huntersKit;
     private final WorldKnowledge knowledge = new WorldKnowledge();
@@ -101,13 +103,9 @@ final class PortalRunCampaign {
     /** A walk back to a sighting that failed: no lead again until then. */
     private long leadFailedUntil;
     private final Set<Long> ownWorkstations = new HashSet<>();
-    private final Map<Long, Long> blockedUntil = new HashMap<>();
-    /** Targets the player could not walk to; consulted when choosing what to gather, never when digging. */
-    private final Map<Long, Long> unreachableUntil = new HashMap<>();
-    /** Where the player stood when each unreachable target failed: it stays unreachable from around there. */
-    private final Map<Long, BlockPos> unreachableFrom = new HashMap<>();
+    /** Cells and columns given up on for now (F-35e: the core's ledger). */
+    private final dev.kindred.core.route.SetAside cellsAside = new dev.kindred.core.route.SetAside();
     private BlockPos lastFeet = BlockPos.ORIGIN;
-    private final Map<Long, Integer> failures = new HashMap<>();
     private final Map<Long, Integer> approaches = new HashMap<>();
     private final Map<Task, Integer> repeatFailures = new HashMap<>();
     /**
@@ -120,26 +118,16 @@ final class PortalRunCampaign {
     private long strandedTick;
     static final int STRANDED = 3;
     private final Map<Task, Long> setAside = new HashMap<>();
-    private Direction digDirection = Direction.NORTH;
+    /** Its own ways up, down and along through rock, and the heading it digs along (F-35e: the core's). */
+    private final dev.kindred.core.route.Digger digger = new dev.kindred.core.route.Digger();
     /** Where a spell hurt and out of food last had open sky over its head (F-25c4ag); none outside such a spell. */
     private BlockPos hungryUpAt;
-    /** Where a climb last found water over its ceiling every way up, when, and the way it tunnels out (F-25c4ah). */
-    private BlockPos underWaterAt;
-    private long underWaterTick;
-    private Direction underWaterHeading;
     /**
-     * Where its climb last began along under the water, and where and when that climb was given up, the water over its
-     * tunnel too wide to get out from under (F-35g).
+     * Whether such a spell has had it on top: under the sky with no rim beside it. From then on its looks are its own for
+     * the spell (F-22c65): on a hillside, a step up out from under a rim and the look down again, it climbed and looked
+     * by turns (the corpus's kindred-48005).
      */
-    private BlockPos underWaterFrom, underWaterGaveUpAt;
-    private long underWaterGaveUpTick = Long.MIN_VALUE / 2;
-    /**
-     * How far along under the water a climb goes, with no dry ceiling over it, before it is given up: a leg of its branch
-     * mine, {@link #BRANCH_LEG}, the longest straight run the campaign digs. That is more than the 707 lake's 18 blocks
-     * across, which a climb is known to get out from under (F-25c4cq); 606's sea in E-40's iteration 18 (`e40a18`) was
-     * open water for forty blocks round Kindred (F-35g).
-     */
-    static final int UNDER_WATER_REACH = BRANCH_LEG;
+    private boolean hungryOnTop;
     /** The steps of filling its bucket from the water over its head (F-35g), and the progress line's words for them. */
     private enum Overhead { OPEN, FILL, SEAL, DRAIN }
     static final String OVERHEAD = "Water over its head";
@@ -186,20 +174,14 @@ final class PortalRunCampaign {
     private final Map<java.util.UUID, Long> ignoredFoes = new HashMap<>();
     private long foeUntil;
     private BlockPos home;
-    /** Cells this player cleared for its own staircases and tunnels. */
-    private final Set<Long> dug = new HashSet<>();
     /** 4×4×4 cells of cave the player has already walked through; exploration heads for the rest. */
     private final Set<Long> visitedCaves = new HashSet<>();
-    /** Where tunnelling has already advanced: walking an old corridor back and forth is not progress. */
-    private final Set<Long> tunnelled = new HashSet<>();
     /** Cells the player has stood in, oldest first, this life: the way back out it knows is walkable. */
     private final java.util.ArrayDeque<BlockPos> trail = new java.util.ArrayDeque<>();
     private static final int TRAIL_LENGTH = 4096;
     /** A run from a creeper found no way out: until then, wall it off or fight it instead. */
     private long runFailedUntil;
     private long backOffFailedUntil;
-    private int branchRun;
-    private boolean branchSide, branchStepping;
     /** Knowledge sweeps to wait for before digging: the first look at goal start, then one after each cave stride. */
     private int lookUntilSweep = 1;
     private long dropSiteUntil;
@@ -229,9 +211,6 @@ final class PortalRunCampaign {
     /** A sealed passage is let go only once no hostile mob has been within six blocks of it for this long (F-25c4dc). */
     private static final int SEAL_RELEASE = 200;
     private static final String SEAL_LABEL = ": seal the passage";
-    /** Pillars beside the water refused where it stood, by the cell, and until when they count (F-25c4bf). */
-    private final Map<Long, Integer> pillarMisses = new HashMap<>();
-    private final Map<Long, Long> pillarMissesUntil = new HashMap<>();
     private EditPolicy.ServerPolicy policy = EditPolicy.ServerPolicy.deferredD4();
 
     /** Lava source L to convert, the air cell W to pour water into, and the stand cell S beyond it. */
@@ -722,7 +701,7 @@ final class PortalRunCampaign {
                 Direction first = Direction.byName(task.args().getOrDefault("dirs", "").split(",")[0]);
                 if (first != null) aside = aside.offset(first);
             }
-            blockedUntil.merge(aside.asLong(), tick + 1200, Math::max);
+            cellsAside.until(aside.asLong(), tick + 1200);
         }
         // A walk back to a drop: one that ends by it, one more look round and on. One that ends short of it, refused or
         // stopped at the nearest it could get to, passes that drop over for the next nearest, three times at most. A kit
@@ -752,7 +731,7 @@ final class PortalRunCampaign {
         // A cell over the pocket it could not open, or a walk back to it that found no way: set aside, not tried again and again.
         if (task != null && !completed && position(task.args()) != null
                 && task.label().startsWith(POCKET_OPEN)) {
-            blockedUntil.put(position(task.args()).asLong(), tick + 1200);
+            cellsAside.put(position(task.args()).asLong(), tick + 1200);
         }
         if (task != null && task.label().startsWith(LAVA_LEG_LABEL)) {
             boolean nearer = completed && lavaLegFrom != null && lavaLegFrom.getSquaredDistance(lastFeet) >= 8 * 8;
@@ -799,10 +778,7 @@ final class PortalRunCampaign {
         // A pillar beside the water refused where it stood (F-25c4bf).
         if (task != null && !completed && "native_pillar".equals(task.skill()) && task.label().endsWith(": pillar up beside the water")
                 && position(task.args()) != null) {
-            long cell = position(task.args()).asLong();
-            if (pillarMissesUntil.getOrDefault(cell, Long.MIN_VALUE) < tick) pillarMisses.remove(cell);
-            pillarMisses.merge(cell, 1, Integer::sum);
-            pillarMissesUntil.put(cell, tick + 1200);
+            digger.pillarMissed(cell(position(task.args())), tick);
         }
         if (task != null && completed && task.label().contains(": open its shelter at ") && position(task.args()) != null) {
             ownSeals.remove(position(task.args()).asLong());
@@ -823,7 +799,7 @@ final class PortalRunCampaign {
         }
         if (task != null && !completed && "native_goto".equals(task.skill()) && task.label().startsWith("Walk to the chest")
                 && position(task.args()) != null) {
-            blockedUntil.merge(position(task.args()).asLong(), tick + 2400, Math::max);
+            cellsAside.until(position(task.args()).asLong(), tick + 2400);
         }
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Walk to")) {
             BlockPos reached = position(task.args());
@@ -832,7 +808,7 @@ final class PortalRunCampaign {
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().startsWith("Pick up ")
                 && !task.label().equals("Pick up food") && position(task.args()) != null) {
             BlockPos at = position(task.args()); // A drop that keeps drifting off is let go after a few tries.
-            if (approaches.merge(at.asLong(), 1, Integer::sum) >= 3) blockedUntil.put(at.asLong(), tick + 1200);
+            if (approaches.merge(at.asLong(), 1, Integer::sum) >= 3) cellsAside.put(at.asLong(), tick + 1200);
         }
         if (task != null && completed && task.label().startsWith("Explore the cave") && position(task.args()) != null) {
             BlockPos at = position(task.args());
@@ -840,7 +816,7 @@ final class PortalRunCampaign {
             lookUntilSweep = knowledge.sweeps() + 2; // Finish the sweep under way, then one full look from here.
         }
         if (task != null && completed && task.label().startsWith("Branch mine") && task.label().endsWith("advance")) {
-            branchTurn(task.label().startsWith("Branch mine for lava"));
+            digger.branchAdvanced(task.label().startsWith("Branch mine for lava"));
         }
         // A cell over lava opened: the lava under it is in plain view from where it stands (F-25c4ac).
         if (task != null && completed && "native_break".equals(task.skill()) && "true".equals(task.args().get("over_lava"))) {
@@ -851,22 +827,20 @@ final class PortalRunCampaign {
             planted.add(position(task.args()).asLong());
         }
         if (task != null && completed && "native_break".equals(task.skill()) && task.label().contains(": clear ") && position(task.args()) != null) {
-            if (dug.size() > 20_000) dug.clear();
-            dug.add(position(task.args()).asLong());
+            digger.dug(cell(position(task.args())));
         }
         if (task != null && completed && task.label().endsWith(": advance") && position(task.args()) != null) {
-            if (tunnelled.size() > 20_000) tunnelled.clear();
-            tunnelled.add(position(task.args()).asLong());
+            digger.tunnelled(cell(position(task.args())));
         }
         if (task != null && completed && task.label().equals("Jump down from the ledge") && position(task.args()) != null) {
             // A last resort taken once: landing there again (bobbing in the same pool, say) would only loop.
             BlockPos landed = position(task.args());
             for (BlockPos near : BlockPos.iterate(landed.add(-2, -2, -2), landed.add(2, 2, 2))) {
-                blockedUntil.merge(near.asLong(), tick + 1200, Math::max);
+                cellsAside.until(near.asLong(), tick + 1200);
             }
         }
         if (task != null && completed && task.label().startsWith("Hole up: seal") && position(task.args()) != null) {
-            blockedUntil.merge(position(task.args()).asLong(), tick + CAVE_DANGER_TICKS, Math::max); // Leave the wall standing.
+            cellsAside.until(position(task.args()).asLong(), tick + CAVE_DANGER_TICKS); // Leave the wall standing.
         }
         if (task != null && completed) repeatFailures.remove(task);
         if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) {
@@ -907,7 +881,7 @@ final class PortalRunCampaign {
             ignoredFoes.put(foe, tick + 600);
             foe = null;
         }
-        if (task.label().startsWith("Dig") || task.label().startsWith("Tunnel") || task.label().startsWith("Climb")) digDirection = digDirection.rotateYClockwise();
+        if (task.label().startsWith("Dig") || task.label().startsWith("Tunnel") || task.label().startsWith("Climb")) digDirection(digDirection().rotateYClockwise());
         if (task.label().startsWith("Obsidian")) obsidianSite = null;
         if ("native_goto".equals(task.skill()) && (task.label().startsWith("Portal") || task.label().equals("Cast: stand in front of the frame site"))) {
             portalSite = null; // Its stand is out of reach: choose again, without that spot.
@@ -1025,16 +999,7 @@ final class PortalRunCampaign {
 
     /** As above; {@code pool} skips the part of a pool around it too (six blocks each way, two up and down). */
     private void avoid(BlockPos pos, boolean column, boolean pool, long tick) {
-        int count = failures.merge(pos.asLong(), 1, Integer::sum);
-        long until = tick + (2400L << Math.min(count - 1, 5));
-        blockedUntil.merge(pos.asLong(), until, Math::max); // The exact target, whatever kind it was.
-        if (!column) return;
-        int across = pool ? 6 : 1, up = pool ? 2 : 6;
-        for (int dy = -up; dy <= up; dy++) for (int dx = -across; dx <= across; dx++) for (int dz = -across; dz <= across; dz++) {
-            long key = pos.add(dx, dy, dz).asLong();
-            unreachableUntil.merge(key, until, Math::max);
-            unreachableFrom.put(key, lastFeet);
-        }
+        cellsAside.avoid(cell(pos), column, pool, tick, cell(lastFeet));
     }
 
     /**
@@ -1092,10 +1057,7 @@ final class PortalRunCampaign {
 
     /** Skipped until its back-off ends and the player has moved well away from where the walk failed. */
     boolean unreachable(BlockPos pos) {
-        Long until = unreachableUntil.get(pos.asLong());
-        if (until == null) return false;
-        BlockPos from = unreachableFrom.get(pos.asLong());
-        return until > lastTick || from != null && from.getSquaredDistance(lastFeet) < 8 * 8;
+        return cellsAside.unreachable(cell(pos), lastTick, cell(lastFeet));
     }
 
     /** A task set aside for now after failing again and again: a leg offers another instead. */
@@ -1105,8 +1067,7 @@ final class PortalRunCampaign {
 
     boolean blocked(BlockPos pos) {
         if (coverHeld.contains(pos.asLong())) return true;
-        Long until = blockedUntil.get(pos.asLong());
-        return until != null && until > lastTick;
+        return cellsAside.blocked(pos.asLong(), lastTick);
     }
 
     /**
@@ -1114,7 +1075,7 @@ final class PortalRunCampaign {
      * as its own failed route edits are: the next table goes elsewhere (M-01a: one spot refused 1,890 times).
      */
     void setAside(BlockPos pos, long until) {
-        blockedUntil.merge(pos.asLong(), until, Math::max);
+        cellsAside.until(pos.asLong(), until);
     }
 
     private static BlockPos position(Map<String, String> args) {
@@ -1400,12 +1361,9 @@ final class PortalRunCampaign {
         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
         stuckLevel++;
         stuckClock = 0;
-        tunnelled.clear();
+        digger.forgetTunnelled();
         if (!elsewhere) {
-            blockedUntil.clear();
-            unreachableUntil.clear();
-            unreachableFrom.clear();
-            failures.clear();
+            cellsAside.clear();
             approaches.clear();
             repeatFailures.clear();
             setAside.clear();
@@ -1422,7 +1380,7 @@ final class PortalRunCampaign {
 
     /** The move elsewhere of attempt {@code level}: a heading turned once more for each, and every third home. */
     private void relocateFor(int level) {
-        Direction heading = digDirection;
+        Direction heading = digDirection();
         for (int i = 0; i < level; i++) heading = heading.rotateYClockwise();
         relocateTo(level % 3 == 0 && home != null && home.getSquaredDistance(lastFeet) > 16 * 16 ? home : lastFeet.offset(heading, 24));
     }
@@ -1437,7 +1395,7 @@ final class PortalRunCampaign {
         stuckLevel++;
         stuckClock = 0;
         relocateEarly = false;
-        tunnelled.clear();
+        digger.forgetTunnelled();
         KindredMod.LOGGER.info("Goal made no progress for {} ticks near {}; its move elsewhere toward {} goes on (attempt {})", stuckTicks,
                 lastFeet.toShortString(), relocate.toShortString(), stuckLevel);
     }
@@ -2179,7 +2137,7 @@ final class PortalRunCampaign {
         stuckSpells++;
         stuckLevel++;
         stuckClock = 0;
-        tunnelled.clear();
+        digger.forgetTunnelled();
         relocateTo(target);
     }
 
@@ -2230,7 +2188,7 @@ final class PortalRunCampaign {
         boolean alongX = Math.abs(dx) >= Math.abs(dz);
         Direction major = alongX ? (dx >= 0 ? Direction.EAST : Direction.WEST) : (dz >= 0 ? Direction.SOUTH : Direction.NORTH);
         Direction minor = alongX ? (dz >= 0 ? Direction.SOUTH : Direction.NORTH) : (dx >= 0 ? Direction.EAST : Direction.WEST);
-        digDirection = major;
+        digDirection(major);
         // Up first, until it is within two of the new place's level; from there on along, whatever the steps of the way
         // do to its level: a step down off the climb was a climb again (P19's corridor beside water).
         if (!relocateLevel && relocate.getY() > lastFeet.getY() + 2) {
@@ -2265,7 +2223,7 @@ final class PortalRunCampaign {
         if (made.isPresent()) return made;
         // Water or lava on either way (a flooded cave), or a block it cannot break: up and out instead (live run 54 tried
         // 18 times), but not over to a wall, which takes it back along the way for the tunnel to bring it here again.
-        digDirection = major;
+        digDirection(major);
         Optional<Task> up = climb(body, "climb away from here");
         if (up.isPresent() && !up.get().label().endsWith(": to the wall")) return climbed(up);
         endRelocating(); // Nothing works that way; the next stuck spell tries another.
@@ -2534,13 +2492,40 @@ final class PortalRunCampaign {
             boolean below = underground(player);
             if (!below) hungryUpAt = feet.toImmutable();
             else if (hungryUpAt != null && feet.getY() >= hungryUpAt.getY() - 3 && feet.getSquaredDistance(hungryUpAt) <= 32 * 32) below = false;
+            boolean band = hungryUpAt != null && feet.getY() >= hungryUpAt.getY() - 3 && feet.getY() <= hungryUpAt.getY()
+                    && feet.getSquaredDistance(hungryUpAt) <= 32 * 32;
             Optional<Task> food = below ? wayUp(body, "Climb toward the surface for food")
                     : hunt(body).or(() -> fish(body)).or(() -> groundBelow(player) ? explore(body, "animals") : Optional.empty());
+            // Within a few blocks of where it last had the sky, and still below a rim beside it, a look for animals whose
+            // walk would take it lower than there is not taken (on top, with no rim, it looks as before): it climbs on, the
+            // climb held until it is above there or has no step left; with no step left, it looks as before. Two up in its
+            // own climb's shaft out of a cut, the sky over it, its looks walked it back down to the cut's floor, still
+            // counted as up, and looked again, north, south, the climb never taken again (F-22c65).
+            boolean rim = belowRim(player.getServerWorld(), feet);
+            if (feet.equals(hungryUpAt) && !rim && !hungryOnTop) {
+                hungryOnTop = true;
+                KindredMod.LOGGER.info("{} hungry and on top at {}: its looks its own for the spell", player.getName().getString(), feet.toShortString());
+            }
+            if (band && hungryUpAt != null && rim && !hungryOnTop) {
+                boolean look = food.isPresent() && food.get().label().startsWith("Explore ");
+                if (climbHeld(player) || look && lookGoesDown(player, food.get(), hungryUpAt)) {
+                    // A climbing step only: a walk back the way it came is no climb. Held, its way up chosen afresh each
+                    // step, the walk back and the stair took turns, and with them the look, which walked it down again,
+                    // until it fell (the corpus's kindred-48005 under the gate). Its stair instead; with no step of that
+                    // either, it looks as before.
+                    var up = wayUp(body, "Climb toward the surface for food");
+                    if (up.isPresent() && up.get().label().endsWith(": back the way it came")) up = climb(body, "Climb toward the surface for food");
+                    if (up.isPresent()) food = up.map(this::heldClimb);
+                }
+            }
             if (food.isPresent()) {
                 progress = stageLabel(stage) + ": hurt and out of food - " + food.get().label();
                 return food;
             }
-        } else hungryUpAt = null;
+        } else {
+            hungryUpAt = null;
+            hungryOnTop = false;
+        }
         // Advised to surface and recover: up out of the dark first, in daylight, then heal fully before going on.
         boolean recovering = stance() == StrategyAdvice.Stance.SURFACE_AND_RECOVER;
         if (recovering && underground(player) && !dark) {
@@ -2738,7 +2723,7 @@ final class PortalRunCampaign {
             Optional<Task> up = climb(body, "Climb to find another way");
             if (up.isPresent()) {
                 paced(tick);
-                blockedUntil.merge(lastFeet.asLong(), lastTick + 2400, Math::max); // A dead end: do not step back down into it.
+                cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
                 progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
                 return up;
             }
@@ -3685,19 +3670,6 @@ final class PortalRunCampaign {
     }
 
     /**
-     * Branch mining: after a leg of {@link #BRANCH_LEG} blocks, step {@link #BRANCH_STEP} to one side and run
-     * the next leg back the other way, alternating sides so the legs zigzag across fresh stone. For lava the legs are
-     * {@link #LAVA_BRANCH_LEG} long and {@link #LAVA_BRANCH_STEP} apart.
-     */
-    private void branchTurn(boolean lava) {
-        if (++branchRun < (branchStepping ? (lava ? LAVA_BRANCH_STEP : BRANCH_STEP) : (lava ? LAVA_BRANCH_LEG : BRANCH_LEG))) return;
-        branchRun = 0;
-        digDirection = branchSide ? digDirection.rotateYCounterclockwise() : digDirection.rotateYClockwise();
-        if (branchStepping) branchSide = !branchSide;
-        branchStepping = !branchStepping;
-    }
-
-    /**
      * In the dark underground (no block light where it stands), place an owned torch, crafting four from its own
      * coal and a stick when it has none and coal to spare. Hostile mobs spawn only in darkness, so a torch every
      * dozen blocks keeps the way it works and walks clear of new spawns.
@@ -3732,9 +3704,9 @@ final class PortalRunCampaign {
         // dropping off as the staircase went on); in a one-wide staircase, on the step behind and above.
         var spots = new java.util.ArrayList<BlockPos>();
         for (Direction direction : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
-            if (direction != digDirection) spots.add(feet.offset(direction));
+            if (direction != digDirection()) spots.add(feet.offset(direction));
         }
-        spots.add(feet.up().offset(digDirection.getOpposite()));
+        spots.add(feet.up().offset(digDirection().getOpposite()));
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
@@ -4008,8 +3980,8 @@ final class PortalRunCampaign {
             if (out) unreachableCount++;
             if (why.size() >= 8) continue;
             String reason = !knows ? "not known"
-                    : aside ? (coverHeld.contains(log.asLong()) ? "set aside: cover held" : "set aside until " + blockedUntil.get(log.asLong()) + " after " + failures.getOrDefault(log.asLong(), 0) + " failures")
-                    : out ? "unreachable until " + unreachableUntil.get(log.asLong()) + " from " + (unreachableFrom.get(log.asLong()) == null ? "-" : unreachableFrom.get(log.asLong()).toShortString())
+                    : aside ? (coverHeld.contains(log.asLong()) ? "set aside: cover held" : "set aside until " + cellsAside.blockedUntil().get(log.asLong()) + " after " + cellsAside.failures().getOrDefault(log.asLong(), 0) + " failures")
+                    : out ? "unreachable until " + cellsAside.unreachableUntil().get(log.asLong()) + " from " + (cellsAside.unreachableFrom(log.asLong()) == null ? "-" : pos(cellsAside.unreachableFrom(log.asLong())).toShortString())
                     : dangerous(log) ? "dangerous"
                     : log.equals(feet.down()) ? "its own support"
                     : log.getSquaredDistance(feet) > radius * radius ? "beyond " + radius
@@ -4017,7 +3989,7 @@ final class PortalRunCampaign {
                     : !harvestable(body, log) ? "not harvestable"
                     : !mayWork(player, log) ? "may not work here"
                     : log.getY() > feet.getY() + TRUNK_REACH ? "above its trunk reach"
-                    : trunkFoot(world, log).isEmpty() ? (builtIn(world, log) ? "built in" : "no trunk foot")
+                    : trunkFoot(world, log).isEmpty() ? (WorldKnowledge.builtIn(world, log) ? "built in" : "no trunk foot")
                     : "usable, " + approaches.getOrDefault(log.asLong(), 0) + " approaches";
             why.add(log.toShortString() + " " + reason + (gone ? ", tree given up" : ""));
         }
@@ -4092,12 +4064,13 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
+        var dig = new WorldDig(world);
         var harvest = new java.util.HashMap<BlockState, Boolean>();
         // Nor a block below its feet whose breaking would leave no ground within a safe drop under it, the dig-down's own
         // landing rule (landingWithin): on a floor one block thick over a drop, mined from round where it stood, it
         // stepped into the hole and fell thirty blocks (#224's CI, the back-off fixture's sky island; F-35l).
         return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
-                && (p.getY() >= feet.getY() || landingWithin(world, p, feet))
+                && (p.getY() >= feet.getY() || Digger.landingWithin(dig, cell(p), cell(feet)))
                 && also.test(p)
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(world, p))
                 && mayWork(player, p)
@@ -4108,45 +4081,13 @@ final class PortalRunCampaign {
     /**
      * Where a player stands to chop {@code log}: on solid ground under its trunk, at most {@link #TRUNK_REACH} blocks
      * below it, through the trunk or the cells where its lower logs were cut. Nothing for logs held up by leaves, or
-     * hanging higher, which would need a pillar, or for a column of logs built into something ({@link #builtIn}): a
-     * player short of logs cut the corner posts out of its own cabin (E-08d). Planning and gathering both use it, so a
-     * log the player would not go for is never a tree in sight either.
+     * hanging higher, which would need a pillar, or for a column of logs built into something (touching planks, stairs,
+     * slabs, a wall, a door, a fence, glass, a pane, wool or a bed, as a hut's corner post does; never cobblestone, dirt or
+     * stone): a player short of logs cut the corner posts out of its own cabin (E-08d). Planning and gathering both use
+     * it, so a log the player would not go for is never a tree in sight either. The core's rule (F-35f: {@code Sight}).
      */
     private static Optional<BlockPos> trunkFoot(ServerWorld world, BlockPos log) {
-        if (builtIn(world, log)) return Optional.empty();
-        BlockPos below = log.down();
-        for (int depth = 1; depth <= TRUNK_REACH + 1; depth++, below = below.down()) {
-            BlockState state = world.getBlockState(below);
-            // The rest of a trunk whose bottom logs were cut is still chopped from the ground beneath it.
-            if (state.isAir()) continue;
-            if (state.isIn(BlockTags.LOGS)) {
-                if (builtIn(world, below)) return Optional.empty();
-                continue;
-            }
-            return !state.getCollisionShape(world, below).isEmpty() && !state.isIn(BlockTags.LEAVES) ? Optional.of(below.up()) : Optional.empty();
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * A log built into something rather than grown: touching planks, stairs, slabs, a wall, a door, a fence, glass, a
-     * pane, wool or a bed, as a hut's or a cabin's corner post does (its floor under it, its roof over it). Never
-     * cobblestone or dirt, which the player's own scaffolding beside a trunk is, nor stone, which trees grow against.
-     * A neighbour in a chunk not loaded counts as nothing built.
-     */
-    private static boolean builtIn(ServerWorld world, BlockPos log) {
-        for (Direction direction : Direction.values()) {
-            BlockPos next = log.offset(direction);
-            if (!world.isChunkLoaded(next.getX() >> 4, next.getZ() >> 4)) continue;
-            BlockState state = world.getBlockState(next);
-            if (state.isIn(BlockTags.PLANKS) || state.isIn(BlockTags.STAIRS) || state.isIn(BlockTags.SLABS) || state.isIn(BlockTags.WALLS)
-                    || state.isIn(BlockTags.DOORS) || state.isIn(BlockTags.TRAPDOORS) || state.isIn(BlockTags.FENCES)
-                    || state.isIn(BlockTags.FENCE_GATES) || state.isIn(BlockTags.WOOL) || state.isIn(BlockTags.BEDS)
-                    || state.isIn(BlockTags.IMPERMEABLE) || state.getBlock() instanceof net.minecraft.block.PaneBlock) {
-                return true;
-            }
-        }
-        return false;
+        return WorldKnowledge.trunkFoot(world, log);
     }
 
     /**
@@ -4201,19 +4142,53 @@ final class PortalRunCampaign {
         var player = body.entity();
         // Over the void a cut leads nowhere and spends the island.
         if (exploreStalls >= 2 && exploreHeading != null && groundBelow(player)) {
-            digDirection = exploreHeading;
+            digDirection(exploreHeading);
             // Along the ground it stands on, never a step down: from the rim of a pit it had climbed, the step down was
             // back into the pit, and its climb out again, by turns (F-25c4an).
-            int floor = tunnelFloor;
-            tunnelFloor = player.getBlockY();
+            int floor = digger.tunnelFloor();
+            digger.tunnelFloor(player.getBlockY());
             try {
                 Optional<Task> cut = tunnel(body, "Cut through " + exploreHeading.asString() + " for " + what);
                 if (cut.isPresent()) return cut;
             } finally {
-                tunnelFloor = floor;
+                digger.tunnelFloor(floor);
             }
         }
         return explore(player, what);
+    }
+
+    /**
+     * The last look for animals planned, by (feet, where it last had the sky, the look's target): searched once for them.
+     * The target too: a look west refused there, the look north from the same spot took the west one's answer and
+     * walked down unplanned (F-22c65).
+     */
+    private long lookPlannedFrom = Long.MIN_VALUE, lookPlannedAnchor = Long.MIN_VALUE, lookPlannedTarget = Long.MIN_VALUE;
+    private boolean lookPlannedDown;
+
+    /**
+     * Whether a look for animals, planned from where it stands, ends lower than {@code anchor}: one search of the
+     * navigator's, kept for that spot, that anchor and that look (F-22c65).
+     */
+    private boolean lookGoesDown(ServerPlayerEntity player, Task look, BlockPos anchor) {
+        BlockPos feet = player.getBlockPos();
+        BlockPos target = new BlockPos(Integer.parseInt(look.args().get("x")), Integer.parseInt(look.args().get("y")), Integer.parseInt(look.args().get("z")));
+        if (feet.asLong() == lookPlannedFrom && anchor.asLong() == lookPlannedAnchor && target.asLong() == lookPlannedTarget) return lookPlannedDown;
+        // As the walk itself searches: its node budget and reach, to within its range of the target.
+        var path = new NativeNavigator(player.getServerWorld(), NativeNavigator.MAX_SAFE_DROP).throughDoors()
+                .find(feet, target, at -> at.getSquaredDistance(target) <= 9, NativeNavigator.DEFAULT_MAX_NODES, 96);
+        BlockPos end = path.nodes().isEmpty() ? feet : path.nodes().getLast();
+        // Lower than there: a step down off its own stair's step onto a ledge of the cut, and back, came down past it to the
+        // cut's floor (F-22c65). A walk that goes nowhere, against a wall it cannot get past, ends level with it and is the
+        // look's own to give up (its stalls cut a way through), as on a cave's floor under a roof (F-25c4ag).
+        boolean down = end.getY() < anchor.getY();
+        lookPlannedFrom = feet.asLong();
+        lookPlannedAnchor = anchor.asLong();
+        lookPlannedTarget = target.asLong();
+        lookPlannedDown = down;
+        KindredMod.LOGGER.info("{} hungry look planned from {} ({} of {} nodes, ends {}{}), the sky last at {}: {}", player.getName().getString(),
+                feet.toShortString(), path.nodes().size(), path.expanded(), end.toShortString(), path.complete() ? "" : ", incomplete",
+                anchor.toShortString(), down ? "climbs on" : "looks");
+        return down;
     }
 
     static boolean underground(ServerPlayerEntity player) {
@@ -4386,25 +4361,15 @@ final class PortalRunCampaign {
     }
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
-        // Over the void there is nothing below to reach: digging would only spend the island.
-        if (!groundBelow(body.entity())) return Optional.empty();
-        int y = body.entity().getBlockY();
-        // Looking for lava, a cell with lava under it is opened to see it (F-25c4ac).
-        boolean lava = what.equals("lava");
-        // Water or lava under every way down (an aquifer, a lava lake): tunnel on until the ground below is solid.
-        if (y > Math.min(top, target + 3)) {
-            return digDown(body, target, "Dig down toward " + what).or(() -> tunnel(body, "Tunnel past liquid toward " + what, lava));
-        }
-        // At the richest depth with no ore or cave in view: branch mine, legs zigzagging through fresh stone.
-        return tunnel(body, "Branch mine for " + what, lava);
+        return digger.descendOrTunnel(dig(body), top, target, what);
     }
 
     /**
-     * Staircase one step down along {@code digDirection}: clear head, feet and step-down cells ahead, then step.
-     * Every break is still a separate recorded action with the lava and support checks.
+     * Staircase one step down along its heading: clear head, feet and step-down cells ahead, then step.
+     * Every break is still a separate recorded action with the lava and support checks (F-35e: the core's {@code Digger}).
      */
     Optional<Task> digDown(NativePlayerBody body, int targetY, String label) {
-        return digDown(body, targetY, label, p -> true);
+        return digger.digDown(dig(body), targetY, label);
     }
 
     /**
@@ -4427,65 +4392,7 @@ final class PortalRunCampaign {
 
     /** As {@link #digDown(NativePlayerBody, int, String)}, digging only cells {@code allowed} lets it. */
     Optional<Task> digDown(NativePlayerBody body, int targetY, String label, Predicate<BlockPos> allowed) {
-        var player = body.entity();
-        if (player.getBlockY() <= targetY) return tunnel(body, label);
-        var world = player.getServerWorld();
-        BlockPos feet = player.getBlockPos();
-        for (int turn = 0; turn < 4; turn++) {
-            BlockPos ahead = feet.offset(digDirection);
-            BlockPos step = ahead.down();
-            List<BlockPos> clear = List.of(ahead.up(), ahead, step);
-            // Water or lava under the step: that way down ends in it, so turn before digging anything there. Nor is a
-            // step dug that opens onto a drop deeper than the navigator allows, a cave's ceiling: that leaves only a
-            // pit (live run 52 dug one on every side and stood stranded between them).
-            // Over the void, the island's last layer stays under every step: nothing below it would catch a fall.
-            boolean refused = !world.getFluidState(step.down()).isEmpty() || !landingWithin(world, step, feet)
-                    || !groundBelow(player) && passable(world, step.down())
-                    // Nor down toward a place where mobs killed or cornered it: the staircase turns, or the tunnel
-                    // fallback carries it off sideways to dig down elsewhere (live runs 52 and 56 dug back down into
-                    // the cave under spawn they had died in).
-                    || dangerBelow(step) || !allowed.test(step.down());
-            // Nor a step it would not then take, its landing set aside or by liquid, checked as below once the step is
-            // open: dug anyway, the step stood open over a drop, its tunnel filled it as a pit, and the staircase dug it
-            // out again. On 505 in E-40's iteration 12 (`e40a12-66a7c0a`) Kindred did so hundreds of times, then waited
-            // "for a feasible step" through 29 stuck spells (F-25c4ch).
-            if (!refused) {
-                BlockPos landing = step;
-                while (passable(world, landing.down()) && landing.getY() > feet.getY() - NativeNavigator.MAX_SAFE_DROP) landing = landing.down();
-                if (liquidNear(world, landing) || blocked(landing)) refused = true;
-            }
-            for (BlockPos cell : clear) {
-                if (!allowed.test(cell)) refused = true;
-                if (refused) break;
-                if (passable(world, cell)) continue;
-                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
-                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
-                // A night shelter is dug by hand when there is no pickaxe: slow in rock, but better than waiting in the
-                // open (live run 59 died four times at night on the surface just after respawning with nothing).
-                if ((label.startsWith("Dig in for the night") || digDownByHand) && handClearable(body, cell)) {
-                    return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
-                }
-                refused = true;
-                break;
-            }
-            if (!refused) {
-                // Never step into a drop deeper than the navigator allows; turn away from a pit instead.
-                BlockPos landing = step;
-                while (passable(world, landing.down()) && landing.getY() > feet.getY() - NativeNavigator.MAX_SAFE_DROP) landing = landing.down();
-                if (!passable(world, landing.down()) && !liquidNear(world, landing) && !blocked(landing)) {
-                    return Optional.of(go(landing, 0.4, false, label + ": step down"));
-                }
-            }
-            digDirection = digDirection.rotateYClockwise();
-        }
-        return Optional.empty();
-    }
-
-    /** Solid ground under {@code step}, or under the open cells below it, no deeper than the navigator will drop. */
-    private static boolean landingWithin(ServerWorld world, BlockPos step, BlockPos feet) {
-        BlockPos landing = step;
-        while (passable(world, landing.down()) && landing.getY() > feet.getY() - NativeNavigator.MAX_SAFE_DROP) landing = landing.down();
-        return !passable(world, landing.down());
+        return digger.digDown(dig(body), targetY, label, cell -> allowed.test(pos(cell)));
     }
 
     /**
@@ -4528,8 +4435,9 @@ final class PortalRunCampaign {
         // pillars out, quicker than punching a staircase by hand; with one it digs its staircase out, as before.
         // Or still no higher than a block over where the water was over it: out from under it by hand, a block of stone some
         // seven seconds, the half minute ran out a few blocks out, and the way back led under the lake again (F-25c4cu).
+        BlockPos underWaterAt = digger.underWaterAt() == null ? null : pos(digger.underWaterAt());
         boolean underWater = underWaterAt != null && underWaterAt.getSquaredDistance(lastFeet) <= 24 * 24
-                && (lastTick - underWaterTick <= 600 || lastFeet.getY() <= underWaterAt.getY() + 1);
+                && (lastTick - digger.underWaterTick() <= 600 || lastFeet.getY() <= underWaterAt.getY() + 1);
         // Under water with no pickaxe, out from under it first, its way out dug by hand: its way back first, it was walked
         // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
         // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
@@ -4659,381 +4567,104 @@ final class PortalRunCampaign {
     }
 
     /**
-     * A staircase one step up along {@code digDirection}: clear the head room above, then the two cells over the
-     * block ahead, and step up onto it. The way out when the job needs the surface.
+     * A staircase one step up along its heading: clear the head room above, then the two cells over the
+     * block ahead, and step up onto it. The way out when the job needs the surface (F-35e: the core's {@code Digger}).
      */
     Optional<Task> climb(NativePlayerBody body, String label) {
-        var player = body.entity();
-        var world = player.getServerWorld();
-        BlockPos feet = player.getBlockPos();
-        // Swimming, from the water's top cell: bobbing at the surface its feet go from one cell to the next, and the step
-        // planned from each was another, none dug through before the next (the flooded pit fixture, F-25c4t).
-        boolean swimming = PlayerRuntime.inDeepWater(player);
-        while (swimming && world.getFluidState(feet.up()).isIn(net.minecraft.registry.tag.FluidTags.WATER)) feet = feet.up();
-        // Water over the ceiling, a lake's or a river's, refusing a step up: then every way up here meets the same water.
-        boolean waterOver = false;
-        // The block over its head refused, for sand or gravel resting on it or a liquid beside it: then so is every way up
-        // from here (F-25c4bd).
-        boolean headRoomRefused = false;
-        // The ways whose step up was refused for a liquid beside the landing, not for the block over its head (F-25c4bf).
-        var besideWater = new java.util.ArrayList<Direction>();
-        // A cell with nothing in it to collide with is room to climb through only if a walk will go through it too: a
-        // cobweb is not. In E-40's iteration 14 (`e40a14-80b7150`) on 8675309 Sol, in a mineshaft's corridor with a cobweb
-        // over its head, had every step up refused for "no walkable route", and walked "to the wall" 1,141 times (F-25c4cm).
-        var walk = new NativeNavigator(world);
-        for (int turn = 0; turn < 4; turn++) {
-            BlockPos step = feet.offset(digDirection);
-            BlockPos landing = step.up();
-            // Nothing to climb onto this way, or a landing it already failed to reach (live run 49 tried one 232 times).
-            boolean refused = passable(world, step) || blocked(landing);
-            for (BlockPos cell : List.of(feet.up(2), landing, landing.up())) {
-                if (refused || passable(world, cell) && walk.passable(cell)) continue;
-                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) {
-                    // Over the sand or gravel resting on it, if any: a lake's bed over the ceiling (F-25c4bg).
-                    waterOver |= world.getFluidState(columnTop(world, cell)).isIn(FluidTags.WATER);
-                    headRoomRefused |= cell.equals(feet.up(2)) && !blocked(cell) && liquidNear(world, cell);
-                    if (!cell.equals(feet.up(2)) && !blocked(cell) && liquidNear(world, cell)) besideWater.add(digDirection);
-                    refused = true;
-                    break;
-                }
-                // Not the block over its head with sand or gravel resting on it: dug out, that falls onto the player, one
-                // block after another as each is dug out of its head room (Kindred suffocated twice so in B7's second pairs).
-                if (cell.equals(feet.up(2)) && world.getBlockState(cell.up()).getBlock() instanceof net.minecraft.block.FallingBlock) {
-                    waterOver |= world.getFluidState(cell.up(2)).isIn(FluidTags.WATER);
-                    headRoomRefused = true;
-                    refused = true;
-                    break;
-                }
-                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
-                // Its last pickaxe gone below ground: punch the way up, slowly, as a player would (live run 57 broke
-                // its last one climbing out and stood at Y 54 for good).
-                if (handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
-                if (snareClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
-                refused = true;
-            }
-            // The block over its head once up there, sand or gravel resting on it, dug from here first: what rests on it
-            // falls into the step's empty cells, not onto the player, and is dug in turn; and no step is taken while any
-            // of it is still coming down, which buried it at its first try. Up there every way up was refused, that block
-            // never dug from under it, and the walk over to a wall dropped it back down here: in the live pair on
-            // `91c1290` Kindred, in a pocket under the desert's sandstone and sand, went between the two for minutes
-            // (F-25c4ao).
-            BlockPos over = landing.up(2);
-            if (!refused && world.getBlockState(over.up()).getBlock() instanceof net.minecraft.block.FallingBlock) {
-                if (!passable(world, over)) {
-                    if (!blocked(over) && !liquidNear(world, over) && !islandEdge(player, over)) {
-                        if (breakableNow(body, over)) return Optional.of(clearAt(over, label + ": clear " + over.toShortString()));
-                        if (handClearable(body, over)) return Optional.of(clearAt(over, label + ": clear " + over.toShortString() + " by hand"));
-                    }
-                    waterOver |= world.getFluidState(columnTop(world, over)).isIn(FluidTags.WATER);
-                    refused = true;
-                } else if (settling(over)) {
-                    return Optional.of(new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle"));
-                }
-            }
-            if (!refused && !world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, new Box(landing).stretch(0, 6, 0), e -> true).isEmpty()) {
-                return Optional.of(new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle"));
-            }
-            if (!refused) {
-                underWaterHeading = null;
-                underWaterFrom = null;
-                return Optional.of(go(landing, 0.4, false, label + ": step up"));
-            }
-            digDirection = digDirection.rotateYClockwise();
-        }
-        // Under water: not over to a wall, whose steps the same water refuses, but along under it, one way, until the
-        // ground over its head is dry. In the live pair on 41f9de9 Kindred, under a lake whose floor of gravel lay on its
-        // corridor's ceiling, went round once a second for eighteen minutes between a step up with no way on, the wall
-        // and the way back (F-25c4ah).
-        if (waterOver && !swimming) {
-            // So far along under the water from where it began with still no dry ground over its head, or about where it
-            // last found that so: the water is too wide to get out from under this way, and the climb ends there, handed
-            // back to what the goal does next. On 606 in E-40's iteration 18 (`e40a18`) Kindred, in its tunnel under the
-            // open sea, went to and fro under it through 12 stuck spells (F-35g).
-            if (underWaterFrom == null || lastTick - underWaterTick > 600) underWaterFrom = feet.toImmutable();
-            boolean gaveUp = underWaterGaveUpAt != null && underWaterGaveUpAt.getSquaredDistance(feet) <= 24 * 24
-                    && lastTick - underWaterGaveUpTick < 2400;
-            int along = Math.max(Math.abs(feet.getX() - underWaterFrom.getX()), Math.abs(feet.getZ() - underWaterFrom.getZ()));
-            if (gaveUp || along >= UNDER_WATER_REACH) {
-                if (!gaveUp) {
-                    underWaterGaveUpAt = feet.toImmutable();
-                    underWaterGaveUpTick = lastTick;
-                    event("the water over its tunnel at " + feet.toShortString() + " too wide to get out from under: " + along
-                            + " blocks along under it with no dry ground over its head; the climb handed back");
-                }
-                underWaterAt = feet.toImmutable();
-                underWaterTick = lastTick;
-                return Optional.empty();
-            }
-            underWaterAt = feet.toImmutable();
-            underWaterTick = lastTick;
-            if (underWaterHeading == null) underWaterHeading = digDirection;
-            digDirection = underWaterHeading;
-            // Along its own level, never a step down: stepped back down into the part below that it had climbed out of, it
-            // climbed up again at the next step, and back down. And with no pickaxe, dug by hand, as the climb is: dug only
-            // with a tool, the way on was nothing it could dig. In E-40's iteration 9 (`e40a9-dd9b037`) on 8675309 Kindred,
-            // its pickaxe broken under a lake, stepped up and back down for 10 stuck spells (F-25c4bu).
-            int floor = tunnelFloor;
-            tunnelFloor = feet.getY();
-            tunnelByHand = true;
-            Optional<Task> out;
-            try {
-                out = tunnel(body, label + ": out from under the water");
-            } finally {
-                tunnelByHand = false;
-                tunnelFloor = floor;
-            }
-            underWaterHeading = digDirection;
-            if (out.isPresent()) return out;
-            // Every way along its own level refused, the lake's water over the next cell or sand with the water on it: a
-            // step down along its heading, by hand if it must, under a block more of cover, and along from there. The cell
-            // it leaves is set aside, so that it is not stepped back up into at once. On 707 in E-40's iteration 15
-            // (`e40a15-dbf4e5c`) Echo, its pickaxe worn out, climbed by hand to the bed of a frozen lake and went "step
-            // aside" and "to the wall" between two cells under it through 10 stuck spells, 10,564 times (F-25c4cq).
-            digDownByHand = true;
-            Optional<Task> lower;
-            try {
-                lower = digDown(body, feet.getY() - 1, label + ": out from under the water, a level lower");
-            } finally {
-                digDownByHand = false;
-            }
-            underWaterHeading = digDirection;
-            if (lower.isPresent()) {
-                if (lower.get().label().endsWith(": step down")) blockedUntil.merge(feet.asLong(), lastTick + 2400, Math::max);
-                return lower;
-            }
-        }
-        if (headRoomRefused && !swimming) {
-            Optional<Task> aside = fromBeside(body, feet, label);
-            if (aside.isPresent()) return aside;
-        }
-        // Under a hole up through the ceiling, nothing beside it to climb onto: up into the hole on blocks of its own, as a
-        // player gets back up the way it fell or dug down (F-25c4be).
-        if (!swimming && player.isOnGround()) {
-            Optional<Task> hole = intoTheHoleOverhead(body, feet, label);
-            if (hole.isPresent()) return hole;
-        }
-        // Every step up beside the water, and a step up clear of it a few blocks higher by the same wall: up there on blocks
-        // of its own, as a player gets back up off a ledge under a lake's wall (F-25c4bf).
-        if (!besideWater.isEmpty() && !swimming && player.isOnGround()) {
-            Optional<Task> pillar = pillarBesideTheWater(body, feet, besideWater, label);
-            if (pillar.isPresent()) return pillar;
-        }
-        // In the open middle of a room, nothing beside it to climb onto: over to its nearest wall first, to dig the stair
-        // up from there, as a player boxed into a chamber does (the stranded fixture's chamber, three square). Swimming,
-        // across the water to it (F-25c4t).
-        Direction toWall = null;
-        int nearest = Integer.MAX_VALUE;
-        for (Direction side : Direction.Type.HORIZONTAL) {
-            for (int n = 1; n <= 4 && n < nearest; n++) {
-                BlockPos cell = feet.offset(side, n);
-                if (!passable(world, cell)) {
-                    if (n > 1) {
-                        nearest = n;
-                        toWall = side;
-                    }
-                    break;
-                }
-                if (!passable(world, cell.up()) || passable(world, cell.down()) && !swimming) break;
-            }
-        }
-        if (toWall == null) return Optional.empty();
-        // Not over to the wall of the cell it has just stepped aside out of, whose head room it may not dig: there it
-        // steps aside again, and back, for good (F-25c4cq).
-        BlockPos wall = feet.offset(toWall, nearest - 1);
-        if (wall.equals(asideFrom) && feet.equals(asideTo) && lastTick - asideTick < 1200) return Optional.empty();
-        // Nor over to the wall of the cell it has just gone out from under the water from: there the water over it sends it
-        // out from under the water again, to here, and back, for good. On 606 in E-40's iteration 18 (`e40a18`) Kindred went
-        // "out from under the water" to 196, 56, -126 and "to the wall" back to 195 some thirty times each a stuck spell,
-        // through 12 of them (F-35g).
-        if (wall.equals(underWaterAt) && lastTick - underWaterTick < 1200) return Optional.empty();
-        digDirection = toWall;
-        return Optional.of(go(wall, 0.4, false, label + ": to the wall"));
+        return digger.climb(dig(body), label);
     }
 
-    /**
-     * Out from under a block over its head it may not dig, as a player gets out: from the cell beside it. The block is
-     * refused for sand or gravel resting on it, which would come down onto the player, or for a liquid beside it, which
-     * would be let in.
-     * <ul>
-     * <li>It digs a pocket two high beside it, on solid ground, where the pocket's own head room has no liquid beside it.</li>
-     * <li>Under sand, it opens the pocket's ceiling from where it stands, so what rested there comes down into the pocket
-     * and not onto the player, and digs what came down out from beside it, the lowest first, until nothing rests over the
-     * pocket.</li>
-     * <li>Then it steps into the pocket, whose head room it may dig or is clear, and climbs from there.</li>
-     * </ul>
-     * In E-40's iteration 2 (`e40a2-143806e`) two players, out of sticks with no pickaxe, came up shafts of their own one
-     * wide to such a block, and stood there to the end of the run (F-25c4bd). On 31102026 Sol had sandstone with four sand
-     * on it over its head at Y=64, 6 stuck spells. On 101 Kindred had stone at Y=55 with a pocket of water beside it, 16.
-     */
-    private Optional<Task> fromBeside(NativePlayerBody body, BlockPos feet, String label) {
-        var world = body.entity().getServerWorld();
-        if (!world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, new Box(feet).expand(1, 0, 1).stretch(0, 8, 0), e -> true).isEmpty()) {
-            return Optional.of(new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle"));
+    /** The heading its staircases and tunnels dig along. */
+    private Direction digDirection() {
+        return direction(digger.heading());
+    }
+
+    private void digDirection(Direction heading) {
+        digger.heading(side(heading));
+    }
+
+    private static Cell cell(BlockPos pos) {
+        return NativeNavigator.cell(pos);
+    }
+
+    private static BlockPos pos(Cell cell) {
+        return NativeNavigator.pos(cell);
+    }
+
+    private static Side side(Direction direction) {
+        return switch (direction) {
+            case DOWN -> Side.DOWN;
+            case UP -> Side.UP;
+            case NORTH -> Side.NORTH;
+            case SOUTH -> Side.SOUTH;
+            case WEST -> Side.WEST;
+            case EAST -> Side.EAST;
+        };
+    }
+
+    private static Direction direction(Side side) {
+        return switch (side) {
+            case DOWN -> Direction.DOWN;
+            case UP -> Direction.UP;
+            case NORTH -> Direction.NORTH;
+            case SOUTH -> Direction.SOUTH;
+            case WEST -> Direction.WEST;
+            case EAST -> Direction.EAST;
+        };
+    }
+
+    /** The player as the core's dig decisions see it: each fact answered by this campaign's own test, each step its task. */
+    private Digger.Body<Task> dig(NativePlayerBody body) {
+        return new Dig(body);
+    }
+
+    private final class Dig implements Digger.Body<Task> {
+        private final NativePlayerBody body;
+        private final ServerPlayerEntity player;
+        private final WorldDig world;
+
+        Dig(NativePlayerBody body) {
+            this.body = body;
+            this.player = body.entity();
+            this.world = new WorldDig(player.getServerWorld());
         }
-        var ways = new java.util.ArrayList<Direction>();
-        for (Direction way = digDirection; ways.size() < 4; way = way.rotateYClockwise()) ways.add(way);
-        // A pocket beside it whose head room it may dig or is clear: into it, and up from there.
-        for (Direction way : ways) {
-            BlockPos side = feet.offset(way);
-            if (pocket(world, side) && !blocked(side) && !headRoomRefused(world, side)) {
-                digDirection = way;
-                asideFrom = feet.toImmutable();
-                asideTo = side.toImmutable();
-                asideTick = lastTick;
-                return Optional.of(go(side, 0.4, false, label + ": step aside"));
-            }
+
+        @Override public DigTerrain world() { return world; }
+        @Override public Cell feet() { return cell(player.getBlockPos()); }
+        @Override public long now() { return lastTick; }
+        @Override public void event(String line) { PortalRunCampaign.this.event(line); }
+        @Override public boolean onGround() { return player.isOnGround(); }
+        @Override public boolean swimming() { return PlayerRuntime.inDeepWater(player); }
+        @Override public boolean groundBelow() { return PortalRunCampaign.groundBelow(player); }
+        @Override public boolean blocked(Cell cell) { return PortalRunCampaign.this.blocked(pos(cell)); }
+        @Override public void setAside(Cell cell, long until) { cellsAside.until(cell.asLong(), until); }
+        @Override public boolean breakableNow(Cell cell) { return PortalRunCampaign.this.breakableNow(body, pos(cell)); }
+        @Override public boolean handClearable(Cell cell) { return PortalRunCampaign.this.handClearable(body, pos(cell)); }
+        @Override public boolean snareClearable(Cell cell) { return PortalRunCampaign.this.snareClearable(body, pos(cell)); }
+        @Override public boolean opensOverLava(Cell cell) {
+            BlockPos at = pos(cell);
+            return eyeDistance(player, at) <= REACH && body.miningEligible(at)
+                    && RoamingEdits.breakDenial(player, at, policy, false, false, true) == null
+                    && NativeBreakAction.bestTool(body, player.getServerWorld().getBlockState(at)) != -2;
         }
-        // What came down into a pocket, dug out from beside it, the lowest first: what rests above comes down after it.
-        for (Direction way : ways) {
-            BlockPos side = feet.offset(way);
-            if (passable(world, side.down())) continue;
-            BlockPos fallen = passable(world, side) ? side.up() : side;
-            if (passable(world, fallen) || !(world.getBlockState(fallen).getBlock() instanceof net.minecraft.block.FallingBlock)) continue;
-            Optional<Task> dig = digBeside(body, fallen, label + ": dig out what came down");
-            if (dig.isPresent()) return dig;
+        @Override public boolean harvestable(Cell cell) { return PortalRunCampaign.this.harvestable(body, pos(cell)); }
+        @Override public boolean islandEdge(Cell cell) { return PortalRunCampaign.this.islandEdge(player, pos(cell)); }
+        @Override public boolean dangerBelow(Cell cell) { return PortalRunCampaign.this.dangerBelow(pos(cell)); }
+        @Override public int wayBlockSlot() { return PortalRunCampaign.this.wayBlockSlot(player.getInventory()); }
+        @Override public Task go(Cell to, double range, boolean partial, String label) { return PortalRunCampaign.go(pos(to), range, partial, label); }
+        @Override public Task clear(Cell cell, String label) { return clearAt(pos(cell), label); }
+        @Override public Task openOverLava(Cell cell, String label) {
+            return new Task("native_break", coords(pos(cell), Map.of("collect", "false", "over_lava", "true")), label);
         }
-        // A pocket beside it under what rests there: its ceiling opened from here, so that comes down into the pocket.
-        for (Direction way : ways) {
-            BlockPos side = feet.offset(way);
-            if (!pocket(world, side) || blocked(side) || !capped(world, side)) continue;
-            Optional<Task> dig = digBeside(body, side.up(2), label + ": open the ceiling beside it");
-            if (dig.isPresent()) return dig;
+        @Override public Task settle(String label) { return new Task("native_wait", Map.of("seconds", "1"), label); }
+        @Override public Task pillar(Cell feet, int slot, String label) {
+            return new Task("native_pillar", coords(pos(feet), Map.of("slot", String.valueOf(slot))), label);
         }
-        // No pocket yet: one dug beside it, on solid ground, its head-level cell first; not where the pocket's own head room
-        // would have a liquid beside it.
-        for (Direction way : ways) {
-            BlockPos side = feet.offset(way);
-            if (passable(world, side.down()) || blocked(side) || blocked(side.up())) continue;
-            if (!passable(world, side.up(2)) && liquidNear(world, side.up(2))) continue;
-            BlockPos cell = !passable(world, side.up()) ? side.up() : side;
-            if (passable(world, cell)) continue;
-            Optional<Task> dig = digBeside(body, cell, label + ": dig a pocket beside it");
-            if (dig.isPresent()) {
-                digDirection = way;
-                return dig;
-            }
-        }
-        return Optional.empty();
+        @Override public Task swap(int slot, String label) { return swapToHotbar(body, slot, label); }
+        @Override public Optional<Task> fill(Cell cell, String label) { return placeBlock(body, pos(cell), label); }
     }
 
-    /**
-     * Up into a hole one wide in the ceiling over it, or over a cell beside it on the same ground, on blocks of its own: a
-     * player come down through a cave's ceiling gets back up the same way. On 20261030 in E-40's iteration 3
-     * (`e40a3-05b58fd`) Echo's stair down for iron broke through the ceiling of a cave two high over a lava lake, and it
-     * came down onto an island of two blocks in the lava. With nothing to climb onto and every walk to a wall across the
-     * lava refused, it stood there from tick 4,500 to the end of the run, 38 stuck spells, the hole it came down through
-     * over the island's other block (F-25c4be).
-     */
-    private Optional<Task> intoTheHoleOverhead(NativePlayerBody body, BlockPos feet, String label) {
-        var player = body.entity();
-        var world = player.getServerWorld();
-        if (holeOver(world, feet)) {
-            var inventory = player.getInventory();
-            int slot = wayBlockSlot(inventory);
-            if (slot < 0) return Optional.empty();
-            if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
-            return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up into the hole over it"));
-        }
-        for (Direction side : Direction.Type.HORIZONTAL) {
-            BlockPos next = feet.offset(side);
-            if (pocket(world, next) && !blocked(next) && holeOver(world, next) && wayBlockSlot(player.getInventory()) >= 0) {
-                return Optional.of(go(next, 0.4, false, label + ": under the hole beside it"));
-            }
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Up on blocks of its own beside a wall it may not climb for the water behind it, to the height where a step up onto
-     * the wall is clear of the water: one to three blocks up, open over its head all the way. On 303 in E-40's iteration 4
-     * (`e40a4-c237a6e`) Kindred swam the top of an aquifer's lake, came onto the stone wall between the lake and a cave, and
-     * went down the cave's side onto a ledge. Every step back up was beside the lake's water. From then to the end of the
-     * run, 27 stuck spells, it stepped aside from a cell it had dug into the wall and walked "to the wall" back into it,
-     * 1,466 times each (F-25c4bf).
-     */
-    private Optional<Task> pillarBesideTheWater(NativePlayerBody body, BlockPos feet, List<Direction> ways, String label) {
-        var player = body.entity();
-        var world = player.getServerWorld();
-        for (int h = 1; h <= 3; h++) {
-            // Room over its head to rise h blocks and step up from there.
-            if (!passable(world, feet.up(h + 1)) || !passable(world, feet.up(h + 2))) return Optional.empty();
-            for (Direction way : ways) {
-                BlockPos step = feet.up(h).offset(way);
-                BlockPos landing = step.up();
-                if (passable(world, step) || blocked(landing)) continue;
-                boolean clear = true;
-                for (BlockPos cell : List.of(landing, landing.up())) {
-                    if (!passable(world, cell) && (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell))) clear = false;
-                }
-                if (!clear) continue;
-                int slot = wayBlockSlot(player.getInventory());
-                if (slot < 0) return Optional.empty();
-                if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
-                // Refused twice here within a minute: not from here again for now, not asked for again at once. In a
-                // fixture of 303's ledge one cell by a wall refused 151 jumps in a row.
-                int misses = pillarMissesUntil.getOrDefault(feet.asLong(), Long.MIN_VALUE) >= lastTick ? pillarMisses.getOrDefault(feet.asLong(), 0) : 0;
-                if (misses >= 2) return Optional.empty();
-                digDirection = way;
-                return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), label + ": pillar up beside the water"));
-            }
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * A hole one wide up through the ceiling over a player standing there: its head room clear, and the cell over its head
-     * walled in on every side, or the one over that walled in with room over it.
-     */
-    private static boolean holeOver(ServerWorld world, BlockPos feet) {
-        if (!passable(world, feet.up()) || !passable(world, feet.up(2))) return false;
-        return walledIn(world, feet.up()) || walledIn(world, feet.up(2)) && passable(world, feet.up(3));
-    }
-
-    /** Nothing open beside it on any side. */
-    private static boolean walledIn(ServerWorld world, BlockPos cell) {
-        for (Direction side : Direction.Type.HORIZONTAL) if (passable(world, cell.offset(side))) return false;
-        return true;
-    }
-
-    /** Open at its feet and head, on solid ground. */
-    private static boolean pocket(ServerWorld world, BlockPos feet) {
-        return passable(world, feet) && passable(world, feet.up()) && !passable(world, feet.down());
-    }
-
-    /** The block over a player's head there with sand or gravel resting on it, which would come down on it if dug out. */
-    private static boolean capped(ServerWorld world, BlockPos feet) {
-        return !passable(world, feet.up(2)) && world.getBlockState(feet.up(3)).getBlock() instanceof net.minecraft.block.FallingBlock;
-    }
-
-    /** The block over a player's head there not to be dug: sand or gravel resting on it, or a liquid beside it. */
-    private static boolean headRoomRefused(ServerWorld world, BlockPos feet) {
-        return capped(world, feet) || !passable(world, feet.up(2)) && liquidNear(world, feet.up(2));
-    }
-
-    /** A block beside the player dug out, with a tool if it has one fit for it, else by hand; never one by a liquid. */
-    private Optional<Task> digBeside(NativePlayerBody body, BlockPos cell, String label) {
-        if (blocked(cell) || liquidNear(body.entity().getServerWorld(), cell)) return Optional.empty();
-        if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
-        if (handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
-        return Optional.empty();
-    }
-
-    private BlockPos settleAt;
-    private long settleSince;
-
-    /**
-     * Sand or gravel over a cell just opened under it comes down in a moment: waited for two seconds at most, as sand
-     * left hanging over a cave by the world's making never comes down until something beside it changes (F-25c4ao).
-     */
-    private boolean settling(BlockPos at) {
-        if (!at.equals(settleAt)) {
-            settleAt = at.toImmutable();
-            settleSince = lastTick;
-        }
-        return lastTick - settleSince < 40;
-    }
-
-    /** A two-high tunnel forward along {@code digDirection}; walls it exposes are scanned for ores. */
+    /** A two-high tunnel forward along its heading; walls it exposes are scanned for ores. */
     /**
      * The next thing to do on a route that may dig, bridge or pillar (F-10e), as a player gets about where walking
      * alone will not do: walk on to where the route first needs work, or do that work, digging what is in the way,
@@ -5143,8 +4774,7 @@ final class PortalRunCampaign {
 
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
     Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
-        digDirection = heading;
-        return tunnel(body, label);
+        return digger.tunnelAlong(dig(body), side(heading), label);
     }
 
     /**
@@ -5152,21 +4782,8 @@ final class PortalRunCampaign {
      * must not turn and wander back along ground already crossed (staged run 6 walked 13 blocks back that way).
      */
     Optional<Task> tunnelStraight(NativePlayerBody body, Direction heading, int floor, String label) {
-        digDirection = heading;
-        tunnelFloor = floor;
-        tunnelTurns = 1;
-        try {
-            return tunnel(body, label);
-        } finally {
-            tunnelFloor = Integer.MIN_VALUE;
-            tunnelTurns = 4;
-            digDirection = heading;
-        }
+        return digger.tunnelStraight(dig(body), side(heading), floor, label);
     }
-
-    private int tunnelFloor = Integer.MIN_VALUE, tunnelTurns = 4;
-    /** Whether a tunnel bridges any drop ahead with a block of its own, as one toward lava at its level does (F-25c4ak). */
-    private boolean bridgeDrops;
 
     Optional<Task> tunnel(NativePlayerBody body, String label) {
         return tunnel(body, label, false);
@@ -5177,67 +4794,8 @@ final class PortalRunCampaign {
      * under it and no other liquid round it is opened, from where it stands, which shows the lava, as a player's next
      * block would. The lava stays where it is: lava never rises, and the cell is never walked onto (F-25c4ac).
      */
-    /** Whether the tunnel being dug may be dug by hand, with no pickaxe held (F-25c4bu). */
-    private boolean tunnelByHand;
-    /** Where the climb last stepped aside from and to, and when (F-25c4cq). */
-    private BlockPos asideFrom, asideTo;
-    private long asideTick;
-    /** Whether the step down being dug may be dug by hand, with no pickaxe held: out from under the water (F-25c4cq). */
-    private boolean digDownByHand;
-
     Optional<Task> tunnel(NativePlayerBody body, String label, boolean revealLava) {
-        var player = body.entity();
-        var world = player.getServerWorld();
-        BlockPos feet = player.getBlockPos();
-        for (int turn = 0; turn < tunnelTurns; turn++) {
-            BlockPos ahead = feet.offset(digDirection);
-            // A drop under the way ahead, too deep to step down and not one it would bridge: that way is not dug into at
-            // all. Dug, its cells were the steps a climb back would have stood on: in the ten seeds on `e9d33c0` Kindred's
-            // branch mine on 505 came out on the crust over a cavern 34 deep, dug the crust out on three sides, found a drop
-            // under each, and waited there for 97 minutes with no step left to climb (F-25c4bb).
-            if (passable(world, ahead.down()) && passable(world, ahead.down(2)) && !bridgeDrops && !dug.contains(ahead.down().asLong())) {
-                digDirection = digDirection.rotateYClockwise();
-                continue;
-            }
-            boolean refused = false;
-            for (BlockPos cell : List.of(ahead.up(), ahead)) {
-                if (passable(world, cell)) continue;
-                if (revealLava && cell.equals(ahead) && passable(world, ahead.up()) && !blocked(cell) && onlyLavaBelow(world, cell)
-                        && eyeDistance(player, cell) <= REACH && body.miningEligible(cell)
-                        && RoamingEdits.breakDenial(player, cell, policy, false, false, true) == null
-                        && NativeBreakAction.bestTool(body, world.getBlockState(cell)) != -2) {
-                    return Optional.of(new Task("native_break", coords(cell, Map.of("collect", "false", "over_lava", "true")),
-                            label + ": open " + cell.toShortString() + " over lava"));
-                }
-                if (blocked(cell) || liquidNear(world, cell) || islandEdge(player, cell)) { refused = true; break; }
-                if (breakableNow(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString()));
-                // Its pickaxe gone, out from under the water by hand, as its climb goes up by hand (F-25c4bu).
-                if (tunnelByHand && handClearable(body, cell)) return Optional.of(clearAt(cell, label + ": clear " + cell.toShortString() + " by hand"));
-                refused = true;
-                break;
-            }
-            // Walking dug ground again is fine on the way to rock it can dig; pacing a dead-end corridor is not.
-            if (!refused && !passable(world, ahead.down()) && !liquidNear(world, ahead) && world.getFluidState(ahead).isEmpty() && !blocked(ahead)
-                    && (!tunnelled.contains(ahead.asLong()) || diggableFaceAhead(body, ahead))) {
-                if (comingDown(world, ahead)) return Optional.of(settle(label));
-                return Optional.of(go(ahead, 0.4, false, label + ": advance"));
-            }
-            // Never a step down into water: wading back out to here and stepping in again would go round for ever.
-            if (!refused && passable(world, ahead.down()) && !passable(world, ahead.down(2)) && !blocked(ahead.down()) && ahead.getY() > tunnelFloor
-                    && world.getFluidState(ahead.down()).isEmpty() && !liquidNear(world, ahead.down())) {
-                if (comingDown(world, ahead.down())) return Optional.of(settle(label));
-                return Optional.of(go(ahead.down(), 0.4, false, label + ": step down"));
-            }
-            // A pit it dug itself over a drop (a staircase step that broke through a cave's ceiling): fill it and go on. Toward
-            // lava at its level, any drop on the way, as a player bridges a cave to the lava it sees across it (F-25c4ak).
-            if (!refused && passable(world, ahead.down()) && (bridgeDrops || passable(world, ahead.down(2)) && dug.contains(ahead.down().asLong()))
-                    && world.getFluidState(ahead.down()).isEmpty()) {
-                Optional<Task> fill = placeBlock(body, ahead.down(), label + ": fill " + ahead.down().toShortString());
-                if (fill.isPresent()) return fill;
-            }
-            digDirection = digDirection.rotateYClockwise();
-        }
-        return Optional.empty();
+        return digger.tunnel(dig(body), label, revealLava);
     }
 
     /**
@@ -5258,29 +4816,6 @@ final class PortalRunCampaign {
     /** A moment's wait while what falls ahead comes to rest, before stepping under it (F-25c4bv). */
     private static Task settle(String label) {
         return new Task("native_wait", Map.of("seconds", "1"), label + ": let what falls settle");
-    }
-
-    /**
-     * Along {@code digDirection} from {@code start}, over open floored ground for up to eight blocks, the first rock
-     * face is one this player could dig: not set aside, no liquid at it, and a block its tools can harvest.
-     */
-    private boolean diggableFaceAhead(NativePlayerBody body, BlockPos start) {
-        var world = body.entity().getServerWorld();
-        BlockPos at = start;
-        for (int k = 0; k < 8; k++) {
-            BlockPos next = at.offset(digDirection);
-            boolean open = passable(world, next) && passable(world, next.up());
-            if (!open) {
-                for (BlockPos face : List.of(next, next.up())) {
-                    if (passable(world, face)) continue;
-                    if (blocked(face) || liquidNear(world, face) || !harvestable(body, face)) return false;
-                }
-                return true;
-            }
-            if (passable(world, next.down()) || liquidNear(world, next)) return false; // A drop or water on the way.
-            at = next;
-        }
-        return false;
     }
 
     private static boolean passable(ServerWorld world, BlockPos pos) {
@@ -5322,13 +4857,6 @@ final class PortalRunCampaign {
             }
         }
         return false;
-    }
-
-    /** The first cell over it that is not sand or gravel resting on it: itself over a column, else the cell over it. */
-    private static BlockPos columnTop(ServerWorld world, BlockPos pos) {
-        BlockPos above = pos.up();
-        for (int i = 0; i < 16 && world.getBlockState(above).getBlock() instanceof net.minecraft.block.FallingBlock; i++) above = above.up();
-        return above;
     }
 
     // ------------------------------------------------------------------ crafting and smelting
@@ -5436,7 +4964,7 @@ final class PortalRunCampaign {
             }
         }
         // Make room: carve a pocket into a side wall at foot level, keeping the way along a tunnel or staircase open.
-        List<Direction> sides = List.of(digDirection.rotateYClockwise(), digDirection.rotateYCounterclockwise(), digDirection.getOpposite(), digDirection);
+        List<Direction> sides = List.of(digDirection().rotateYClockwise(), digDirection().rotateYCounterclockwise(), digDirection().getOpposite(), digDirection());
         for (Direction direction : sides) {
             BlockPos wall = feet.offset(direction);
             if (passable(world, wall) || liquidNear(world, wall) || blocked(wall) || !mayWork(player, wall)) continue;
@@ -5736,7 +5264,7 @@ final class PortalRunCampaign {
                 overheadTick = lastTick;
             } else if (overheadOpenFailed || lastTick - overheadTick > 600) {
                 // Not opened: nothing let in, nothing to put back; that block let be a while.
-                blockedUntil.merge(opening.asLong(), lastTick + 2400, Math::max);
+                cellsAside.until(opening.asLong(), lastTick + 2400);
                 overhead = null;
                 return Optional.empty();
             } else {
@@ -5798,7 +5326,7 @@ final class PortalRunCampaign {
         }
         if (overheadLeft != null) {
             event("opened its ceiling at " + opening.toShortString() + " and closed it again, its bucket empty: " + overheadLeft, false);
-            blockedUntil.merge(opening.asLong(), lastTick + 24_000, Math::max);
+            cellsAside.until(opening.asLong(), lastTick + 24_000);
         } else {
             event("filled a bucket from the water over its head at " + overheadSource.toShortString() + "; resealed, its tunnel dry", false);
         }
@@ -6117,36 +5645,11 @@ final class PortalRunCampaign {
      * that level, which opens a cell with lava under it to show the lava (F-25c4ad). The staircases turn where a cell is
      * refused. The tunnel goes only the two ways that close on the lava, and bridges a drop on the way with a block of its
      * own: turned aside by a cave's drop at every step, Kindred, in the live pair on 64c298d, tunnelled 81 blocks west at
-     * the lava's level, past the lava it saw across the cave (F-25c4ak). With neither way open it digs nothing.
+     * the lava's level, past the lava it saw across the cave (F-25c4ak). With neither way open it digs nothing. The core's
+     * decision (F-35f: {@code Digger.toward}).
      */
     private Optional<Task> digToward(NativePlayerBody body, BlockPos lava, String label) {
-        BlockPos feet = body.entity().getBlockPos();
-        int dx = lava.getX() - feet.getX(), dz = lava.getZ() - feet.getZ(), rise = lava.getY() + 1 - feet.getY();
-        if (dx == 0 && dz == 0) return rise > 0 ? climb(body, label) : rise < 0 ? digDown(body, lava.getY() + 1, label) : Optional.empty();
-        Direction across = dx > 0 ? Direction.EAST : Direction.WEST, along = dz > 0 ? Direction.SOUTH : Direction.NORTH;
-        boolean xFirst = Math.abs(dx) >= Math.abs(dz);
-        Direction major = xFirst ? across : along;
-        digDirection = major;
-        if (rise > 0) return climb(body, label);
-        if (rise < 0) return digDown(body, lava.getY() + 1, label);
-        List<Direction> ways = (xFirst ? dz : dx) == 0 ? List.of(major) : List.of(major, xFirst ? along : across);
-        int floor = tunnelFloor, turns = tunnelTurns;
-        try {
-            tunnelFloor = lava.getY() + 1;
-            tunnelTurns = 1;
-            bridgeDrops = true;
-            for (Direction way : ways) {
-                digDirection = way;
-                Optional<Task> step = tunnel(body, label, true);
-                if (step.isPresent()) return step;
-            }
-            return Optional.empty();
-        } finally {
-            tunnelFloor = floor;
-            tunnelTurns = turns;
-            bridgeDrops = false;
-            digDirection = major;
-        }
+        return digger.toward(dig(body), cell(lava), label);
     }
 
     /**
@@ -6210,7 +5713,7 @@ final class PortalRunCampaign {
             BlockPos source = pair[0].down();
             Optional<Task> dig = digToward(body, source, POCKET_DIG + source.toShortString());
             if (dig.isPresent()) return dig;
-            blockedUntil.put(pair[0].asLong(), lastTick + 1200);
+            cellsAside.put(pair[0].asLong(), lastTick + 1200);
         }
         return Optional.empty();
     }
@@ -7280,8 +6783,8 @@ final class PortalRunCampaign {
             generator = g;
             generatorPlan = null;
             // Nothing else digs into it, carves room for a workstation out of its walls or jumps into its hole.
-            for (BlockPos cell : g.dug()) blockedUntil.put(cell.asLong(), Long.MAX_VALUE);
-            for (BlockPos cell : g.walls()) blockedUntil.put(cell.asLong(), Long.MAX_VALUE);
+            for (BlockPos cell : g.dug()) cellsAside.put(cell.asLong(), Long.MAX_VALUE);
+            for (BlockPos cell : g.walls()) cellsAside.put(cell.asLong(), Long.MAX_VALUE);
             return mineGenerator(body);
         }
         if (!watered) {
@@ -7295,7 +6798,7 @@ final class PortalRunCampaign {
                     if (generatorTried.contains(cell.asLong() * 31 + stand.asLong()) || !standable(world, stand)) continue;
                     return Optional.of(go(stand, 0.4, false, "Generator: stand by the trench"));
                 }
-                for (BlockPos dug : g.dug()) blockedUntil.merge(dug.asLong(), lastTick + 6000, Math::max);
+                for (BlockPos dug : g.dug()) cellsAside.until(dug.asLong(), lastTick + 6000);
                 generatorPlan = null;
                 generatorTried.clear();
                 return Optional.empty();
@@ -7500,7 +7003,7 @@ final class PortalRunCampaign {
         BlockPos leaf = leaves.get();
         if (breakableNow(body, leaf)) return Optional.of(breakAt(leaf, "Break leaves for saplings at " + leaf.toShortString()));
         if (Math.hypot(leaf.getX() - feet.getX(), leaf.getZ() - feet.getZ()) <= 2) {
-            blockedUntil.merge(leaf.asLong(), lastTick + 1200, Math::max); // Overhead and out of reach from here.
+            cellsAside.until(leaf.asLong(), lastTick + 1200); // Overhead and out of reach from here.
             return Optional.empty();
         }
         return Optional.of(go(leaf, 2.0, true, "Walk to the leaves at " + leaf.toShortString()));
@@ -8309,7 +7812,7 @@ final class PortalRunCampaign {
         memory.addProperty("version", 1);
         int[] left = {0};
         var blocked = new com.google.gson.JsonArray();
-        for (var entry : blockedUntil.entrySet()) {
+        for (var entry : cellsAside.blockedUntil().entrySet()) {
             int[] at = inBox(BlockPos.fromLong(entry.getKey()), origin, width, height);
             if (entry.getValue() <= tick) continue;
             if (at == null || blocked.size() >= MEMORY_CAP) { left[0]++; continue; }
@@ -8319,25 +7822,26 @@ final class PortalRunCampaign {
             blocked.add(one);
         }
         memory.add("blocked", blocked);
-        memory.add("failures", counts(failures, origin, width, height, left));
+        memory.add("failures", counts(cellsAside.failures(), origin, width, height, left));
         memory.add("approaches", counts(approaches, origin, width, height, left));
         var unreachable = new com.google.gson.JsonArray();
-        for (var entry : unreachableUntil.entrySet()) {
+        for (var entry : cellsAside.unreachableUntil().entrySet()) {
             int[] at = inBox(BlockPos.fromLong(entry.getKey()), origin, width, height);
             if (at == null || unreachable.size() >= MEMORY_CAP) { left[0]++; continue; }
             var one = new com.google.gson.JsonObject();
             one.add("at", array(at));
             one.addProperty("left", Math.max(0, entry.getValue() - tick));
             // Where it found no way from: kept only in the box; outside it the replay has no such place.
-            int[] from = inBox(unreachableFrom.get(entry.getKey()), origin, width, height);
+            Cell given = cellsAside.unreachableFrom(entry.getKey());
+            int[] from = given == null ? null : inBox(pos(given), origin, width, height);
             if (from != null) one.add("from", array(from));
             unreachable.add(one);
         }
         memory.add("unreachable", unreachable);
         memory.add("coverHeld", cells(coverHeld, false, origin, width, height, left));
         memory.add("treesGivenUp", columns(treesGivenUp, origin, width, height, left));
-        memory.add("dug", cells(dug, false, origin, width, height, left));
-        memory.add("tunnelled", cells(tunnelled, false, origin, width, height, left));
+        memory.add("dug", cells(digger.dugCells(), false, origin, width, height, left));
+        memory.add("tunnelled", cells(digger.tunnelledCells(), false, origin, width, height, left));
         memory.add("visitedCaves", cells(visitedCaves, true, origin, width, height, left));
         var tasks = new com.google.gson.JsonArray();
         for (var entry : setAside.entrySet()) {
@@ -8471,12 +7975,12 @@ final class PortalRunCampaign {
         each.accept("blocked", one -> {
             BlockPos pos = at.apply(one.get("at"));
             if (pos == null) { dropped.add("blocked: " + one); return; }
-            blockedUntil.merge(pos.asLong(), tick + one.get("left").getAsLong(), Math::max);
+            cellsAside.until(pos.asLong(), tick + one.get("left").getAsLong());
         });
         each.accept("failures", one -> {
             BlockPos pos = at.apply(one.get("at"));
             if (pos == null) { dropped.add("failures: " + one); return; }
-            failures.put(pos.asLong(), one.get("n").getAsInt());
+            cellsAside.failures(pos.asLong(), one.get("n").getAsInt());
         });
         each.accept("approaches", one -> {
             BlockPos pos = at.apply(one.get("at"));
@@ -8486,17 +7990,14 @@ final class PortalRunCampaign {
         each.accept("unreachable", one -> {
             BlockPos pos = at.apply(one.get("at"));
             if (pos == null) { dropped.add("unreachable: " + one); return; }
-            unreachableUntil.merge(pos.asLong(), tick + one.get("left").getAsLong(), Math::max);
-            if (one.has("from")) {
-                BlockPos from = at.apply(one.get("from"));
-                if (from != null) unreachableFrom.put(pos.asLong(), from);
-                else dropped.add("unreachable from: " + one);
-            }
+            BlockPos from = one.has("from") ? at.apply(one.get("from")) : null;
+            if (one.has("from") && from == null) dropped.add("unreachable from: " + one);
+            cellsAside.unreachable(pos.asLong(), tick + one.get("left").getAsLong(), from == null ? null : cell(from));
         });
         cellsOf.accept("coverHeld", pos -> coverHeld.add(pos.asLong()));
         cellsOf.accept("treesGivenUp", pos -> treesGivenUp.add(BlockPos.asLong(pos.getX() >> 2, 0, pos.getZ() >> 2)));
-        cellsOf.accept("dug", pos -> dug.add(pos.asLong()));
-        cellsOf.accept("tunnelled", pos -> tunnelled.add(pos.asLong()));
+        cellsOf.accept("dug", pos -> digger.dug(cell(pos)));
+        cellsOf.accept("tunnelled", pos -> digger.tunnelled(cell(pos)));
         cellsOf.accept("visitedCaves", pos -> visitedCaves.add(BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2)));
         each.accept("setAside", one -> {
             var args = new LinkedHashMap<String, String>();

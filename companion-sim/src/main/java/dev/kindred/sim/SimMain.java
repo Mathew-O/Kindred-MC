@@ -19,7 +19,8 @@ import java.util.stream.LongStream;
  * Technical: F-28. {@code <pack|all> <seeds> <out folder>}: seeds 1 to n, run in parallel; each run's
  * {@code eval-result.json} and {@code latest.log} under {@code <out>/<pack>/<seed>/}, and the pack's anomalies (a step
  * the planner asked for twenty times running while the simulator refused it, with nothing new seen) in
- * {@code <out>/<pack>/anomalies.txt}. The packs are data: where a run starts, with what, and for how long.
+ * {@code <out>/<pack>/anomalies.txt}. The packs are data: where a run starts, with what, and for how long. With
+ * {@code corpus <scenes> <out>}, the failure corpus's scenes instead ({@link SimCorpus}, F-35f).
  */
 public final class SimMain {
     /** A scenario pack: its name, how a run begins and how many game ticks it lasts. */
@@ -31,6 +32,10 @@ public final class SimMain {
             new Pack("portal", SimRun.Start.FRESH, 72_000));
 
     public static void main(String[] args) throws IOException {
+        if (args.length > 0 && args[0].equals("corpus")) {
+            SimCorpus.main(java.util.Arrays.copyOfRange(args, 1, args.length));
+            return;
+        }
         String which = args.length > 0 ? args[0] : "all";
         int seeds = args.length > 1 ? Integer.parseInt(args[1]) : 100;
         Path out = Path.of(args.length > 2 ? args[2] : "run/sim");

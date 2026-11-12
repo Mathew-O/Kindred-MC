@@ -356,6 +356,15 @@ detour. The strategist's report has one line: how many chunks it knows and where
 `KINDRED_ATLAS=off` in the server's environment to turn the atlas off: nothing is kept or read (an evaluation scenario
 says `atlas=off`).
 
+### Hearing (E-71f)
+An AI player hears the sounds the server sends its body's connection, as a person's client would be sent them: a creeper's
+hiss, a bow shot, a hostile's call, steps, a block broken, a door, a chest, eating, an explosion. Each is kept only as what
+kind of sound, which of eight ways from where it faced, and near (4 blocks), mid (8) or far. Its newest 64 are kept, and a
+stop clears them. Nothing it does reads them yet. A person's client also makes lava's popping and running water's sound
+itself, so the server never sends them. With `KINDRED_HEARING_AMBIENCE=on` in the server's environment (read at start;
+off by default), an AI player hears those by the client's own rule: lava only with air above it, water only where it
+runs, never through stone. It costs about 0.1 ms a tick a player.
+
 ### Rescue plans (F-29)
 
 With the strategist on, a player that has made no progress on its goal for a minute of game time (F-29b; before, its
@@ -820,7 +829,8 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
 
 1. Build the server from `packs/factions/` (its README): the seven mods by the index's links, each checked against its
    SHA-512; the Fabric server launcher for 1.21.1 with Loader 0.19.5; the Kindred jar; the pack's `server.properties`,
-   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first.
+   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first: start the
+   pack once without the Kindred jar, stop it, archive `world/`, then add the jar (walked 2026-11-12).
 2. Start it, then at the console: `aiplayer mode world factions`, then `faction admin hub` (the safe zone, the borders,
    the hub built). The mode is kept across restarts.
 3. Pre-generate with Chunky (the README's commands); `spark tps` after should read 20. Use
@@ -830,10 +840,14 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    `execute positioned ~20 ~ ~20 positioned over world_surface run aiplayer native create <name>`, and the rest beside it
    with `execute at <first> positioned ~2 ~ ~ positioned over world_surface run ...`. Act for one with
    `/faction as <player> <request>` (`create`, `invite`, `join`, `claim`, `coins`, `shop price <item>`, `ah list`, ...).
+   The auction house works the same way: `/faction as <player> ah sell <start> [buyNow] [hours]` lists what the player
+   holds (25 coins a listing, five at a time, 48 hours unless given), `ah buy <id>` pays the buy-now price, and the seller
+   is paid it less 3%.
 5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
    `aiplayer native connect <UUID>` for each.
 6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
-   read from the console.
+   read from the console. The overworld's size, centre and warning distance are in `world/level.dat` once the server
+   has stopped (BorderSize, BorderCenterX/Z, BorderWarningBlocks).
 
 In a faction world:
 
@@ -1049,6 +1063,9 @@ Each seed's `eval-result.json` and `latest.log` are written as an evaluation run
 
 It found that last one in the planner, and a GameTest confirmed it on a real server. See
 [the evidence](evidence/F-28.md), which also records how its deaths an hour compare with a server's.
+
+Its ways up, down and along through rock, and the targets it gives up on, are the campaign's own (F-35e). What it
+still lacks for movement fidelity is listed, ranked against the corpus, in [its known gaps](../companion-sim/README.md#known-gaps).
 
 ## The watch page (E-48)
 
