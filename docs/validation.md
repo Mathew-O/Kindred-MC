@@ -13,7 +13,8 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   committed.
 - **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
   `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
-  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes). A change that
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes), each run from an empty corpus world
+  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
   run alone ×3 on the branch and ×3 on main as the branch has it, its merge-base with origin/main, so merges that land
@@ -41,10 +42,16 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
+- F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
+- F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## An AI player buys and bids for what its run lacks (M-06i) — 12 November 2026 (`claude/m06i-wants-1111`)
+
+- [M-06i: an AI player buys and bids for what its run lacks](evidence/M-06i.md#an-ai-player-buys-and-bids-for-what-its-run-lacks-2026-11-12-claudem06i-wants-1111).
 
 ## A tree on land it may not work set aside in its plan (M-06i) — 11 November 2026 (`claude/m06i-refused-logs-1111`)
 
