@@ -356,6 +356,15 @@ detour. The strategist's report has one line: how many chunks it knows and where
 `KINDRED_ATLAS=off` in the server's environment to turn the atlas off: nothing is kept or read (an evaluation scenario
 says `atlas=off`).
 
+### Hearing (E-71f)
+An AI player hears the sounds the server sends its body's connection, as a person's client would be sent them: a creeper's
+hiss, a bow shot, a hostile's call, steps, a block broken, a door, a chest, eating, an explosion. Each is kept only as what
+kind of sound, which of eight ways from where it faced, and near (4 blocks), mid (8) or far. Its newest 64 are kept, and a
+stop clears them. Nothing it does reads them yet. A person's client also makes lava's popping and running water's sound
+itself, so the server never sends them. With `KINDRED_HEARING_AMBIENCE=on` in the server's environment (read at start;
+off by default), an AI player hears those by the client's own rule: lava only with air above it, water only where it
+runs, never through stone. It costs about 0.1 ms a tick a player.
+
 ### Rescue plans (F-29)
 
 With the strategist on, a player that has made no progress on its goal for a minute of game time (F-29b; before, its
