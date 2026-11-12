@@ -94,3 +94,35 @@ settle it, or the simulator's own water scenes.
 "Kindred shutdown flush incomplete; reconcile on startup" is not new. It appears on 4 of 10 e40a20 consoles (202,
 20261030, 31102026, 404), and on 8 of 10 e40a21 consoles (all but 404 and 707). Every time, it comes after the result
 was written and the world was saved.
+
+## The #157 pair (added 13:30 UTC)
+
+This is one pair. `6a6d882` is main just before #157, and `ec581d5` is #157's merge. Seeds 505, 31102026 and 303 ran on each side, at `goal=nether; ticks=144000`, three at a time, earned, alone on the cores, 12:00 to 13:23. All six runs are complete at 144,000 ticks.
+- The runs are in `runs/p157-before-6a6d882/` and `runs/p157-after-ec581d5/`.
+- The measures are in `analysis/p157-measures.txt` (from `analysis/p157measure.py`), with the spell lists in `analysis/spells-p157-{before,after}.json`.
+- Each side was scored with its own score.py; the stuck rules are the same as 2354e67's.
+
+| Measure, 505 / 31102026 / 303 | before 6a6d882 | after ec581d5 | e40a20 (79a9aad) | e40a21 (2354e67) |
+| --- | --- | --- | --- | --- |
+| "- Tunnel for water" steps | 0 / 3119 / 0 | 0 / 1031 / 126 | 0 / 1955 / 366 | 435 / 7274 / 373 |
+| Completed "Climb toward the surface for water: back the way it came" | 0 / 39 / 1 | 29 / 62 / 63 | 0 / 23 / 4 | 285 / 101 / 153 |
+| Hole-or-pit spells (minutes) | 0 (0) / 2 (6) / 2 (6) | 2 (6) / 8 (24) / 1 (3) | 0 / 0 / 0 | 4 (12) / 1 (3) / 4 (12) |
+| Of them, the water-bucket step | 0 / 0 / 0 | 1 / 3 / 1 | 0 / 0 / 0 | 4 / 1 / 2 |
+| Spells with the tunnel ↔ climb-for-water cycle | 0 / 0 / 0 | 0 / 2 / 1 | 0 / 0 / 0 | 4 / 1 / 2 |
+| Buckets filled | 3 / 2 / 1 | 3 / 2 / 3 | 3 / 2 / 3 | 5 / 1 / 3 |
+| First obsidian, min | 38.9 / not reached / 54.0 | 41.7 / 78.5 / 29.2 | 33.1 / 101.5 / 42.2 | 113.6 / 116.4 / 84.0 |
+
+**Verdict, from one pair: #157 changed it.**
+
+What #157 brings in:
+- The climb back for water: 40 completed climb-backs before, 154 after.
+- The water-bucket hole-or-pit spells: 0 before, 5 after, on every seed.
+- The tunnel ↔ climb cycle inside a spell: 0 before, 3 after.
+
+None of these is present before #157, or in e40a20.
+
+What it does not bring in:
+- The rise in "Tunnel for water" steps, which falls on 31102026 (3119 → 1031).
+- The late obsidian: on this pair obsidian is no later after #157 (it is earlier on 31102026 and 303).
+
+e40a21 has more of all of these than ec581d5, so later merges add to it.

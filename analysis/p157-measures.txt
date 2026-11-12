@@ -1,0 +1,8 @@
+## before 6a6d882
+505: tunnel-steps 0 (walks 0), climb-for-water steps 91, climb-back completed 0, fills 3, spells 2 (6 min), hole-or-pit 0 (0 min; water-bucket 0), spells with tunnel<->climb cycle 0, obsidian 38.9
+31102026: tunnel-steps 3119 (walks 1405), climb-for-water steps 1238, climb-back completed 39, fills 2, spells 5 (15 min), hole-or-pit 2 (6 min; water-bucket 0), spells with tunnel<->climb cycle 0, obsidian not reached
+303: tunnel-steps 0 (walks 0), climb-for-water steps 40, climb-back completed 1, fills 1, spells 15 (45 min), hole-or-pit 2 (6 min; water-bucket 0), spells with tunnel<->climb cycle 0, obsidian 54.0
+## after ec581d5
+505: tunnel-steps 0 (walks 0), climb-for-water steps 557, climb-back completed 29, fills 3, spells 15 (45 min), hole-or-pit 2 (6 min; water-bucket 1), spells with tunnel<->climb cycle 0, obsidian 41.7
+31102026: tunnel-steps 1031 (walks 381), climb-for-water steps 1647, climb-back completed 62, fills 2, spells 13 (39 min), hole-or-pit 8 (24 min; water-bucket 3), spells with tunnel<->climb cycle 2, obsidian 78.5
+303: tunnel-steps 126 (walks 238), climb-for-water steps 1124, climb-back completed 63, fills 3, spells 3 (9 min), hole-or-pit 1 (3 min; water-bucket 1), spells with tunnel<->climb cycle 1, obsidian 29.2
