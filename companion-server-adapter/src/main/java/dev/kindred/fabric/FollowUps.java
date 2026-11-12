@@ -128,6 +128,12 @@ final class FollowUps {
             wants.add(new Want(Need.IRON_SWORD, 1, Objective.SURVIVAL, "a hunter's kit: an iron sword"));
             wants.add(new Want(Need.SHIELD, 1, Objective.SURVIVAL, "a hunter's kit: a shield"));
         }
+        // A bed of its own for the nights away from home (E-70a): a standing want, taken as the chance comes; wanted first
+        // thing after a night spent holed up for want of one.
+        if (campaign.bedWanted()) {
+            wants.add(new Want(Need.BED, 1, Objective.SURVIVAL, campaign.bedUrgent()
+                    ? "a bed wanted first thing: last night was spent holed up for want of one" : "a bed of its own for the nights away from home"));
+        }
         if (ahead.contains(Objective.NETHER_TRIP) && campaign.preferences().has(PlanPreferences.Habit.MORE_FOOD)) {
             wants.add(new Want(Need.FOOD, StrongholdRunPlanner.PREP_FOOD + PlanPreferences.EXTRA_FOOD, Objective.NETHER_TRIP,
                     "a habit kept in this world: more food"));
@@ -280,7 +286,9 @@ final class FollowUps {
                             chicken -> chicken.isAlive() && !chicken.isBaby() && player.canSee(chicken)).isEmpty()) at.add(Need.FEATHERS);
                 }
                 case "WOOL" -> {
-                    if (ashore && !world.getEntitiesByClass(net.minecraft.entity.passive.SheepEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                    // A bed wanted first thing (E-70a): a sheep farther off is worth the walk.
+                    int reach = campaign.bedUrgent() ? 40 : 16;
+                    if (ashore && !world.getEntitiesByClass(net.minecraft.entity.passive.SheepEntity.class, player.getBoundingBox().expand(reach, 6, reach),
                             sheep -> sheep.isAlive() && !sheep.isBaby() && player.canSee(sheep)).isEmpty()) at.add(Need.WOOL);
                 }
                 case "STRING" -> {
@@ -353,7 +361,8 @@ final class FollowUps {
             case "FLINT" -> ashore ? campaign.flint(body) : Optional.empty();
             // A bed of the colour it holds three wool of, and the planks it takes, at a table.
             case "BED" -> !craftable(need) || wood < 3 ? Optional.empty() : bedColour(player).flatMap(colour -> craftAtTable(body, colour + "_bed"));
-            case "WOOL" -> !ashore ? Optional.empty() : campaign.huntFor(player, net.minecraft.entity.passive.SheepEntity.class, "sheep for wool")
+            case "WOOL" -> !ashore ? Optional.empty() : campaign.huntFor(player, net.minecraft.entity.passive.SheepEntity.class, "sheep for wool",
+                            campaign.bedUrgent() ? 40 : 24)
                     .or(() -> due ? shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy) : Optional.empty());
             case "BLOCKS" -> ashore ? shared(PortalRunPlanner.Action.GATHER_STONE, count, why, p, body, policy) : Optional.empty();
             case "FOOD" -> ashore ? shared(PortalRunPlanner.Action.HUNT, count, why, p, body, policy)
