@@ -679,6 +679,9 @@ final class PortalRunCampaign {
             if (waterDug.size() < 4_096) waterDug.add(position(task.args()).asLong());
             waterHoldBegins();
         }
+        // A bucket that could not be filled where it stood: not asked for again there for a minute, now that water in reach is
+        // filled from whatever became of a walk to it (F-35o).
+        if (task != null && !completed && fillingBucket(task) && position(task.args()) != null) cellsAside.until(position(task.args()).asLong(), tick + 1200);
         if (task != null && !completed) {
             if (blocked.size() >= 5) blocked.removeFirst();
             blocked.addLast("at " + tick / 20 + "s: " + task.label() + (why == null || why.isBlank() ? "" : " - " + why));
@@ -5443,6 +5446,13 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         // At night below ground, only water down there too: water under the sky waits for daylight (see daylightBelow).
         boolean below = underground(player) && night(world);
+        // Water in reach is filled from where it stands, whatever became of a walk to it: a walk refused before its tunnel's
+        // floor was dug had set a cave's pool aside, and its tunnel went on past the pool beside it (F-35o).
+        var inReach = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !generatorCell(p) && mayWork(player, p)
+                && eyeDistance(player, p) <= 4.0 && !(below && world.isSkyVisible(p.up())));
+        if (inReach.isPresent()) {
+            return Optional.of(new Task("native_bucket", coords(inReach.get(), Map.of("mode", "fill")), "Fill a bucket at " + inReach.get().toShortString()));
+        }
         var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p) && mayWork(player, p)
                 && p.getSquaredDistance(feet) < 64 * 64 && !(below && world.isSkyVisible(p.up())));
         if (source.isEmpty()) return Optional.empty();
