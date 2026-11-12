@@ -4,7 +4,7 @@
 
 **Setup:**
 - Build: main `2c67d67` (#255's merge), run 15:15 to 20:33 UTC on 2026-11-12.
-- Settings: the same as `e40c2-d640518` — the ten seeds, `goal=dragon; ticks=288000`, two at a time, worlds kept (`--keep-world`), earned, strategist off, nothing else on the cores. As in e40c2, the run does not turn the dragon fight on, so the fight itself would be refused as in play.
+- Settings: the same as `e40c2-d640518` — the ten seeds, `goal=dragon; ticks=288000`, two at a time, worlds kept (`--keep-world`), earned, strategist off, nothing else on the cores. As in e40c2, the evaluation's bootstrap turns the dragon fight on for the dragon goal (F-26b): each of the ten consoles logs "Evaluation run: the dragon fight on, for the dragon goal". No player reached the End, so it never came into play.
 - Completion: 10 of 10 exit 0, 288,000 ticks each. The runner's container did not restart: it was up throughout, checked hourly.
 - Differences from e40c2: the build, and that e40c2's container restarted twice, so five of its seeds were re-run there.
 - Scoring: this build's score.py (`--no-metrics`), paired with e40c2 in [`compare-e40c3.md`](../compare-e40c3.md).
