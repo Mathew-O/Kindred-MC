@@ -329,7 +329,7 @@ final class WorldKnowledge {
      * game's own ray cast from the player (its shape context), and the blocks of the section a scan is reading taken from
      * that section, as the sweep read them.
      */
-    private static final class WorldSight implements SightWorld {
+    static final class WorldSight implements SightWorld {
         private final ServerWorld world;
         private final ServerPlayerEntity player;
         private ChunkSection section;

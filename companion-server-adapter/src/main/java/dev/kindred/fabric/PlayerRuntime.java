@@ -5128,10 +5128,13 @@ final class PlayerRuntime {
                 var before = footprint(last);
                 var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
                 for (var base : record.built) avoid.add(footprint(base));
-                var site = dev.kindred.core.construction.BaseSite.choose(ground(world), (before.minX() + before.maxX()) / 2,
+                var site = dev.kindred.core.construction.BaseSite.choose(entry.seenGround.ground(world), (before.minX() + before.maxX()) / 2,
                         (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, dev.kindred.core.construction.TradingHall.width(HALL_CELLS),
                         dev.kindred.core.construction.TradingHall.DEPTH, dev.kindred.core.construction.TradingHall.HEIGHT, avoid);
                 if (site.isPresent()) {
+                    entry.standCheck = new StandCheck("hall", dimension, site.get().x(), site.get().y(), site.get().z(),
+                            dev.kindred.core.construction.TradingHall.width(HALL_CELLS), dev.kindred.core.construction.TradingHall.DEPTH,
+                            dev.kindred.core.construction.TradingHall.HEIGHT);
                     record.hall = new PlayerMemoryStore.Hall(dimension, site.get().x(), site.get().y(), site.get().z(), HALL_CELLS,
                             styleOf(last).wood(), false);
                     memories.saveBases(id, record);
@@ -5172,12 +5175,16 @@ final class PlayerRuntime {
         var shape = dev.kindred.core.construction.Houses.shape(stage, style.variant());
         int[] span = dev.kindred.core.construction.Houses.span(shape, style.turns());
         var plan = dev.kindred.core.construction.Houses.of(stage, style);
-        var site = siteFor(world, record, dimension, anchorX, anchorZ, span[0], span[1], height(plan), footprint -> true);
+        var site = siteFor(entry.seenGround.ground(world), record, dimension, anchorX, anchorZ, span[0], span[1], height(plan), footprint -> true);
         if (site.isEmpty()) {
-            entry.baseCheckAt = now + BASE_NO_SITE;
-            noteBase(entry, "No flat open ground for a " + stage.noun + " within " + BASE_RADIUS + " blocks of " + anchorX + ", " + anchorZ);
+            // While it is still seeing ground it had not, it looks again soon: the site may be there once seen (F-35m1).
+            long seen = entry.seenGround.version();
+            entry.baseCheckAt = now + (seen != entry.noSiteSeen ? BASE_LOOK : BASE_NO_SITE);
+            entry.noSiteSeen = seen;
+            noteBase(entry, "No flat open ground it has seen for a " + stage.noun + " within " + BASE_RADIUS + " blocks of " + anchorX + ", " + anchorZ);
             return false;
         }
+        entry.standCheck = new StandCheck("base", dimension, site.get().x(), site.get().y(), site.get().z(), span[0], span[1], height(plan));
         var origin = dev.kindred.core.construction.Houses.originFor(site.get(), shape, style.turns());
         var base = new PlayerMemoryStore.Base(stage.noun, dimension, origin.x(), origin.y(), origin.z(), false,
                 style.seed().isEmpty() ? null : style.seed(), style.wood(), style.variant(), style.turns());
@@ -5269,12 +5276,13 @@ final class PlayerRuntime {
         for (var pen : record.allPens()) {
             if (pen.dimension().equals(dimension)) avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(pen.x(), pen.z(), pen.x() + 6, pen.z() + 6));
         }
-        var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
+        var site = dev.kindred.core.construction.BaseSite.choose(entry.seenGround.ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
                 (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, 7, 7, 2, avoid);
         if (site.isEmpty()) {
             entry.ranchNote = "No flat open ground for a pen within " + BASE_RADIUS + " blocks of its " + last.stage();
             return false;
         }
+        entry.standCheck = new StandCheck("pen", dimension, site.get().x(), site.get().y(), site.get().z(), 7, 7, 2);
         var pen = new PlayerMemoryStore.Pen(dimension, site.get().x(), site.get().y(), site.get().z(), choice.kind().get().name(), false);
         record.addPen(pen);
         memories.saveBases(entry.data.id(), record);
@@ -5328,13 +5336,14 @@ final class PlayerRuntime {
             for (var pen : record.allPens()) {
                 if (pen.dimension().equals(dimension)) avoid.add(new dev.kindred.core.construction.BaseSite.Footprint(pen.x(), pen.z(), pen.x() + 6, pen.z() + 6));
             }
-            var site = dev.kindred.core.construction.BaseSite.choose(ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
+            var site = dev.kindred.core.construction.BaseSite.choose(entry.seenGround.ground(player.getServerWorld()), (before.minX() + before.maxX()) / 2,
                     (before.minZ() + before.maxZ()) / 2, BASE_RADIUS, PLOT, PLOT, 1, avoid);
             if (site.isEmpty()) {
                 entry.ranchNote = "No flat open ground for a wheat plot within " + BASE_RADIUS + " blocks of its " + last.stage();
                 return false;
             }
             // The site's floor is laid on the ground; the plot is the ground itself, one below.
+            entry.standCheck = new StandCheck("plot", dimension, site.get().x(), site.get().y(), site.get().z(), PLOT, PLOT, 1);
             record.plot = new PlayerMemoryStore.Plot(dimension, site.get().x(), site.get().y() - 1, site.get().z());
             memories.saveBases(entry.data.id(), record);
         }
@@ -6158,14 +6167,23 @@ final class PlayerRuntime {
      * {@code fits}. Pure: it reads the ground and the record and changes neither; the base decision and a faction world's
      * founder choose by it alike (M-06i).
      */
-    private static Optional<dev.kindred.core.construction.Pos> siteFor(ServerWorld world, PlayerMemoryStore.Bases record, String dimension,
+    private static Optional<dev.kindred.core.construction.Pos> siteFor(dev.kindred.core.construction.BaseSite.Ground ground, PlayerMemoryStore.Bases record, String dimension,
                                                                        int anchorX, int anchorZ, int width, int depth, int height,
                                                                        java.util.function.Predicate<dev.kindred.core.construction.BaseSite.Footprint> fits) {
         var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
         for (var base : record.built) avoid.add(footprint(base));
         if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
-        return dev.kindred.core.construction.BaseSite.choose(ground(world), anchorX, anchorZ, BASE_RADIUS, width, depth, height, avoid, fits);
+        long start = System.nanoTime();
+        try {
+            return dev.kindred.core.construction.BaseSite.choose(ground, anchorX, anchorZ, BASE_RADIUS, width, depth, height, avoid, fits);
+        } finally {
+            siteNanos += System.nanoTime() - start;
+            siteCalls++;
+        }
     }
+
+    /** Every base siting's time, for the evidence (F-35m1). */
+    static long siteNanos, siteCalls;
 
     /** A first base's ground as a founder reckons it before it is decided: the cabin's largest plan, whichever is chosen. */
     private static final int FIRST_BASE_SPAN = 9;
@@ -6212,8 +6230,9 @@ final class PlayerRuntime {
         }
         var ledgers = projected();
         var aside = entry.factionPlay.setAside(server.getTicks());
+        // Kept until what it has seen of the ground grows or changes too (F-35m1): a site it could not choose before it looked.
         long key = java.util.Objects.hash(anchorX, anchorZ, ledgers.claims().hashCode(), ledgers.safe().chunks().hashCode(), aside.hashCode(),
-                record.built.size(), dimension);
+                record.built.size(), dimension, entry.seenGround.version());
         if (entry.prospectKey != null && entry.prospectKey == key) return entry.prospect;
         java.util.function.Function<dev.kindred.core.construction.BaseSite.Footprint, java.util.Set<dev.kindred.core.factions.Territory.Chunk>> chunks = f -> {
             var out = new java.util.LinkedHashSet<dev.kindred.core.factions.Territory.Chunk>();
@@ -6230,9 +6249,10 @@ final class PlayerRuntime {
             return true;
         };
         int height = firstBaseHeight();
-        var site = siteFor(world, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
+        var seen = entry.seenGround.ground(world);
+        var site = siteFor(seen, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
                 f -> chunks.apply(f).size() == 1 && free.test(f));
-        if (site.isEmpty()) site = siteFor(world, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
+        if (site.isEmpty()) site = siteFor(seen, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
                 f -> chunks.apply(f).size() == 2 && free.test(f));
         Prospect prospect = null;
         if (site.isPresent()) {
@@ -6248,7 +6268,7 @@ final class PlayerRuntime {
                 anchorX = centreX;
                 anchorZ = centreZ;
                 key = java.util.Objects.hash(anchorX, anchorZ, ledgers.claims().hashCode(), ledgers.safe().chunks().hashCode(), aside.hashCode(),
-                        record.built.size(), dimension);
+                        record.built.size(), dimension, entry.seenGround.version());
             }
         }
         entry.prospectKey = key;
@@ -6270,20 +6290,96 @@ final class PlayerRuntime {
         if (!world.isChunkLoaded(x >> 4, z >> 4)) return Optional.empty();
         int top = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
         if (top < world.getBottomY()) return Optional.empty();
-        var state = world.getBlockState(new BlockPos(x, top, z));
-        boolean firm = !state.hasBlockEntity() && state.getFluidState().isEmpty() && (state.isIn(net.minecraft.registry.tag.BlockTags.DIRT)
-                || state.isIn(net.minecraft.registry.tag.BlockTags.BASE_STONE_OVERWORLD) || state.isIn(net.minecraft.registry.tag.BlockTags.SAND)
-                || state.isOf(Blocks.GRAVEL));
-        // Open water at the top, still or flowing: a rail line crosses it on a bridge (E-45e).
-        boolean water = state.isOf(Blocks.WATER);
-        int open = 0;
-        while (open < 24) {
-            var above = world.getBlockState(new BlockPos(x, top + 1 + open, z));
-            // A rail is no more in the way than air: a line laid again over its own rails (E-45e).
-            if (!(above.isAir() || above.isReplaceable() && above.getFluidState().isEmpty() || above.isIn(net.minecraft.registry.tag.BlockTags.RAILS))) break;
-            open++;
+        return Optional.of(SeenGround.column(SeenGround.describe(world, x, top, z)));
+    }
+
+    /** A site it chose for a base stage, hall, pen or plot, not begun when chosen: its kind, where, and its size (F-35m1). */
+    record StandCheck(String kind, String dimension, int x, int y, int z, int width, int depth, int height) { }
+
+    /** How near a site's edge it stands when it looks its site over again (F-35m1). */
+    static final int STAND = 6;
+    /** Every check at the stand: made, and those that found the site changed, for the evidence (F-35m1). */
+    static long standChecks, standDropped;
+
+    /**
+     * The check at the stand (F-35m1): once it stands within {@value #STAND} of a site it chose and has not begun, the ground
+     * there is looked over again (its sweep sees it afresh from close by), and if the site no longer fits by the rule it
+     * was chosen by, its unbegun record is dropped and the site chosen again from what it now sees. A site begun (a block
+     * of its own on its ground) is never dropped by this check. Once a site.
+     */
+    private void standCheck(Entry entry, ServerPlayerEntity player) {
+        var check = entry.standCheck;
+        if (check == null) return;
+        var world = player.getServerWorld();
+        if (!world.getRegistryKey().getValue().toString().equals(check.dimension())) return;
+        double cx = check.x() + check.width() / 2.0, cz = check.z() + check.depth() / 2.0;
+        if (Math.hypot(player.getX() - cx, player.getZ() - cz) > STAND + Math.max(check.width(), check.depth()) / 2.0) return;
+        entry.standCheck = null;
+        standChecks++;
+        if (begun(world, check)) return;
+        // Its site looked over again from where it stands now: the ground as it is, wherever it can see it.
+        int ring = dev.kindred.core.construction.BaseSite.RING;
+        entry.seenGround.lookOver(player, check.x() - ring, check.z() - ring, check.x() + check.width() - 1 + ring, check.z() + check.depth() - 1 + ring);
+        var floor = dev.kindred.core.construction.BaseSite.floorAt(entry.seenGround.ground(world), check.x(), check.z(), check.width(), check.depth(),
+                check.height());
+        if (floor.isPresent() && floor.get() == check.y()) return;
+        standDropped++;
+        String why = "its " + check.kind() + "'s site at " + check.x() + ", " + check.y() + ", " + check.z() + " was not as it had seen it ("
+                + floor.map(f -> "its floor now at " + f).orElse("no longer flat and open") + "); sited again";
+        KindredMod.LOGGER.info("{} stand check: {}", entry.data.displayName(), why);
+        var record = entry.bases;
+        switch (check.kind()) {
+            case "base" -> {
+                if (record != null && !record.built.isEmpty() && !record.built.getLast().complete()) record.built.removeLast();
+                entry.build = null;
+                entry.baseBuild = null;
+                entry.baseCheckAt = server.getTicks();
+                noteBase(entry, why);
+            }
+            case "hall" -> {
+                if (record != null) record.hall = null;
+                entry.build = null;
+                entry.hallBuild = null;
+                entry.baseCheckAt = server.getTicks();
+                noteBase(entry, why);
+            }
+            case "pen" -> {
+                if (record != null && entry.ownRanch != null) {
+                    if (entry.ownRanch.equals(record.ranch)) record.ranch = null;
+                    else if (record.pens != null) record.pens.remove(entry.ownRanch);
+                }
+                entry.ranch = null;
+                entry.ownRanch = null;
+                entry.ranchNote = why;
+            }
+            case "plot" -> {
+                if (record != null) record.plot = null;
+                entry.growing = null;
+                entry.ranchNote = why;
+            }
+            default -> { }
         }
-        return Optional.of(new dev.kindred.core.construction.BaseSite.Column(top, firm, open, water));
+        if (record != null) memories.saveBases(entry.data.id(), record);
+        entry.cachedRoutineCandidates = List.of();
+        entry.routineRefreshPending = true;
+    }
+
+    /**
+     * Whether a site is begun: a block on its ground or over it, up to its height, that is not the ground's own (dirt,
+     * grass, stone, sand, gravel), air or a plant. Tilled soil and a fence are a plot's and a pen's beginnings.
+     */
+    private static boolean begun(ServerWorld world, StandCheck check) {
+        for (int x = check.x(); x < check.x() + check.width(); x++) for (int z = check.z(); z < check.z() + check.depth(); z++) {
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+            for (int y = check.y() - 1; y < check.y() + check.height(); y++) {
+                var state = world.getBlockState(new BlockPos(x, y, z));
+                if (state.isAir() || state.isReplaceable() || state.isIn(net.minecraft.registry.tag.BlockTags.DIRT)
+                        || state.isIn(net.minecraft.registry.tag.BlockTags.BASE_STONE_OVERWORLD) || state.isIn(net.minecraft.registry.tag.BlockTags.SAND)
+                        || state.isOf(Blocks.GRAVEL)) continue;
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The base a player has or is building (M-01c), if any. */
@@ -6984,6 +7080,9 @@ final class PlayerRuntime {
         if (usable && body.entity() != null) {
             takeUpWork(entry, body);
             refreshTacticalObservation(entry, server.getTicks());
+            // A little more of the ground round it looked at, for siting what it builds on ground it has seen (F-35m1).
+            entry.seenGround.sweep(body.entity());
+            standCheck(entry, body.entity());
             // A goal looks around as it goes, and so does a build, for the trees and stone its needs may send it to (E-08c).
             if (goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null || entry.bringIron > 0) {
                 if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
@@ -18136,6 +18235,12 @@ final class PlayerRuntime {
         dev.kindred.core.construction.BuildStyle fixedBaseStyle;
         /** A faction world's founder's base site before its first base is decided, and what it was reckoned from (M-06i). */
         Prospect prospect;
+        /** The ground it has looked at, as it saw it: where it may site what it builds (F-35m1). */
+        final SeenGround seenGround = new SeenGround();
+        /** What it had seen of the ground when its base last found no site (F-35m1). */
+        long noSiteSeen = -1;
+        /** A site it chose and has not begun, checked again when it stands there (F-35m1). */
+        StandCheck standCheck;
         Long prospectKey;
         /**
          * Life first (F-25c9): whether it is out getting food to last, until when a look for food that came to nothing
