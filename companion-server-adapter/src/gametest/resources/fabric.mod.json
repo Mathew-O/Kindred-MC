@@ -167,6 +167,7 @@
       "dev.kindred.fabric.NativeHorseGameTests",
       "dev.kindred.fabric.NativeBaseRepairGameTests",
       "dev.kindred.fabric.NativeLifeFirstGameTests",
+      "dev.kindred.fabric.NativeNightsGameTests",
       "dev.kindred.fabric.NativeSeedBuildGameTests",
       "dev.kindred.fabric.NativeCompoundGameTests",
       "dev.kindred.fabric.NativeWorkRestartGameTests",

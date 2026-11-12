@@ -45,6 +45,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
 - F-35l, stone not mined from a thin floor over a drop round its feet: [evidence](evidence/F-35l.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
+- E-70a, nights in bed: in by dusk, the bed it carries, a person's night never held: [evidence](evidence/E-70a.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)

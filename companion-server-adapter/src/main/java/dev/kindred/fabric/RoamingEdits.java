@@ -58,13 +58,25 @@ final class RoamingEdits {
      */
     static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded, boolean underfoot,
                               boolean overLava) {
+        return breakDenial(player, pos, policy, waterGuarded, underfoot, overLava, false);
+    }
+
+    /**
+     * As {@link #breakDenial(ServerPlayerEntity, BlockPos, EditPolicy.ServerPolicy, boolean, boolean, boolean)};
+     * {@code carriedBed} lets the player take up the bed it set down for the night and slept in (E-70a): a bed whose
+     * either half is where its spawn is set, and no other block entity.
+     */
+    static String breakDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, boolean waterGuarded, boolean underfoot,
+                              boolean overLava, boolean carriedBed) {
         String common = common(player, pos, policy);
         if (common != null) return common;
         var world = player.getServerWorld();
         BlockState state = world.getBlockState(pos);
         if (state.isAir() || !state.getFluidState().isEmpty() && state.getCollisionShape(world, pos).isEmpty()) return "Nothing solid to break";
         if (state.getHardness(world, pos) < 0) return "Unbreakable block";
-        if (state.hasBlockEntity() && !emptyFurnace(player, pos, state) && !emptyLectern(state)) return "Containers and block entities are not broken autonomously";
+        if (state.hasBlockEntity() && !emptyFurnace(player, pos, state) && !emptyLectern(state) && !(carriedBed && ownSpawnBed(player, pos, state))) {
+            return "Containers and block entities are not broken autonomously";
+        }
         if (state.isOf(Blocks.SPAWNER) || state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.END_PORTAL_FRAME)) return "Protected structure block";
         if (state.isIn(BlockTags.GUARDED_BY_PIGLINS) && piglinsAbout(player)) return "A piglin nearby would turn on the player for it";
         BlockPos support = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
@@ -196,6 +208,14 @@ final class RoamingEdits {
     }
 
     /** A lectern with no book on it: breaking it loses nothing, as a player rerolling a librarian breaks it (E-45c). */
+    /** A bed at {@code pos} whose either half is where {@code player}'s spawn is set, in its world. */
+    private static boolean ownSpawnBed(ServerPlayerEntity player, BlockPos pos, BlockState state) {
+        if (!state.isIn(BlockTags.BEDS) || player.getSpawnPointPosition() == null || player.getSpawnPointDimension() != player.getServerWorld().getRegistryKey()) return false;
+        BlockPos other = pos.offset(state.get(net.minecraft.block.BedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD
+                ? state.get(net.minecraft.block.BedBlock.FACING).getOpposite() : state.get(net.minecraft.block.BedBlock.FACING));
+        return pos.equals(player.getSpawnPointPosition()) || other.equals(player.getSpawnPointPosition());
+    }
+
     private static boolean emptyLectern(BlockState state) {
         return state.isOf(Blocks.LECTERN) && !state.get(net.minecraft.block.LecternBlock.HAS_BOOK);
     }

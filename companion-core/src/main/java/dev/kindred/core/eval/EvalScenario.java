@@ -21,13 +21,14 @@ import java.util.Set;
  * {@code advice} ({@code on}/{@code off}, on unless said; E-46, F-30, F-29: with the strategist on, {@code advice=off}
  * asks it for rescue plans alone), {@code mode} ({@code survival}, the default, or {@code factions}: M-06i),
  * {@code players} (more AI players by name, comma-separated) and {@code founders} (with {@code mode=factions}: how many of
- * the players, the first in order, are set to found a faction at once, the others to wait to be asked). An unknown key, an unknown value or a key given twice is
+ * the players, the first in order, are set to found a faction at once, the others to wait to be asked) and {@code sleep}
+ * ({@code on}/{@code off}, on unless said; E-70a: off keeps the nights as they were before it, for a clean comparison). An unknown key, an unknown value or a key given twice is
  * refused. A run is earned only when nothing in it is handed out or kept: the starters spawn with empty inventories,
  * edits are on under the roaming policy and nothing is kept at death; every other run is staged.
  */
 public record EvalScenario(List<String> starters, Goal goal, boolean edits, long ticks, boolean sprint,
                            boolean strategist, boolean voice, Keep keep, boolean lessons, boolean atlas, boolean rescue,
-                           boolean advice, Mode mode, List<String> players, int founders) {
+                           boolean advice, Mode mode, List<String> players, int founders, boolean sleep) {
     /** What the starters are set to do. */
     public enum Goal { NETHER, END, DRAGON, NONE }
 
@@ -44,7 +45,7 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
     public static final long DEFAULT_TICKS = 144_000;
     public static final long MAX_TICKS = 10_000_000;
     private static final List<String> CANONICAL = List.of("Kindred", "Sol", "Echo");
-    private static final Set<String> KEYS = Set.of("starters", "goal", "edits", "ticks", "sprint", "strategist", "voice", "keep", "lessons", "atlas", "rescue", "advice", "mode", "players", "founders");
+    private static final Set<String> KEYS = Set.of("starters", "goal", "edits", "ticks", "sprint", "strategist", "voice", "keep", "lessons", "atlas", "rescue", "advice", "mode", "players", "founders", "sleep");
 
     public EvalScenario {
         starters = List.copyOf(starters);
@@ -118,7 +119,7 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
         if (founders > 0 && mode != Mode.FACTIONS) throw new IllegalArgumentException("founders is for mode=factions");
         return new EvalScenario(starters, goal, onOff(pairs, "edits", true), ticks, onOff(pairs, "sprint", true),
                 onOff(pairs, "strategist", false), onOff(pairs, "voice", false), keep, onOff(pairs, "lessons", true), onOff(pairs, "atlas", true),
-                onOff(pairs, "rescue", true), onOff(pairs, "advice", true), mode, players, founders);
+                onOff(pairs, "rescue", true), onOff(pairs, "advice", true), mode, players, founders, onOff(pairs, "sleep", true));
     }
 
     private static boolean onOff(Map<String, String> pairs, String key, boolean fallback) {
@@ -145,7 +146,8 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
                 + "; rescue=" + (rescue ? "on" : "off") + "; advice=" + (advice ? "on" : "off")
                 + (mode == Mode.FACTIONS ? "; mode=factions" : "")
                 + (players.isEmpty() ? "" : "; players=" + String.join(",", players))
-                + (founders == 0 ? "" : "; founders=" + founders);
+                + (founders == 0 ? "" : "; founders=" + founders)
+                + (sleep ? "" : "; sleep=off");
     }
 
     /** Every AI player of the run, the starters first, in the order they are made. */
