@@ -6340,7 +6340,11 @@ final class PortalRunCampaign {
             for (int s = 0; s < 36 && slot < 0; s++) if (RESTING.contains(inventory.getStack(s).getItem())) slot = s;
         }
         if (slot < 0) return Optional.empty();
-        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        // The swap named for what the block is for: a block readied to take cover or hole up is that step, which a mob on
+        // it does not stop, as the weapon taken to hand is not (F-25c4cv). Readied under the one name, it was stopped "A
+        // hostile mob is attacking; fight back first" 25 to 35 times a run in the corpus's kindred-21883, never reached its
+        // hotbar, and it fought on outmatched until a zombie killed it (E-71e).
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, label + ": ready a block"));
         for (Direction side : Direction.values()) {
             BlockPos support = cell.offset(side.getOpposite());
             if (support.equals(feet) || support.equals(feet.up())) continue;
