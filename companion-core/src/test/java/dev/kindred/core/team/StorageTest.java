@@ -42,6 +42,37 @@ class StorageTest {
     }
 
     @Test
+    void whatItKnowsIsKeptAcrossARestartAsItWasAndWhatItLearnedSinceIsNotOverwritten() {
+        var before = new Storage();
+        before.looked(HOME, Whose.OWN, Map.of("minecraft:saddle", 1, "minecraft:enchanted_book", 2), 100);
+        before.looked(SHED, Whose.TEAM, Map.of("minecraft:bread", 5), 150);
+        var kept = before.stores();
+        assertEquals(List.of(HOME, SHED), kept.stream().map(Storage.Store::place).toList(), "Every container, in the order first known");
+
+        var after = new Storage();
+        long fresh = after.revision();
+        // Since this start it has looked into the shed already: that is newer, and stays.
+        after.looked(SHED, Whose.TEAM, Map.of("minecraft:bread", 2), 10);
+        assertTrue(after.revision() > fresh, "A look is a change");
+        long looked = after.revision();
+        assertTrue(after.restore(kept.get(0)), "The chest it knew taken up again");
+        assertFalse(after.restore(kept.get(1)), "Not over what it learned since");
+        assertTrue(after.revision() > looked, "Taking one up is a change");
+        long settled = after.revision();
+        assertFalse(after.restore(kept.get(0)), "Taken up once");
+        assertEquals(settled, after.revision(), "Nothing taken up, nothing changed");
+        assertEquals(kept.get(0), after.store(HOME).orElseThrow(), "As it was: whose, the counts and when");
+        assertEquals(2, after.store(SHED).orElseThrow().count("minecraft:bread"));
+
+        // The restored counts are what a later look is judged against: the saddle gone, nothing else.
+        var look = after.looked(HOME, Whose.OWN, Map.of("minecraft:enchanted_book", 2), 400);
+        assertTrue(look.isShort());
+        assertEquals(Map.of("minecraft:saddle", 1), look.gone());
+        // With nothing kept, a first look only notes what is there, as before.
+        assertFalse(new Storage().looked(HOME, Whose.OWN, Map.of("minecraft:enchanted_book", 2), 400).isShort());
+    }
+
+    @Test
     void aLookFindsWhatIsGoneAndWhatMoreIsThereAndCountsWhatItSees() {
         var storage = new Storage();
         storage.looked(HOME, Whose.TEAM, Map.of("minecraft:iron_ingot", 12, "minecraft:diamond", 2), 100);
