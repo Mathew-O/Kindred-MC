@@ -334,6 +334,12 @@ def score(build_dir, use_metrics=True):
                              "spellsOutByRecipe": sum(1 for r in lines if r["line"].endswith(": out by its recipe")),
                              "tokens": p.get("tokens", 0),
                              "metrics": metrics.get(str(log_of(folder)), {}).get(name)}
+            # E-70a: the chunks it brought into its loaded area and held, per game hour of the run's ticks.
+            if "chunkLoads" in p:
+                players[name]["chunkLoads"] = p["chunkLoads"]
+                players[name]["chunkMinutes"] = p["chunkMinutes"]
+                players[name]["chunkLoadsPerHour"] = round(p["chunkLoads"] / hours, 1)
+                players[name]["chunkMinutesPerHour"] = round(p["chunkMinutes"] / hours, 1)
         # F-26c: every death and every stuck spell in a bucket; a listed spell with no watchdog line found is "unmatched".
         found = stuck_kinds_of(log_of(folder), result["players"])
         for name, p in result["players"].items():
@@ -350,6 +356,16 @@ def score(build_dir, use_metrics=True):
                                  "factions": factions, "server": result.get("server"),
                                  "teamFurthest": STAGES[best] if best >= 0 else "none", "teamFurthestIndex": best,
                                  "teamDeathsPerHour": round(sum(p["deaths"] for p in players.values()) / hours, 2), "players": players}
+        # E-70a: a night slept through passes in moments, so a run's ticks cover more of the world's days. The same counts
+        # per game day (the Overworld's time of day's advance) beside those per game hour of ticks.
+        days = result.get("days")
+        if days is not None and days > 0:
+            per_seed[folder.name]["days"] = round(days, 3)
+            per_seed[folder.name]["teamDeathsPerDay"] = round(sum(p["deaths"] for p in players.values()) / days, 2)
+            per_seed[folder.name]["teamStuckMinutesPerDay"] = round(sum(p["stuckMinutes"] for p in players.values()) / days, 2)
+        if all("chunkLoads" in p for p in players.values()) and players:
+            per_seed[folder.name]["teamChunkLoadsPerHour"] = round(sum(p["chunkLoads"] for p in players.values()) / hours, 1)
+            per_seed[folder.name]["teamChunkMinutesPerHour"] = round(sum(p["chunkMinutes"] for p in players.values()) / hours, 1)
     team = {
         "teamFurthestIndex": spread([s["teamFurthestIndex"] for s in per_seed.values()]),
         "teamDeathsPerHour": spread([s["teamDeathsPerHour"] for s in per_seed.values()]),
@@ -373,6 +389,10 @@ def score(build_dir, use_metrics=True):
         "unaskedLines": spread([s["chatter"]["unaskedLines"] for s in per_seed.values()]),
         "silentMeetings": spread([s["chatter"]["silentMeetings"] for s in per_seed.values()]),
     }
+    for key in ("days", "teamDeathsPerDay", "teamStuckMinutesPerDay", "teamChunkLoadsPerHour", "teamChunkMinutesPerHour"):
+        values = [s[key] for s in per_seed.values() if key in s]
+        if values:
+            team[key] = spread(values)
     for stage in STAGES:
         firsts = [min((p["minutesTo"][stage] for p in s["players"].values() if stage in p["minutesTo"]), default=None) for s in per_seed.values()]
         team["minutesTo_" + stage] = by_end(firsts)
@@ -442,6 +462,13 @@ def markdown(summary):
     t = summary["team"]
     lines.append("| The team's furthest stage (index in the list below) | %s |" % fmt(t["teamFurthestIndex"]))
     lines.append("| Deaths a game hour, the team | %s |" % fmt(t["teamDeathsPerHour"]))
+    if "days" in t:
+        lines.append("| The world's days over the run | %s |" % fmt(t["days"]))
+        lines.append("| Deaths a game day, the team | %s |" % fmt(t["teamDeathsPerDay"]))
+        lines.append("| Stuck game minutes a game day, the team | %s |" % fmt(t["teamStuckMinutesPerDay"]))
+    if "teamChunkLoadsPerHour" in t:
+        lines.append("| Chunk-loads a game hour, the team | %s |" % fmt(t["teamChunkLoadsPerHour"]))
+        lines.append("| Chunk-minutes a game hour, the team | %s |" % fmt(t["teamChunkMinutesPerHour"]))
     lines.append("| Stuck spells, the team | %s |" % fmt(t["stuckSpells"]))
     lines.append("| Stuck game minutes, the team | %s |" % fmt(t["stuckMinutes"]))
     lines.append("| Rescue plans, the team (of them, out) | %s (%s) |" % (fmt(t["rescues"]), fmt(t["rescuesUnstuck"])))

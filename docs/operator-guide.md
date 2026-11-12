@@ -64,6 +64,13 @@ Press **K** in game (rebindable under Controls → Key Binds → Kindred AI Play
 - Files that are not usable skins are named in the server log with the reason.
 - After adding files, press Reload in the selector.
 
+AI players sleep at night as people do (E-70a): home by dusk to their own bed, or in the bed they carry in a sealed
+pocket when home is out of reach, taken back up in the morning. When a person lies down, every AI player in the
+Overworld that can goes to bed too. An AI player that cannot be in bed (in a fight, no bed, busy underground) never
+holds up a person's night: it is left out of the count of sleepers, as a spectator is, and one on its way to bed counts
+for at most half a minute. `aiPlayersCountForSleep=true` in `<world>/kindred/edits.properties` counts every AI player as
+vanilla counts everyone (default false). People are counted exactly as vanilla counts them.
+
 How many native AI players the server allows is its own policy too: `maxNativePlayers=N` in `<world>/kindred/edits.properties` (3 when absent, at most 12; the server logs the value at startup, and a refused creation names the setting). It is kept when an operator's command rewrites the file. Raising it is a capacity decision: the month run's eight wait on an engine run at eight that measures tick time and heap (M-06i, M-06k).
 
 Free travel and free items are forbidden until an operator allows them (`teleport=allow`, `freeItems=allow` in `edits.properties`; mod-support decision 6). Allowed, a switch is the same rule for every player, human or AI: each change is announced to everyone online in the same words and kept in the World Record with who made it (`policy.set`). No AI skill teleports or takes a free item; with teleporting allowed, `/faction home` takes a person who asks to the faction's home and still only tells an AI player where it is. An eval run with either switch allowed is not earned: `eval-result.json` records both, `score.py` names the run and `compare.py` refuses it, so no ladder counts a teleport or a free item.

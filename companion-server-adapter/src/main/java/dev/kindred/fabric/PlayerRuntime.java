@@ -745,6 +745,10 @@ final class PlayerRuntime {
         CompletableFuture.supplyAsync(() -> readPace(directory)).whenComplete((step, failure) -> handBack(() -> {
             if (step != null && startupGeneration == currentStartupGen) groupStep = dev.kindred.core.match.GroupPace.further(Optional.ofNullable(groupStep), Optional.of(step)).orElse(null);
         }));
+        // Whether AI players not in bed still count toward a person's night (E-70a): the operator's aiPlayersCountForSleep.
+        CompletableFuture.supplyAsync(() -> readLeave(directory, "aiPlayersCountForSleep")).whenComplete((count, failure) -> handBack(() -> {
+            if (count != null && startupGeneration == currentStartupGen) SleepCount.aiPlayersCount(count);
+        }));
         startup = CompletableFuture.supplyAsync(() -> new Bootstrap(loadWorldId(directory), readEdits(directory), readLeave(directory, "dragonFight"), readLeave(directory, "bases"), readWorldMode(directory),
                 readNativeLimit(directory)))
                 .thenCompose(inputs -> SqliteCompanionStore.open(directory.resolve("companions.sqlite"), 128)
@@ -1949,7 +1953,8 @@ final class PlayerRuntime {
                         Boolean.parseBoolean(arguments.getOrDefault("collect", "true")),
                         Boolean.parseBoolean(arguments.getOrDefault("guarded", "false")),
                         Boolean.parseBoolean(arguments.getOrDefault("underfoot", "false")),
-                        Boolean.parseBoolean(arguments.getOrDefault("over_lava", "false")));
+                        Boolean.parseBoolean(arguments.getOrDefault("over_lava", "false")),
+                        Boolean.parseBoolean(arguments.getOrDefault("carried_bed", "false")));
             } else if (skill.equals("native_bucket")) {
                 task = new NativeBucketAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> edits, claims,
                         nativeActionWriter(), this::handBack,
@@ -2670,6 +2675,7 @@ final class PlayerRuntime {
         }
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
+        SleepCount.tick(server, tick);
         for (var changed : matches.tick(tick)) announce(changed);
         flushMatches();
         chronicle.tick();
@@ -3668,6 +3674,10 @@ final class PlayerRuntime {
         // A find shared out with its team as it comes, and its hand-overs taken up again after a stop (E-40a).
         shareOutFinds(entry, body);
 
+        // Its night (E-70a): home by dusk to its own bed, and to bed when a person lies down, before any work.
+        var night = nightCandidates(entry, body);
+        if (night != null) return night;
+
         // 0. Team project task candidates (TEAM-01, TEAM-02)
         java.util.Optional<SharedTask> currentSharedTask = teamCoordinator.getPlayerCurrentTask(entry.data.id());
         if (currentSharedTask.isPresent() && HandOvers.Piece.of(currentSharedTask.get()) != null) {
@@ -4541,6 +4551,8 @@ final class PlayerRuntime {
         entry.campaign.huntersKit(gearingHunter(body));
         entry.campaign.pace(entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
                 ? dev.kindred.core.guide.Playbook.Mode.SPEEDRUN : dev.kindred.core.guide.Playbook.Mode.NORMAL);
+        // Its nights (E-70a): in the bed it carries when home is out of reach, unless its match keeps its own rules.
+        entry.campaign.nights(nightsOn && !ownNightRules(entry), entry.homeInReach);
         divideTheRun(entry, body);
         entry.campaign.takeTreesFound().ifPresent(at -> tellOfTrees(entry, body, at));
         var task = entry.campaign.next(body, edits, server.getTicks());
@@ -5774,6 +5786,162 @@ final class PlayerRuntime {
     private static final String FROM_STORAGE = "from its storage";
 
     /**
+     * Its night (E-70a), as {@link dev.kindred.core.survival.Nights} decides it: home by dusk, turned for home in time to be
+     * in its own bed when sleeping first becomes possible, and asleep there; and to bed when a person in the Overworld
+     * lies down, if it can be, so that person's night is not held up. On its way to bed with a person asleep, it counts
+     * toward that person's night ({@link SleepCount}) for a bounded time. Null when nothing about the night comes first
+     * (the day, no bed of its own in reach, a match keeping its own rules, the Nether or the End): the rest of its
+     * choices, a goal's own night among them, go on as before.
+     */
+    private List<NativeTaskCandidate> nightCandidates(Entry entry, NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        long now = server.getTicks();
+        if (!nightsOn) return null;
+        boolean overworld = world.getRegistryKey() == net.minecraft.world.World.OVERWORLD;
+        boolean ownRules = ownNightRules(entry);
+        boolean goal = goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE;
+        // A goal's player below ground is mid-task, and its goal keeps its night there (dug in, or mining on).
+        boolean below = goal && PortalRunCampaign.underground(player);
+        BlockPos bed = player.isSleeping() ? player.getSleepingPosition().orElse(null)
+                : overworld && !below && now >= entry.sleepRetryAt ? homeBed(entry, world, player) : null;
+        double toBed = bed == null ? -1 : Math.sqrt(player.getBlockPos().getSquaredDistance(bed));
+        entry.homeInReach = dev.kindred.core.survival.Nights.turnForHomeAt(toBed, 0) >= 0;
+        boolean carries = player.getInventory().containsAny(stack -> stack.isIn(net.minecraft.registry.tag.ItemTags.BEDS));
+        boolean fighting = player.hurtTime > 0 || player.getAttacker() != null
+                || !world.getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class, player.getBoundingBox().expand(12, 6, 12),
+                        mob -> mob.isAlive() && mob.getTarget() == player).isEmpty();
+        boolean personAsleep = overworld && world.getPlayers().stream().anyMatch(p -> !(p instanceof PreparedNativePlayer) && p.isSleeping());
+        var decision = dev.kindred.core.survival.Nights.decide(new dev.kindred.core.survival.Nights.State(world.getTimeOfDay(), world.isThundering(),
+                overworld, ownRules, toBed, 0, carries, entry.campaign != null && goal && entry.campaign.nightWork(player), personAsleep, !fighting && !below));
+        boolean home = decision.plan() == dev.kindred.core.survival.Nights.Plan.HOME && bed != null && !fighting;
+        if (entry.campaign != null) entry.campaign.nights(!ownRules, entry.homeInReach);
+        // On its way to bed while a person sleeps, it counts toward their night, from the moment it set off and for a
+        // bounded while: a person's night is never held for longer.
+        if (home && personAsleep && !player.isSleeping()) {
+            if (entry.toBedSince < 0) entry.toBedSince = now;
+            SleepCount.toBed(server, player.getUuid(), entry.toBedSince + dev.kindred.core.survival.Nights.TO_BED_LIMIT);
+        } else {
+            entry.toBedSince = -1;
+            SleepCount.toBed(server, player.getUuid(), -1);
+        }
+        PortalRunCampaign.Task task = null;
+        double weight = decision.weight();
+        if (!home && !goal && !fighting) {
+            // Without a goal or work of its own, the bed it carries for a night with home out of reach, and taken back up in
+            // the morning, as a goal's player does on its way (E-70a). A player with work of its own (a build, its base, a
+            // ranch or a field) keeps the night life-first gives it (F-25c9): the bed in its pack is the one its build sets
+            // down, and dug in beside its build it would build nothing (the house fixtures on #216's head).
+            boolean ownWork = entry.ranch != null || entry.field != null || entry.build != null || bases && worldEditsEnabled();
+            boolean carried = !ownWork && decision.plan() == dev.kindred.core.survival.Nights.Plan.CARRIED
+                    || entry.campaign != null && entry.campaign.carriedBed(world) != null;
+            if (carried) {
+                if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+                entry.campaign.policy(edits);
+                entry.campaign.nights(true, false);
+                task = entry.campaign.carriedBedNight(body).orElse(null);
+                if (decision.plan() != dev.kindred.core.survival.Nights.Plan.CARRIED) weight = dev.kindred.core.survival.Nights.BED;
+            }
+            // Home again by day after a night away: its home bed used, which sets where it wakes after a death back there.
+            if (task == null && overworld && !ownRules) task = homeAgain(entry, world, player);
+            if (task == null) return null;
+            if (decision.plan() == dev.kindred.core.survival.Nights.Plan.NONE) weight = HOME_AGAIN_WEIGHT;
+        } else if (!home) {
+            return null;
+        }
+        noteLife(entry, task != null ? task.label() : decision.why());
+        // Unless the carried bed's night or morning, or home's bed set again, was chosen above: its own bed.
+        if (task == null) task = toOwnBed(player, world, bed, personAsleep);
+        UUID id = UUID.nameUUIDFromBytes(("night:" + entry.data.id() + ":" + task.skill() + ":" + new java.util.TreeMap<>(task.args()))
+                .getBytes(StandardCharsets.UTF_8));
+        entry.lifeTaskId = id;
+        entry.lifeTask = task;
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, weight,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, task.skill(), task.args()));
+    }
+
+    /** To its own bed at {@code bed} and asleep there, lying down the moment a bed can be slept in (E-70a). */
+    private static PortalRunCampaign.Task toOwnBed(ServerPlayerEntity player, ServerWorld world, BlockPos bed, boolean personAsleep) {
+        if (player.isSleeping()) return new PortalRunCampaign.Task("native_wait", Map.of("seconds", "1"), "Asleep in its bed");
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(bed)) > 3.5 * 3.5) {
+            return PortalRunCampaign.go(bed, 2.0, false, personAsleep ? "To its bed: a person is going to bed" : "To its bed for the night");
+        }
+        long time = world.getTimeOfDay() % 24000L;
+        if (!dev.kindred.core.survival.Nights.sleepTime(time, world.isThundering())) {
+            // By its bed before a bed can be slept in: it waits there.
+            long seconds = Math.clamp((dev.kindred.core.survival.Nights.SLEEP_FROM - time + 19) / 20, 1, 5);
+            return new PortalRunCampaign.Task("native_wait", Map.of("seconds", String.valueOf(seconds)), "By its bed till it can sleep");
+        }
+        return new PortalRunCampaign.Task("native_sleep", Map.of("x", String.valueOf(bed.getX()), "y", String.valueOf(bed.getY()),
+                "z", String.valueOf(bed.getZ())), "Sleep in its own bed");
+    }
+
+    /** The weight of setting its home bed again on coming home by day: above its work, below its night. */
+    private static final double HOME_AGAIN_WEIGHT = 76;
+
+    /** A match it is in, or its playstyle, keeps its own rules for the night (a speedrun, a manhunt), or it only watches. */
+    private boolean ownNightRules(Entry entry) {
+        return worldMode == dev.kindred.core.match.GameModes.WorldMode.SPEEDRUN || worldMode == dev.kindred.core.match.GameModes.WorldMode.MANHUNT
+                || entry.runtimeSettings.playstyleProfile() == PlaystyleProfile.SPEEDRUN_ANY_PERCENT
+                || entry.runtimeSettings.playstyleProfile().isIdleObserving();
+    }
+
+    /**
+     * Its home bed in this world (E-70a): the nearest free bed of its own bases; or else the bed it slept in at home,
+     * remembered; or else the bed it last slept in, where it wakes after a death (its spawn), unless that is the bed it
+     * carries. Each only if it still stands and no one is in it. Null when it has none.
+     */
+    private static BlockPos homeBed(Entry entry, ServerWorld world, ServerPlayerEntity player) {
+        BlockPos own = nearestOwnBed(entry, world, player.getBlockPos());
+        if (own != null) return own;
+        String dimension = world.getRegistryKey().getValue().toString();
+        if (entry.homeBed != null && dimension.equals(entry.homeBedWorld) && freeBed(world, entry.homeBed)) return entry.homeBed;
+        BlockPos spawn = spawnBed(world, player);
+        if (spawn == null || entry.campaign != null && spawn.equals(entry.campaign.carriedBed(world)) || !freeBed(world, spawn)) return null;
+        entry.homeBed = spawn;
+        entry.homeBedWorld = dimension;
+        return spawn;
+    }
+
+    /** A bed's head at {@code at}, loaded, standing and free. */
+    private static boolean freeBed(ServerWorld world, BlockPos at) {
+        if (!world.isChunkLoaded(at)) return false;
+        var state = world.getBlockState(at);
+        return state.isIn(BlockTags.BEDS) && !state.get(net.minecraft.block.BedBlock.OCCUPIED);
+    }
+
+    /**
+     * Home again by day after a night away (E-70a): within a short walk of its home bed while it wakes somewhere else
+     * after a death, it uses that bed, which sets where it wakes back at home, as a person does on coming home. Null
+     * when there is nothing to set.
+     */
+    private PortalRunCampaign.Task homeAgain(Entry entry, ServerWorld world, ServerPlayerEntity player) {
+        if (entry.homeBed == null || !world.getRegistryKey().getValue().toString().equals(entry.homeBedWorld)) return null;
+        if (server.getTicks() < entry.sleepRetryAt || !freeBed(world, entry.homeBed)) return null;
+        if (entry.homeBed.equals(spawnBed(world, player))) return null;
+        if (entry.campaign != null && entry.campaign.carriedBed(world) != null) return null; // Its own bed still to take up first.
+        if (player.getBlockPos().getSquaredDistance(entry.homeBed) > HOME_AGAIN_REACH * HOME_AGAIN_REACH) return null;
+        BlockPos bed = entry.homeBed;
+        if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(bed)) > 3.5 * 3.5) return PortalRunCampaign.go(bed, 2.0, false, "To its bed: home again");
+        return new PortalRunCampaign.Task("native_sleep", Map.of("x", String.valueOf(bed.getX()), "y", String.valueOf(bed.getY()),
+                "z", String.valueOf(bed.getZ()), "anchor", "true"), "Its home bed set again: home after a night away");
+    }
+
+    /** How near its home bed it comes before it sets it again by day. */
+    private static final int HOME_AGAIN_REACH = 24;
+
+    /** The head of the bed its spawn is set at in this world, or null (its spawn elsewhere, or not at a bed). */
+    private static BlockPos spawnBed(ServerWorld world, ServerPlayerEntity player) {
+        BlockPos at = player.getSpawnPointPosition();
+        if (at == null || player.getSpawnPointDimension() != world.getRegistryKey() || !world.isChunkLoaded(at)) return null;
+        var state = world.getBlockState(at);
+        if (!state.isIn(BlockTags.BEDS)) return null;
+        return state.get(net.minecraft.block.BedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? at
+                : at.offset(state.get(net.minecraft.block.BedBlock.FACING));
+    }
+
+    /**
      * Food in its own storage, taken before it hunts (F-25c9b): to its storage when it is out of reach, then the most
      * filling safe food there, as much as brings it to enough to last ({@code has} is what it has in its body and pack).
      * Empty when it has no storage near, or none of the food there is safe to eat.
@@ -5838,6 +6006,8 @@ final class PlayerRuntime {
         if (!state.isIn(BlockTags.BEDS)) return false;
         BlockPos head = state.get(net.minecraft.block.BedBlock.PART) == net.minecraft.block.enums.BedPart.HEAD ? at
                 : at.offset(state.get(net.minecraft.block.BedBlock.FACING));
+        // Its home bed, and the bed it last slept in, where it wakes after a death, are its own too (E-70a).
+        if (head.equals(entry.homeBed) || entry.nativeBody != null && head.equals(spawnBed(world, entry.nativeBody.entity()))) return true;
         return ownBeds(entry, world).contains(head);
     }
 
@@ -5860,6 +6030,32 @@ final class PlayerRuntime {
         entry.lifeNote = why;
         KindredMod.LOGGER.info("{} life: {}", entry.data.displayName(), why);
     }
+
+    /** Its bed want (E-70a), for fixtures: "urgent", "standing" or "none". */
+    String bedWant(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.campaign == null || !entry.campaign.bedWanted()) return "none";
+        return entry.campaign.bedUrgent() ? "urgent" : "standing";
+    }
+
+    /** The chore of its carried bed (E-70a), for fixtures; empty when it has no campaign. */
+    String bedChoreForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.campaign == null || entry.nativeBody == null) return "";
+        return entry.campaign.bedChoreForTest(entry.nativeBody.entity().getServerWorld());
+    }
+
+    /** Its home bed as remembered (E-70a), for fixtures; null when none. */
+    BlockPos homeBed(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.homeBed;
+    }
+
+    /** Whether its players keep E-70a's nights, for fixtures. */
+    boolean nightsOn() { return nightsOn; }
 
     /** What the player last said of what keeps it alive (F-25c9), for fixtures and status. */
     String lifeNote(UUID id) {
@@ -14072,6 +14268,15 @@ final class PlayerRuntime {
         memory.advice(on);
     }
 
+    /** Whether its players keep E-70a's nights (home by dusk, to bed with a person); on unless an evaluation's {@code sleep=off}. */
+    private boolean nightsOn = true;
+
+    void nights(boolean on) {
+        requireThread();
+        nightsOn = on;
+        if (!on) SleepCount.clear(server);
+    }
+
     /** How long a rescue plan's fence holds after it is asked for: the planning lane's deadline and a little more. */
     private static final java.time.Duration RESCUE_FENCE = java.time.Duration.ofSeconds(20);
 
@@ -14489,6 +14694,7 @@ final class PlayerRuntime {
         // this thread, and every write-then-callback begun before now is stale from here on (recordThen).
         stopping = true;
         ++stopEpoch;
+        SleepCount.clear(server); // None of its players is on its way to bed any more (E-70a).
         if (onStopBegin != null) {
             var action = onStopBegin;
             onStopBegin = null;
@@ -16963,21 +17169,40 @@ final class PlayerRuntime {
 
     /**
      * An evaluation run's preset traits for one AI player (founders and joiners, M-06i), set as its administrator would
-     * set them and saved once; bounded weights only, nothing more.
+     * set them and saved once; bounded weights only, nothing more. The traits make one new personality, saved as one
+     * change: the store takes a profile one revision on, and one revision per trait was refused, leaving the player's
+     * profile ahead of its saved one for the rest of the run, so every later profile change of its was refused too.
+     * As the administrator's own change ({@link #socialSetting}): in effect at once, and a failed save stops the player
+     * for storage inspection.
      */
     void personalityForEval(UUID id, Map<Personality.Trait, Integer> traits) {
         requireThread();
         Entry entry = entries.get(id);
         if (entry == null || !entry.profileWrite.isDone()) return;
         SocialProfile previous = entry.profile;
-        SocialProfile changed = previous;
-        for (var t : traits.entrySet()) changed = changed.withTrait(t.getKey(), t.getValue());
+        Personality next = previous.personality();
+        for (var t : traits.entrySet()) next = next.withTrait(t.getKey(), t.getValue());
+        SocialProfile changed = previous.withPersonality(next);
         entry.profile = changed;
         socials.reset(id);
         entry.profileWrite = store.saveProfile(changed, previous.revision());
-        entry.profileWrite.whenComplete((saved, failure) -> {
-            if (failure != null) KindredMod.LOGGER.error("An evaluation run's preset traits for {} were not saved", id, failure);
-        });
+        entry.profileWrite.whenComplete((saved, failure) -> handBack(() -> {
+            if (!running || failure == null) return;
+            entry.metadataFault = true;
+            halt(entry, Actor.console(), "Profile save failed; companion stopped for storage inspection.");
+            KindredMod.LOGGER.error("An evaluation run's preset traits for {} were not saved", id, failure);
+        }));
+    }
+
+    /** For fixtures: the player's profile as the runtime holds it, and its last profile write. */
+    SocialProfile profileForTest(UUID id) {
+        requireThread();
+        return entries.get(id).profile;
+    }
+
+    CompletableFuture<SocialProfile> profileWriteForTest(UUID id) {
+        requireThread();
+        return entries.get(id).profileWrite;
     }
 
     /** The faction world's whole history audited against its locked rules (M-06i), read off the server thread. */
@@ -17641,6 +17866,16 @@ final class PlayerRuntime {
         long foodSoughtUntil;
         int foodLooks;
         long sleepRetryAt;
+        /** Since when it has been on its way to bed with a person asleep (E-70a); negative when it is not. */
+        long toBedSince = -1;
+        /**
+         * Its home bed (E-70a): the bed it slept in at home, kept while its spawn moves to the bed it carries; in memory
+         * only, so after a restart it is the bed its spawn is at again.
+         */
+        BlockPos homeBed;
+        String homeBedWorld;
+        /** Its home bed in reach tonight, as its night was last weighed. */
+        boolean homeInReach;
         UUID lifeTaskId;
         PortalRunCampaign.Task lifeTask;
         String lifeNote = "";

@@ -42,6 +42,7 @@ operator guide.
 | `mode` | `survival`, `factions` (a faction world the starters joined, M-06i; its locked rules audited from the World Record at the end) | `survival` |
 | `players` | more AI players by name beside the starters, comma-separated (3 to 16 letters, digits or `_`; native players with no preset) | none |
 | `founders` | with `mode=factions`, how many of the players (the starters first, in order) are set to found a faction and invite, the others to wait to be asked | 0 |
+| `sleep` | `on`, `off` (E-70a's nights: home by dusk, the bed it carries, a bed as a standing want; `off` keeps the nights as they were before it, for a clean comparison) | `on` |
 
 - **Earned or staged.** A run is earned only when nothing in it is handed out or kept: the starters spawn with empty
   inventories, edits are on under the roaming policy, and `keep=none`. Every other run is staged, and the summary says
@@ -72,8 +73,11 @@ iron pickaxe, diamond, obsidian, portal lit, Nether entered, blaze rods, eyes, s
 (the tick, the cause as the game records it, x y z, light level, time of day, dimension, hunger, under the sky or not,
 the goal's stage, the stance and habits in force, the task it was on), every stuck spell (when the campaign's watchdog
 gave a spot up), every rescue plan (F-29: when, and its line, `rescue: <steps> -> unstuck`, `-> failed: <why>` or
-`-> refused: <why>`), and the model tokens it used; and the scenario, earned or staged, the seed, the ticks run, and whether
-the run ran all its ticks. Stages are seen once a game second from the player's inventory and dimension, and from the
+`-> refused: <why>`), the model tokens it used, and its chunk-loads (chunks that came into its loaded area, the square
+the server's view distance keeps round it, counted once a game second) and chunk-minutes (those chunks times the
+minutes held; E-70a); and the scenario, earned or staged, the seed, the ticks run, whether the run ran all its ticks, and
+`days`, the Overworld's days that passed over the run (a night slept through passes in moments). `score.py` reports
+the chunk counts per game hour of ticks, and deaths and stuck minutes per game day as well as per game hour. Stages are seen once a game second from the player's inventory and dimension, and from the
 cast and the portal's lighting as they complete; a frame's obsidian is cast where it stands and never held.
 
 ## A faction world (M-06i)
