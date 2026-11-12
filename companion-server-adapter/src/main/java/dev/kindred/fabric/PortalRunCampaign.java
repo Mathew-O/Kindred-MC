@@ -116,6 +116,20 @@ final class PortalRunCampaign {
     private BlockPos strandedAt;
     private int strandedWalks;
     private long strandedTick;
+    /**
+     * A stand of trees given up from where it stands: the logs it saw that no walk from here could reach, and where it stood
+     * when the walk was refused. One refused walk to a log gives up its whole stand, every log it knows of chained to it a
+     * few blocks at a time, until it has moved off from there (F-22c67). Behind a wall it could see through, it walked for
+     * fifteen logs of one stand, one after another, each refused and each a new log (the corpus's sol-102920).
+     */
+    private BlockPos standRefusedFrom;
+    /** A log a walk was refused to, judged at the next look at what to gather, where the player stands is seen. */
+    private BlockPos standRefusal;
+    private final Set<Long> standRefused = new HashSet<>();
+    /** How far apart two logs of one stand may be: a grove's trunks, a few blocks apart. */
+    static final int STAND_APART = 6;
+    /** How far off across a refused log must be for its stand to be given up with it, not only the log itself. */
+    static final int STAND_FAR = 8;
     static final int STRANDED = 3;
     private final Map<Task, Long> setAside = new HashMap<>();
     /** Its own ways up, down and along through rock, and the heading it digs along (F-35e: the core's). */
@@ -679,6 +693,10 @@ final class PortalRunCampaign {
                 treesFound = cut;
             }
             if (toldTrees != null && toldTrees.isWithinDistance(cut, TREES_APART)) toldTrees = null;
+        }
+        if (task != null && !completed && "native_goto".equals(task.skill()) && why != null && why.contains("No walkable route")
+                && logWalk(task.label()) && position(task.args()) != null) {
+            standRefusal = position(task.args()).toImmutable();
         }
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
         // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
@@ -4131,8 +4149,80 @@ final class PortalRunCampaign {
      * unchanged through it. On seed 110 Factions the searches it filters were 9.4% of the server thread's samples, the
      * best-tool question 2.8% (M-06k); the answers are the same.
      */
+    /** A walk the gather or the look for trees gives toward a log it saw. */
+    private static boolean logWalk(String label) {
+        return label.startsWith("Walk to logs at ") || label.startsWith("Walk under the logs at ")
+                || label.startsWith("Walk to the foot of the trunk under the logs at ") || label.startsWith("Walk toward the trees seen at ");
+    }
+
+    /**
+     * A walk to the log at {@code refused}, more than {@link #STAND_FAR} blocks off across, found no route from here: that log's
+     * whole stand is given up from here, every log it knows of chained to it {@link #STAND_APART} blocks at a time
+     * (F-22c67). Given up from somewhere else before, that is looked at again from here.
+     */
+    private void refuseStand(ServerPlayerEntity player, BlockPos refused) {
+        // Only in the open, under the sky with a step out every way: from a trench or a hole its walks are refused for
+        // where it stands, not for the trees. Walking the told strip two blocks down, in a trench, Dune's walks to the
+        // told stand were refused from twenty off; given up, the stand was never walked to (NativeToldTreesGameTests).
+        if (!inTheOpen(player)) return;
+        // From in among the trees, one log out of reach (in a pit beside them, say) says nothing of the rest: that log is
+        // set aside alone, as before. From off over there, the way to it is the way to its stand: Dune at the foot of the
+        // told stand, its walk to one log refused, gave up all 28 and waited out its time (NativeToldTreesGameTests).
+        // Across, not up and down: from a pit beside the told stand Dune's refused log stood six off and five up.
+        double dx = refused.getX() - lastFeet.getX(), dz = refused.getZ() - lastFeet.getZ();
+        if (dx * dx + dz * dz <= STAND_FAR * STAND_FAR) return;
+        if (standRefusedFrom == null || standRefusedFrom.getSquaredDistance(lastFeet) > 8 * 8) standRefused.clear();
+        standRefusedFrom = lastFeet;
+        var near = knowledge.all(WorldKnowledge.Kind.LOG).stream().filter(log -> log.getSquaredDistance(refused) <= 48 * 48).toList();
+        var stand = new java.util.ArrayDeque<BlockPos>();
+        stand.add(refused);
+        int before = standRefused.size();
+        standRefused.add(refused.asLong());
+        while (!stand.isEmpty()) {
+            BlockPos at = stand.poll();
+            for (BlockPos log : near) {
+                if (log.getSquaredDistance(at) <= STAND_APART * STAND_APART && standRefused.add(log.asLong())) stand.add(log);
+            }
+        }
+        KindredMod.LOGGER.info("The stand round {} given up from {}: no route to it, {} more of its logs set aside from here",
+                refused.toShortString(), lastFeet.toShortString(), standRefused.size() - before - 1);
+    }
+
+    /** Under the sky, with the ground on every side no more than a step above its feet. */
+    private static boolean inTheOpen(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (!world.isSkyVisible(feet.up())) return false;
+        for (Direction direction : Direction.Type.HORIZONTAL) {
+            BlockPos side = feet.offset(direction);
+            if (world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, side.getX(), side.getZ()) > feet.getY() + 1) return false;
+        }
+        return true;
+    }
+
+    /**
+     * A log of a stand given up from about here (F-22c67): one of it, or one seen since within {@link #STAND_APART} of one
+     * of it. Its logs come into sight a sweep at a time, and those seen after the stand was given up were walked for one
+     * by one, as before.
+     */
+    private boolean standGivenUp(BlockPos log) {
+        if (standRefusedFrom == null || standRefusedFrom.getSquaredDistance(lastFeet) > 8 * 8 || standRefused.isEmpty()) return false;
+        if (standRefused.contains(log.asLong())) return true;
+        for (long key : standRefused) {
+            if (BlockPos.fromLong(key).getSquaredDistance(log) <= STAND_APART * STAND_APART) {
+                standRefused.add(log.asLong());
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Predicate<BlockPos> gatherable(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
         var player = body.entity();
+        if (standRefusal != null) {
+            refuseStand(player, standRefusal);
+            standRefusal = null;
+        }
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
@@ -4147,7 +4237,7 @@ final class PortalRunCampaign {
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(world, p))
                 && mayWork(player, p)
                 && harvest.computeIfAbsent(world.getBlockState(p), state -> NativeBreakAction.bestTool(body, state) != -2)
-                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(world, p).isPresent());
+                && (kind != WorldKnowledge.Kind.LOG || !standGivenUp(p) && p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(world, p).isPresent());
     }
 
     /**
@@ -4352,7 +4442,7 @@ final class PortalRunCampaign {
                 treesGivenUp.add(BlockPos.asLong(treeSeen.getX() >> 2, 0, treeSeen.getZ() >> 2));
                 treeSeen = null;
             }
-            BlockPos seen = knowledge.treeInView(player, TREE_SIGHT, p -> !blocked(p) && !unreachable(p)
+            BlockPos seen = knowledge.treeInView(player, TREE_SIGHT, p -> !blocked(p) && !unreachable(p) && !standGivenUp(p)
                     && !treesGivenUp.contains(BlockPos.asLong(p.getX() >> 2, 0, p.getZ() >> 2))).orElse(null);
             if (seen != null && (treeSeen == null || !seen.isWithinDistance(treeSeen, 8))) treeSince = lastTick;
             treeSeen = seen;
