@@ -1,2 +1,3 @@
 before-1 (d8fd87fe): 40 min, peak 2623 MB, 149 required tests failed, fence-top 59, disk 15G
 after-1 (5158191a): 43 min, peak 2958 MB, 124 required tests failed, fence-top 16, disk 14G
+after-2 (5158191a): 40 min, peak 3643 MB, 106 required tests failed, fence-top 26, disk 14G
