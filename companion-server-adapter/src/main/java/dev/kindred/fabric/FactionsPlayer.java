@@ -299,18 +299,25 @@ final class FactionsPlayer {
         }
         int y = player.getBlockY();
         if (world.isChunkLoaded(x >> 4, z >> 4)) {
-            // Ground to stand on there, nearest its own height first (a trunk or a roof above is not the way); else, at a
-            // leg's end, the top of the column; otherwise its own height, for the route to find the way.
-            Integer ground = null;
-            for (int d = 0; d <= 8 && ground == null; d++) {
-                if (standable(world, x, y + d, z)) ground = y + d;
-                else if (d > 0 && standable(world, x, y - d, z)) ground = y - d;
+            // Ground to stand on there that it can see, nearest its own height first (a trunk or a roof above is not the
+            // way); else, at a leg's end, the top of the column if it can see it; otherwise its own height, for the route to
+            // find the way. What it cannot see from where it stands sets nothing (F-35m): a leg's end is past its sweep.
+            var looks = WorldKnowledge.looks(player, GROUND_LOOKS + 1);
+            var under = new java.util.ArrayList<BlockPos>();
+            for (int d = 0; d <= 8; d++) {
+                under.add(new BlockPos(x, y + d - 1, z));
+                if (d > 0) under.add(new BlockPos(x, y - d - 1, z));
             }
-            if (ground != null) y = ground;
-            else if (far > LEG) y = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
+            // Room to stand is asked before the sight line only to spare it: a cell with none is no walk's end.
+            var ground = looks.firstSeen(under, below -> standable(world, below.getX(), below.getY() + 1, below.getZ()));
+            if (ground.isPresent()) y = ground.get().getY() + 1;
+            else if (far > LEG && looks.rays() <= GROUND_LOOKS) y = looks.ground(x, z).map(top -> top.getY() + 1).orElse(y);
         }
         return new BlockPos(x, y, z);
     }
+
+    /** Sight lines to ground near its own height at a walk's end; one more for the column's top (F-35m). */
+    private static final int GROUND_LOOKS = 4;
 
     /** Solid ground under {@code y} and room for a player above it. */
     private static boolean standable(net.minecraft.server.world.ServerWorld world, int x, int y, int z) {
