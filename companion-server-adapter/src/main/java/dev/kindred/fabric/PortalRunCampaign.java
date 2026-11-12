@@ -154,6 +154,17 @@ final class PortalRunCampaign {
      * at first as half the least long, as {@link #surfaceClimbTick}: the least long itself overflowed the hold's test.
      */
     private long waterClimbTick = Long.MIN_VALUE / 2;
+    /**
+     * The water fetch's hold (F-35o): the cells its search's tunnel for water went into, which its climb or way back for
+     * water does not walk straight back out over; and where the hold began, with the water it knew of and the water it
+     * carried then. A bucket filled, water newly seen or the player more than {@value #WATER_HOLD_OFF} blocks from where
+     * the hold began ends it: nothing else, and nothing timed. The other way, its search does not undo its climb: on the
+     * surface its tunnel keeps to its own floor ({@link #searchForWater}).
+     */
+    private final java.util.Set<Long> waterDug = new java.util.HashSet<>();
+    private BlockPos waterHoldAt;
+    private int waterHoldSeen = -1, waterHoldBuckets = -1;
+    static final int WATER_HOLD_OFF = 8;
     private Direction exploreHeading;
     private int exploreFailures;
     private BlockPos exploredFrom;
@@ -657,6 +668,17 @@ final class PortalRunCampaign {
 
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
+        if (task != null && completed) {
+            if (completedForTest.size() >= 64) completedForTest.removeFirst();
+            completedForTest.addLast(task.label());
+        }
+        // The water fetch's halves (F-35o): a step of its search's tunnel for water, or of its walk to look cutting a way
+        // through for water, and its climb or way back for water. In a staged pit the walk's cut went a block into the rock
+        // and its way back walked it out again, by turns, as the search's tunnel had on 303 (NativeWaterCutGameTests).
+        if (task != null && completed && waterDigLabel(task.label()) && position(task.args()) != null) {
+            if (waterDug.size() < 4_096) waterDug.add(position(task.args()).asLong());
+            waterHoldBegins();
+        }
         if (task != null && !completed) {
             if (blocked.size() >= 5) blocked.removeFirst();
             blocked.addLast("at " + tick / 20 + "s: " + task.label() + (why == null || why.isBlank() ? "" : " - " + why));
@@ -1582,6 +1604,11 @@ final class PortalRunCampaign {
     List<String> rescues() { return List.copyOf(rescues); }
 
     /** For fixtures (F-29b): whether a move elsewhere is under way, and whether it was begun early for a rescue. */
+    /** Its last steps that completed, by label, oldest first, at most 64 (F-35n's fixture). */
+    private final java.util.ArrayDeque<String> completedForTest = new java.util.ArrayDeque<>();
+
+    java.util.List<String> completedForTest() { return java.util.List.copyOf(completedForTest); }
+
     boolean relocatingForTest() { return relocate != null; }
 
     /** The cell the goal's gather would go for first (its first {@code nearest}, with the one rule {@link #gatherable}). */
@@ -3375,11 +3402,12 @@ final class PortalRunCampaign {
                     // The water it saw over its head first, one block of its own ceiling between: opened, filled from and
                     // closed again, rather than a climb that the same water refuses every step of (F-35g).
                     .or(() -> waterOverhead(body))
-                    .or(() -> fillWater(body)).or(() -> !underground(player)
-                            && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos())) ? Optional.<Task>empty()
-                            : night(player.getServerWorld()) ? lavaMeanwhile(body).or(() -> daylightBelow(body))
-                            : wayUp(body, "Climb toward the surface for water").map(climb -> { waterClimbTick = lastTick; return climb; }))
-                    .or(() -> search(body, "water"));
+                    // Standing in its own search's tunnel for water, no climb or way back straight back out over it: the
+                    // search goes on (F-35o). On 303 in E-40's iteration 21 (`e40a21-2354e67`) Kindred, at the mouth of its cut
+                    // into a hill, stepped a block in for water and a block back out for the surface by turns, some 160 times
+                    // a run of that spell's replay, and filled no bucket.
+                    .or(() -> fillWater(body)).or(() -> waterUp(body))
+                    .or(() -> searchForWater(body));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
                     .or(() -> cave(body, "lava", DIAMOND_TARGET))
                     .or(this::lookAround).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
@@ -4184,6 +4212,137 @@ final class PortalRunCampaign {
      * Underground, search by tunnelling along the current level; on the surface, walk out and look. Over the void
      * there is nothing to tunnel toward: a cut through a sky island only spends it.
      */
+    /**
+     * The search for water (F-35o). Under cover, as {@link #search}: its tunnel, then a walk to look. On the surface, with
+     * no water it knows of, a walk to look, then a wider one (the eight ways round, farther), and only then its tunnel,
+     * on its own floor, never a step down: from the surface its tunnel found water about one time in six, after hundreds
+     * of steps (F-35o's count over E-40's iterations 20 and 21), and a step down there was back under the cover its climb
+     * for water had just brought it out of.
+     */
+    private Optional<Task> searchForWater(NativePlayerBody body) {
+        var player = body.entity();
+        if (!groundBelow(player)) return search(body, "water");
+        // Under cover the climb to the surface came first ({@link #waterUp}); here only when it had no way up, said why.
+        if (underground(player)) {
+            // Each tunnel says why it is not the climb, for the count: the night, its own tunnel held, or no way up.
+            String why = night(player.getServerWorld()) ? "at night" : waterHeld() && waterDug.contains(lastFeet.asLong()) ? "on along its own" : "no way up";
+            return tunnel(body, "Tunnel for water (" + why + ")").or(() -> explore(body, "water"));
+        }
+        Optional<Task> look = explore(body, "water").or(() -> exploreWider(player, "water"));
+        if (look.isPresent()) return look;
+        int floor = digger.tunnelFloor();
+        digger.tunnelFloor(player.getBlockY());
+        try {
+            return tunnel(body, "Tunnel for water (on the surface)");
+        } finally {
+            digger.tunnelFloor(floor);
+        }
+    }
+
+    /**
+     * A wider walk to look than {@link #explore(ServerPlayerEntity, String)}: the eight ways round, {@value #EXPLORE_WIDER}
+     * blocks out, then the four between the ways it looks at first, its own distance out (F-35o). Bounded by ground, not
+     * time: within the explore radius of home, and never to a place it has set aside or found no way to.
+     */
+    private Optional<Task> exploreWider(ServerPlayerEntity player, String what) {
+        var world = player.getServerWorld();
+        BlockPos anchor = home == null ? player.getBlockPos() : home;
+        BlockPos feet = player.getBlockPos();
+        for (int out : new int[] {EXPLORE_WIDER, 28}) {
+            for (int way = 0; way < 8; way++) {
+                if (out == 28 && way % 2 == 0) continue; // The four straight ways at 28 are explore's own.
+                double angle = Math.toRadians(way * 45);
+                int dx = (int) Math.round(-Math.sin(angle) * out), dz = (int) Math.round(-Math.cos(angle) * out);
+                BlockPos ahead = feet.add(dx, 0, dz);
+                if (!world.isChunkLoaded(ahead)) continue;
+                if (Math.hypot(ahead.getX() - anchor.getX(), ahead.getZ() - anchor.getZ()) > EXPLORE_RADIUS) continue;
+                int surface = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ahead.getX(), ahead.getZ());
+                if (NativeNavigator.unseen(world.getBlockState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())))) continue;
+                boolean onSurface = player.getBlockY() > surface - 8;
+                // Whether water lies there is not read: it has not seen it, and a walk toward water is the walk it wants.
+                BlockPos target = new BlockPos(ahead.getX(), onSurface ? surface : player.getBlockY(), ahead.getZ());
+                if (blocked(target) || unreachable(target)) continue;
+                return Optional.of(go(target, 3, true, "Explore wider for " + what));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Under cover with no water it knows of, up to the surface first (F-35o's option 1), where {@link #searchForWater}
+     * looks, the wider walk too, rather than its search's tunnel at depth: on 303, 707 and 505 in E-40's iteration 21
+     * (`e40a21-2354e67`) that tunnel and the climb undid each other by turns, and filled no bucket. Its tunnel for water
+     * comes only when the climb has no way up at all, said once for where it stands and why; and at night, as before,
+     * lava or the daylight below it meanwhile. Not under cover, nothing here. In its own search's tunnel for water (the
+     * hold, {@link #waterHeld}) nothing either: the search goes on rather than the climb undoing it.
+     */
+    private Optional<Task> waterUp(NativePlayerBody body) {
+        var player = body.entity();
+        if (!underground(player) && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos()))) return Optional.empty();
+        if (waterHeld() && waterDug.contains(lastFeet.asLong())) return Optional.empty();
+        if (night(player.getServerWorld())) return lavaMeanwhile(body).or(() -> daylightBelow(body));
+        Optional<Task> up = wayUp(body, "Climb toward the surface for water");
+        if (up.isPresent()) {
+            waterClimbTick = lastTick;
+            return up;
+        }
+        if (waterNoWayUpAt != lastFeet.asLong()) {
+            waterNoWayUpAt = lastFeet.asLong();
+            String why = noWayUpWhy(player);
+            KindredMod.LOGGER.info("{} no way up for water at {}: {}", player.getName().getString(), lastFeet.toShortString(), why);
+            event("No way up to the surface for water from " + lastFeet.toShortString() + ": " + why + "; its search tunnels instead");
+        }
+        return Optional.empty();
+    }
+
+    /** Where it last said it had no way up for water (F-35o), so that it says so once for each place. */
+    private long waterNoWayUpAt = Long.MIN_VALUE;
+
+    /** Why every way up was refused, as {@link #wayUpBy} tries them (F-35o). */
+    private String noWayUpWhy(ServerPlayerEntity player) {
+        var why = new java.util.ArrayList<String>();
+        BlockPos gaveUpAt = digger.underWaterGaveUpAt() == null ? null : pos(digger.underWaterGaveUpAt());
+        if (gaveUpAt != null && gaveUpAt.getSquaredDistance(lastFeet) <= 24 * 24) why.add("its climb gave up under the water at " + gaveUpAt.toShortString());
+        else why.add("its climb found no step up");
+        why.add(trail.size() < 2 ? "no way back it came" : lastTick < retraceStalledUntil ? "its way back stalled" : "no way back higher than here");
+        if (ownSeals.isEmpty()) why.add("no shelter of its own to open");
+        else why.add("its shelter not to be opened");
+        return String.join(", ", why);
+    }
+
+    /** How far out the wider walk to look goes first (F-35o). */
+    static final int EXPLORE_WIDER = 56;
+
+    /** Whether a step is one of the water fetch's own digs on along the ground for water (F-35o). */
+    static boolean waterDigLabel(String label) {
+        return label.startsWith("Tunnel for water") || label.startsWith("Cut through ") && label.contains(" for water");
+    }
+
+    /** The water fetch's hold begins here, if it has not already (F-35o). */
+    private void waterHoldBegins() {
+        if (waterHoldAt != null) return;
+        waterHoldAt = lastFeet;
+        waterHoldSeen = knowledge.count(WorldKnowledge.Kind.WATER);
+        waterHoldBuckets = rescueBody == null ? -1 : ItemMoves.count(rescueBody.entity().getInventory(), Items.WATER_BUCKET);
+    }
+
+    /**
+     * Whether the water fetch's hold is on (F-35o); ended, and forgotten, by a bucket filled, water newly seen, or the
+     * player more than {@value #WATER_HOLD_OFF} blocks from where it began.
+     */
+    private boolean waterHeld() {
+        if (waterHoldAt == null) return false;
+        int buckets = rescueBody == null ? -1 : ItemMoves.count(rescueBody.entity().getInventory(), Items.WATER_BUCKET);
+        boolean progress = buckets > waterHoldBuckets && waterHoldBuckets >= 0 || knowledge.count(WorldKnowledge.Kind.WATER) > waterHoldSeen
+                || waterHoldAt.getSquaredDistance(lastFeet) > WATER_HOLD_OFF * WATER_HOLD_OFF;
+        if (!progress) return true;
+        waterHoldAt = null;
+        waterHoldSeen = -1;
+        waterHoldBuckets = -1;
+        waterDug.clear();
+        return false;
+    }
+
     private Optional<Task> search(NativePlayerBody body, String what) {
         var player = body.entity();
         if (!groundBelow(player)) return explore(player, what);
