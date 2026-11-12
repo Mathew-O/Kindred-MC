@@ -1,0 +1,16 @@
+202 Sol {'endFrom': 42167, 'idleSpells': 26, 'idleMinutes': 78, 'longestIdleTicks': 13602, 'longestIdleFrom': 209814, 'nightSpellsLeftOut': 0}
+20261030 Echo {'endFrom': 57624, 'idleSpells': 14, 'idleMinutes': 42, 'longestIdleTicks': 12679, 'longestIdleFrom': 191760, 'nightSpellsLeftOut': 0}
+303 Kindred {'endFrom': 147347, 'idleSpells': 29, 'idleMinutes': 87, 'longestIdleTicks': 105690, 'longestIdleFrom': 182310, 'nightSpellsLeftOut': 0}
+303 Sol {'endFrom': 169888, 'idleSpells': 10, 'idleMinutes': 30, 'longestIdleTicks': 12677, 'longestIdleFrom': 275006, 'nightSpellsLeftOut': 0}
+303 Echo {'endFrom': 89551, 'idleSpells': 24, 'idleMinutes': 72, 'longestIdleTicks': 12719, 'longestIdleFrom': 250957, 'nightSpellsLeftOut': 3}
+31102026 Echo {'endFrom': 114557, 'idleSpells': 37, 'idleMinutes': 111, 'longestIdleTicks': 77532, 'longestIdleFrom': 210468, 'nightSpellsLeftOut': 0}
+404 Sol {'endFrom': 80866, 'idleSpells': 52, 'idleMinutes': 156, 'longestIdleTicks': 179077, 'longestIdleFrom': 108923, 'nightSpellsLeftOut': 0}
+404 Echo {'endFrom': 87805, 'idleSpells': 10, 'idleMinutes': 30, 'longestIdleTicks': 13029, 'longestIdleFrom': 119385, 'nightSpellsLeftOut': 12}
+505 Kindred {'endFrom': 43654, 'idleSpells': 36, 'idleMinutes': 108, 'longestIdleTicks': 57746, 'longestIdleFrom': 230254, 'nightSpellsLeftOut': 3}
+505 Echo {'endFrom': 178690, 'idleSpells': 4, 'idleMinutes': 12, 'longestIdleTicks': 10388, 'longestIdleFrom': 277612, 'nightSpellsLeftOut': 0}
+606 Kindred {'endFrom': 84121, 'idleSpells': 0, 'idleMinutes': 0, 'longestIdleTicks': 73, 'longestIdleFrom': 132073, 'nightSpellsLeftOut': 0}
+606 Sol {'endFrom': 88101, 'idleSpells': 26, 'idleMinutes': 78, 'longestIdleTicks': 66771, 'longestIdleFrom': 221229, 'nightSpellsLeftOut': 0}
+606 Echo {'endFrom': 42909, 'idleSpells': 0, 'idleMinutes': 0, 'longestIdleTicks': 1365, 'longestIdleFrom': 49725, 'nightSpellsLeftOut': 0}
+707 Kindred {'endFrom': 145151, 'idleSpells': 14, 'idleMinutes': 42, 'longestIdleTicks': 12972, 'longestIdleFrom': 239413, 'nightSpellsLeftOut': 0}
+707 Sol {'endFrom': 130293, 'idleSpells': 18, 'idleMinutes': 54, 'longestIdleTicks': 13068, 'longestIdleFrom': 191330, 'nightSpellsLeftOut': 0}
+8675309 Echo {'endFrom': 89507, 'idleSpells': 53, 'idleMinutes': 159, 'longestIdleTicks': 193644, 'longestIdleFrom': 94356, 'nightSpellsLeftOut': 0}
