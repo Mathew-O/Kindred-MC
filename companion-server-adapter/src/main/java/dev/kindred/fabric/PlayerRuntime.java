@@ -5159,9 +5159,6 @@ final class PlayerRuntime {
             anchorX = (before.minX() + before.maxX()) / 2;
             anchorZ = (before.minZ() + before.maxZ()) / 2;
         }
-        var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
-        for (var base : record.built) avoid.add(footprint(base));
-        if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
         // Its style grown from its seed block, or the wood it has to hand, and its world (E-29a): this world's stage
         // is not the next world's.
         var style = entry.fixedBaseStyle != null ? entry.fixedBaseStyle : unique(entry, stage, dev.kindred.core.construction.BuildStyle.grown(record.seed,
@@ -5169,8 +5166,7 @@ final class PlayerRuntime {
         var shape = dev.kindred.core.construction.Houses.shape(stage, style.variant());
         int[] span = dev.kindred.core.construction.Houses.span(shape, style.turns());
         var plan = dev.kindred.core.construction.Houses.of(stage, style);
-        var site = dev.kindred.core.construction.BaseSite.choose(ground(world), anchorX, anchorZ, BASE_RADIUS, span[0], span[1],
-                height(plan), avoid);
+        var site = siteFor(world, record, dimension, anchorX, anchorZ, span[0], span[1], height(plan), footprint -> true);
         if (site.isEmpty()) {
             entry.baseCheckAt = now + BASE_NO_SITE;
             noteBase(entry, "No flat open ground for a " + stage.noun + " within " + BASE_RADIUS + " blocks of " + anchorX + ", " + anchorZ);
@@ -6150,6 +6146,110 @@ final class PlayerRuntime {
     }
 
     /** The ground round a site as a player sees it, column by column, each read once. */
+    /**
+     * Where a base's next stage goes (M-01c): the nearest flat open ground ({@link dev.kindred.core.construction.BaseSite})
+     * within {@link #BASE_RADIUS} of the anchor, clear of its built bases and its trading hall, among the footprints that
+     * {@code fits}. Pure: it reads the ground and the record and changes neither; the base decision and a faction world's
+     * founder choose by it alike (M-06i).
+     */
+    private static Optional<dev.kindred.core.construction.Pos> siteFor(ServerWorld world, PlayerMemoryStore.Bases record, String dimension,
+                                                                       int anchorX, int anchorZ, int width, int depth, int height,
+                                                                       java.util.function.Predicate<dev.kindred.core.construction.BaseSite.Footprint> fits) {
+        var avoid = new java.util.ArrayList<dev.kindred.core.construction.BaseSite.Footprint>();
+        for (var base : record.built) avoid.add(footprint(base));
+        if (record.hall != null && record.hall.dimension().equals(dimension)) avoid.add(footprint(record.hall));
+        return dev.kindred.core.construction.BaseSite.choose(ground(world), anchorX, anchorZ, BASE_RADIUS, width, depth, height, avoid, fits);
+    }
+
+    /** A first base's ground as a founder reckons it before it is decided: the cabin's largest plan, whichever is chosen. */
+    private static final int FIRST_BASE_SPAN = 9;
+    private static int firstBaseHeight = -1;
+
+    private static int firstBaseHeight() {
+        if (firstBaseHeight < 0) {
+            int most = 0;
+            var classic = dev.kindred.core.construction.BuildStyle.CLASSIC;
+            for (int v = 0; v <= dev.kindred.core.construction.BuildStyle.VARIANTS; v++) {
+                most = Math.max(most, height(dev.kindred.core.construction.Houses.of(dev.kindred.core.construction.Houses.Stage.CABIN,
+                        new dev.kindred.core.construction.BuildStyle(classic.seed(), classic.wood(), classic.stone(), v, 0))));
+            }
+            firstBaseHeight = most;
+        }
+        return firstBaseHeight;
+    }
+
+    /** A founder's base site before its first base is decided: its chunk, and the second chunk its ground covers, if any. */
+    record Prospect(dev.kindred.core.factions.Territory.Chunk site, java.util.Optional<dev.kindred.core.factions.Territory.Chunk> also) { }
+
+    /**
+     * In a faction world, before its first base is decided, where that base will stand (M-06i with M-01c), so the founder
+     * claims that ground and not wherever it happens to be: the site its base decision would choose from the same anchor
+     * ({@link #siteFor}), for the cabin's largest plan, on land it may work ({@link TerritoryGuard#mayChange}) and not in
+     * a chunk it found no way to lately; in one chunk if any site fits so, else across one chunk's edge (the second chunk
+     * claimed next). Its centre becomes the base's anchor, saved as its own anchor is, so its base decision chooses from
+     * there; never once a base is decided. Kept until the anchor, the claims, the safe zones, the places set aside or the
+     * bases built change. Null where no ground serves: the founder claims where it stands, as before.
+     */
+    private Prospect prospectiveSite(Entry entry, ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        String dimension = world.getRegistryKey().getValue().toString();
+        var record = entry.bases;
+        int anchorX, anchorZ;
+        if (record.anchor != null) {
+            anchorX = record.anchor.x();
+            anchorZ = record.anchor.z();
+        } else {
+            BlockPos home = entry.setup == null || entry.setup.home() == null ? player.getBlockPos()
+                    : new BlockPos(entry.setup.home().position().x(), entry.setup.home().position().y(), entry.setup.home().position().z());
+            anchorX = home.getX();
+            anchorZ = home.getZ();
+        }
+        var ledgers = projected();
+        var aside = entry.factionPlay.setAside(server.getTicks());
+        long key = java.util.Objects.hash(anchorX, anchorZ, ledgers.claims().hashCode(), ledgers.safe().chunks().hashCode(), aside.hashCode(),
+                record.built.size(), dimension);
+        if (entry.prospectKey != null && entry.prospectKey == key) return entry.prospect;
+        java.util.function.Function<dev.kindred.core.construction.BaseSite.Footprint, java.util.Set<dev.kindred.core.factions.Territory.Chunk>> chunks = f -> {
+            var out = new java.util.LinkedHashSet<dev.kindred.core.factions.Territory.Chunk>();
+            for (int[] c : new int[][] {{f.minX(), f.minZ()}, {f.maxX(), f.minZ()}, {f.minX(), f.maxZ()}, {f.maxX(), f.maxZ()}}) {
+                out.add(dev.kindred.core.factions.Territory.Chunk.at(dimension, c[0], c[1]));
+            }
+            return out;
+        };
+        java.util.function.Predicate<dev.kindred.core.construction.BaseSite.Footprint> free = f -> {
+            for (int[] c : new int[][] {{f.minX(), f.minZ()}, {f.maxX(), f.minZ()}, {f.minX(), f.maxZ()}, {f.maxX(), f.maxZ()}}) {
+                if (!TerritoryGuard.mayChange(player, new BlockPos(c[0], player.getBlockY(), c[1]))) return false;
+            }
+            for (var chunk : chunks.apply(f)) if (aside.contains(chunk.key())) return false;
+            return true;
+        };
+        int height = firstBaseHeight();
+        var site = siteFor(world, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
+                f -> chunks.apply(f).size() == 1 && free.test(f));
+        if (site.isEmpty()) site = siteFor(world, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
+                f -> chunks.apply(f).size() == 2 && free.test(f));
+        Prospect prospect = null;
+        if (site.isPresent()) {
+            var at = site.get();
+            var ground = new dev.kindred.core.construction.BaseSite.Footprint(at.x(), at.z(), at.x() + FIRST_BASE_SPAN - 1, at.z() + FIRST_BASE_SPAN - 1);
+            int centreX = at.x() + FIRST_BASE_SPAN / 2, centreZ = at.z() + FIRST_BASE_SPAN / 2;
+            var first = dev.kindred.core.factions.Territory.Chunk.at(dimension, centreX, centreZ);
+            var also = chunks.apply(ground).stream().filter(c -> !c.equals(first)).findFirst();
+            prospect = new Prospect(first, also);
+            if (record.built.isEmpty() && (record.anchor == null || record.anchor.x() != centreX || record.anchor.z() != centreZ)) {
+                record.anchor = new PlayerMemoryStore.Place(dimension, centreX, at.y(), centreZ);
+                memories.saveBases(entry.data.id(), record);
+                anchorX = centreX;
+                anchorZ = centreZ;
+                key = java.util.Objects.hash(anchorX, anchorZ, ledgers.claims().hashCode(), ledgers.safe().chunks().hashCode(), aside.hashCode(),
+                        record.built.size(), dimension);
+            }
+        }
+        entry.prospectKey = key;
+        entry.prospect = prospect;
+        return prospect;
+    }
+
     private static dev.kindred.core.construction.BaseSite.Ground ground(ServerWorld world) {
         var seen = new HashMap<Long, Optional<dev.kindred.core.construction.BaseSite.Column>>();
         return (x, z) -> seen.computeIfAbsent(BlockPos.asLong(x, 0, z), key -> column(world, x, z));
@@ -9666,6 +9766,15 @@ final class PlayerRuntime {
             var base = entry.bases.built.getFirst();
             site = java.util.Optional.of(dev.kindred.core.factions.Territory.Chunk.at(base.dimension(), base.x(), base.z()));
         } else if (world.equals(dev.kindred.core.factions.Territory.OVERWORLD)) site = java.util.Optional.of(here);
+        // Before its first base is decided, with bases on: where that base will stand, so it claims that ground (M-06i).
+        java.util.Optional<dev.kindred.core.factions.Territory.Chunk> siteAlso = java.util.Optional.empty();
+        if (entry.bases != null && entry.bases.built.isEmpty() && bases && worldEditsEnabled() && world.equals(dev.kindred.core.factions.Territory.OVERWORLD)) {
+            var prospect = prospectiveSite(entry, player);
+            if (prospect != null) {
+                site = java.util.Optional.of(prospect.site());
+                siteAlso = prospect.also();
+            }
+        }
         var spare = new ArrayList<dev.kindred.core.factions.FactionPlay.Spare>();
         var slots = FactionsPlayer.spareSlots(player);
         if (!slots.isEmpty()) {
@@ -9679,7 +9788,7 @@ final class PlayerRuntime {
         return new dev.kindred.core.factions.FactionPlay.View(id, entry.profile.personality(), ledgers.factions(), ledgers.power(), ledgers.claims(),
                 ledgers.safe().chunks(), ledgers.captures(), ledgers.coins().of(id), factions.settings(), factions.now(), site, java.util.Optional.of(here),
                 healthy, spare, wants, asks, ledgers.auctions(), entry.factionPlay.seen(), entry.factionPlay.met(),
-                entry.factionPlay.setAside(server.getTicks()));
+                entry.factionPlay.setAside(server.getTicks()), siteAlso);
     }
 
     /**
@@ -17849,6 +17958,9 @@ final class PlayerRuntime {
         /** The seed block it was given (E-29a), until its bases are read; and a fixture's fixed style for its bases. */
         String seedBlock;
         dev.kindred.core.construction.BuildStyle fixedBaseStyle;
+        /** A faction world's founder's base site before its first base is decided, and what it was reckoned from (M-06i). */
+        Prospect prospect;
+        Long prospectKey;
         /**
          * Life first (F-25c9): whether it is out getting food to last, until when a look for food that came to nothing
          * holds, the walks it has taken to look, when it may try its bed again after a sleep that did not take, the

@@ -2768,6 +2768,63 @@ final class NativePlayerBody implements BodyAdapter {
         if (!player.server.isOnThread()) throw new IllegalStateException("Native body access requires the server thread");
     }
 
+    // ----- E-71f's first step: what this body would hear (diagnostic only) -----
+
+    /**
+     * A sound-carrying packet the server sent this body's connection: which packet, the sound (or the world event's id),
+     * its category, where it was played from, its volume and pitch, and the tick. Nothing acts on it.
+     */
+    record Heard(String packet, String sound, String category, double x, double y, double z, float volume, float pitch, long tick) { }
+
+    /** The last {@link #HEARD_KEPT} heard while a fixture listens; null while nobody does (the default). */
+    private java.util.ArrayDeque<Heard> heard;
+    static final int HEARD_KEPT = 512;
+
+    /** A fixture listens for what reaches this body's connection, from now on, or stops; off by default. Server thread. */
+    void listenForTest(boolean on) {
+        requireThread();
+        heard = on ? new java.util.ArrayDeque<>() : null;
+        if (connection != null) connection.tap = on ? this::heardPacket : null;
+    }
+
+    /** What it heard since a fixture started listening, oldest first. Server thread. */
+    List<Heard> heardForTest() {
+        requireThread();
+        return heard == null ? List.of() : List.copyOf(heard);
+    }
+
+    private void heardPacket(Packet<?> packet) {
+        var queue = heard;
+        if (queue == null) return;
+        if (packet instanceof net.minecraft.network.packet.s2c.play.BundleS2CPacket bundle) {
+            for (var inner : bundle.getPackets()) heardPacket(inner);
+            return;
+        }
+        long tick = player.server.getTicks();
+        Heard h = switch (packet) {
+            case net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket p -> new Heard("sound", soundId(p.getSound()), p.getCategory().getName(),
+                    p.getX(), p.getY(), p.getZ(), p.getVolume(), p.getPitch(), tick);
+            case net.minecraft.network.packet.s2c.play.PlaySoundFromEntityS2CPacket p -> {
+                var from = player.getServerWorld().getEntityById(p.getEntityId());
+                yield new Heard("sound from entity", soundId(p.getSound()), p.getCategory().getName(),
+                        from == null ? Double.NaN : from.getX(), from == null ? Double.NaN : from.getY(), from == null ? Double.NaN : from.getZ(),
+                        p.getVolume(), p.getPitch(), tick);
+            }
+            case net.minecraft.network.packet.s2c.play.WorldEventS2CPacket p -> new Heard("world event", String.valueOf(p.getEventId()),
+                    p.isGlobal() ? "global" : "local", p.getPos().getX() + 0.5, p.getPos().getY() + 0.5, p.getPos().getZ() + 0.5, 0, 0, tick);
+            case net.minecraft.network.packet.s2c.play.ExplosionS2CPacket p -> new Heard("explosion", soundId(p.getSoundEvent()), "explosion",
+                    p.getX(), p.getY(), p.getZ(), p.getRadius(), 0, tick);
+            default -> null;
+        };
+        if (h == null) return;
+        queue.addLast(h);
+        while (queue.size() > HEARD_KEPT) queue.removeFirst();
+    }
+
+    private static String soundId(net.minecraft.registry.entry.RegistryEntry<net.minecraft.sound.SoundEvent> sound) {
+        return sound.getKey().map(k -> k.getValue().toString()).orElseGet(() -> sound.value().getId().toString());
+    }
+
     private final class NativePlayer extends ServerPlayerEntity implements PreparedNativePlayer {
         private Optional<NbtCompound> preparedState;
         NativePlayerBody body() { return NativePlayerBody.this; }
@@ -2926,11 +2983,15 @@ final class NativePlayerBody implements BodyAdapter {
     private static final class NativeConnection extends ClientConnection {
         private boolean open = true;
         private PacketListener listener;
+        /** E-71f's diagnostic: what reaches this connection, while a fixture listens; null otherwise. */
+        private java.util.function.Consumer<Packet<?>> tap;
         private NativeConnection() { super(NetworkSide.SERVERBOUND); }
         @Override public <T extends PacketListener> void transitionInbound(NetworkState<T> state, T listener) { this.listener = listener; }
         @Override public void transitionOutbound(NetworkState<?> state) { }
         @Override public PacketListener getPacketListener() { return listener; }
         @Override public void send(Packet<?> packet, PacketCallbacks callbacks, boolean flush) {
+            var listening = tap;
+            if (listening != null) listening.accept(packet);
             if (callbacks != null) callbacks.onSuccess();
         }
         @Override public void tick() { }

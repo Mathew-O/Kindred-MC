@@ -1,0 +1,2219 @@
+{
+ "kind": "spell",
+ "player": "Echo",
+ "tick": 116900,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -134,
+  40,
+  43
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.498363161380112,
+  8.676330519061509,
+  16.461316896886643
+ ],
+ "yaw": -12528.975,
+ "pitch": 18.159489,
+ "health": 20.0,
+ "food": 20,
+ "saturation": 0.20000005,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:mutton",
+    "count": 2
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:birch_planks",
+    "count": 2
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 58
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 29
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 53
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 7
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:red_tulip",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:raw_iron",
+    "count": 6
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cooked_chicken",
+    "count": 2
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 57
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 24
+    }
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 13
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 32
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 3
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 88
+    }
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 20899,
+ "raining": true,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: Get out of the water: up for air (tried elsewhere 1 time)",
+ "task": "try elsewhere, toward -118, 48, 83",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE, TORCH_AS_YOU_GO]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+ "memory": {
+  "version": 1,
+  "blocked": [
+   {
+    "at": [
+     4,
+     5,
+     0
+    ],
+    "left": 1131
+   },
+   {
+    "at": [
+     17,
+     11,
+     17
+    ],
+    "left": 3394
+   }
+  ],
+  "failures": [
+   {
+    "at": [
+     5,
+     5,
+     0
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     12,
+     9,
+     13
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     4,
+     5,
+     0
+    ],
+    "n": 3
+   },
+   {
+    "at": [
+     18,
+     9,
+     21
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     17,
+     11,
+     17
+    ],
+    "n": 2
+   }
+  ],
+  "approaches": [
+   {
+    "at": [
+     16,
+     9,
+     17
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     15,
+     11,
+     17
+    ],
+    "n": 2
+   }
+  ],
+  "unreachable": [
+   {
+    "at": [
+     5,
+     9,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     8,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     11,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     10,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     5,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     4,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     7,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     6,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     1,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     0,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     3,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     2,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     9,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     8,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     11,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     10,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     5,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     4,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     7,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     6,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     1,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     0,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     3,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     2,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     9,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     8,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     11,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     10,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     5,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     4,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     7,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     6,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     1,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     0,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     3,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     2,
+     0
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     6,
+     9,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     8,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     11,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     10,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     5,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     4,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     7,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     6,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     1,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     0,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     3,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     2,
+     1
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     5,
+     9,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     8,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     11,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     10,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     5,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     4,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     7,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     6,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     1,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     0,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     3,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     5,
+     2,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     9,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     8,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     11,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     10,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     5,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     4,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     7,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     6,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     1,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     0,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     3,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     4,
+     2,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     9,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     8,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     11,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     10,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     5,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     4,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     7,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     6,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     1,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     0,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     3,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     3,
+     2,
+     1
+    ],
+    "left": 1131,
+    "from": [
+     4,
+     10,
+     17
+    ]
+   },
+   {
+    "at": [
+     6,
+     9,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     8,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     11,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     10,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     5,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     4,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     7,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     6,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     1,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     0,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     3,
+     0
+    ],
+    "left": 0
+   },
+   {
+    "at": [
+     6,
+     2,
+     0
+    ],
+    "left": 0
+   }
+  ],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    5,
+    12,
+    17
+   ],
+   [
+    5,
+    11,
+    17
+   ],
+   [
+    4,
+    12,
+    17
+   ],
+   [
+    4,
+    10,
+    17
+   ],
+   [
+    4,
+    10,
+    16
+   ],
+   [
+    4,
+    11,
+    17
+   ],
+   [
+    4,
+    11,
+    16
+   ],
+   [
+    3,
+    10,
+    17
+   ],
+   [
+    3,
+    11,
+    17
+   ],
+   [
+    2,
+    10,
+    17
+   ],
+   [
+    2,
+    11,
+    17
+   ],
+   [
+    1,
+    10,
+    17
+   ],
+   [
+    1,
+    11,
+    17
+   ],
+   [
+    0,
+    16,
+    0
+   ],
+   [
+    0,
+    16,
+    1
+   ],
+   [
+    0,
+    12,
+    10
+   ],
+   [
+    0,
+    13,
+    4
+   ],
+   [
+    0,
+    13,
+    2
+   ],
+   [
+    0,
+    13,
+    3
+   ],
+   [
+    0,
+    12,
+    13
+   ],
+   [
+    0,
+    12,
+    15
+   ],
+   [
+    0,
+    12,
+    14
+   ],
+   [
+    0,
+    12,
+    5
+   ],
+   [
+    0,
+    12,
+    6
+   ],
+   [
+    0,
+    12,
+    7
+   ],
+   [
+    0,
+    13,
+    1
+   ],
+   [
+    0,
+    12,
+    8
+   ],
+   [
+    0,
+    12,
+    9
+   ],
+   [
+    0,
+    12,
+    11
+   ],
+   [
+    0,
+    12,
+    12
+   ],
+   [
+    0,
+    12,
+    3
+   ],
+   [
+    0,
+    12,
+    4
+   ],
+   [
+    0,
+    12,
+    2
+   ],
+   [
+    0,
+    15,
+    0
+   ],
+   [
+    0,
+    15,
+    1
+   ],
+   [
+    0,
+    15,
+    2
+   ],
+   [
+    0,
+    14,
+    1
+   ],
+   [
+    0,
+    14,
+    2
+   ],
+   [
+    0,
+    14,
+    3
+   ],
+   [
+    0,
+    14,
+    0
+   ],
+   [
+    0,
+    9,
+    17
+   ],
+   [
+    0,
+    11,
+    4
+   ],
+   [
+    0,
+    11,
+    3
+   ],
+   [
+    0,
+    10,
+    15
+   ],
+   [
+    0,
+    10,
+    16
+   ],
+   [
+    0,
+    10,
+    17
+   ],
+   [
+    0,
+    11,
+    9
+   ],
+   [
+    0,
+    11,
+    5
+   ],
+   [
+    0,
+    11,
+    6
+   ],
+   [
+    0,
+    11,
+    7
+   ],
+   [
+    0,
+    11,
+    8
+   ],
+   [
+    0,
+    11,
+    10
+   ],
+   [
+    0,
+    11,
+    15
+   ],
+   [
+    0,
+    11,
+    16
+   ],
+   [
+    0,
+    11,
+    11
+   ],
+   [
+    0,
+    11,
+    12
+   ],
+   [
+    0,
+    11,
+    13
+   ],
+   [
+    0,
+    11,
+    14
+   ],
+   [
+    0,
+    11,
+    17
+   ],
+   [
+    15,
+    12,
+    17
+   ],
+   [
+    15,
+    11,
+    17
+   ],
+   [
+    14,
+    12,
+    17
+   ],
+   [
+    14,
+    11,
+    17
+   ],
+   [
+    13,
+    12,
+    17
+   ],
+   [
+    13,
+    11,
+    17
+   ],
+   [
+    12,
+    12,
+    17
+   ],
+   [
+    12,
+    11,
+    17
+   ],
+   [
+    11,
+    12,
+    17
+   ],
+   [
+    11,
+    11,
+    17
+   ],
+   [
+    10,
+    12,
+    17
+   ],
+   [
+    10,
+    11,
+    17
+   ],
+   [
+    9,
+    12,
+    17
+   ],
+   [
+    9,
+    11,
+    17
+   ],
+   [
+    8,
+    12,
+    17
+   ],
+   [
+    8,
+    11,
+    17
+   ],
+   [
+    7,
+    16,
+    17
+   ],
+   [
+    7,
+    16,
+    16
+   ],
+   [
+    7,
+    16,
+    15
+   ],
+   [
+    7,
+    12,
+    9
+   ],
+   [
+    7,
+    12,
+    13
+   ],
+   [
+    7,
+    12,
+    17
+   ],
+   [
+    7,
+    12,
+    12
+   ],
+   [
+    7,
+    12,
+    11
+   ],
+   [
+    7,
+    12,
+    10
+   ],
+   [
+    7,
+    12,
+    8
+   ],
+   [
+    7,
+    12,
+    7
+   ],
+   [
+    7,
+    12,
+    6
+   ],
+   [
+    7,
+    12,
+    5
+   ],
+   [
+    7,
+    13,
+    14
+   ],
+   [
+    7,
+    13,
+    13
+   ],
+   [
+    7,
+    13,
+    12
+   ],
+   [
+    7,
+    12,
+    4
+   ],
+   [
+    7,
+    12,
+    3
+   ],
+   [
+    7,
+    14,
+    15
+   ],
+   [
+    7,
+    14,
+    14
+   ],
+   [
+    7,
+    14,
+    13
+   ],
+   [
+    7,
+    15,
+    16
+   ],
+   [
+    7,
+    15,
+    15
+   ],
+   [
+    7,
+    15,
+    14
+   ],
+   [
+    7,
+    11,
+    4
+   ],
+   [
+    7,
+    11,
+    10
+   ],
+   [
+    7,
+    11,
+    12
+   ],
+   [
+    7,
+    11,
+    11
+   ],
+   [
+    7,
+    11,
+    9
+   ],
+   [
+    7,
+    11,
+    8
+   ],
+   [
+    7,
+    11,
+    7
+   ],
+   [
+    7,
+    11,
+    6
+   ],
+   [
+    7,
+    11,
+    5
+   ],
+   [
+    7,
+    11,
+    17
+   ],
+   [
+    6,
+    12,
+    17
+   ],
+   [
+    6,
+    11,
+    17
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    2,
+    8,
+    17
+   ],
+   [
+    2,
+    8,
+    13
+   ],
+   [
+    14,
+    8,
+    17
+   ],
+   [
+    14,
+    8,
+    13
+   ],
+   [
+    10,
+    8,
+    17
+   ],
+   [
+    6,
+    16,
+    17
+   ],
+   [
+    6,
+    16,
+    13
+   ],
+   [
+    6,
+    12,
+    13
+   ],
+   [
+    6,
+    12,
+    9
+   ],
+   [
+    6,
+    8,
+    9
+   ],
+   [
+    6,
+    8,
+    5
+   ],
+   [
+    6,
+    8,
+    1
+   ],
+   [
+    6,
+    8,
+    17
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "IRON_ORE": [
+    [
+     4,
+     5,
+     0
+    ],
+    [
+     5,
+     5,
+     0
+    ]
+   ],
+   "FURNACE": [
+    [
+     19,
+     11,
+     17
+    ],
+    [
+     13,
+     11,
+     17
+    ]
+   ],
+   "CAVE": [
+    [
+     5,
+     11,
+     17
+    ],
+    [
+     0,
+     14,
+     0
+    ],
+    [
+     0,
+     12,
+     2
+    ],
+    [
+     0,
+     11,
+     4
+    ],
+    [
+     0,
+     11,
+     5
+    ],
+    [
+     0,
+     11,
+     9
+    ],
+    [
+     0,
+     11,
+     13
+    ],
+    [
+     14,
+     11,
+     17
+    ],
+    [
+     17,
+     0,
+     1
+    ],
+    [
+     10,
+     11,
+     17
+    ],
+    [
+     12,
+     0,
+     2
+    ],
+    [
+     7,
+     14,
+     15
+    ],
+    [
+     7,
+     11,
+     12
+    ],
+    [
+     7,
+     11,
+     7
+    ],
+    [
+     6,
+     11,
+     17
+    ]
+   ]
+  },
+  "strandedAt": [
+   16,
+   8,
+   16
+  ],
+  "strandedWalks": 3,
+  "strandedAgo": 194,
+  "exploreStalls": 0,
+  "exploreFailures": 263,
+  "stuckSpells": 3,
+  "stuckLevel": 1,
+  "leftOut": 22312
+ },
+ "log": [
+  "[15:00:28] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:30] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:31] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:33] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:34] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:36] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:37] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:39] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:41] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:43] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:44] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:46] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:47] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:47] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -103, 23, 59 [Explore the cave toward iron]",
+  "[15:00:47] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -97, 23, 61 [Explore the cave toward iron]",
+  "[15:00:48] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -126, 27, 44 [Explore the cave toward iron]",
+  "[15:00:49] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:50] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:52] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]",
+  "[15:00:53] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: up for air]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "202",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/202/replays/world/Echo-116900",
+  "class": "stuck: water loop",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166), with its goal's own memory of the box (#198, put back by #201): passes when its goal gains something or it stays out of the 8 blocks it was caught in for the budget's last half (#190)"
+ }
+}

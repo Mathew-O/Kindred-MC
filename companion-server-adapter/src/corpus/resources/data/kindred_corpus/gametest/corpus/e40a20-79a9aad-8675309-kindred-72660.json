@@ -1,0 +1,796 @@
+{
+ "kind": "spell",
+ "player": "Kindred",
+ "tick": 72660,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  16,
+  -6,
+  47
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.494907529827756,
+  8.0,
+  16.718897618003467
+ ],
+ "yaw": 34383.48,
+ "pitch": 18.159489,
+ "health": 17.214996,
+ "food": 16,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:oak_sapling",
+    "count": 3
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 27
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:oak_log",
+    "count": 6
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 15
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 47
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:wooden_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 3
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 125
+    }
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:chain",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 16
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 46
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 5
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 20
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 34
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobbled_deepslate",
+    "count": 10
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 2
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 38
+    }
+   }
+  }
+ ],
+ "selected": 7,
+ "timeOfDay": 659,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward 56, 2, 65",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[NO_CAVES]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+ "memory": {
+  "version": 1,
+  "blocked": [
+   {
+    "at": [
+     16,
+     8,
+     16
+    ],
+    "left": 2378
+   },
+   {
+    "at": [
+     16,
+     8,
+     17
+    ],
+    "left": 1328
+   },
+   {
+    "at": [
+     16,
+     8,
+     18
+    ],
+    "left": 2390
+   }
+  ],
+  "failures": [],
+  "approaches": [],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    16,
+    10,
+    17
+   ],
+   [
+    16,
+    9,
+    16
+   ],
+   [
+    16,
+    10,
+    18
+   ],
+   [
+    16,
+    11,
+    17
+   ],
+   [
+    16,
+    8,
+    16
+   ],
+   [
+    16,
+    8,
+    17
+   ],
+   [
+    16,
+    8,
+    18
+   ],
+   [
+    16,
+    9,
+    17
+   ],
+   [
+    16,
+    10,
+    16
+   ],
+   [
+    16,
+    9,
+    18
+   ],
+   [
+    17,
+    10,
+    17
+   ],
+   [
+    17,
+    7,
+    17
+   ],
+   [
+    17,
+    8,
+    17
+   ],
+   [
+    17,
+    9,
+    17
+   ],
+   [
+    18,
+    11,
+    17
+   ],
+   [
+    19,
+    11,
+    17
+   ],
+   [
+    20,
+    12,
+    17
+   ],
+   [
+    21,
+    12,
+    17
+   ],
+   [
+    22,
+    13,
+    17
+   ],
+   [
+    23,
+    16,
+    15
+   ],
+   [
+    23,
+    15,
+    16
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    16,
+    10,
+    17
+   ],
+   [
+    16,
+    6,
+    13
+   ],
+   [
+    16,
+    6,
+    17
+   ],
+   [
+    20,
+    10,
+    17
+   ],
+   [
+    20,
+    14,
+    13
+   ],
+   [
+    20,
+    14,
+    17
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "IRON_ORE": [
+    [
+     17,
+     10,
+     19
+    ]
+   ],
+   "GRAVEL": [
+    [
+     25,
+     6,
+     11
+    ],
+    [
+     26,
+     7,
+     11
+    ],
+    [
+     26,
+     6,
+     11
+    ],
+    [
+     27,
+     8,
+     12
+    ],
+    [
+     27,
+     7,
+     11
+    ],
+    [
+     27,
+     6,
+     10
+    ],
+    [
+     28,
+     8,
+     11
+    ],
+    [
+     28,
+     7,
+     9
+    ],
+    [
+     28,
+     7,
+     10
+    ],
+    [
+     28,
+     7,
+     11
+    ],
+    [
+     28,
+     6,
+     9
+    ],
+    [
+     28,
+     6,
+     10
+    ],
+    [
+     28,
+     5,
+     10
+    ],
+    [
+     27,
+     5,
+     10
+    ],
+    [
+     26,
+     5,
+     10
+    ],
+    [
+     25,
+     5,
+     10
+    ]
+   ],
+   "CAVE": [
+    [
+     15,
+     13,
+     16
+    ],
+    [
+     14,
+     15,
+     16
+    ],
+    [
+     15,
+     14,
+     17
+    ],
+    [
+     17,
+     12,
+     20
+    ],
+    [
+     17,
+     12,
+     21
+    ],
+    [
+     16,
+     8,
+     16
+    ],
+    [
+     17,
+     13,
+     16
+    ],
+    [
+     16,
+     8,
+     17
+    ],
+    [
+     19,
+     14,
+     16
+    ],
+    [
+     16,
+     14,
+     21
+    ],
+    [
+     17,
+     14,
+     25
+    ],
+    [
+     21,
+     12,
+     17
+    ],
+    [
+     21,
+     15,
+     16
+    ],
+    [
+     23,
+     14,
+     17
+    ],
+    [
+     27,
+     11,
+     28
+    ],
+    [
+     26,
+     11,
+     29
+    ],
+    [
+     27,
+     7,
+     29
+    ],
+    [
+     27,
+     8,
+     27
+    ],
+    [
+     24,
+     16,
+     16
+    ],
+    [
+     24,
+     15,
+     17
+    ],
+    [
+     31,
+     7,
+     1
+    ],
+    [
+     31,
+     7,
+     5
+    ],
+    [
+     31,
+     6,
+     0
+    ],
+    [
+     31,
+     6,
+     9
+    ],
+    [
+     31,
+     13,
+     26
+    ],
+    [
+     28,
+     6,
+     30
+    ],
+    [
+     30,
+     7,
+     22
+    ],
+    [
+     28,
+     7,
+     25
+    ],
+    [
+     32,
+     7,
+     5
+    ],
+    [
+     32,
+     7,
+     1
+    ],
+    [
+     32,
+     6,
+     13
+    ],
+    [
+     32,
+     6,
+     10
+    ],
+    [
+     32,
+     13,
+     25
+    ],
+    [
+     32,
+     6,
+     32
+    ],
+    [
+     32,
+     9,
+     22
+    ],
+    [
+     28,
+     1,
+     3
+    ],
+    [
+     31,
+     1,
+     16
+    ],
+    [
+     31,
+     2,
+     18
+    ],
+    [
+     30,
+     2,
+     21
+    ],
+    [
+     31,
+     4,
+     28
+    ],
+    [
+     31,
+     4,
+     29
+    ],
+    [
+     28,
+     0,
+     5
+    ],
+    [
+     30,
+     0,
+     9
+    ],
+    [
+     28,
+     2,
+     1
+    ],
+    [
+     29,
+     3,
+     5
+    ],
+    [
+     31,
+     2,
+     13
+    ],
+    [
+     31,
+     3,
+     12
+    ],
+    [
+     29,
+     0,
+     23
+    ]
+   ]
+  },
+  "strandedAt": [
+   16,
+   8,
+   18
+  ],
+  "strandedWalks": 1,
+  "strandedAgo": 227,
+  "exploreHeading": "west",
+  "exploreStalls": 1,
+  "exploreFailures": 1,
+  "stuckSpells": 2,
+  "stuckLevel": 1,
+  "leftOut": 15366
+ },
+ "log": [
+  "[17:18:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:39] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 5, -18, 43 [Cast: walk to the lava]",
+  "[17:18:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:40] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:41] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]",
+  "[17:18:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: to the wall]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "8675309",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/8675309/replays/world/Kindred-72660",
+  "class": "stuck: hemmed in",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166), with its goal's own memory of the box (#198, put back by #201): passes when its goal gains something or it stays out of the 8 blocks it was caught in for the budget's last half (#190)"
+ }
+}

@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; sleep=off",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 12.45, "tickMsWorst": 1307.68, "tickMsWorstAt": 790, "ticksOver50ms": 407, "ticksOver200ms": 10, "heapMbMax": 957, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 3080, "iron_ingot": 9540, "iron_pickaxe": 38520, "obsidian": 112571},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28160, "x": 35, "y": 18, "z": -47, "attempt": 1}, {"tick": 32020, "x": 20, "y": 18, "z": -60, "attempt": 2}, {"tick": 42760, "x": 5, "y": 29, "z": -47, "attempt": 1}, {"tick": 56460, "x": 19, "y": 32, "z": -49, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4925,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1240, "stone_tools": 2980, "iron_ingot": 17660, "iron_pickaxe": 30980, "obsidian": 64303},
+      "deaths": [
+        {"tick": 6998, "cause": "Sol was slain by Zombie", "x": 51, "y": 32, "z": -26, "light": 9, "timeOfDay": 7160, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 40960, "x": 6, "y": 29, "z": -46, "attempt": 1}, {"tick": 79860, "x": 69, "y": 71, "z": 22, "attempt": 1}, {"tick": 83540, "x": 89, "y": 73, "z": 24, "attempt": 2}, {"tick": 99020, "x": 90, "y": 69, "z": 40, "attempt": 3}, {"tick": 103500, "x": -27, "y": 74, "z": 3, "attempt": 4}, {"tick": 107160, "x": -44, "y": 74, "z": 3, "attempt": 5}, {"tick": 122920, "x": -47, "y": 71, "z": -19, "attempt": 6}, {"tick": 126760, "x": 0, "y": 74, "z": 2, "attempt": 7}, {"tick": 130440, "x": -19, "y": 73, "z": -2, "attempt": 8}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4172,
+      "chunkMinutes": 34675.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 740, "stone_tools": 2520, "iron_ingot": 5560, "iron_pickaxe": 27700},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 14500, "x": -22, "y": 57, "z": -44, "attempt": 1}, {"tick": 37060, "x": -9, "y": 57, "z": -32, "attempt": 1}, {"tick": 42600, "x": 7, "y": 42, "z": -33, "attempt": 2}, {"tick": 67800, "x": -48, "y": -4, "z": -5, "attempt": 3}, {"tick": 71420, "x": -48, "y": -4, "z": -5, "attempt": 4}, {"tick": 75020, "x": -48, "y": -4, "z": -5, "attempt": 5}, {"tick": 78620, "x": -48, "y": -4, "z": -5, "attempt": 6}, {"tick": 82220, "x": -48, "y": -4, "z": -5, "attempt": 7}, {"tick": 85840, "x": -48, "y": -4, "z": -5, "attempt": 8}, {"tick": 89440, "x": -48, "y": -4, "z": -5, "attempt": 9}, {"tick": 93040, "x": -48, "y": -5, "z": -4, "attempt": 10}, {"tick": 96680, "x": -48, "y": -4, "z": -5, "attempt": 11}, {"tick": 100280, "x": -48, "y": -4, "z": -5, "attempt": 12}, {"tick": 103880, "x": -48, "y": -4, "z": -5, "attempt": 13}, {"tick": 107480, "x": -48, "y": -4, "z": -4, "attempt": 14}, {"tick": 111120, "x": -48, "y": -4, "z": -5, "attempt": 15}, {"tick": 114720, "x": -48, "y": -4, "z": -5, "attempt": 16}, {"tick": 118320, "x": -48, "y": -4, "z": -5, "attempt": 17}, {"tick": 121920, "x": -48, "y": -4, "z": -5, "attempt": 18}, {"tick": 125520, "x": -48, "y": -4, "z": -5, "attempt": 19}, {"tick": 129160, "x": -48, "y": -4, "z": -5, "attempt": 20}, {"tick": 132760, "x": -48, "y": -4, "z": -5, "attempt": 21}, {"tick": 136360, "x": -48, "y": -4, "z": -4, "attempt": 22}, {"tick": 140920, "x": -47, "y": -4, "z": -4, "attempt": 23}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1683,
+      "chunkMinutes": 34680.0
+    }
+  }
+}
