@@ -68,6 +68,10 @@ final class BuildRunner {
     private final Map<Pos, Integer> refused = new HashMap<>();
     /** Whether it has gone back once, all else built, to what it gave up on as it went. */
     private boolean retriedGivenUp;
+    /** How often each given-up block has been tried again because another waited on it (E-70a1). */
+    private final Map<Pos, Integer> setAsideRetries = new HashMap<>();
+    /** The most times a given-up block is tried again for a block that waits on it. */
+    private static final int SET_ASIDE_RETRIES = 3;
     /** Spots where the server refused a step the plan thought sound; avoided until the build gets on again. */
     private final Set<Pos> shunned = new HashSet<>();
     /** Where the feet stood for the place or break last given. */
@@ -512,7 +516,21 @@ final class BuildRunner {
             breakTarget = breakStance = null;
         }
         var walkedTo = placeWalkedTo(player, site);
-        var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned, spareScaffold(player, wanted, site));
+        // What it gave up on for now is still the build's: no prop or scaffold goes in its cells (E-70a1).
+        var setAside = blocks.stream().filter(b -> givenUp.contains(b.at())).toList();
+        var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned,
+                spareScaffold(player, wanted, site), setAside);
+        // A block with nothing to be set against but one it gave up on (a bed's foot over a floor plank an animal stood
+        // in): that block is tried again now, a few times at most, rather than the bed left for good (E-70a1).
+        if (step.kind() == ConstructionPlanner.Kind.BLOCKED && step.target() != null && step.reason().startsWith(ConstructionPlanner.WAITS_ON_SET_ASIDE)
+                && givenUp.contains(step.target()) && setAsideRetries.merge(step.target(), 1, Integer::sum) <= SET_ASIDE_RETRIES) {
+            givenUp.remove(step.target());
+            refused.remove(step.target());
+            wrong.remove(step.target());
+            progress = blueprint.name() + ": once more at " + step.target() + ", which " + step.reason().substring(
+                    step.reason().indexOf(" for ") + 5) + " waits on";
+            return Optional.of(wait("Once more at a block another waits on"));
+        }
         // Blocked high up its own scaffold, the ground beneath more than a drop down: down the column first, the block
         // underfoot dug out, before any walk off (a walk round, or one out to fetch what it lacks) that the navigator cannot
         // take from up there. In #123's CI (run 42758107947, the life-first cabin; and #113's, #117's and #119's) the builder,
