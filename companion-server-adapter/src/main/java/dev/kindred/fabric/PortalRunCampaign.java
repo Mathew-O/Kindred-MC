@@ -4323,10 +4323,12 @@ final class PortalRunCampaign {
     /**
      * Stone for a build (E-08c), as the goal gets its own: stone in sight close by, else a staircase down to
      * {@code depth} and a tunnel along it, which is all stone. Every cell it digs is one {@code allowed} lets it: never
-     * the build's own site, nor the steps of its own staircase.
+     * the build's own site, nor the steps of its own staircase. Stone in sight is taken only from {@code depth} up:
+     * below it is the floor it digs along on. With its memory of stone full and no longer refusing new blocks, a player
+     * knew the floor its pit laid open and mined down through it, then could not climb back out for logs (#219's CI).
      */
     Optional<Task> stoneFor(NativePlayerBody body, int depth, Predicate<BlockPos> allowed) {
-        return gather(body, WorldKnowledge.Kind.STONE, 6, "stone", allowed)
+        return gather(body, WorldKnowledge.Kind.STONE, 6, "stone", allowed.and(p -> p.getY() >= depth))
                 .or(() -> digDown(body, depth, "Dig for stone", allowed));
     }
 

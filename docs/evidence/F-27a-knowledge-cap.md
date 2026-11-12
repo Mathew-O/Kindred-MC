@@ -47,3 +47,16 @@ For seed 110's bamboo loop: the follow-up to the logs-kept-out line (`F-27a-gath
   - **Comparability:** 3 runs give a scene fewer chances to fail than the baseline's 6, so 53.9% against 49.7% is not a measured gain.
   - **Flagged 1, confirmed 0:** `e40a13-fe2ba3b-505-sol-18180` was flagged and then cleared. The branch failed it 1 of 3 and main passed it 2 of 3. Replay players still acting after their batch: 0, 0, 0. The gate passes.
   - **Seed 110's bamboo spot:** it is not in the corpus, so the gate does not test it directly. Only a live run can confirm that loop is gone.
+- **#219's CI on c90adfa failed the cabin test, and the change was at fault.** The test was `NativeBaseGameTests.aPlayerWithStoneToolsSitesAndBuildsItsOwnCabinThenWaitsForIron`: "Stone mined for the walls: 43".
+  - **Why the change acts there:** the field's 12 logs are not the only kind. The stone round the field fills that kind's 2,000 at the first look.
+    - **Before the change:** the known stone froze there.
+    - **After it:** the stone its own pit uncovers is remembered too.
+    - **Where that leads:** `stoneFor` takes "stone in sight" within 6 blocks, and its staircase digs only to a fixed depth (six under the floor). The stone it now knew lay below that depth, so it mined down through its own floor.
+  - **The counts:**
+    - **In CI:** 19 of its 62 came from the layer under the field (y −1), so the field's own stone came up short.
+    - **Locally, on the branch:** in the earlier run of three, it mined below the field in 2 (down to y −1 and y −2) and passed the third.
+    - **On main:** 3 of 3 runs mined only the field's top layer.
+  - **Fixture first:** the cabin test now also checks "No stone mined below where it digs to" (stone below the dig depth, counted before and after). Nothing in it was loosened.
+    - **Without the fix:** it failed 3 of 3. One run failed that check (37 below). Two ran out of time, stuck below ground in a loop between "Back up to the build" and "Explore for logs", with 22 and 48 blocks below the field remembered.
+    - **With the fix:** it passed 3 of 3, with 62 mined and 0 below each time.
+  - **Change:** `PortalRunCampaign.stoneFor` gathers stone in sight only at or above the depth it digs to. The staircase and tunnel are unchanged, and so is eviction.
