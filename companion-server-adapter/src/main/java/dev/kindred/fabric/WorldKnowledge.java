@@ -214,29 +214,26 @@ final class WorldKnowledge {
         return new Looks(player, eye(player), rays);
     }
 
-    /**
-     * F-35m: far columns as {@code player} sees them with its eyes at {@code eye}: where it will look from a step away, as a
-     * player at a drop's brink leans over it to see the ground below (its own block hides the ground straight under its
-     * eyes from where it stands).
-     */
-    static Looks looksFrom(ServerPlayerEntity player, Vec3d eye, int rays) {
+    /** F-35m: far columns as {@code player} sees them with its eyes at {@code eye}, a point over its own floor ({@link #looksOverTheBrink}). */
+    private static Looks looksFrom(ServerPlayerEntity player, Vec3d eye, int rays) {
         return new Looks(player, new double[] {eye.x, eye.y, eye.z}, rays);
     }
 
     /**
-     * F-35m: far columns as {@code player} sees them from the brink of what it stands on, toward ({@code dx}, {@code dz}):
-     * its eyes over the last of its own floor that way, out to four blocks, as a player on a perch walks to its edge to
-     * look down (from its middle the perch's own edge hides the ground near its foot). Its floor it sees under its feet.
+     * F-35m: far columns as {@code player} sees them from the brink of what it stands on, toward ({@code dx}, {@code dz}),
+     * as a player on a perch steps to its edge to look down (from its middle the perch's own edge hides the ground near its
+     * foot). The bound: its eyes over its own standing floor, walked out to it in tenths of a block over floor it stands
+     * on, at most {@value #BRINK} blocks, stopping within a tenth of the edge; never past the brink, never over air.
      */
     static Looks looksOverTheBrink(ServerPlayerEntity player, double dx, double dz, int rays) {
         var world = player.getServerWorld();
         double length = Math.hypot(dx, dz);
         Vec3d at = player.getPos();
         if (length > 1e-6) {
-            double ux = dx / length * 0.5, uz = dz / length * 0.5;
-            for (int step = 1; step <= 8; step++) {
+            double ux = dx / length * 0.1, uz = dz / length * 0.1;
+            for (int step = 1; step <= BRINK * 10; step++) {
                 Vec3d next = player.getPos().add(ux * step, 0, uz * step);
-                BlockPos feet = BlockPos.ofFloored(next);
+                BlockPos feet = BlockPos.ofFloored(next.x, player.getY() + 0.01, next.z);
                 if (!world.isChunkLoaded(feet) || world.getBlockState(feet.down()).getCollisionShape(world, feet.down()).isEmpty()
                         || !world.getBlockState(feet).getCollisionShape(world, feet).isEmpty()
                         || !world.getBlockState(feet.up()).getCollisionShape(world, feet.up()).isEmpty()) break;
@@ -245,6 +242,9 @@ final class WorldKnowledge {
         }
         return looksFrom(player, at.add(0, player.getStandingEyeHeight(), 0), rays);
     }
+
+    /** How far out over its own floor it walks to the brink to look down (F-35m). */
+    static final int BRINK = 4;
 
     /**
      * F-35m: the tops of far columns as one player sees them from where it stands, for one decision. A top is known only

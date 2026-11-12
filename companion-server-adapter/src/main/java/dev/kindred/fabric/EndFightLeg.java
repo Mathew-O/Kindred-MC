@@ -820,8 +820,8 @@ final class EndFightLeg {
             if (!world.getBlockState(edge).getCollisionShape(world, edge).isEmpty()
                     || !world.getBlockState(edge.up()).getCollisionShape(world, edge.up()).isEmpty()
                     || !world.getBlockState(edge.down()).getCollisionShape(world, edge.down()).isEmpty()) continue;
-            // The ground below as it sees it leaning over the free block, its eyes over it (F-35m): three sight lines.
-            var looks = WorldKnowledge.looksFrom(player, Vec3d.ofCenter(edge).add(0, player.getStandingEyeHeight() - 0.5, 0), 3);
+            // The ground below as it sees it from its perch's brink toward the free block (F-35m): three sight lines.
+            var looks = WorldKnowledge.looksOverTheBrink(player, dx, dz, 3);
             var top = islandTop(world, looks, edge.getX(), edge.getZ());
             if (top.isEmpty() || blocked.test(top.get()) || Math.hypot(top.get().getX(), top.get().getZ()) < PERCH_CLEAR) continue;
             int drop = feet.getY() - top.get().getY();
