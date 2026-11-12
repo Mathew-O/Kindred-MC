@@ -8019,6 +8019,15 @@ final class PlayerRuntime {
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
                     + (label.isEmpty() ? "" : " [" + label + "]"));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
+            if ("native_bridge".equals(entry.skillId) && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED)) {
+                var report = entry.runner.lastProgress();
+                try {
+                    runObserver.bridged(entry.data.displayName(), Long.parseLong(report.getOrDefault("blocks", "0")),
+                            Long.parseLong(report.getOrDefault("ticks", "0")));
+                } catch (NumberFormatException unreported) {
+                    // A run that ended before it reported (a refusal at its start) bridged nothing.
+                }
+            }
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.

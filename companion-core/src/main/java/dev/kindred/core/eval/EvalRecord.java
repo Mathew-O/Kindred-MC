@@ -39,6 +39,8 @@ public final class EvalRecord {
         long tokens;
         /** Chunks that came into its loaded area, and chunks held times ticks held (E-70a). */
         long chunkLoads, chunkTicks;
+        /** Bridge blocks placed in its bridge runs, and the ticks those runs took (E-71a). */
+        long bridgeBlocks, bridgeTicks;
     }
 
     private final EvalScenario scenario;
@@ -90,6 +92,17 @@ public final class EvalRecord {
         if (p == null) return;
         p.chunkLoads += loads;
         p.chunkTicks += chunkTicks;
+    }
+
+    /**
+     * A bridge run of {@code player}'s ended, with {@code blocks} placed in {@code ticks} (E-71a's measure: bridge blocks
+     * per second, over every run whether it reached its end or stopped short).
+     */
+    public void bridged(String player, long blocks, long ticks) {
+        var p = players.get(player);
+        if (p == null || blocks < 0 || ticks < 0) return;
+        p.bridgeBlocks += blocks;
+        p.bridgeTicks += ticks;
     }
 
     /** The Overworld's days that passed over the run (a night slept through passes in moments); negative until set. */
@@ -219,7 +232,9 @@ public final class EvalRecord {
             }
             out.append("],\n      \"rescuesNotListed\": ").append(p.rescuesDropped).append(",\n      \"tokens\": ").append(p.tokens)
                     .append(",\n      \"chunkLoads\": ").append(p.chunkLoads)
-                    .append(String.format(java.util.Locale.ROOT, ",\n      \"chunkMinutes\": %.1f", p.chunkTicks / 1200.0)).append("\n    }");
+                    .append(String.format(java.util.Locale.ROOT, ",\n      \"chunkMinutes\": %.1f", p.chunkTicks / 1200.0))
+                    .append(",\n      \"bridgeBlocks\": ").append(p.bridgeBlocks)
+                    .append(String.format(java.util.Locale.ROOT, ",\n      \"bridgeSeconds\": %.1f", p.bridgeTicks / 20.0)).append("\n    }");
         }
         out.append(players.isEmpty() ? "}" : "\n  }").append("\n}\n");
         return out.toString();
