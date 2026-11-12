@@ -166,6 +166,7 @@
       "dev.kindred.fabric.NativeLogsKeptOutGameTests",
       "dev.kindred.fabric.NativeKnowledgeCapGameTests",
       "dev.kindred.fabric.NativeKnownLogsKeptOutGameTests",
+      "dev.kindred.fabric.NativeLavaProbeGameTests",
       "dev.kindred.fabric.ReplayWorldStateGameTests",
       "dev.kindred.fabric.NativeStuckSpellReplayGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",
