@@ -37,6 +37,8 @@ public final class EvalRecord {
         final List<Rescue> rescues = new ArrayList<>();
         int deathsDropped, stuckDropped, rescuesDropped;
         long tokens;
+        /** Chunks that came into its loaded area, and chunks held times ticks held (E-70a). */
+        long chunkLoads, chunkTicks;
     }
 
     private final EvalScenario scenario;
@@ -78,6 +80,23 @@ public final class EvalRecord {
         if (p == null) return;
         if (p.rescues.size() < KEPT) p.rescues.add(rescue); else p.rescuesDropped++;
     }
+
+    /**
+     * Chunks that came into {@code player}'s loaded area since the last look, and the chunks it held times the ticks since
+     * then (E-70a's measure: a player's chunks are most of what it costs the server).
+     */
+    public void chunks(String player, long loads, long chunkTicks) {
+        var p = players.get(player);
+        if (p == null) return;
+        p.chunkLoads += loads;
+        p.chunkTicks += chunkTicks;
+    }
+
+    /** The Overworld's days that passed over the run (a night slept through passes in moments); negative until set. */
+    private double days = -1;
+
+    /** The Overworld's days that passed over the run: its time of day's advance, over 24,000. */
+    public void days(double days) { this.days = days; }
 
     /** The tokens its model players have used so far: the latest total replaces the last. */
     public void tokens(String player, long tokens) {
@@ -157,6 +176,7 @@ public final class EvalRecord {
                 .append(",\n  \"ticks\": ").append(scenario.ticks())
                 .append(",\n  \"ticksRun\": ").append(ticksRun)
                 .append(",\n  \"complete\": ").append(complete)
+                .append(days < 0 ? "" : String.format(java.util.Locale.ROOT, ",\n  \"days\": %.3f", days))
                 .append(factions == null ? "" : factions)
                 .append(server == null ? "" : server)
                 .append(",\n  \"players\": {");
@@ -197,7 +217,9 @@ public final class EvalRecord {
                 out.append(first ? "" : ", ").append("{\"tick\": ").append(r.tick()).append(", \"line\": ").append(Json.string(r.line())).append('}');
                 first = false;
             }
-            out.append("],\n      \"rescuesNotListed\": ").append(p.rescuesDropped).append(",\n      \"tokens\": ").append(p.tokens).append("\n    }");
+            out.append("],\n      \"rescuesNotListed\": ").append(p.rescuesDropped).append(",\n      \"tokens\": ").append(p.tokens)
+                    .append(",\n      \"chunkLoads\": ").append(p.chunkLoads)
+                    .append(String.format(java.util.Locale.ROOT, ",\n      \"chunkMinutes\": %.1f", p.chunkTicks / 1200.0)).append("\n    }");
         }
         out.append(players.isEmpty() ? "}" : "\n  }").append("\n}\n");
         return out.toString();

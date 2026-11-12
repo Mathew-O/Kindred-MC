@@ -72,4 +72,19 @@ class EvalRecordTest {
         assertEquals("\"a\\nb\\tc\\u0001\\\\\"", Json.string("a\nb\tc\u0001\\"));
         assertEquals("null", Json.string(null));
     }
+
+    @Test
+    void chunksAndTheWorldsDaysAreWrittenPerPlayerAndForTheRun() {
+        var record = new EvalRecord(EvalScenario.parse("starters=Kindred; goal=nether"));
+        String before = record.toJson("b", 1, 1, true);
+        assertFalse(before.contains("\"days\""), "no days until set");
+        record.chunks("Kindred", 289, 289 * 20);
+        record.chunks("Kindred", 17, 289 * 20);
+        record.chunks("Nobody", 5, 5);
+        record.days(2.5);
+        String json = record.toJson("b", 1, 40, true);
+        assertTrue(json.contains("\"chunkLoads\": 306"), json);
+        assertTrue(json.contains("\"chunkMinutes\": 9.6"), json);
+        assertTrue(json.contains("\"days\": 2.500"), json);
+    }
 }

@@ -200,5 +200,35 @@ class FreeSwitchTest(unittest.TestCase):
         self.assertEqual([], compare.free_runs(a))
         self.assertEqual(['B seed 101 (freeItems)'], compare.free_runs(b))
 
+class NightsMeasureTest(unittest.TestCase):
+    """E-70a: chunk-loads and chunk-minutes per game hour, and deaths and stuck minutes per game day as well as per hour."""
+
+    def test_01_chunks_per_hour_and_deaths_per_day(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root) / 'b' / '101'
+            folder.mkdir(parents=True)
+            p = {'stages': {}, 'deaths': [{'tick': 10, 'cause': 'Kindred was slain by Zombie'}], 'deathsNotListed': 0,
+                 'stuck': [{'tick': 5, 'x': 0, 'y': 0, 'z': 0, 'attempt': 1}], 'tokens': 0, 'chunkLoads': 600, 'chunkMinutes': 1734.0}
+            result = {'scenario': 'goal=nether; ticks=144000', 'kind': 'earned', 'build': 'x', 'seed': 101, 'ticks': 144000,
+                      'ticksRun': 144000, 'complete': True, 'days': 8.0, 'players': {'Kindred': p}}
+            (folder / 'eval-result.json').write_text(json.dumps(result), encoding='utf-8')
+            s = score.score(folder.parent, use_metrics=False)
+        seed = s['perSeed']['101']
+        self.assertEqual(300.0, seed['players']['Kindred']['chunkLoadsPerHour'])
+        self.assertEqual(867.0, seed['teamChunkMinutesPerHour'])
+        self.assertEqual(8.0, seed['days'])
+        self.assertEqual(0.12, seed['teamDeathsPerDay'])
+        self.assertEqual(0.38, seed['teamStuckMinutesPerDay'])
+        text = score.markdown(s)
+        self.assertIn('| Chunk-loads a game hour, the team | 300.0', text)
+        self.assertIn('| Deaths a game day, the team | 0.12', text)
+
+    def test_02_an_older_file_has_none_of_them(self):
+        with tempfile.TemporaryDirectory() as root:
+            s = score.score(FreeSwitchTest().run_dir(root, {}), use_metrics=False)
+        self.assertNotIn('days', s['team'])
+        self.assertNotIn('Chunk-loads', score.markdown(s))
+
+
 if __name__ == '__main__':
     unittest.main()

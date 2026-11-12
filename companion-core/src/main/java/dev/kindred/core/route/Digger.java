@@ -343,8 +343,11 @@ public final class Digger {
         return Optional.empty();
     }
 
-    /** Solid ground under {@code step}, or under the open cells below it, no deeper than the navigator will drop. */
-    private static boolean landingWithin(DigTerrain world, Cell step, Cell feet) {
+    /**
+     * Solid ground under {@code step}, or under the open cells below it, no deeper than the navigator will drop. Public for
+     * the gather's own check of a block below its feet (F-35l), which uses it only to refuse a block, never to choose one.
+     */
+    public static boolean landingWithin(DigTerrain world, Cell step, Cell feet) {
         Cell landing = step;
         while (passable(world, landing.down()) && landing.y() > feet.y() - MAX_SAFE_DROP) landing = landing.down();
         return !passable(world, landing.down());
