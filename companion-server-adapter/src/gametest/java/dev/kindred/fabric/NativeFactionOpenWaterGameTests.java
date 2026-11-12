@@ -54,6 +54,65 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
         run(context, true);
     }
 
+    /**
+     * Its factions founded before it has looked round, the places its faction play chooses out on the water (F-35j1): a
+     * place set aside as water it saw is followed by the next choice at the decision interval, not on the same tick. On
+     * Factions seed 110 (main 0476ee5, RUNNER 2's F-35j pair) Echo had faction walks to ten places refused in one second:
+     * each refused place, seen as water a second later, was set aside and another chosen at once, no wait ever served.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionOpenWaterPaced", tickLimit = 3700)
+    public void theNextChoiceAfterAPlaceSetAsideAsWaterComesAtTheDecisionInterval(TestContext context) {
+        paced(context, false);
+    }
+
+    /** The control (F-35j1): a causeway of land east through the sea it saw, to Blue's land: its faction walk still gets there. */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionOpenWaterCauseway", tickLimit = 3700)
+    public void aCausewayThroughTheSeaItSawIsStillWalked(TestContext context) {
+        paced(context, true);
+    }
+
+    private static void paced(TestContext context, boolean causeway) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3600);
+        var server = context.getWorld().getServer();
+        ServerPlayerEntity[] ben = new ServerPlayerEntity[1];
+        long[] start = {-1};
+        BlockPos[] isle = new BlockPos[1];
+        FixtureGround.whenDone(context, () -> { if (ben[0] != null && server.getPlayerManager().getPlayer(ben[0].getUuid()) != null) server.getPlayerManager().remove(ben[0]); });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    isle[0] = staged(context, f, false, causeway);
+                    // The factions at once, before it has looked round: its first walks are asked before it saw the water.
+                    factions(context, f, ben, isle[0]);
+                    start[0] = server.getTicks();
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    if (causeway) {
+                        var at = Territory.Chunk.at(W, player.getBlockX(), player.getBlockZ());
+                        var east = Territory.Chunk.at(W, isle[0].getX(), isle[0].getZ()).offset(1, 0);
+                        context.assertTrue(at.x() == east.x(), "Along the causeway into Blue's land east: at " + player.getBlockPos().toShortString()
+                                + "; move " + f.runtime.factionMoveForTest(f.id) + "; ended " + f.runtime.factionWalksEndedForTest(f.id));
+                        return;
+                    }
+                    context.assertTrue(server.getTicks() - start[0] >= 3000, "Three thousand ticks on");
+                })
+                .createAndAdd(() -> {
+                    if (causeway) return;
+                    var ended = f.runtime.factionWalksEndedForTest(f.id);
+                    var decided = f.runtime.factionDecisionsForTest(f.id);
+                    KindredMod.LOGGER.info("Paced fixture: walks ended {}; choices at {}", ended, decided);
+                    for (int i = 1; i < decided.size(); i++) {
+                        context.assertTrue(decided.get(i) - decided.get(i - 1) >= FactionsPlayer.DECIDE_TICKS,
+                                "Its next choice " + (decided.get(i) - decided.get(i - 1)) + " ticks after the last, before the decision interval: " + decided);
+                    }
+                })
+                .completeIfSuccessful();
+    }
+
     private static void run(TestContext context, boolean walled) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3600);
         var server = context.getWorld().getServer();
@@ -68,7 +127,7 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
-                    isle[0] = staged(context, f, walled);
+                    isle[0] = staged(context, f, walled, false);
                     start[0] = server.getTicks();
                 })
                 .createAndAdd(() -> {
@@ -110,11 +169,11 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
      * seed 303's land at Y 64 over a sea at 62), thirty up; walled,
      * a ring of stone four high round its edge, so that no line from its eyes reaches the water.
      */
-    private static BlockPos island(TestContext context, BlockPos o, boolean walled) {
+    private static BlockPos island(TestContext context, BlockPos o, boolean walled, boolean causeway) {
         var world = context.getWorld();
         FixtureGround.keep(context, o.add(-SEA - 1, -7, -SEA - 1), o.add(SEA + 1, 8, SEA + 1));
         for (int x = -SEA; x <= SEA; x++) for (int z = -SEA; z <= SEA; z++) {
-            boolean land = Math.abs(x) <= 4 && Math.abs(z) <= 4;
+            boolean land = Math.abs(x) <= 4 && Math.abs(z) <= 4 || causeway && x > 4 && Math.abs(z) <= 1;
             world.setBlockState(o.add(x, -6, z), Blocks.STONE.getDefaultState());
             for (int y = -5; y <= -1; y++) world.setBlockState(o.add(x, y, z), (land ? Blocks.STONE : y <= -3 ? Blocks.WATER : Blocks.AIR).getDefaultState());
             for (int y = 0; y <= 7; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -130,13 +189,13 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
     }
 
     /** The sea, the island and the player on it, playing: the island's middle. */
-    private static BlockPos staged(TestContext context, NativePaidSkillsGameTests.Fixture f, boolean walled) {
+    private static BlockPos staged(TestContext context, NativePaidSkillsGameTests.Fixture f, boolean walled, boolean causeway) {
         var world = context.getWorld();
         var player = f.player();
         // The island's middle four blocks into its chunk from the west, so the chunk east begins eight past its edge.
         BlockPos up = player.getBlockPos().up(30);
         BlockPos o = new BlockPos((up.getX() & ~15) + 4, up.getY(), (up.getZ() & ~15) + 8);
-        island(context, o, walled);
+        island(context, o, walled, causeway);
         world.setTimeOfDay(1000);
         player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 0, 0);
         player.setVelocity(Vec3d.ZERO);

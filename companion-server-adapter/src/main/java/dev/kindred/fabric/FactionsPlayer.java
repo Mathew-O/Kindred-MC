@@ -73,11 +73,7 @@ final class FactionsPlayer {
             streakAtSurface = atSurface;
         }
         if (times == SET_ASIDE) streak++;
-        if (streak >= STREAK || pauses > 0) {
-            pausedUntil = tick + Math.min(BACKOFF_MAX, PAUSE << Math.min(pauses, 10));
-            pauses++;
-            streak = 0;
-        }
+        streakPause(tick);
     }
 
     /**
@@ -122,6 +118,11 @@ final class FactionsPlayer {
     int blockedWalks, refusalsCounted;
     /** Faction walks that ended, however they ended: asked of the navigator at all (F-35j's fixtures). */
     int walksEnded;
+    /** For the fixtures (F-35j1): each faction walk that ended, its target and tick, and each choice's tick; the last 64 of each. */
+    final java.util.ArrayDeque<Map.Entry<String, Long>> endedForTest = new java.util.ArrayDeque<>();
+    final java.util.ArrayDeque<Long> decidedForTest = new java.util.ArrayDeque<>();
+    void endedForTest(String target, long tick) { endedForTest.addLast(Map.entry(target, tick)); if (endedForTest.size() > 64) endedForTest.removeFirst(); }
+    void decidedForTest(long tick) { decidedForTest.addLast(tick); if (decidedForTest.size() > 64) decidedForTest.removeFirst(); }
 
     /** A walk toward {@code target} got somewhere: its refusals and ways forgotten, and the run of refusals with them. */
     void walked(String target) {
@@ -153,10 +154,35 @@ final class FactionsPlayer {
      * searched, and the run of refusals (F-35i) is not counted on.
      */
     void openWater(String target, long tick) {
+        openWater(target, tick, null, true);
+    }
+
+    /**
+     * As above, from {@code at}, at the surface or not: a place set aside as open water counts toward the run of places set
+     * aside with no walk between, as a place set aside after its refusals does, so that a coast of such places and land
+     * beyond reach pauses every faction walk as F-35i has it (F-35j1: on Factions seed 110 they never counted, and Echo's
+     * walks went on to place after place, each refused once).
+     */
+    void openWater(String target, long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
         var before = refused.get(target);
         int times = Math.max(SET_ASIDE, before == null ? 0 : before.times() + 1);
         refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
         overWater++;
+        if (streakFrom == null && at != null) {
+            streakFrom = at.toImmutable();
+            streakAtSurface = atSurface;
+        }
+        streak++;
+        streakPause(tick);
+    }
+
+    /** Once {@value #STREAK} places are set aside in a row, or after a pause, every faction walk waits, twice as long each time. */
+    private void streakPause(long tick) {
+        if (streak >= STREAK || pauses > 0) {
+            pausedUntil = tick + Math.min(BACKOFF_MAX, PAUSE << Math.min(pauses, 10));
+            pauses++;
+            streak = 0;
+        }
     }
 
     /** Places set aside as open water it saw, for the fixtures. */

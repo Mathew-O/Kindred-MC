@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 8.716,
+  "server": {"tickMsMean": 12.69, "tickMsWorst": 2424.67, "tickMsWorstAt": 1, "ticksOver50ms": 594, "ticksOver200ms": 16, "heapMbMax": 1007, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1080, "stone_tools": 1960, "iron_ingot": 8300, "iron_pickaxe": 73500},
+      "deaths": [
+        {"tick": 13599, "cause": "Kindred was shot by Skeleton", "x": -424, "y": 27, "z": -129, "light": 0, "timeOfDay": 13761, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 10280,
+      "chunkMinutes": 34675.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 880, "stone_tools": 1300, "iron_ingot": 8520, "iron_pickaxe": 69920, "obsidian": 118299, "portal_lit": 119230},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4074,
+      "chunkMinutes": 34680.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1580, "stone_tools": 2920, "iron_ingot": 16440, "iron_pickaxe": 53080, "obsidian": 78187, "portal_lit": 81352},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3042,
+      "chunkMinutes": 34680.0
+    }
+  }
+}

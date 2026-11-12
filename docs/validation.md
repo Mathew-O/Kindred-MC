@@ -42,8 +42,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35b, a cave pocket up a wall climbed to once: [evidence](evidence/F-35b.md).
 - F-35g, the water over its head under the sea, filled from and resealed; no to and fro beneath it (606, `e40a18`): [evidence](evidence/F-35g.md)
 - F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
+- F-35h2, no faction walk out through its own night shelter's seal (Factions 110): [evidence](evidence/F-35h2.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
+- F-35j1, a refused faction walk's wait served and open water set aside counted toward the pause (Factions 110): [evidence](evidence/F-35j1.md).
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
 - F-35l, stone not mined from a thin floor over a drop round its feet: [evidence](evidence/F-35l.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
@@ -69,9 +71,21 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06i: an AI player buys and bids for what its run lacks](evidence/M-06i.md#an-ai-player-buys-and-bids-for-what-its-run-lacks-2026-11-12-claudem06i-wants-1111).
 
+## The M-06c to M-06h acceptance mapped to the tests — 12 November 2026 (`claude/m06-acceptance-map-1112`)
+
+- [M-06c to M-06h: the acceptance mapped to the tests](evidence/M-06-acceptance.md).
+
 ## A tree on land it may not work set aside in its plan (M-06i) — 11 November 2026 (`claude/m06i-refused-logs-1111`)
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
+
+## The rules on the eval engine (M-06k) — 12 November 2026 (`claude/m06k-rules-1112`)
+
+- [M-06k: the rules on the eval engine](evidence/M-06k.md#the-rules-on-the-eval-engine-2026-11-12-claudem06k-rules-1112).
+
+## The hitches attributed by cause (M-06k) — 12 November 2026 (`claude/m06k-hitches-1112`)
+
+- [M-06k: the hitches attributed by cause](evidence/M-06k.md#the-hitches-attributed-by-cause-2026-11-12-claudem06k-hitches-1112).
 
 ## The gather's best-tool question asked once per kind of block (M-06k) — 11 November 2026 (`claude/m06k-gather-tool-cache-1111`)
 
@@ -120,7 +134,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
 - [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
-- [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs.
+- [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs; 2026-11-12, a break's collection that ends with its own drop uncollected says why (pure line test 2 of 2).
 - [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs; the build green on the merged tree; the corpus gate passes, its three flagged scenes cleared by the lead (reasons in the evidence).
 - [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
 
