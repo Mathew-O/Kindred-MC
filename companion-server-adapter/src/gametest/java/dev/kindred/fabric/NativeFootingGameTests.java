@@ -31,7 +31,7 @@ public final class NativeFootingGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "footingThin", tickLimit = 2600)
     public void aFloorOneBlockThickOverALongDropIsNotMinedOutFromUnderIt(TestContext context) {
-        run(context, 1);
+        run(context, 1, UP);
     }
 
     /**
@@ -41,10 +41,20 @@ public final class NativeFootingGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "footingGround", tickLimit = 2600)
     public void aFloorAtTheGroundsLevelIsMinedForStoneAsBefore(TestContext context) {
-        run(context, 4);
+        run(context, 4, 0);
     }
 
-    private static void run(TestContext context, int thick) {
+    /**
+     * A column of stone thirty high, nine across, its top the floor, a cliff all round it (F-35l2): going on from its stone
+     * pickaxe to iron, it does not break out through the column's side and fall. Before, its branch mine for iron and once its
+     * cave exploring came out through the side, and it "fell from a high place", 2 of 3.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "footingColumn", tickLimit = 2600)
+    public void inAColumnOverACliffItsMiningDoesNotBreakOutOfTheSideAndFall(TestContext context) {
+        run(context, UP, UP);
+    }
+
+    private static void run(TestContext context, int thick, int up) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2500);
         var server = context.getWorld().getServer();
         BlockPos[] platform = new BlockPos[1];
@@ -58,7 +68,7 @@ public final class NativeFootingGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
-                    platform[0] = staged(context, f, thick);
+                    platform[0] = staged(context, f, thick, up);
                     start[0] = server.getTicks();
                     body[0] = f.player();
                     context.runAtEveryTick(() -> {
@@ -79,6 +89,10 @@ public final class NativeFootingGameTests implements FabricGameTest {
                             + platform[0].getY() + "), " + holes + " of the floor's 81 blocks mined out, " + cobble + " cobblestone or stone pickaxe; " + f.runtime.panelBots(dev.kindred.core.Actor.console()).getFirst().goalProgress();
                     KindredMod.LOGGER.info("Footing fixture ({} thick): {}", thick, state);
                     context.assertTrue(!died[0] && player.isAlive(), "Alive, never died: " + state);
+                    if (up > 0 && thick == up) {
+                        // The column: alive is the test (its fall off the cliff is a death); it may dig down inside it.
+                        return;
+                    }
                     if (thick == 1) {
                         context.assertTrue(holes == 0, "No block of the floor over the drop mined out: " + state);
                         context.assertTrue(lowest[0] >= platform[0].getY(), "Never below its floor: " + state);
@@ -90,13 +104,14 @@ public final class NativeFootingGameTests implements FabricGameTest {
     }
 
     /**
-     * The platform, nine across, {@code thick} blocks of stone: one thick with its top {@value #UP} over the ground, or set
-     * into the ground at its own level; the player on its middle.
+     * The platform, nine across, {@code thick} blocks of stone, its top {@code up} over the ground: one thick thirty up, four
+     * thick set into the ground at its own level, or thirty thick thirty up (a column solid to the ground, a cliff all
+     * round); the player on its middle.
      */
-    private static BlockPos staged(TestContext context, NativePaidSkillsGameTests.Fixture f, int thick) {
+    private static BlockPos staged(TestContext context, NativePaidSkillsGameTests.Fixture f, int thick, int up) {
         var world = context.getWorld();
         var player = f.player();
-        BlockPos o = player.getBlockPos().up(thick == 1 ? UP : 0).toImmutable();
+        BlockPos o = player.getBlockPos().up(up).toImmutable();
         FixtureGround.keep(context, o.add(-5, -thick - 1, -5), o.add(5, 6, 5));
         for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) {
             for (int y = 1; y <= thick; y++) world.setBlockState(o.add(x, -y, z), Blocks.STONE.getDefaultState());
