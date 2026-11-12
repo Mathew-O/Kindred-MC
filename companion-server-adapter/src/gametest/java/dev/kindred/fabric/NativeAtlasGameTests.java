@@ -592,6 +592,68 @@ public final class NativeAtlasGameTests implements FabricGameTest {
     }
 
     /** The test server ticks only a test's own chunks; the chunks a fixture's walk crosses are kept loaded while it runs. */
+    /**
+     * F-31e: the last write of a player's memory at a stop is on disk once the stop is done, so a process that ends then,
+     * or a runtime started again at once, finds it. Its atlas, at its bound of 4,096 chunks as a long run leaves it, is
+     * written once a game minute and at the stop; here the chunk it walks into is recorded within the minute, so only the
+     * stop's write holds it. Before, the stop did not wait for the memory files' thread (a daemon): the stop was done
+     * while that write was still being made. Staged: the atlas filled to its bound with chunks it stood in, the player set
+     * down four chunks east, and the stop at once.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "atlasLastWrite", tickLimit = 1600)
+    public void whatItsAtlasLearnedJustBeforeAStopIsOnDiskWhenTheStopIsDone(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        BlockPos[] there = new BlockPos[1];
+        String[] onDisk = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mapper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.runtime.atlasForFixtures(f.id) != null, "Its atlas read"))
+                .createAndAdd(() -> {
+                    var atlas = f.runtime.atlasForFixtures(f.id);
+                    long time = context.getWorld().getTime();
+                    // Far from where it stands, as a long run's atlas is: its bound's worth of chunks it stood in.
+                    for (int i = 0; i < Atlas.MAX_CHUNKS; i++) {
+                        atlas.visit(new Atlas.Place("overworld", 100_000 + (i % 64) * 16, 64, 100_000 + (i / 64) * 16), "minecraft:plains", time);
+                    }
+                    var player = f.player();
+                    BlockPos at = player.getBlockPos().add(64, 0, 0);
+                    there[0] = at;
+                    player.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(visited(f.runtime.atlasForFixtures(f.id), there[0]), "The chunk it walked into, in its atlas"))
+                .createAndAdd(() -> f.runtime.stop())
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.shutdownComplete(), "Stopped");
+                    // At once, as a process ending with the stop would: what is on disk now.
+                    if (onDisk[0] == null) {
+                        try (var store = new PlayerMemoryStore(f.directory)) {
+                            var kept = store.loadAtlas(f.id, "Mapper").join();
+                            onDisk[0] = kept == null ? "no atlas" : kept.chunks().stream().anyMatch(chunk -> chunk.visited()
+                                    && chunk.x() == (there[0].getX() >> 4) && chunk.z() == (there[0].getZ() >> 4)) ? "held" : kept.chunks().size() + " chunks, not it";
+                        }
+                    }
+                })
+                .createAndAdd(() -> context.assertTrue("held".equals(onDisk[0]), "The chunk it walked into just before the stop, on disk when the stop was done: " + onDisk[0]))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Started again"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "connect", f.id) == 1, "Connected again"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    context.assertTrue(visited(f.runtime.atlasForFixtures(f.id), there[0]), "And read back");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    private static boolean visited(Atlas atlas, BlockPos at) {
+        return atlas != null && atlas.snapshot().chunks().stream().anyMatch(chunk -> chunk.visited() && chunk.x() == (at.getX() >> 4) && chunk.z() == (at.getZ() >> 4));
+    }
+
     private static void chunks(ServerWorld world, BlockPos min, BlockPos max, boolean forced) {
         for (int cx = min.getX() >> 4; cx <= max.getX() >> 4; cx++) {
             for (int cz = min.getZ() >> 4; cz <= max.getZ() >> 4; cz++) world.setChunkForced(cx, cz, forced);

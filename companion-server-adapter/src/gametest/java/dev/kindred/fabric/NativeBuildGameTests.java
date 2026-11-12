@@ -39,6 +39,107 @@ public final class NativeBuildGameTests implements FabricGameTest {
         context.assertTrue(false, first[0]);
     }
 
+    /**
+     * A floor of nine planks with a bed on it, a cow standing still in the cell of the plank under the bed's foot until
+     * that plank's placement has been refused three times, and then gone (E-70a1). The plank is set aside for the time
+     * being; the bed, with nothing else to stand on, waits on it, the plank is tried again and the bed goes on it, and
+     * the floor is whole with no scaffold left standing. In CI (#239, #240) the bed was propped in the plank's cell:
+     * walled in by the rest of the floor under the bed, the prop was out of reach to take down and the cabin was left
+     * a plank short.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildBedOverSetAside", tickLimit = 6000)
+    public void aBedOverAPlankAnAnimalStoodInWaitsForThePlankAndTheFloorIsWhole(TestContext context) {
+        java.util.concurrent.atomic.AtomicInteger refusedThere = new java.util.concurrent.atomic.AtomicInteger();
+        BlockPos[] origin = new BlockPos[1];
+        String[] under = {null};
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> new dev.kindred.core.ActionAdmission.Writer() {
+            @Override public java.util.concurrent.CompletableFuture<dev.kindred.core.ActionRecord> prepare(dev.kindred.core.ActionRecord intent) {
+                return writer.prepare(intent);
+            }
+            @Override public java.util.concurrent.CompletableFuture<dev.kindred.core.ActionRecord> transition(dev.kindred.core.ActionRecord next, long expectedRevision) {
+                if ("native_place".equals(next.kind()) && under[0] != null && next.preconditions().contains("pos=" + under[0] + ";")
+                        && next.state() == dev.kindred.core.ActionRecord.State.FAILED) refusedThere.incrementAndGet();
+                return writer.transition(next, expectedRevision);
+            }
+        }, true, 5500);
+        String[] first = {null};
+        var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
+        for (int x = 0; x <= 2; x++) for (int z = 0; z <= 2; z++) {
+            blocks.add(new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(x, 0, z),
+                    dev.kindred.core.construction.BlockSpec.of("minecraft:oak_planks")));
+        }
+        blocks.add(new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(1, 1, 1),
+                dev.kindred.core.construction.BlockSpec.parse("minecraft:red_bed[facing=north,part=foot]")));
+        blocks.add(new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(1, 1, 0),
+                dev.kindred.core.construction.BlockSpec.parse("minecraft:red_bed[facing=north,part=head]")));
+        var floor = new dev.kindred.core.construction.Blueprint("bed over a set-aside plank", "test", "", "", blocks, List.of());
+        net.minecraft.entity.passive.CowEntity[] cow = new net.minecraft.entity.passive.CowEntity[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bedmaker"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -8; x <= 12; x++) for (int z = -8; z <= 12; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 10; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(1, new ItemStack(Items.OAK_PLANKS, 9));
+                    inventory.setStack(2, new ItemStack(Items.RED_BED, 1));
+                    inventory.setStack(3, new ItemStack(Items.DIRT, 32));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 2, o.getZ() + 0.5, 0, 0);
+                    origin[0] = o.add(4, 2, 4);
+                    // The cow in the cell of the plank under the bed's foot, standing still.
+                    BlockPos cell = origin[0].add(1, 0, 1);
+                    under[0] = cell.toShortString();
+                    cow[0] = new net.minecraft.entity.passive.CowEntity(net.minecraft.entity.EntityType.COW, world);
+                    cow[0].refreshPositionAndAngles(cell.getX() + 0.5, cell.getY(), cell.getZ() + 0.5, 0, 0);
+                    cow[0].setAiDisabled(true);
+                    cow[0].setPersistent();
+                    world.spawnEntity(cow[0]);
+                    context.assertTrue(f.runtime.startBuild(f.source, f.id, floor, origin[0], 0) == 1, "Build started");
+                })
+                .createAndAdd(() -> {
+                    // Refused three times, the plank is set aside; the cow wanders off.
+                    if (cow[0] != null && cow[0].isAlive() && refusedThere.get() >= 3) cow[0].discard();
+                    context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(),
+                            "Built: " + f.runtime.buildStatus(f.id).orElse("") + " / refused there " + refusedThere.get());
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    check(context, first, refusedThere.get() >= 3, "The plank refused while the cow stood there: " + refusedThere.get());
+                    int wrong = 0;
+                    var report = new StringBuilder();
+                    for (var b : floor.placed(BuildRunner.pos(origin[0]), 0)) {
+                        var got = BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at())));
+                        if (!got.sameAs(b.spec())) {
+                            wrong++;
+                            report.append(b.at()).append(' ').append(got).append(" for ").append(b.spec()).append("; ");
+                        }
+                    }
+                    check(context, first, wrong == 0, wrong + " blocks not in their state: " + report);
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    var dirt = new java.util.ArrayList<String>();
+                    for (BlockPos pos : BlockPos.iterate(o.add(-8, 2, -8), o.add(12, 10, 12))) {
+                        if (world.getBlockState(pos).isOf(Blocks.DIRT)) dirt.add(pos.subtract(origin[0]).toShortString());
+                    }
+                    check(context, first, dirt.isEmpty(), "No scaffold left standing: dirt at " + dirt + " from the floor's corner");
+                    KindredMod.LOGGER.info("Bedmaker: the floor and its bed built, the plank refused {} times while the cow stood there", refusedThere.get());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildHut", tickLimit = 14000)
     public void aHutIsBuiltFromItsOwnBlocksEachInItsState(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 13500);
