@@ -1,2 +1,3 @@
 branch-1 (70b8c315): 46 min, peak 2806 MB, 114 required tests failed, fence-top 27, disk 8.0G
 branch-2 (70b8c315): 45 min, peak 3001 MB, 112 required tests failed, fence-top 21, disk 7.9G
+branch-3 (70b8c315): 45 min, peak 2845 MB, 119 required tests failed, fence-top 16, disk 7.9G
