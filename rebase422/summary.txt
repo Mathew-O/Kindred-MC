@@ -3,3 +3,4 @@ run-2 (06f6cb41): 43 min, peak 3463 MB, 121 required tests failed, fence-top 21,
 run-3 (06f6cb41): 45 min, peak 2777 MB, 119 required tests failed, fence-top 30, disk 11G
 run-4 (06f6cb41): 44 min, peak 3535 MB, 123 required tests failed, fence-top 11, disk 11G
 run-5 (06f6cb41): 43 min, peak 3273 MB, 121 required tests failed, fence-top 30, disk 11G
+run-6 (06f6cb41): 44 min, peak 3462 MB, 108 required tests failed, fence-top 25, disk 11G
