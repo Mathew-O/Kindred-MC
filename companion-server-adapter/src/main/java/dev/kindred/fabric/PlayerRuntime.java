@@ -15036,12 +15036,16 @@ final class PlayerRuntime {
             if (entry.seenAtStoresDirty || entry.storage.revision() != entry.storesSavedRevision
                     || !entry.seenAtStores.isEmpty() || !entry.storage.stores().isEmpty()) saveStores(entry);
         }
-        memories.close();
+        // F-31e: the memory files' last writes, waited for after the Record's, under the same bound; the time logged.
+        long memoryClosing = System.nanoTime();
+        CompletableFuture<Void> memoryWrites = memories.closeAsync().whenComplete((ignored, failure) -> KindredMod.LOGGER.info(
+                "Kindred memory files written at the stop in {} ms", (System.nanoTime() - memoryClosing) / 1_000_000));
         recipeStore.saveIfChanged(rescueBook);
         recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
-                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).handle((ignored, failure) -> null);
+                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).thenCompose(ignored -> memoryWrites)
+                .handle((ignored, failure) -> null);
         shutdown = writes.thenCompose(ignored -> startup.handle((loaded, failure) ->
                 loaded == null ? CompletableFuture.<Void>completedFuture(null) : loaded.store().closeAsync())
                 .thenCompose(future -> future));
