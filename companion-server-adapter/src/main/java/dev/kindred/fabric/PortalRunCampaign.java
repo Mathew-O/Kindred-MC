@@ -1239,7 +1239,7 @@ final class PortalRunCampaign {
         boolean nightIn = dugInForTheNight(dweller);
         // Its work only: a walk up for air, a back-off, a run from a creeper or any other safety step goes as before.
         if (nightIn && planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get())
-                && outUnderTheSky(dweller.getServerWorld(), planned.get())) {
+                && outUnderTheSky(dweller, planned.get())) {
             planned = daylightBelow(body);
             progress = stageLabel(stage) + ": nothing to do before daylight - " + planned.get().label();
         }
@@ -1601,6 +1601,16 @@ final class PortalRunCampaign {
 
     /** For fixtures (F-29b): whether a move elsewhere is under way, and whether it was begun early for a rescue. */
     boolean relocatingForTest() { return relocate != null; }
+
+    /** Where its next explore walk would go from where it stands (F-35m's fixtures), its heading kept as it turns. */
+    Optional<BlockPos> exploreTargetForTest(ServerPlayerEntity player) {
+        return explore(player, "a fixture").map(task -> position(task.args()));
+    }
+
+    /** Whether a walk to {@code to} would take it out under the sky, by the night's rule (F-35m's fixtures). */
+    static boolean outUnderTheSkyForTest(ServerPlayerEntity player, BlockPos to) {
+        return outUnderTheSky(player, go(to, 1, true, "a fixture"));
+    }
 
     /** The cell the goal's gather would go for first (its first {@code nearest}, with the one rule {@link #gatherable}). */
     Optional<BlockPos> gatherTargetForTest(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
@@ -3997,18 +4007,7 @@ final class PortalRunCampaign {
             if (gone) givenUp++;
             if (out) unreachableCount++;
             if (why.size() >= 8) continue;
-            String reason = !knows ? "not known"
-                    : aside ? (coverHeld.contains(log.asLong()) ? "set aside: cover held" : "set aside until " + cellsAside.blockedUntil().get(log.asLong()) + " after " + cellsAside.failures().getOrDefault(log.asLong(), 0) + " failures")
-                    : out ? "unreachable until " + cellsAside.unreachableUntil().get(log.asLong()) + " from " + (cellsAside.unreachableFrom(log.asLong()) == null ? "-" : pos(cellsAside.unreachableFrom(log.asLong())).toShortString())
-                    : dangerous(log) ? "dangerous"
-                    : log.equals(feet.down()) ? "its own support"
-                    : log.getSquaredDistance(feet) > radius * radius ? "beyond " + radius
-                    : !also.test(log) ? "the step's own filter"
-                    : !harvestable(body, log) ? "not harvestable"
-                    : !mayWork(player, log) ? "may not work here"
-                    : log.getY() > feet.getY() + TRUNK_REACH ? "above its trunk reach"
-                    : trunkFoot(world, log).isEmpty() ? (WorldKnowledge.builtIn(world, log) ? "built in" : "no trunk foot")
-                    : "usable, " + approaches.getOrDefault(log.asLong(), 0) + " approaches";
+            String reason = !knows ? "not known" : keptOut(body, log, radius, p -> also.test(p) ? null : "the step's own filter").text();
             why.add(log.toShortString() + " " + reason + (gone ? ", tree given up" : ""));
         }
         if (logs == 0) return;
@@ -4017,6 +4016,79 @@ final class PortalRunCampaign {
                 + feet.toShortString() + ": " + isKnown + " known, " + setAsideCount + " set aside, " + givenUp + " given up, "
                 + unreachableCount + " unreachable; " + String.join("; ", why);
         KindredMod.LOGGER.info("{} (spell {})", logsKeptOutLast, stuckSpells);
+    }
+
+    /** The first of the gather's rules that keeps a log out, and what it says of it ("until 123 after 2 failures"). */
+    record KeptOut(String rule, String detail) {
+        String text() { return detail.isEmpty() ? rule : rule + " " + detail; }
+    }
+
+    /**
+     * Which of {@link #gatherable}'s rules first keeps {@code log} out of a gather of logs within {@code radius} from where
+     * the player stands, in its order, with {@code filtered} naming the caller's own rule for a log it keeps out (null for
+     * one it lets in). Diagnostic only: the gather itself asks {@link #gatherable}.
+     */
+    private KeptOut keptOut(NativePlayerBody body, BlockPos log, int radius, java.util.function.Function<BlockPos, String> filtered) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        long at = log.asLong();
+        if (!world.isChunkLoaded(log)) return new KeptOut("not loaded", "");
+        if (!world.getBlockState(log).isIn(BlockTags.LOGS)) return new KeptOut("no longer a log", "");
+        if (blocked(log)) {
+            return coverHeld.contains(at) ? new KeptOut("set aside: cover held", "")
+                    : new KeptOut("set aside", "until " + cellsAside.blockedUntil().get(at) + " after " + cellsAside.failures().getOrDefault(at, 0) + " failures");
+        }
+        if (unreachable(log)) {
+            var from = cellsAside.unreachableFrom(at);
+            return new KeptOut("unreachable", "until " + cellsAside.unreachableUntil().get(at) + " from " + (from == null ? "-" : pos(from).toShortString()));
+        }
+        if (dangerous(log)) return new KeptOut("dangerous", "");
+        if (log.equals(feet.down())) return new KeptOut("its own support", "");
+        if (log.getSquaredDistance(feet) > radius * radius) return new KeptOut("beyond " + radius, "");
+        if (log.getY() < feet.getY() && !Digger.landingWithin(new WorldDig(world), cell(log), cell(feet))) return new KeptOut("no landing under it", "");
+        String own = filtered.apply(log);
+        if (own != null) return new KeptOut(own, "");
+        if (!mayWork(player, log)) return new KeptOut("may not work here", "");
+        if (!harvestable(body, log)) return new KeptOut("not harvestable", "");
+        if (log.getY() > feet.getY() + TRUNK_REACH) return new KeptOut("above its trunk reach", "");
+        if (trunkFoot(world, log).isEmpty()) return new KeptOut(WorldKnowledge.builtIn(world, log) ? "built in" : "no trunk foot", "");
+        return new KeptOut("usable", approaches.getOrDefault(at, 0) + " approaches");
+    }
+
+    /** For fixtures: how many known-logs-kept-out lines it has logged, and the last. */
+    private int knownLogsLines;
+    private String knownLogsLast;
+    int knownLogsLinesForTest() { return knownLogsLines; }
+    String knownLogsLastForTest() { return knownLogsLast; }
+
+    /**
+     * Diagnostic only, no decision reads it: a gather of logs within {@code radius} came back empty while it knows
+     * logs, so a line, after {@code prefix}, of how many it knows, how many each rule kept out ({@link #keptOut}, the
+     * caller's own named by {@code filtered}), and the nearest eight with theirs; false, with no line, when it knows no logs. For the
+     * cabin fixture on #219's CI (capM-2): its build went "Explore west for logs" with a tree 21 blocks east, and
+     * nothing said why the build's gather had passed it over. The caller logs it once a trip.
+     */
+    boolean knownLogsKeptOut(NativePlayerBody body, int radius, java.util.function.Function<BlockPos, String> filtered, String prefix) {
+        BlockPos feet = body.entity().getBlockPos();
+        var known = new java.util.ArrayList<>(knowledge.all(WorldKnowledge.Kind.LOG));
+        if (known.isEmpty()) return false;
+        known.sort(java.util.Comparator.comparingDouble(p -> p.getSquaredDistance(feet)));
+        var rules = new java.util.TreeMap<String, Integer>();
+        var nearest = new java.util.ArrayList<String>();
+        for (BlockPos log : known) {
+            var kept = keptOut(body, log, radius, filtered);
+            rules.merge(kept.rule(), 1, Integer::sum);
+            if (nearest.size() < 8) {
+                nearest.add(log.toShortString() + " (" + Math.round(Math.sqrt(log.getSquaredDistance(feet))) + " off) " + kept.text()
+                        + (treesGivenUp.contains(BlockPos.asLong(log.getX() >> 2, 0, log.getZ() >> 2)) ? ", tree given up" : ""));
+            }
+        }
+        knownLogsLines++;
+        knownLogsLast = prefix + ": its gather within " + radius + " found no logs, with " + known.size() + " known from " + feet.toShortString()
+                + ", kept out by " + rules + "; nearest: " + String.join("; ", nearest);
+        KindredMod.LOGGER.info("{}", knownLogsLast);
+        return true;
     }
 
     private Optional<Task> gatherFrom(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,
@@ -4432,18 +4504,21 @@ final class PortalRunCampaign {
             exploreHeading = headings[Math.floorMod(exploreFailures + (int) (player.getUuid().getLeastSignificantBits() & 3), 4)];
         }
         BlockPos anchor = home == null ? player.getBlockPos() : home;
+        // The ground ahead as it sees it from where it stands (F-35m): a top out of its sight gives the walk its own height,
+        // for the route to find the way, as under the ground; the heightmap of a column it cannot see is never used.
+        var looks = WorldKnowledge.looks(player, 8);
         for (int turn = 0; turn < 4; turn++, exploreHeading = exploreHeading.rotateYClockwise()) {
             BlockPos ahead = player.getBlockPos().offset(exploreHeading, 28);
             if (!world.isChunkLoaded(ahead)) ahead = player.getBlockPos().offset(exploreHeading, 12);
             if (!world.isChunkLoaded(ahead)) continue;
             if (Math.hypot(ahead.getX() - anchor.getX(), ahead.getZ() - anchor.getZ()) > EXPLORE_RADIUS) continue;
-            int surface = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ahead.getX(), ahead.getZ());
+            Optional<BlockPos> top = looks.ground(ahead.getX(), ahead.getZ());
             // A barrier column, which a survival player cannot see, sets no look's height: the top of the GameTest's own
             // fence round a scene drew a hurt player's look up over a tree onto it, and off the canopy (F-22c66).
-            if (NativeNavigator.unseen(world.getBlockState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())))) continue;
-            boolean onSurface = player.getBlockY() > surface - 8;
-            if (onSurface && !world.getFluidState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())).isEmpty()) continue;
-            BlockPos target = new BlockPos(ahead.getX(), onSurface ? surface : player.getBlockY(), ahead.getZ());
+            if (top.isPresent() && NativeNavigator.unseen(world.getBlockState(top.get()))) continue;
+            boolean onSurface = top.isPresent() && player.getBlockY() > top.get().getY() + 1 - 8;
+            if (onSurface && !world.getFluidState(top.get()).isEmpty()) continue;
+            BlockPos target = new BlockPos(ahead.getX(), onSurface ? top.get().getY() + 1 : player.getBlockY(), ahead.getZ());
             if (blocked(target) || unreachable(target)) continue;
             return Optional.of(go(target, 3, true, "Explore " + exploreHeading.asString() + " for " + what));
         }
@@ -4465,10 +4540,12 @@ final class PortalRunCampaign {
     /**
      * Stone for a build (E-08c), as the goal gets its own: stone in sight close by, else a staircase down to
      * {@code depth} and a tunnel along it, which is all stone. Every cell it digs is one {@code allowed} lets it: never
-     * the build's own site, nor the steps of its own staircase.
+     * the build's own site, nor the steps of its own staircase. Stone in sight is taken only from {@code depth} up:
+     * below it is the floor it digs along on. With its memory of stone full and no longer refusing new blocks, a player
+     * knew the floor its pit laid open and mined down through it, then could not climb back out for logs (#219's CI).
      */
     Optional<Task> stoneFor(NativePlayerBody body, int depth, Predicate<BlockPos> allowed) {
-        return gather(body, WorldKnowledge.Kind.STONE, 6, "stone", allowed)
+        return gather(body, WorldKnowledge.Kind.STONE, 6, "stone", allowed.and(p -> p.getY() >= depth))
                 .or(() -> digDown(body, depth, "Dig for stone", allowed));
     }
 
@@ -5467,12 +5544,20 @@ final class PortalRunCampaign {
         return seal.isPresent() ? seal : Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
     }
 
-    /** A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight (F-25c4cd). */
-    private static boolean outUnderTheSky(ServerWorld world, Task task) {
+    /**
+     * A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight
+     * (F-25c4cd). Where it can see the ground's top at the walk's end, on it or above it; where it cannot, at or above
+     * the ground's top over its own feet less one, as high as the surface it dug in under (F-35m: no far column's height it
+     * cannot see; its own column's is the read F-35m2 puts to the owner, as the climb's and the shelter's are).
+     */
+    private static boolean outUnderTheSky(ServerPlayerEntity player, Task task) {
         if (!"native_goto".equals(task.skill())) return false;
         BlockPos to = position(task.args());
+        var world = player.getServerWorld();
         if (to == null || !world.isChunkLoaded(to)) return false;
-        return world.isSkyVisible(to.up()) || to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, to.getX(), to.getZ()) - 1;
+        Optional<BlockPos> top = WorldKnowledge.looks(player, 1).ground(to.getX(), to.getZ());
+        if (top.isPresent()) return to.getY() >= top.get().getY();
+        return to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ()) - 1;
     }
 
     /** Night where there is a sky: a player that learned to shelter early counts the last of the afternoon as night already. */

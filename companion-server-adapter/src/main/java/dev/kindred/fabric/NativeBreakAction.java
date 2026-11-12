@@ -308,6 +308,7 @@ final class NativeBreakAction extends NativeRecordedAction {
                     }
                 }
                 if (next == null || ++collectTicks > COLLECT_TICKS) {
+                    if (next != null) noteUncollected("the bound", null);
                     body.stopInputs();
                     phase = Phase.DONE;
                     settle("Native break observed", true);
@@ -326,6 +327,7 @@ final class NativeBreakAction extends NativeRecordedAction {
                     float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
                     // A drop that fell down a shaft or into a cave is not followed over the edge.
                     if (!new NativeNavigator(world).safeHeading(player, yaw)) {
+                        noteUncollected("a heading it would not follow", new NativeNavigator(world).headingRefusal(player, yaw));
                         body.stopInputs();
                         phase = Phase.DONE;
                         settle("Native break observed; the drop fell where it is unsafe to follow", true);
@@ -371,6 +373,44 @@ final class NativeBreakAction extends NativeRecordedAction {
         }
     }
 
+    /** One of a break's own drops still lying as its collection ended, as the diagnostic line gives it (F-22c64). */
+    record LeftDrop(double x, double y, double z, int age, int pickupDelay, double vx, double vy, double vz) {}
+
+    /**
+     * Its own drops still alive and uncollected as a collection ends, said in one line with why it ended; nothing when
+     * every one was picked up or is gone. Diagnostics only (F-22c64): what the break does and returns is unchanged.
+     */
+    private void noteUncollected(String arm, String refusal) {
+        var player = body.entity();
+        if (player == null) return;
+        var world = player.getServerWorld();
+        var left = new java.util.ArrayList<LeftDrop>();
+        for (UUID id : drops) {
+            if (world.getEntity(id) instanceof ItemEntity drop && drop.isAlive()) {
+                var saved = new net.minecraft.nbt.NbtCompound();
+                drop.writeNbt(saved);
+                var v = drop.getVelocity();
+                left.add(new LeftDrop(drop.getX(), drop.getY(), drop.getZ(), drop.getItemAge(), saved.getShort("PickupDelay"), v.x, v.y, v.z));
+            }
+        }
+        if (left.isEmpty()) return;
+        KindredMod.LOGGER.info(uncollectedLine(player.getGameProfile().getName(), target.toShortString(), arm, collectTicks, left,
+                player.getX(), player.getY(), player.getZ(), player.getYaw(), refusal));
+    }
+
+    /**
+     * The line for a collection that ended with drops of its own uncollected (F-22c64): why it ended (the bound, a
+     * heading it would not follow, or its authority ending), how long it had collected, each such drop's place, age,
+     * pickup delay and velocity, and where the body stood and faced, with the heading's refusal when that was why.
+     */
+    static String uncollectedLine(String name, String target, String arm, int collectTicks, List<LeftDrop> left,
+                                  double x, double y, double z, float yaw, String refusal) {
+        var drops = left.stream().map(d -> String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f age %d delay %d moving %.3f, %.3f, %.3f",
+                d.x(), d.y(), d.z(), d.age(), d.pickupDelay(), d.vx(), d.vy(), d.vz())).toList();
+        return String.format(java.util.Locale.ROOT, "%s break at %s: its collection ended (%s) after %d ticks, its own drops uncollected: %s; the body at %.2f, %.2f, %.2f facing %.0f%s",
+                name, target, arm, collectTicks, drops, x, y, z, yaw, refusal == null ? "" : "; the heading refused: " + refusal);
+    }
+
     @Override boolean permits(NativePlayerBody.Intent intent, BlockPos requested) {
         if (halted || admission == null || admission.phase() != ActionAdmission.Phase.ISSUED || !ownsClaim()) return false;
         return switch (intent) {
@@ -389,7 +429,10 @@ final class NativeBreakAction extends NativeRecordedAction {
         halted = true;
         body.stopInputs();
         if (flush != null) { if (claim != null) claims.release(claim); return flush; }
-        if (admission != null && admission.phase() == ActionAdmission.Phase.ISSUED && result == null) settle("Authority ended", false);
+        if (admission != null && admission.phase() == ActionAdmission.Phase.ISSUED && result == null) {
+            if (phase == Phase.COLLECTING) noteUncollected("authority ended", null);
+            settle("Authority ended", false);
+        }
         flush = admission == null ? CompletableFuture.completedFuture(null) : admission.close();
         if (claim != null) claims.release(claim);
         return flush;

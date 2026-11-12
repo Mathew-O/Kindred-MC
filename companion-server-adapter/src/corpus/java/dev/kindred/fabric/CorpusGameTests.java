@@ -36,6 +36,17 @@ public final class CorpusGameTests implements FabricGameTest {
     static final String CORPUS = "data/kindred_corpus/gametest/corpus";
     /** Scenes run side by side in one batch. */
     static final int BATCH = 10;
+    /**
+     * An empty test after every scene, {@value #SPACER_WIDTH} blocks wide and {@value #SPACER_DEPTH} deep, so that no
+     * scene stands within sight of another (#235). 1.21.1's {@code TestStructurePlacer} sets each test 5 blocks past the
+     * last in x, 8 to a row, and starts a row 6 blocks past everything placed so far in z, never clearing: scenes stood
+     * 5 blocks apart, so that each saw, and went for, its neighbour's logs and ores across the barrier wall. With a
+     * spacer between, a scene's wall is 5 + 90 + 5 = 100 blocks from the next in its row, past the 96 a player looks
+     * over; its depth puts the second row's scenes 130 + 6 - 33 = 103 past the first's (later rows lie farther still).
+     * {@code tools/corpus/layout.py} works the places out.
+     */
+    static final String SPACER = "kindred_corpus:spacer";
+    static final int SPACER_WIDTH = 90, SPACER_DEPTH = 130;
 
     @CustomTestProvider
     public Collection<TestFunction> scenes() {
@@ -72,11 +83,15 @@ public final class CorpusGameTests implements FabricGameTest {
                 String batch = "corpus_" + batchNumber;
                 if (scene.has("fixture")) {
                     tests.add(fixture(batch, id, scene.get("fixture").getAsString()));
-                    continue;
+                } else {
+                    int ticks = scene.has("ticks") ? scene.get("ticks").getAsInt() : 1200;
+                    tests.add(new TestFunction(batch, "corpus." + id, "kindred_corpus:corpus/" + id,
+                            BlockRotation.NONE, ticks + 600, 0L, true, false, 1, 1, true, context -> {
+                                KindredMod.LOGGER.info("Corpus scene {} placed at {}", id, context.getAbsolutePos(net.minecraft.util.math.BlockPos.ORIGIN).toShortString());
+                                ReplayGameTests.play(context, scene, 1, ticks);
+                            }));
                 }
-                int ticks = scene.has("ticks") ? scene.get("ticks").getAsInt() : 1200;
-                tests.add(new TestFunction(batch, "corpus." + id, "kindred_corpus:corpus/" + id,
-                        BlockRotation.NONE, ticks + 600, 0L, true, false, 1, 1, true, context -> ReplayGameTests.play(context, scene, 1, ticks)));
+                tests.add(spacer(batch, id));
             }
         } catch (Exception unreadable) {
             throw new IllegalStateException("A scene in " + CORPUS + " could not be read", unreadable);
@@ -91,6 +106,12 @@ public final class CorpusGameTests implements FabricGameTest {
         boolean night = time >= 13000 && time < 23000;
         return String.format("%s/%b/%b/%b/%05d", scene.has("difficulty") ? scene.get("difficulty").getAsString() : "",
                 scene.has("thundering") && scene.get("thundering").getAsBoolean(), scene.has("raining") && scene.get("raining").getAsBoolean(), night, time);
+    }
+
+    /** The empty test after scene {@code id}: not required, done at once; only the room it takes counts. */
+    private static TestFunction spacer(String batch, String id) {
+        return new TestFunction(batch, "corpus.spacer." + id, SPACER, BlockRotation.NONE, 20, 0L, false, false, 1, 1, false,
+                net.minecraft.test.TestContext::complete);
     }
 
     /** A contract-suite GameTest run as a scene: its own template, ticks and staging. */

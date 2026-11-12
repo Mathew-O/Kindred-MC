@@ -1,0 +1,9 @@
+BorderSize (tag 6) = 8000.0
+BorderCenterX (tag 6) = 0.0
+BorderWarningBlocks (tag 6) = 20.0
+BorderSafeZone (tag 6) = 5.0
+BorderDamagePerBlock (tag 6) = 0.2
+BorderWarningTime (tag 6) = 15.0
+BorderSizeLerpTime (tag 4) = 0
+BorderCenterZ (tag 6) = 0.0
+BorderSizeLerpTarget (tag 6) = 8000.0

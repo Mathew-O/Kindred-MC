@@ -73,11 +73,7 @@ final class FactionsPlayer {
             streakAtSurface = atSurface;
         }
         if (times == SET_ASIDE) streak++;
-        if (streak >= STREAK || pauses > 0) {
-            pausedUntil = tick + Math.min(BACKOFF_MAX, PAUSE << Math.min(pauses, 10));
-            pauses++;
-            streak = 0;
-        }
+        streakPause(tick);
     }
 
     /**
@@ -122,6 +118,11 @@ final class FactionsPlayer {
     int blockedWalks, refusalsCounted;
     /** Faction walks that ended, however they ended: asked of the navigator at all (F-35j's fixtures). */
     int walksEnded;
+    /** For the fixtures (F-35j1): each faction walk that ended, its target and tick, and each choice's tick; the last 64 of each. */
+    final java.util.ArrayDeque<Map.Entry<String, Long>> endedForTest = new java.util.ArrayDeque<>();
+    final java.util.ArrayDeque<Long> decidedForTest = new java.util.ArrayDeque<>();
+    void endedForTest(String target, long tick) { endedForTest.addLast(Map.entry(target, tick)); if (endedForTest.size() > 64) endedForTest.removeFirst(); }
+    void decidedForTest(long tick) { decidedForTest.addLast(tick); if (decidedForTest.size() > 64) decidedForTest.removeFirst(); }
 
     /** A walk toward {@code target} got somewhere: its refusals and ways forgotten, and the run of refusals with them. */
     void walked(String target) {
@@ -153,10 +154,35 @@ final class FactionsPlayer {
      * searched, and the run of refusals (F-35i) is not counted on.
      */
     void openWater(String target, long tick) {
+        openWater(target, tick, null, true);
+    }
+
+    /**
+     * As above, from {@code at}, at the surface or not: a place set aside as open water counts toward the run of places set
+     * aside with no walk between, as a place set aside after its refusals does, so that a coast of such places and land
+     * beyond reach pauses every faction walk as F-35i has it (F-35j1: on Factions seed 110 they never counted, and Echo's
+     * walks went on to place after place, each refused once).
+     */
+    void openWater(String target, long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
         var before = refused.get(target);
         int times = Math.max(SET_ASIDE, before == null ? 0 : before.times() + 1);
         refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
         overWater++;
+        if (streakFrom == null && at != null) {
+            streakFrom = at.toImmutable();
+            streakAtSurface = atSurface;
+        }
+        streak++;
+        streakPause(tick);
+    }
+
+    /** Once {@value #STREAK} places are set aside in a row, or after a pause, every faction walk waits, twice as long each time. */
+    private void streakPause(long tick) {
+        if (streak >= STREAK || pauses > 0) {
+            pausedUntil = tick + Math.min(BACKOFF_MAX, PAUSE << Math.min(pauses, 10));
+            pauses++;
+            streak = 0;
+        }
     }
 
     /** Places set aside as open water it saw, for the fixtures. */
@@ -273,18 +299,25 @@ final class FactionsPlayer {
         }
         int y = player.getBlockY();
         if (world.isChunkLoaded(x >> 4, z >> 4)) {
-            // Ground to stand on there, nearest its own height first (a trunk or a roof above is not the way); else, at a
-            // leg's end, the top of the column; otherwise its own height, for the route to find the way.
-            Integer ground = null;
-            for (int d = 0; d <= 8 && ground == null; d++) {
-                if (standable(world, x, y + d, z)) ground = y + d;
-                else if (d > 0 && standable(world, x, y - d, z)) ground = y - d;
+            // Ground to stand on there that it can see, nearest its own height first (a trunk or a roof above is not the
+            // way); else, at a leg's end, the top of the column if it can see it; otherwise its own height, for the route to
+            // find the way. What it cannot see from where it stands sets nothing (F-35m): a leg's end is past its sweep.
+            var looks = WorldKnowledge.looks(player, GROUND_LOOKS + 1);
+            var under = new java.util.ArrayList<BlockPos>();
+            for (int d = 0; d <= 8; d++) {
+                under.add(new BlockPos(x, y + d - 1, z));
+                if (d > 0) under.add(new BlockPos(x, y - d - 1, z));
             }
-            if (ground != null) y = ground;
-            else if (far > LEG) y = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
+            // Room to stand is asked before the sight line only to spare it: a cell with none is no walk's end.
+            var ground = looks.firstSeen(under, below -> standable(world, below.getX(), below.getY() + 1, below.getZ()));
+            if (ground.isPresent()) y = ground.get().getY() + 1;
+            else if (far > LEG && looks.rays() <= GROUND_LOOKS) y = looks.ground(x, z).map(top -> top.getY() + 1).orElse(y);
         }
         return new BlockPos(x, y, z);
     }
+
+    /** Sight lines to ground near its own height at a walk's end; one more for the column's top (F-35m). */
+    private static final int GROUND_LOOKS = 4;
 
     /** Solid ground under {@code y} and room for a player above it. */
     private static boolean standable(net.minecraft.server.world.ServerWorld world, int x, int y, int z) {
