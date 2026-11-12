@@ -1,0 +1,811 @@
+{
+ "kind": "spell",
+ "player": "Echo",
+ "tick": 80020,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  102,
+  55,
+  -15
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.128265301561157,
+  8.0,
+  16.420883359625183
+ ],
+ "yaw": -23315.916,
+ "pitch": 18.159492,
+ "health": 10.603756,
+ "food": 5,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 30
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 130
+    }
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:spruce_log",
+    "count": 3
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 36
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:spruce_sapling",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:spruce_planks",
+    "count": 3
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 4
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:water_bucket",
+    "count": 1
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 21
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 3
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 36
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 1
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 18
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 53
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 5
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 21
+    }
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 8019,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: no progress here for a while - try elsewhere, toward 118, 63, -23",
+ "task": "Tunnel past liquid toward lava: advance",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "no progress for 3600 ticks",
+ "ticks": 3600,
+ "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+ "memory": {
+  "version": 1,
+  "blocked": [],
+  "failures": [],
+  "approaches": [
+   {
+    "at": [
+     15,
+     7,
+     20
+    ],
+    "n": 1
+   }
+  ],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    12,
+    8,
+    19
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [],
+  "setAside": [],
+  "known": {
+   "LOG": [
+    [
+     13,
+     9,
+     13
+    ],
+    [
+     13,
+     10,
+     13
+    ],
+    [
+     13,
+     11,
+     13
+    ],
+    [
+     13,
+     12,
+     13
+    ],
+    [
+     13,
+     13,
+     13
+    ],
+    [
+     13,
+     14,
+     13
+    ],
+    [
+     13,
+     15,
+     13
+    ]
+   ],
+   "GRAVEL": [
+    [
+     14,
+     0,
+     8
+    ]
+   ],
+   "WATER": [
+    [
+     12,
+     7,
+     19
+    ],
+    [
+     13,
+     7,
+     23
+    ],
+    [
+     13,
+     7,
+     24
+    ],
+    [
+     13,
+     7,
+     22
+    ],
+    [
+     14,
+     7,
+     22
+    ],
+    [
+     15,
+     7,
+     21
+    ],
+    [
+     15,
+     7,
+     22
+    ],
+    [
+     15,
+     7,
+     20
+    ],
+    [
+     16,
+     7,
+     21
+    ],
+    [
+     16,
+     7,
+     22
+    ],
+    [
+     16,
+     7,
+     23
+    ],
+    [
+     16,
+     7,
+     17
+    ],
+    [
+     16,
+     7,
+     18
+    ],
+    [
+     16,
+     7,
+     19
+    ],
+    [
+     16,
+     7,
+     20
+    ],
+    [
+     17,
+     7,
+     20
+    ],
+    [
+     17,
+     7,
+     17
+    ],
+    [
+     17,
+     7,
+     16
+    ],
+    [
+     17,
+     7,
+     18
+    ],
+    [
+     17,
+     7,
+     19
+    ],
+    [
+     17,
+     7,
+     21
+    ],
+    [
+     17,
+     7,
+     22
+    ],
+    [
+     17,
+     7,
+     23
+    ],
+    [
+     17,
+     7,
+     25
+    ],
+    [
+     17,
+     7,
+     26
+    ],
+    [
+     17,
+     7,
+     24
+    ]
+   ],
+   "LEAVES": [
+    [
+     13,
+     10,
+     15
+    ],
+    [
+     13,
+     12,
+     15
+    ],
+    [
+     12,
+     10,
+     15
+    ],
+    [
+     12,
+     12,
+     15
+    ],
+    [
+     14,
+     10,
+     15
+    ],
+    [
+     14,
+     12,
+     15
+    ],
+    [
+     14,
+     10,
+     11
+    ],
+    [
+     14,
+     10,
+     12
+    ],
+    [
+     14,
+     10,
+     13
+    ],
+    [
+     14,
+     10,
+     14
+    ],
+    [
+     14,
+     11,
+     13
+    ],
+    [
+     14,
+     12,
+     11
+    ],
+    [
+     14,
+     12,
+     12
+    ],
+    [
+     14,
+     12,
+     13
+    ],
+    [
+     14,
+     12,
+     14
+    ],
+    [
+     14,
+     13,
+     13
+    ],
+    [
+     14,
+     15,
+     13
+    ],
+    [
+     15,
+     10,
+     12
+    ],
+    [
+     15,
+     10,
+     13
+    ],
+    [
+     15,
+     10,
+     14
+    ],
+    [
+     15,
+     12,
+     12
+    ],
+    [
+     15,
+     12,
+     13
+    ],
+    [
+     15,
+     12,
+     14
+    ],
+    [
+     12,
+     10,
+     11
+    ],
+    [
+     12,
+     10,
+     12
+    ],
+    [
+     12,
+     10,
+     13
+    ],
+    [
+     12,
+     10,
+     14
+    ],
+    [
+     12,
+     11,
+     13
+    ],
+    [
+     12,
+     12,
+     11
+    ],
+    [
+     12,
+     12,
+     12
+    ],
+    [
+     12,
+     12,
+     13
+    ],
+    [
+     12,
+     12,
+     14
+    ],
+    [
+     12,
+     13,
+     13
+    ],
+    [
+     12,
+     15,
+     13
+    ],
+    [
+     13,
+     10,
+     11
+    ],
+    [
+     13,
+     10,
+     12
+    ],
+    [
+     13,
+     10,
+     14
+    ],
+    [
+     13,
+     11,
+     12
+    ],
+    [
+     13,
+     11,
+     14
+    ],
+    [
+     13,
+     12,
+     11
+    ],
+    [
+     13,
+     12,
+     12
+    ],
+    [
+     13,
+     12,
+     14
+    ],
+    [
+     13,
+     13,
+     12
+    ],
+    [
+     13,
+     13,
+     14
+    ],
+    [
+     13,
+     15,
+     12
+    ],
+    [
+     13,
+     15,
+     14
+    ],
+    [
+     13,
+     16,
+     13
+    ],
+    [
+     11,
+     10,
+     12
+    ],
+    [
+     11,
+     10,
+     13
+    ],
+    [
+     11,
+     10,
+     14
+    ],
+    [
+     11,
+     12,
+     12
+    ],
+    [
+     11,
+     12,
+     13
+    ],
+    [
+     11,
+     12,
+     14
+    ]
+   ]
+  },
+  "exploreHeading": "south",
+  "exploreStalls": 2,
+  "exploreFailures": 23,
+  "stuckSpells": 1,
+  "stuckLevel": 1,
+  "leftOut": 7211
+ },
+ "log": [
+  "[16:11:53] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:53] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:53] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:53] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:53] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:53] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:54] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:55] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:55] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+  "[16:11:55] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward lava: advance]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "707",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/707/replays/world/Echo-80020",
+  "class": "stuck: mining for a find",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; a stuck spell kept as the watchdog counted it (#166), with its goal's own memory of the box (#198, put back by #201): passes when its goal gains something or it stays out of the 8 blocks it was caught in for the budget's last half (#190)"
+ }
+}
