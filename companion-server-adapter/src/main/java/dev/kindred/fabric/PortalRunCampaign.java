@@ -1056,6 +1056,13 @@ final class PortalRunCampaign {
     private int paced, pacedMoves;
     private long pacedTick;
     static final int PACED = 3;
+    /**
+     * Whole spells it must already have spent with nothing gained, each ended by a move elsewhere, before its climbs
+     * count for an early move: a climb given look after look where it has only now stopped is not a stranding
+     * (diag-holepit 202's branch mine ended in one, a block cleared overhead and the jump down refused, nothing tried
+     * elsewhere yet; an early move took it back where it had been stuck, 3 of 3, where main waited and passed).
+     */
+    static final int PACED_AFTER = 2;
 
     private void paced(long tick) {
         if (pacedAt != null && pacedAt.getSquaredDistance(lastFeet) <= 3 * 3 && tick - pacedTick <= STRANDED_FOR) {
@@ -1068,7 +1075,16 @@ final class PortalRunCampaign {
     }
 
     private boolean pacing() {
-        return paced >= PACED && pacedAt != null && pacedAt.getSquaredDistance(lastFeet) <= 3 * 3 && lastTick - pacedTick <= STRANDED_FOR;
+        return paced >= PACED && pacedAt != null && pacedAt.getSquaredDistance(lastFeet) <= 3 * 3 && lastTick - pacedTick <= STRANDED_FOR
+                && stuckLevel >= PACED_AFTER;
+    }
+
+    /** Where it paced, looked at once a look: left more than eight blocks behind, its count is gone, not kept for a return. */
+    private void pacedWhere() {
+        if (pacedAt != null && pacedAt.getSquaredDistance(lastFeet) > 8 * 8) {
+            pacedAt = null;
+            paced = 0;
+        }
     }
 
     /** How long a stranding lasts with no walk failing again. */
@@ -2340,6 +2356,7 @@ final class PortalRunCampaign {
     private Optional<Task> plan(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
+        pacedWhere();
         atlasWorld = body.entity().getServerWorld();
         holdCover(body.entity().getServerWorld());
         // A pickaxe broken below ground with none left (E-46's trouble), seen as a player sees a tool break: vanilla
