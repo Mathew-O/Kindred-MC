@@ -126,6 +126,14 @@ final class WheatRunner {
             case WheatPlot.Step.Till till -> {
                 progress = till.why();
                 if (far(player, pos(till.at()))) yield Optional.of(PortalRunCampaign.go(pos(till.at()).up(), 2.0, true, "To the plot"));
+                // A plant on the soil first, as a player clears it: a hoe tills nothing under grass or a flower (in a meadow
+                // its plot sited on ground in sight, F-35m1, "Soil tilling produced no effect" every try).
+                BlockPos over = pos(till.at()).up();
+                var cover = player.getServerWorld().getBlockState(over);
+                if (!cover.isAir() && cover.isReplaceable() && cover.getFluidState().isEmpty()) {
+                    yield Optional.of(new PortalRunCampaign.Task("native_break", coords(new Pos(over.getX(), over.getY(), over.getZ()), Map.of()),
+                            "Clear the plot for tilling"));
+                }
                 int slot = hotbar(player, stack -> stack.getItem() instanceof HoeItem);
                 if (slot < 0) yield bring(player, stack -> stack.getItem() instanceof HoeItem, "Take the hoe in hand");
                 yield Optional.of(new PortalRunCampaign.Task("native_till", coords(till.at(), Map.of("slot", str(slot), "roam", "true")), till.why()));

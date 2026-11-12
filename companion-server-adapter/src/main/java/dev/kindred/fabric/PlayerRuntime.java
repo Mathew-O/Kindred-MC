@@ -6402,6 +6402,15 @@ final class PlayerRuntime {
         return true;
     }
 
+    /** Fixtures only: a wheat plot recorded as the player's own, where the fixture lays it (M-01a1). */
+    boolean stagePlotForTest(UUID id, PlayerMemoryStore.Plot plot) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null || !basesLoaded(entry)) return false;
+        entry.bases.plot = plot;
+        return true;
+    }
+
     /** A horse of its own staged as kept, as a fixture lays one down (M-01a); its taming is its own fixture's. */
     boolean stageHorseForTest(UUID id, UUID horse) {
         requireThread();
