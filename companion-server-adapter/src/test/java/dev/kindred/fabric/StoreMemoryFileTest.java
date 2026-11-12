@@ -92,7 +92,7 @@ class StoreMemoryFileTest {
 
     @Test
     void closedOnlyOnceEveryWriteAskedForIsMade(@TempDir Path dir) throws Exception {
-        // F-30d3: the stop waits for this; a restart reads the file after it.
+        // F-31e: the stop waits for this; a restart reads the file after it.
         var store = new PlayerMemoryStore(dir);
         var out = new PlayerMemoryStore.StoreMemory();
         out.player = "Rue";

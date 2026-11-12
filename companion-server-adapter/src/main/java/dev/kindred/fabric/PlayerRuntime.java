@@ -15059,6 +15059,7 @@ final class PlayerRuntime {
     }
 
     void stop() {
+        if (store != null) store.stopChecks(); // F-31f: a check under way is stopped at once and reports nothing.
         requireThread();
         ready = false;
         // The stop barrier first: whatever stop() itself waits on (the store's last writes) may hand callbacks back on
@@ -15125,7 +15126,10 @@ final class PlayerRuntime {
             // F-30d3: with the waits as at the stop; nothing if it knows of none, or its file was never read back.
             if (entry.villagersDirty || !entry.villagers.isEmpty() || !entry.villagerVisitAt.isEmpty() || !entry.villagersTold.isEmpty()) saveVillagers(entry);
         }
-        CompletableFuture<Void> memoryWrites = memories.closeAsync(); // F-30d3: waited for below, as the store's writes are.
+        // F-31e: the memory files' last writes, waited for after the Record's, under the same bound; the time logged.
+        long memoryClosing = System.nanoTime();
+        CompletableFuture<Void> memoryWrites = memories.closeAsync().whenComplete((ignored, failure) -> KindredMod.LOGGER.info(
+                "Kindred memory files written at the stop in {} ms", (System.nanoTime() - memoryClosing) / 1_000_000));
         recipeStore.saveIfChanged(rescueBook);
         recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
@@ -17043,23 +17047,32 @@ final class PlayerRuntime {
         dev.kindred.core.record.Ledgers kept = ledgers;
         long through = ledgersThrough;
         var result = new CompletableFuture<Boolean>();
+        // F-31f: the action ledger read off the writer, from one snapshot, streamed; the writer goes on writing meanwhile.
         database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds())
-                .thenCombine(database.checkActionLedger(), (events, actions) -> {
+                .thenCombine(database.checkActionLedgerFromSnapshot(), (events, actions) -> {
                     var upTo = events.stream().filter(event -> event.id() <= through).toList();
-                    var checks = new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo));
-                    checks.add(actions);
-                    return checks;
-                }).whenComplete((checks, failure) -> handBack(() -> {
+                    return java.util.Map.entry(new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo)), actions);
+                }).whenComplete((both, failure) -> handBack(() -> {
                     if (failure != null) {
-                        KindredMod.LOGGER.error("World Record check could not run", failure);
+                        Throwable cause = failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+                        // Stopped with the server: no verdict, and none recorded; the next check reads it all again.
+                        if (cause instanceof java.util.concurrent.CancellationException) KindredMod.LOGGER.info("World Record check stopped before it was done; nothing reported");
+                        else KindredMod.LOGGER.error("World Record check could not run", failure);
                         result.complete(false);
                         return;
                     }
-                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees);
+                    var checks = both.getKey();
+                    var actions = both.getValue();
+                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees) && actions.agrees();
                     var data = new java.util.LinkedHashMap<String, String>();
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
+                    data.put(dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.agrees() ? "agrees" : actions.differing() > 0 ? "differs" : "not checked");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
+                    if (actions.differing() > 0) KindredMod.LOGGER.error("Ledger {} differs from the World Record in {} of {} actions: {}",
+                            dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.differing(), actions.rows(), actions.differences());
+                    if (actions.unchecked() > 0) KindredMod.LOGGER.error("Ledger {} not checked against the World Record: {} actions named other than as an id is written: {}",
+                            dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.unchecked(), actions.notChecked());
                     if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
