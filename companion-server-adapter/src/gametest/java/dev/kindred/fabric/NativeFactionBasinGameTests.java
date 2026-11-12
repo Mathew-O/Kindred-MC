@@ -27,7 +27,8 @@ import net.minecraft.util.math.BlockPos;
  * (1,209 cells flood-filled offline with the walk's rules, rises of 2 to 13 all round); 253 of the 359 faction legs refused
  * "No walkable route" stopped at exactly 1,184 nodes, the basin exhausted. Staged: the ground, and a wall and floor of bedrock under open sky; the two
  * factions and their land as the no-way fixture sets them ({@code NativeFactionPlayGameTests}), so that the player's
- * choice is the scout of the border chunk east; a stone pickaxe and a stack of cobblestone in hand.
+ * choice is the scout of the border chunk east; a stone pickaxe and a stack of cobblestone in hand; no goal, its operator's
+ * choice, so that only faction play moves it, and its power too low to claim more, so that its choice stays the scout.
  */
 public final class NativeFactionBasinGameTests implements FabricGameTest {
     private static final FactionSettings WIDE = FactionSettings.parse(Map.of("border", "60000000"));
@@ -65,7 +66,11 @@ public final class NativeFactionBasinGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     var player = f.player();
-                    BlockPos feet = player.getBlockPos();
+                    // The hollow at the middle of its chunk's width, so that its wall (two out from its feet) never lies in
+                    // keys[1]: staged where it spawned, a spawn within two blocks of the chunk's east edge put the wall there,
+                    // and its stair over the wall was already arrival (about one run in eight).
+                    BlockPos spawn = player.getBlockPos();
+                    BlockPos feet = new BlockPos((spawn.getX() & ~15) + 8, spawn.getY(), spawn.getZ());
                     var here = Territory.Chunk.at(W, feet.getX(), feet.getZ());
                     keys[0] = here.key();
                     keys[1] = here.offset(1, 0).key();
@@ -85,11 +90,18 @@ public final class NativeFactionBasinGameTests implements FabricGameTest {
                         if (Math.abs(dx) < 2 && Math.abs(dz) < 2) continue;
                         for (int dy = 0; dy <= 1; dy++) world.setBlockState(feet.add(dx, dy, dz), wall.getDefaultState());
                     }
+                    player.refreshPositionAndAngles(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5, 0, 0);
+                    player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                     player.getInventory().clear();
                     player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
                     if (cobblestone > 0) player.getInventory().setStack(1, new ItemStack(Items.COBBLESTONE, cobblestone));
                     context.assertTrue(f.runtime.socialSetting(f.source, f.id, null, false, Personality.Trait.COMBATIVENESS, 70) == 1, "Ada made fierce");
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    // Staged goalless on purpose, its operator's choice: only faction play moves it, so that what is tested is
+                    // the faction walk's way made out of the hollow. With the faction world's standing goal, once out it went
+                    // exploring west for logs (the ground has no trees) and was five or six chunks off the border chunk at
+                    // the check (#206's CI run 43114167671, #227's 43127685464), its choice of keys[1] right both times.
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NONE) == 1, "No goal");
                     f.runtime.factionsWorldForTest(WIDE);
                     ben[0] = MockPlayers.survival(context, "Ben", new BlockPos(2, 2, 2));
                     f.runtime.factionsTickForTest();
@@ -104,6 +116,11 @@ public final class NativeFactionBasinGameTests implements FabricGameTest {
                     f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, keys[1], Map.of()));
                     f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, here.offset(2, 0).key(), Map.of()));
                     f.runtime.record(PowerRules.set(ben[0].getUuid(), 1, null, FactionSettings.DEFAULTS, server.getTicks(), System.currentTimeMillis()));
+                    // Ada's power too low to claim more, as the open-water fixture stages it: its choice stays the scout. Goalless
+                    // with power to spare, once its stair over the wall had brought it into keys[1] (a spawn within two blocks of
+                    // the chunk's edge puts the hollow's east wall there), it went on to claim its own land west and stood there
+                    // at the check (a local run, 2026-11-12: Red 1 to 5 of 10).
+                    f.runtime.record(PowerRules.set(player.getUuid(), 1, null, FactionSettings.DEFAULTS, server.getTicks(), System.currentTimeMillis()));
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
