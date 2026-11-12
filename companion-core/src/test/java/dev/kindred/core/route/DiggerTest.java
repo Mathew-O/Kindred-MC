@@ -275,13 +275,31 @@ class DiggerTest {
         var events = new java.util.ArrayList<String>();
         int handedBack = -1;
         for (int step = 1; step <= 100 && handedBack < 0; step++) {
-            var next = digger.climb(new Timed(scene, new Cell(0, 0, 0), 100 + step, events), "Up");
+            // To and fro in its tunnel, a cell each step, never farther than one from where it began.
+            var next = digger.climb(new Timed(scene, new Cell(step % 2, 0, 0), 100 + step, events), "Up");
             if (next.isEmpty()) handedBack = step;
             else assertTrue(events.isEmpty(), "not handed back yet at step " + step + ": " + next.get());
         }
-        assertEquals(Digger.UNDER_WATER_STALLS, handedBack, "handed back once it had got no farther for its steps");
+        // Its first step sets where it began, its second is its farthest (one along); then its steps to and fro get no farther.
+        assertEquals(Digger.UNDER_WATER_STALLS + 2, handedBack, "handed back once it had got no farther for its steps");
         assertEquals(1, events.size(), "said once: " + events);
-        assertTrue(events.getFirst().contains("0 blocks along under it, no farther in " + Digger.UNDER_WATER_STALLS + " steps"), events.getFirst());
+        assertTrue(events.getFirst().contains("1 blocks along under it, no farther in " + Digger.UNDER_WATER_STALLS + " steps"), events.getFirst());
+    }
+
+    /**
+     * Blocks dug where it stands under the water are not steps that got it no farther (F-35n): by hand a block takes many
+     * goes, and a climb out by hand from under a lake was handed back before it had moved at all (CI on #269,
+     * NativeUnderLakeKeptGameTests). Standing in one cell, it never hands back for want of getting farther.
+     */
+    @Test
+    void diggingWhereItStandsUnderWaterIsNotCountedAsGettingNoFarther() {
+        var scene = box();
+        var digger = new Digger();
+        var events = new java.util.ArrayList<String>();
+        for (int step = 1; step <= 4 * Digger.UNDER_WATER_STALLS; step++) {
+            digger.climb(new Timed(scene, new Cell(0, 0, 0), 100 + step, events), "Up");
+        }
+        assertTrue(events.stream().noneMatch(e -> e.contains("no farther in")), "not handed back for standing still: " + events);
     }
 
     /**
@@ -321,7 +339,7 @@ class DiggerTest {
         var digger = new Digger();
         var events = new java.util.ArrayList<String>();
         long tick = 100;
-        for (int step = 1; step <= Digger.UNDER_WATER_STALLS; step++) digger.climb(new Timed(scene, new Cell(0, 0, 0), ++tick, events), "Up");
+        for (int step = 1; step <= Digger.UNDER_WATER_STALLS + 2; step++) digger.climb(new Timed(scene, new Cell(step % 2, 0, 0), ++tick, events), "Up");
         assertEquals(1, events.size(), "it gave up: " + events);
         assertEquals(Optional.empty(), digger.climb(new Timed(scene, new Cell(0, 0, 0), tick + 10, events), "Up"), "at once: not again");
         assertEquals(Optional.empty(), digger.climb(new Timed(scene, new Cell(0, 0, 0), tick + 3000, events), "Up"), "the wait out, but not moved off");

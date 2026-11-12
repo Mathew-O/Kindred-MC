@@ -118,6 +118,8 @@ public final class Digger {
      * boxed in under it, it turns at each wall and never gets farther (F-35n).
      */
     private int underWaterFarthest, underWaterStalls;
+    /** Where it stood at its last step under the water: a stall is a step to another cell, not a block dug where it stands. */
+    private Cell underWaterLast;
     /** Whether the last staircase step down it chose was the step itself, not a block cleared for it. */
     private boolean steppedDown;
     private Cell settleAt;
@@ -623,6 +625,7 @@ public final class Digger {
                 underWaterFrom = feet;
                 underWaterFarthest = 0;
                 underWaterStalls = 0;
+                underWaterLast = feet;
             }
             // Where it last gave up, not again soon, nor while it has not moved off (F-35n): with only the time, it came back
             // into the same box under the water once the wait was out, the way it had left it.
@@ -632,9 +635,12 @@ public final class Digger {
             if (along > underWaterFarthest) {
                 underWaterFarthest = along;
                 underWaterStalls = 0;
-            } else {
+            } else if (!feet.equals(underWaterLast)) {
+                // A step to another cell that got it no farther; blocks dug where it stands are not (by hand, a block takes
+                // many: a climb out by hand from under a lake was handed back before it had moved at all, CI on #269).
                 underWaterStalls++;
             }
+            underWaterLast = feet;
             // Or {@value #UNDER_WATER_STALLS} steps under it with no farther along than before, short of the reach: boxed in
             // under it, it turned at each wall and never got far from where it began. On 505 in E-40's iteration 21
             // (`e40a21-2354e67`) Kindred, at Y -51 under an aquifer, went round within seven blocks for whole stuck spells, some
