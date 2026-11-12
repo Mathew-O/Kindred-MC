@@ -60,3 +60,7 @@ For seed 110's bamboo loop: the follow-up to the logs-kept-out line (`F-27a-gath
     - **Without the fix:** it failed 3 of 3. One run failed that check (37 below). Two ran out of time, stuck below ground in a loop between "Back up to the build" and "Explore for logs", with 22 and 48 blocks below the field remembered.
     - **With the fix:** it passed 3 of 3, with 62 mined and 0 below each time.
   - **Change:** `PortalRunCampaign.stoneFor` gathers stone in sight only at or above the depth it digs to. The staircase and tunnel are unchanged, and so is eviction.
+  - **The cabin class after the fix, with main merged (3a1a605):** 16 of 17 runs passed alone, against main's 9 of 9 (c0a4648 ×6, b7027be ×3). Fisher p ≈ 0.65, so the counts do not separate the branch from main.
+    - **Order of fetching:** either side fetched cobblestone first in about half its runs, so the order is not this change's. On main, 4 of 6 runs went cobblestone first.
+    - **The one failure (capM-2):** an explore walked off the fixture's raised field. Then came "Out of the ground for logs", up 3 stairs, explore west again and the barrier edge, about 200 times. Nothing in that loop touches the cap. In the runs with a temporary diagnostic, the trees' logs were known throughout.
+    - **What it leaves open:** why the build's log gather came back empty that once. A diagnostic of the logs kept out follows separately. #235's barrier skip may remove the loop, and capM-2's pattern is to be checked against it once #235 merges.
