@@ -1,0 +1,1053 @@
+{
+ "kind": "death",
+ "player": "Kindred",
+ "tick": 50141,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -24,
+  43,
+  -117
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.20176776120349,
+  8.0,
+  16.395753504784807
+ ],
+ "yaw": 41.818756,
+ "pitch": 50.2717,
+ "health": 6.0152984,
+ "food": 15,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 106
+    }
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 64
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 18
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 1
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 4
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 4
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 8
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 7
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 1
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:diorite",
+    "count": 31
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 16
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 4
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 6
+    }
+   }
+  }
+ ],
+ "selected": 4,
+ "timeOfDay": 2141,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Fight zombie",
+ "task": "Fight zombie",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Kindred was slain by Zombie",
+ "ticks": 1200,
+ "memory": {
+  "version": 1,
+  "blocked": [
+   {
+    "at": [
+     19,
+     8,
+     12
+    ],
+    "left": 2396
+   }
+  ],
+  "failures": [
+   {
+    "at": [
+     19,
+     8,
+     12
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     15,
+     0,
+     24
+    ],
+    "n": 1
+   }
+  ],
+  "approaches": [],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    14,
+    6,
+    18
+   ],
+   [
+    14,
+    6,
+    17
+   ],
+   [
+    14,
+    5,
+    19
+   ],
+   [
+    14,
+    5,
+    18
+   ],
+   [
+    14,
+    5,
+    17
+   ],
+   [
+    14,
+    7,
+    17
+   ],
+   [
+    14,
+    4,
+    19
+   ],
+   [
+    14,
+    4,
+    18
+   ],
+   [
+    14,
+    3,
+    19
+   ],
+   [
+    15,
+    6,
+    17
+   ],
+   [
+    15,
+    8,
+    17
+   ],
+   [
+    15,
+    8,
+    16
+   ],
+   [
+    15,
+    7,
+    17
+   ],
+   [
+    15,
+    7,
+    16
+   ],
+   [
+    15,
+    9,
+    16
+   ],
+   [
+    15,
+    2,
+    20
+   ],
+   [
+    15,
+    2,
+    19
+   ],
+   [
+    15,
+    1,
+    20
+   ],
+   [
+    15,
+    4,
+    19
+   ],
+   [
+    15,
+    3,
+    20
+   ],
+   [
+    15,
+    3,
+    19
+   ],
+   [
+    32,
+    3,
+    9
+   ],
+   [
+    32,
+    3,
+    10
+   ],
+   [
+    32,
+    4,
+    10
+   ],
+   [
+    32,
+    1,
+    9
+   ],
+   [
+    32,
+    2,
+    9
+   ],
+   [
+    32,
+    2,
+    10
+   ],
+   [
+    32,
+    12,
+    14
+   ],
+   [
+    32,
+    15,
+    13
+   ],
+   [
+    32,
+    15,
+    12
+   ],
+   [
+    32,
+    16,
+    12
+   ],
+   [
+    32,
+    13,
+    14
+   ],
+   [
+    32,
+    13,
+    13
+   ],
+   [
+    32,
+    14,
+    14
+   ],
+   [
+    32,
+    14,
+    13
+   ],
+   [
+    32,
+    14,
+    12
+   ],
+   [
+    16,
+    7,
+    32
+   ],
+   [
+    16,
+    7,
+    31
+   ],
+   [
+    16,
+    7,
+    30
+   ],
+   [
+    16,
+    8,
+    32
+   ],
+   [
+    16,
+    8,
+    31
+   ],
+   [
+    16,
+    5,
+    30
+   ],
+   [
+    16,
+    5,
+    29
+   ],
+   [
+    16,
+    5,
+    28
+   ],
+   [
+    16,
+    8,
+    16
+   ],
+   [
+    16,
+    6,
+    31
+   ],
+   [
+    16,
+    6,
+    30
+   ],
+   [
+    16,
+    6,
+    29
+   ],
+   [
+    16,
+    10,
+    16
+   ],
+   [
+    16,
+    10,
+    15
+   ],
+   [
+    16,
+    9,
+    16
+   ],
+   [
+    16,
+    9,
+    15
+   ],
+   [
+    16,
+    9,
+    32
+   ],
+   [
+    16,
+    11,
+    15
+   ],
+   [
+    16,
+    0,
+    21
+   ],
+   [
+    16,
+    0,
+    20
+   ],
+   [
+    16,
+    3,
+    28
+   ],
+   [
+    16,
+    3,
+    27
+   ],
+   [
+    16,
+    2,
+    20
+   ],
+   [
+    16,
+    4,
+    29
+   ],
+   [
+    16,
+    4,
+    28
+   ],
+   [
+    16,
+    4,
+    27
+   ],
+   [
+    16,
+    1,
+    20
+   ],
+   [
+    16,
+    2,
+    27
+   ],
+   [
+    31,
+    1,
+    8
+   ],
+   [
+    31,
+    1,
+    9
+   ],
+   [
+    31,
+    2,
+    9
+   ],
+   [
+    31,
+    0,
+    8
+   ],
+   [
+    31,
+    0,
+    9
+   ],
+   [
+    17,
+    10,
+    15
+   ],
+   [
+    17,
+    12,
+    15
+   ],
+   [
+    17,
+    11,
+    15
+   ],
+   [
+    17,
+    0,
+    21
+   ],
+   [
+    30,
+    0,
+    8
+   ],
+   [
+    18,
+    13,
+    15
+   ],
+   [
+    18,
+    12,
+    15
+   ],
+   [
+    18,
+    11,
+    15
+   ],
+   [
+    19,
+    14,
+    15
+   ],
+   [
+    19,
+    13,
+    15
+   ],
+   [
+    19,
+    12,
+    15
+   ],
+   [
+    20,
+    14,
+    15
+   ],
+   [
+    20,
+    14,
+    16
+   ],
+   [
+    20,
+    13,
+    15
+   ],
+   [
+    20,
+    16,
+    16
+   ],
+   [
+    20,
+    16,
+    17
+   ],
+   [
+    20,
+    16,
+    18
+   ],
+   [
+    20,
+    15,
+    15
+   ],
+   [
+    20,
+    15,
+    16
+   ],
+   [
+    20,
+    15,
+    17
+   ],
+   [
+    20,
+    0,
+    25
+   ],
+   [
+    20,
+    0,
+    24
+   ],
+   [
+    20,
+    1,
+    25
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    32,
+    1,
+    9
+   ],
+   [
+    32,
+    9,
+    13
+   ],
+   [
+    32,
+    9,
+    9
+   ],
+   [
+    32,
+    5,
+    9
+   ],
+   [
+    32,
+    5,
+    13
+   ],
+   [
+    32,
+    13,
+    13
+   ],
+   [
+    32,
+    13,
+    9
+   ],
+   [
+    12,
+    5,
+    17
+   ],
+   [
+    12,
+    5,
+    13
+   ],
+   [
+    12,
+    1,
+    17
+   ],
+   [
+    28,
+    1,
+    9
+   ],
+   [
+    16,
+    13,
+    13
+   ],
+   [
+    16,
+    5,
+    29
+   ],
+   [
+    16,
+    5,
+    13
+   ],
+   [
+    16,
+    9,
+    13
+   ],
+   [
+    16,
+    1,
+    29
+   ],
+   [
+    16,
+    1,
+    25
+   ],
+   [
+    16,
+    1,
+    17
+   ],
+   [
+    20,
+    13,
+    13
+   ],
+   [
+    20,
+    13,
+    17
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "IRON_ORE": [
+    [
+     13,
+     2,
+     24
+    ]
+   ],
+   "GRAVEL": [
+    [
+     10,
+     0,
+     21
+    ],
+    [
+     10,
+     0,
+     22
+    ],
+    [
+     11,
+     0,
+     23
+    ],
+    [
+     11,
+     0,
+     24
+    ],
+    [
+     11,
+     1,
+     22
+    ],
+    [
+     11,
+     1,
+     23
+    ],
+    [
+     11,
+     1,
+     24
+    ],
+    [
+     12,
+     0,
+     25
+    ],
+    [
+     12,
+     1,
+     25
+    ],
+    [
+     13,
+     0,
+     26
+    ],
+    [
+     14,
+     0,
+     26
+    ],
+    [
+     24,
+     1,
+     0
+    ]
+   ],
+   "CAVE": [
+    [
+     32,
+     1,
+     9
+    ],
+    [
+     32,
+     13,
+     13
+    ],
+    [
+     14,
+     5,
+     17
+    ],
+    [
+     15,
+     7,
+     16
+    ],
+    [
+     14,
+     0,
+     21
+    ],
+    [
+     15,
+     1,
+     20
+    ],
+    [
+     31,
+     0,
+     9
+    ],
+    [
+     16,
+     7,
+     32
+    ],
+    [
+     16,
+     8,
+     16
+    ],
+    [
+     16,
+     9,
+     15
+    ],
+    [
+     16,
+     0,
+     23
+    ],
+    [
+     18,
+     0,
+     25
+    ],
+    [
+     16,
+     0,
+     20
+    ],
+    [
+     16,
+     4,
+     29
+    ],
+    [
+     18,
+     2,
+     18
+    ],
+    [
+     20,
+     13,
+     15
+    ],
+    [
+     20,
+     15,
+     17
+    ],
+    [
+     20,
+     0,
+     26
+    ],
+    [
+     20,
+     3,
+     19
+    ]
+   ]
+  },
+  "strandedAt": [
+   16,
+   8,
+   16
+  ],
+  "strandedWalks": 1,
+  "strandedAgo": 4,
+  "exploreHeading": "west",
+  "exploreStalls": 1,
+  "exploreFailures": 5,
+  "stuckSpells": 1,
+  "stuckLevel": 0,
+  "leftOut": 5112
+ },
+ "log": [
+  "[16:05:21] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -4, 61, -99]",
+  "[16:05:22] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -5, 60, -99]",
+  "[16:05:22] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -5, 61, -99]",
+  "[16:05:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[16:05:22] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -5, 62, -99]",
+  "[16:05:23] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -6, 61, -99]",
+  "[16:05:23] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -6, 62, -99]",
+  "[16:05:23] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[16:05:23] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -6, 63, -99]",
+  "[16:05:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -6, 62, -100]",
+  "[16:05:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -6, 63, -100]",
+  "[16:05:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[16:05:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -6, 64, -100]",
+  "[16:05:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -7, 63, -100]",
+  "[16:05:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -7, 64, -100]",
+  "[16:05:25] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[16:05:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for food: clear -7, 65, -100]",
+  "[16:05:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore west for animals]",
+  "[16:05:30] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+  "[16:05:30] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -5, 51, -105 [Back off from zombie]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "707",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/707/replays/world/Kindred-50141",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; with its goal's own memory of the box (#198, put back by #201)"
+ }
+}

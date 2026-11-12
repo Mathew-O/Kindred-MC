@@ -1,0 +1,118 @@
+package dev.kindred.sim;
+
+import dev.kindred.core.route.Cell;
+import dev.kindred.core.route.Navigator;
+import dev.kindred.core.route.Terrain;
+import dev.kindred.sim.SimWorld.Block;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * In plain terms: the simulator's world answers the route planners' questions about each block as the server's world
+ * does for the matching vanilla block, so a route planned in the simulator is the one the game would plan.
+ *
+ * Technical: F-35d step 3. {@link SimWorld}'s {@link Terrain} facts, block by block, against what the adapter's
+ * {@code NativeNavigator.WorldTerrain} reads from vanilla 1.21.1's states (collision shape, fluid, replaceability,
+ * hardness); and the core navigator over a staged world.
+ */
+class SimWorldTerrainTest {
+    @Test
+    void eachBlockAnswersAsItsVanillaBlockDoes() {
+        var world = SimWorld.staged(1);
+        int x = 10, z = 10;
+        for (Block b : Block.values()) world.set(x + b.ordinal(), 0, z, b);
+        for (Block b : Block.values()) {
+            int bx = x + b.ordinal();
+            boolean open = b == Block.AIR || b == Block.TORCH, fluid = b == Block.WATER || b == Block.LAVA;
+            assertEquals(open || fluid, world.passThrough(bx, 0, z), b + " passes through");
+            assertEquals(!open && !fluid, world.supports(bx, 0, z), b + " supports");
+            assertEquals(!open && !fluid, world.bears(bx, 0, z), b + " bears");
+            assertEquals(!open && !fluid, world.placeAgainst(bx, 0, z), b + " takes a block against it");
+            assertEquals(b == Block.AIR || fluid, world.replaceable(bx, 0, z), b + " is replaced by a placed block");
+            assertEquals(b == Block.LAVA, world.harms(bx, 0, z), b + " harms");
+            assertEquals(b == Block.WATER ? Terrain.Fluid.WATER : b == Block.LAVA ? Terrain.Fluid.LAVA : Terrain.Fluid.NONE,
+                    world.fluid(bx, 0, z), b + "'s fluid");
+            assertFalse(world.scorches(bx, 0, z) || world.bottomHalf(bx, 0, z) || world.portal(bx, 0, z), b.toString());
+        }
+        assertEquals(1.5f, world.hardness(x + Block.STONE.ordinal(), 0, z));
+        assertEquals(-1f, world.hardness(x + Block.BEDROCK.ordinal(), 0, z));
+        assertEquals(50f, world.hardness(x + Block.OBSIDIAN.ordinal(), 0, z));
+        assertEquals(3f, world.hardness(x + Block.IRON_ORE.ordinal(), 0, z));
+        assertEquals(0.6f, world.hardness(x + Block.GRASS.ordinal(), 0, z));
+        assertEquals(0.2f, world.hardness(x + Block.LEAVES.ordinal(), 0, z));
+    }
+
+    @Test
+    void loadedIsTheSquareAndItsHeights() {
+        var world = SimWorld.staged(1);
+        assertTrue(world.loaded(0, SimWorld.MIN_Y, 0));
+        assertTrue(world.loaded(SimWorld.SIZE - 1, SimWorld.MIN_Y + SimWorld.HEIGHT - 1, SimWorld.SIZE - 1));
+        assertFalse(world.loaded(-1, 0, 0));
+        assertFalse(world.loaded(0, 0, SimWorld.SIZE));
+        assertFalse(world.loaded(0, SimWorld.MIN_Y - 1, 0));
+        assertFalse(world.loaded(0, SimWorld.MIN_Y + SimWorld.HEIGHT, 0));
+        assertFalse(world.placeAgainst(-1, 0, 0));
+        assertEquals(Terrain.Fluid.NONE, world.fluid(-1, 0, 0));
+    }
+
+    @Test
+    void theNavigatorWalksTheSimulatorsWorld() {
+        var world = SimWorld.staged(1);
+        for (int x = 0; x < 20; x++) for (int z = 0; z < 5; z++) world.set(x, 0, z, Block.STONE);
+        // A wall two high across the way, and a step of one beside it.
+        for (int z = 0; z < 5; z++) for (int y = 1; y <= 2; y++) world.set(10, y, z, Block.STONE);
+        var navigator = new Navigator(world);
+        var start = new Cell(5, 1, 2);
+        var target = new Cell(15, 1, 2);
+        assertFalse(navigator.find(start, target, target::equals, Navigator.DEFAULT_MAX_NODES, 96).complete(), "no way over a wall two high");
+        world.set(10, 2, 2, Block.AIR);
+        var path = new Navigator(world).find(start, target, target::equals, Navigator.DEFAULT_MAX_NODES, 96);
+        assertTrue(path.complete(), "over a step of one");
+        assertTrue(path.nodes().contains(new Cell(10, 2, 2)), path.nodes().toString());
+    }
+
+    /** The perception's facts (F-35f) as the adapter's {@code WorldKnowledge} reads them for the matching vanilla block. */
+    @Test
+    void eachBlockAnswersThePerceptionAsItsVanillaBlockDoes() {
+        var world = SimWorld.staged(1);
+        int x = 10, z = 10;
+        for (Block b : Block.values()) world.set(x + b.ordinal(), 0, z, b);
+        for (Block b : Block.values()) {
+            int bx = x + b.ordinal();
+            boolean open = b == Block.AIR || b == Block.TORCH, fluid = b == Block.WATER || b == Block.LAVA;
+            assertEquals(b == Block.AIR, world.air(bx, 0, z), b + " is air");
+            assertEquals(!fluid, world.fluidEmpty(bx, 0, z), b + " holds no fluid");
+            assertEquals(!open && !fluid && b != Block.LEAVES, world.opaqueFullCube(bx, 0, z), b + " is an opaque full cube");
+            assertEquals(open || fluid, world.collisionEmpty(bx, 0, z), b + " has no collision box");
+        }
+        assertEquals(dev.kindred.core.route.Sight.Kind.STONE, world.kind(x + Block.COBBLE.ordinal(), 0, z), "cobblestone is stone to the sweep");
+        assertEquals(null, world.kind(x + Block.DIRT.ordinal(), 0, z));
+        assertTrue(world.inLoadedChunk(0, 500, 0) && !world.inLoadedChunk(-1, 0, 0), "a column of the square is loaded at any height");
+        assertEquals(new Cell(x + Block.STONE.ordinal(), 0, z), world.ray(x + 0.5, 0.5, z + 0.5, x + Block.STONE.ordinal() + 0.5, 0.5, z + 0.5, false),
+                "a line along the row meets the first full cube on it");
+    }
+
+    /**
+     * Ore where vanilla 1.21.1's ore features put it (F-35f): diamonds no higher than their ranges' top, 16, and a vein's
+     * reach; coal no lower than 0 and a vein's reach; iron several times the atlas-placed world's 200 veins of at most 6.
+     */
+    @Test
+    void oreIsPlacedAsVanillasOreFeaturesPlaceIt() {
+        var world = SimWorld.generate(7);
+        int iron = 0, ironMiddle = 0;
+        for (int x = 0; x < SimWorld.SIZE; x++) for (int z = 0; z < SimWorld.SIZE; z++) for (int y = SimWorld.MIN_Y; y < SimWorld.MIN_Y + SimWorld.HEIGHT; y++) {
+            Block b = world.at(x, y, z);
+            if (b == Block.DIAMOND_ORE) assertTrue(y <= 19, "diamond at " + y);
+            if (b == Block.COAL_ORE) assertTrue(y >= -4, "coal at " + y);
+            if (b == Block.IRON_ORE) {
+                iron++;
+                if (y >= -24 && y <= 56) ironMiddle++;
+            }
+        }
+        assertTrue(iron > 2_400, "iron blocks " + iron);
+        assertTrue(ironMiddle > iron / 2, "most iron in the middle band: " + ironMiddle + " of " + iron);
+    }
+}

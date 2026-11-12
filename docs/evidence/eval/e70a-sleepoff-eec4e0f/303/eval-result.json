@@ -1,0 +1,54 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; sleep=off",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 15.88, "tickMsWorst": 1272.68, "tickMsWorstAt": 5838, "ticksOver50ms": 1263, "ticksOver200ms": 11, "heapMbMax": 1012, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 3880, "stone_tools": 4400, "iron_ingot": 19840, "iron_pickaxe": 30460},
+      "deaths": [
+        {"tick": 54592, "cause": "Kindred burned to death", "x": -189, "y": 62, "z": 73, "light": 14, "timeOfDay": 6754, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4584,
+      "chunkMinutes": 34675.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 1880, "iron_ingot": 100120, "iron_pickaxe": 124200},
+      "deaths": [
+        {"tick": 62494, "cause": "Sol was slain by Zombie", "x": 42, "y": 63, "z": 203, "light": 0, "timeOfDay": 14656, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4108,
+      "chunkMinutes": 34675.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2360, "stone_tools": 3280, "iron_ingot": 28320, "iron_pickaxe": 43000, "obsidian": 79027, "portal_lit": 83200},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 15520, "x": 122, "y": 51, "z": 32, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4316,
+      "chunkMinutes": 34680.0
+    }
+  }
+}

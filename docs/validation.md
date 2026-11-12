@@ -34,6 +34,8 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+- F-35f, the simulator sees, digs toward lava and finds ore as the game does: [evidence](evidence/F-35f.md).
+- F-35e, the campaign's climb, dig down, tunnel and giving up, in core: [evidence](evidence/F-35e.md).
 - F-35d, the route planners in core behind a terrain of per-cell facts: [evidence](evidence/F-35d.md).
 - F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
 - F-35c1, no walk to the portal out of a night shelter: [evidence](evidence/F-35c1.md).
@@ -51,6 +53,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## A founder claims the ground its first base will stand on (M-06i) — 12 November 2026 (`claude/m06i-base-site-1111`)
+
+- [M-06i: a founder claims the ground its first base will stand on](evidence/M-06i.md#a-founder-claims-the-ground-its-first-base-will-stand-on-2026-11-12-claudem06i-base-site-1111).
 
 ## An evaluation run's preset traits saved as one change (M-06i) — 12 November 2026 (`claude/m06i-eval-presets-1111`)
 

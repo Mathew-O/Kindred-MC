@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 11.62, "tickMsWorst": 753.54, "tickMsWorstAt": 5838, "ticksOver50ms": 338, "ticksOver200ms": 5, "heapMbMax": 998, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1400, "stone_tools": 2820, "iron_ingot": 12500, "iron_pickaxe": 70180},
+      "deaths": [
+        {"tick": 4984, "cause": "Kindred was slain by Zombie", "x": 1, "y": 35, "z": 113, "light": 0, "timeOfDay": 5146, "dimension": "minecraft:overworld", "hunger": 18, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 92359, "cause": "Kindred was slain by Phantom", "x": -189, "y": 72, "z": 180, "light": 4, "timeOfDay": 20521, "dimension": "minecraft:overworld", "hunger": 20, "underSky": true, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 102394, "cause": "Kindred was slain by Enderman", "x": -14, "y": 35, "z": 139, "light": 7, "timeOfDay": 6556, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from enderman", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 33980, "x": -47, "y": 63, "z": 93, "attempt": 1}, {"tick": 55620, "x": -90, "y": 57, "z": 72, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6756,
+      "chunkMinutes": 34665.6
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1640, "stone_tools": 3240, "iron_ingot": 15220, "iron_pickaxe": 30860},
+      "deaths": [
+        {"tick": 49275, "cause": "Sol suffocated in a wall", "x": 52, "y": -44, "z": 96, "light": 0, "timeOfDay": 1437, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 52, -44, 96", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Dig out of the wall: out from under the falling gravel to 52, -44, 96"},
+        {"tick": 143974, "cause": "Sol fell from a high place", "x": 14, "y": 12, "z": 3, "light": 0, "timeOfDay": 136, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3358,
+      "chunkMinutes": 34670.4
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1720, "stone_tools": 3080, "iron_ingot": 6880, "iron_pickaxe": 40560, "obsidian": 63363, "portal_lit": 66411},
+      "deaths": [
+        {"tick": 5596, "cause": "Echo was shot by Skeleton", "x": 7, "y": 34, "z": 69, "light": 0, "timeOfDay": 5758, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Ready a block", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 7636, "cause": "Echo was slain by Spider", "x": 18, "y": 39, "z": 88, "light": 1, "timeOfDay": 7798, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Back off from spider", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 10974, "cause": "Echo was blown up by Creeper", "x": 38, "y": 33, "z": 80, "light": 0, "timeOfDay": 11136, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Ready a block", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "Ready a block"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3363,
+      "chunkMinutes": 34665.6
+    }
+  }
+}
