@@ -1221,7 +1221,7 @@ final class PortalRunCampaign {
         boolean nightIn = dugInForTheNight(dweller);
         // Its work only: a walk up for air, a back-off, a run from a creeper or any other safety step goes as before.
         if (nightIn && planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get())
-                && outUnderTheSky(dweller.getServerWorld(), planned.get())) {
+                && outUnderTheSky(dweller, planned.get())) {
             planned = daylightBelow(body);
             progress = stageLabel(stage) + ": nothing to do before daylight - " + planned.get().label();
         }
@@ -1583,6 +1583,16 @@ final class PortalRunCampaign {
 
     /** For fixtures (F-29b): whether a move elsewhere is under way, and whether it was begun early for a rescue. */
     boolean relocatingForTest() { return relocate != null; }
+
+    /** Where its next explore walk would go from where it stands (F-35m's fixtures), its heading kept as it turns. */
+    Optional<BlockPos> exploreTargetForTest(ServerPlayerEntity player) {
+        return explore(player, "a fixture").map(task -> position(task.args()));
+    }
+
+    /** Whether a walk to {@code to} would take it out under the sky, by the night's rule (F-35m's fixtures). */
+    static boolean outUnderTheSkyForTest(ServerPlayerEntity player, BlockPos to) {
+        return outUnderTheSky(player, go(to, 1, true, "a fixture"));
+    }
 
     /** The cell the goal's gather would go for first (its first {@code nearest}, with the one rule {@link #gatherable}). */
     Optional<BlockPos> gatherTargetForTest(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
@@ -4459,18 +4469,21 @@ final class PortalRunCampaign {
             exploreHeading = headings[Math.floorMod(exploreFailures + (int) (player.getUuid().getLeastSignificantBits() & 3), 4)];
         }
         BlockPos anchor = exploreAnchor(player, player.getBlockPos());
+        // The ground ahead as it sees it from where it stands (F-35m): a top out of its sight gives the walk its own height,
+        // for the route to find the way, as under the ground; the heightmap of a column it cannot see is never used.
+        var looks = WorldKnowledge.looks(player, 8);
         for (int turn = 0; turn < 4; turn++, exploreHeading = exploreHeading.rotateYClockwise()) {
             BlockPos ahead = player.getBlockPos().offset(exploreHeading, 28);
             if (!world.isChunkLoaded(ahead)) ahead = player.getBlockPos().offset(exploreHeading, 12);
             if (!world.isChunkLoaded(ahead)) continue;
             if (Math.hypot(ahead.getX() - anchor.getX(), ahead.getZ() - anchor.getZ()) > EXPLORE_RADIUS) continue;
-            int surface = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ahead.getX(), ahead.getZ());
+            Optional<BlockPos> top = looks.ground(ahead.getX(), ahead.getZ());
             // A barrier column, which a survival player cannot see, sets no look's height: the top of the GameTest's own
             // fence round a scene drew a hurt player's look up over a tree onto it, and off the canopy (F-22c66).
-            if (NativeNavigator.unseen(world.getBlockState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())))) continue;
-            boolean onSurface = player.getBlockY() > surface - 8;
-            if (onSurface && !world.getFluidState(new BlockPos(ahead.getX(), surface - 1, ahead.getZ())).isEmpty()) continue;
-            BlockPos target = new BlockPos(ahead.getX(), onSurface ? surface : player.getBlockY(), ahead.getZ());
+            if (top.isPresent() && NativeNavigator.unseen(world.getBlockState(top.get()))) continue;
+            boolean onSurface = top.isPresent() && player.getBlockY() > top.get().getY() + 1 - 8;
+            if (onSurface && !world.getFluidState(top.get()).isEmpty()) continue;
+            BlockPos target = new BlockPos(ahead.getX(), onSurface ? top.get().getY() + 1 : player.getBlockY(), ahead.getZ());
             if (blocked(target) || unreachable(target)) continue;
             return Optional.of(go(target, 3, true, "Explore " + exploreHeading.asString() + " for " + what));
         }
@@ -4492,10 +4505,12 @@ final class PortalRunCampaign {
     /**
      * Stone for a build (E-08c), as the goal gets its own: stone in sight close by, else a staircase down to
      * {@code depth} and a tunnel along it, which is all stone. Every cell it digs is one {@code allowed} lets it: never
-     * the build's own site, nor the steps of its own staircase.
+     * the build's own site, nor the steps of its own staircase. Stone in sight is taken only from {@code depth} up:
+     * below it is the floor it digs along on. With its memory of stone full and no longer refusing new blocks, a player
+     * knew the floor its pit laid open and mined down through it, then could not climb back out for logs (#219's CI).
      */
     Optional<Task> stoneFor(NativePlayerBody body, int depth, Predicate<BlockPos> allowed) {
-        return gather(body, WorldKnowledge.Kind.STONE, 6, "stone", allowed)
+        return gather(body, WorldKnowledge.Kind.STONE, 6, "stone", allowed.and(p -> p.getY() >= depth))
                 .or(() -> digDown(body, depth, "Dig for stone", allowed));
     }
 
@@ -5494,12 +5509,20 @@ final class PortalRunCampaign {
         return seal.isPresent() ? seal : Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
     }
 
-    /** A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight (F-25c4cd). */
-    private static boolean outUnderTheSky(ServerWorld world, Task task) {
+    /**
+     * A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight
+     * (F-25c4cd). Where it can see the ground's top at the walk's end, on it or above it; where it cannot, at or above
+     * the ground's top over its own feet less one, as high as the surface it dug in under (F-35m: no far column's height it
+     * cannot see; its own column's is the read F-35m2 puts to the owner, as the climb's and the shelter's are).
+     */
+    private static boolean outUnderTheSky(ServerPlayerEntity player, Task task) {
         if (!"native_goto".equals(task.skill())) return false;
         BlockPos to = position(task.args());
+        var world = player.getServerWorld();
         if (to == null || !world.isChunkLoaded(to)) return false;
-        return world.isSkyVisible(to.up()) || to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, to.getX(), to.getZ()) - 1;
+        Optional<BlockPos> top = WorldKnowledge.looks(player, 1).ground(to.getX(), to.getZ());
+        if (top.isPresent()) return to.getY() >= top.get().getY();
+        return to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ()) - 1;
     }
 
     /** Night where there is a sky: a player that learned to shelter early counts the last of the afternoon as night already. */
@@ -6457,7 +6480,11 @@ final class PortalRunCampaign {
             for (int s = 0; s < 36 && slot < 0; s++) if (RESTING.contains(inventory.getStack(s).getItem())) slot = s;
         }
         if (slot < 0) return Optional.empty();
-        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        // The swap named for what the block is for: a block readied to take cover or hole up is that step, which a mob on
+        // it does not stop, as the weapon taken to hand is not (F-25c4cv). Readied under the one name, it was stopped "A
+        // hostile mob is attacking; fight back first" 25 to 35 times a run in the corpus's kindred-21883, never reached its
+        // hotbar, and it fought on outmatched until a zombie killed it (E-71e).
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, label + ": ready a block"));
         for (Direction side : Direction.values()) {
             BlockPos support = cell.offset(side.getOpposite());
             if (support.equals(feet) || support.equals(feet.up())) continue;

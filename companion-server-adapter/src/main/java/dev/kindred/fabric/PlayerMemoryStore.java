@@ -445,6 +445,23 @@ final class PlayerMemoryStore implements AutoCloseable {
     /** Stops the background saving once the writes already asked for are done. */
     @Override
     public void close() {
+        closeAsync();
+    }
+
+    /**
+     * Stops the background saving, and is done once every write already asked for is (F-31e): the store's one thread
+     * takes them in order, so a last task after them completes it. Its thread is a daemon, so a stop that did not wait
+     * for this could end the process with the last writes (each atlas, peers, rapport and stores, written at the stop)
+     * not made, and a runtime started again at once could read a file before its last write.
+     */
+    CompletableFuture<Void> closeAsync() {
+        var done = new CompletableFuture<Void>();
+        try {
+            io.execute(() -> done.complete(null));
+        } catch (java.util.concurrent.RejectedExecutionException closed) {
+            done.complete(null);
+        }
         io.shutdown();
+        return done;
     }
 }

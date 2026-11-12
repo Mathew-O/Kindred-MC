@@ -88,7 +88,7 @@ public final class CorpusGameTests implements FabricGameTest {
                     tests.add(new TestFunction(batch, "corpus." + id, "kindred_corpus:corpus/" + id,
                             BlockRotation.NONE, ticks + 600, 0L, true, false, 1, 1, true, context -> {
                                 KindredMod.LOGGER.info("Corpus scene {} placed at {}", id, context.getAbsolutePos(net.minecraft.util.math.BlockPos.ORIGIN).toShortString());
-                                ReplayGameTests.play(context, scene, 1, ticks);
+                                ReplayGameTests.play(context, scene, id, 1, ticks);
                             }));
                 }
                 tests.add(spacer(batch, id));

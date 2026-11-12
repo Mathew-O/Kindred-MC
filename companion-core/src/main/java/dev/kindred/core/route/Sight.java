@@ -41,7 +41,10 @@ public final class Sight {
     private static final int RAYCASTS_PER_SCAN = 24;
     /** Cave floors passed in a sweep while their sight lines were spent, looked at first in the scans after. */
     private static final int CAVE_BACKLOG = 1024;
+    /** At most this many of a kind are remembered; past it the farthest go ({@link #remember}). */
     private static final int MAX_PER_KIND = 2_000;
+    /** How many a full kind drops at once, the farthest first: one sort each so many, not a scan per block remembered. */
+    public static final int EVICT = MAX_PER_KIND / 10;
 
     private final ArrayDeque<Cell> caveBacklog = new ArrayDeque<>();
     private final Map<Kind, Map<Long, Cell>> known = new EnumMap<>(Kind.class);
@@ -104,6 +107,7 @@ public final class Sight {
      * z), its feet's cell {@code feet}.
      */
     public void scan(SightWorld world, double[] eye, Cell feet) {
+        center = feet;
         // A sweep ends once the cave floors it passed over are looked at too: what was not seen in it is known not there.
         if (cursor >= sweep.size() && caveBacklog.isEmpty()) rebuildSweep(feet);
         int reads = 0;
@@ -197,6 +201,8 @@ public final class Sight {
         tops.sort(Comparator.comparingDouble(p -> p.squaredDistance(feet)));
         for (int i = 0; i < Math.min(8, tops.size()); i++) {
             Cell top = tops.get(i);
+            // Never across ground that is not loaded, which is not there to see and which a sight line would load (F-35m).
+            if (!loadedAlong(world, eye[0], eye[2], top.x() + 0.5, top.z() + 0.5)) continue;
             // Seen if the sight line meets the tree itself, a leaf or log of its crown short of the top block.
             Cell hit = world.ray(eye[0], eye[1], eye[2], top.x() + 0.5, top.y() + 0.5, top.z() + 0.5, false);
             if (hit != null && !(manhattan(hit, top) <= 3
@@ -324,6 +330,89 @@ public final class Sight {
         return sees(world, eye, pos.x() + 0.5, pos.y() + Math.max(0.1, height - 0.05), pos.z() + 0.5, pos);
     }
 
+    /**
+     * In plain terms: whether its eyes reach a block, however far off, over ground that is there to look at. Every
+     * stretch of ground the sight line crosses must be loaded; a stretch that is not was never seen, and nothing here
+     * loads one.
+     *
+     * Technical: F-35m. Every chunk column the line's ground track crosses is checked loaded (a walk of the chunk grid
+     * along it) before the one sight line, which aims at the block's top face, a thousandth inside it (so a line along
+     * flat ground does not meet the ground before it), and counts only if it meets the block itself or nothing. Water is
+     * seen through, as a swimmer with its eyes under the surface still sees, and a water top is seen when the line ends
+     * at its surface unmet. No distance cap: the callers bound how many they ask.
+     */
+    public static boolean seenFrom(SightWorld world, double[] eye, Cell pos) {
+        double px = pos.x() + 0.5, py = pos.y() + 0.999, pz = pos.z() + 0.5;
+        if (!loadedAlong(world, eye[0], eye[2], px, pz)) return false;
+        Cell hit = world.ray(eye[0], eye[1], eye[2], px, py, pz, false);
+        return hit == null || hit.equals(pos);
+    }
+
+    /**
+     * In plain terms: the top of a far column, if it can see that top from where it stands; nothing if it cannot, if the
+     * column's ground is not there to look at, or if its sight line crosses ground that is not.
+     *
+     * Technical: F-35m. {@code aim} (the column's top as the world keys it, the first block over the top) is asked only of
+     * a column whose ground and whose way from the eyes are loaded, and only to choose the one block the sight line goes
+     * to: when {@link #seenFrom} fails, nothing from that column is returned or kept.
+     */
+    public static Optional<Cell> seenTop(SightWorld world, double[] eye, int x, int z, java.util.function.IntBinaryOperator aim) {
+        if (!world.columnLoaded(x >> 4, z >> 4)) return Optional.empty();
+        if (!loadedAlong(world, eye[0], eye[2], x + 0.5, z + 0.5)) return Optional.empty();
+        Cell top = new Cell(x, aim.applyAsInt(x, z) - 1, z);
+        Cell hit = world.ray(eye[0], eye[1], eye[2], top.x() + 0.5, top.y() + 0.999, top.z() + 0.5, false);
+        return hit == null || hit.equals(top) ? Optional.of(top) : Optional.empty();
+    }
+
+    /**
+     * In plain terms: the first of the places, in order, that is what it looks for and that it can see from where it
+     * stands. Whether a place is what it looks for is asked first only to spare sight lines: a place that is not could
+     * never be the answer, so the answer is the one a sight line to every place in turn would give.
+     *
+     * Technical: F-35m. Equal to the first {@code c} in {@code candidates} with {@code seenFrom(world, eye, c) &&
+     * answer.test(c)} while the sight lines last: {@code answer} must be a property of the place alone (not of the order,
+     * nor of other places), so testing it before the sight line only skips places that could not win. {@code rays[0]} is
+     * the sight lines left, spent one a cast; when it runs out, nothing further is seen (fewer casts than the
+     * unfiltered search, so it runs out no sooner).
+     */
+    public static Optional<Cell> firstSeen(SightWorld world, double[] eye, List<Cell> candidates, Predicate<Cell> answer, int[] rays) {
+        for (Cell c : candidates) {
+            if (rays[0] <= 0) return Optional.empty();
+            if (!answer.test(c)) continue;
+            double px = c.x() + 0.5, py = c.y() + 0.999, pz = c.z() + 0.5;
+            if (!loadedAlong(world, eye[0], eye[2], px, pz)) continue;
+            rays[0]--;
+            Cell hit = world.ray(eye[0], eye[1], eye[2], px, py, pz, false);
+            if (hit == null || hit.equals(c)) return Optional.of(c);
+        }
+        return Optional.empty();
+    }
+
+    /** Every chunk column the straight ground track from (ax, az) to (bx, bz) crosses is loaded: the chunk grid walked along it. */
+    static boolean loadedAlong(SightWorld world, double ax, double az, double bx, double bz) {
+        int cx = (int) Math.floor(ax / 16), cz = (int) Math.floor(az / 16);
+        int ex = (int) Math.floor(bx / 16), ez = (int) Math.floor(bz / 16);
+        double dx = bx - ax, dz = bz - az;
+        int sx = Integer.signum(ex - cx), sz = Integer.signum(ez - cz);
+        double tx = sx == 0 ? Double.MAX_VALUE : ((sx > 0 ? (cx + 1) * 16.0 : cx * 16.0) - ax) / dx;
+        double tz = sz == 0 ? Double.MAX_VALUE : ((sz > 0 ? (cz + 1) * 16.0 : cz * 16.0) - az) / dz;
+        double stepX = sx == 0 ? 0 : 16.0 / Math.abs(dx), stepZ = sz == 0 ? 0 : 16.0 / Math.abs(dz);
+        for (int guard = 0; guard < 4096; guard++) {
+            if (!world.columnLoaded(cx, cz)) return false;
+            if (cx == ex && cz == ez) return true;
+            if (tx == tz) {
+                // Through a corner the line touches both neighbours: both must be loaded.
+                if (!world.columnLoaded(cx + sx, cz) || !world.columnLoaded(cx, cz + sz)) return false;
+                cx += sx; cz += sz; tx += stepX; tz += stepZ;
+            } else if (tx < tz) {
+                cx += sx; tx += stepX;
+            } else {
+                cz += sz; tz += stepZ;
+            }
+        }
+        return false;
+    }
+
     private static boolean sees(SightWorld world, double[] eye, double px, double py, double pz, Cell pos) {
         Cell hit = world.ray(eye[0], eye[1], eye[2], px, py, pz, true);
         return hit == null || hit.equals(pos);
@@ -342,8 +431,30 @@ public final class Sight {
         }
         var map = known.get(kind);
         long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
-        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
+        // Full: the farthest of the kind from where it last looked round go, so what is beside it now is known. Refusing
+        // the new one instead, a player who had walked through a jungle knew 2,000 logs it had left behind and none of
+        // the trunks five blocks off ("0 known" with 42 to 82 logs within 8, recap-factions110-b663fb5).
+        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) evictFarthest(map, center != null ? center : pos);
         if (map.put(key, pos) == null && firstSight != null) firstSight.accept(kind, pos);
+    }
+
+    /** Where it last looked round from: the far ones are measured from here when a kind is full. */
+    private Cell center;
+
+    /** For tests: where it last looked round from, as a scan sets it. */
+    public void centerAt(Cell at) { center = at; }
+
+    public static int maxPerKind() { return MAX_PER_KIND; }
+
+    private static void evictFarthest(Map<Long, Cell> map, Cell from) {
+        var entries = new ArrayList<>(map.entrySet());
+        entries.sort((a, b) -> Long.compare(distanceSquared(b.getValue(), from), distanceSquared(a.getValue(), from)));
+        for (int i = 0; i < EVICT && i < entries.size(); i++) map.remove(entries.get(i).getKey());
+    }
+
+    private static long distanceSquared(Cell a, Cell b) {
+        long dx = a.x() - b.x(), dy = a.y() - b.y(), dz = a.z() - b.z();
+        return dx * dx + dy * dy + dz * dz;
     }
 
     /**
