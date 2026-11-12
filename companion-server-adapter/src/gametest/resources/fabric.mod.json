@@ -214,7 +214,8 @@
       "dev.kindred.fabric.NativeGatherTargetGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
       "dev.kindred.fabric.NativeOutingGameTests",
-      "dev.kindred.fabric.NativeAttentionGameTests"
+      "dev.kindred.fabric.NativeAttentionGameTests",
+      "dev.kindred.fabric.NativePitPocketGameTests"
     ]
   },
   "depends": {
