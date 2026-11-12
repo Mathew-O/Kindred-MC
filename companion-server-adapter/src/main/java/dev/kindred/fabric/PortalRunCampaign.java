@@ -1575,6 +1575,12 @@ final class PortalRunCampaign {
     /** For fixtures (F-29b): whether a move elsewhere is under way, and whether it was begun early for a rescue. */
     boolean relocatingForTest() { return relocate != null; }
 
+    /** The cell the goal's gather would go for first (its first {@code nearest}, with the one rule {@link #gatherable}). */
+    Optional<BlockPos> gatherTargetForTest(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
+        var player = body.entity();
+        return knowledge.nearest(player.getServerWorld(), kind, player.getBlockPos(), gatherable(body, kind, radius, also));
+    }
+
     boolean relocatingEarlyForTest() { return relocate != null && relocateEarly; }
 
     /** For fixtures: the watchdog gives a spot up after {@code ticks} of no progress rather than three minutes. */
@@ -3376,9 +3382,13 @@ final class PortalRunCampaign {
             if (below && source.getKey() == WorldFacts.Source.TREE) continue;
             // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight, and
             // nor are logs left hanging out of reach (sky-island run 12 explored the void for nine minutes for those).
+            // Nor, in a faction world, a tree on land it may not work (a safe zone, another faction's claim): its gather
+            // refuses those logs, and a plan that still counted them chose the gather again and again (M-06i, seed 110).
+            // Outside a faction world the territory guard allows everything.
             boolean tree = source.getKey() == WorldFacts.Source.TREE;
             knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
-                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)))
+                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)
+                                && TerritoryGuard.mayChange(player, p)))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
         // A generator counts from the moment its water is in: the lava that finishes it is already in hand.
@@ -3387,9 +3397,25 @@ final class PortalRunCampaign {
             nearest.put(WorldFacts.Source.GENERATOR, (int) Math.round(Math.sqrt(g.cobble().getSquaredDistance(feet))));
         }
         nearestSapling(player).ifPresent(sapling -> nearest.put(WorldFacts.Source.SAPLING, (int) Math.round(Math.sqrt(sapling.getSquaredDistance(feet)))));
+        // A diamond lying in reach, one it has just mined, is a diamond in sight as its ore was: with the ore gone and
+        // the diamond not yet picked up, the frame was weighed as if none were near, and the plan turned to the iron for
+        // a second bucket until it was in hand (F-30d (b)'s fixture, once in 735).
+        looseDiamond(player).ifPresent(d -> nearest.merge(WorldFacts.Source.DIAMOND_ORE, d, Math::min));
         facts = new WorldFacts(nearest, methods(player));
         factsTick = lastTick;
         return facts;
+    }
+
+    /**
+     * How far off the nearest diamond lying loose is, within the reach it picks up what it keeps from (eight blocks
+     * across, three up or down), in sight and not where it gave up going: as {@link #pickUpLoose} would go for it.
+     */
+    private Optional<Integer> looseDiamond(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        return world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(8, 3, 8),
+                        drop -> drop.getStack().isOf(Items.DIAMOND) && player.canSee(drop) && !blocked(drop.getBlockPos()))
+                .stream().map(drop -> (int) Math.round(Math.sqrt(drop.getBlockPos().getSquaredDistance(player.getBlockPos()))))
+                .min(Integer::compare);
     }
 
     /** Underground, sight lines are shorter and every walk is through the dark: ore within two dozen blocks. */
@@ -3871,6 +3897,12 @@ final class PortalRunCampaign {
     int logsKeptOutLinesForTest() { return logsKeptOutLines; }
     String logsKeptOutLastForTest() { return logsKeptOutLast; }
 
+    /** For fixtures: what its plan is made from, worked out afresh where the player stands. */
+    WorldFacts factsForTest(ServerPlayerEntity player) {
+        facts = null;
+        return facts(player);
+    }
+
     /**
      * Diagnostic only, no decision reads it: stuck, short of logs and its gather finding none, while logs stand within
      * eight blocks, a line saying what kept each out (known to it or not, set aside, given up, unreachable, and the
@@ -3968,16 +4000,25 @@ final class PortalRunCampaign {
         return player.getServerWorld().canPlayerModifyAt(player, pos) && TerritoryGuard.mayChange(player, pos);
     }
 
-    /** A block of {@code kind} the goal would go and gather from where the player stands now: the one rule for both. */
+    /**
+     * A block of {@code kind} the goal would go and gather from where the player stands now: the one rule for both.
+     * Whether an owned tool harvests a block depends on the kind of block and the inventory alone, so it is asked once
+     * per kind of block for the predicate's life: one gather's search, or one stop's, within a tick, the inventory
+     * unchanged through it. On seed 110 Factions the searches it filters were 9.4% of the server thread's samples, the
+     * best-tool question 2.8% (M-06k); the answers are the same.
+     */
     private Predicate<BlockPos> gatherable(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, Predicate<BlockPos> also) {
         var player = body.entity();
+        var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
+        var harvest = new java.util.HashMap<BlockState, Boolean>();
         return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
                 && also.test(p)
-                && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(player.getServerWorld(), p))
-                && harvestable(body, p) && mayWork(player, p)
-                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(player.getServerWorld(), p).isPresent());
+                && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(world, p))
+                && mayWork(player, p)
+                && harvest.computeIfAbsent(world.getBlockState(p), state -> NativeBreakAction.bestTool(body, state) != -2)
+                && (kind != WorldKnowledge.Kind.LOG || p.getY() <= feet.getY() + TRUNK_REACH && trunkFoot(world, p).isPresent());
     }
 
     /**
@@ -4917,8 +4958,14 @@ final class PortalRunCampaign {
 
     /** {@link #buildRoute(NativePlayerBody, BlockPos, java.util.function.Predicate, boolean, String)} under the server's current edit policy. */
     Optional<Task> buildRoute(NativePlayerBody body, EditPolicy.ServerPolicy policy, BlockPos target, java.util.function.Predicate<BlockPos> goal, String label) {
+        return buildRoute(body, policy, target, goal, false, label);
+    }
+
+    /** As above; {@code needEdit} refuses a way that only walks, for a caller whose walk there has just failed. */
+    Optional<Task> buildRoute(NativePlayerBody body, EditPolicy.ServerPolicy policy, BlockPos target, java.util.function.Predicate<BlockPos> goal,
+                              boolean needEdit, String label) {
         this.policy = policy;
-        return buildRoute(body, target, goal, false, label);
+        return buildRoute(body, target, goal, needEdit, label);
     }
 
     /**
@@ -7531,11 +7578,21 @@ final class PortalRunCampaign {
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
-    /** The nearest mob on foot after the player and in sight, close enough to strike it within a step. */
+    /** Closer than this, a shooter is a mob in reach (see {@link #onFootInReach}). */
+    static final double POINT_BLANK = 2.0;
+
+    /**
+     * The nearest mob on foot after the player and in sight, close enough to strike it within a step. A shooter counts
+     * once it stands closer than {@link #POINT_BLANK}: no block goes between them there, the cell it would go in holding
+     * the shooter or the player. In e40a20-79a9aad on 20261030 Echo, at 2.7 health with a skeleton 0.8 blocks off, tried
+     * cover into the skeleton's own cell ("Block placement produced no effect or was obstructed"), then, with no way off,
+     * rested to heal in its line of fire and was shot (4 of 6 replays on main b7027be).
+     */
     private static HostileEntity onFootInReach(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(3.0, 1.5, 3.0),
                         mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
-                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < 3.0 && player.canSee(mob))
+                                && (!(mob instanceof net.minecraft.entity.ai.RangedAttackMob) || player.distanceTo(mob) < POINT_BLANK)
+                                && player.distanceTo(mob) < 3.0 && player.canSee(mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 

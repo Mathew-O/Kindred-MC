@@ -807,6 +807,27 @@ leave it any time. A person in no faction is never a target, and an AI player in
 on the first start (10 members, power 0 to 10 starting at 10, −2 a qualifying PvP death, +1 an online hour, 80 chunks,
 500-block spawn exclusion, an 8,000-block border); an unknown key or a bad value is logged and the defaults apply.
 
+### Setting up a Factions server (M-06j1)
+
+Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-06j1.md)):
+
+1. Build the server from `packs/factions/` (its README): the seven mods by the index's links, each checked against its
+   SHA-512; the Fabric server launcher for 1.21.1 with Loader 0.19.5; the Kindred jar; the pack's `server.properties`,
+   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first.
+2. Start it, then at the console: `aiplayer mode world factions`, then `faction admin hub` (the safe zone, the borders,
+   the hub built). The mode is kept across restarts.
+3. Pre-generate with Chunky (the README's commands); `spark tps` after should read 20. Use
+   `spark heapsummary --save-to-file`, never the default, which uploads to spark's public paste site.
+4. AI players: `aiplayer native create <name>` puts one where the command stands. The console stands at world spawn,
+   inside the hub once it is built, so create the first with
+   `execute positioned ~20 ~ ~20 positioned over world_surface run aiplayer native create <name>`, and the rest beside it
+   with `execute at <first> positioned ~2 ~ ~ positioned over world_surface run ...`. Act for one with
+   `/faction as <player> <request>` (`create`, `invite`, `join`, `claim`, `coins`, `shop price <item>`, `ah list`, ...).
+5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
+   `aiplayer native connect <UUID>` for each.
+6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
+   read from the console.
+
 In a faction world:
 
 - `/faction create <name> <tag> [colour]`, `invite|uninvite|kick|promote|demote|leader <player>`, `join <faction>`,
@@ -840,7 +861,10 @@ In a faction world:
   and builds a lighthouse and a twelve-stall market hall at spawn; `/faction admin hub zone` does it without building.
   In a safe zone nobody's hit lands on a player and only operators change blocks. A Nether portal that would lead
   beyond the border takes nobody anywhere.
-- The market (M-06g): `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
+- The market (M-06g): bare `/shop` or `/market` opens its chest screen for a person at a client (M-06g1): what it
+  sells with what it pays and asks, and your own stacks with what each fetches; click one, then confirm to buy one,
+  sixteen or sixty-four, or to sell the stack. The price is quoted again at the confirming click and a moved price asks
+  again; clicks never move items. As text: `/shop sell hand`, `/shop sell all` (the estimate) then `/shop sell all confirm` (or `/sellall`),
   `/shop buy <item> <count>` (raw materials the market stocks), `/shop price [item]`, `/market top` (the day's movers),
   `/market history <item>`; operators `/market baseline <item> <hundredths> <mass|ordinary|scarce> [nobuy]` to price a
   pending item. Prices fall as the market fills and drift back over hours; a sale of many walks down the price; made
@@ -949,7 +973,8 @@ of three; one that does not is left out.
 `./gradlew :companion-server-adapter:runCorpus` plays every kept death again from its own ground and state, one test a
 scene. It takes about 25 minutes on four cores. `python3 tools/corpus/report.py <results.xml>...` prints the share that
 come through. `tools/corpus/gate.sh` runs it three times and compares the result with `tools/corpus/baseline.json`. It
-then runs any scene that newly fails alone, on the change and on main, before saying the change broke it.
+then runs any scene that newly fails alone, on the change and on main as the change has it (its merge-base with
+origin/main; `--main-ref REF` for another), before saying the change broke it.
 `KINDRED_CORPUS_ONLY=<id>,<id>` in the environment runs only those scenes.
 Nothing in a world is touched: the corpus runs in its own GameTest server.
 

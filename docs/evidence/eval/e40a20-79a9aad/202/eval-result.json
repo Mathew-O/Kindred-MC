@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "server": {"tickMsMean": 17.30, "tickMsWorst": 932.46, "tickMsWorstAt": 5838, "ticksOver50ms": 8815, "ticksOver200ms": 23, "heapMbMax": 1196, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1020, "stone_tools": 1960, "iron_ingot": 4100, "iron_pickaxe": 20940, "diamond": 37980},
+      "deaths": [
+        {"tick": 57825, "cause": "Kindred was slain by Zombie", "x": -52, "y": -40, "z": 33, "light": 0, "timeOfDay": 9987, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Wood: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 108504, "cause": "Kindred drowned", "x": -119, "y": 48, "z": 60, "light": 6, "timeOfDay": 12666, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: Get out of the water: open the way up at -119, 50, 60", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE, TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1520, "stone_tools": 3800, "iron_ingot": 11740, "iron_pickaxe": 42220},
+      "deaths": [
+        {"tick": 99963, "cause": "Sol was slain by Zombie", "x": -56, "y": -35, "z": 27, "light": 0, "timeOfDay": 4125, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 20780, "x": -112, "y": 40, "z": -13, "attempt": 1}, {"tick": 25100, "x": -136, "y": 37, "z": -13, "attempt": 2}, {"tick": 29560, "x": -135, "y": 34, "z": -37, "attempt": 3}, {"tick": 33680, "x": -116, "y": 30, "z": -40, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2480, "stone_tools": 4040, "iron_ingot": 8920, "iron_pickaxe": 53960},
+      "deaths": [
+        {"tick": 14825, "cause": "Echo was shot by Skeleton", "x": -93, "y": -3, "z": 4, "light": 0, "timeOfDay": 14987, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 96191, "cause": "Echo was slain by Zombie", "x": -119, "y": 44, "z": 16, "light": 0, "timeOfDay": 353, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 120365, "cause": "Echo drowned", "x": -119, "y": 35, "z": 59, "light": 0, "timeOfDay": 527, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: Get out of the water: up for air (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE, TORCH_AS_YOU_GO]", "task": "Get out of the water: up for air"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 77380, "x": -136, "y": 19, "z": 35, "attempt": 1}, {"tick": 110660, "x": -130, "y": 50, "z": 59, "attempt": 1}, {"tick": 116740, "x": -118, "y": 48, "z": 59, "attempt": 1}, {"tick": 129140, "x": -118, "y": 48, "z": 59, "attempt": 1}, {"tick": 133900, "x": -118, "y": 49, "z": 60, "attempt": 2}, {"tick": 138540, "x": -118, "y": 48, "z": 60, "attempt": 3}, {"tick": 143200, "x": -118, "y": 49, "z": 59, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

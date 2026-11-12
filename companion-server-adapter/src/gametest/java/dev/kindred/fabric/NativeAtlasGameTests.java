@@ -122,6 +122,73 @@ public final class NativeAtlasGameTests implements FabricGameTest {
     }
 
     /**
+     * A diamond it has just mined, lying beside it, is a diamond in sight: with two in hand and no diamond ore known, it
+     * wants the third and picks it up, its plan on the diamond throughout, rather than turn for a moment to the iron for a
+     * second bucket because no ore is left to mine (F-30d (b)'s fixture caught that turn once in 735: the remembered ore
+     * mined, the plan weighed the frame again before the diamond was picked up).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "atlasLooseDiamond", tickLimit = 1200)
+    public void aDiamondItJustMinedLyingBesideItKeepsItsPlanOnTheDiamond(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        BlockPos[] origin = new BlockPos[1];
+        List<String> steps = new ArrayList<>();
+        int[] settle = new int[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Prospector"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    chunks(world, o.add(-8, 0, -8), o.add(8, 0, 8), true);
+                    // A walled pad of stone in the open, three blocks thick, the sky over it; no ore anywhere.
+                    for (int x = -6; x <= 6; x++) for (int z = -5; z <= 5; z++) {
+                        for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
+                        boolean edge = Math.abs(x) == 6 || Math.abs(z) == 5;
+                        for (int y = 0; y <= 4; y++) {
+                            world.setBlockState(o.add(x, y, z), edge && y <= 2 ? Blocks.STONE.getDefaultState() : Blocks.AIR.getDefaultState());
+                        }
+                    }
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, -90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    kit(f, false);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(origin[0]), "On the pad"))
+                .createAndAdd(() -> context.assertTrue(++settle[0] >= 30, "A moment"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = origin[0];
+                    // The diamond it has just mined, three blocks east, still where it fell.
+                    var drop = new net.minecraft.entity.ItemEntity(world, o.getX() + 3.5, o.getY(), o.getZ() + 0.5, new ItemStack(Items.DIAMOND));
+                    drop.setVelocity(Vec3d.ZERO);
+                    world.spawnEntity(drop);
+                    var inventory = f.player().getInventory();
+                    context.assertTrue(ItemMoves.count(inventory, Items.DIAMOND) == 2 && ItemMoves.count(inventory, Items.WATER_BUCKET) == 1
+                            && ItemMoves.count(inventory, Items.DIAMOND_PICKAXE) == 0, "Two diamonds, one bucket");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (steps.isEmpty() || !steps.getLast().equals(progress)) steps.add(progress);
+                    context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.DIAMOND) >= 3, "The third diamond picked up: " + progress);
+                })
+                .createAndAdd(() -> {
+                    KindredMod.LOGGER.info("Loose diamond: its steps {}", steps);
+                    context.assertTrue(steps.stream().anyMatch(s -> s.contains("Pick up diamond")), "It picked up the diamond: " + steps);
+                    context.assertTrue(steps.stream().allMatch(s -> s.startsWith("Diamond:") || s.startsWith("Starting")),
+                            "Its plan on the diamond throughout, never the iron: " + steps);
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    chunks(context.getWorld(), origin[0].add(-8, 0, -8), origin[0].add(8, 0, 8), false);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * F-30d: what it saw is kept across a restart. It sees two diamond ores, the server stops and starts again, and,
      * put far off where it cannot see them, its atlas still holds them where they are, as last seen before the stop;
      * nothing it never saw (iron, a village) is in it. What its plan then does with them after a restart is F-30d's
