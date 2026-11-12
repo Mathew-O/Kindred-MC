@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 12.38, "tickMsWorst": 1067.09, "tickMsWorstAt": 5838, "ticksOver50ms": 312, "ticksOver200ms": 8, "heapMbMax": 943, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 860, "stone_tools": 2580, "iron_ingot": 8860, "iron_pickaxe": 16960, "obsidian": 71631},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 98920, "x": 101, "y": 63, "z": -125, "attempt": 1}, {"tick": 102820, "x": 105, "y": 63, "z": -128, "attempt": 2}, {"tick": 106760, "x": 138, "y": 62, "z": -136, "attempt": 3}, {"tick": 127360, "x": 32, "y": 59, "z": -51, "attempt": 4}, {"tick": 131340, "x": 7, "y": 63, "z": -53, "attempt": 5}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1936,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1440, "stone_tools": 2980, "iron_ingot": 6940, "iron_pickaxe": 42900, "obsidian": 68303, "portal_lit": 70311},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2278,
+      "chunkMinutes": 34680.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 380, "stone_tools": 1820, "iron_ingot": 6820},
+      "deaths": [
+        {"tick": 15732, "cause": "Echo tried to swim in lava", "x": 29, "y": -24, "z": -26, "light": 15, "timeOfDay": 15894, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "Rest to heal"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1104,
+      "chunkMinutes": 34675.2
+    }
+  }
+}
