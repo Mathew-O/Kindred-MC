@@ -123,6 +123,12 @@ final class PortalRunCampaign {
     private Direction digDirection = Direction.NORTH;
     /** Where a spell hurt and out of food last had open sky over its head (F-25c4ag); none outside such a spell. */
     private BlockPos hungryUpAt;
+    /**
+     * Whether such a spell has had it on top: under the sky with no rim beside it. From then on its looks are its own for
+     * the spell (F-22c65): on a hillside, a step up out from under a rim and the look down again, it climbed and looked
+     * by turns (the corpus's kindred-48005).
+     */
+    private boolean hungryOnTop;
     /** Where a climb last found water over its ceiling every way up, when, and the way it tunnels out (F-25c4ah). */
     private BlockPos underWaterAt;
     private long underWaterTick;
@@ -2471,18 +2477,31 @@ final class PortalRunCampaign {
             // climb held until it is above there or has no step left; with no step left, it looks as before. Two up in its
             // own climb's shaft out of a cut, the sky over it, its looks walked it back down to the cut's floor, still
             // counted as up, and looked again, north, south, the climb never taken again (F-22c65).
-            if (band && hungryUpAt != null && belowRim(player.getServerWorld(), feet)) {
+            boolean rim = belowRim(player.getServerWorld(), feet);
+            if (feet.equals(hungryUpAt) && !rim && !hungryOnTop) {
+                hungryOnTop = true;
+                KindredMod.LOGGER.info("{} hungry and on top at {}: its looks its own for the spell", player.getName().getString(), feet.toShortString());
+            }
+            if (band && hungryUpAt != null && rim && !hungryOnTop) {
                 boolean look = food.isPresent() && food.get().label().startsWith("Explore ");
                 if (climbHeld(player) || look && lookGoesDown(player, food.get(), hungryUpAt)) {
-                    var up = wayUp(body, "Climb toward the surface for food").map(this::heldClimb);
-                    if (up.isPresent()) food = up;
+                    // A climbing step only: a walk back the way it came is no climb. Held, its way up chosen afresh each
+                    // step, the walk back and the stair took turns, and with them the look, which walked it down again,
+                    // until it fell (the corpus's kindred-48005 under the gate). Its stair instead; with no step of that
+                    // either, it looks as before.
+                    var up = wayUp(body, "Climb toward the surface for food");
+                    if (up.isPresent() && up.get().label().endsWith(": back the way it came")) up = climb(body, "Climb toward the surface for food");
+                    if (up.isPresent()) food = up.map(this::heldClimb);
                 }
             }
             if (food.isPresent()) {
                 progress = stageLabel(stage) + ": hurt and out of food - " + food.get().label();
                 return food;
             }
-        } else hungryUpAt = null;
+        } else {
+            hungryUpAt = null;
+            hungryOnTop = false;
+        }
         // Advised to surface and recover: up out of the dark first, in daylight, then heal fully before going on.
         boolean recovering = stance() == StrategyAdvice.Stance.SURFACE_AND_RECOVER;
         if (recovering && underground(player) && !dark) {
