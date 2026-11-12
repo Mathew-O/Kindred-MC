@@ -3389,9 +3389,13 @@ final class PortalRunCampaign {
             if (below && source.getKey() == WorldFacts.Source.TREE) continue;
             // Only sources it could still go to: a tree across water it failed to reach is not a tree in sight, and
             // nor are logs left hanging out of reach (sky-island run 12 explored the void for nine minutes for those).
+            // Nor, in a faction world, a tree on land it may not work (a safe zone, another faction's claim): its gather
+            // refuses those logs, and a plan that still counted them chose the gather again and again (M-06i, seed 110).
+            // Outside a faction world the territory guard allows everything.
             boolean tree = source.getKey() == WorldFacts.Source.TREE;
             knowledge.nearest(world, source.getValue(), feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p)
-                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)))
+                            && (!tree || trunkFoot(world, p).isPresent() && (!island || p.getSquaredDistance(feet) <= ISLAND_TREES * ISLAND_TREES)
+                                && TerritoryGuard.mayChange(player, p)))
                     .ifPresent(pos -> nearest.put(source.getKey(), (int) Math.round(Math.sqrt(pos.getSquaredDistance(feet)))));
         }
         // A generator counts from the moment its water is in: the lava that finishes it is already in hand.
@@ -3899,6 +3903,12 @@ final class PortalRunCampaign {
     /** For fixtures: how many logs-kept-out lines it has logged, and the last. */
     int logsKeptOutLinesForTest() { return logsKeptOutLines; }
     String logsKeptOutLastForTest() { return logsKeptOutLast; }
+
+    /** For fixtures: what its plan is made from, worked out afresh where the player stands. */
+    WorldFacts factsForTest(ServerPlayerEntity player) {
+        facts = null;
+        return facts(player);
+    }
 
     /**
      * Diagnostic only, no decision reads it: stuck, short of logs and its gather finding none, while logs stand within
@@ -7834,11 +7844,21 @@ final class PortalRunCampaign {
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
-    /** The nearest mob on foot after the player and in sight, close enough to strike it within a step. */
+    /** Closer than this, a shooter is a mob in reach (see {@link #onFootInReach}). */
+    static final double POINT_BLANK = 2.0;
+
+    /**
+     * The nearest mob on foot after the player and in sight, close enough to strike it within a step. A shooter counts
+     * once it stands closer than {@link #POINT_BLANK}: no block goes between them there, the cell it would go in holding
+     * the shooter or the player. In e40a20-79a9aad on 20261030 Echo, at 2.7 health with a skeleton 0.8 blocks off, tried
+     * cover into the skeleton's own cell ("Block placement produced no effect or was obstructed"), then, with no way off,
+     * rested to heal in its line of fire and was shot (4 of 6 replays on main b7027be).
+     */
     private static HostileEntity onFootInReach(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(3.0, 1.5, 3.0),
                         mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
-                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob) && player.distanceTo(mob) < 3.0 && player.canSee(mob))
+                                && (!(mob instanceof net.minecraft.entity.ai.RangedAttackMob) || player.distanceTo(mob) < POINT_BLANK)
+                                && player.distanceTo(mob) < 3.0 && player.canSee(mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
