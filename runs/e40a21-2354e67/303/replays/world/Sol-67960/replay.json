@@ -1,0 +1,210 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 67960,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -62,
+    79,
+    -184
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.397160579387922,
+    8.0,
+    16.599066285217276
+  ],
+  "yaw": 181.6435,
+  "pitch": 13.461634,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.2,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 21
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 5
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 1011,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward -46, 87, -191",
+  "task": "try elsewhere, toward -46, 87, -191",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          19,
+          7,
+          22
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          16,
+          9,
+          17
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [
+      {
+        "at": [
+          18,
+          8,
+          14
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          14,
+          6,
+          29
+        ],
+        "n": 1
+      }
+    ],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [
+      [
+        26,
+        0,
+        28
+      ]
+    ],
+    "dug": [
+      [
+        15,
+        6,
+        20
+      ],
+      [
+        15,
+        5,
+        20
+      ],
+      [
+        17,
+        6,
+        20
+      ],
+      [
+        17,
+        7,
+        20
+      ],
+      [
+        1,
+        1,
+        27
+      ],
+      [
+        1,
+        0,
+        27
+      ],
+      [
+        16,
+        6,
+        20
+      ],
+      [
+        16,
+        5,
+        20
+      ],
+      [
+        16,
+        7,
+        20
+      ],
+      [
+        0,
+        1,
+        27
+      ],
+      [
+        0,
+        0,
+        27
+      ],
+      [
+        2,
+        1,
+        27
+      ],
+      [
+        2,
+        0,
+        27
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "south",
+    "exploreStalls": 0,
+    "exploreFailures": 53,
+    "stuckSpells": 5,
+    "stuckLevel": 1,
+    "leftOut": 7595
+  },
+  "log": [
+    "[10:36:16] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -45, 86, -164]",
+    "[10:36:16] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -45, 85, -164]",
+    "[10:36:17] [Server thread/INFO]: Sol native_goto COMPLETED [Dig in for the night: step down]",
+    "[10:36:17] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -46, 86, -164]",
+    "[10:36:17] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -46, 85, -164]",
+    "[10:36:17] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -46, 84, -164]",
+    "[10:36:18] [Server thread/INFO]: Sol native_goto COMPLETED [Dig in for the night: step down]",
+    "[10:36:18] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -47, 85, -164]",
+    "[10:36:18] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -47, 84, -164]",
+    "[10:36:19] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]"
+  ]
+}

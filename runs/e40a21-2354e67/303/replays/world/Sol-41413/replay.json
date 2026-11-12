@@ -1,0 +1,855 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 41413,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    75,
+    6,
+    39
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.583111306043037,
+    8.0,
+    16.019705156836558
+  ],
+  "yaw": 34.331974,
+  "pitch": 29.969202,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 11
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_bed",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 15
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 61
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 10
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 4
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 11
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 44
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 6,
+  "timeOfDay": 3379,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - make a way elsewhere: land first",
+  "task": "make a way elsewhere: land first",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol fell from a high place",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          9,
+          13,
+          2
+        ],
+        "left": 7987
+      },
+      {
+        "at": [
+          29,
+          11,
+          5
+        ],
+        "left": 3630
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          9,
+          13,
+          2
+        ],
+        "n": 3
+      },
+      {
+        "at": [
+          29,
+          11,
+          5
+        ],
+        "n": 2
+      },
+      {
+        "at": [
+          4,
+          16,
+          29
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [
+      {
+        "at": [
+          3,
+          14,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          14,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          14,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          15,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          15,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          15,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          16,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          16,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          16,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          10,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          10,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          10,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          11,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          11,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          11,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          12,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          12,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          12,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          13,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          13,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          3,
+          13,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          14,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          14,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          14,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          15,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          15,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          15,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          16,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          16,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          16,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          10,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          10,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          10,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          11,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          11,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          11,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          12,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          12,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          12,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          13,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          13,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          4,
+          13,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          14,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          14,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          14,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          15,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          15,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          15,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          16,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          16,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          16,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          10,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          10,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          10,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          11,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          11,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          11,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          12,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          12,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          12,
+          28
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          13,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          13,
+          29
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          5,
+          13,
+          28
+        ],
+        "left": 0
+      }
+    ],
+    "coverHeld": [],
+    "treesGivenUp": [
+      [
+        13,
+        0,
+        1
+      ]
+    ],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "IRON_ORE": [
+        [
+          4,
+          16,
+          29
+        ]
+      ],
+      "GRAVEL": [
+        [
+          21,
+          16,
+          9
+        ],
+        [
+          7,
+          10,
+          25
+        ],
+        [
+          7,
+          11,
+          26
+        ],
+        [
+          7,
+          12,
+          27
+        ],
+        [
+          8,
+          10,
+          26
+        ],
+        [
+          8,
+          11,
+          27
+        ],
+        [
+          9,
+          10,
+          26
+        ],
+        [
+          9,
+          11,
+          27
+        ],
+        [
+          10,
+          10,
+          27
+        ]
+      ],
+      "CAVE": [
+        [
+          29,
+          11,
+          5
+        ],
+        [
+          3,
+          14,
+          25
+        ],
+        [
+          6,
+          11,
+          24
+        ],
+        [
+          5,
+          14,
+          26
+        ],
+        [
+          6,
+          15,
+          29
+        ],
+        [
+          6,
+          12,
+          25
+        ],
+        [
+          9,
+          13,
+          2
+        ],
+        [
+          9,
+          14,
+          29
+        ],
+        [
+          9,
+          13,
+          28
+        ],
+        [
+          10,
+          13,
+          29
+        ]
+      ]
+    },
+    "exploreStalls": 44,
+    "exploreFailures": 53,
+    "stuckSpells": 4,
+    "stuckLevel": 4,
+    "leftOut": 7012
+  },
+  "log": [
+    "[10:28:49] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[10:28:49] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[10:28:49] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[10:28:50] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 92, 41, 57]",
+    "[10:28:50] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[10:28:50] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[10:28:50] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    "[10:28:50] [Server thread/INFO]: Sol native_goto COMPLETED [Climb to find another way: to the wall]",
+    "[10:28:52] [Server thread/INFO]: Sol native_goto COMPLETED [try elsewhere, toward 90, 40, 33]",
+    "[10:28:52] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 90, 40, 33 [try elsewhere, toward 90, 40, 33]",
+    "[10:28:52] [Server thread/INFO]: Sol native_place COMPLETED [make a way elsewhere: bridge 91, 39, 44]",
+    "[10:28:52] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+    "[10:28:52] [Server thread/INFO]: Sol native_place COMPLETED [make a way elsewhere: bridge 90, 39, 44]",
+    "[10:28:52] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+    "[10:28:53] [Server thread/INFO]: Sol native_break COMPLETED [climb away from here: clear 90, 42, 44]",
+    "[10:28:54] [Server thread/INFO]: Sol native_goto COMPLETED [try elsewhere, toward 4, 100, 51]",
+    "[10:28:55] [Server thread/INFO]: Sol native_pillar COMPLETED [make a way elsewhere: pillar up]",
+    "[10:28:55] [Server thread/INFO]: Sol native_stair COMPLETED [make a way elsewhere: stairs up 5]",
+    "[10:28:56] [Server thread/INFO]: Sol native_wait CANCELLED: The player died [make a way elsewhere: land first]",
+    "[10:28:56] [Server thread/INFO]: Sol died at 91, 14, 55: Sol fell from a high place (tick 41413, day, under cover, hunger 20, armour 0, holding cobblestone, no shield; doing \"make a way elsewhere: land first\" in \"Iron: no progress here for a while - make a way elsewhere: land first\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

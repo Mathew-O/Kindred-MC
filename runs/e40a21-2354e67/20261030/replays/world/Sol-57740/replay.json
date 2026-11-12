@@ -1,0 +1,562 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 57740,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    47,
+    -13,
+    169
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.43765180449953,
+    8.0,
+    16.567145124467544
+  ],
+  "yaw": -109.012245,
+  "pitch": 15.845819,
+  "health": 20.0,
+  "food": 19,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 4
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 41
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 26
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 41
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 3
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:cooked_mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 34
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 12
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 28
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 24
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:black_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 27
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 3
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:mossy_cobblestone",
+        "count": 14
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:coarse_dirt",
+        "count": 1
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 16
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 10
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 9739,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - try elsewhere, toward 62, -5, 161",
+  "task": "nothing",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          23,
+          14,
+          17
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        10,
+        16
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        15,
+        7,
+        16
+      ],
+      [
+        15,
+        9,
+        16
+      ],
+      [
+        19,
+        13,
+        16
+      ],
+      [
+        14,
+        8,
+        16
+      ],
+      [
+        20,
+        14,
+        16
+      ],
+      [
+        20,
+        13,
+        16
+      ],
+      [
+        21,
+        15,
+        16
+      ],
+      [
+        21,
+        14,
+        16
+      ],
+      [
+        21,
+        13,
+        16
+      ],
+      [
+        22,
+        16,
+        16
+      ],
+      [
+        22,
+        15,
+        16
+      ],
+      [
+        22,
+        14,
+        16
+      ],
+      [
+        23,
+        16,
+        15
+      ],
+      [
+        23,
+        16,
+        16
+      ],
+      [
+        23,
+        16,
+        17
+      ],
+      [
+        23,
+        15,
+        16
+      ],
+      [
+        23,
+        15,
+        17
+      ],
+      [
+        20,
+        12,
+        16
+      ],
+      [
+        19,
+        12,
+        16
+      ],
+      [
+        19,
+        11,
+        16
+      ],
+      [
+        18,
+        12,
+        16
+      ],
+      [
+        18,
+        11,
+        16
+      ],
+      [
+        18,
+        10,
+        16
+      ],
+      [
+        17,
+        11,
+        16
+      ],
+      [
+        17,
+        10,
+        16
+      ],
+      [
+        17,
+        9,
+        16
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        17,
+        13,
+        15
+      ],
+      [
+        13,
+        5,
+        15
+      ],
+      [
+        21,
+        13,
+        15
+      ],
+      [
+        17,
+        9,
+        15
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "GRAVEL": [
+        [
+          11,
+          12,
+          21
+        ],
+        [
+          23,
+          16,
+          17
+        ],
+        [
+          23,
+          15,
+          17
+        ]
+      ],
+      "CAVE": [
+        [
+          23,
+          16,
+          15
+        ],
+        [
+          20,
+          12,
+          16
+        ]
+      ]
+    },
+    "exploreHeading": "north",
+    "exploreStalls": 1,
+    "exploreFailures": 0,
+    "stuckSpells": 1,
+    "stuckLevel": 1,
+    "leftOut": 10383
+  },
+  "log": [
+    "[10:00:32] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:32] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:33] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:33] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:34] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:34] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:35] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:35] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:36] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:36] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:37] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:37] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:38] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:38] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:39] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:39] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:40] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:40] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]",
+    "[10:00:41] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]",
+    "[10:00:42] [Server thread/INFO]: Sol native_goto COMPLETED [try elsewhere, toward 62, -5, 161]"
+  ]
+}

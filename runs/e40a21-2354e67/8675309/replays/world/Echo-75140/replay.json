@@ -1,0 +1,562 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 75140,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    2,
+    -25,
+    27
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.890594271920943,
+    8.0,
+    16.556781416259724
+  ],
+  "yaw": -95.77535,
+  "pitch": 18.058815,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.6000004,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 59
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:gray_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cooked_mutton",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 186
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 2
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 12
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 19
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 5
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 31
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 3139,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Portal: no progress here for a while - try elsewhere, toward 17, -17, 19",
+  "task": "try elsewhere, toward 17, -17, 19",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          4,
+          7,
+          15
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        26,
+        5,
+        13
+      ],
+      [
+        26,
+        9,
+        13
+      ],
+      [
+        22,
+        5,
+        13
+      ],
+      [
+        18,
+        5,
+        13
+      ],
+      [
+        14,
+        5,
+        13
+      ],
+      [
+        14,
+        9,
+        13
+      ],
+      [
+        10,
+        5,
+        13
+      ],
+      [
+        30,
+        5,
+        13
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "IRON_ORE": [
+        [
+          3,
+          3,
+          32
+        ]
+      ],
+      "LAVA": [
+        [
+          0,
+          7,
+          16
+        ],
+        [
+          4,
+          7,
+          15
+        ],
+        [
+          3,
+          7,
+          16
+        ],
+        [
+          2,
+          7,
+          17
+        ],
+        [
+          1,
+          7,
+          18
+        ],
+        [
+          0,
+          7,
+          19
+        ],
+        [
+          0,
+          7,
+          18
+        ],
+        [
+          3,
+          7,
+          15
+        ],
+        [
+          1,
+          7,
+          16
+        ],
+        [
+          2,
+          7,
+          16
+        ],
+        [
+          0,
+          7,
+          17
+        ],
+        [
+          1,
+          7,
+          17
+        ]
+      ],
+      "CAVE": [
+        [
+          30,
+          8,
+          16
+        ],
+        [
+          26,
+          8,
+          16
+        ],
+        [
+          24,
+          8,
+          16
+        ],
+        [
+          18,
+          8,
+          16
+        ],
+        [
+          17,
+          8,
+          16
+        ],
+        [
+          10,
+          1,
+          32
+        ],
+        [
+          12,
+          8,
+          16
+        ],
+        [
+          9,
+          0,
+          21
+        ],
+        [
+          6,
+          1,
+          15
+        ],
+        [
+          7,
+          1,
+          31
+        ],
+        [
+          8,
+          1,
+          21
+        ],
+        [
+          8,
+          1,
+          19
+        ],
+        [
+          6,
+          8,
+          15
+        ],
+        [
+          5,
+          0,
+          22
+        ],
+        [
+          5,
+          1,
+          14
+        ],
+        [
+          5,
+          1,
+          31
+        ],
+        [
+          5,
+          1,
+          18
+        ],
+        [
+          2,
+          8,
+          15
+        ],
+        [
+          1,
+          2,
+          15
+        ],
+        [
+          1,
+          1,
+          31
+        ],
+        [
+          0,
+          8,
+          15
+        ]
+      ]
+    },
+    "exploreStalls": 7,
+    "exploreFailures": 2,
+    "stuckSpells": 2,
+    "stuckLevel": 1,
+    "leftOut": 22025
+  },
+  "log": [
+    "[11:35:57] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:35:57] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:35:58] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:35:58] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:35:59] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:00] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:00] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:01] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:01] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:02] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:03] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:03] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:04] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:04] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:05] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:05] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:06] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:07] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:07] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[11:36:08] [Server thread/INFO]: Echo native_wait COMPLETED [Wait for the team\u0027s portal]"
+  ]
+}

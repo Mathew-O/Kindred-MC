@@ -1,0 +1,671 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 13761,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -440,
+    19,
+    -145
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.30000001192093,
+    8.0,
+    16.69999998807907
+  ],
+  "yaw": -107.65012,
+  "pitch": 10.790322,
+  "health": 4.999999,
+  "food": 20,
+  "saturation": 7.8,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:cooked_porkchop",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 29
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 7
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 24
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 45
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 3
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 53
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 15
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 56
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 9
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 3
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 63
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 4
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 13
+        }
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 13761,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Back off from skeleton",
+  "task": "Rest to heal",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred was shot by Skeleton",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          7,
+          8,
+          19
+        ],
+        "left": 2286
+      },
+      {
+        "at": [
+          6,
+          8,
+          18
+        ],
+        "left": 2129
+      },
+      {
+        "at": [
+          17,
+          9,
+          18
+        ],
+        "left": 5690
+      },
+      {
+        "at": [
+          18,
+          10,
+          18
+        ],
+        "left": 5685
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          7,
+          8,
+          19
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          6,
+          8,
+          18
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [
+      [
+        19,
+        8,
+        18
+      ],
+      [
+        19,
+        9,
+        18
+      ],
+      [
+        20,
+        8,
+        16
+      ],
+      [
+        20,
+        7,
+        16
+      ]
+    ],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        16,
+        5,
+        17
+      ],
+      [
+        32,
+        9,
+        1
+      ],
+      [
+        24,
+        5,
+        13
+      ],
+      [
+        16,
+        5,
+        13
+      ],
+      [
+        20,
+        5,
+        17
+      ],
+      [
+        20,
+        9,
+        17
+      ],
+      [
+        28,
+        9,
+        1
+      ],
+      [
+        28,
+        9,
+        5
+      ],
+      [
+        28,
+        5,
+        5
+      ],
+      [
+        28,
+        5,
+        9
+      ],
+      [
+        28,
+        5,
+        13
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "COAL_ORE": [
+        [
+          28,
+          13,
+          0
+        ],
+        [
+          31,
+          7,
+          8
+        ],
+        [
+          32,
+          7,
+          8
+        ]
+      ],
+      "GRAVEL": [
+        [
+          15,
+          8,
+          14
+        ],
+        [
+          15,
+          8,
+          15
+        ],
+        [
+          15,
+          8,
+          16
+        ],
+        [
+          16,
+          7,
+          12
+        ],
+        [
+          16,
+          7,
+          13
+        ],
+        [
+          16,
+          7,
+          14
+        ],
+        [
+          16,
+          7,
+          15
+        ],
+        [
+          16,
+          7,
+          16
+        ],
+        [
+          17,
+          7,
+          12
+        ],
+        [
+          17,
+          7,
+          13
+        ],
+        [
+          17,
+          7,
+          14
+        ],
+        [
+          17,
+          6,
+          11
+        ],
+        [
+          17,
+          6,
+          15
+        ],
+        [
+          17,
+          6,
+          16
+        ],
+        [
+          18,
+          7,
+          12
+        ],
+        [
+          18,
+          7,
+          13
+        ],
+        [
+          18,
+          7,
+          14
+        ],
+        [
+          18,
+          6,
+          15
+        ]
+      ],
+      "CAVE": [
+        [
+          24,
+          7,
+          18
+        ],
+        [
+          31,
+          7,
+          17
+        ],
+        [
+          31,
+          8,
+          21
+        ],
+        [
+          29,
+          9,
+          20
+        ],
+        [
+          30,
+          9,
+          21
+        ],
+        [
+          31,
+          9,
+          5
+        ],
+        [
+          31,
+          10,
+          4
+        ],
+        [
+          30,
+          7,
+          10
+        ],
+        [
+          30,
+          7,
+          13
+        ],
+        [
+          31,
+          8,
+          7
+        ],
+        [
+          32,
+          7,
+          17
+        ],
+        [
+          32,
+          8,
+          21
+        ],
+        [
+          32,
+          9,
+          23
+        ],
+        [
+          32,
+          9,
+          5
+        ],
+        [
+          32,
+          8,
+          7
+        ],
+        [
+          32,
+          8,
+          9
+        ],
+        [
+          32,
+          7,
+          13
+        ],
+        [
+          15,
+          9,
+          11
+        ],
+        [
+          15,
+          6,
+          2
+        ],
+        [
+          15,
+          7,
+          5
+        ],
+        [
+          15,
+          8,
+          9
+        ],
+        [
+          18,
+          7,
+          17
+        ],
+        [
+          16,
+          7,
+          6
+        ],
+        [
+          16,
+          7,
+          9
+        ],
+        [
+          19,
+          7,
+          15
+        ],
+        [
+          16,
+          6,
+          3
+        ],
+        [
+          22,
+          7,
+          17
+        ],
+        [
+          20,
+          9,
+          12
+        ],
+        [
+          20,
+          9,
+          13
+        ],
+        [
+          20,
+          7,
+          15
+        ]
+      ]
+    },
+    "strandedAt": [
+      16,
+      8,
+      16
+    ],
+    "strandedWalks": 2,
+    "strandedAgo": 114,
+    "exploreHeading": "west",
+    "exploreStalls": 0,
+    "exploreFailures": 0,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 4555
+  },
+  "log": [
+    "[09:49:42] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:49:42] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[09:49:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:49:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:49:45] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[09:49:45] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[09:49:45] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal -422, 29, -127]",
+    "[09:49:45] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal -423, 28, -127]",
+    "[09:49:45] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:49:45] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -434, 27, -127 [Back off from skeleton]",
+    "[09:49:46] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3227]",
+    "[09:49:46] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Rest to heal]",
+    "[09:49:47] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[09:49:47] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[09:49:47] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[09:49:47] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[09:49:47] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -433, 27, -126 [Back off from skeleton]",
+    "[09:49:48] [Server thread/INFO]: Kindred native_wait COMPLETED [Rest to heal]",
+    "[09:49:49] [Server thread/INFO]: Kindred native_wait CANCELLED: The player died [Rest to heal]",
+    "[09:49:49] [Server thread/INFO]: Kindred died at -424, 27, -129: Kindred was shot by Skeleton (tick 13761, night, under cover, hunger 19, armour 0, holding dirt, a shield; doing \"Rest to heal\" in \"Iron: fight back - Back off from skeleton\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

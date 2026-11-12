@@ -1,0 +1,542 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 80140,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    124,
+    59,
+    393
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.72447756065077,
+    8.0,
+    16.499747902403897
+  ],
+  "yaw": -156.0118,
+  "pitch": 12.0,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 4
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:azalea",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 124
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 17
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 107
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 45
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 34
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 12
+        }
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 2
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 1
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cactus",
+        "count": 3
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 18
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 8139,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Portal: no progress here for a while - try elsewhere, toward 140, 67, 385",
+  "task": "Wait for the team\u0027s portal",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        13,
+        7,
+        26
+      ],
+      [
+        13,
+        6,
+        26
+      ],
+      [
+        15,
+        7,
+        26
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        15,
+        6,
+        26
+      ],
+      [
+        14,
+        7,
+        26
+      ],
+      [
+        14,
+        6,
+        26
+      ],
+      [
+        17,
+        8,
+        16
+      ],
+      [
+        17,
+        6,
+        26
+      ],
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        6,
+        26
+      ],
+      [
+        19,
+        6,
+        26
+      ],
+      [
+        18,
+        6,
+        26
+      ],
+      [
+        21,
+        6,
+        26
+      ],
+      [
+        20,
+        7,
+        26
+      ],
+      [
+        20,
+        6,
+        26
+      ],
+      [
+        23,
+        7,
+        26
+      ],
+      [
+        23,
+        8,
+        16
+      ],
+      [
+        23,
+        6,
+        26
+      ],
+      [
+        22,
+        6,
+        26
+      ],
+      [
+        25,
+        7,
+        26
+      ],
+      [
+        25,
+        6,
+        26
+      ],
+      [
+        24,
+        7,
+        26
+      ],
+      [
+        24,
+        8,
+        16
+      ],
+      [
+        24,
+        6,
+        26
+      ],
+      [
+        27,
+        7,
+        26
+      ],
+      [
+        27,
+        6,
+        26
+      ],
+      [
+        26,
+        7,
+        26
+      ],
+      [
+        26,
+        6,
+        26
+      ],
+      [
+        29,
+        7,
+        26
+      ],
+      [
+        29,
+        6,
+        26
+      ],
+      [
+        28,
+        7,
+        26
+      ],
+      [
+        28,
+        6,
+        26
+      ],
+      [
+        31,
+        7,
+        26
+      ],
+      [
+        31,
+        6,
+        26
+      ],
+      [
+        30,
+        7,
+        26
+      ],
+      [
+        30,
+        6,
+        26
+      ],
+      [
+        32,
+        7,
+        26
+      ],
+      [
+        32,
+        6,
+        26
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "east",
+    "exploreStalls": 0,
+    "exploreFailures": 0,
+    "stuckSpells": 1,
+    "stuckLevel": 1,
+    "leftOut": 6323
+  },
+  "log": [
+    "[10:35:42] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:42] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:43] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:44] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:44] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:45] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:45] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:46] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:46] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:47] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:47] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:48] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:49] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:49] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:50] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:51] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:51] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:52] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]",
+    "[10:35:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for the team\u0027s portal]"
+  ]
+}

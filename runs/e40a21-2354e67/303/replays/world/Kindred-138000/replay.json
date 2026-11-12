@@ -1,0 +1,901 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 138000,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -189,
+    -62,
+    34
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.485072702439567,
+    8.0,
+    16.48088536323992
+  ],
+  "yaw": 88.88836,
+  "pitch": 6.9441657,
+  "health": 20.0,
+  "food": 19,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 35
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cooked_beef",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 32
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cooked_mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 40
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 41
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:smooth_basalt",
+        "count": 4
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 14
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:amethyst_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 53
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 6
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 54
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 31
+        }
+      }
+    }
+  ],
+  "selected": 7,
+  "timeOfDay": 7168,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - dig toward elsewhere: clear -174, -53, 50",
+  "task": "dig toward elsewhere: clear -174, -53, 50",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          17,
+          8,
+          14
+        ],
+        "left": 76792
+      },
+      {
+        "at": [
+          14,
+          7,
+          17
+        ],
+        "left": 1294
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          17,
+          8,
+          14
+        ],
+        "n": 6792
+      },
+      {
+        "at": [
+          13,
+          9,
+          18
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          22,
+          10,
+          16
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          14,
+          7,
+          17
+        ],
+        "n": 2
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        9,
+        17
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        17,
+        8,
+        17
+      ],
+      [
+        17,
+        8,
+        16
+      ],
+      [
+        17,
+        9,
+        17
+      ],
+      [
+        17,
+        9,
+        16
+      ],
+      [
+        17,
+        9,
+        15
+      ],
+      [
+        18,
+        8,
+        17
+      ],
+      [
+        18,
+        8,
+        16
+      ],
+      [
+        18,
+        9,
+        17
+      ],
+      [
+        18,
+        9,
+        16
+      ],
+      [
+        19,
+        8,
+        17
+      ],
+      [
+        19,
+        8,
+        16
+      ],
+      [
+        19,
+        9,
+        17
+      ],
+      [
+        19,
+        9,
+        16
+      ],
+      [
+        20,
+        8,
+        16
+      ],
+      [
+        20,
+        8,
+        17
+      ],
+      [
+        20,
+        9,
+        16
+      ],
+      [
+        20,
+        9,
+        17
+      ],
+      [
+        21,
+        10,
+        17
+      ],
+      [
+        21,
+        10,
+        16
+      ],
+      [
+        21,
+        10,
+        18
+      ],
+      [
+        21,
+        10,
+        19
+      ],
+      [
+        21,
+        11,
+        16
+      ],
+      [
+        21,
+        11,
+        17
+      ],
+      [
+        21,
+        11,
+        18
+      ],
+      [
+        21,
+        11,
+        19
+      ],
+      [
+        21,
+        12,
+        16
+      ],
+      [
+        21,
+        12,
+        17
+      ],
+      [
+        21,
+        12,
+        18
+      ],
+      [
+        21,
+        12,
+        19
+      ],
+      [
+        21,
+        8,
+        17
+      ],
+      [
+        21,
+        8,
+        16
+      ],
+      [
+        21,
+        8,
+        18
+      ],
+      [
+        21,
+        8,
+        19
+      ],
+      [
+        21,
+        9,
+        17
+      ],
+      [
+        21,
+        9,
+        16
+      ],
+      [
+        21,
+        9,
+        18
+      ],
+      [
+        21,
+        9,
+        19
+      ],
+      [
+        22,
+        10,
+        16
+      ],
+      [
+        22,
+        10,
+        17
+      ],
+      [
+        22,
+        10,
+        18
+      ],
+      [
+        22,
+        10,
+        19
+      ],
+      [
+        22,
+        11,
+        16
+      ],
+      [
+        22,
+        11,
+        17
+      ],
+      [
+        22,
+        11,
+        18
+      ],
+      [
+        22,
+        11,
+        19
+      ],
+      [
+        22,
+        12,
+        17
+      ],
+      [
+        22,
+        12,
+        18
+      ],
+      [
+        22,
+        8,
+        17
+      ],
+      [
+        22,
+        8,
+        18
+      ],
+      [
+        22,
+        9,
+        17
+      ],
+      [
+        22,
+        9,
+        16
+      ],
+      [
+        22,
+        9,
+        18
+      ],
+      [
+        22,
+        9,
+        19
+      ],
+      [
+        23,
+        10,
+        17
+      ],
+      [
+        23,
+        8,
+        17
+      ],
+      [
+        23,
+        9,
+        17
+      ],
+      [
+        24,
+        10,
+        17
+      ],
+      [
+        24,
+        8,
+        17
+      ],
+      [
+        24,
+        9,
+        17
+      ],
+      [
+        25,
+        8,
+        17
+      ],
+      [
+        25,
+        9,
+        17
+      ],
+      [
+        26,
+        8,
+        17
+      ],
+      [
+        26,
+        9,
+        17
+      ],
+      [
+        27,
+        8,
+        17
+      ],
+      [
+        27,
+        9,
+        17
+      ],
+      [
+        28,
+        8,
+        17
+      ],
+      [
+        28,
+        9,
+        17
+      ],
+      [
+        29,
+        8,
+        17
+      ],
+      [
+        29,
+        9,
+        17
+      ],
+      [
+        30,
+        8,
+        17
+      ],
+      [
+        30,
+        9,
+        17
+      ],
+      [
+        31,
+        8,
+        17
+      ],
+      [
+        31,
+        9,
+        17
+      ],
+      [
+        32,
+        8,
+        17
+      ],
+      [
+        32,
+        9,
+        17
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        13,
+        6,
+        14
+      ],
+      [
+        17,
+        6,
+        14
+      ],
+      [
+        17,
+        6,
+        18
+      ],
+      [
+        21,
+        6,
+        14
+      ],
+      [
+        21,
+        6,
+        18
+      ],
+      [
+        25,
+        6,
+        14
+      ],
+      [
+        29,
+        6,
+        14
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "LAVA": [
+        [
+          14,
+          7,
+          17
+        ]
+      ],
+      "OBSIDIAN": [
+        [
+          22,
+          10,
+          16
+        ],
+        [
+          22,
+          10,
+          19
+        ],
+        [
+          22,
+          8,
+          17
+        ],
+        [
+          22,
+          8,
+          18
+        ],
+        [
+          22,
+          9,
+          16
+        ],
+        [
+          22,
+          9,
+          19
+        ]
+      ],
+      "CAVE": [
+        [
+          13,
+          9,
+          18
+        ],
+        [
+          16,
+          8,
+          16
+        ],
+        [
+          20,
+          8,
+          17
+        ],
+        [
+          17,
+          8,
+          18
+        ],
+        [
+          24,
+          8,
+          17
+        ],
+        [
+          21,
+          8,
+          18
+        ],
+        [
+          28,
+          8,
+          17
+        ],
+        [
+          32,
+          8,
+          17
+        ]
+      ]
+    },
+    "strandedAt": [
+      16,
+      8,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 5,
+    "exploreStalls": 124,
+    "exploreFailures": 33,
+    "stuckSpells": 6,
+    "stuckLevel": 2,
+    "leftOut": 11340
+  },
+  "log": [
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from -173, -54, 50: the line to its middle meets Block{minecraft:deepslate}[axis\u003dy] at -173, -53, 49 [Take its bed back up in the morning]",
+    "[10:57:59] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -197, -54, 50 [try elsewhere, toward -197, -54, 50]"
+  ]
+}

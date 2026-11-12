@@ -1,0 +1,362 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 48140,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    233,
+    77,
+    119
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.15696201245268,
+    8.0,
+    16.34275756676888
+  ],
+  "yaw": -272.14093,
+  "pitch": 26.93928,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 7.6000004,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 8
+        }
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cooked_beef",
+        "count": 3
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:wheat_seeds",
+        "count": 3
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 27
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cooked_mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 129
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 55
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:white_bed",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 37
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 40
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 5
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 13
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 4
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 57
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 10105,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - try elsewhere, toward 1, 99, 48",
+  "task": "try elsewhere, toward 1, 99, 48",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          16,
+          11,
+          16
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "strandedAt": [
+      16,
+      6,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 3784,
+    "exploreHeading": "north",
+    "exploreStalls": 1,
+    "exploreFailures": 2,
+    "stuckSpells": 3,
+    "stuckLevel": 3,
+    "leftOut": 7085
+  },
+  "log": [
+    "[10:29:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel for water: step down]",
+    "[10:29:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel for water: step down]",
+    "[10:29:52] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: back the way it came]",
+    "[10:29:55] [Server thread/INFO]: Kindred native_goto COMPLETED [try elsewhere, toward 249, 88, 135]",
+    "[10:29:55] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 249, 88, 135 [try elsewhere, toward 249, 88, 135]",
+    "[10:29:55] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:29:55] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: step up]",
+    "[10:29:56] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:29:56] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: step up]",
+    "[10:29:56] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:29:56] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: step up]",
+    "[10:29:56] [Server thread/INFO]: Kindred native_wait COMPLETED [make a way elsewhere: land first]",
+    "[10:29:57] [Server thread/INFO]: Kindred native_goto COMPLETED [make a way elsewhere: walk on]",
+    "[10:29:57] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: advance]",
+    "[10:29:57] [Server thread/INFO]: Kindred native_goto COMPLETED [make a way elsewhere: walk on]",
+    "[10:29:57] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: advance]",
+    "[10:29:57] [Server thread/INFO]: Kindred native_goto COMPLETED [dig toward elsewhere: advance]",
+    "[10:29:58] [Server thread/INFO]: Kindred native_swap COMPLETED [Ready a block]",
+    "[10:29:58] [Server thread/INFO]: Kindred native_stair COMPLETED [make a way elsewhere: stairs up 1]",
+    "[10:29:58] [Server thread/INFO]: Kindred native_pillar COMPLETED [make a way elsewhere: pillar up]"
+  ]
+}

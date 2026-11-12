@@ -1,0 +1,643 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 143860,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -64,
+    -12,
+    -21
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.440728563842562,
+    8.0,
+    16.63660864480252
+  ],
+  "yaw": -177.63007,
+  "pitch": 16.53735,
+  "health": 20.0,
+  "food": 13,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 9
+        }
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 23
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 12
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 61
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 22
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 36
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 11
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 1
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 3
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 33
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 15
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 3
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 4
+        }
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 20
+        }
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 23859,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - make a way elsewhere: bridge -47, -5, -5",
+  "task": "make a way elsewhere: bridge -47, -5, -5",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO, SPARE_PICKAXE]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          16,
+          7,
+          17
+        ],
+        "left": 2245
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          16,
+          11,
+          16
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [
+      {
+        "at": [
+          16,
+          9,
+          17
+        ],
+        "n": 1
+      }
+    ],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        16,
+        14,
+        18
+      ],
+      [
+        16,
+        13,
+        18
+      ],
+      [
+        16,
+        13,
+        17
+      ],
+      [
+        16,
+        12,
+        18
+      ],
+      [
+        16,
+        12,
+        17
+      ],
+      [
+        16,
+        12,
+        16
+      ],
+      [
+        17,
+        15,
+        18
+      ],
+      [
+        17,
+        14,
+        18
+      ],
+      [
+        17,
+        13,
+        18
+      ],
+      [
+        18,
+        16,
+        18
+      ],
+      [
+        18,
+        15,
+        18
+      ],
+      [
+        18,
+        14,
+        18
+      ],
+      [
+        19,
+        16,
+        18
+      ],
+      [
+        19,
+        15,
+        18
+      ],
+      [
+        16,
+        11,
+        17
+      ],
+      [
+        16,
+        11,
+        16
+      ],
+      [
+        16,
+        10,
+        16
+      ],
+      [
+        16,
+        10,
+        17
+      ],
+      [
+        16,
+        9,
+        17
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        8,
+        17
+      ],
+      [
+        16,
+        7,
+        17
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        16,
+        16,
+        5
+      ],
+      [
+        16,
+        16,
+        9
+      ],
+      [
+        16,
+        12,
+        17
+      ],
+      [
+        20,
+        16,
+        13
+      ],
+      [
+        20,
+        16,
+        17
+      ],
+      [
+        16,
+        8,
+        17
+      ],
+      [
+        16,
+        8,
+        13
+      ],
+      [
+        16,
+        4,
+        17
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "IRON_ORE": [
+        [
+          3,
+          11,
+          1
+        ],
+        [
+          4,
+          11,
+          1
+        ]
+      ],
+      "GRAVEL": [
+        [
+          29,
+          14,
+          19
+        ],
+        [
+          29,
+          14,
+          20
+        ],
+        [
+          30,
+          14,
+          18
+        ],
+        [
+          30,
+          14,
+          19
+        ],
+        [
+          30,
+          13,
+          20
+        ],
+        [
+          31,
+          14,
+          17
+        ],
+        [
+          31,
+          14,
+          18
+        ],
+        [
+          31,
+          13,
+          19
+        ],
+        [
+          31,
+          13,
+          20
+        ],
+        [
+          32,
+          14,
+          16
+        ],
+        [
+          32,
+          14,
+          17
+        ],
+        [
+          32,
+          13,
+          18
+        ],
+        [
+          32,
+          13,
+          19
+        ],
+        [
+          32,
+          13,
+          20
+        ],
+        [
+          30,
+          13,
+          21
+        ]
+      ],
+      "CAVE": [
+        [
+          16,
+          8,
+          16
+        ],
+        [
+          16,
+          7,
+          17
+        ],
+        [
+          7,
+          14,
+          2
+        ],
+        [
+          8,
+          14,
+          1
+        ],
+        [
+          19,
+          15,
+          18
+        ]
+      ]
+    },
+    "strandedAt": [
+      16,
+      8,
+      16
+    ],
+    "strandedWalks": 75,
+    "strandedAgo": 5,
+    "exploreStalls": 6,
+    "exploreFailures": 170,
+    "stuckSpells": 1,
+    "stuckLevel": 1,
+    "leftOut": 24553
+  },
+  "log": [
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -74, -27, -11 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -75, -27, -7 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -75, -27, -8 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -75, -27, -9 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -75, -27, -10 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -75, -27, -11 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -76, -27, -7 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -76, -27, -8 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -76, -27, -9 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -76, -27, -10 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -77, -27, -8 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -77, -27, -9 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -78, -27, -7 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -78, -27, -8 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -79, -27, -6 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -79, -27, -7 [Cast: walk to the lava]",
+    "[11:19:32] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -79, -27, -8 [Cast: walk to the lava]",
+    "[11:19:33] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward lava: step down]",
+    "[11:19:33] [Server thread/INFO]: Echo native_goto COMPLETED [Climb to find another way: step up]",
+    "[11:19:34] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -24, -4, -5 [try elsewhere, toward -24, -4, -5]"
+  ]
+}

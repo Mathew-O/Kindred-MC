@@ -1,0 +1,1700 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 35620,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    76,
+    32,
+    41
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.392054736867024,
+    8.0,
+    16.478179308184558
+  ],
+  "yaw": -41538.477,
+  "pitch": 18.159489,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:white_bed",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 3
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 82
+        }
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 6
+        }
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 11
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 5,
+  "timeOfDay": 10282,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - dig toward elsewhere: to the wall",
+  "task": "dig toward elsewhere: to the wall",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          14,
+          14,
+          10
+        ],
+        "left": 5992
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          14,
+          14,
+          10
+        ],
+        "n": 3
+      },
+      {
+        "at": [
+          9,
+          2,
+          17
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [
+      {
+        "at": [
+          13,
+          11,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          11,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          11,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          10,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          10,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          10,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          9,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          9,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          9,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          8,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          8,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          8,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          15,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          15,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          15,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          14,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          14,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          14,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          13,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          13,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          13,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          12,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          12,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          12,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          16,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          16,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          13,
+          16,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          11,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          11,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          11,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          10,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          10,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          10,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          9,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          9,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          9,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          8,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          8,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          8,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          15,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          15,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          15,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          14,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          14,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          14,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          13,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          13,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          13,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          12,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          12,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          12,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          16,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          16,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          14,
+          16,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          11,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          11,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          11,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          10,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          10,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          10,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          9,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          9,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          9,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          8,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          8,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          8,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          15,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          15,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          15,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          14,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          14,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          14,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          13,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          13,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          13,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          12,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          12,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          12,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          16,
+          11
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          16,
+          10
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      },
+      {
+        "at": [
+          15,
+          16,
+          9
+        ],
+        "left": 5992,
+        "from": [
+          14,
+          8,
+          16
+        ]
+      }
+    ],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        14,
+        9,
+        16
+      ],
+      [
+        14,
+        8,
+        16
+      ],
+      [
+        15,
+        11,
+        15
+      ],
+      [
+        15,
+        10,
+        15
+      ],
+      [
+        15,
+        9,
+        15
+      ],
+      [
+        15,
+        9,
+        16
+      ],
+      [
+        15,
+        8,
+        15
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        15,
+        15,
+        15
+      ],
+      [
+        15,
+        14,
+        15
+      ],
+      [
+        15,
+        13,
+        15
+      ],
+      [
+        15,
+        12,
+        15
+      ],
+      [
+        15,
+        16,
+        15
+      ],
+      [
+        16,
+        7,
+        15
+      ],
+      [
+        16,
+        11,
+        15
+      ],
+      [
+        16,
+        10,
+        3
+      ],
+      [
+        16,
+        10,
+        15
+      ],
+      [
+        16,
+        9,
+        15
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        16,
+        8,
+        15
+      ],
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        15,
+        15
+      ],
+      [
+        16,
+        14,
+        15
+      ],
+      [
+        16,
+        13,
+        15
+      ],
+      [
+        16,
+        12,
+        15
+      ],
+      [
+        16,
+        16,
+        15
+      ],
+      [
+        17,
+        7,
+        14
+      ],
+      [
+        17,
+        9,
+        14
+      ],
+      [
+        17,
+        8,
+        14
+      ],
+      [
+        18,
+        9,
+        10
+      ],
+      [
+        18,
+        8,
+        10
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        12,
+        8,
+        15
+      ],
+      [
+        12,
+        8,
+        11
+      ],
+      [
+        12,
+        12,
+        15
+      ],
+      [
+        12,
+        16,
+        15
+      ],
+      [
+        16,
+        4,
+        15
+      ],
+      [
+        16,
+        4,
+        11
+      ],
+      [
+        16,
+        8,
+        15
+      ],
+      [
+        16,
+        8,
+        11
+      ],
+      [
+        16,
+        8,
+        7
+      ],
+      [
+        16,
+        8,
+        3
+      ],
+      [
+        16,
+        12,
+        15
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "COAL_ORE": [
+        [
+          15,
+          11,
+          16
+        ],
+        [
+          16,
+          11,
+          16
+        ],
+        [
+          15,
+          10,
+          16
+        ],
+        [
+          16,
+          10,
+          16
+        ],
+        [
+          14,
+          8,
+          2
+        ],
+        [
+          16,
+          9,
+          17
+        ],
+        [
+          14,
+          9,
+          2
+        ],
+        [
+          10,
+          12,
+          8
+        ]
+      ],
+      "IRON_ORE": [
+        [
+          14,
+          14,
+          10
+        ]
+      ],
+      "GRAVEL": [
+        [
+          20,
+          2,
+          4
+        ],
+        [
+          20,
+          3,
+          0
+        ],
+        [
+          20,
+          3,
+          1
+        ],
+        [
+          20,
+          3,
+          2
+        ],
+        [
+          20,
+          3,
+          3
+        ],
+        [
+          20,
+          4,
+          2
+        ],
+        [
+          20,
+          5,
+          2
+        ],
+        [
+          21,
+          2,
+          4
+        ],
+        [
+          21,
+          3,
+          0
+        ],
+        [
+          21,
+          3,
+          1
+        ],
+        [
+          21,
+          3,
+          2
+        ],
+        [
+          21,
+          3,
+          3
+        ],
+        [
+          21,
+          3,
+          4
+        ],
+        [
+          21,
+          4,
+          3
+        ],
+        [
+          22,
+          3,
+          0
+        ],
+        [
+          22,
+          3,
+          1
+        ],
+        [
+          22,
+          3,
+          2
+        ],
+        [
+          23,
+          3,
+          0
+        ],
+        [
+          23,
+          3,
+          1
+        ],
+        [
+          24,
+          3,
+          0
+        ],
+        [
+          0,
+          8,
+          26
+        ],
+        [
+          0,
+          9,
+          25
+        ],
+        [
+          19,
+          2,
+          1
+        ],
+        [
+          19,
+          3,
+          1
+        ],
+        [
+          19,
+          4,
+          1
+        ]
+      ],
+      "CAVE": [
+        [
+          9,
+          2,
+          17
+        ],
+        [
+          12,
+          1,
+          17
+        ],
+        [
+          15,
+          8,
+          15
+        ],
+        [
+          16,
+          7,
+          15
+        ],
+        [
+          17,
+          7,
+          14
+        ],
+        [
+          16,
+          8,
+          16
+        ],
+        [
+          16,
+          8,
+          3
+        ],
+        [
+          17,
+          8,
+          10
+        ]
+      ]
+    },
+    "strandedAt": [
+      14,
+      8,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 3447,
+    "exploreStalls": 44,
+    "exploreFailures": 35,
+    "stuckSpells": 4,
+    "stuckLevel": 4,
+    "leftOut": 6632
+  },
+  "log": [
+    "[10:27:02] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:03] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:03] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:03] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:03] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:04] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:04] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:04] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:05] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:05] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:05] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:05] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:05] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:06] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:06] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:06] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:06] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:07] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:07] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]",
+    "[10:27:07] [Server thread/INFO]: Sol native_goto COMPLETED [dig toward elsewhere: to the wall]"
+  ]
+}

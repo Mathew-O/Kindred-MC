@@ -1,0 +1,1776 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 99320,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    103,
+    -62,
+    88
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.27086583686902,
+    8.0,
+    16.499951795355642
+  ],
+  "yaw": -89.99775,
+  "pitch": 42.34011,
+  "health": 12.0,
+  "food": 9,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:spruce_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:spruce_sapling",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 6
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 18
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:spruce_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:water_bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:diamond",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:moss_block",
+        "count": 2
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 28
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 7
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 50
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 24
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobbled_deepslate",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:tuff",
+        "count": 39
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 8
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 1
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:clay_ball",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 6,
+  "timeOfDay": 3319,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - try elsewhere, toward 119, -54, 128",
+  "task": "Branch mine for lava: clear 120, -54, 104",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          26,
+          9,
+          32
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [
+      {
+        "at": [
+          26,
+          8,
+          32
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          25,
+          8,
+          32
+        ],
+        "n": 2
+      }
+    ],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        24,
+        8,
+        19
+      ],
+      [
+        24,
+        9,
+        19
+      ],
+      [
+        23,
+        8,
+        19
+      ],
+      [
+        23,
+        9,
+        19
+      ],
+      [
+        22,
+        8,
+        19
+      ],
+      [
+        22,
+        9,
+        19
+      ],
+      [
+        21,
+        8,
+        19
+      ],
+      [
+        21,
+        9,
+        19
+      ],
+      [
+        20,
+        8,
+        19
+      ],
+      [
+        20,
+        9,
+        19
+      ],
+      [
+        19,
+        8,
+        19
+      ],
+      [
+        19,
+        9,
+        19
+      ],
+      [
+        18,
+        8,
+        19
+      ],
+      [
+        18,
+        9,
+        19
+      ],
+      [
+        17,
+        8,
+        19
+      ],
+      [
+        17,
+        9,
+        19
+      ],
+      [
+        16,
+        8,
+        19
+      ],
+      [
+        16,
+        9,
+        19
+      ],
+      [
+        15,
+        8,
+        19
+      ],
+      [
+        15,
+        9,
+        19
+      ],
+      [
+        14,
+        8,
+        19
+      ],
+      [
+        14,
+        9,
+        19
+      ],
+      [
+        13,
+        8,
+        19
+      ],
+      [
+        13,
+        9,
+        19
+      ],
+      [
+        12,
+        9,
+        27
+      ],
+      [
+        12,
+        9,
+        31
+      ],
+      [
+        12,
+        8,
+        9
+      ],
+      [
+        12,
+        8,
+        11
+      ],
+      [
+        12,
+        8,
+        13
+      ],
+      [
+        12,
+        9,
+        29
+      ],
+      [
+        12,
+        9,
+        25
+      ],
+      [
+        12,
+        8,
+        23
+      ],
+      [
+        12,
+        8,
+        21
+      ],
+      [
+        12,
+        8,
+        19
+      ],
+      [
+        12,
+        8,
+        17
+      ],
+      [
+        12,
+        8,
+        15
+      ],
+      [
+        12,
+        8,
+        27
+      ],
+      [
+        12,
+        8,
+        31
+      ],
+      [
+        12,
+        9,
+        9
+      ],
+      [
+        12,
+        9,
+        11
+      ],
+      [
+        12,
+        9,
+        13
+      ],
+      [
+        12,
+        8,
+        29
+      ],
+      [
+        12,
+        8,
+        25
+      ],
+      [
+        12,
+        9,
+        23
+      ],
+      [
+        12,
+        9,
+        21
+      ],
+      [
+        12,
+        9,
+        19
+      ],
+      [
+        12,
+        9,
+        17
+      ],
+      [
+        12,
+        9,
+        15
+      ],
+      [
+        12,
+        9,
+        7
+      ],
+      [
+        12,
+        9,
+        5
+      ],
+      [
+        12,
+        9,
+        3
+      ],
+      [
+        12,
+        9,
+        1
+      ],
+      [
+        12,
+        8,
+        7
+      ],
+      [
+        12,
+        8,
+        5
+      ],
+      [
+        12,
+        8,
+        3
+      ],
+      [
+        12,
+        8,
+        1
+      ],
+      [
+        11,
+        8,
+        19
+      ],
+      [
+        11,
+        9,
+        19
+      ],
+      [
+        10,
+        8,
+        19
+      ],
+      [
+        10,
+        9,
+        19
+      ],
+      [
+        9,
+        8,
+        19
+      ],
+      [
+        9,
+        9,
+        19
+      ],
+      [
+        8,
+        8,
+        19
+      ],
+      [
+        8,
+        9,
+        19
+      ],
+      [
+        7,
+        8,
+        19
+      ],
+      [
+        7,
+        9,
+        19
+      ],
+      [
+        6,
+        8,
+        19
+      ],
+      [
+        6,
+        9,
+        19
+      ],
+      [
+        5,
+        8,
+        19
+      ],
+      [
+        5,
+        9,
+        19
+      ],
+      [
+        4,
+        8,
+        19
+      ],
+      [
+        4,
+        9,
+        19
+      ],
+      [
+        3,
+        8,
+        19
+      ],
+      [
+        3,
+        9,
+        19
+      ],
+      [
+        2,
+        8,
+        19
+      ],
+      [
+        2,
+        9,
+        19
+      ],
+      [
+        1,
+        8,
+        19
+      ],
+      [
+        1,
+        9,
+        19
+      ],
+      [
+        0,
+        8,
+        19
+      ],
+      [
+        0,
+        9,
+        19
+      ],
+      [
+        31,
+        9,
+        30
+      ],
+      [
+        31,
+        9,
+        24
+      ],
+      [
+        31,
+        9,
+        26
+      ],
+      [
+        31,
+        8,
+        20
+      ],
+      [
+        31,
+        8,
+        22
+      ],
+      [
+        31,
+        9,
+        28
+      ],
+      [
+        31,
+        9,
+        32
+      ],
+      [
+        31,
+        8,
+        30
+      ],
+      [
+        31,
+        8,
+        24
+      ],
+      [
+        31,
+        8,
+        26
+      ],
+      [
+        31,
+        9,
+        20
+      ],
+      [
+        31,
+        9,
+        22
+      ],
+      [
+        31,
+        8,
+        28
+      ],
+      [
+        31,
+        8,
+        32
+      ],
+      [
+        30,
+        9,
+        32
+      ],
+      [
+        30,
+        8,
+        32
+      ],
+      [
+        29,
+        9,
+        32
+      ],
+      [
+        29,
+        8,
+        32
+      ],
+      [
+        28,
+        9,
+        32
+      ],
+      [
+        28,
+        8,
+        32
+      ],
+      [
+        27,
+        9,
+        32
+      ],
+      [
+        27,
+        8,
+        32
+      ],
+      [
+        26,
+        9,
+        32
+      ],
+      [
+        26,
+        8,
+        32
+      ],
+      [
+        25,
+        9,
+        32
+      ],
+      [
+        25,
+        8,
+        32
+      ],
+      [
+        24,
+        9,
+        32
+      ],
+      [
+        24,
+        8,
+        32
+      ],
+      [
+        23,
+        9,
+        32
+      ],
+      [
+        23,
+        8,
+        32
+      ],
+      [
+        22,
+        9,
+        32
+      ],
+      [
+        22,
+        8,
+        32
+      ],
+      [
+        21,
+        9,
+        32
+      ],
+      [
+        21,
+        8,
+        32
+      ],
+      [
+        20,
+        9,
+        32
+      ],
+      [
+        20,
+        8,
+        32
+      ],
+      [
+        19,
+        8,
+        32
+      ],
+      [
+        18,
+        8,
+        32
+      ],
+      [
+        17,
+        8,
+        32
+      ],
+      [
+        17,
+        9,
+        16
+      ],
+      [
+        16,
+        9,
+        32
+      ],
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        8,
+        32
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        15,
+        9,
+        32
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        15,
+        8,
+        32
+      ],
+      [
+        15,
+        9,
+        16
+      ],
+      [
+        14,
+        9,
+        32
+      ],
+      [
+        14,
+        8,
+        16
+      ],
+      [
+        14,
+        8,
+        32
+      ],
+      [
+        14,
+        9,
+        16
+      ],
+      [
+        13,
+        9,
+        32
+      ],
+      [
+        13,
+        8,
+        16
+      ],
+      [
+        13,
+        8,
+        32
+      ],
+      [
+        13,
+        9,
+        16
+      ],
+      [
+        12,
+        8,
+        14
+      ],
+      [
+        12,
+        8,
+        10
+      ],
+      [
+        12,
+        9,
+        30
+      ],
+      [
+        12,
+        9,
+        32
+      ],
+      [
+        12,
+        9,
+        28
+      ],
+      [
+        12,
+        8,
+        8
+      ],
+      [
+        12,
+        8,
+        12
+      ],
+      [
+        12,
+        8,
+        16
+      ],
+      [
+        12,
+        8,
+        18
+      ],
+      [
+        12,
+        8,
+        20
+      ],
+      [
+        12,
+        8,
+        22
+      ],
+      [
+        12,
+        9,
+        24
+      ],
+      [
+        12,
+        9,
+        26
+      ],
+      [
+        12,
+        9,
+        14
+      ],
+      [
+        12,
+        9,
+        10
+      ],
+      [
+        12,
+        8,
+        30
+      ],
+      [
+        12,
+        8,
+        32
+      ],
+      [
+        12,
+        8,
+        28
+      ],
+      [
+        12,
+        9,
+        8
+      ],
+      [
+        12,
+        9,
+        12
+      ],
+      [
+        12,
+        9,
+        16
+      ],
+      [
+        12,
+        9,
+        18
+      ],
+      [
+        12,
+        9,
+        20
+      ],
+      [
+        12,
+        9,
+        22
+      ],
+      [
+        12,
+        8,
+        24
+      ],
+      [
+        12,
+        8,
+        26
+      ],
+      [
+        12,
+        9,
+        0
+      ],
+      [
+        12,
+        9,
+        2
+      ],
+      [
+        12,
+        9,
+        4
+      ],
+      [
+        12,
+        9,
+        6
+      ],
+      [
+        12,
+        8,
+        0
+      ],
+      [
+        12,
+        8,
+        2
+      ],
+      [
+        12,
+        8,
+        4
+      ],
+      [
+        12,
+        8,
+        6
+      ],
+      [
+        11,
+        8,
+        16
+      ],
+      [
+        11,
+        9,
+        16
+      ],
+      [
+        10,
+        8,
+        16
+      ],
+      [
+        10,
+        9,
+        16
+      ],
+      [
+        9,
+        8,
+        16
+      ],
+      [
+        9,
+        9,
+        16
+      ],
+      [
+        8,
+        8,
+        16
+      ],
+      [
+        8,
+        9,
+        16
+      ],
+      [
+        7,
+        8,
+        16
+      ],
+      [
+        7,
+        9,
+        16
+      ],
+      [
+        6,
+        8,
+        16
+      ],
+      [
+        6,
+        9,
+        16
+      ],
+      [
+        5,
+        8,
+        16
+      ],
+      [
+        5,
+        9,
+        16
+      ],
+      [
+        4,
+        8,
+        16
+      ],
+      [
+        4,
+        9,
+        16
+      ],
+      [
+        3,
+        8,
+        16
+      ],
+      [
+        3,
+        9,
+        16
+      ],
+      [
+        2,
+        8,
+        16
+      ],
+      [
+        2,
+        9,
+        16
+      ],
+      [
+        1,
+        8,
+        16
+      ],
+      [
+        1,
+        9,
+        16
+      ],
+      [
+        0,
+        8,
+        16
+      ],
+      [
+        0,
+        9,
+        16
+      ],
+      [
+        32,
+        9,
+        31
+      ],
+      [
+        32,
+        8,
+        31
+      ],
+      [
+        31,
+        9,
+        25
+      ],
+      [
+        31,
+        9,
+        27
+      ],
+      [
+        31,
+        8,
+        21
+      ],
+      [
+        31,
+        8,
+        23
+      ],
+      [
+        31,
+        8,
+        19
+      ],
+      [
+        31,
+        9,
+        31
+      ],
+      [
+        31,
+        9,
+        29
+      ],
+      [
+        31,
+        8,
+        25
+      ],
+      [
+        31,
+        8,
+        27
+      ],
+      [
+        31,
+        9,
+        21
+      ],
+      [
+        31,
+        9,
+        23
+      ],
+      [
+        31,
+        9,
+        19
+      ],
+      [
+        31,
+        8,
+        31
+      ],
+      [
+        31,
+        8,
+        29
+      ],
+      [
+        30,
+        9,
+        31
+      ],
+      [
+        30,
+        8,
+        19
+      ],
+      [
+        30,
+        8,
+        31
+      ],
+      [
+        30,
+        9,
+        19
+      ],
+      [
+        29,
+        8,
+        19
+      ],
+      [
+        29,
+        9,
+        19
+      ],
+      [
+        28,
+        8,
+        19
+      ],
+      [
+        28,
+        9,
+        19
+      ],
+      [
+        27,
+        8,
+        19
+      ],
+      [
+        27,
+        9,
+        19
+      ],
+      [
+        26,
+        8,
+        19
+      ],
+      [
+        26,
+        9,
+        19
+      ],
+      [
+        25,
+        8,
+        19
+      ],
+      [
+        25,
+        9,
+        19
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        21,
+        6,
+        32
+      ],
+      [
+        21,
+        6,
+        16
+      ],
+      [
+        17,
+        6,
+        32
+      ],
+      [
+        17,
+        6,
+        16
+      ],
+      [
+        13,
+        6,
+        32
+      ],
+      [
+        13,
+        6,
+        16
+      ],
+      [
+        9,
+        6,
+        32
+      ],
+      [
+        9,
+        6,
+        0
+      ],
+      [
+        9,
+        6,
+        4
+      ],
+      [
+        9,
+        6,
+        8
+      ],
+      [
+        9,
+        6,
+        12
+      ],
+      [
+        9,
+        6,
+        16
+      ],
+      [
+        9,
+        6,
+        20
+      ],
+      [
+        9,
+        6,
+        24
+      ],
+      [
+        9,
+        6,
+        28
+      ],
+      [
+        5,
+        6,
+        16
+      ],
+      [
+        1,
+        6,
+        16
+      ],
+      [
+        29,
+        6,
+        16
+      ],
+      [
+        29,
+        6,
+        24
+      ],
+      [
+        29,
+        6,
+        20
+      ],
+      [
+        29,
+        6,
+        32
+      ],
+      [
+        29,
+        6,
+        28
+      ],
+      [
+        25,
+        6,
+        32
+      ],
+      [
+        25,
+        6,
+        16
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "IRON_ORE": [
+        [
+          26,
+          9,
+          31
+        ],
+        [
+          22,
+          7,
+          32
+        ]
+      ],
+      "GRAVEL": [
+        [
+          32,
+          8,
+          20
+        ],
+        [
+          32,
+          9,
+          23
+        ],
+        [
+          32,
+          9,
+          22
+        ],
+        [
+          32,
+          9,
+          21
+        ],
+        [
+          32,
+          9,
+          20
+        ]
+      ],
+      "CAVE": [
+        [
+          21,
+          8,
+          32
+        ],
+        [
+          24,
+          8,
+          19
+        ],
+        [
+          19,
+          10,
+          31
+        ],
+        [
+          17,
+          8,
+          32
+        ],
+        [
+          20,
+          8,
+          19
+        ],
+        [
+          13,
+          8,
+          32
+        ],
+        [
+          16,
+          8,
+          19
+        ],
+        [
+          12,
+          8,
+          24
+        ],
+        [
+          12,
+          8,
+          16
+        ],
+        [
+          12,
+          8,
+          20
+        ],
+        [
+          12,
+          8,
+          10
+        ],
+        [
+          12,
+          8,
+          12
+        ],
+        [
+          12,
+          8,
+          0
+        ],
+        [
+          12,
+          8,
+          4
+        ],
+        [
+          12,
+          8,
+          32
+        ],
+        [
+          8,
+          8,
+          19
+        ],
+        [
+          4,
+          8,
+          19
+        ],
+        [
+          31,
+          8,
+          19
+        ],
+        [
+          0,
+          8,
+          19
+        ],
+        [
+          31,
+          8,
+          27
+        ],
+        [
+          31,
+          8,
+          23
+        ],
+        [
+          29,
+          8,
+          32
+        ],
+        [
+          30,
+          8,
+          31
+        ],
+        [
+          25,
+          8,
+          32
+        ],
+        [
+          28,
+          8,
+          19
+        ]
+      ]
+    },
+    "strandedAt": [
+      25,
+      8,
+      32
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 15547,
+    "exploreHeading": "west",
+    "exploreStalls": 1,
+    "exploreFailures": 0,
+    "stuckSpells": 2,
+    "stuckLevel": 1,
+    "leftOut": 10399
+  },
+  "log": [
+    "[10:08:41] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 113, -53, 104]",
+    "[10:08:41] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 113, -54, 104]",
+    "[10:08:41] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[10:08:42] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 114, -53, 104]",
+    "[10:08:42] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 114, -54, 104]",
+    "[10:08:42] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[10:08:42] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[10:08:42] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 116, -53, 104]",
+    "[10:08:43] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 116, -54, 104]",
+    "[10:08:43] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[10:08:43] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 117, -53, 104]",
+    "[10:08:43] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 117, -54, 104]",
+    "[10:08:44] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[10:08:44] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 118, -53, 104]",
+    "[10:08:44] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 118, -54, 104]",
+    "[10:08:44] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[10:08:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 119, -53, 104]",
+    "[10:08:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 119, -54, 104]",
+    "[10:08:45] [Server thread/INFO]: Echo native_goto COMPLETED [Branch mine for lava: advance]",
+    "[10:08:45] [Server thread/INFO]: Echo native_break COMPLETED [Branch mine for lava: clear 120, -53, 104]"
+  ]
+}

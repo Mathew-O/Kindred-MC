@@ -1,0 +1,1029 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 81640,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    68,
+    58,
+    425
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.822299522779474,
+    8.0,
+    16.375096257238283
+  ],
+  "yaw": 254.23898,
+  "pitch": 16.834072,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:cooked_rabbit",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 2
+        }
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cactus",
+        "count": 3
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 61
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 106
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 47
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 4
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 3
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 14
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 3
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 46
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 13
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 51
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 5
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 9639,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: no progress here for a while - try elsewhere, toward 84, 66, 417",
+  "task": "try elsewhere, toward 84, 66, 417",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        29,
+        9,
+        16
+      ],
+      [
+        29,
+        8,
+        16
+      ],
+      [
+        28,
+        9,
+        16
+      ],
+      [
+        28,
+        8,
+        16
+      ],
+      [
+        31,
+        9,
+        16
+      ],
+      [
+        31,
+        8,
+        16
+      ],
+      [
+        30,
+        9,
+        16
+      ],
+      [
+        30,
+        8,
+        16
+      ],
+      [
+        1,
+        12,
+        32
+      ],
+      [
+        1,
+        12,
+        31
+      ],
+      [
+        1,
+        12,
+        30
+      ],
+      [
+        1,
+        12,
+        28
+      ],
+      [
+        1,
+        12,
+        26
+      ],
+      [
+        1,
+        12,
+        24
+      ],
+      [
+        1,
+        12,
+        23
+      ],
+      [
+        1,
+        12,
+        25
+      ],
+      [
+        1,
+        12,
+        27
+      ],
+      [
+        1,
+        12,
+        29
+      ],
+      [
+        1,
+        13,
+        32
+      ],
+      [
+        1,
+        13,
+        30
+      ],
+      [
+        1,
+        13,
+        28
+      ],
+      [
+        1,
+        13,
+        26
+      ],
+      [
+        1,
+        13,
+        24
+      ],
+      [
+        1,
+        13,
+        23
+      ],
+      [
+        1,
+        13,
+        25
+      ],
+      [
+        1,
+        13,
+        27
+      ],
+      [
+        1,
+        13,
+        29
+      ],
+      [
+        1,
+        13,
+        31
+      ],
+      [
+        1,
+        13,
+        22
+      ],
+      [
+        1,
+        13,
+        20
+      ],
+      [
+        1,
+        13,
+        19
+      ],
+      [
+        1,
+        13,
+        21
+      ],
+      [
+        1,
+        12,
+        22
+      ],
+      [
+        1,
+        12,
+        20
+      ],
+      [
+        1,
+        12,
+        18
+      ],
+      [
+        1,
+        12,
+        19
+      ],
+      [
+        1,
+        12,
+        21
+      ],
+      [
+        32,
+        9,
+        16
+      ],
+      [
+        32,
+        8,
+        16
+      ],
+      [
+        7,
+        11,
+        16
+      ],
+      [
+        6,
+        11,
+        16
+      ],
+      [
+        9,
+        11,
+        16
+      ],
+      [
+        8,
+        11,
+        16
+      ],
+      [
+        11,
+        11,
+        16
+      ],
+      [
+        10,
+        11,
+        16
+      ],
+      [
+        12,
+        11,
+        16
+      ],
+      [
+        15,
+        9,
+        16
+      ],
+      [
+        15,
+        8,
+        16
+      ],
+      [
+        17,
+        9,
+        16
+      ],
+      [
+        17,
+        8,
+        16
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        19,
+        10,
+        32
+      ],
+      [
+        19,
+        10,
+        31
+      ],
+      [
+        19,
+        10,
+        30
+      ],
+      [
+        19,
+        10,
+        28
+      ],
+      [
+        19,
+        10,
+        26
+      ],
+      [
+        19,
+        10,
+        24
+      ],
+      [
+        19,
+        9,
+        22
+      ],
+      [
+        19,
+        9,
+        20
+      ],
+      [
+        19,
+        9,
+        18
+      ],
+      [
+        19,
+        9,
+        16
+      ],
+      [
+        19,
+        9,
+        17
+      ],
+      [
+        19,
+        9,
+        19
+      ],
+      [
+        19,
+        9,
+        21
+      ],
+      [
+        19,
+        10,
+        23
+      ],
+      [
+        19,
+        10,
+        25
+      ],
+      [
+        19,
+        10,
+        27
+      ],
+      [
+        19,
+        10,
+        29
+      ],
+      [
+        19,
+        8,
+        16
+      ],
+      [
+        19,
+        9,
+        32
+      ],
+      [
+        19,
+        9,
+        30
+      ],
+      [
+        19,
+        9,
+        28
+      ],
+      [
+        19,
+        9,
+        26
+      ],
+      [
+        19,
+        9,
+        24
+      ],
+      [
+        19,
+        10,
+        22
+      ],
+      [
+        19,
+        10,
+        20
+      ],
+      [
+        19,
+        10,
+        19
+      ],
+      [
+        19,
+        10,
+        21
+      ],
+      [
+        19,
+        9,
+        23
+      ],
+      [
+        19,
+        9,
+        25
+      ],
+      [
+        19,
+        9,
+        27
+      ],
+      [
+        19,
+        9,
+        29
+      ],
+      [
+        19,
+        9,
+        31
+      ],
+      [
+        18,
+        9,
+        16
+      ],
+      [
+        18,
+        8,
+        16
+      ],
+      [
+        21,
+        10,
+        25
+      ],
+      [
+        21,
+        10,
+        23
+      ],
+      [
+        21,
+        10,
+        24
+      ],
+      [
+        21,
+        9,
+        16
+      ],
+      [
+        21,
+        10,
+        26
+      ],
+      [
+        21,
+        10,
+        27
+      ],
+      [
+        21,
+        10,
+        28
+      ],
+      [
+        21,
+        10,
+        29
+      ],
+      [
+        21,
+        10,
+        30
+      ],
+      [
+        21,
+        10,
+        31
+      ],
+      [
+        21,
+        10,
+        32
+      ],
+      [
+        21,
+        11,
+        25
+      ],
+      [
+        21,
+        11,
+        23
+      ],
+      [
+        21,
+        11,
+        24
+      ],
+      [
+        21,
+        8,
+        16
+      ],
+      [
+        21,
+        11,
+        26
+      ],
+      [
+        21,
+        11,
+        27
+      ],
+      [
+        21,
+        11,
+        28
+      ],
+      [
+        21,
+        11,
+        29
+      ],
+      [
+        21,
+        11,
+        30
+      ],
+      [
+        21,
+        11,
+        31
+      ],
+      [
+        21,
+        11,
+        32
+      ],
+      [
+        21,
+        10,
+        20
+      ],
+      [
+        21,
+        10,
+        21
+      ],
+      [
+        21,
+        10,
+        22
+      ],
+      [
+        20,
+        9,
+        16
+      ],
+      [
+        20,
+        8,
+        16
+      ],
+      [
+        23,
+        9,
+        9
+      ],
+      [
+        23,
+        9,
+        7
+      ],
+      [
+        23,
+        9,
+        8
+      ],
+      [
+        23,
+        9,
+        10
+      ],
+      [
+        23,
+        9,
+        11
+      ],
+      [
+        23,
+        9,
+        12
+      ],
+      [
+        23,
+        9,
+        13
+      ],
+      [
+        23,
+        9,
+        14
+      ],
+      [
+        23,
+        9,
+        15
+      ],
+      [
+        23,
+        9,
+        17
+      ],
+      [
+        23,
+        9,
+        16
+      ],
+      [
+        23,
+        9,
+        1
+      ],
+      [
+        23,
+        9,
+        2
+      ],
+      [
+        23,
+        9,
+        3
+      ],
+      [
+        23,
+        9,
+        4
+      ],
+      [
+        23,
+        9,
+        5
+      ],
+      [
+        23,
+        9,
+        6
+      ],
+      [
+        23,
+        8,
+        16
+      ],
+      [
+        22,
+        9,
+        16
+      ],
+      [
+        22,
+        8,
+        16
+      ],
+      [
+        25,
+        9,
+        16
+      ],
+      [
+        25,
+        8,
+        16
+      ],
+      [
+        24,
+        9,
+        16
+      ],
+      [
+        24,
+        8,
+        16
+      ],
+      [
+        27,
+        8,
+        16
+      ],
+      [
+        26,
+        8,
+        16
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "west",
+    "exploreStalls": 1,
+    "exploreFailures": 0,
+    "stuckSpells": 1,
+    "stuckLevel": 1,
+    "leftOut": 6967
+  },
+  "log": [
+    "[10:36:03] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+    "[10:36:03] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 87, 67, 441]",
+    "[10:36:03] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 87, 66, 441]",
+    "[10:36:04] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+    "[10:36:04] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 86, 67, 441]",
+    "[10:36:04] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 86, 66, 441]",
+    "[10:36:04] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+    "[10:36:04] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 85, 67, 441]",
+    "[10:36:04] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 85, 66, 441]",
+    "[10:36:04] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel for water: let what falls settle]",
+    "[10:36:05] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 85, 66, 441]",
+    "[10:36:05] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+    "[10:36:05] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 84, 67, 441]",
+    "[10:36:05] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 84, 66, 441]",
+    "[10:36:05] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel for water: let what falls settle]",
+    "[10:36:05] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 84, 66, 441]",
+    "[10:36:05] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel for water: advance]",
+    "[10:36:06] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 83, 67, 441]",
+    "[10:36:06] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel for water: clear 83, 66, 441]",
+    "[10:36:06] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel for water: let what falls settle]"
+  ]
+}
