@@ -186,6 +186,14 @@ final class WorldKnowledge {
 
     int count(Kind kind) { return sight.count(sight(kind)); }
 
+    /** For tests: where it last looked round from, as a scan sets it; the far ones go from here when a kind is full. */
+    void centerAt(BlockPos at) { sight.centerAt(at == null ? null : cell(at)); }
+
+    /** How many a full kind drops at once, the farthest first (the core's, {@link Sight#EVICT}). */
+    static final int EVICT = Sight.EVICT;
+
+    static int maxPerKind() { return Sight.maxPerKind(); }
+
     /** Nearest remembered block of a kind that still matches the world and the caller's filter. */
     Optional<BlockPos> nearest(ServerWorld world, Kind kind, BlockPos from, Predicate<BlockPos> filter) {
         return sight.nearest(new WorldSight(world, null), sight(kind), cell(from), c -> filter.test(pos(c))).map(WorldKnowledge::pos);

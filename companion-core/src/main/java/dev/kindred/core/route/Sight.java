@@ -41,7 +41,10 @@ public final class Sight {
     private static final int RAYCASTS_PER_SCAN = 24;
     /** Cave floors passed in a sweep while their sight lines were spent, looked at first in the scans after. */
     private static final int CAVE_BACKLOG = 1024;
+    /** At most this many of a kind are remembered; past it the farthest go ({@link #remember}). */
     private static final int MAX_PER_KIND = 2_000;
+    /** How many a full kind drops at once, the farthest first: one sort each so many, not a scan per block remembered. */
+    public static final int EVICT = MAX_PER_KIND / 10;
 
     private final ArrayDeque<Cell> caveBacklog = new ArrayDeque<>();
     private final Map<Kind, Map<Long, Cell>> known = new EnumMap<>(Kind.class);
@@ -104,6 +107,7 @@ public final class Sight {
      * z), its feet's cell {@code feet}.
      */
     public void scan(SightWorld world, double[] eye, Cell feet) {
+        center = feet;
         // A sweep ends once the cave floors it passed over are looked at too: what was not seen in it is known not there.
         if (cursor >= sweep.size() && caveBacklog.isEmpty()) rebuildSweep(feet);
         int reads = 0;
@@ -342,8 +346,30 @@ public final class Sight {
         }
         var map = known.get(kind);
         long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
-        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
+        // Full: the farthest of the kind from where it last looked round go, so what is beside it now is known. Refusing
+        // the new one instead, a player who had walked through a jungle knew 2,000 logs it had left behind and none of
+        // the trunks five blocks off ("0 known" with 42 to 82 logs within 8, recap-factions110-b663fb5).
+        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) evictFarthest(map, center != null ? center : pos);
         if (map.put(key, pos) == null && firstSight != null) firstSight.accept(kind, pos);
+    }
+
+    /** Where it last looked round from: the far ones are measured from here when a kind is full. */
+    private Cell center;
+
+    /** For tests: where it last looked round from, as a scan sets it. */
+    public void centerAt(Cell at) { center = at; }
+
+    public static int maxPerKind() { return MAX_PER_KIND; }
+
+    private static void evictFarthest(Map<Long, Cell> map, Cell from) {
+        var entries = new ArrayList<>(map.entrySet());
+        entries.sort((a, b) -> Long.compare(distanceSquared(b.getValue(), from), distanceSquared(a.getValue(), from)));
+        for (int i = 0; i < EVICT && i < entries.size(); i++) map.remove(entries.get(i).getKey());
+    }
+
+    private static long distanceSquared(Cell a, Cell b) {
+        long dx = a.x() - b.x(), dy = a.y() - b.y(), dz = a.z() - b.z();
+        return dx * dx + dy * dy + dz * dz;
     }
 
     /**
