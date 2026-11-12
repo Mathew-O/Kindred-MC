@@ -147,7 +147,7 @@ public final class ReplayGameTests implements FabricGameTest {
                 for (int n = 1; n <= 3; n++) {
                     int run = n;
                     tests.add(new TestFunction("replay_" + id, "replaygametests." + id + "_" + n, "kindred_gametest:replays/" + id,
-                            BlockRotation.NONE, ticks + 600, 0L, true, false, 1, 1, true, context -> play(context, replay, run, ticks)));
+                            BlockRotation.NONE, ticks + 600, 0L, true, false, 1, 1, true, context -> play(context, replay, id, run, ticks)));
                 }
             }
         } catch (Exception unreadable) {
@@ -186,6 +186,22 @@ public final class ReplayGameTests implements FabricGameTest {
     }
 
     static void play(TestContext context, JsonObject replay, int run, int ticks) {
+        play(context, replay, null, run, ticks);
+    }
+
+    /**
+     * The name a replay's player is made under, at most 16 letters, digits and underscores, as a player's profile name
+     * must be: one of its own for each scene ({@code scene}, its id) and run. With none, a scene staged by a fixture, it
+     * is the recorded player's and tick's.
+     */
+    static String replayName(String scene, String player, long tick, int run) {
+        // The scene's id, not its player and tick: two worlds' Kindred caught at tick 99080 were one name (F-27a).
+        int key = scene != null ? scene.hashCode() : player.hashCode() * 31 + (int) tick;
+        return "R" + Integer.toHexString(key & 0xfffffff) + "_" + run;
+    }
+
+    /** As {@link #play(TestContext, JsonObject, int, int)}, for the scene {@code scene} (its id; null for one staged). */
+    static void play(TestContext context, JsonObject replay, String scene, int run, int ticks) {
         var world = context.getWorld();
         var server = world.getServer();
         JsonObject state = replay;
@@ -220,7 +236,7 @@ public final class ReplayGameTests implements FabricGameTest {
         HELD.put(runtime, held);
         // A name of its own for each replay and run: with one name for every replay of a player, the next batch's clashed
         // with a player a failed run had left in the world.
-        String name = "R" + Integer.toHexString(state.get("player").getAsString().hashCode() * 31 + (int) state.get("tick").getAsLong() & 0xfffffff) + "_" + run;
+        String name = replayName(scene, state.get("player").getAsString(), state.get("tick").getAsLong(), run);
         UUID[] id = new UUID[2];
         Vec3d[] from = new Vec3d[1];
         int[] completed = {0};
@@ -401,6 +417,33 @@ public final class ReplayGameTests implements FabricGameTest {
      * seconds before. Staged: stone to stand on, a zombie with its AI off beside it, a stone pickaxe and bread; health 14
      * when its vitals are noted; then killed by the zombie.
      */
+    /**
+     * In plain terms: two scenes of the same player caught at the same tick in two worlds play as two players, never one
+     * name for both.
+     *
+     * Technical: {@link #replayName} (F-27a). Named from the recorded player and tick alone, the corpus's
+     * {@code e40a20-79a9aad-404-kindred-99080} and {@code diag-factions303-079bdc2-303-kindred-99080} were both made as
+     * {@code R2d3924b_1}, in batches one after the other, and the two {@code 123080} scenes as one name in the same
+     * batch; the report counted a player acting after its own batch in every run. Passes if each scene's name is its
+     * own, the same scene's runs differ, and each is a valid profile name.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "replayNames", tickLimit = 20)
+    public void twoScenesOfOnePlayerAtOneTickGetNamesOfTheirOwn(TestContext context) {
+        String[][] pairs = {
+                {"e40a20-79a9aad-404-kindred-99080", "diag-factions303-079bdc2-303-kindred-99080"},
+                {"e40a20-79a9aad-20261030-kindred-123080", "e40a20-79a9aad-404-kindred-123080"}};
+        long[] ticks = {99080, 123080};
+        for (int i = 0; i < pairs.length; i++) {
+            String a = replayName(pairs[i][0], "Kindred", ticks[i], 1), b = replayName(pairs[i][1], "Kindred", ticks[i], 1);
+            context.assertTrue(!a.equals(b), "One name for two scenes: " + pairs[i][0] + " and " + pairs[i][1] + " both " + a);
+            context.assertTrue(!a.equals(replayName(pairs[i][0], "Kindred", ticks[i], 2)), "One name for two runs: " + a);
+            for (String name : new String[] {a, b}) {
+                context.assertTrue(name.length() <= 16 && name.matches("[A-Za-z0-9_]+"), "Not a profile name: " + name);
+            }
+        }
+        context.complete();
+    }
+
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "replayCapture", tickLimit = 1200)
     public void aDeathIsCapturedWithinOneTickAndReadsBackAsAReplay(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
