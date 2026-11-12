@@ -27,6 +27,20 @@ For seed 110's bamboo loop: the follow-up to the logs-kept-out line (`F-27a-gath
   - **Before the change:** it failed 2 of 3, for the cap reason (2,000 known, 0 of the tree's 3, through tick 2,400).
   - **After:** it passed 3 of 3, with 1,800 far logs plus the tree's 3 known.
   - **Discarded stagings:** in the first, the memory was filled before the first scan, which wipes it, so it passed without the fix. In the second, fake logs were written where none stood and were purged within 20 ticks.
+- **#219's first CI run (cb1ebc4) failed this fixture, and the fixture was at fault.** The fix was working: from tick 60 the player knew all 3 of the tree's logs and 1,800 far ones.
+  - **What went wrong:** the fixture laid its ±10 ground round wherever the player came in, and put the far logs past its 80-block FIELD structure. In CI the player came in 2 blocks up, on what an earlier test had left there. Its first "Explore north for logs", started before the tree was set, took it off that raised ground, and it found no route back up to the tree ("expanded 6000"). It ended 109 blocks off.
+  - **Restaged:**
+    - The WIDE structure (120 by 120) is used, with stone, dirt and grass laid over the whole of it and air above; the whole structure is kept and restored.
+    - The player stands at (8, 7, 60) and the far logs 100–111 blocks east, inside the structure.
+    - The fixture takes the first look round itself, then fills the memory and sets the tree, all before the goal starts.
+  - **A stricter pass:** on this field with no fix the player walked to the far logs and cut those, 3 of 3. So the test now passes only once the tree beside it is cut and the player holds wood.
+  - **Results:**
+    - With the old refuse-at-cap line put back, it failed 3 of 3 (0 of the tree's 3 known through tick 2,400).
+    - With the fix, it passed 3 of 3.
+    - In the full GameTest set it passed.
+  - **The one other failure in that full set:** `NativeBaseGameTests.aPlayerWithStoneToolsSitesAndBuildsItsOwnCabinThenWaitsForIron` ran out of time short of logs.
+    - Alone, it passed 2 of 3 on this branch (then based on main b867e1a) and 3 of 3 on main b7027be.
+    - Its field holds two trees, 12 logs, and the change only acts once a kind holds 2,000. So the change does nothing in that test.
 - **Build:** the full build was green on 557d9df.
 - **Corpus gate:** 49ff60d against main b867e1a, over 3 runs. The baseline was #215's 811b0f7 (6 runs, 332 scenes), applied uncommitted. Main's committed baseline is 084dde5 (247 scenes).
   - **Result:** 179 of 332 pass (53.9%), 81 intermittent, 72 fail. Death is 149 / 71 / 66, stuck 29 / 10 / 6, fixture 1 / 0 / 0. Survival is 55.6% and factions 47.9%.
