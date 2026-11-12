@@ -4295,7 +4295,16 @@ final class PortalRunCampaign {
         if (!underground(player) && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos()))) return Optional.empty();
         if (waterHeld() && waterDug.contains(lastFeet.asLong())) return Optional.empty();
         if (night(player.getServerWorld())) return lavaMeanwhile(body).or(() -> daylightBelow(body));
-        Optional<Task> up = wayUp(body, "Climb toward the surface for water");
+        // Not back the way it came while its own dig for water lies within reach of the walk back: past the hold's eight
+        // blocks the way back walked it into that dig again, its dig went on, and the two undid each other at that scale,
+        // 76 to 149 walks back a run of 505's replay against 6 to 9 on main (F-35o).
+        retraceBarred = waterDug.stream().anyMatch(cell -> BlockPos.fromLong(cell).getSquaredDistance(lastFeet) <= 20 * 20);
+        Optional<Task> up;
+        try {
+            up = wayUp(body, "Climb toward the surface for water");
+        } finally {
+            retraceBarred = false;
+        }
         if (up.isPresent()) {
             waterClimbTick = lastTick;
             return up;
@@ -4309,6 +4318,9 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /** While the water fetch asks for a way up with its own dig for water near: no walk back the way it came (F-35o). */
+    private boolean retraceBarred;
+
     /** Where it last said it had no way up for water (F-35o), so that it says so once for each place. */
     private long waterNoWayUpAt = Long.MIN_VALUE;
 
@@ -4318,7 +4330,9 @@ final class PortalRunCampaign {
         BlockPos gaveUpAt = digger.underWaterGaveUpAt() == null ? null : pos(digger.underWaterGaveUpAt());
         if (gaveUpAt != null && gaveUpAt.getSquaredDistance(lastFeet) <= 24 * 24) why.add("its climb gave up under the water at " + gaveUpAt.toShortString());
         else why.add("its climb found no step up");
-        why.add(trail.size() < 2 ? "no way back it came" : lastTick < retraceStalledUntil ? "its way back stalled" : "no way back higher than here");
+        boolean dugNear = waterDug.stream().anyMatch(cell -> BlockPos.fromLong(cell).getSquaredDistance(lastFeet) <= 20 * 20);
+        why.add(dugNear ? "its way back runs into its own dig for water" : trail.size() < 2 ? "no way back it came"
+                : lastTick < retraceStalledUntil ? "its way back stalled" : "no way back higher than here");
         if (ownSeals.isEmpty()) why.add("no shelter of its own to open");
         else why.add("its shelter not to be opened");
         return String.join(", ", why);
@@ -4347,13 +4361,13 @@ final class PortalRunCampaign {
     private boolean waterHeld() {
         if (waterHoldAt == null) return false;
         int buckets = rescueBody == null ? -1 : ItemMoves.count(rescueBody.entity().getInventory(), Items.WATER_BUCKET);
-        boolean progress = buckets > waterHoldBuckets && waterHoldBuckets >= 0 || knowledge.count(WorldKnowledge.Kind.WATER) > waterHoldSeen
-                || waterHoldAt.getSquaredDistance(lastFeet) > WATER_HOLD_OFF * WATER_HOLD_OFF;
-        if (!progress) return true;
+        boolean found = buckets > waterHoldBuckets && waterHoldBuckets >= 0 || knowledge.count(WorldKnowledge.Kind.WATER) > waterHoldSeen;
+        if (!found && waterHoldAt.getSquaredDistance(lastFeet) <= WATER_HOLD_OFF * WATER_HOLD_OFF) return true;
         waterHoldAt = null;
         waterHoldSeen = -1;
         waterHoldBuckets = -1;
-        waterDug.clear();
+        // Moved off, the dig it made is still remembered: its way back is not walked into it again ({@link #waterUp}).
+        if (found) waterDug.clear();
         return false;
     }
 
@@ -4748,6 +4762,7 @@ final class PortalRunCampaign {
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
      */
     private Optional<Task> retrace(NativePlayerBody body, String label) {
+        if (retraceBarred) return Optional.empty();
         var world = body.entity().getServerWorld();
         // A walk back that cannot start completes at once without moving; asked for again it only loops (the
         // staircase fixture, its foot open, stood in a pit for three minutes). Another way out gets half a minute.
