@@ -1,0 +1,52 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 12.08, "tickMsWorst": 1319.97, "tickMsWorstAt": 77178, "ticksOver50ms": 132, "ticksOver200ms": 7, "heapMbMax": 1244, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1840, "stone_tools": 3860, "iron_ingot": 8760, "iron_pickaxe": 30100, "obsidian": 69411, "portal_lit": 76066},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 63760, "x": -15, "y": -53, "z": 60, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2872,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2100, "stone_tools": 3620, "iron_ingot": 6160, "iron_pickaxe": 13060, "obsidian": 115395, "portal_lit": 122587},
+      "deaths": [
+        {"tick": 70705, "cause": "Sol was slain by Zombie", "x": 72, "y": -15, "z": 242, "light": 0, "timeOfDay": 22867, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 119700, "x": 21, "y": -54, "z": 240, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5263,
+      "chunkMinutes": 34675.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2240, "stone_tools": 3820, "iron_ingot": 14780, "iron_pickaxe": 37240},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52680, "x": 83, "y": 39, "z": 42, "attempt": 1}, {"tick": 74980, "x": 19, "y": -16, "z": 43, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2122,
+      "chunkMinutes": 34680.0
+    }
+  }
+}

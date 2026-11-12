@@ -28,6 +28,67 @@ import net.minecraft.test.TestContext;
  * from the database after the final stop agrees with them, as does the nightly check run once by hand.
  */
 public final class NativeWorldRecordGameTests implements FabricGameTest {
+    /** How long the stop may take to flush, as {@link PlayerRuntime#finishShutdown} allows it (F-31d). */
+    private static final long FLUSH_BOUND_MS = 10_000;
+    /** About an evaluation's action ledger at its last check (e40, 144,000 ticks): actions, each prepared, dispatched and verified. */
+    private static final int ACTIONS = 10_000;
+
+    /**
+     * F-31d: the server's stop flushes within its bound with the agreement check under way, as an evaluation's last
+     * check is (at tick 143,999, one before its 144,000th). In E-40's iterations 20 and 21, 4 and then 8 of 10 consoles
+     * ended "Kindred shutdown flush incomplete": the check rebuilt the action ledger with a copy of it for every event,
+     * 15 seconds of the writer at that size, and the stop's own writes waited behind it. Staged: a store holding the
+     * history of ten thousand actions, each prepared, dispatched and verified, as a run's writes leave it; the runtime
+     * started on it, the check begun, and the stop at once. The flush is the runtime's own, and so is its bound.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "worldRecordStop", tickLimit = 40_000)
+    public void theStopFlushesWithinItsBoundWithTheLedgerCheckUnderWay(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 39_000);
+        var server = context.getWorld().getServer();
+        @SuppressWarnings("unchecked") CompletableFuture<Void>[] seeded = new CompletableFuture[1];
+        @SuppressWarnings("unchecked") CompletableFuture<Boolean>[] check = new CompletableFuture[1];
+        long[] stoppedAt = {0}, flushedMs = {-1};
+        boolean[] told = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.stop())
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped to stage the store"))
+                .createAndAdd(() -> seeded[0] = CompletableFuture.runAsync(() -> {
+                    // Off the server thread: the store's own writer does the writing, a write at a time as play does.
+                    var store = SqliteCompanionStore.open(f.directory.resolve("companions.sqlite"), 128).join();
+                    try {
+                        UUID id = store.create(new dev.kindred.persistence.CreationRequest(UUID.randomUUID(), UUID.randomUUID(), "Ledgerkeeper",
+                                UUID.randomUUID(), "minecraft:overworld")).join().companion().id();
+                        var lease = new dev.kindred.core.ActionLease(id, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, 1, 1);
+                        for (int i = 0; i < ACTIONS; i++) {
+                            var action = store.prepareAction(dev.kindred.core.ActionRecord.prepare(UUID.randomUUID(), lease, "native_goto", "walk " + i)).join();
+                            store.transitionAction(store.transitionAction(action.dispatched("from " + i), 0).join().verified("at " + i, "arrived"), 1).join();
+                        }
+                    } finally {
+                        store.closeAsync().join();
+                    }
+                }))
+                .createAndAdd(() -> context.assertTrue(seeded[0].isDone() && !seeded[0].isCompletedExceptionally(), "Staged: " + ACTIONS + " actions"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Started on the staged store"))
+                .createAndAdd(() -> {
+                    // The check begun, as the tick before an evaluation's end begins it, and the server stopping at once.
+                    check[0] = f.runtime.checkLedgers();
+                    stoppedAt[0] = System.nanoTime();
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> {
+                    if (flushedMs[0] < 0 && f.runtime.shutdownComplete()) flushedMs[0] = (System.nanoTime() - stoppedAt[0]) / 1_000_000;
+                    context.assertTrue(flushedMs[0] >= 0, "Flushed");
+                })
+                .createAndAdd(() -> {
+                    if (!told[0]) KindredMod.LOGGER.info("F-31d fixture: the stop flushed in {} ms, the check under way", flushedMs[0]);
+                    told[0] = true;
+                    context.assertTrue(flushedMs[0] <= FLUSH_BOUND_MS, "Flushed within its bound: " + flushedMs[0] + " ms against " + FLUSH_BOUND_MS);
+                })
+                .completeIfSuccessful();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "worldRecord", tickLimit = 1600)
     public void everyLedgerIsRebuiltFromTheRecordAloneAfterARestart(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1500);

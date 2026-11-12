@@ -59,6 +59,8 @@ public final class Storage {
     }
 
     private final Map<Place, Store> stores = new LinkedHashMap<>();
+    /** Moved by every change to what it knows, so that a change can be told from none (F-30d2a). */
+    private long revision;
 
     /**
      * A look inside a container: what it holds now. The first look at one only notes it; after that, what is short of
@@ -80,6 +82,7 @@ public final class Storage {
             }
         }
         stores.put(place, new Store(place, known == null ? whose : known.whose(), positive(found), now));
+        revision++;
         return new Look(place, known == null ? whose : known.whose(), gone, more);
     }
 
@@ -90,6 +93,7 @@ public final class Storage {
         var counts = new HashMap<>(known == null ? Map.<String, Integer>of() : known.counts());
         counts.merge(item, count, Integer::sum);
         stores.put(place, new Store(place, known == null ? whose : known.whose(), counts, now));
+        revision++;
     }
 
     /** Something taken out, by the player itself or by a teammate who said so: no longer counted there. */
@@ -101,6 +105,7 @@ public final class Storage {
         int left = known.count(item) - count;
         if (left > 0) counts.put(item, left); else counts.remove(item);
         stores.put(place, new Store(place, known.whose(), counts, now));
+        revision++;
     }
 
     /** How many of an item it has stored, in all its containers. */
@@ -134,6 +139,28 @@ public final class Storage {
         for (Store store : stores.values()) if (store.count(item) > 0) found.add(store);
         found.sort((a, b) -> Integer.compare(b.count(item), a.count(item)));
         return found;
+    }
+
+    /** Every container it knows, as it knows it, in the order it first knew them: what a restart keeps (F-30d2a). */
+    public List<Store> stores() {
+        return List.copyOf(stores.values());
+    }
+
+    /**
+     * A container it knew before a restart, known again as it was; not if it has looked into it or changed it since,
+     * what it knows now being newer. Whether it was taken up.
+     */
+    public boolean restore(Store store) {
+        Objects.requireNonNull(store);
+        if (stores.containsKey(store.place())) return false;
+        stores.put(store.place(), new Store(store.place(), store.whose(), positive(store.counts()), store.seenAt()));
+        revision++;
+        return true;
+    }
+
+    /** How many changes it has known: equal twice over, nothing it knows has changed between. */
+    public long revision() {
+        return revision;
     }
 
     private static Map<String, Integer> positive(Map<String, Integer> counts) {

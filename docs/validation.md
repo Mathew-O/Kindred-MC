@@ -45,10 +45,14 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35h2, no faction walk out through its own night shelter's seal (Factions 110): [evidence](evidence/F-35h2.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
+- F-35j1, a refused faction walk's wait served and open water set aside counted toward the pause (Factions 110): [evidence](evidence/F-35j1.md).
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
 - F-35l, stone not mined from a thin floor over a drop round its feet: [evidence](evidence/F-35l.md).
+- F-35l2, a cave-explore walk to a cliff's edge, then the fall: not reproduced on main, open: [evidence](evidence/F-35l2.md).
+- F-35m, no far column's height that the player cannot see: [evidence](evidence/F-35m.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - E-70a, nights in bed: in by dusk, the bed it carries, a person's night never held: [evidence](evidence/E-70a.md)
+- E-70a1, a bed never propped in a floor cell the build set aside, the cabin finished: [evidence](evidence/E-70a1.md)
 - E-71a, timed-crouch bridging: upright to the edge, crouched for the click, held where a fall could kill: [evidence](evidence/E-71a.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
@@ -78,6 +82,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 ## A tree on land it may not work set aside in its plan (M-06i) — 11 November 2026 (`claude/m06i-refused-logs-1111`)
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
+
+## The rules on the eval engine (M-06k) — 12 November 2026 (`claude/m06k-rules-1112`)
+
+- [M-06k: the rules on the eval engine](evidence/M-06k.md#the-rules-on-the-eval-engine-2026-11-12-claudem06k-rules-1112).
 
 ## The hitches attributed by cause (M-06k) — 12 November 2026 (`claude/m06k-hitches-1112`)
 

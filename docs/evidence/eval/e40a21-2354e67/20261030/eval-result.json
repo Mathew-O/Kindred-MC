@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 12.47, "tickMsWorst": 4432.35, "tickMsWorstAt": 1, "ticksOver50ms": 529, "ticksOver200ms": 22, "heapMbMax": 1334, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2180, "iron_ingot": 10280, "iron_pickaxe": 29660, "obsidian": 78167, "portal_lit": 79444},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2277,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 480, "stone_tools": 1820, "iron_ingot": 10000, "iron_pickaxe": 16940},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 57560, "x": 62, "y": -5, "z": 185, "attempt": 1}, {"tick": 74920, "x": 80, "y": -54, "z": 170, "attempt": 2}, {"tick": 79880, "x": 101, "y": -54, "z": 170, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2512,
+      "chunkMinutes": 34680.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1020, "stone_tools": 2720, "iron_ingot": 15600, "iron_pickaxe": 51260, "diamond": 56780, "obsidian": 133474, "portal_lit": 141647},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 19780, "x": 37, "y": 18, "z": 75, "attempt": 1}, {"tick": 99160, "x": 119, "y": -54, "z": 104, "attempt": 1}, {"tick": 137080, "x": 73, "y": -54, "z": 215, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2958,
+      "chunkMinutes": 34680.0
+    }
+  }
+}
