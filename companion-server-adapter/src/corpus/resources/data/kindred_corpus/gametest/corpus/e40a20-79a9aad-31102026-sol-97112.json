@@ -1,0 +1,758 @@
+{
+ "kind": "death",
+ "player": "Sol",
+ "tick": 97112,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  129,
+  34,
+  149
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.43560799344266,
+  8.0,
+  16.24282975785377
+ ],
+ "yaw": -46.98121,
+ "pitch": 17.476488,
+ "health": 4.4777226,
+ "food": 17,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 6
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:rabbit_hide",
+    "count": 3
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 53
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:azalea",
+    "count": 1
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 33
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:dirt",
+    "count": 2
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 164
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:sandstone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:oak_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:andesite",
+    "count": 48
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 15,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 10
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:raw_copper",
+    "count": 8
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:clay_ball",
+    "count": 44
+   }
+  },
+  {
+   "slot": 26,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:rabbit_foot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 24
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:sand",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 4
+   }
+  },
+  {
+   "slot": 35,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 1
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  }
+ ],
+ "selected": 5,
+ "timeOfDay": 1112,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Run from creeper (tried elsewhere 1 time)",
+ "task": "Run from creeper",
+ "stance": "PRESS_ON",
+ "habits": "[]",
+ "cause": "Sol was blown up by Creeper",
+ "ticks": 1200,
+ "memory": {
+  "version": 1,
+  "blocked": [],
+  "failures": [
+   {
+    "at": [
+     3,
+     8,
+     1
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     11,
+     10,
+     8
+    ],
+    "n": 1
+   }
+  ],
+  "approaches": [],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [],
+  "dug": [
+   [
+    7,
+    13,
+    9
+   ],
+   [
+    7,
+    13,
+    8
+   ],
+   [
+    7,
+    12,
+    9
+   ],
+   [
+    7,
+    15,
+    8
+   ],
+   [
+    7,
+    15,
+    7
+   ],
+   [
+    7,
+    14,
+    9
+   ],
+   [
+    7,
+    14,
+    8
+   ],
+   [
+    7,
+    14,
+    7
+   ],
+   [
+    7,
+    16,
+    7
+   ],
+   [
+    8,
+    11,
+    9
+   ],
+   [
+    8,
+    12,
+    9
+   ],
+   [
+    8,
+    15,
+    7
+   ],
+   [
+    8,
+    16,
+    7
+   ],
+   [
+    9,
+    16,
+    7
+   ],
+   [
+    10,
+    10,
+    8
+   ],
+   [
+    11,
+    9,
+    8
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    15,
+    6,
+    11
+   ],
+   [
+    15,
+    6,
+    15
+   ],
+   [
+    3,
+    14,
+    7
+   ],
+   [
+    7,
+    6,
+    7
+   ],
+   [
+    7,
+    10,
+    7
+   ],
+   [
+    7,
+    10,
+    11
+   ],
+   [
+    7,
+    14,
+    7
+   ],
+   [
+    7,
+    14,
+    11
+   ],
+   [
+    11,
+    6,
+    7
+   ],
+   [
+    11,
+    6,
+    11
+   ],
+   [
+    11,
+    10,
+    7
+   ],
+   [
+    11,
+    10,
+    11
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "IRON_ORE": [
+    [
+     9,
+     13,
+     11
+    ],
+    [
+     18,
+     5,
+     10
+    ],
+    [
+     18,
+     4,
+     10
+    ]
+   ],
+   "GRAVEL": [
+    [
+     31,
+     0,
+     4
+    ],
+    [
+     32,
+     0,
+     4
+    ],
+    [
+     16,
+     3,
+     32
+    ]
+   ],
+   "CAVE": [
+    [
+     1,
+     9,
+     18
+    ],
+    [
+     2,
+     10,
+     18
+    ],
+    [
+     1,
+     10,
+     19
+    ],
+    [
+     31,
+     12,
+     19
+    ],
+    [
+     6,
+     9,
+     15
+    ],
+    [
+     4,
+     8,
+     13
+    ],
+    [
+     6,
+     10,
+     16
+    ],
+    [
+     3,
+     11,
+     19
+    ],
+    [
+     6,
+     10,
+     13
+    ],
+    [
+     6,
+     15,
+     0
+    ],
+    [
+     4,
+     16,
+     3
+    ],
+    [
+     3,
+     16,
+     20
+    ],
+    [
+     7,
+     9,
+     15
+    ],
+    [
+     10,
+     8,
+     8
+    ],
+    [
+     10,
+     12,
+     16
+    ],
+    [
+     7,
+     10,
+     14
+    ],
+    [
+     10,
+     10,
+     9
+    ],
+    [
+     7,
+     16,
+     3
+    ],
+    [
+     8,
+     16,
+     11
+    ],
+    [
+     7,
+     16,
+     10
+    ],
+    [
+     9,
+     15,
+     18
+    ],
+    [
+     7,
+     15,
+     19
+    ],
+    [
+     13,
+     8,
+     12
+    ],
+    [
+     11,
+     7,
+     9
+    ],
+    [
+     14,
+     2,
+     11
+    ],
+    [
+     13,
+     16,
+     17
+    ],
+    [
+     15,
+     7,
+     14
+    ],
+    [
+     16,
+     7,
+     15
+    ],
+    [
+     18,
+     0,
+     13
+    ],
+    [
+     19,
+     6,
+     18
+    ],
+    [
+     19,
+     7,
+     19
+    ],
+    [
+     21,
+     0,
+     16
+    ],
+    [
+     21,
+     2,
+     17
+    ],
+    [
+     24,
+     7,
+     17
+    ],
+    [
+     24,
+     7,
+     19
+    ],
+    [
+     24,
+     9,
+     23
+    ],
+    [
+     26,
+     10,
+     22
+    ],
+    [
+     23,
+     1,
+     17
+    ],
+    [
+     24,
+     2,
+     17
+    ],
+    [
+     27,
+     8,
+     19
+    ],
+    [
+     27,
+     9,
+     18
+    ],
+    [
+     28,
+     10,
+     21
+    ],
+    [
+     27,
+     10,
+     17
+    ]
+   ]
+  },
+  "strandedAt": [
+   15,
+   8,
+   14
+  ],
+  "strandedWalks": 1,
+  "strandedAgo": 23,
+  "exploreStalls": 1,
+  "exploreFailures": 13,
+  "stuckSpells": 1,
+  "stuckLevel": 1,
+  "leftOut": 7150
+ },
+ "log": [
+  "[15:33:01] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 138, 51, 156]",
+  "[15:33:01] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[15:33:01] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 138, 52, 156]",
+  "[15:33:02] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 139, 51, 156]",
+  "[15:33:02] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 139, 52, 156]",
+  "[15:33:02] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 139, 53, 156]",
+  "[15:33:03] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for food: let what falls settle]",
+  "[15:33:03] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 139, 51, 156]",
+  "[15:33:03] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for food: let what falls settle]",
+  "[15:33:11] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 139, 51, 156]",
+  "[15:33:12] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for food: let what falls settle]",
+  "[15:33:12] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 139, 51, 156]",
+  "[15:33:12] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[15:33:14] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore south for animals]",
+  "[15:33:14] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for food: back the way it came]",
+  "[15:33:14] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]",
+  "[15:33:16] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton the way it came]",
+  "[15:33:16] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+  "[15:33:19] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Explore south for animals]",
+  "[15:33:19] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Run from creeper]"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "31102026",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/31102026/replays/world/Sol-97112",
+  "class": "death: creeper",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; with its goal's own memory of the box (#198, put back by #201)"
+ }
+}

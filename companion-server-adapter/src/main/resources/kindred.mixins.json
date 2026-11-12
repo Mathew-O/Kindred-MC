@@ -27,7 +27,8 @@
     "BreakDoorTerritoryMixin",
     "DoorInteractGoalAccessor",
     "SmithingTransformAccessor",
-    "PlayerSaveHandlerMixin"
+    "PlayerSaveHandlerMixin",
+    "SleepCountMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin",

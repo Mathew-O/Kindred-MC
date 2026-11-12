@@ -1,0 +1,1710 @@
+{
+ "kind": "death",
+ "player": "Echo",
+ "tick": 96353,
+ "dimension": "minecraft:overworld",
+ "origin": [
+  -135,
+  36,
+  0
+ ],
+ "size": [
+  33,
+  17,
+  33
+ ],
+ "at": [
+  16.69999998807907,
+  8.0,
+  16.30000001192093
+ ],
+ "yaw": 180.03046,
+ "pitch": 15.096565,
+ "health": 9.119999,
+ "food": 6,
+ "saturation": 0.0,
+ "air": 300,
+ "absorption": 0.0,
+ "effects": [],
+ "inventory": [
+  {
+   "slot": 0,
+   "stack": {
+    "id": "minecraft:crafting_table",
+    "count": 1
+   }
+  },
+  {
+   "slot": 1,
+   "stack": {
+    "id": "minecraft:black_wool",
+    "count": 1
+   }
+  },
+  {
+   "slot": 2,
+   "stack": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 1
+    }
+   }
+  },
+  {
+   "slot": 3,
+   "stack": {
+    "id": "minecraft:white_wool",
+    "count": 2
+   }
+  },
+  {
+   "slot": 4,
+   "stack": {
+    "id": "minecraft:stone_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 18
+    }
+   }
+  },
+  {
+   "slot": 5,
+   "stack": {
+    "id": "minecraft:cherry_log",
+    "count": 3
+   }
+  },
+  {
+   "slot": 6,
+   "stack": {
+    "id": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 12
+    }
+   }
+  },
+  {
+   "slot": 7,
+   "stack": {
+    "id": "minecraft:stick",
+    "count": 31
+   }
+  },
+  {
+   "slot": 8,
+   "stack": {
+    "id": "minecraft:stone_pickaxe",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 16
+    }
+   }
+  },
+  {
+   "slot": 9,
+   "stack": {
+    "id": "minecraft:bucket",
+    "count": 2
+   }
+  },
+  {
+   "slot": 10,
+   "stack": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+   }
+  },
+  {
+   "slot": 11,
+   "stack": {
+    "id": "minecraft:string",
+    "count": 1
+   }
+  },
+  {
+   "slot": 12,
+   "stack": {
+    "id": "minecraft:arrow",
+    "count": 2
+   }
+  },
+  {
+   "slot": 13,
+   "stack": {
+    "id": "minecraft:coal",
+    "count": 5
+   }
+  },
+  {
+   "slot": 14,
+   "stack": {
+    "id": "minecraft:pointed_dripstone",
+    "count": 3
+   }
+  },
+  {
+   "slot": 16,
+   "stack": {
+    "id": "minecraft:redstone",
+    "count": 4
+   }
+  },
+  {
+   "slot": 17,
+   "stack": {
+    "id": "minecraft:bow",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 320
+    }
+   }
+  },
+  {
+   "slot": 18,
+   "stack": {
+    "id": "minecraft:furnace",
+    "count": 1
+   }
+  },
+  {
+   "slot": 19,
+   "stack": {
+    "id": "minecraft:gravel",
+    "count": 8
+   }
+  },
+  {
+   "slot": 20,
+   "stack": {
+    "id": "minecraft:flint",
+    "count": 3
+   }
+  },
+  {
+   "slot": 21,
+   "stack": {
+    "id": "minecraft:bone",
+    "count": 2
+   }
+  },
+  {
+   "slot": 22,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 23,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 24,
+   "stack": {
+    "id": "minecraft:lapis_lazuli",
+    "count": 53
+   }
+  },
+  {
+   "slot": 25,
+   "stack": {
+    "id": "minecraft:granite",
+    "count": 4
+   }
+  },
+  {
+   "slot": 27,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 28,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 29,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 30,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 31,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 64
+   }
+  },
+  {
+   "slot": 32,
+   "stack": {
+    "id": "minecraft:cobblestone",
+    "count": 14
+   }
+  },
+  {
+   "slot": 33,
+   "stack": {
+    "id": "minecraft:torch",
+    "count": 1
+   }
+  },
+  {
+   "slot": 34,
+   "stack": {
+    "id": "minecraft:cherry_planks",
+    "count": 1
+   }
+  },
+  {
+   "slot": 36,
+   "stack": {
+    "id": "minecraft:iron_boots",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 9
+    }
+   }
+  },
+  {
+   "slot": 38,
+   "stack": {
+    "id": "minecraft:iron_chestplate",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 9
+    }
+   }
+  },
+  {
+   "slot": 40,
+   "stack": {
+    "id": "minecraft:shield",
+    "count": 1,
+    "components": {
+     "minecraft:damage": 13
+    }
+   }
+  }
+ ],
+ "selected": 8,
+ "timeOfDay": 353,
+ "raining": false,
+ "thundering": false,
+ "difficulty": "easy",
+ "goal": "NETHER_PORTAL",
+ "stage": "Iron: fight back - Back off from zombie the way it came",
+ "task": "nothing",
+ "stance": "PRESS_ON",
+ "habits": "[SPARE_PICKAXE]",
+ "cause": "Echo was slain by Zombie",
+ "ticks": 1200,
+ "memory": {
+  "version": 1,
+  "blocked": [],
+  "failures": [
+   {
+    "at": [
+     10,
+     10,
+     10
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     10,
+     8,
+     10
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     10,
+     7,
+     11
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     10,
+     6,
+     12
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     10,
+     5,
+     13
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     10,
+     4,
+     14
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     10,
+     3,
+     15
+    ],
+    "n": 1
+   },
+   {
+    "at": [
+     18,
+     0,
+     4
+    ],
+    "n": 1
+   }
+  ],
+  "approaches": [
+   {
+    "at": [
+     10,
+     9,
+     9
+    ],
+    "n": 2
+   }
+  ],
+  "unreachable": [],
+  "coverHeld": [],
+  "treesGivenUp": [
+   [
+    27,
+    0,
+    0
+   ]
+  ],
+  "dug": [
+   [
+    6,
+    0,
+    28
+   ],
+   [
+    6,
+    0,
+    29
+   ],
+   [
+    5,
+    13,
+    11
+   ],
+   [
+    5,
+    8,
+    15
+   ],
+   [
+    5,
+    7,
+    16
+   ],
+   [
+    5,
+    0,
+    28
+   ],
+   [
+    27,
+    4,
+    1
+   ],
+   [
+    27,
+    3,
+    0
+   ],
+   [
+    27,
+    3,
+    1
+   ],
+   [
+    27,
+    3,
+    2
+   ],
+   [
+    27,
+    2,
+    0
+   ],
+   [
+    27,
+    2,
+    1
+   ],
+   [
+    27,
+    2,
+    2
+   ],
+   [
+    27,
+    2,
+    3
+   ],
+   [
+    27,
+    1,
+    0
+   ],
+   [
+    27,
+    1,
+    2
+   ],
+   [
+    27,
+    1,
+    3
+   ],
+   [
+    27,
+    1,
+    4
+   ],
+   [
+    27,
+    0,
+    3
+   ],
+   [
+    27,
+    0,
+    4
+   ],
+   [
+    27,
+    0,
+    5
+   ],
+   [
+    26,
+    3,
+    1
+   ],
+   [
+    26,
+    2,
+    1
+   ],
+   [
+    26,
+    1,
+    1
+   ],
+   [
+    26,
+    0,
+    4
+   ],
+   [
+    25,
+    2,
+    1
+   ],
+   [
+    25,
+    1,
+    1
+   ],
+   [
+    25,
+    0,
+    1
+   ],
+   [
+    24,
+    1,
+    1
+   ],
+   [
+    24,
+    0,
+    1
+   ],
+   [
+    23,
+    0,
+    1
+   ],
+   [
+    13,
+    4,
+    19
+   ],
+   [
+    13,
+    2,
+    19
+   ],
+   [
+    13,
+    3,
+    19
+   ],
+   [
+    13,
+    3,
+    20
+   ],
+   [
+    12,
+    2,
+    19
+   ],
+   [
+    12,
+    3,
+    19
+   ],
+   [
+    12,
+    1,
+    19
+   ],
+   [
+    11,
+    2,
+    19
+   ],
+   [
+    11,
+    0,
+    21
+   ],
+   [
+    11,
+    0,
+    19
+   ],
+   [
+    11,
+    1,
+    19
+   ],
+   [
+    10,
+    11,
+    8
+   ],
+   [
+    10,
+    10,
+    8
+   ],
+   [
+    10,
+    10,
+    9
+   ],
+   [
+    10,
+    10,
+    10
+   ],
+   [
+    10,
+    9,
+    8
+   ],
+   [
+    10,
+    9,
+    9
+   ],
+   [
+    10,
+    9,
+    10
+   ],
+   [
+    10,
+    9,
+    11
+   ],
+   [
+    10,
+    8,
+    10
+   ],
+   [
+    10,
+    8,
+    11
+   ],
+   [
+    10,
+    8,
+    12
+   ],
+   [
+    10,
+    7,
+    11
+   ],
+   [
+    10,
+    7,
+    12
+   ],
+   [
+    10,
+    7,
+    13
+   ],
+   [
+    10,
+    6,
+    12
+   ],
+   [
+    10,
+    6,
+    13
+   ],
+   [
+    10,
+    6,
+    14
+   ],
+   [
+    10,
+    5,
+    13
+   ],
+   [
+    10,
+    5,
+    14
+   ],
+   [
+    10,
+    5,
+    15
+   ],
+   [
+    10,
+    4,
+    16
+   ],
+   [
+    10,
+    4,
+    14
+   ],
+   [
+    10,
+    4,
+    15
+   ],
+   [
+    10,
+    3,
+    15
+   ],
+   [
+    10,
+    2,
+    16
+   ],
+   [
+    10,
+    2,
+    17
+   ],
+   [
+    10,
+    2,
+    18
+   ],
+   [
+    10,
+    3,
+    16
+   ],
+   [
+    10,
+    3,
+    17
+   ],
+   [
+    10,
+    0,
+    18
+   ],
+   [
+    10,
+    0,
+    19
+   ],
+   [
+    10,
+    0,
+    20
+   ],
+   [
+    10,
+    0,
+    21
+   ],
+   [
+    10,
+    0,
+    22
+   ],
+   [
+    10,
+    1,
+    17
+   ],
+   [
+    10,
+    1,
+    18
+   ],
+   [
+    10,
+    1,
+    19
+   ],
+   [
+    9,
+    16,
+    0
+   ],
+   [
+    9,
+    16,
+    1
+   ],
+   [
+    9,
+    16,
+    2
+   ],
+   [
+    9,
+    16,
+    3
+   ],
+   [
+    9,
+    15,
+    2
+   ],
+   [
+    9,
+    15,
+    3
+   ],
+   [
+    9,
+    15,
+    4
+   ],
+   [
+    9,
+    14,
+    3
+   ],
+   [
+    9,
+    14,
+    4
+   ],
+   [
+    9,
+    14,
+    5
+   ],
+   [
+    9,
+    13,
+    4
+   ],
+   [
+    9,
+    13,
+    5
+   ],
+   [
+    9,
+    13,
+    6
+   ],
+   [
+    9,
+    12,
+    5
+   ],
+   [
+    9,
+    12,
+    6
+   ],
+   [
+    9,
+    12,
+    7
+   ],
+   [
+    9,
+    11,
+    6
+   ],
+   [
+    9,
+    11,
+    7
+   ],
+   [
+    9,
+    11,
+    8
+   ],
+   [
+    9,
+    10,
+    7
+   ],
+   [
+    9,
+    10,
+    8
+   ],
+   [
+    9,
+    9,
+    8
+   ],
+   [
+    9,
+    0,
+    21
+   ]
+  ],
+  "tunnelled": [],
+  "visitedCaves": [
+   [
+    3,
+    12,
+    12
+   ],
+   [
+    3,
+    12,
+    8
+   ],
+   [
+    3,
+    8,
+    16
+   ],
+   [
+    3,
+    8,
+    12
+   ],
+   [
+    3,
+    4,
+    20
+   ],
+   [
+    3,
+    4,
+    16
+   ],
+   [
+    3,
+    0,
+    20
+   ],
+   [
+    3,
+    0,
+    24
+   ],
+   [
+    3,
+    0,
+    28
+   ],
+   [
+    31,
+    4,
+    32
+   ],
+   [
+    27,
+    8,
+    28
+   ],
+   [
+    27,
+    8,
+    24
+   ],
+   [
+    27,
+    4,
+    32
+   ],
+   [
+    27,
+    4,
+    28
+   ],
+   [
+    27,
+    0,
+    0
+   ],
+   [
+    27,
+    0,
+    4
+   ],
+   [
+    27,
+    0,
+    32
+   ],
+   [
+    23,
+    8,
+    24
+   ],
+   [
+    23,
+    8,
+    20
+   ],
+   [
+    23,
+    0,
+    0
+   ],
+   [
+    19,
+    8,
+    20
+   ],
+   [
+    19,
+    4,
+    20
+   ],
+   [
+    15,
+    8,
+    16
+   ],
+   [
+    15,
+    4,
+    20
+   ],
+   [
+    11,
+    8,
+    16
+   ],
+   [
+    11,
+    4,
+    20
+   ],
+   [
+    11,
+    4,
+    16
+   ],
+   [
+    11,
+    0,
+    20
+   ],
+   [
+    11,
+    0,
+    16
+   ],
+   [
+    7,
+    16,
+    0
+   ],
+   [
+    7,
+    12,
+    0
+   ],
+   [
+    7,
+    12,
+    4
+   ],
+   [
+    7,
+    8,
+    4
+   ],
+   [
+    7,
+    8,
+    8
+   ],
+   [
+    7,
+    4,
+    8
+   ],
+   [
+    7,
+    4,
+    12
+   ],
+   [
+    7,
+    0,
+    12
+   ],
+   [
+    7,
+    0,
+    16
+   ],
+   [
+    7,
+    0,
+    20
+   ]
+  ],
+  "setAside": [],
+  "known": {
+   "COAL_ORE": [
+    [
+     20,
+     13,
+     12
+    ],
+    [
+     10,
+     11,
+     9
+    ],
+    [
+     10,
+     10,
+     6
+    ],
+    [
+     10,
+     9,
+     7
+    ],
+    [
+     11,
+     11,
+     7
+    ],
+    [
+     11,
+     11,
+     8
+    ],
+    [
+     11,
+     10,
+     8
+    ],
+    [
+     11,
+     10,
+     9
+    ]
+   ],
+   "IRON_ORE": [
+    [
+     18,
+     4,
+     22
+    ],
+    [
+     18,
+     4,
+     21
+    ]
+   ],
+   "GRAVEL": [
+    [
+     6,
+     11,
+     10
+    ],
+    [
+     6,
+     11,
+     11
+    ],
+    [
+     6,
+     10,
+     12
+    ],
+    [
+     6,
+     9,
+     13
+    ],
+    [
+     5,
+     11,
+     11
+    ],
+    [
+     5,
+     10,
+     12
+    ],
+    [
+     5,
+     9,
+     13
+    ],
+    [
+     5,
+     8,
+     14
+    ],
+    [
+     4,
+     10,
+     11
+    ],
+    [
+     4,
+     10,
+     12
+    ],
+    [
+     4,
+     9,
+     13
+    ],
+    [
+     4,
+     8,
+     14
+    ],
+    [
+     3,
+     10,
+     12
+    ],
+    [
+     3,
+     9,
+     13
+    ],
+    [
+     9,
+     11,
+     10
+    ],
+    [
+     9,
+     11,
+     11
+    ],
+    [
+     9,
+     11,
+     9
+    ],
+    [
+     9,
+     10,
+     12
+    ],
+    [
+     9,
+     10,
+     9
+    ],
+    [
+     9,
+     10,
+     10
+    ],
+    [
+     9,
+     9,
+     9
+    ],
+    [
+     9,
+     9,
+     10
+    ],
+    [
+     9,
+     9,
+     11
+    ],
+    [
+     9,
+     8,
+     10
+    ],
+    [
+     9,
+     8,
+     11
+    ],
+    [
+     8,
+     11,
+     10
+    ],
+    [
+     8,
+     11,
+     11
+    ],
+    [
+     8,
+     10,
+     12
+    ],
+    [
+     8,
+     10,
+     8
+    ],
+    [
+     8,
+     9,
+     13
+    ],
+    [
+     8,
+     9,
+     8
+    ],
+    [
+     7,
+     11,
+     10
+    ],
+    [
+     7,
+     11,
+     11
+    ],
+    [
+     7,
+     10,
+     12
+    ],
+    [
+     7,
+     9,
+     13
+    ]
+   ],
+   "CAVE": [
+    [
+     3,
+     12,
+     27
+    ],
+    [
+     3,
+     11,
+     11
+    ],
+    [
+     4,
+     1,
+     26
+    ],
+    [
+     3,
+     1,
+     28
+    ],
+    [
+     5,
+     2,
+     23
+    ],
+    [
+     2,
+     12,
+     26
+    ],
+    [
+     1,
+     8,
+     16
+    ],
+    [
+     1,
+     9,
+     15
+    ],
+    [
+     1,
+     4,
+     20
+    ],
+    [
+     1,
+     5,
+     19
+    ],
+    [
+     2,
+     1,
+     27
+    ],
+    [
+     1,
+     1,
+     28
+    ],
+    [
+     1,
+     3,
+     22
+    ],
+    [
+     27,
+     8,
+     27
+    ],
+    [
+     29,
+     8,
+     28
+    ],
+    [
+     27,
+     11,
+     23
+    ],
+    [
+     27,
+     1,
+     2
+    ],
+    [
+     23,
+     8,
+     23
+    ],
+    [
+     23,
+     8,
+     24
+    ],
+    [
+     23,
+     10,
+     19
+    ],
+    [
+     23,
+     4,
+     30
+    ],
+    [
+     23,
+     6,
+     27
+    ],
+    [
+     23,
+     4,
+     32
+    ],
+    [
+     19,
+     11,
+     13
+    ],
+    [
+     19,
+     8,
+     18
+    ],
+    [
+     21,
+     8,
+     20
+    ],
+    [
+     19,
+     4,
+     29
+    ],
+    [
+     21,
+     6,
+     25
+    ],
+    [
+     19,
+     5,
+     23
+    ],
+    [
+     19,
+     7,
+     19
+    ],
+    [
+     19,
+     3,
+     32
+    ],
+    [
+     19,
+     3,
+     30
+    ],
+    [
+     18,
+     12,
+     12
+    ],
+    [
+     15,
+     8,
+     16
+    ],
+    [
+     15,
+     9,
+     15
+    ],
+    [
+     18,
+     4,
+     24
+    ],
+    [
+     18,
+     4,
+     28
+    ],
+    [
+     15,
+     5,
+     19
+    ],
+    [
+     18,
+     5,
+     23
+    ],
+    [
+     18,
+     0,
+     4
+    ],
+    [
+     15,
+     2,
+     32
+    ],
+    [
+     16,
+     2,
+     30
+    ],
+    [
+     11,
+     14,
+     30
+    ],
+    [
+     12,
+     8,
+     16
+    ],
+    [
+     12,
+     8,
+     15
+    ],
+    [
+     11,
+     4,
+     19
+    ],
+    [
+     11,
+     4,
+     20
+    ],
+    [
+     13,
+     1,
+     32
+    ],
+    [
+     11,
+     1,
+     30
+    ],
+    [
+     11,
+     3,
+     21
+    ],
+    [
+     11,
+     3,
+     24
+    ],
+    [
+     11,
+     0,
+     19
+    ],
+    [
+     9,
+     9,
+     8
+    ],
+    [
+     9,
+     10,
+     13
+    ],
+    [
+     10,
+     7,
+     11
+    ],
+    [
+     10,
+     6,
+     12
+    ],
+    [
+     7,
+     4,
+     19
+    ],
+    [
+     7,
+     4,
+     20
+    ],
+    [
+     7,
+     1,
+     28
+    ],
+    [
+     10,
+     3,
+     15
+    ],
+    [
+     10,
+     0,
+     18
+    ],
+    [
+     7,
+     1,
+     32
+    ],
+    [
+     7,
+     1,
+     27
+    ],
+    [
+     7,
+     2,
+     23
+    ]
+   ]
+  },
+  "exploreStalls": 14,
+  "exploreFailures": 233,
+  "stuckSpells": 1,
+  "stuckLevel": 0,
+  "leftOut": 21164
+ },
+ "log": [
+  "[14:54:46] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -124, 38, 19]",
+  "[14:54:47] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -123, 37, 19]",
+  "[14:54:47] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -123, 38, 19]",
+  "[14:54:47] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:47] [Server thread/INFO]: Echo native_discard COMPLETED [Drop surplus dirt]",
+  "[14:54:47] [Server thread/INFO]: Echo native_discard COMPLETED [Drop surplus diorite]",
+  "[14:54:47] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -123, 39, 19]",
+  "[14:54:47] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -122, 38, 19]",
+  "[14:54:47] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -122, 39, 19]",
+  "[14:54:48] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:48] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -122, 40, 19]",
+  "[14:54:48] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for food: clear -122, 39, 20]",
+  "[14:54:48] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:48] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:48] [Server thread/INFO]: Echo native_discard COMPLETED [Drop surplus diorite]",
+  "[14:54:48] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:49] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:49] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:49] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for food: step up]",
+  "[14:54:52] [Server thread/INFO]: Echo died at -119, 44, 16: Echo was slain by Zombie (tick 96353, day, under cover, hunger 6, armour 8, holding stone_pickaxe, a shield; doing \"native_goto\" in \"Iron: fight back - Back off from zombie the way it came\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+ ],
+ "corpus": {
+  "run": "e40a20-79a9aad",
+  "seed": "202",
+  "build": "79a9aad",
+  "replay": "",
+  "source": "claude/corpus-data-e40a20-1111@aab8e78:e40a20-79a9aad/202/replays/world/Echo-96353",
+  "class": "death: zombie",
+  "staged": "the ground captured round the player at the time (the structure); the player made from its recorded state; nothing given beyond what it held; with its goal's own memory of the box (#198, put back by #201)"
+ }
+}

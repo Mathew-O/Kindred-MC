@@ -50,6 +50,7 @@ final class NativeNavigator {
     private final Long2ObjectOpenHashMap<BlockState> states = new Long2ObjectOpenHashMap<>();
     private final Long2ByteOpenHashMap chunks = new Long2ByteOpenHashMap();
     private final Navigator core;
+    private final Terrain terrain;
 
     /** A navigator for the given world that drops the body no further than is safe. */
     NativeNavigator(ServerWorld world) {
@@ -93,11 +94,15 @@ final class NativeNavigator {
      */
     NativeNavigator(ServerWorld world, int maxDrop) {
         this.world = world;
-        this.core = new Navigator(new WorldTerrain(), maxDrop);
+        this.terrain = new WorldTerrain();
+        this.core = new Navigator(terrain, maxDrop);
     }
 
     /** The core navigator this one hands its searches to, over this world. */
     Navigator core() { return core; }
+
+    /** This navigator's view of the world's per-cell facts, read through its own cache of the blocks (F-35e). */
+    Terrain terrain() { return terrain; }
 
     /** The same navigator, ending an unfinished route only where {@code where} allows. */
     NativeNavigator endingOnly(Predicate<BlockPos> where) {
@@ -273,6 +278,16 @@ final class NativeNavigator {
                 || state.isOf(Blocks.WITHER_ROSE) || state.isOf(Blocks.MAGMA_BLOCK) || state.isOf(Blocks.POINTED_DRIPSTONE);
     }
 
+    /**
+     * A block a survival player cannot see, solid to the touch: a barrier (F-22c66). It is never ground to stand on or a
+     * step to take, only an obstacle, as a player bumps into it. The other blocks it cannot see (light, structure void)
+     * have no collision box, and are passed through as air already. In the corpus, a route walked the GameTest's own
+     * barrier fence round a scene over a tree's leaves, toward a look aimed at its top, and fell off the canopy.
+     */
+    static boolean unseen(BlockState state) {
+        return state.isOf(Blocks.BARRIER);
+    }
+
     /** What a step through a portal cell costs a route not going through it. */
     static final double PORTAL_COST = Navigator.PORTAL_COST;
 
@@ -349,14 +364,18 @@ final class NativeNavigator {
         @Override
         public boolean supports(int x, int y, int z) {
             BlockPos pos = new BlockPos(x, y, z);
-            var shape = state(pos).getCollisionShape(world, pos);
+            BlockState state = state(pos);
+            if (unseen(state)) return false;
+            var shape = state.getCollisionShape(world, pos);
             return !shape.isEmpty() && shape.getMax(Direction.Axis.Y) >= 0.8 && shape.getMax(Direction.Axis.Y) <= 1.0;
         }
 
         @Override
         public boolean bears(int x, int y, int z) {
             BlockPos pos = new BlockPos(x, y, z);
-            var shape = state(pos).getCollisionShape(world, pos);
+            BlockState state = state(pos);
+            if (unseen(state)) return false;
+            var shape = state.getCollisionShape(world, pos);
             return !shape.isEmpty() && shape.getMax(Direction.Axis.Y) >= 0.8;
         }
 

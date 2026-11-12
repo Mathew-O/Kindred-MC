@@ -34,6 +34,8 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   with the fix that makes it pass three of three; one over a megabyte is not committed. A replay is staged by
   definition: the ground, the mobs and the player's state are copied, and its personality is the fixtures' own.
 
+- F-35f, the simulator sees, digs toward lava and finds ore as the game does: [evidence](evidence/F-35f.md).
+- F-35e, the campaign's climb, dig down, tunnel and giving up, in core: [evidence](evidence/F-35e.md).
 - F-35d, the route planners in core behind a terrain of per-cell facts: [evidence](evidence/F-35d.md).
 - F-35c, a lit portal far off or deep walked to a leg at a time: [evidence](evidence/F-35c.md).
 - F-35c1, no walk to the portal out of a night shelter: [evidence](evidence/F-35c1.md).
@@ -43,11 +45,25 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
+- F-35l, stone not mined from a thin floor over a drop round its feet: [evidence](evidence/F-35l.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
+- E-70a, nights in bed: in by dusk, the bed it carries, a person's night never held: [evidence](evidence/E-70a.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
+
+- [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
+
+## A founder claims the ground its first base will stand on (M-06i) — 12 November 2026 (`claude/m06i-base-site-1111`)
+
+- [M-06i: a founder claims the ground its first base will stand on](evidence/M-06i.md#a-founder-claims-the-ground-its-first-base-will-stand-on-2026-11-12-claudem06i-base-site-1111).
+
+## An evaluation run's preset traits saved as one change (M-06i) — 12 November 2026 (`claude/m06i-eval-presets-1111`)
+
+- [M-06i: an evaluation run's preset traits saved as one change](evidence/M-06i.md#an-evaluation-runs-preset-traits-saved-as-one-change-2026-11-12-claudem06i-eval-presets-1111).
 
 ## An AI player buys and bids for what its run lacks (M-06i) — 12 November 2026 (`claude/m06i-wants-1111`)
 
@@ -105,6 +121,8 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
 - [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs.
+- [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs; the build green on the merged tree; the corpus gate passes, its three flagged scenes cleared by the lead (reasons in the evidence).
+- [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

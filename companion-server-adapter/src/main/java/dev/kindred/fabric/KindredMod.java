@@ -41,6 +41,11 @@ public final class KindredMod implements ModInitializer {
     private static boolean lessons;
     /** Whether the players keep and use an atlas of the world (F-30): {@code KINDRED_ATLAS=off} turns it off. */
     private static boolean atlas;
+    /**
+     * Whether the players hear lava and water by the client's own rule (E-71f): off unless {@code KINDRED_HEARING_AMBIENCE=on},
+     * read once at start. Nothing reads what it hears yet, and it costs about 0.1 ms a tick a player when on.
+     */
+    private static boolean hearingAmbience;
     /** Whether a stuck player asks the strategist for a way out (F-29): {@code KINDRED_RESCUE=off} turns it off. */
     private static boolean rescue;
     /** The watch page (E-48), when {@code KINDRED_WATCH_PORT} and {@code KINDRED_WATCH_TOKEN} are set: off otherwise. */
@@ -98,6 +103,7 @@ public final class KindredMod implements ModInitializer {
         lessons = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_LESSONS")).trim());
         atlas = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_ATLAS")).trim());
         rescue = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_RESCUE")).trim());
+        hearingAmbience = "on".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_HEARING_AMBIENCE")).trim());
         if (eval != null) {
             net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
         }
@@ -125,6 +131,10 @@ public final class KindredMod implements ModInitializer {
             if (!rescue) {
                 runtime.rescue(false);
                 LOGGER.info("Rescue plans are off (KINDRED_RESCUE=off)");
+            }
+            if (hearingAmbience) {
+                runtime.hearingAmbience(true);
+                LOGGER.info("The players hear lava and water by the client's own rule (KINDRED_HEARING_AMBIENCE=on)");
             }
             if (System.getenv("KINDRED_WATCH_PORT") != null) {
                 try {

@@ -1,0 +1,3 @@
+{"fixture": "NativeCavernLedgeGameTests.onACavernsLedgeWithAnAquiferBehindItItGetsOffTheLedge",
+ "corpus": {"class": "stuck: ledge, aquifer side", "source": "F-25c4cp, main@b663fb5; handed over by CI GREEN as a marginal stuck loop (alone x3 on b663fb5: off the ledge after 1,445, 1,557 and 1,629 ticks; failed in full suites on #157, #185, #206 and #209)",
+  "staged": "the kept world's block round Echo's ledge on 505 (29 by 34 by 27, liquid on the faces made stone), daylight held, the cavern lit so nothing spawns, Echo's iron-stage kit, watchdog at 400 ticks; passes once off the ledge 8 or more on ground within 3,000 ticks, alive"}}

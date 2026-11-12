@@ -1,5 +1,9 @@
 package dev.kindred.fabric;
 
+import dev.kindred.core.route.Cell;
+import dev.kindred.core.route.Sight;
+import dev.kindred.core.route.SightWorld;
+
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.tag.BlockTags;
@@ -9,17 +13,11 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.chunk.ChunkSection;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -54,28 +52,33 @@ final class WorldKnowledge {
         GOLD_BLOCK
     }
 
-    static final int HORIZONTAL_RADIUS = 32;
-    static final int VERTICAL_RADIUS = 24;
-    private static final int BLOCK_READS_PER_SCAN = 6_000;
-    private static final int RAYCASTS_PER_SCAN = 24;
-    /** Cave floors passed in a sweep while their sight lines were spent, looked at first in the scans after. */
-    private static final int CAVE_BACKLOG = 1024;
-    private final java.util.ArrayDeque<BlockPos> caveBacklog = new java.util.ArrayDeque<>();
-    /** At most this many of a kind are remembered; past it the farthest go ({@link #remember}). */
-    private static final int MAX_PER_KIND = 2_000;
+    static final int HORIZONTAL_RADIUS = Sight.HORIZONTAL_RADIUS;
+    static final int VERTICAL_RADIUS = Sight.VERTICAL_RADIUS;
+    private static final Kind[] KINDS = Kind.values();
+    private static final Sight.Kind[] SIGHT_KINDS = new Sight.Kind[KINDS.length];
+    static {
+        for (Kind kind : KINDS) SIGHT_KINDS[kind.ordinal()] = Sight.Kind.valueOf(kind.name());
+    }
 
-    private final Map<Kind, Map<Long, BlockPos>> known = new EnumMap<>(Kind.class);
-    /** The columns where it saw still water open to the air, the last {@value #WATER_COLUMNS} (F-35j). */
-    private final java.util.LinkedHashSet<Long> waterColumns = new java.util.LinkedHashSet<>();
-    static final int WATER_COLUMNS = 16_384;
+    /** What it has seen and how it sees, the core's (F-35f); this class answers its world facts from the live world. */
+    private final Sight sight = new Sight();
+    /** The columns of still water it saw that it keeps, the core's (F-35j). */
+    static final int WATER_COLUMNS = Sight.WATER_COLUMNS;
     private String dimension = "";
-    private final List<ChunkSectionPos> sweep = new ArrayList<>();
-    private int cursor;
-    private int index;
-    private int sweeps;
 
-    WorldKnowledge() {
-        for (Kind kind : Kind.values()) known.put(kind, new HashMap<>());
+    WorldKnowledge() { }
+
+    private static Sight.Kind sight(Kind kind) { return kind == null ? null : SIGHT_KINDS[kind.ordinal()]; }
+
+    private static Kind kind(Sight.Kind kind) { return kind == null ? null : KINDS[kind.ordinal()]; }
+
+    private static Cell cell(BlockPos pos) { return new Cell(pos.getX(), pos.getY(), pos.getZ()); }
+
+    private static BlockPos pos(Cell cell) { return new BlockPos(cell.x(), cell.y(), cell.z()); }
+
+    private static double[] eye(ServerPlayerEntity player) {
+        Vec3d eye = player.getEyePos();
+        return new double[] {eye.x, eye.y, eye.z};
     }
 
     static Kind classify(BlockState state) {
@@ -105,101 +108,26 @@ final class WorldKnowledge {
         return null;
     }
 
-    private static boolean needsSight(Kind kind) {
-        return kind == Kind.COAL_ORE || kind == Kind.IRON_ORE || kind == Kind.DIAMOND_ORE || kind == Kind.WATER || kind == Kind.LAVA
-                || kind == Kind.CAVE || kind == Kind.SPAWNER || kind == Kind.STONE_BRICK || kind == Kind.END_PORTAL_FRAME
-                || kind == Kind.NETHER_BRICK || kind == Kind.COBWEB || kind == Kind.NETHER_GOLD_ORE || kind == Kind.CONTAINER
-                || kind == Kind.GOLD_BLOCK;
-    }
-
     /**
      * A place a player could stand in a cave: two blocks of air over a stone floor, out of daylight (sky light
      * at most 7, so overhangs at a cave mouth count and open ground does not), or a ravine floor well below sea level.
      * Ground open to the sky, nothing above it in the heightmap, is never a cave floor, whatever its light says: sky light
      * reaches stone just set a few ticks late, more so on a busy server, and a wall's top read as a cave in the meantime
-     * sent players on walks to it.
+     * sent players on walks to it. The core's rule (F-35f).
      */
     static boolean caveFloor(ServerWorld world, BlockPos feet) {
-        if (!world.getBlockState(feet).isAir() || !world.getBlockState(feet.up()).isAir()) return false;
-        if (classify(world.getBlockState(feet.down())) != Kind.STONE) return false;
-        if (feet.getY() < world.getSeaLevel() - 10) return true;
-        return world.getLightLevel(net.minecraft.world.LightType.SKY, feet) <= 7
-                && world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING, feet.getX(), feet.getZ()) > feet.getY();
+        return Sight.caveFloor(new WorldSight(world, null), cell(feet));
     }
 
-    private static long cell(BlockPos pos) {
-        return BlockPos.asLong(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2);
-    }
-
-    /** Advances the incremental sweep around the player by a bounded amount of block reads. */
+    /** Advances the incremental sweep around the player by a bounded amount of block reads (the core's, F-35f). */
     void scan(ServerPlayerEntity player) {
         ServerWorld world = player.getServerWorld();
-        center = player.getBlockPos().toImmutable();
         String dim = world.getRegistryKey().getValue().toString();
         if (!dim.equals(dimension)) {
             dimension = dim;
-            for (var map : known.values()) map.clear();
-            waterColumns.clear();
-            sweep.clear();
-            caveBacklog.clear();
+            sight.reset();
         }
-        // A sweep ends once the cave floors it passed over are looked at too: what was not seen in it is known not there.
-        if (cursor >= sweep.size() && caveBacklog.isEmpty()) rebuildSweep(player);
-        int reads = 0;
-        int raycasts = 0, caveRaycasts = 0;
-        while (!caveBacklog.isEmpty() && caveRaycasts < RAYCASTS_PER_SCAN) {
-            BlockPos floor = caveBacklog.poll();
-            if (known.get(Kind.CAVE).containsKey(cell(floor)) || !world.isChunkLoaded(floor)) continue;
-            caveRaycasts++;
-            if (visible(player, floor)) remember(Kind.CAVE, floor);
-        }
-        while (cursor < sweep.size() && reads < BLOCK_READS_PER_SCAN) {
-            ChunkSectionPos sectionPos = sweep.get(cursor);
-            var chunk = world.getChunkManager().getWorldChunk(sectionPos.getSectionX(), sectionPos.getSectionZ());
-            if (chunk == null || sectionPos.getSectionY() < world.getBottomSectionCoord() || sectionPos.getSectionY() >= world.getTopSectionCoord()) {
-                nextSection();
-                continue;
-            }
-            ChunkSection section = chunk.getSection(chunk.sectionCoordToIndex(sectionPos.getSectionY()));
-            if (section.isEmpty() || !section.hasAny(state -> classify(state) != null)) {
-                nextSection();
-                continue;
-            }
-            while (index < 4096 && reads < BLOCK_READS_PER_SCAN) {
-                int x = index & 15, z = (index >> 4) & 15, y = index >> 8;
-                reads++;
-                BlockState state = section.getBlockState(x, y, z);
-                Kind kind = classify(state);
-                if (kind != null) {
-                    BlockPos pos = new BlockPos(sectionPos.getMinX() + x, sectionPos.getMinY() + y, sectionPos.getMinZ() + z);
-                    // Stone with a cave floor on top: one sighting per cell is enough to know there is a cave there.
-                    BlockPos floor = pos.up();
-                    boolean airAbove = y < 15 ? section.getBlockState(x, y + 1, z).isAir() : world.getBlockState(floor).isAir();
-                    // Cave floors have sight lines of their own to spend: a wide floor of open stone (a hillside, a quarry)
-                    // took them all, scan after scan, and the ore beside it went unseen. Those it has none left for are
-                    // looked at first in the scans after.
-                    if (kind == Kind.STONE && airAbove && !known.get(Kind.CAVE).containsKey(cell(floor)) && caveFloor(world, floor)) {
-                        if (caveRaycasts < RAYCASTS_PER_SCAN) {
-                            caveRaycasts++;
-                            if (visible(player, floor)) remember(Kind.CAVE, floor);
-                        } else if (caveBacklog.size() < CAVE_BACKLOG) {
-                            caveBacklog.add(floor.toImmutable());
-                        }
-                    }
-                    if (exposed(world, pos, kind)) {
-                        if (needsSight(kind)) {
-                            if (raycasts >= RAYCASTS_PER_SCAN) return; // Resume at this exact block next scan.
-                            raycasts++;
-                            if (visible(player, pos)) remember(kind, pos);
-                        } else {
-                            remember(kind, pos);
-                        }
-                    }
-                }
-                index++;
-            }
-            if (index >= 4096) nextSection();
-        }
+        sight.scan(new WorldSight(world, player), eye(player), cell(player.getBlockPos()));
     }
 
     /**
@@ -208,11 +136,7 @@ final class WorldKnowledge {
      * remembered now, wherever the sweep has got to. Bounded: a small box, and one sight line a block of the kind.
      */
     void look(ServerPlayerEntity player, BlockPos center, int radius, int height, Kind kind) {
-        ServerWorld world = player.getServerWorld();
-        for (BlockPos pos : BlockPos.iterate(center.add(-radius, -height, -radius), center.add(radius, height, radius))) {
-            if (!world.isChunkLoaded(pos) || classify(world.getBlockState(pos)) != kind || !exposed(world, pos, kind)) continue;
-            if (!needsSight(kind) || visible(player, pos)) remember(kind, pos);
-        }
+        sight.look(new WorldSight(player.getServerWorld(), player), eye(player), cell(center), radius, height, sight(kind));
     }
 
     /**
@@ -222,158 +146,29 @@ final class WorldKnowledge {
      * third column, and one sight line a top for the eight nearest.
      */
     Optional<BlockPos> treeInView(ServerPlayerEntity player, int radius, Predicate<BlockPos> usable) {
-        ServerWorld world = player.getServerWorld();
-        BlockPos feet = player.getBlockPos();
-        Vec3d eye = player.getEyePos();
-        var tops = new ArrayList<BlockPos>();
-        for (int dx = -radius; dx <= radius; dx += 3) {
-            for (int dz = -radius; dz <= radius; dz += 3) {
-                int square = dx * dx + dz * dz;
-                if (square > radius * radius || square <= HORIZONTAL_RADIUS * HORIZONTAL_RADIUS) continue;
-                int x = feet.getX() + dx, z = feet.getZ() + dz;
-                if (!world.isChunkLoaded(ChunkSectionPos.getSectionCoord(x), ChunkSectionPos.getSectionCoord(z))) continue;
-                BlockPos top = new BlockPos(x, world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING, x, z) - 1, z);
-                BlockState state = world.getBlockState(top);
-                if (state.isIn(BlockTags.LEAVES) || state.isIn(BlockTags.LOGS)) tops.add(top);
-            }
-        }
-        tops.sort(java.util.Comparator.comparingDouble(p -> p.getSquaredDistance(feet)));
-        for (int i = 0; i < Math.min(8, tops.size()); i++) {
-            BlockPos top = tops.get(i);
-            // Seen if the sight line meets the tree itself, a leaf or log of its crown short of the top block.
-            BlockHitResult hit = world.raycast(new RaycastContext(eye, Vec3d.ofCenter(top), RaycastContext.ShapeType.COLLIDER,
-                    RaycastContext.FluidHandling.NONE, player));
-            BlockState met = world.getBlockState(hit.getBlockPos());
-            if (hit.getType() != HitResult.Type.MISS && !(hit.getBlockPos().getManhattanDistance(top) <= 3
-                    && (met.isIn(BlockTags.LEAVES) || met.isIn(BlockTags.LOGS)))) continue;
-            Optional<BlockPos> log = logUnder(world, top);
-            if (log.isPresent() && usable.test(log.get())) {
-                remember(Kind.LOG, log.get());
-                return log;
-            }
-        }
-        return Optional.empty();
+        return sight.treeInView(new WorldSight(player.getServerWorld(), player), eye(player), cell(player.getBlockPos()), radius,
+                c -> usable.test(pos(c))).map(WorldKnowledge::pos);
     }
 
-    /** A log of the tree whose crown or trunk top is {@code top}: down its own column or one within two of it, eight deep. */
-    private static Optional<BlockPos> logUnder(ServerWorld world, BlockPos top) {
-        for (int dy = 0; dy <= 8; dy++) {
-            for (int dx = -2; dx <= 2; dx++) {
-                for (int dz = -2; dz <= 2; dz++) {
-                    BlockPos at = top.add(dx, -dy, dz);
-                    if (world.isChunkLoaded(at) && world.getBlockState(at).isIn(BlockTags.LOGS)) return Optional.of(at);
-                }
-            }
-        }
-        return Optional.empty();
+    /** Where a player stands to chop {@code log}, the core's rule (F-35f): see {@link Sight#trunkFoot}. */
+    static Optional<BlockPos> trunkFoot(ServerWorld world, BlockPos log) {
+        return Sight.trunkFoot(new WorldSight(world, null), cell(log)).map(WorldKnowledge::pos);
     }
 
-    private void nextSection() {
-        cursor++;
-        index = 0;
+    /** A log beside something built, a cabin's post and not a tree: the core's rule (F-35f), see {@link Sight#builtIn}. */
+    static boolean builtIn(ServerWorld world, BlockPos log) {
+        return Sight.builtIn(new WorldSight(world, null), cell(log));
     }
 
     /** Completed sweeps of the surroundings so far; a new one starts around wherever the player then is. */
-    int sweeps() { return sweeps; }
-
-    private void rebuildSweep(ServerPlayerEntity player) {
-        if (!sweep.isEmpty()) sweeps++;
-        sweep.clear();
-        cursor = 0;
-        index = 0;
-        ChunkSectionPos center = ChunkSectionPos.from(player);
-        int horizontal = HORIZONTAL_RADIUS >> 4;
-        int vertical = Math.max(1, VERTICAL_RADIUS >> 4);
-        for (int dy = -vertical; dy <= vertical; dy++) {
-            for (int dx = -horizontal; dx <= horizontal; dx++) {
-                for (int dz = -horizontal; dz <= horizontal; dz++) {
-                    sweep.add(ChunkSectionPos.from(center.getSectionX() + dx, center.getSectionY() + dy, center.getSectionZ() + dz));
-                }
-            }
-        }
-        // Nearest sections first, so fresh surroundings are known quickly.
-        sweep.sort((a, b) -> Integer.compare(distance(a, center), distance(b, center)));
-    }
-
-    private static int distance(ChunkSectionPos a, ChunkSectionPos b) {
-        int dx = a.getSectionX() - b.getSectionX(), dy = a.getSectionY() - b.getSectionY(), dz = a.getSectionZ() - b.getSectionZ();
-        return dx * dx + dy * dy * 2 + dz * dz;
-    }
-
-    private static boolean exposed(ServerWorld world, BlockPos pos, Kind kind) {
-        for (Direction direction : Direction.values()) {
-            BlockPos near = pos.offset(direction);
-            if (!world.isChunkLoaded(near)) continue;
-            BlockState state = world.getBlockState(near);
-            if (kind == Kind.WATER || kind == Kind.LAVA) {
-                if (state.isAir()) return true;
-                continue;
-            }
-            // A face under water is not a face a walking player can work from, except obsidian, which forms
-            // under the water poured to make it.
-            if (!state.getFluidState().isEmpty() && kind == Kind.OBSIDIAN && state.getFluidState().isIn(FluidTags.WATER)) return true;
-            if (state.getFluidState().isEmpty() && (state.isAir() || !state.isOpaqueFullCube(world, near))) return true;
-        }
-        return false;
-    }
-
-    private static boolean visible(ServerPlayerEntity player, BlockPos pos) {
-        Vec3d eye = player.getEyePos();
-        Vec3d center = Vec3d.ofCenter(pos);
-        if (eye.squaredDistanceTo(center) > (HORIZONTAL_RADIUS + 8) * (HORIZONTAL_RADIUS + 8)) return false;
-        if (sees(player, eye, center, pos)) return true;
-        // A pool set into the floor shows only its surface: from a few blocks away the ray to its centre meets the
-        // floor's edge, while a player plainly sees the lava or water. Look at the surface too.
-        var fluid = player.getServerWorld().getFluidState(pos);
-        if (fluid.isEmpty()) return false;
-        float height = fluid.getHeight(player.getServerWorld(), pos);
-        return sees(player, eye, new Vec3d(pos.getX() + 0.5, pos.getY() + Math.max(0.1, height - 0.05), pos.getZ() + 0.5), pos);
-    }
-
-    private static boolean sees(ServerPlayerEntity player, Vec3d eye, Vec3d point, BlockPos pos) {
-        BlockHitResult hit = player.getServerWorld().raycast(new RaycastContext(eye, point, RaycastContext.ShapeType.COLLIDER,
-                RaycastContext.FluidHandling.ANY, player));
-        return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos);
-    }
+    int sweeps() { return sight.sweeps(); }
 
     /** Told of each block of a kind remembered for the first time (F-30's atlas), on the server thread; none by default. */
-    private java.util.function.BiConsumer<Kind, BlockPos> firstSight;
-
-    void onFirstSight(java.util.function.BiConsumer<Kind, BlockPos> listener) { firstSight = listener; }
-
-    void remember(Kind kind, BlockPos pos) {
-        // Water it saw, by column, past the cap on blocks of a kind: a sea fills that cap long before it has looked round.
-        if (kind == Kind.WATER) {
-            long column = net.minecraft.util.math.ChunkPos.toLong(pos.getX(), pos.getZ());
-            waterColumns.remove(column);
-            waterColumns.add(column);
-            if (waterColumns.size() > WATER_COLUMNS) waterColumns.remove(waterColumns.iterator().next());
-        }
-        var map = known.get(kind);
-        long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
-        // Full: the farthest of the kind from where it last looked round go, so what is beside it now is known. Refusing
-        // the new one instead, a player who had walked through a jungle knew 2,000 logs it had left behind and none of
-        // the trunks five blocks off ("0 known" with 42 to 82 logs within 8, recap-factions110-b663fb5).
-        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) evictFarthest(map, center != null ? center : pos);
-        if (map.put(key, pos.toImmutable()) == null && firstSight != null) firstSight.accept(kind, pos.toImmutable());
+    void onFirstSight(java.util.function.BiConsumer<Kind, BlockPos> listener) {
+        sight.onFirstSight((kind, cell) -> listener.accept(kind(kind), pos(cell)));
     }
 
-    /** Where it last looked round from: the far ones are measured from here when a kind is full. */
-    private BlockPos center;
-
-    /** For tests: where it last looked round from, as a scan sets it. */
-    void centerAt(BlockPos at) { center = at == null ? null : at.toImmutable(); }
-
-    /** How many a full kind drops at once, the farthest first: one sort each so many, not a scan per block remembered. */
-    static final int EVICT = MAX_PER_KIND / 10;
-
-    static int maxPerKind() { return MAX_PER_KIND; }
-
-    private static void evictFarthest(Map<Long, BlockPos> map, BlockPos from) {
-        var entries = new ArrayList<>(map.entrySet());
-        entries.sort((a, b) -> Double.compare(b.getValue().getSquaredDistance(from), a.getValue().getSquaredDistance(from)));
-        for (int i = 0; i < EVICT && i < entries.size(); i++) map.remove(entries.get(i).getKey());
-    }
+    void remember(Kind kind, BlockPos pos) { sight.remember(sight(kind), cell(pos)); }
 
     /**
      * F-30d: a block of a kind it saw before this start in {@code world} (a dimension's id), as its atlas kept it,
@@ -384,46 +179,27 @@ final class WorldKnowledge {
         // Of the world it is in: the first sweep's change of world would otherwise forget it at once.
         if (dimension.isEmpty()) dimension = world;
         if (!world.equals(dimension)) return;
-        var map = known.get(kind);
-        long key = kind == Kind.CAVE ? cell(pos) : pos.asLong();
-        if (map.size() >= MAX_PER_KIND && !map.containsKey(key)) return;
-        map.putIfAbsent(key, pos.toImmutable());
+        sight.recall(sight(kind), cell(pos));
     }
 
-    void forget(BlockPos pos) {
-        for (var map : known.values()) map.remove(pos.asLong());
-        known.get(Kind.CAVE).remove(cell(pos));
-    }
+    void forget(BlockPos pos) { sight.forget(cell(pos)); }
 
-    /** Still what it was remembered as: the same kind of block, or for a cave, still a cave floor. */
-    private static boolean still(ServerWorld world, Kind kind, BlockPos pos) {
-        return kind == Kind.CAVE ? caveFloor(world, pos) : classify(world.getBlockState(pos)) == kind;
-    }
+    int count(Kind kind) { return sight.count(sight(kind)); }
 
-    int count(Kind kind) { return known.get(kind).size(); }
+    /** For tests: where it last looked round from, as a scan sets it; the far ones go from here when a kind is full. */
+    void centerAt(BlockPos at) { sight.centerAt(at == null ? null : cell(at)); }
+
+    /** How many a full kind drops at once, the farthest first (the core's, {@link Sight#EVICT}). */
+    static final int EVICT = Sight.EVICT;
+
+    static int maxPerKind() { return Sight.maxPerKind(); }
 
     /** Nearest remembered block of a kind that still matches the world and the caller's filter. */
     Optional<BlockPos> nearest(ServerWorld world, Kind kind, BlockPos from, Predicate<BlockPos> filter) {
-        BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
-        var stale = new ArrayList<Long>();
-        for (var entry : known.get(kind).entrySet()) {
-            BlockPos pos = entry.getValue();
-            if (world.isChunkLoaded(pos) && !still(world, kind, pos)) {
-                stale.add(entry.getKey());
-                continue;
-            }
-            double distance = pos.getSquaredDistance(from);
-            if (distance < bestDistance && filter.test(pos)) {
-                bestDistance = distance;
-                best = pos;
-            }
-        }
-        stale.forEach(key -> known.get(kind).remove(key));
-        return Optional.ofNullable(best);
+        return sight.nearest(new WorldSight(world, null), sight(kind), cell(from), c -> filter.test(pos(c))).map(WorldKnowledge::pos);
     }
 
-    List<BlockPos> all(Kind kind) { return List.copyOf(known.get(kind).values()); }
+    List<BlockPos> all(Kind kind) { return sight.all(sight(kind)).stream().map(WorldKnowledge::pos).toList(); }
 
     /**
      * Whether a walk from {@code from} to {@code to} would end in open water it saw (F-35j). Within its sight
@@ -433,40 +209,81 @@ final class WorldKnowledge {
      * can see is not open water.
      */
     boolean seenOpenWaterToward(BlockPos from, BlockPos to, int run) {
-        double dx = to.getX() - from.getX(), dz = to.getZ() - from.getZ();
-        double far = Math.hypot(dx, dz);
-        if (far <= HORIZONTAL_RADIUS) {
-            for (int ox = -2; ox <= 2; ox++) for (int oz = -2; oz <= 2; oz++) {
-                if (!waterColumns.contains(net.minecraft.util.math.ChunkPos.toLong(to.getX() + ox, to.getZ() + oz))) return false;
-            }
-            return true;
-        }
-        for (int i = HORIZONTAL_RADIUS - run + 1; i <= HORIZONTAL_RADIUS; i++) {
-            int x = (int) Math.floor(from.getX() + 0.5 + dx * i / far), z = (int) Math.floor(from.getZ() + 0.5 + dz * i / far);
-            if (!waterColumns.contains(net.minecraft.util.math.ChunkPos.toLong(x, z))) return false;
-        }
-        return true;
+        return sight.seenOpenWaterToward(cell(from), cell(to), run);
     }
 
     /** Lowest-scoring remembered block of a kind that still matches the world and the caller's filter. */
     Optional<BlockPos> best(ServerWorld world, Kind kind, java.util.function.ToDoubleFunction<BlockPos> score, Predicate<BlockPos> filter) {
-        BlockPos best = null;
-        double bestScore = Double.MAX_VALUE;
-        var stale = new ArrayList<Long>();
-        for (var entry : known.get(kind).entrySet()) {
-            BlockPos pos = entry.getValue();
-            if (world.isChunkLoaded(pos) && !still(world, kind, pos)) {
-                stale.add(entry.getKey());
-                continue;
-            }
-            if (!filter.test(pos)) continue;
-            double value = score.applyAsDouble(pos);
-            if (value < bestScore) {
-                bestScore = value;
-                best = pos;
-            }
+        return sight.best(new WorldSight(world, null), sight(kind), c -> score.applyAsDouble(pos(c)), c -> filter.test(pos(c))).map(WorldKnowledge::pos);
+    }
+
+    /**
+     * The live world as the core's sight reads it: each fact as this class read it before the port, the sight lines by the
+     * game's own ray cast from the player (its shape context), and the blocks of the section a scan is reading taken from
+     * that section, as the sweep read them.
+     */
+    private static final class WorldSight implements SightWorld {
+        private final ServerWorld world;
+        private final ServerPlayerEntity player;
+        private ChunkSection section;
+        private int sectionX, sectionY, sectionZ;
+
+        WorldSight(ServerWorld world, ServerPlayerEntity player) {
+            this.world = world;
+            this.player = player;
         }
-        stale.forEach(key -> known.get(kind).remove(key));
-        return Optional.ofNullable(best);
+
+        private BlockState state(int x, int y, int z) {
+            if (section != null && x >> 4 == sectionX && y >> 4 == sectionY && z >> 4 == sectionZ) return section.getBlockState(x & 15, y & 15, z & 15);
+            return world.getBlockState(new BlockPos(x, y, z));
+        }
+
+        @Override public boolean inLoadedChunk(int x, int y, int z) { return world.isChunkLoaded(new BlockPos(x, y, z)); }
+        @Override public boolean columnLoaded(int chunkX, int chunkZ) { return world.isChunkLoaded(chunkX, chunkZ); }
+        @Override public boolean sectionLoaded(int sx, int sy, int sz) {
+            section = null;
+            var chunk = world.getChunkManager().getWorldChunk(sx, sz);
+            if (chunk == null || sy < world.getBottomSectionCoord() || sy >= world.getTopSectionCoord()) return false;
+            ChunkSection at = chunk.getSection(chunk.sectionCoordToIndex(sy));
+            section = at;
+            sectionX = sx;
+            sectionY = sy;
+            sectionZ = sz;
+            return true;
+        }
+        @Override public boolean sectionOfInterest(int sx, int sy, int sz) {
+            if (section == null || sx != sectionX || sy != sectionY || sz != sectionZ) sectionLoaded(sx, sy, sz);
+            return section != null && !(section.isEmpty() || !section.hasAny(state -> classify(state) != null));
+        }
+        @Override public Sight.Kind kind(int x, int y, int z) { return sight(classify(state(x, y, z))); }
+        @Override public boolean air(int x, int y, int z) { return state(x, y, z).isAir(); }
+        @Override public boolean fluidEmpty(int x, int y, int z) { return state(x, y, z).getFluidState().isEmpty(); }
+        @Override public boolean water(int x, int y, int z) { return state(x, y, z).getFluidState().isIn(FluidTags.WATER); }
+        @Override public boolean opaqueFullCube(int x, int y, int z) { return state(x, y, z).isOpaqueFullCube(world, new BlockPos(x, y, z)); }
+        @Override public boolean log(int x, int y, int z) { return state(x, y, z).isIn(BlockTags.LOGS); }
+        @Override public boolean leaves(int x, int y, int z) { return state(x, y, z).isIn(BlockTags.LEAVES); }
+        @Override public boolean collisionEmpty(int x, int y, int z) {
+            BlockPos pos = new BlockPos(x, y, z);
+            return state(x, y, z).getCollisionShape(world, pos).isEmpty();
+        }
+        @Override public boolean built(int x, int y, int z) {
+            BlockState state = state(x, y, z);
+            return state.isIn(BlockTags.PLANKS) || state.isIn(BlockTags.STAIRS) || state.isIn(BlockTags.SLABS) || state.isIn(BlockTags.WALLS)
+                    || state.isIn(BlockTags.DOORS) || state.isIn(BlockTags.TRAPDOORS) || state.isIn(BlockTags.FENCES)
+                    || state.isIn(BlockTags.FENCE_GATES) || state.isIn(BlockTags.WOOL) || state.isIn(BlockTags.BEDS)
+                    || state.isIn(BlockTags.IMPERMEABLE) || state.getBlock() instanceof net.minecraft.block.PaneBlock;
+        }
+        @Override public int seaLevel() { return world.getSeaLevel(); }
+        @Override public int skyLight(int x, int y, int z) { return world.getLightLevel(net.minecraft.world.LightType.SKY, new BlockPos(x, y, z)); }
+        @Override public int motionTop(int x, int z) { return world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING, x, z); }
+        @Override public float fluidHeight(int x, int y, int z) {
+            BlockPos pos = new BlockPos(x, y, z);
+            return world.getFluidState(pos).getHeight(world, pos);
+        }
+        @Override public Cell ray(double ax, double ay, double az, double bx, double by, double bz, boolean fluids) {
+            BlockHitResult hit = world.raycast(new RaycastContext(new Vec3d(ax, ay, az), new Vec3d(bx, by, bz), RaycastContext.ShapeType.COLLIDER,
+                    fluids ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE, player));
+            return hit.getType() == HitResult.Type.MISS ? null : cell(hit.getBlockPos());
+        }
     }
 }

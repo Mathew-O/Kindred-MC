@@ -97,6 +97,31 @@ class FactionPlayTest {
     }
 
     @Test
+    void itsSecondClaimIsTheOtherChunkItsBasesGroundCovers() {
+        UUID mine = found(self, "Red", "RED");
+        var site = new Territory.Chunk(W, 100, 100);
+        claim(mine, 100, 100);
+        // Without a second chunk: the nearest free neighbour, west first on a tie (x 99).
+        var plainNext = FactionPlay.decide(view(person(50, 50, 50, 50), 1000 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(),
+                Map.of(), AuctionBook.EMPTY, List.of())).getFirst();
+        assertEquals(new Territory.Chunk(W, 99, 100).key(), plainNext.target());
+        // Its base's ground runs on south into (100, 101): that one next.
+        var also = new Territory.Chunk(W, 100, 101);
+        var v = view(person(50, 50, 50, 50), 1000 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(), Map.of(), AuctionBook.EMPTY, List.of());
+        var withAlso = new FactionPlay.View(v.self(), v.personality(), v.factions(), v.powers(), v.claims(), v.safe(), v.captures(), v.coins(), v.settings(),
+                v.nowMs(), v.site(), v.standing(), v.healthy(), v.spare(), v.wants(), v.asks(), v.auctions(), v.seen(), v.nearby(), v.setAside(), Optional.of(also));
+        var next = FactionPlay.decide(withAlso).getFirst();
+        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.CLAIM, also.key(), 100 * Coins.CENT, "Claim land beside its own"), next);
+        // Once held, the neighbours again.
+        claim(mine, 100, 101);
+        var held = view(person(50, 50, 50, 50), 1000 * Coins.CENT, Optional.of(site), Optional.empty(), List.of(), List.of(), Map.of(), AuctionBook.EMPTY, List.of());
+        var heldAlso = new FactionPlay.View(held.self(), held.personality(), held.factions(), held.powers(), held.claims(), held.safe(), held.captures(),
+                held.coins(), held.settings(), held.nowMs(), held.site(), held.standing(), held.healthy(), held.spare(), held.wants(), held.asks(),
+                held.auctions(), held.seen(), held.nearby(), held.setAside(), Optional.of(also));
+        assertTrue(!FactionPlay.decide(heldAlso).getFirst().target().equals(also.key()), "not claimed twice");
+    }
+
+    @Test
     void itSellsWhatIsSpareAndBuysOrBidsForWhatItLacksWithinWhatItCanSpare() {
         found(self, "Red", "RED");
         var spare = List.of(new FactionPlay.Spare("minecraft:cobblestone", 128, 300));
