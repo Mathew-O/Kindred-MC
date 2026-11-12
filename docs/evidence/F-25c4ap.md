@@ -58,8 +58,11 @@ not climb back onto, and `native_goto BLOCKED: Route to` that point 28 north of 
 route, so the same walk was refused the moment the player was set down and the test passed.
 
 Waiting only for a tick with no walk under way was not enough (3 of 3 still failed): on the tick it was checked, the plan
-was made but its walk not yet dispatched. The staging now waits for the first walk to be under way, then for it to end,
-and sets the player down on a tick when no walk is under way. The first decision after it is then made where it was set
+was made but its walk not yet dispatched. The staging now waits for the first walk to start, then for it to end, and
+sets the player down on a tick when no walk is under way. The start is read from `PlayerRuntime.ownStartsForTest`, a
+read-only count of the tasks it starts of its own choosing, taken as each starts: a walk can start and end within one
+server tick (its first step may complete or be refused), so a look at `busy()` alone could miss it. In the six runs
+before that change the first walk was seen under way each time; the six after it are those in the table. The first decision after it is then made where it was set
 down: "Walk toward the trees seen at …". The assertion and the tick limit are unchanged.
 
 | Run | Before (`ec581d5`) | After |

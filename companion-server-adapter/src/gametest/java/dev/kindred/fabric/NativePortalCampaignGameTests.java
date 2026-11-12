@@ -3897,7 +3897,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      * to look keep within 192 blocks of home. Staged: the goal begun where the player stands, so home is there; then the
      * player set down 170 blocks east on open ground, its chunks kept loaded, and an oak of five logs under its leaves 60
      * blocks further east, 230 from home; daylight; bread. Fixture staging: the player is set down only once the goal's
-     * first walk, dispatched from home, has begun and ended, on a tick when no walk is under way. Set down while that walk
+     * first walk, dispatched from home, has started and ended, on a tick when no walk is under way. Set down while that walk
      * was still to come or still ran, it walked on toward its target, 28 north of home, back west off the raised ground,
      * and could not climb back; it went so wherever the ground between was open (2 of 2 in the run with the stair,
      * navigation, rescue, rescue-rounds, bring, boat and fall classes on `ec581d5`), and was refused at once where it was not.
@@ -3906,6 +3906,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     public void withNoWoodItWalksToATreeItSeesFarOffOverOpenGround(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] at = new BlockPos[1];
+        long[] startsBefore = new long[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Treeseeker"))
@@ -3916,12 +3917,13 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     var inventory = f.player().getInventory();
                     inventory.clear();
                     inventory.setStack(0, new ItemStack(Items.BREAD, 8));
+                    startsBefore[0] = f.runtime.ownStartsForTest(f.id);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 // Its first plan made, so its home is here.
                 .createAndAdd(() -> context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().goalProgress().startsWith("Wood:"), "Planned"))
-                // Fixture staging: its first walk, from home, under way ...
-                .createAndAdd(() -> context.assertTrue(f.runtime.panelBots(Actor.console()).getFirst().busy(), "First walk"))
+                // Fixture staging: its first walk, from home, started (counted as it starts, so even one ended at once) ...
+                .createAndAdd(() -> context.assertTrue(f.runtime.ownStartsForTest(f.id) > startsBefore[0], "First walk"))
                 .createAndAdd(() -> {
                     // ... and ended: set down between walks, so no walk dispatched from home is still to come or under way.
                     context.assertFalse(f.runtime.panelBots(Actor.console()).getFirst().busy(), "Between walks");
