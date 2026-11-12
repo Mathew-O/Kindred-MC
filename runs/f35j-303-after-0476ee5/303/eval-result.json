@@ -1,0 +1,44 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144173,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 189, "factions": 3, "claims": 10, "captures": 0, "sales": 47, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 0, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 13.23, "tickMsWorst": 1113.44, "tickMsWorstAt": 121965, "ticksOver50ms": 453, "ticksOver200ms": 7, "heapMbMax": 1173, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 75900, "stone_tools": 77880, "iron_ingot": 89840, "iron_pickaxe": 125060},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29920, "x": 150, "y": 62, "z": 387, "attempt": 1}, {"tick": 58980, "x": 145, "y": 64, "z": 409, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 8500, "stone_tools": 10860, "iron_ingot": 15880, "iron_pickaxe": 33400},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 75220, "x": -84, "y": 76, "z": 481, "attempt": 1}, {"tick": 79380, "x": -84, "y": 78, "z": 479, "attempt": 2}, {"tick": 101920, "x": -60, "y": 76, "z": 475, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 30020, "stone_tools": 35360, "iron_ingot": 55260, "iron_pickaxe": 74600, "obsidian": 94634, "portal_lit": 121964},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 98600, "x": 165, "y": -54, "z": 385, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

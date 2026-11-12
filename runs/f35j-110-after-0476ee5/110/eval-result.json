@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 110,
+  "ticks": 144000,
+  "ticksRun": 144001,
+  "complete": true,
+  "factions": {"audited": true, "note": "", "counts": {"events": 67, "factions": 3, "claims": 7, "captures": 0, "sales": 0, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 13, "kills": 0}, "violations": []},
+  "server": {"tickMsMean": 16.79, "tickMsWorst": 959.04, "tickMsWorstAt": 22959, "ticksOver50ms": 1338, "ticksOver200ms": 8, "heapMbMax": 1493, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {},
+      "deaths": [
+        {"tick": 47620, "cause": "Kindred was slain by Zombie", "x": -118, "y": 67, "z": 497, "light": 13, "timeOfDay": 23782, "dimension": "minecraft:overworld", "hunger": 12, "underSky": true, "stage": "Wood: fight back - Back off from zombie (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 61186, "cause": "Kindred burned to death", "x": -41, "y": 81, "z": 19, "light": 14, "timeOfDay": 13348, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "Wait for daylight"},
+        {"tick": 72328, "cause": "Kindred went up in flames", "x": 11, "y": 91, "z": -14, "light": 15, "timeOfDay": 490, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: waiting for a feasible step", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 72961, "cause": "Kindred burned to death", "x": 9, "y": 91, "z": -16, "light": 15, "timeOfDay": 1123, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: hurt and out of food - Explore east for animals", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 73280, "cause": "Kindred went up in flames", "x": 13, "y": 80, "z": -11, "light": 15, "timeOfDay": 1442, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: hurt and out of food - Explore south for animals", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 75506, "cause": "Kindred went up in flames", "x": 29, "y": 80, "z": -15, "light": 15, "timeOfDay": 3668, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Wood: hurt and out of food - Explore south for animals", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 82585, "cause": "Kindred went up in flames", "x": 10, "y": 91, "z": -16, "light": 15, "timeOfDay": 10747, "dimension": "minecraft:overworld", "hunger": 14, "underSky": true, "stage": "Wood: hurt and out of food - Explore west for animals (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "Explore west for food"},
+        {"tick": 103366, "cause": "Kindred burned to death", "x": 21, "y": 80, "z": -11, "light": 15, "timeOfDay": 7528, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: waiting for a feasible step (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 121472, "cause": "Kindred went up in flames", "x": 23, "y": 79, "z": -17, "light": 15, "timeOfDay": 1634, "dimension": "minecraft:overworld", "hunger": 14, "underSky": true, "stage": "Wood: hurt and out of food - Explore north for animals (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 139337, "cause": "Kindred was shot by Skeleton", "x": -30, "y": 71, "z": 25, "light": 12, "timeOfDay": 19499, "dimension": "minecraft:overworld", "hunger": 5, "underSky": true, "stage": "Wood: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30760, "x": -139, "y": 70, "z": 475, "attempt": 1}, {"tick": 34500, "x": -116, "y": 69, "z": 476, "attempt": 2}, {"tick": 53500, "x": -41, "y": 76, "z": 9, "attempt": 1}, {"tick": 79120, "x": 13, "y": 93, "z": -15, "attempt": 1}, {"tick": 96180, "x": 21, "y": 80, "z": -11, "attempt": 1}, {"tick": 99800, "x": 20, "y": 80, "z": -10, "attempt": 2}, {"tick": 106980, "x": 17, "y": 94, "z": -17, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Sol": {
+      "stages": {},
+      "deaths": [
+        {"tick": 128756, "cause": "Sol was slain by Spider", "x": 30, "y": 79, "z": 106, "light": 9, "timeOfDay": 8918, "dimension": "minecraft:overworld", "hunger": 1, "underSky": false, "stage": "Wood: fight back - Back off from spider the way it came (tried elsewhere 4 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31500, "x": -515, "y": 67, "z": -55, "attempt": 1}, {"tick": 53020, "x": -498, "y": 74, "z": -12, "attempt": 2}, {"tick": 60060, "x": -476, "y": 88, "z": -11, "attempt": 1}, {"tick": 76400, "x": -490, "y": 73, "z": -32, "attempt": 2}, {"tick": 80660, "x": -522, "y": 66, "z": -60, "attempt": 3}, {"tick": 101160, "x": -78, "y": 64, "z": -28, "attempt": 4}, {"tick": 143900, "x": 9, "y": 88, "z": -17, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    },
+    "Echo": {
+      "stages": {},
+      "deaths": [
+        {"tick": 62338, "cause": "Echo suffocated in a wall", "x": 227, "y": 61, "z": -99, "light": 0, "timeOfDay": 14500, "dimension": "minecraft:overworld", "hunger": 2, "underSky": false, "stage": "Wood: nothing to do before daylight - Seal the shelter at 227, 61, -98 (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "Seal the shelter at 227, 61, -98"},
+        {"tick": 72637, "cause": "Echo went up in flames", "x": 11, "y": 91, "z": -15, "light": 15, "timeOfDay": 799, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: waiting for a feasible step", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 51320, "x": 206, "y": 62, "z": -18, "attempt": 1}, {"tick": 57620, "x": 229, "y": 64, "z": -99, "attempt": 2}, {"tick": 76240, "x": 21, "y": 92, "z": -17, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0
+    }
+  }
+}

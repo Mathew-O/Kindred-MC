@@ -1,0 +1,12 @@
+{
+ "build": "f35j-109-before-973cc12",
+ "jar": "kindred-mc-0.1.0-SNAPSHOT.jar",
+ "scenario": "goal=none; mode=factions; ticks=72000",
+ "minecraft": "1.21.1",
+ "loader": "0.19.5",
+ "fabricApi": "0.116.17+1.21.1",
+ "launcher": "fabric-server-1.21.1-0.19.5-1.1.2.jar",
+ "policy": [
+  "bases=true"
+ ]
+}
