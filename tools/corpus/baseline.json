@@ -1,5 +1,5 @@
 {
- "notes": "811b0f7 over 6 runs for the 332 scenes of #215. Scene-only addition of 90 (89 e40a20-79a9aad replays and f-25c4cp-ledge-505): 6 runs of those 90 alone on 9aa0c27, which is main a0bb355 with #228's harness at 6143139, every run from an empty corpus world.",
+ "notes": "811b0f7 over 6 runs for the 332 scenes of #215. Those predate the fresh-world harness (#228): the six ran in one checkout whose corpus folder was new at the first run, and each later run played in the world the earlier ones had grown (977 MB at the end). Scene-only addition of 90 (89 e40a20-79a9aad replays and f-25c4cp-ledge-505): 6 runs of those 90 alone on 9aa0c27, which is main a0bb355 with #228's harness at 6143139, every run from an empty corpus world.",
  "runs": 6,
  "scenes": {
   "diag-factions303-079bdc2-303-echo-10360": "intermittent",

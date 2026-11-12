@@ -25,6 +25,7 @@ A scene-only addition: 90 scenes and their baseline entries, with no code change
 | fixture | 1 | 0 | 0 | 1 |
 
 - **Baseline:** `tools/corpus/baseline.json` keeps #215's 332 scenes on 811b0f7 as they were and gains these 90, 422 in all. A `notes` field records which runs made which entries. `report.py` reads only `sha`, `runs` and `scenes`.
+  - **#215's 332 predate the fresh-world harness.** Its six 811b0f7 runs were made in one checkout whose corpus folder was new at 14:49 on 11 November. The first run started empty, and each later one played in the world the earlier runs had grown, 977 MB by the end. The notes say so. Whether to re-baseline those 332 from empty worlds is decided after this PR.
 - **The 8675309 pocket:** the ten `e40a20-79a9aad-8675309-kindred-1xxxxx` spells (109060 to 141720) are among the failing 35. Each failed 6 of 6 here.
   - MODES's F-35k (#231) passes them 8, 8 and 7 of 10 over three runs. Once #231 merges, the gate will list them as newly passing.
   - `-138100` lies wholly at night, and the player rightly stays sheltered through it, so it cannot pass by the stuck-spell rule.
