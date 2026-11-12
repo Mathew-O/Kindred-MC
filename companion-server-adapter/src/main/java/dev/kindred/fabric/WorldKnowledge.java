@@ -209,6 +209,113 @@ final class WorldKnowledge {
         return sight.best(new WorldSight(world, null), sight(kind), c -> score.applyAsDouble(pos(c)), c -> filter.test(pos(c))).map(WorldKnowledge::pos);
     }
 
+    /** F-35m: far columns as {@code player} sees them from where it stands, for one decision, with at most {@code rays} sight lines. */
+    static Looks looks(ServerPlayerEntity player, int rays) {
+        return new Looks(player, eye(player), rays);
+    }
+
+    /**
+     * F-35m: far columns as {@code player} sees them with its eyes at {@code eye}: where it will look from a step away, as a
+     * player at a drop's brink leans over it to see the ground below (its own block hides the ground straight under its
+     * eyes from where it stands).
+     */
+    static Looks looksFrom(ServerPlayerEntity player, Vec3d eye, int rays) {
+        return new Looks(player, new double[] {eye.x, eye.y, eye.z}, rays);
+    }
+
+    /**
+     * F-35m: far columns as {@code player} sees them from the brink of what it stands on, toward ({@code dx}, {@code dz}):
+     * its eyes over the last of its own floor that way, out to four blocks, as a player on a perch walks to its edge to
+     * look down (from its middle the perch's own edge hides the ground near its foot). Its floor it sees under its feet.
+     */
+    static Looks looksOverTheBrink(ServerPlayerEntity player, double dx, double dz, int rays) {
+        var world = player.getServerWorld();
+        double length = Math.hypot(dx, dz);
+        Vec3d at = player.getPos();
+        if (length > 1e-6) {
+            double ux = dx / length * 0.5, uz = dz / length * 0.5;
+            for (int step = 1; step <= 8; step++) {
+                Vec3d next = player.getPos().add(ux * step, 0, uz * step);
+                BlockPos feet = BlockPos.ofFloored(next);
+                if (!world.isChunkLoaded(feet) || world.getBlockState(feet.down()).getCollisionShape(world, feet.down()).isEmpty()
+                        || !world.getBlockState(feet).getCollisionShape(world, feet).isEmpty()
+                        || !world.getBlockState(feet.up()).getCollisionShape(world, feet.up()).isEmpty()) break;
+                at = next;
+            }
+        }
+        return looksFrom(player, at.add(0, player.getStandingEyeHeight(), 0), rays);
+    }
+
+    /**
+     * F-35m: the tops of far columns as one player sees them from where it stands, for one decision. A top is known only
+     * when a sight line from its eyes reaches it ({@link Sight#seenTop}); a column not loaded, or seen across ground not
+     * loaded, is never asked its height; a column it cannot see gives nothing, and nothing of it is kept. Each column is
+     * asked once a decision, and the sight lines are capped: past the cap, every column not already asked is unseen.
+     */
+    static final class Looks {
+        private final ServerWorld world;
+        private final WorldSight sight;
+        private final double[] eye;
+        private final int cap;
+        private final java.util.HashMap<Long, Optional<BlockPos>> tops = new java.util.HashMap<>();
+        private final java.util.HashMap<Long, Optional<BlockPos>> ground = new java.util.HashMap<>();
+        /** Every decision's sight lines and time, for the evidence's cost per call (F-35m). */
+        static long calls, raysCast, nanos;
+
+        private Looks(ServerPlayerEntity player, double[] eye, int cap) {
+            this.world = player.getServerWorld();
+            this.sight = new WorldSight(world, player);
+            this.eye = eye;
+            this.cap = cap;
+        }
+
+        /** The top block of the column, leaves not counted, if it can see it. */
+        Optional<BlockPos> ground(int x, int z) {
+            return top(ground, x, z, net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES);
+        }
+
+        /** The top block of the column, leaves and fluids counted (the sea's surface), if it can see it. */
+        Optional<BlockPos> top(int x, int z) {
+            return top(tops, x, z, net.minecraft.world.Heightmap.Type.MOTION_BLOCKING);
+        }
+
+        private Optional<BlockPos> top(java.util.HashMap<Long, Optional<BlockPos>> cache, int x, int z, net.minecraft.world.Heightmap.Type type) {
+            long key = BlockPos.asLong(x, 0, z);
+            Optional<BlockPos> known = cache.get(key);
+            if (known != null) return known;
+            if (sight.rays >= cap) return Optional.empty();
+            long start = System.nanoTime();
+            int before = sight.rays;
+            Optional<BlockPos> seen = Sight.seenTop(sight, eye, x, z, (cx, cz) -> world.getTopY(type, cx, cz)).map(WorldKnowledge::pos);
+            nanos += System.nanoTime() - start;
+            calls++;
+            raysCast += sight.rays - before;
+            cache.put(key, seen);
+            return seen;
+        }
+
+        /**
+         * The first of {@code places}, in order, that {@code answer} accepts and that its eyes reach ({@link Sight#firstSeen}).
+         * {@code answer} is asked first only to spare sight lines, and must be a property of the place alone, one that rules
+         * out a place that could never be the answer (water is not the land it looks for, a cell with no room is no walk's
+         * end): so the answer is the one a sight line to every place would give, with fewer cast.
+         */
+        Optional<BlockPos> firstSeen(List<BlockPos> places, Predicate<BlockPos> answer) {
+            long start = System.nanoTime();
+            int[] left = {cap - sight.rays};
+            int before = sight.rays;
+            Optional<BlockPos> seen = Sight.firstSeen(sight, eye, places.stream().map(WorldKnowledge::cell).toList(), c -> answer.test(pos(c)), left)
+                    .map(WorldKnowledge::pos);
+            nanos += System.nanoTime() - start;
+            calls++;
+            raysCast += sight.rays - before;
+            return seen;
+        }
+
+        /** Sight lines cast so far this decision. */
+        int rays() { return sight.rays; }
+    }
+
     /**
      * The live world as the core's sight reads it: each fact as this class read it before the port, the sight lines by the
      * game's own ray cast from the player (its shape context), and the blocks of the section a scan is reading taken from
@@ -219,6 +326,8 @@ final class WorldKnowledge {
         private final ServerPlayerEntity player;
         private ChunkSection section;
         private int sectionX, sectionY, sectionZ;
+        /** Sight lines cast through this view (F-35m's cap). */
+        int rays;
 
         WorldSight(ServerWorld world, ServerPlayerEntity player) {
             this.world = world;
@@ -273,6 +382,7 @@ final class WorldKnowledge {
             return world.getFluidState(pos).getHeight(world, pos);
         }
         @Override public Cell ray(double ax, double ay, double az, double bx, double by, double bz, boolean fluids) {
+            rays++;
             BlockHitResult hit = world.raycast(new RaycastContext(new Vec3d(ax, ay, az), new Vec3d(bx, by, bz), RaycastContext.ShapeType.COLLIDER,
                     fluids ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE, player));
             return hit.getType() == HitResult.Type.MISS ? null : cell(hit.getBlockPos());

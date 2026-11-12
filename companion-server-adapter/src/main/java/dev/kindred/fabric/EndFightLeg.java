@@ -396,10 +396,16 @@ final class EndFightLeg {
 
     // ------------------------------------------------------------------ in the End
 
-    /** The island's top at a column, if it is end stone there: somewhere to stand. */
-    private static Optional<BlockPos> islandTop(ServerWorld world, int x, int z) {
-        if (!world.isChunkLoaded(new BlockPos(x, 0, z))) return Optional.empty();
-        BlockPos top = new BlockPos(x, world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1, z);
+    /** Sight lines one decision on the island may cast at the tops round it, each column once (F-35m). */
+    static final int END_LOOKS = 128;
+
+    /**
+     * The island's top at a column, if it is end stone there that it can see from where it stands: somewhere to stand. A
+     * top out of its sight is no island to it (F-35m).
+     */
+    private static Optional<BlockPos> islandTop(ServerWorld world, WorldKnowledge.Looks looks, int x, int z) {
+        BlockPos top = looks.ground(x, z).orElse(null);
+        if (top == null) return Optional.empty();
         return world.getBlockState(top).isOf(Blocks.END_STONE) && world.getBlockState(top.up()).isAir() && world.getBlockState(top.up(2)).isAir()
                 ? Optional.of(top.up()) : Optional.empty();
     }
@@ -408,10 +414,11 @@ final class EndFightLeg {
     private Optional<PortalRunCampaign.Task> toIsland(NativePlayerBody body, EditPolicy.ServerPolicy policy) {
         var player = body.entity();
         var world = player.getServerWorld();
+        var looks = WorldKnowledge.looks(player, END_LOOKS);
         double d = Math.hypot(player.getX(), player.getZ());
         double ux = -player.getX() / Math.max(1, d), uz = -player.getZ() / Math.max(1, d);
         for (int step = 4; step <= d; step += 2) {
-            var top = islandTop(world, (int) Math.floor(player.getX() + ux * step), (int) Math.floor(player.getZ() + uz * step));
+            var top = islandTop(world, looks, (int) Math.floor(player.getX() + ux * step), (int) Math.floor(player.getZ() + uz * step));
             if (top.isPresent()) {
                 BlockPos at = top.get();
                 return campaign.buildRoute(body, policy, at, pos -> pos.isWithinDistance(at, 2.5), "Onto the main island")
@@ -483,6 +490,7 @@ final class EndFightLeg {
      */
     private Optional<BlockPos> standFor(ServerPlayerEntity player, EndCrystalEntity crystal) {
         var world = player.getServerWorld();
+        var looks = WorldKnowledge.looks(player, END_LOOKS);
         Vec3d target = crystal.getBoundingBox().getCenter();
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
@@ -491,10 +499,10 @@ final class EndFightLeg {
             for (int a = 0; a < 24; a++) {
                 double angle = Math.toRadians(a * 15);
                 int x = (int) Math.floor(crystal.getX() + Math.cos(angle) * range), z = (int) Math.floor(crystal.getZ() + Math.sin(angle) * range);
-                var top = islandTop(world, x, z);
+                var top = islandTop(world, looks, x, z);
                 if (top.isEmpty() || unusable(crystal.getUuid(), top.get()) || Math.hypot(x, z) > 80 || Math.hypot(x, z) < PERCH_CLEAR) continue;
                 // Not by the island's edge, where a charging dragon knocks the player into the void.
-                if (!islandTop(world, x + 4, z).isPresent() && !islandTop(world, x - 4, z).isPresent()) continue;
+                if (!islandTop(world, looks, x + 4, z).isPresent() && !islandTop(world, looks, x - 4, z).isPresent()) continue;
                 Vec3d feet = Vec3d.ofBottomCenter(top.get());
                 var arc = clearArc(world, feet, target);
                 if (arc.isEmpty()) continue;
@@ -812,11 +820,13 @@ final class EndFightLeg {
             if (!world.getBlockState(edge).getCollisionShape(world, edge).isEmpty()
                     || !world.getBlockState(edge.up()).getCollisionShape(world, edge.up()).isEmpty()
                     || !world.getBlockState(edge.down()).getCollisionShape(world, edge.down()).isEmpty()) continue;
-            var top = islandTop(world, edge.getX(), edge.getZ());
+            // The ground below as it sees it leaning over the free block, its eyes over it (F-35m): three sight lines.
+            var looks = WorldKnowledge.looksFrom(player, Vec3d.ofCenter(edge).add(0, player.getStandingEyeHeight() - 0.5, 0), 3);
+            var top = islandTop(world, looks, edge.getX(), edge.getZ());
             if (top.isEmpty() || blocked.test(top.get()) || Math.hypot(top.get().getX(), top.get().getZ()) < PERCH_CLEAR) continue;
             int drop = feet.getY() - top.get().getY();
             if (drop <= NativeNavigator.MAX_SAFE_DROP || drop > NativeNavigator.MAX_CLUTCH_DROP) continue;
-            if (islandTop(world, top.get().getX() + 2, top.get().getZ()).isEmpty() && islandTop(world, top.get().getX() - 2, top.get().getZ()).isEmpty()) continue;
+            if (islandTop(world, looks, top.get().getX() + 2, top.get().getZ()).isEmpty() && islandTop(world, looks, top.get().getX() - 2, top.get().getZ()).isEmpty()) continue;
             if (drop < bestDrop) { bestDrop = drop; best = top.get(); }
         }
         return best == null ? Optional.empty() : Optional.of(Map.entry(best, bestDrop));
@@ -834,11 +844,18 @@ final class EndFightLeg {
                                                 java.util.function.Predicate<BlockPos> blocked, int tries) {
         var world = player.getServerWorld();
         var spots = new ArrayList<BlockPos>();
+        // Each heading's ground as it sees it from its perch's brink that way (F-35m): twelve sight lines a heading.
+        var brinks = new WorldKnowledge.Looks[16];
+        for (int a = 0; a < 16; a++) {
+            double angle = Math.toRadians(a * 22.5);
+            brinks[a] = WorldKnowledge.looksOverTheBrink(player, around.x + Math.cos(angle) * inner - feet.x, around.z + Math.sin(angle) * inner - feet.z, 12);
+        }
         for (int r = inner; r <= inner + 12; r += 4) for (int a = 0; a < 16; a++) {
             double angle = Math.toRadians(a * 22.5);
-            islandTop(world, (int) Math.floor(around.x + Math.cos(angle) * r), (int) Math.floor(around.z + Math.sin(angle) * r))
+            var looks = brinks[a];
+            islandTop(world, looks, (int) Math.floor(around.x + Math.cos(angle) * r), (int) Math.floor(around.z + Math.sin(angle) * r))
                     .filter(top -> Math.hypot(top.getX(), top.getZ()) >= PERCH_CLEAR + 4 && !blocked.test(top))
-                    .filter(top -> islandTop(world, top.getX() + 4, top.getZ()).isPresent() || islandTop(world, top.getX() - 4, top.getZ()).isPresent())
+                    .filter(top -> islandTop(world, looks, top.getX() + 4, top.getZ()).isPresent() || islandTop(world, looks, top.getX() - 4, top.getZ()).isPresent())
                     .ifPresent(spots::add);
         }
         spots.sort(java.util.Comparator.comparingDouble(top -> Vec3d.ofBottomCenter(top).squaredDistanceTo(feet)));
@@ -906,13 +923,14 @@ final class EndFightLeg {
 
     /** Ground beside the crystal's pillar, a block out from its obsidian, the nearest to the player. */
     private static Optional<BlockPos> towerFoot(ServerWorld world, ServerPlayerEntity player, EndCrystalEntity crystal) {
+        var looks = WorldKnowledge.looks(player, END_LOOKS);
         int cx = crystal.getBlockX(), cz = crystal.getBlockZ();
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         for (int r = 2; r <= 6; r++) {
             for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
                 if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
-                var top = islandTop(world, cx + dx, cz + dz);
+                var top = islandTop(world, looks, cx + dx, cz + dz);
                 if (top.isEmpty()) continue;
                 // Beside the obsidian: a neighbour toward the pillar's middle is obsidian, a block or two up.
                 BlockPos in = top.get().add(-Integer.signum(dx), 1, -Integer.signum(dz));
@@ -958,16 +976,17 @@ final class EndFightLeg {
      */
     private Optional<BlockPos> ringSpot(ServerPlayerEntity player, int inner, int outer) {
         var world = player.getServerWorld();
+        var looks = WorldKnowledge.looks(player, END_LOOKS);
         var clouds = clouds(player);
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         for (int r = inner; r <= outer; r += 3) {
             for (int a = 0; a < 24; a++) {
                 double angle = Math.toRadians(a * 15);
-                var top = islandTop(world, (int) Math.floor(Math.cos(angle) * r), (int) Math.floor(Math.sin(angle) * r));
+                var top = islandTop(world, looks, (int) Math.floor(Math.cos(angle) * r), (int) Math.floor(Math.sin(angle) * r));
                 if (top.isEmpty() || campaign.unreachable(top.get()) || campaign.blocked(top.get()) || !clearOfBreath(player, top.get(), clouds)) continue;
                 // Not by the island's edge, where a charging dragon knocks the player into the void.
-                if (islandTop(world, top.get().getX() + 4, top.get().getZ()).isEmpty() && islandTop(world, top.get().getX() - 4, top.get().getZ()).isEmpty()) continue;
+                if (islandTop(world, looks, top.get().getX() + 4, top.get().getZ()).isEmpty() && islandTop(world, looks, top.get().getX() - 4, top.get().getZ()).isEmpty()) continue;
                 double distance = Math.hypot(top.get().getX() + 0.5 - player.getX(), top.get().getZ() + 0.5 - player.getZ());
                 if (distance < bestDistance) {
                     bestDistance = distance;
@@ -1025,13 +1044,14 @@ final class EndFightLeg {
         var cloud = NativeDragonAction.breath(player, 1.0);
         if (cloud == null) return Optional.empty();
         var world = player.getServerWorld();
+        var looks = WorldKnowledge.looks(player, END_LOOKS);
         var clouds = clouds(player);
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
         for (double reach = cloud.getRadius() + 3; reach <= cloud.getRadius() + 9; reach += 3) {
             for (int a = 0; a < 16; a++) {
                 double angle = Math.toRadians(a * 22.5);
-                var spot = islandTop(world, (int) Math.floor(cloud.getX() + Math.cos(angle) * reach), (int) Math.floor(cloud.getZ() + Math.sin(angle) * reach));
+                var spot = islandTop(world, looks, (int) Math.floor(cloud.getX() + Math.cos(angle) * reach), (int) Math.floor(cloud.getZ() + Math.sin(angle) * reach));
                 if (spot.isEmpty() || player.getBlockPos().isWithinDistance(spot.get(), 2) || !clearOfBreath(player, spot.get(), clouds)) continue;
                 double out = Math.hypot(spot.get().getX(), spot.get().getZ());
                 double score = Math.hypot(spot.get().getX() + 0.5 - player.getX(), spot.get().getZ() + 0.5 - player.getZ())
