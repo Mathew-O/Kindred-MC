@@ -89,4 +89,20 @@ class StoreMemoryFileTest {
             assertEquals("{\"seen\": [ {\"x\": ", Files.readString(file(dir).resolveSibling(ID + ".stores.json.unreadable")), "Set aside as it was");
         }
     }
+
+    @Test
+    void closedOnlyOnceEveryWriteAskedForIsMade(@TempDir Path dir) throws Exception {
+        // F-31e: the stop waits for this; a restart reads the file after it.
+        var store = new PlayerMemoryStore(dir);
+        var out = new PlayerMemoryStore.StoreMemory();
+        out.player = "Rue";
+        for (int i = 0; i < 200; i++) out.seen.add(new PlayerMemoryStore.StoreSighting(i, 64, 30, "Hal", false, HAL, i));
+        store.saveStores(ID, out);
+        store.closeAsync().get(10, TimeUnit.SECONDS);
+        assertTrue(Files.isRegularFile(file(dir)), "Written before it is closed");
+        try (var again = new PlayerMemoryStore(dir)) {
+            assertEquals(200, again.loadStores(ID, "Rue").get(10, TimeUnit.SECONDS).seen.size());
+        }
+        store.closeAsync().get(10, TimeUnit.SECONDS); // Closing again is done at once.
+    }
 }
