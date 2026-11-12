@@ -75,6 +75,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06c to M-06h: the acceptance mapped to the tests](evidence/M-06-acceptance.md).
 
+## The standing goal on ten seeds, and out of the hub to wood (M-06i, M-06i1) — 12 November 2026 (`claude/m06i1-hub-walk-out-1112`)
+
+- [M-06i: the standing goal on ten seeds, and M-06i1: out of the hub to wood](evidence/M-06i.md#the-standing-goal-on-ten-seeds-and-out-of-the-hub-to-wood-2026-11-12-claudem06i1-hub-walk-out-1112).
+
 ## A tree on land it may not work set aside in its plan (M-06i) — 11 November 2026 (`claude/m06i-refused-logs-1111`)
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
