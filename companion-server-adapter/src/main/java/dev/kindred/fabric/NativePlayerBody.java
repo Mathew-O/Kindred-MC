@@ -111,6 +111,12 @@ final class NativePlayerBody implements BodyAdapter {
     private float sideways;
     private boolean jump;
     private boolean sprint;
+    /**
+     * The sneak held as a movement input (E-71a): set on the player each tick while held, so vanilla's own edge rule keeps
+     * it on the block it stands on, and walking slows as a client slows it. Only a skill that steers with
+     * {@link #crouchWalk} holds it; every halt lets it go.
+     */
+    private boolean sneak;
     /** Paddle inputs while in a boat, set on the boat each tick as a client sets them. */
     private boolean rowForward, rowLeft, rowRight;
     private BlockPos miningTarget;
@@ -483,7 +489,7 @@ final class NativePlayerBody implements BodyAdapter {
 
     @Override public boolean isSettled(ActionLease lease) {
         requireThread();
-        return forward == 0 && sideways == 0 && !jump && !sprint
+        return forward == 0 && sideways == 0 && !jump && !sprint && !sneak
                 && miningTarget == null && !player.isUsingItem();
     }
 
@@ -496,8 +502,34 @@ final class NativePlayerBody implements BodyAdapter {
             this.sideways = sideways;
             this.jump = jump;
             this.sprint = sprint;
+            if (this.sneak) player.setSneaking(false);
+            this.sneak = false;
             player.setYaw(yaw);
             player.setHeadYaw(yaw);
+        });
+    }
+
+    /**
+     * Walking with the sneak as an input of its own (E-71a), as a player bridging holds or lets go of the sneak key while
+     * it walks: {@code forward} along {@code yaw} (backward when negative), the look at {@code pitch}, and the sneak held
+     * while {@code sneak}. Held, vanilla keeps the player from walking off the edge of the block it stands on and the walk
+     * slows to three tenths, as a client's does; never sprinting.
+     */
+    boolean crouchWalk(ActionLease lease, float forward, boolean sneak, float yaw, float pitch) {
+        requireThread();
+        if (!Float.isFinite(forward) || !Float.isFinite(yaw) || !Float.isFinite(pitch) || Math.abs(forward) > 1 || Math.abs(pitch) > 90) {
+            throw new IllegalArgumentException("Invalid movement input");
+        }
+        return execute(lease, Intent.MOVE, null, () -> {
+            this.forward = forward;
+            this.sideways = 0;
+            this.jump = false;
+            this.sprint = false;
+            this.sneak = sneak;
+            player.setSneaking(sneak);
+            player.setYaw(yaw);
+            player.setHeadYaw(yaw);
+            player.setPitch(pitch);
         });
     }
 
@@ -515,6 +547,8 @@ final class NativePlayerBody implements BodyAdapter {
             this.sideways = sideways;
             this.jump = jump;
             this.sprint = sprint;
+            if (this.sneak) player.setSneaking(false);
+            this.sneak = false;
             float turn = net.minecraft.util.math.MathHelper.wrapDegrees(yaw - player.getYaw());
             float step = Math.min(Math.abs(turn), Math.min(45f, Math.max(6f, Math.abs(turn) * 0.5f)));
             player.setYaw(player.getYaw() + Math.signum(turn) * step);
@@ -1442,7 +1476,7 @@ final class NativePlayerBody implements BodyAdapter {
             try {
                 player.interactionManager.interactBlock(player, world, player.getMainHandStack(), Hand.MAIN_HAND, hitResult);
             } finally {
-                player.setSneaking(false);
+                player.setSneaking(sneak);
             }
         });
     }
@@ -2683,11 +2717,13 @@ final class NativePlayerBody implements BodyAdapter {
             haltControls();
             controls = null;
         }
-        // As a client does: an item in use (a raised shield, food being eaten) slows walking to a fifth, and no sprint.
-        float pace = player.isUsingItem() ? 0.2f : 1.0f;
+        // As a client does: an item in use (a raised shield, food being eaten) slows walking to a fifth, and no sprint; a
+        // held sneak slows it to three tenths (E-71a), and is set again each tick it is held.
+        if (sneak) player.setSneaking(true);
+        float pace = player.isUsingItem() ? 0.2f : sneak ? 0.3f : 1.0f;
         player.applyInput(forward * pace, sideways * pace);
         player.setJumping(jump);
-        player.setSprinting(sprint && !player.isUsingItem() && player.getHungerManager().getFoodLevel() > 6);
+        player.setSprinting(sprint && !sneak && !player.isUsingItem() && player.getHungerManager().getFoodLevel() > 6);
         if (player.getVehicle() instanceof BoatEntity boat) boat.setInputs(rowLeft, rowRight, rowForward, false);
     }
 
@@ -2707,6 +2743,8 @@ final class NativePlayerBody implements BodyAdapter {
     private void haltControls() {
         forward = sideways = 0;
         jump = sprint = false;
+        if (sneak) player.setSneaking(false);
+        sneak = false;
         rowForward = rowLeft = rowRight = false;
         if (player.getVehicle() instanceof BoatEntity boat) boat.setInputs(false, false, false, false);
         player.applyInput(0, 0);

@@ -1653,6 +1653,20 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_throw_eye", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw)));
     }
 
+    /** The native player's running or last skill, by identity, and its runner's state, for fixtures: {@code [identity, state]}. */
+    String[] nativeTaskForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.runner == null) return new String[] {"", "IDLE"};
+        return new String[] {entry.nativeTask == null ? "" : Integer.toHexString(System.identityHashCode(entry.nativeTask)), entry.runner.state().name()};
+    }
+
+    /** The world identity a native player's claims are keyed by, for fixtures. */
+    UUID nativeWorldIdForTest(UUID id) {
+        requireThread();
+        return entries.get(id).data.worldId();
+    }
+
     /** What the native player's last skill reported (an eye's flight, a block's position), for fixtures. */
     Map<String, String> nativeLastResult(UUID id) {
         requireThread();
@@ -1770,6 +1784,14 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         directions, Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_bridge")) {
+                var direction = net.minecraft.util.math.Direction.byName(arguments.get("dir").trim());
+                if (direction == null) throw new IllegalArgumentException("Unknown bridge direction " + arguments.get("dir"));
+                task = new NativeBridgeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), this::handBack,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        direction, Integer.parseInt(arguments.get("n")), Integer.parseInt(arguments.get("slot")),
+                        NativeBridgeAction.Crouch.of(arguments.get("crouch")));
             } else if (skill.equals("native_clutch")) {
                 task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")));
@@ -2322,7 +2344,8 @@ final class PlayerRuntime {
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_bed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SLEEP
                         || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId)) && (intent == NativePlayerBody.Intent.PLACE
+                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId))
+                        && (intent == NativePlayerBody.Intent.PLACE
                         || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pearl".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -4623,6 +4646,7 @@ final class PlayerRuntime {
                     entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
                 }
             }
+            if ("native_bridge".equals(task.skill())) entry.campaign.bridgeEnded(completed ? Map.of() : entry.runner.lastProgress());
             entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
@@ -8036,7 +8060,7 @@ final class PlayerRuntime {
                             + (finishedLease != null ? " (action " + finishedLease.actionId() + ")" : ""), observed);
                 }
                 if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId)
-                        || "native_stair".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
+                        || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
                     entry.cachedCraftingTablePos = null;
                     entry.cachedFurnacePos = null;
                     primeWorkstationCaches(entry, entry.nativeBody);
