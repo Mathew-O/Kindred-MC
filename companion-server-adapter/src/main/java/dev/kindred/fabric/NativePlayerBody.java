@@ -376,6 +376,7 @@ final class NativePlayerBody implements BodyAdapter {
         saved.ifPresent(this::validateSave);
         player.preparedState = saved.map(NbtCompound::copy);
         connection = new NativeConnection();
+        connection.tap = this::heardPacket; // E-71f: what it hears, into its earshot; nothing acts on it yet.
         try {
             player.server.getPlayerManager().onPlayerConnect(connection, player,
                     ConnectedClientData.createDefault(player.getGameProfile(), false));
@@ -404,6 +405,7 @@ final class NativePlayerBody implements BodyAdapter {
 
     void disconnect() {
         requireThread();
+        earshot.clear(); // E-71f: nothing heard before it left is read after.
         if (arbiter != null && controls != null) arbiter.cancel(controls);
         haltControls();
         controls = null;
@@ -2784,7 +2786,31 @@ final class NativePlayerBody implements BodyAdapter {
     void listenForTest(boolean on) {
         requireThread();
         heard = on ? new java.util.ArrayDeque<>() : null;
-        if (connection != null) connection.tap = on ? this::heardPacket : null;
+    }
+
+    /**
+     * E-71f: what it has heard and not yet thought about (kind, bearing from where it faced, a near/mid/far band), the
+     * newest {@link dev.kindred.core.hearing.Earshot#CAPACITY}; filled as sounds reach its connection and by the
+     * client's own rule for lava and water ({@link NativeAmbience}). Server thread only.
+     */
+    private final dev.kindred.core.hearing.Earshot earshot = new dev.kindred.core.hearing.Earshot();
+
+    /** Everything heard since the last drain (the observation builder's), oldest first. Server thread. */
+    List<dev.kindred.core.hearing.HeardSound> drainHeard() {
+        requireThread();
+        return earshot.drain();
+    }
+
+    /** Forgets what is heard and not yet drained (a stop). Server thread. */
+    void clearHeard() {
+        requireThread();
+        earshot.clear();
+    }
+
+    /** A sound made by the client's own rule (lava, water), heard as any other. Server thread. */
+    void hearAmbient(dev.kindred.core.hearing.HeardSound sound) {
+        requireThread();
+        earshot.offer(sound);
     }
 
     /** What it heard since a fixture started listening, oldest first. Server thread. */
@@ -2794,8 +2820,6 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     private void heardPacket(Packet<?> packet) {
-        var queue = heard;
-        if (queue == null) return;
         if (packet instanceof net.minecraft.network.packet.s2c.play.BundleS2CPacket bundle) {
             for (var inner : bundle.getPackets()) heardPacket(inner);
             return;
@@ -2817,6 +2841,16 @@ final class NativePlayerBody implements BodyAdapter {
             default -> null;
         };
         if (h == null) return;
+        // Into its earshot as kind, bearing and band only: the exact place is used here to bucket, and kept nowhere.
+        if (!Double.isNaN(h.x())) {
+            var kind = dev.kindred.core.hearing.Hearing.kindOf(h.packet(), h.sound(), h.category());
+            if (kind.isPresent()) {
+                earshot.offer(dev.kindred.core.hearing.Hearing.heard(kind.get(), h.x() - player.getX(), h.y() - player.getEyeY(),
+                        h.z() - player.getZ(), player.getYaw(), tick));
+            }
+        }
+        var queue = heard;
+        if (queue == null) return;
         queue.addLast(h);
         while (queue.size() > HEARD_KEPT) queue.removeFirst();
     }
