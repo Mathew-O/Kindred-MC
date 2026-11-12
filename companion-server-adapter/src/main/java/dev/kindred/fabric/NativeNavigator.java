@@ -201,6 +201,23 @@ final class NativeNavigator {
     }
 
     /**
+     * Why {@link #safeHeading} refuses {@code yaw}: the first cell ahead it will not enter, how far ahead, and what is in
+     * it, over it and under it; null when it would not refuse. Diagnostics only (F-22c64).
+     */
+    String headingRefusal(net.minecraft.entity.Entity body, float yaw) {
+        double radians = Math.toRadians(yaw);
+        double sx = -Math.sin(radians), sz = Math.cos(radians);
+        BlockPos feet = BlockPos.ofFloored(body.getX(), body.getY() + 0.2, body.getZ());
+        for (double reach : new double[]{0.6, 1.1}) {
+            BlockPos ahead = BlockPos.ofFloored(body.getX() + sx * reach, body.getY() + 0.2, body.getZ() + sz * reach);
+            if (ahead.getX() == feet.getX() && ahead.getZ() == feet.getZ()) continue;
+            if (!core.safeToEnter(cell(ahead))) return ahead.toShortString() + " (" + reach + " ahead): " + world.getBlockState(ahead)
+                    + ", " + world.getBlockState(ahead.up()) + " over it, " + world.getBlockState(ahead.down()) + " under it";
+        }
+        return null;
+    }
+
+    /**
      * Whether a push along {@code yaw} for up to {@code reach} blocks (a hit's knockback) would leave the body on safe
      * ground: no hazard, lava or drop beyond what is safe on the way, or a wall that stops it first.
      */
