@@ -145,25 +145,24 @@ public final class NativeTrustGameTests implements FabricGameTest {
 
     /**
      * The day's end staged, 55 before the next day's end ahead of the tick; with {@code late}, instead the tick set 30 before
-     * a day's end, for a runtime to tick there before the staging's own step.
+     * the next day's end ahead of it, for a runtime to tick there before the staging's own step. Both only ever move the
+     * tick forward: on #255's CI (run 43219208498) the late step, begun at 431998, inside a day's last 30 ticks, set it back
+     * to 431970, and a live runtime refused the backward tick ("Backward tick: 431971 < 431998") and stopped the whole
+     * GameTest server, as the 55 step had on #139 before F-22c55 (F-22c68).
      */
     private static void dayEnd(TestContext context, boolean late) {
         var server = context.getWorld().getServer();
         long day = dev.kindred.core.Trust.DAY;
-        if (late) {
-            serverTicks(context, (int) ((Math.floorDiv(server.getTicks(), day) + 1) * day - 30));
-            return;
-        }
         long now = server.getTicks();
-        long target = dayEndLess55(now, day);
-        KindredMod.LOGGER.info("Trust fixture: the day's end staged from {} to {}", now, target);
+        long target = dayEndLess(now, day, late ? 30 : 55);
+        KindredMod.LOGGER.info("Trust fixture: the day's end staged from {} to {}{}", now, target, late ? " (late)" : "");
         context.assertTrue(target > now, "The tick moved forward: " + now + " to " + target);
         serverTicks(context, (int) target);
     }
 
-    /** The server's next tick 55 before a cap's day ends, never behind {@code now}: the tick only moves forward. */
-    static long dayEndLess55(long now, long day) {
-        long target = (Math.floorDiv(now, day) + 1) * day - 55;
+    /** The server's next tick {@code less} before a cap's day ends, never behind {@code now}: the tick only moves forward. */
+    static long dayEndLess(long now, long day, long less) {
+        long target = (Math.floorDiv(now, day) + 1) * day - less;
         return target <= now ? target + day : target;
     }
 
