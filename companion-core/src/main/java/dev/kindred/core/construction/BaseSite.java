@@ -61,7 +61,18 @@ public final class BaseSite {
      */
     public static Optional<Pos> choose(Ground ground, int anchorX, int anchorZ, int radius, int width, int depth, int height,
                                        List<Footprint> avoid) {
+        return choose(ground, anchorX, anchorZ, radius, width, depth, height, avoid, footprint -> true);
+    }
+
+    /**
+     * As {@link #choose(Ground, int, int, int, int, int, int, List)}, among only the sites whose footprint (the build's
+     * ground, its ring aside) {@code fits}: a faction world's founder keeps its first base on one chunk of land it may
+     * claim (M-06i). The nearest such site, by the same order.
+     */
+    public static Optional<Pos> choose(Ground ground, int anchorX, int anchorZ, int radius, int width, int depth, int height,
+                                       List<Footprint> avoid, java.util.function.Predicate<Footprint> fits) {
         Objects.requireNonNull(ground);
+        Objects.requireNonNull(fits);
         Objects.requireNonNull(avoid);
         if (width < 1 || depth < 1 || height < 1 || radius < 0) throw new IllegalArgumentException("Not a site");
         var origins = new ArrayList<int[]>();
@@ -81,6 +92,7 @@ public final class BaseSite {
                 }
             }
             if (clash) continue;
+            if (!fits.test(new Footprint(o[0], o[1], o[0] + width - 1, o[1] + depth - 1))) continue;
             var floor = level(ground, o[0], o[1], width, depth, height);
             if (floor.isPresent()) return Optional.of(new Pos(o[0], floor.get(), o[1]));
         }
