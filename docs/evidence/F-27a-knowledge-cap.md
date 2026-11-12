@@ -76,3 +76,33 @@ For seed 110's bamboo loop: the follow-up to the logs-kept-out line (`F-27a-gath
   - `:companion-sim:test`: 10 passed.
   - `WorldKnowledgeCapTest`: 4 of 4.
   - `NativeKnowledgeCapGameTests` and `NativeBaseGameTests` (the cabin): passed 3 of 3. Each cap run filled its log memory at tick 4 and knew all 3 of the tree's logs by tick 20, 1,803 known in all.
+
+## The corpus gate on the spacer harness: passes
+- **Trees,** all local merges, run alone on a 4-core container with `runCorpus --max-workers=2`, each from an empty corpus world:
+  - **base:** 69c5d12, which is main f009244 with #241's head 1ca5c7b. Its tree is identical to main 697f391, the merge of #241.
+  - **branch:** c277e84, which is 69c5d12 with #219 at a742fb7.
+  - **confirm:** on 69c5d12.
+- **How it ran:** `gate.sh`'s steps, made by hand with each run as its own task, because three full runs are longer than one task may run. The order: an empty world, `runCorpus`, `report.py` against `baseline.json`, then each flagged scene alone three times on each side. The results are on `claude/spacer-runs-1112` under `gate219/`.
+
+| Run | Time | Peak (VmHWM) | Failed of 422 | Fence-top |
+| --- | --- | --- | --- | --- |
+| branch-1 | 46 min | 2744 MB | 114 | 20 |
+| branch-2 | 44 min | 3023 MB | 110 | 18 |
+| branch-3 | 46 min | 3138 MB | 105 | 12 |
+
+- **Over the three runs:** 267 pass, 72 fail and 83 are intermittent (63.3%). #241's runs on main's spacer harness had 63.5%.
+- **Against the committed baseline:** 74 scenes newly pass and 4 are flagged. Confirmed: 0. Cleared: 4.
+
+| Flagged scene | Branch, full runs | Main 5158191, full runs (#241) | Branch alone, failed | Base alone, passed | Ruling |
+| --- | --- | --- | --- | --- | --- |
+| `diag-factions303-079bdc2-303-kindred-84180` | 1 of 3 passed | 2 of 3 | 0 of 3 | 3 of 3 | cleared: does not fail alone |
+| `e40a20-79a9aad-101-sol-107500` | 0 of 3 | 0 of 3 | 3 of 3 | 0 of 3 | cleared: main's own failure |
+| `e40a20-79a9aad-20261030-kindred-131420` | 1 of 3 | 2 of 3 | 0 of 3 | 3 of 3 | cleared: does not fail alone |
+| `e40a20-79a9aad-404-kindred-99080` | 1 of 3 | 3 of 3 | 0 of 3 | 3 of 3 | cleared by the rule; see below |
+
+- **Every failure** was "still in its stuck spell after 3600 ticks".
+- **A harness confound, found by the report's leftover count:** the count of replay players acting after their own batch was 1 in each branch run, against 1, 2 and 1 in #241's runs on main. It is not a player outliving its test.
+  - `ReplayGameTests` names a replay's player from the recorded player's name and tick alone. Two pairs of scenes from different seeds share a name: `e40a20-79a9aad-404-kindred-99080` with `diag-factions303-079bdc2-303-kindred-99080` (`R2d3924b_1`), and `e40a20-79a9aad-20261030-kindred-123080` with `e40a20-79a9aad-404-kindred-123080`.
+  - In each run, `diag-…-99080` is set first and the flagged `404-kindred-99080` follows it in the next batch, two minutes later.
+  - The `123080` pair are set in the same batch, so they play at the same time under one name. Both passed every run on the branch, in #241's three runs on main, and in its run before the spacers.
+  - It passed 3 of 3 alone on both sides, and 3 of 3 in main's full runs with the same pairing. So the collision does not explain its 1 of 3 here by itself. It is a confound all the same. It belongs to the harness, not to #219, and should be fixed there: the name could take the scene's id.
