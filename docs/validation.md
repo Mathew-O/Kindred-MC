@@ -54,6 +54,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - E-70a, nights in bed: in by dusk, the bed it carries, a person's night never held: [evidence](evidence/E-70a.md)
 - E-70a1, a bed never propped in a floor cell the build set aside, the cabin finished: [evidence](evidence/E-70a1.md)
 - E-07e1, a table in the goal's reach is in the dispatch's, the golden helmet made: [evidence](evidence/E-07e1.md)
+- E-71a, timed-crouch bridging: upright to the edge, crouched for the click, held where a fall could kill: [evidence](evidence/E-71a.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
