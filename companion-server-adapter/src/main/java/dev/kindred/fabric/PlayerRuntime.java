@@ -6646,6 +6646,16 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * Tasks it has started of its own choosing, since the player came into play; -1 for no such player. Counted as each
+     * starts, so a fixture sees a start even of one that ended before it looked (F-25c4ap1).
+     */
+    long ownStartsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null ? -1 : entry.ownStarts;
+    }
+
     /** Walks of its own that found no way, since the player came into play; -1 for no such player. */
     int walksFailed(UUID id) {
         requireThread();
