@@ -87,7 +87,10 @@ final class HuntCompass {
         if (held || !hunter.isAlive()) return 0;
         var stack = make(hunter, match);
         stack.set(DataComponentTypes.LODESTONE_TRACKER, tracker);
-        return hunter.getInventory().insertStack(stack) ? 1 : 0;
+        EvalItemSources.enter(hunter);
+        boolean given = hunter.getInventory().insertStack(stack);
+        EvalItemSources.exit(hunter, "rule:manhunt-compass");
+        return given ? 1 : 0;
     }
 
     /** Every compass of {@code match} taken back from {@code player}: the rule that handed them is over. */

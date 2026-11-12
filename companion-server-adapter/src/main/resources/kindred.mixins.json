@@ -28,7 +28,15 @@
     "DoorInteractGoalAccessor",
     "SmithingTransformAccessor",
     "PlayerSaveHandlerMixin",
-    "SleepCountMixin"
+    "SleepCountMixin",
+    "ItemSourceSpawnMixin",
+    "ItemSourceRemoveMixin",
+    "ItemSourcePickupMixin",
+    "ItemSourceProjectilePickupMixin",
+    "ItemSourceScreenMixin",
+    "ItemSourceUseMixin",
+    "ItemSourceInteractMixin",
+    "ItemSourceConsumeMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin",

@@ -1352,7 +1352,9 @@ final class NativePlayerBody implements BodyAdapter {
                 ItemStack output = furnace.getStack(2);
                 if (!output.isEmpty() && canReceiveStack(output)) {
                     ItemStack taken = furnace.removeStack(2);
+                    EvalItemSources.enter(player);
                     player.getInventory().offerOrDrop(taken);
+                    EvalItemSources.exit(player, "container.take:furnace");
                     furnace.dropExperienceForRecipesUsed(player);
                 }
             }
@@ -1760,7 +1762,9 @@ final class NativePlayerBody implements BodyAdapter {
                 if (!stack.isOf(item)) continue;
                 ItemStack part = stack.copyWithCount(Math.min(count - moved[0], stack.getCount()));
                 int offered = part.getCount();
+                EvalItemSources.enter(player);
                 player.getInventory().insertStack(part);
+                EvalItemSources.exit(player, "container.take");
                 int took = offered - part.getCount();
                 if (took <= 0) break;
                 stack.decrement(took);

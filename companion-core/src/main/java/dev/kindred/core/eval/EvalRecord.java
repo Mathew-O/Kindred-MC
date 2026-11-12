@@ -156,6 +156,42 @@ public final class EvalRecord {
         factions = out.append("]}").toString();
     }
 
+    /** The item-source audit (M-06k), written into the file; null when none ran. */
+    private String items;
+
+    /**
+     * The item-source audit, as the file will hold it: the rises in what the players held, how many a source paid for and
+     * by which, the drops picked up by where they came from, the credits that lapsed unused, every rise no source paid
+     * for, and what a snapshot of the players and a drop's tagging cost.
+     */
+    public void items(ItemSourceLedger.Report report, java.util.Map<String, Long> origins, long untaggedPickups, long forgottenDrops,
+                      double snapshotMicrosMean, double snapshotMicrosMax, double tagMicrosMean, double tagMicrosMax) {
+        var out = new StringBuilder(",\n  \"items\": {\"windows\": ").append(report.windows()).append(", \"gained\": ").append(report.gained())
+                .append(", \"paid\": ").append(report.paid()).append(", \"lapsed\": ").append(report.lapsed())
+                .append(", \"untaggedPickups\": ").append(untaggedPickups).append(", \"forgottenDrops\": ").append(forgottenDrops)
+                .append(String.format(java.util.Locale.ROOT, ", \"snapshotMicrosMean\": %.1f, \"snapshotMicrosMax\": %.1f, \"tagMicrosMean\": %.1f, \"tagMicrosMax\": %.1f",
+                        snapshotMicrosMean, snapshotMicrosMax, tagMicrosMean, tagMicrosMax))
+                .append(", \"bySource\": {");
+        boolean first = true;
+        for (var e : report.bySource().entrySet()) {
+            out.append(first ? "" : ", ").append(Json.string(e.getKey())).append(": ").append(e.getValue());
+            first = false;
+        }
+        out.append("}, \"dropsByOrigin\": {");
+        first = true;
+        for (var e : origins.entrySet()) {
+            out.append(first ? "" : ", ").append(Json.string(e.getKey())).append(": ").append(e.getValue());
+            first = false;
+        }
+        out.append("}, \"violationCount\": ").append(report.violationCount()).append(", \"violations\": [");
+        first = true;
+        for (String v : report.violations()) {
+            out.append(first ? "" : ", ").append(Json.string(v));
+            first = false;
+        }
+        items = out.append("]}").toString();
+    }
+
     public int deaths(String player) {
         var p = players.get(player);
         return p == null ? 0 : p.deaths.size() + p.deathsDropped;
@@ -178,6 +214,7 @@ public final class EvalRecord {
                 .append(",\n  \"complete\": ").append(complete)
                 .append(days < 0 ? "" : String.format(java.util.Locale.ROOT, ",\n  \"days\": %.3f", days))
                 .append(factions == null ? "" : factions)
+                .append(items == null ? "" : items)
                 .append(server == null ? "" : server)
                 .append(",\n  \"players\": {");
         boolean firstPlayer = true;
