@@ -1,0 +1,8 @@
+## p240-4119b62
+505: tunnel-steps 0 (walks 0), climb-for-water steps 328, climb-back completed 0, fills 2, spells 9 (27 min), hole-or-pit 1 (3 min; water-bucket 0), spells with tunnel<->climb cycle 0, obsidian 29.1
+31102026: tunnel-steps 3216 (walks 1243), climb-for-water steps 1037, climb-back completed 91, fills 2, spells 12 (36 min), hole-or-pit 5 (15 min; water-bucket 1), spells with tunnel<->climb cycle 1, obsidian 119.0
+303: tunnel-steps 112 (walks 19), climb-for-water steps 1247, climb-back completed 96, fills 2, spells 5 (15 min), hole-or-pit 2 (6 min; water-bucket 2), spells with tunnel<->climb cycle 0, obsidian 48.1
+## p242-2354e67-3seed
+505: tunnel-steps 14 (walks 8), climb-for-water steps 693, climb-back completed 4, fills 4, spells 13 (39 min), hole-or-pit 0 (0 min; water-bucket 0), spells with tunnel<->climb cycle 0, obsidian 73.3
+31102026: tunnel-steps 74 (walks 44), climb-for-water steps 57, climb-back completed 1, fills 1, spells 5 (15 min), hole-or-pit 3 (9 min; water-bucket 0), spells with tunnel<->climb cycle 0, obsidian not reached
+303: tunnel-steps 1043 (walks 506), climb-for-water steps 632, climb-back completed 79, fills 3, spells 15 (45 min), hole-or-pit 1 (3 min; water-bucket 1), spells with tunnel<->climb cycle 1, obsidian not reached

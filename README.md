@@ -126,3 +126,25 @@ What it does not bring in:
 - The late obsidian: on this pair obsidian is no later after #157 (it is earlier on 31102026 and 303).
 
 e40a21 has more of all of these than ec581d5, so later merges add to it.
+
+## The second question: why e40a21 is worse than ec581d5 (added 14:50 UTC)
+
+These runs re-measure the same three seeds on #240's merge (`4119b62`) and on `2354e67` (e40a21's own build, here on the three seeds alone). Both use the same settings as the pair, alone on the cores, 13:28 to 14:39, with all six runs complete at 144,000 ticks. They are in `runs/p240-4119b62/` and `runs/p242-2354e67-3seed/`, with the measures in `analysis/q2-measures.txt` and `analysis/q2-extra.txt`.
+
+| 505 / 31102026 / 303 | Climb-back for water completed | Water-bucket hole-or-pit | Cycle spells | "Tunnel for water" steps | First obsidian, min | Mean tick, ms |
+| --- | --- | --- | --- | --- | --- | --- |
+| 6a6d882 (before #157) | 0 / 39 / 1 (40) | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 3119 / 0 | 38.9 / not reached / 54.0 | 15.8 / 14.1 / 15.4 |
+| ec581d5 (#157) | 29 / 62 / 63 (154) | 1 / 3 / 1 | 0 / 2 / 1 | 0 / 1031 / 126 | 41.7 / 78.5 / 29.2 | 12.0 / 13.2 / 16.9 |
+| 4119b62 (#240) | 0 / 91 / 96 (187) | 0 / 1 / 2 | 0 / 1 / 0 | 0 / 3216 / 112 | 29.1 / 119.0 / 48.1 | 10.6 / 13.2 / 12.7 |
+| 2354e67, three seeds | 4 / 1 / 79 (84) | 0 / 0 / 1 | 0 / 0 / 1 | 14 / 74 / 1043 | 73.3 / not reached / not reached | 13.9 / 13.1 / 14.9 |
+| 2354e67, e40a21's batch | 285 / 101 / 153 (539) | 4 / 1 / 2 | 4 / 1 / 2 | 435 / 7274 / 373 | 113.6 / 116.4 / 84.0 | 12.2 / 12.8 / 17.6 |
+
+- **e40a21 is not reproduced by its own build.** The three-seed rerun of 2354e67 has 84 climb-backs against 539, and 1 water-bucket spell against 7. Its obsidian is not better either: two seeds never reach it.
+  - So the e40a21-against-ec581d5 gap is not #240 or #242 shown. It is the spread between runs of one build on one seed.
+  - Mean tick is alike in every run (10.6 to 17.6 ms), so the gap is not load.
+  - These runs cannot tell e40a21's ten-seed batch conditions from plain run-to-run nondeterminism. Both run three at a time, and the same seed and jar give different games.
+- **The #157 verdict above is withdrawn.** The same-build spread (84 to 539 climb-backs) is larger than the pair's difference (40 to 154). What still holds is narrower:
+  - The water-bucket hole-or-pit spells and the tunnel ↔ climb cycle are 0 on the one pre-#157 run, and on e40a20. They are present on every post-#157 run: 5, 3, 1 and 7 water-bucket spells.
+  - Climb-back is 40 before and 84 to 539 after.
+  - That is consistent with #157, not shown. Settling it needs repeats on each side.
+- **For E-40:** one run a side on these seeds cannot resolve a change of this size.

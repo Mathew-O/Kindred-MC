@@ -1,0 +1,5 @@
+p157-before-6a6d882 mean tick ms 505/31102026/303: [15.84, 14.1, 15.37] | spells 22 hole-or-pit 4
+p157-after-ec581d5 mean tick ms 505/31102026/303: [11.95, 13.16, 16.85] | spells 31 hole-or-pit 11
+p240-4119b62 mean tick ms 505/31102026/303: [10.64, 13.16, 12.72] | spells 26 hole-or-pit 8
+p242-2354e67-3seed mean tick ms 505/31102026/303: [13.85, 13.05, 14.85] | spells 33 hole-or-pit 4
+e40a21-2354e67 mean tick ms 505/31102026/303: [12.19, 12.77, 17.55] | spells 30 hole-or-pit 9

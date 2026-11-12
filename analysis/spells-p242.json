@@ -1,0 +1,3605 @@
+[
+ {
+  "seed": "303",
+  "player": "Kindred",
+  "tick": 50820,
+  "startTick": 47220,
+  "noProgressTicks": 3600,
+  "at": [
+   190,
+   30,
+   -10
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Kindred native_break COMPLETED [Dig down toward iron: clear 190, 31, -10]",
+   "Kindred picked up 1 minecraft:cobblestone",
+   "Kindred goal at 189 31 -10: Iron: Mine iron ore (5/18) - Dig down toward iron: step down",
+   "Kindred native_break COMPLETED [Dig down toward iron: clear 190, 30, -10]",
+   "Kindred goal at 190 30 -10: Iron: Mine iron ore (5/18) - Dig down toward iron: clear 191, 31, -10",
+   "Kindred native_goto COMPLETED [Dig down toward iron: step down]",
+   "Kindred picked up 1 minecraft:cobblestone",
+   "Kindred native_break COMPLETED [Dig down toward iron: clear 191, 31, -10]",
+   "Kindred goal at 190 30 -10: Iron: Mine iron ore (5/18) - Dig down toward iron: clear 191, 30, -10",
+   "Kindred picked up 1 minecraft:cobblestone"
+  ],
+  "insideLines": 296,
+  "firstStep": "Kindred goal at 190 30 -10: Iron: Mine iron ore (5/18) - Dig down toward iron: clear 191, 29, -10",
+  "firstInside": [
+   "Kindred native_break COMPLETED [Dig down toward iron: clear 191, 30, -10]",
+   "Kindred goal at 190 30 -10: Iron: Mine iron ore (5/18) - Dig down toward iron: clear 191, 29, -10",
+   "Kindred picked up 1 minecraft:cobblestone"
+  ],
+  "labels": [
+   [
+    "Iron: on the way, for what comes later - Place a crafting table",
+    36
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    36
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    36
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    35
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    35
+   ],
+   [
+    "Iron: Pick up crafting table",
+    33
+   ],
+   [
+    "Iron: Wait for the drop to settle",
+    28
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N",
+    13
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    11
+   ],
+   [
+    "native_break COMPLETED [Dig down toward iron: clear N, N, N]",
+    10
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: step down",
+    10
+   ],
+   [
+    "native_goto COMPLETED [Dig down toward iron: step down]",
+    3
+   ],
+   [
+    "Iron: on the way, for what comes later - Ready crafting table",
+    1
+   ],
+   [
+    "native_swap COMPLETED [Ready crafting table]",
+    1
+   ],
+   [
+    "native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Place a crafting table]",
+    1
+   ],
+   [
+    "Iron: on the way, for what comes later - Clear space for a workstation",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "cost: day N: the Record through event N, N written since start (N characters of data); by kind events/characters {action=N/N, chronicle.page=N/N, death=N/N, journal=N/N, ledger_check=N/N}; the database N bytes on disk; webs N holding N relations, the world's N; Wire inboxes N messages; teammates' updates (team.state) N told since start, kept only in the peer ledgers; Chronicle N pages kept; heap in use N MB",
+    1
+   ],
+   [
+    "chronicle: day N page (the plain list, N characters, N events cited)",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Kindred",
+  "tick": 55360,
+  "startTick": 51760,
+  "noProgressTicks": 3600,
+  "at": [
+   190,
+   30,
+   -10
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": false,
+  "before10": [
+   "Kindred picked up 1 minecraft:cobblestone",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 190 30 11: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)",
+   "Kindred goal at 190 30 11: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred native_break COMPLETED [Pick up the crafting table]",
+   "Kindred goal at 190 30 9: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+   "Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 190 30 9: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)"
+  ],
+  "insideLines": 261,
+  "firstStep": "Kindred goal at 190 30 8: Iron: Pick up crafting table (tried elsewhere 1 time)",
+  "firstInside": [
+   "Kindred goal at 190 30 8: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Kindred leaves 1 minecraft:crafting_table lying at 190, 30, 8 (190.69, 30.52, 8.36): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at 190.52, 30.12, 8.47",
+   "Kindred goal at 190 30 8: Iron: Mine iron ore (5/18) - Dig down toward iron: clear 190, 29, 9 (tried elsewhere 1 time)"
+  ],
+  "labels": [
+   [
+    "Iron: Pick up crafting table (tried elsewhere N time)",
+    36
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    36
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    35
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N (tried elsewhere N time)",
+    9
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    9
+   ],
+   [
+    "native_break COMPLETED [dig toward elsewhere: clear N, N, N]",
+    8
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    6
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: advance",
+    4
+   ],
+   [
+    "native_goto COMPLETED [dig toward elsewhere: advance]",
+    4
+   ],
+   [
+    "picked up N minecraft:diorite",
+    2
+   ],
+   [
+    "leaves N minecraft:crafting_table lying at N, N, N (N.N, N.N, N.N): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at N.N, N.N, N.N",
+    1
+   ],
+   [
+    "Iron: Wait for the drop to settle (tried elsewhere N time)",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [try elsewhere, toward N, N, N]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Kindred",
+  "tick": 59800,
+  "startTick": 56200,
+  "noProgressTicks": 3600,
+  "at": [
+   190,
+   30,
+   -27
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Kindred goal at 190 30 -30: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 2 times)",
+   "Kindred picked up 1 minecraft:cobblestone",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 190 30 -30: Iron: take workstations along - Pick up the crafting table (tried elsewhere 2 times)",
+   "Kindred goal at 190 30 -30: Iron: Pick up crafting table (tried elsewhere 2 times)",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred goal at 190 30 -28: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 2 times)",
+   "Kindred native_break COMPLETED [Pick up the crafting table]",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 190 30 -28: Iron: take workstations along - Pick up the crafting table (tried elsewhere 2 times)"
+  ],
+  "insideLines": 223,
+  "firstStep": "Kindred goal at 190 30 -28: Iron: Pick up crafting table (tried elsewhere 2 times)",
+  "firstInside": [
+   "Kindred goal at 190 30 -28: Iron: Pick up crafting table (tried elsewhere 2 times)",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred goal at 190 30 -28: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 2 times)"
+  ],
+  "labels": [
+   [
+    "picked up N minecraft:crafting_table",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    36
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N times)",
+    35
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    35
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    35
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    35
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N (tried elsewhere N times)",
+    6
+   ],
+   [
+    "native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+    1
+   ],
+   [
+    "leaves N minecraft:crafting_table lying at N, N, N (N.N, N.N, N.N): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at N.N, N.N, N.N",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Kindred",
+  "tick": 67420,
+  "startTick": 63820,
+  "noProgressTicks": 3600,
+  "at": [
+   56,
+   95,
+   29
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Kindred picked up 1 minecraft:dirt",
+   "Kindred native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Kindred picked up 1 minecraft:dirt",
+   "Kindred goal at 54 95 31: Iron: on the way, for what comes later - Clear space for a workstation (tried elsewhere 3 times)",
+   "Kindred native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Kindred goal at 54 95 31: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 3 times)",
+   "Kindred native_break COMPLETED [Clear space for a workstation]",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 54 95 31: Iron: take workstations along - Pick up the crafting table (tried elsewhere 3 times)",
+   "Kindred picked up 1 minecraft:dirt"
+  ],
+  "insideLines": 265,
+  "firstStep": "Kindred goal at 54 95 31: Iron: Pick up crafting table (tried elsewhere 3 times)",
+  "firstInside": [
+   "Kindred goal at 54 95 31: Iron: Pick up crafting table (tried elsewhere 3 times)",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred goal at 55 95 31: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 3 times)"
+  ],
+  "labels": [
+   [
+    "picked up N minecraft:crafting_table",
+    40
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    40
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    40
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    40
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    40
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N times)",
+    33
+   ],
+   [
+    "Iron: Wait for the drop to settle (tried elsewhere N times)",
+    8
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: step down (tried elsewhere N times)",
+    6
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N (tried elsewhere N times)",
+    5
+   ],
+   [
+    "native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+    2
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [Pick up crafting table]",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Pick up crafting table]",
+    1
+   ],
+   [
+    "leaves N minecraft:crafting_table lying at N, N, N (N.N, N.N, N.N): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at N.N, N.N, N.N",
+    1
+   ],
+   [
+    "Iron: on the way, for what comes later - Clear space for a workstation (tried elsewhere N times)",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "picked up N minecraft:dirt",
+    1
+   ],
+   [
+    "Iron: on the way, for what comes later - Ready crafting table (tried elsewhere N times)",
+    1
+   ],
+   [
+    "native_swap COMPLETED [Ready crafting table]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Kindred",
+  "tick": 77800,
+  "startTick": 74200,
+  "noProgressTicks": 3600,
+  "at": [
+   54,
+   91,
+   82
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Kindred native_goto COMPLETED [Explore the cave toward iron]",
+   "Kindred goal at 53 89 82: Iron: Mine iron ore (5/18) - Explore the cave toward iron (tried elsewhere 4 times)",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 53 89 82: Iron: take workstations along - Pick up the crafting table (tried elsewhere 4 times)",
+   "Kindred goal at 53 89 82: Iron: Pick up crafting table (tried elsewhere 4 times)",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred native_break COMPLETED [Pick up the crafting table]",
+   "Kindred goal at 53 90 83: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 4 times)",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 53 90 83: Iron: take workstations along - Pick up the crafting table (tried elsewhere 4 times)"
+  ],
+  "insideLines": 233,
+  "firstStep": "Kindred goal at 53 90 83: Iron: Pick up crafting table (tried elsewhere 4 times)",
+  "firstInside": [
+   "Kindred goal at 53 90 83: Iron: Pick up crafting table (tried elsewhere 4 times)",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "picked up N minecraft:crafting_table",
+    35
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    35
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    35
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    35
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    35
+   ],
+   [
+    "Iron: Wait for the drop to settle (tried elsewhere N times)",
+    32
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Explore the cave toward iron (tried elsewhere N times)",
+    12
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N times)",
+    8
+   ],
+   [
+    "Iron: on the way, for what comes later - Clear space for a workstation (tried elsewhere N times)",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Kindred",
+  "tick": 85000,
+  "startTick": 81400,
+  "noProgressTicks": 3600,
+  "at": [
+   69,
+   96,
+   73
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Kindred goal at 70 96 74: Iron: no progress here for a while - make a way elsewhere: walk on",
+   "Kindred planned a way toward 78, 91, 82 in 36 ms (2500 positions, partial)",
+   "Kindred native_goto COMPLETED [make a way elsewhere: walk on]",
+   "Kindred goal at 70 96 73: Iron: no progress here for a while - dig toward elsewhere: advance",
+   "Kindred native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Kindred planned a way toward 78, 91, 82 in 20 ms (2500 positions, partial)",
+   "Kindred goal at 70 96 74: Iron: no progress here for a while - make a way elsewhere: walk on",
+   "Kindred planned a way toward 78, 91, 82 in 40 ms (2500 positions, partial)",
+   "Kindred native_goto COMPLETED [make a way elsewhere: walk on]",
+   "Kindred goal at 70 96 73: Iron: no progress here for a while - dig toward elsewhere: advance"
+  ],
+  "insideLines": 272,
+  "firstStep": "Kindred goal at 70 96 74: Iron: no progress here for a while - make a way elsewhere: walk on",
+  "firstInside": [
+   "Kindred planned a way toward 78, 91, 82 in 38 ms (2500 positions, partial)",
+   "Kindred goal at 70 96 74: Iron: no progress here for a while - make a way elsewhere: walk on",
+   "Kindred native_goto COMPLETED [dig toward elsewhere: advance]"
+  ],
+  "labels": [
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    37
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    37
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    37
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    37
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N times)",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    36
+   ],
+   [
+    "planned a way toward N, N, N in N ms (N positions, partial)",
+    8
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Walk to iron ore at N, N, N (tried elsewhere N times)",
+    8
+   ],
+   [
+    "Iron: no progress here for a while - make a way elsewhere: walk on",
+    6
+   ],
+   [
+    "native_goto COMPLETED [dig toward elsewhere: advance]",
+    6
+   ],
+   [
+    "native_goto COMPLETED [make a way elsewhere: walk on]",
+    6
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: advance",
+    5
+   ],
+   [
+    "Iron: Wait for the drop to settle (tried elsewhere N times)",
+    5
+   ],
+   [
+    "Iron: on the way, for what comes later - Clear space for a workstation (tried elsewhere N times)",
+    2
+   ],
+   [
+    "lesson: dropped SPARE_PICKAXE - Three days without a broken last pickaxe; dropping the habit of a spare pickaxe.",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Sol",
+  "tick": 64180,
+  "startTick": 60580,
+  "noProgressTicks": 3600,
+  "at": [
+   -288,
+   73,
+   50
+  ],
+  "kind": "hole or pit",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol goal at -287 73 50: Iron: shelter for the night - Dig in for the night: clear -288, 72, 50",
+   "Sol native_break COMPLETED [Dig in for the night: clear -288, 73, 50]",
+   "Sol picked up 1 minecraft:dirt",
+   "Sol goal at -287 73 50: Iron: shelter for the night - Dig in for the night: step down",
+   "Sol native_break COMPLETED [Dig in for the night: clear -288, 72, 50]",
+   "Sol native_goto COMPLETED [Dig in for the night: step down]",
+   "Sol picked up 1 minecraft:dirt",
+   "Sol goal at -288 72 50: Iron: shelter for the night - Dig in for the night: clear -289, 72, 50",
+   "Sol native_break COMPLETED [Dig in for the night: clear -289, 72, 50]",
+   "Sol goal at -288 72 50: Iron: shelter for the night - Dig in for the night: clear -289, 71, 50"
+  ],
+  "insideLines": 739,
+  "firstStep": "Sol goal at -288 72 50: Iron: shelter for the night - Dig in for the night: step down",
+  "firstInside": [
+   "Sol picked up 1 minecraft:dirt",
+   "Sol native_break COMPLETED [Dig in for the night: clear -289, 71, 50]",
+   "Sol goal at -288 72 50: Iron: shelter for the night - Dig in for the night: step down"
+  ],
+  "labels": [
+   [
+    "Iron: Fill a bucket with water - Tunnel for water: fill N, N, N",
+    248
+   ],
+   [
+    "Iron: Fill a bucket with water - Tunnel for water: step down",
+    138
+   ],
+   [
+    "native_goto COMPLETED [Tunnel for water: step down]",
+    127
+   ],
+   [
+    "Iron: Fill a bucket with water - Climb toward the surface for water: back the way it came",
+    127
+   ],
+   [
+    "native_goto COMPLETED [Climb toward the surface for water: back the way it came]",
+    64
+   ],
+   [
+    "picked up N minecraft:dirt",
+    7
+   ],
+   [
+    "Iron: Fill a bucket with water - Tunnel for water: clear N, N, N",
+    5
+   ],
+   [
+    "native_break COMPLETED [Dig in for the night: clear N, N, N]",
+    4
+   ],
+   [
+    "Iron: shelter for the night - Dig in for the night: clear N, N, N",
+    3
+   ],
+   [
+    "Iron: Fill a bucket with water - Climb toward the surface for water: clear N, N, N",
+    3
+   ],
+   [
+    "Iron: Fill a bucket with water - Tunnel for water: advance",
+    2
+   ],
+   [
+    "native_break COMPLETED [Tunnel for water: clear N, N, N]",
+    2
+   ],
+   [
+    "Iron: shelter for the night - Dig in for the night: step down",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Dig in for the night: step down]",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Tunnel for water: advance]",
+    1
+   ],
+   [
+    "Iron: Fill a bucket with water - Climb toward the surface for water: step up",
+    1
+   ],
+   [
+    "native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Sol",
+  "tick": 76860,
+  "startTick": 73260,
+  "noProgressTicks": 3600,
+  "at": [
+   -192,
+   70,
+   39
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol goal at -192 69 40: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol goal at -192 70 39: Iron: on the way, for what comes later - Clear space for a workstation (tried elsewhere 1 time)",
+   "Sol native_break COMPLETED [Clear space for a workstation]",
+   "Sol goal at -192 70 39: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+   "Sol goal at -192 70 39: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -199, 70, 64: clear -193, 71, 39 (tried elsewhere 1 time)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at -192 70 39: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:dirt"
+  ],
+  "insideLines": 231,
+  "firstStep": "Sol goal at -192 70 39: Iron: Wait for the drop to settle (tried elsewhere 1 time)",
+  "firstInside": [
+   "Sol goal at -192 70 39: Iron: Wait for the drop to settle (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "Iron: Wait for the drop to settle (tried elsewhere N time)",
+    35
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    35
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    35
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    35
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at N, N, N: clear N, N, N (tried elsewhere N time)",
+    14
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N time)",
+    4
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Sol",
+  "tick": 100300,
+  "startTick": 96700,
+  "noProgressTicks": 3600,
+  "at": [
+   -167,
+   76,
+   -35
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol goal at -167 76 -35: Iron: on the way, for what comes later - Clear space for a workstation (tried elsewhere 2 times)",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_break COMPLETED [Clear space for a workstation]",
+   "Sol goal at -167 76 -35: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 2 times)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at -167 76 -35: Iron: take workstations along - Pick up the crafting table (tried elsewhere 2 times)",
+   "Sol picked up 1 minecraft:dirt"
+  ],
+  "insideLines": 244,
+  "firstStep": "Sol goal at -167 76 -35: Iron: Wait for the drop to settle (tried elsewhere 2 times)",
+  "firstInside": [
+   "Sol goal at -167 76 -35: Iron: Wait for the drop to settle (tried elsewhere 2 times)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol goal at -167 76 -35: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 2 times)"
+  ],
+  "labels": [
+   [
+    "Iron: Wait for the drop to settle (tried elsewhere N times)",
+    36
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    36
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    36
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    36
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    36
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N times)",
+    16
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk toward the lava at N, N, N (tried elsewhere N times)",
+    9
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Sol",
+  "tick": 105100,
+  "startTick": 101500,
+  "noProgressTicks": 3600,
+  "at": [
+   -105,
+   81,
+   -21
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Sol native_goto COMPLETED [dig toward elsewhere: advance]",
+   "Sol goal at -107 82 -16: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 3 times)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at -107 82 -16: Iron: take workstations along - Pick up the crafting table (tried elsewhere 3 times)"
+  ],
+  "insideLines": 229,
+  "firstStep": "Sol goal at -107 82 -16: Iron: Pick up crafting table (tried elsewhere 3 times)",
+  "firstInside": [
+   "Sol goal at -107 82 -16: Iron: Pick up crafting table (tried elsewhere 3 times)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "Iron: Pick up crafting table (tried elsewhere N times)",
+    36
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    36
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    36
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    36
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    36
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk toward the lava at N, N, N (tried elsewhere N times)",
+    10
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Sol",
+  "tick": 124460,
+  "startTick": 120860,
+  "noProgressTicks": 3600,
+  "at": [
+   -67,
+   71,
+   -33
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol goal at -67 71 -33: Iron: nothing to do before daylight - Wait for daylight",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol native_wait COMPLETED [Wait for daylight]",
+   "Sol goal at -67 71 -33: Iron: Cast the portal frame from lava and water - Cast: walk toward the lava at -200, 70, 65",
+   "Sol goal at -67 71 -33: Iron: on the way, for what comes later - Clear space for a workstation"
+  ],
+  "insideLines": 260,
+  "firstStep": "Sol goal at -67 71 -33: Iron: on the way, for what comes later - Place a crafting table",
+  "firstInside": [
+   "Sol chronicle: day 5 page (the plain list, 441 characters, 3 events cited)",
+   "Sol goal at -67 71 -33: Iron: on the way, for what comes later - Place a crafting table",
+   "Sol native_break COMPLETED [Clear space for a workstation]"
+  ],
+  "labels": [
+   [
+    "Iron: on the way, for what comes later - Place a crafting table",
+    38
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    38
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    38
+   ],
+   [
+    "Iron: Wait for the drop to settle",
+    37
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    37
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    37
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk toward the lava at N, N, N",
+    14
+   ],
+   [
+    "Iron: Pick up crafting table",
+    10
+   ],
+   [
+    "picked up N minecraft:coal",
+    2
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    2
+   ],
+   [
+    "chronicle: day N page (the plain list, N characters, N events cited)",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [try elsewhere, toward N, N, N]",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ],
+   [
+    "native_break COMPLETED [dig toward elsewhere: clear N, N, N]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Sol",
+  "tick": 128640,
+  "startTick": 125040,
+  "noProgressTicks": 3600,
+  "at": [
+   -67,
+   71,
+   -33
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol goal at -67 71 -32: Iron: on the way, for what comes later - Place a crafting table",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at -67 71 -32: Iron: take workstations along - Pick up the crafting table",
+   "Sol goal at -67 71 -32: Iron: Pick up crafting table",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol goal at -67 71 -33: Iron: on the way, for what comes later - Place a crafting table",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at -67 71 -33: Iron: take workstations along - Pick up the crafting table"
+  ],
+  "insideLines": 269,
+  "firstStep": "Sol goal at -67 71 -33: Iron: Pick up crafting table",
+  "firstInside": [
+   "Sol goal at -67 71 -33: Iron: Pick up crafting table",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol goal at -67 71 -32: Iron: on the way, for what comes later - Clear space for a workstation"
+  ],
+  "labels": [
+   [
+    "Iron: on the way, for what comes later - Place a crafting table",
+    38
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    37
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    37
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    37
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    37
+   ],
+   [
+    "Iron: Wait for the drop to settle",
+    35
+   ],
+   [
+    "Iron: Pick up crafting table",
+    14
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk toward the lava at N, N, N",
+    13
+   ],
+   [
+    "Iron: on the way, for what comes later - Clear space for a workstation",
+    4
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    4
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    2
+   ],
+   [
+    "picked up N minecraft:coal",
+    2
+   ],
+   [
+    "native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+    1
+   ],
+   [
+    "native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Place a crafting table]",
+    1
+   ],
+   [
+    "native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "Iron: light the way - Place a torch at N, N, N",
+    1
+   ],
+   [
+    "native_place COMPLETED [Place a torch at N, N, N]",
+    1
+   ],
+   [
+    "picked up N minecraft:torch",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Sol",
+  "tick": 133080,
+  "startTick": 129480,
+  "noProgressTicks": 3600,
+  "at": [
+   -76,
+   71,
+   -33
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol picked up 1 minecraft:cobblestone",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at -88 71 -33: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)",
+   "Sol goal at -88 71 -33: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol goal at -87 71 -33: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+   "Sol goal at -87 71 -33: Iron: Cast the portal frame from lava and water - Cast: walk toward the lava at -200, 70, 65 (tried elsewhere 1 time)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at -87 71 -33: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)"
+  ],
+  "insideLines": 235,
+  "firstStep": "Sol goal at -87 71 -33: Iron: Pick up crafting table (tried elsewhere 1 time)",
+  "firstInside": [
+   "Sol goal at -87 71 -33: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "picked up N minecraft:crafting_table",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    36
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    35
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk toward the lava at N, N, N (tried elsewhere N time)",
+    11
+   ],
+   [
+    "Iron: inventory full - Drop surplus dirt (tried elsewhere N time)",
+    2
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobblestone (tried elsewhere N time)",
+    2
+   ],
+   [
+    "leaves N minecraft:crafting_table lying at N, N, N (N.N, N.N, N.N): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at N.N, N.N, N.N",
+    2
+   ],
+   [
+    "native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus wheat seeds (tried elsewhere N time)",
+    1
+   ],
+   [
+    "native_discard COMPLETED [Drop surplus cobblestone]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Echo",
+  "tick": 34660,
+  "startTick": 31060,
+  "noProgressTicks": 3600,
+  "at": [
+   95,
+   101,
+   21
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Echo native_break COMPLETED [Pick up the crafting table]",
+   "Echo goal at 92 100 29: Iron: on the way, for what comes later - Place a crafting table",
+   "Echo native_place COMPLETED [Place a crafting table]",
+   "Echo goal at 92 100 29: Iron: take workstations along - Pick up the crafting table",
+   "Echo goal at 92 100 29: Iron: Pick up crafting table",
+   "Echo picked up 1 minecraft:crafting_table",
+   "Echo native_break COMPLETED [Pick up the crafting table]",
+   "Echo goal at 92 100 28: Iron: on the way, for what comes later - Place a crafting table",
+   "Echo native_place COMPLETED [Place a crafting table]",
+   "Echo goal at 92 100 28: Iron: take workstations along - Pick up the crafting table"
+  ],
+  "insideLines": 262,
+  "firstStep": "Echo goal at 92 100 28: Iron: Pick up crafting table",
+  "firstInside": [
+   "Echo goal at 92 100 28: Iron: Pick up crafting table",
+   "Echo picked up 1 minecraft:crafting_table",
+   "Echo goal at 92 101 28: Iron: on the way, for what comes later - Place a crafting table"
+  ],
+  "labels": [
+   [
+    "Iron: Pick up crafting table",
+    41
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    41
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table",
+    41
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    41
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    41
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    41
+   ],
+   [
+    "Iron: on the way, for what comes later - Craft white bed",
+    8
+   ],
+   [
+    "native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+    3
+   ],
+   [
+    "leaves N minecraft:crafting_table lying at N, N, N (N.N, N.N, N.N): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at N.N, N.N, N.N",
+    1
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Back to where it saw iron ore at N, N, N",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/EchoN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "303",
+  "player": "Echo",
+  "tick": 74920,
+  "startTick": 71320,
+  "noProgressTicks": 3600,
+  "at": [
+   119,
+   19,
+   -11
+  ],
+  "kind": "refused target repeated",
+  "watchdogMatched": false,
+  "before10": [
+   "Echo native_break COMPLETED [Branch mine for iron: clear 95, 20, -20]",
+   "Echo goal at 95 19 -21: Iron: Mine iron ore (2/10) - Branch mine for iron: clear 95, 19, -20",
+   "Echo picked up 1 minecraft:cobblestone",
+   "Echo goal at 95 19 -21: Iron: Mine iron ore (2/10) - Branch mine for iron: advance",
+   "Echo native_break COMPLETED [Branch mine for iron: clear 95, 19, -20]",
+   "Echo native_goto COMPLETED [Branch mine for iron: advance]",
+   "Echo goal at 95 19 -20: Iron: Mine iron ore (2/10) - Branch mine for iron: clear 95, 20, -19",
+   "Echo picked up 1 minecraft:cobblestone",
+   "Echo goal at 95 19 -20: Iron: Mine iron ore (2/10) - Branch mine for iron: clear 95, 19, -19",
+   "Echo native_break COMPLETED [Branch mine for iron: clear 95, 20, -19]"
+  ],
+  "insideLines": 1985,
+  "firstStep": "Echo goal at 95 19 -20: Iron: Mine iron ore (2/10) - Branch mine for iron: advance",
+  "firstInside": [
+   "Echo goal at 95 19 -20: Iron: Mine iron ore (2/10) - Branch mine for iron: advance",
+   "Echo native_break COMPLETED [Branch mine for iron: clear 95, 19, -19]",
+   "Echo picked up 1 minecraft:cobblestone"
+  ],
+  "labels": [
+   [
+    "native_break refused: Break target is out of reach or not visible: out of sight from N, N, N: the line to its middle meets Block{minecraft:granite} at N, N, N [Take its bed back up in the morning]",
+    1666
+   ],
+   [
+    "native_break COMPLETED [Branch mine for iron: clear N, N, N]",
+    70
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Branch mine for iron: clear N, N, N",
+    70
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    61
+   ],
+   [
+    "native_goto COMPLETED [Branch mine for iron: advance]",
+    43
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Branch mine for iron: advance",
+    35
+   ],
+   [
+    "picked up N minecraft:andesite",
+    9
+   ],
+   [
+    "native_wait COMPLETED [Asleep in its bed]",
+    5
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    4
+   ],
+   [
+    "native_break COMPLETED [dig toward elsewhere: clear N, N, N]",
+    3
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: advance",
+    2
+   ],
+   [
+    "native_break CANCELLED: Stopped or unavailable [Branch mine for iron: clear N, N, N]",
+    1
+   ],
+   [
+    "chronicle: day N page (the plain list, N characters, N events cited)",
+    1
+   ],
+   [
+    "Iron: Ready the bed it carries",
+    1
+   ],
+   [
+    "Iron: Set its bed down in its pocket for the night",
+    1
+   ],
+   [
+    "native_swap COMPLETED [Ready the bed it carries]",
+    1
+   ],
+   [
+    "native_bed BLOCKED: Owned inventory changed before the bed was set down; nothing placed [Set its bed down in its pocket for the night]",
+    1
+   ],
+   [
+    "Iron: Sleep in the bed it carries",
+    1
+   ],
+   [
+    "native_bed COMPLETED [Set its bed down in its pocket for the night]",
+    1
+   ],
+   [
+    "native_sleep COMPLETED [Sleep in the bed it carries]",
+    1
+   ],
+   [
+    "Iron: Take its bed back up in the morning",
+    1
+   ],
+   [
+    "has started nothing for N ticks on its goal: mayDecide=true admitted=true candidates=N decision=PROPOSE_TASK Active project goal: need N.N + bias +N.N = N.N current=false [bodyTicks=N age=N removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=N/false build=none blocker=Break target is out of reach or not visible: out of sight from N, N, N: the line to its middle meets Block{minecraft:granite} at N, N, N]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/EchoN (N KB)",
+    1
+   ],
+   [
+    "native_goto COMPLETED [try elsewhere, toward N, N, N]",
+    1
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [try elsewhere, toward N, N, N]",
+    1
+   ],
+   [
+    "native_goto COMPLETED [dig toward elsewhere: advance]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "31102026",
+  "player": "Kindred",
+  "tick": 101800,
+  "startTick": 98200,
+  "noProgressTicks": 3600,
+  "at": [
+   -22,
+   64,
+   300
+  ],
+  "kind": "hole or pit",
+  "watchdogMatched": false,
+  "before10": [
+   "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: let what falls settle",
+   "Kindred native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Climb toward the surface for logs: clear -22, 65, 300]",
+   "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -22, 63, 300",
+   "Kindred picked up 1 minecraft:sand",
+   "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -22, 64, 300",
+   "Kindred native_break COMPLETED [Climb toward the surface for logs: clear -22, 63, 300]",
+   "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: let what falls settle",
+   "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -22, 63, 300",
+   "Kindred picked up 1 minecraft:sand",
+   "Kindred native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]"
+  ],
+  "insideLines": 83,
+  "firstStep": "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: let what falls settle",
+  "firstInside": [
+   "Kindred native_break COMPLETED [Climb toward the surface for logs: clear -22, 63, 300]",
+   "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: let what falls settle",
+   "Kindred goal at -22 62 301: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -22, 63, 300"
+  ],
+  "labels": [
+   [
+    "Wood: Gather logs for sticks - Climb toward the surface for logs: clear N, N, N",
+    17
+   ],
+   [
+    "native_break COMPLETED [Climb toward the surface for logs: clear N, N, N]",
+    12
+   ],
+   [
+    "picked up N minecraft:sand",
+    12
+   ],
+   [
+    "Wood: Gather logs for sticks - Climb toward the surface for logs: let what falls settle",
+    7
+   ],
+   [
+    "native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    6
+   ],
+   [
+    "Wood: Gather logs for sticks - Climb toward the surface for logs: step up",
+    5
+   ],
+   [
+    "native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    5
+   ],
+   [
+    "Wood: no way on from here - Jump down from the ledge",
+    4
+   ],
+   [
+    "Wood: waiting for a feasible step",
+    3
+   ],
+   [
+    "Wood: Gather logs for sticks - Climb toward the surface for logs: back the way it came",
+    2
+   ],
+   [
+    "native_goto COMPLETED [Jump down from the ledge]",
+    2
+   ],
+   [
+    "native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Climb toward the surface for logs: clear N, N, N]",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    1
+   ],
+   [
+    "has started nothing for N ticks on its goal: mayDecide=true admitted=true candidates=N decision=WAIT No executable local task; retain goals and wait for a meaningful change current=false [bodyTicks=N age=N removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=N/false build=none blocker=Completed native_goto: {arrived=N, N, N}.]",
+    1
+   ],
+   [
+    "Wood: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ],
+   [
+    "Wood: waiting for a feasible step (tried elsewhere N time)",
+    1
+   ],
+   [
+    "native_goto COMPLETED [try elsewhere, toward N, N, N]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "31102026",
+  "player": "Kindred",
+  "tick": 105560,
+  "startTick": 101960,
+  "noProgressTicks": 3600,
+  "at": [
+   -44,
+   64,
+   299
+  ],
+  "kind": "hole or pit",
+  "watchdogMatched": false,
+  "before10": [
+   "Kindred goal at -22 64 299: Wood: waiting for a feasible step",
+   "Kindred goal at -22 65 299: Wood: no way on from here - Jump down from the ledge",
+   "Kindred goal at -22 64 300: Wood: waiting for a feasible step",
+   "Kindred native_goto COMPLETED [Jump down from the ledge]",
+   "Kindred has started nothing for 1201 ticks on its goal: mayDecide=true admitted=true candidates=0 decision=WAIT No executable local task; retain goals and wait for a meaningful change current=false [bodyTicks=101045 age=101045 removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=0/false build=none blocker=Completed native_goto: {arrived=-22, 63, 300}.]",
+   "Kindred goal at -22 63 301: Wood: no progress here for a while - try elsewhere, toward -46, 63, 301",
+   "Kindred spell replay captured in 3.1 ms on the server thread (2.5 ms of its time)",
+   "Kindred spell replay written to kindred/replays/world/Kindred-101960 (613 KB)",
+   "Kindred goal at -43 64 300: Wood: waiting for a feasible step (tried elsewhere 1 time)",
+   "Kindred native_goto COMPLETED [try elsewhere, toward -46, 63, 301]"
+  ],
+  "insideLines": 1,
+  "firstStep": null,
+  "firstInside": [
+   "Kindred has started nothing for 1201 ticks on its goal: mayDecide=true admitted=true candidates=0 decision=WAIT No executable local task; retain goals and wait for a meaningful change current=false [bodyTicks=103277 age=103277 removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=0/false build=none blocker=Completed native_goto: {arrived=-44, 64, 300}.]"
+  ],
+  "labels": [
+   [
+    "has started nothing for N ticks on its goal: mayDecide=true admitted=true candidates=N decision=WAIT No executable local task; retain goals and wait for a meaningful change current=false [bodyTicks=N age=N removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=N/false build=none blocker=Completed native_goto: {arrived=N, N, N}.]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "31102026",
+  "player": "Sol",
+  "tick": 76600,
+  "startTick": 73000,
+  "noProgressTicks": 3600,
+  "at": [
+   251,
+   36,
+   363
+  ],
+  "kind": "mining for a find",
+  "watchdogMatched": false,
+  "before10": [
+   "Sol goal at 240 36 363: Iron: Find fuel to smelt iron - Tunnel for coal: clear 241, 37, 363",
+   "Sol picked up 1 minecraft:cobblestone",
+   "Sol native_break COMPLETED [Tunnel for coal: clear 241, 37, 363]",
+   "Sol goal at 240 36 363: Iron: Find fuel to smelt iron - Tunnel for coal: clear 241, 36, 363",
+   "Sol picked up 1 minecraft:cobblestone",
+   "Sol goal at 240 36 363: Iron: Find fuel to smelt iron - Tunnel for coal: advance",
+   "Sol native_break COMPLETED [Tunnel for coal: clear 241, 36, 363]",
+   "Sol native_goto COMPLETED [Tunnel for coal: advance]",
+   "Sol goal at 241 36 363: Iron: Find fuel to smelt iron - Tunnel for coal: clear 242, 37, 363",
+   "Sol picked up 1 minecraft:cobblestone"
+  ],
+  "insideLines": 82,
+  "firstStep": "Sol goal at 241 36 363: Iron: Find fuel to smelt iron - Tunnel for coal: clear 242, 36, 363",
+  "firstInside": [
+   "Sol native_break COMPLETED [Tunnel for coal: clear 242, 37, 363]",
+   "Sol goal at 241 36 363: Iron: Find fuel to smelt iron - Tunnel for coal: clear 242, 36, 363",
+   "Sol native_break COMPLETED [Tunnel for coal: clear 242, 36, 363]"
+  ],
+  "labels": [
+   [
+    "native_break COMPLETED [Tunnel for coal: clear N, N, N]",
+    20
+   ],
+   [
+    "Iron: Find fuel to smelt iron - Tunnel for coal: clear N, N, N",
+    19
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    11
+   ],
+   [
+    "native_goto COMPLETED [Tunnel for coal: advance]",
+    11
+   ],
+   [
+    "Iron: Find fuel to smelt iron - Tunnel for coal: advance",
+    10
+   ],
+   [
+    "picked up N minecraft:granite",
+    9
+   ],
+   [
+    "Iron: waiting for a feasible step",
+    1
+   ],
+   [
+    "has started nothing for N ticks on its goal: mayDecide=true admitted=true candidates=N decision=WAIT No executable local task; retain goals and wait for a meaningful change current=false [bodyTicks=N age=N removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=N/false build=none blocker=Completed native_goto: {arrived=N, N, N}.]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "31102026",
+  "player": "Sol",
+  "tick": 83140,
+  "startTick": 79540,
+  "noProgressTicks": 3600,
+  "at": [
+   249,
+   36,
+   384
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol native_swap COMPLETED [Ready a torch]",
+   "Sol goal at 249 36 384: Iron: Place a crafting table - Ready crafting table",
+   "Sol native_swap COMPLETED [Ready crafting table]",
+   "Sol goal at 249 36 384: Iron: light the way - Ready a torch",
+   "Sol native_swap COMPLETED [Ready a torch]",
+   "Sol goal at 249 36 384: Iron: Place a crafting table - Ready crafting table",
+   "Sol goal at 249 36 384: Iron: light the way - Ready a torch",
+   "Sol native_swap COMPLETED [Ready crafting table]",
+   "Sol native_swap COMPLETED [Ready a torch]",
+   "Sol goal at 249 36 384: Iron: Place a crafting table - Ready crafting table"
+  ],
+  "insideLines": 1161,
+  "firstStep": "Sol goal at 249 36 384: Iron: light the way - Ready a torch",
+  "firstInside": [
+   "Sol native_swap COMPLETED [Ready crafting table]",
+   "Sol goal at 249 36 384: Iron: light the way - Ready a torch",
+   "Sol goal at 249 36 384: Iron: Place a crafting table - Ready crafting table"
+  ],
+  "labels": [
+   [
+    "native_swap COMPLETED [Ready crafting table]",
+    287
+   ],
+   [
+    "Iron: light the way - Ready a torch",
+    286
+   ],
+   [
+    "Iron: Place a crafting table - Ready crafting table",
+    286
+   ],
+   [
+    "native_swap COMPLETED [Ready a torch]",
+    286
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    4
+   ],
+   [
+    "native_break COMPLETED [dig toward elsewhere: clear N, N, N]",
+    3
+   ],
+   [
+    "picked up N minecraft:granite",
+    3
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [try elsewhere, toward N, N, N]",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: advance",
+    1
+   ],
+   [
+    "native_goto COMPLETED [dig toward elsewhere: advance]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "31102026",
+  "player": "Sol",
+  "tick": 106280,
+  "startTick": 102680,
+  "noProgressTicks": 3600,
+  "at": [
+   213,
+   63,
+   381
+  ],
+  "kind": "hole or pit",
+  "watchdogMatched": false,
+  "before10": [
+   "Sol goal at 213 61 380: Wood: hurt and out of food - Climb toward the surface for food: let what falls settle",
+   "Sol goal at 213 61 380: Wood: hurt and out of food - Climb toward the surface for food: clear 213, 62, 381",
+   "Sol picked up 1 minecraft:sand",
+   "Sol native_wait COMPLETED [Climb toward the surface for food: let what falls settle]",
+   "Sol native_break COMPLETED [Climb toward the surface for food: clear 213, 62, 381]",
+   "Sol goal at 213 61 380: Wood: hurt and out of food - Climb toward the surface for food: step up",
+   "Sol goal at 213 62 380: Wood: hurt and out of food - Climb toward the surface for food: step aside",
+   "Sol picked up 1 minecraft:sand",
+   "Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+   "Sol goal at 213 62 381: Wood: waiting for a feasible step"
+  ],
+  "insideLines": 1,
+  "firstStep": null,
+  "firstInside": [
+   "Sol has started nothing for 1201 ticks on its goal: mayDecide=true admitted=true candidates=0 decision=WAIT No executable local task; retain goals and wait for a meaningful change current=false [bodyTicks=104178 age=76128 removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=0/false build=none blocker=Completed native_goto: {arrived=213, 62, 381}.]"
+  ],
+  "labels": [
+   [
+    "has started nothing for N ticks on its goal: mayDecide=true admitted=true candidates=N decision=WAIT No executable local task; retain goals and wait for a meaningful change current=false [bodyTicks=N age=N removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=COMPLETED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=N/false build=none blocker=Completed native_goto: {arrived=N, N, N}.]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Kindred",
+  "tick": 59240,
+  "startTick": 55640,
+  "noProgressTicks": 3600,
+  "at": [
+   18,
+   66,
+   127
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": false,
+  "before10": [
+   "Kindred native_attack COMPLETED [Hunt sheep for wool]",
+   "Kindred native_attack COMPLETED [Hunt sheep for wool]",
+   "Kindred goal at 5 69 127: Stone: on the way, for what comes later - Approach sheep for wool",
+   "Kindred goal at 5 69 127: Stone: on the way, for what comes later - Hunt sheep for wool",
+   "Kindred native_goto COMPLETED [Approach sheep for wool]",
+   "Kindred native_attack COMPLETED [Hunt sheep for wool]",
+   "Kindred native_attack COMPLETED [Hunt sheep for wool]",
+   "Kindred native_attack COMPLETED [Hunt sheep for wool]",
+   "Kindred native_attack COMPLETED [Hunt sheep for wool]",
+   "Kindred goal at 4 69 128: Stone: on the way, for what comes later - Approach sheep for wool"
+  ],
+  "insideLines": 315,
+  "firstStep": "Kindred goal at 5 69 129: Stone: on the way, for what comes later - Hunt sheep for wool",
+  "firstInside": [
+   "Kindred goal at 5 69 129: Stone: on the way, for what comes later - Hunt sheep for wool",
+   "Kindred native_goto COMPLETED [Approach sheep for wool]",
+   "Kindred native_attack COMPLETED [Hunt sheep for wool]"
+  ],
+  "labels": [
+   [
+    "Stone: on the way, for what comes later - Place a crafting table",
+    33
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    32
+   ],
+   [
+    "Stone: take workstations along - Pick up the crafting table",
+    32
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    31
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    31
+   ],
+   [
+    "Stone: Wait for the drop to settle",
+    30
+   ],
+   [
+    "native_goto COMPLETED [Approach sheep for wool]",
+    23
+   ],
+   [
+    "Stone: on the way, for what comes later - Approach sheep for wool",
+    19
+   ],
+   [
+    "native_attack COMPLETED [Hunt sheep for wool]",
+    16
+   ],
+   [
+    "Stone: on the way, for what comes later - Hunt sheep for wool",
+    12
+   ],
+   [
+    "Stone: on the way, for what comes later - Craft white bed",
+    10
+   ],
+   [
+    "Stone: Pick up crafting table",
+    9
+   ],
+   [
+    "Stone: Gather logs for the trip below - Mine logs at N, N, N",
+    6
+   ],
+   [
+    "Stone: Pick up mutton",
+    4
+   ],
+   [
+    "Stone: Gather logs for the trip below - Walk to logs at N, N, N",
+    4
+   ],
+   [
+    "Stone: Pick up white wool",
+    3
+   ],
+   [
+    "native_goto COMPLETED [Walk to logs at N, N, N]",
+    2
+   ],
+   [
+    "picked up N minecraft:acacia_log",
+    2
+   ],
+   [
+    "native_break COMPLETED [Mine logs at N, N, N]",
+    2
+   ],
+   [
+    "Stone: on the way, for what comes later - Ready crafting table",
+    2
+   ],
+   [
+    "native_swap COMPLETED [Ready crafting table]",
+    2
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [Pick up mutton]",
+    1
+   ],
+   [
+    "leaves N minecraft:white_wool lying at N, N, N (N.N, N.N, N.N): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at N.N, N.N, N.N",
+    1
+   ],
+   [
+    "picked up N minecraft:mutton",
+    1
+   ],
+   [
+    "picked up N minecraft:white_wool",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Pick up mutton]",
+    1
+   ],
+   [
+    "Stone: on the way, for what comes later - Clear space for a workstation",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "picked up N minecraft:dirt",
+    1
+   ],
+   [
+    "native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Kindred",
+  "tick": 70320,
+  "startTick": 66720,
+  "noProgressTicks": 3600,
+  "at": [
+   30,
+   61,
+   128
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 29 61 128: Iron: take workstations along - Pick up the crafting table",
+   "Kindred goal at 29 61 128: Iron: Pick up crafting table",
+   "Kindred goal at 29 62 128: Iron: Wait for the drop to settle",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred native_break COMPLETED [Pick up the crafting table]",
+   "Kindred goal at 29 61 128: Iron: on the way, for what comes later - Place a crafting table",
+   "Kindred goal at 29 61 128: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 29, 60, 129",
+   "Kindred native_place COMPLETED [Place a crafting table]",
+   "Kindred goal at 29 61 128: Iron: take workstations along - Pick up the crafting table"
+  ],
+  "insideLines": 260,
+  "firstStep": "Kindred goal at 29 61 128: Iron: Pick up crafting table",
+  "firstInside": [
+   "Kindred goal at 29 61 128: Iron: Pick up crafting table",
+   "Kindred picked up 1 minecraft:crafting_table",
+   "Kindred native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "Iron: on the way, for what comes later - Place a crafting table",
+    39
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    38
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    38
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    38
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    38
+   ],
+   [
+    "Iron: Wait for the drop to settle",
+    36
+   ],
+   [
+    "Iron: Pick up crafting table",
+    14
+   ],
+   [
+    "Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear N, N, N",
+    7
+   ],
+   [
+    "Iron: on the way, for what comes later - Ready crafting table",
+    2
+   ],
+   [
+    "native_swap COMPLETED [Ready crafting table]",
+    2
+   ],
+   [
+    "Iron: on the way, for what comes later - Clear space for a workstation",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    1
+   ],
+   [
+    "native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/KindredN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Kindred",
+  "tick": 107240,
+  "startTick": 103640,
+  "noProgressTicks": 3600,
+  "at": [
+   -48,
+   -27,
+   45
+  ],
+  "kind": "no walkable route",
+  "watchdogMatched": true,
+  "before10": [
+   "Kindred native_break COMPLETED [Cast: dig toward the lava at -51, -55, 45: clear -50, -25, 45]",
+   "Kindred goal at -50 -24 45: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -51, -55, 45: clear -51, -25, 45",
+   "Kindred native_goto COMPLETED [Cast: dig toward the lava at -51, -55, 45: step down]",
+   "Kindred picked up 1 minecraft:cobbled_deepslate",
+   "Kindred goal at -50 -25 45: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -51, -55, 45: clear -49, -24, 45",
+   "Kindred native_break COMPLETED [Cast: dig toward the lava at -51, -55, 45: clear -49, -24, 45]",
+   "Kindred goal at -50 -25 45: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -51, -55, 45: clear -49, -25, 45",
+   "Kindred picked up 1 minecraft:cobbled_deepslate",
+   "Kindred native_break COMPLETED [Cast: dig toward the lava at -51, -55, 45: clear -49, -25, 45]",
+   "Kindred goal at -50 -25 45: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -51, -55, 45: clear -49, -26, 45"
+  ],
+  "insideLines": 1230,
+  "firstStep": "Kindred goal at -50 -25 45: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -51, -55, 45: step down",
+  "firstInside": [
+   "Kindred picked up 1 minecraft:cobbled_deepslate",
+   "Kindred native_break COMPLETED [Cast: dig toward the lava at -51, -55, 45: clear -49, -26, 45]",
+   "Kindred goal at -50 -25 45: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -51, -55, 45: step down"
+  ],
+  "labels": [
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [Cast: walk to the lava]",
+    1212
+   ],
+   [
+    "picked up N minecraft:cobbled_deepslate",
+    5
+   ],
+   [
+    "native_break COMPLETED [Cast: dig toward the lava at N, N, N: clear N, N, N]",
+    4
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at N, N, N: clear N, N, N",
+    3
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at N, N, N: step down",
+    2
+   ],
+   [
+    "native_goto COMPLETED [Cast: dig toward the lava at N, N, N: step down]",
+    2
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk to the lava",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Sol",
+  "tick": 7840,
+  "startTick": 4240,
+  "noProgressTicks": 3600,
+  "at": [
+   -15,
+   57,
+   -52
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": false,
+  "before10": [
+   "Sol native_break BLOCKED: Another task holds this block [Mine logs at -15, 73, -12]",
+   "Sol goal at -15 73 -9: Stone: Gather logs for the trip below - Clear the way to logs at -15, 74, -12",
+   "Sol goal at -15 73 -9: Stone: Gather logs for the trip below - Mine logs at -15, 74, -12",
+   "Sol native_break COMPLETED [Clear the way to logs at -15, 74, -12]",
+   "Sol goal at -15 73 -9: Stone: Gather logs for the trip below - Mine logs at -15, 72, -12",
+   "Sol goal at -15 74 -9: Stone: Gather logs for the trip below - Clear the way to logs at -15, 75, -12",
+   "Sol goal at -15 73 -9: Stone: Gather logs for the trip below - Mine logs at -15, 72, -12",
+   "Sol native_break COMPLETED [Mine logs at -15, 74, -12]",
+   "Sol native_break BLOCKED: Another task holds this block [Mine logs at -15, 72, -12]",
+   "Sol goal at -15 72 -10: Stone: Gather logs for the trip below - Mine logs at -14, 74, -12"
+  ],
+  "insideLines": 522,
+  "firstStep": "Sol goal at -15 72 -10: Stone: Gather logs for the trip below - Mine logs at -15, 75, -12",
+  "firstInside": [
+   "Sol goal at -15 72 -10: Stone: Gather logs for the trip below - Mine logs at -15, 75, -12",
+   "Sol picked up 1 minecraft:acacia_log",
+   "Sol native_break COMPLETED [Mine logs at -14, 74, -12]"
+  ],
+  "labels": [
+   [
+    "native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    81
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    68
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Tunnel past liquid toward iron: clear N, N, N",
+    38
+   ],
+   [
+    "native_break COMPLETED [Dig for stone: clear N, N, N]",
+    37
+   ],
+   [
+    "native_break COMPLETED [Tunnel past liquid toward iron: clear N, N, N]",
+    37
+   ],
+   [
+    "Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear N, N, N",
+    32
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Tunnel past liquid toward iron: advance",
+    20
+   ],
+   [
+    "native_goto COMPLETED [Walk under the logs at N, N, N]",
+    18
+   ],
+   [
+    "Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear N, N, N",
+    18
+   ],
+   [
+    "native_goto COMPLETED [Dig for stone: step down]",
+    14
+   ],
+   [
+    "native_craft COMPLETED [Craft stick]",
+    14
+   ],
+   [
+    "picked up N minecraft:dirt",
+    12
+   ],
+   [
+    "Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: step down",
+    11
+   ],
+   [
+    "Iron: Craft spare sticks for later pickaxes - Craft stick",
+    8
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N",
+    8
+   ],
+   [
+    "Iron: Craft planks for spare sticks - Craft acacia planks",
+    7
+   ],
+   [
+    "native_craft COMPLETED [Craft acacia planks]",
+    7
+   ],
+   [
+    "Stone: Gather logs for the trip below - Mine logs at N, N, N",
+    6
+   ],
+   [
+    "Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down",
+    6
+   ],
+   [
+    "native_break COMPLETED [Dig down toward iron: clear N, N, N]",
+    6
+   ],
+   [
+    "native_break COMPLETED [Mine logs at N, N, N]",
+    4
+   ],
+   [
+    "Stone: Gather logs for the trip below - Walk to logs at N, N, N",
+    4
+   ],
+   [
+    "picked up N minecraft:oak_log",
+    4
+   ],
+   [
+    "Iron: Place a crafting table - Place a crafting table",
+    4
+   ],
+   [
+    "native_break BLOCKED: Another task holds this block [Mine logs at N, N, N]",
+    3
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    3
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    3
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    3
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    3
+   ],
+   [
+    "native_craft COMPLETED [Craft stone pickaxe]",
+    2
+   ],
+   [
+    "Iron: Pick up crafting table",
+    2
+   ],
+   [
+    "Iron: Place a crafting table - Ready crafting table",
+    2
+   ],
+   [
+    "native_swap COMPLETED [Ready crafting table]",
+    2
+   ],
+   [
+    "Iron: Craft planks for a crafting table - Craft acacia planks",
+    2
+   ],
+   [
+    "leaves N minecraft:crafting_table lying at N, N, N (N.N, N.N, N.N): in sight false, blocked false, watched false, in water false, settle wait none, within the wait's reach false; the obsidian site none; the player at N.N, N.N, N.N",
+    2
+   ],
+   [
+    "native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Place a crafting table]",
+    2
+   ],
+   [
+    "Iron: Place a crafting table - Clear space for a workstation",
+    2
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    2
+   ],
+   [
+    "Iron: Mine cobblestone for a furnace and portal corners - Tunnel for stone: clear N, N, N",
+    2
+   ],
+   [
+    "native_break COMPLETED [Tunnel for stone: clear N, N, N]",
+    2
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: step down",
+    2
+   ],
+   [
+    "native_goto COMPLETED [Dig down toward iron: step down]",
+    2
+   ],
+   [
+    "picked up N minecraft:acacia_log",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Walk to logs at N, N, N]",
+    1
+   ],
+   [
+    "Stone: Gather logs for the trip below - Clear the way to logs at N, N, N",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear the way to logs at N, N, N]",
+    1
+   ],
+   [
+    "Stone: Gather logs for the trip below - Walk under the logs at N, N, N",
+    1
+   ],
+   [
+    "has made the advancement [Stone Age]",
+    1
+   ],
+   [
+    "Stone: Place a crafting table - Place a crafting table",
+    1
+   ],
+   [
+    "Stone: Craft stone pickaxe - Craft stone pickaxe",
+    1
+   ],
+   [
+    "has made the advancement [Getting an Upgrade]",
+    1
+   ],
+   [
+    "Iron: Craft stone sword - Craft stone sword",
+    1
+   ],
+   [
+    "native_craft COMPLETED [Craft stone sword]",
+    1
+   ],
+   [
+    "Iron: Take its weapon to hand",
+    1
+   ],
+   [
+    "native_swap COMPLETED [Take its weapon to hand]",
+    1
+   ],
+   [
+    "Iron: Craft a spare stone pickaxe for the work below - Craft stone pickaxe",
+    1
+   ],
+   [
+    "picked up N minecraft:raw_copper",
+    1
+   ],
+   [
+    "native_craft BLOCKED: Owned inventory changed before craft dispatch; no craft issued [Craft stone pickaxe]",
+    1
+   ],
+   [
+    "Iron: Wait for the drop to settle",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Sol",
+  "tick": 34780,
+  "startTick": 31180,
+  "noProgressTicks": 3600,
+  "at": [
+   121,
+   74,
+   -32
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": false,
+  "before10": [
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol goal at 120 74 -31: Iron: on the way, for what comes later - Craft white bed",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 120 74 -31: Iron: take workstations along - Pick up the crafting table",
+   "Sol goal at 120 74 -31: Iron: Pick up crafting table",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol goal at 120 74 -32: Iron: on the way, for what comes later - Place a crafting table",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 120 74 -32: Iron: take workstations along - Pick up the crafting table"
+  ],
+  "insideLines": 90,
+  "firstStep": "Sol goal at 120 74 -32: Iron: Pick up crafting table",
+  "firstInside": [
+   "Sol goal at 120 74 -32: Iron: Pick up crafting table",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol goal at 120 74 -33: Iron: on the way, for what comes later - Place a crafting table"
+  ],
+  "labels": [
+   [
+    "Iron: Pick up crafting table",
+    13
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    13
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table",
+    13
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    13
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    13
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    12
+   ],
+   [
+    "Iron: on the way, for what comes later - Craft white bed",
+    10
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Sol",
+  "tick": 49140,
+  "startTick": 45540,
+  "noProgressTicks": 3600,
+  "at": [
+   147,
+   71,
+   -51
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": false,
+  "before10": [
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol goal at 142 72 -51: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 142 72 -51: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)",
+   "Sol goal at 142 72 -51: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol goal at 143 72 -51: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 144 72 -51: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)"
+  ],
+  "insideLines": 225,
+  "firstStep": "Sol goal at 144 72 -51: Iron: Pick up crafting table (tried elsewhere 1 time)",
+  "firstInside": [
+   "Sol goal at 144 72 -51: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "Iron: Pick up crafting table (tried elsewhere N time)",
+    36
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    36
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    35
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N time)",
+    35
+   ],
+   [
+    "Iron: Stock some food while animals are around - Approach sheep (tried elsewhere N time)",
+    6
+   ],
+   [
+    "native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+    1
+   ],
+   [
+    "Iron: Stock some food while animals are around - To where it last saw game at N, N, N (tried elsewhere N time)",
+    1
+   ],
+   [
+    "chronicle: day N page (the plain list, N characters, N events cited)",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Sol",
+  "tick": 60680,
+  "startTick": 57080,
+  "noProgressTicks": 3600,
+  "at": [
+   184,
+   72,
+   -92
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 182 72 -92: Iron: take workstations along - Pick up the crafting table (tried elsewhere 2 times)",
+   "Sol goal at 183 72 -92: Iron: Pick up crafting table (tried elsewhere 2 times)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol goal at 184 72 -92: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 2 times)",
+   "Sol goal at 184 72 -92: Iron: Stock some food while animals are around - Approach sheep (tried elsewhere 2 times)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 184 72 -92: Iron: take workstations along - Pick up the crafting table (tried elsewhere 2 times)"
+  ],
+  "insideLines": 313,
+  "firstStep": "Sol goal at 184 72 -92: Iron: Pick up crafting table (tried elsewhere 2 times)",
+  "firstInside": [
+   "Sol goal at 184 72 -92: Iron: Pick up crafting table (tried elsewhere 2 times)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "Iron: Pick up crafting table (tried elsewhere N times)",
+    49
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    49
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    49
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N times)",
+    49
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    49
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N times)",
+    49
+   ],
+   [
+    "Iron: Stock some food while animals are around - Approach sheep (tried elsewhere N times)",
+    5
+   ],
+   [
+    "Iron: Gather a log for spare sticks - Walk to logs at N, N, N (tried elsewhere N times)",
+    5
+   ],
+   [
+    "Iron: Stock some food while animals are around - To where it last saw game at N, N, N (tried elsewhere N times)",
+    4
+   ],
+   [
+    "Iron: on the way, for what comes later - Walk to room for a workstation (tried elsewhere N times)",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Walk to room for a workstation]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Sol",
+  "tick": 66820,
+  "startTick": 63220,
+  "noProgressTicks": 3600,
+  "at": [
+   4,
+   61,
+   -31
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol picked up 1 minecraft:coal",
+   "Sol goal at 23 63 -31: Iron: Mine iron ore (0/19) - Dig down toward iron: step down",
+   "Sol native_break COMPLETED [Dig down toward iron: clear 24, 62, -31]",
+   "Sol picked up 1 minecraft:cobblestone",
+   "Sol goal at 24 62 -31: Iron: Mine iron ore (0/19) - Explore the cave toward iron",
+   "Sol native_goto COMPLETED [Dig down toward iron: step down]",
+   "Sol native_goto BLOCKED: No walkable route toward 12, 23, -26 [Explore the cave toward iron]",
+   "Sol native_goto BLOCKED: No walkable route toward 28, 27, -25 [Explore the cave toward iron]",
+   "Sol native_goto BLOCKED: No walkable route toward 23, 27, -24 [Explore the cave toward iron]",
+   "Sol goal at 24 62 -31: Iron: Mine iron ore (0/19) - Dig down toward iron: clear 25, 63, -31"
+  ],
+  "insideLines": 304,
+  "firstStep": "Sol goal at 24 62 -31: Iron: Mine iron ore (0/19) - Dig down toward iron: clear 25, 62, -31",
+  "firstInside": [
+   "Sol native_break COMPLETED [Dig down toward iron: clear 25, 63, -31]",
+   "Sol goal at 24 62 -31: Iron: Mine iron ore (0/19) - Dig down toward iron: clear 25, 62, -31",
+   "Sol picked up 1 minecraft:cobblestone"
+  ],
+  "labels": [
+   [
+    "Iron: on the way, for what comes later - Place a crafting table",
+    39
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    36
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table",
+    36
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    35
+   ],
+   [
+    "picked up N minecraft:crafting_table",
+    35
+   ],
+   [
+    "Iron: Pick up crafting table",
+    34
+   ],
+   [
+    "Iron: Wait for the drop to settle",
+    18
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N",
+    11
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    10
+   ],
+   [
+    "Iron: light the way - Place a torch at N, N, N",
+    10
+   ],
+   [
+    "native_break COMPLETED [Dig down toward iron: clear N, N, N]",
+    9
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Back to where it saw iron ore at N, N, N",
+    8
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: step down",
+    5
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Explore the cave toward iron",
+    4
+   ],
+   [
+    "native_goto COMPLETED [Dig down toward iron: step down]",
+    3
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Walk to iron ore at N, N, N",
+    2
+   ],
+   [
+    "Iron: on the way, for what comes later - Clear space for a workstation",
+    2
+   ],
+   [
+    "native_goto COMPLETED [Walk to iron ore at N, N, N]",
+    1
+   ],
+   [
+    "native_place COMPLETED [Place a torch at N, N, N]",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Pick up crafting table]",
+    1
+   ],
+   [
+    "native_break COMPLETED [Clear space for a workstation]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Sol",
+  "tick": 74820,
+  "startTick": 71220,
+  "noProgressTicks": 3600,
+  "at": [
+   9,
+   73,
+   -18
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Sol goal at 3 73 -15: Iron: Gather a log for spare sticks - Walk to logs at 5, 73, -32 (tried elsewhere 1 time)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 3 73 -15: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)",
+   "Sol goal at 3 73 -15: Iron: Pick up crafting table (tried elsewhere 1 time)",
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol native_break COMPLETED [Pick up the crafting table]",
+   "Sol goal at 3 73 -16: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+   "Sol native_place COMPLETED [Place a crafting table]",
+   "Sol goal at 3 73 -16: Iron: take workstations along - Pick up the crafting table (tried elsewhere 1 time)",
+   "Sol goal at 3 73 -16: Iron: Pick up crafting table (tried elsewhere 1 time)"
+  ],
+  "insideLines": 218,
+  "firstStep": "Sol goal at 3 73 -17: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+  "firstInside": [
+   "Sol picked up 1 minecraft:crafting_table",
+   "Sol goal at 3 73 -17: Iron: on the way, for what comes later - Place a crafting table (tried elsewhere 1 time)",
+   "Sol native_break COMPLETED [Pick up the crafting table]"
+  ],
+  "labels": [
+   [
+    "picked up N minecraft:crafting_table",
+    34
+   ],
+   [
+    "Iron: on the way, for what comes later - Place a crafting table (tried elsewhere N time)",
+    34
+   ],
+   [
+    "native_place COMPLETED [Place a crafting table]",
+    34
+   ],
+   [
+    "Iron: take workstations along - Pick up the crafting table (tried elsewhere N time)",
+    34
+   ],
+   [
+    "native_break COMPLETED [Pick up the crafting table]",
+    33
+   ],
+   [
+    "Iron: Pick up crafting table (tried elsewhere N time)",
+    33
+   ],
+   [
+    "Iron: Gather a log for spare sticks - Walk to logs at N, N, N (tried elsewhere N time)",
+    10
+   ],
+   [
+    "native_place BLOCKED: Block placement produced no effect or was obstructed [Place a crafting table]",
+    1
+   ],
+   [
+    "native_break CANCELLED: Stopped or unavailable [Pick up the crafting table]",
+    1
+   ],
+   [
+    "chronicle: day N page (the plain list, N characters, N events cited)",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Sol",
+  "tick": 135880,
+  "startTick": 132280,
+  "noProgressTicks": 3600,
+  "at": [
+   -17,
+   57,
+   -50
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": false,
+  "before10": [
+   "Sol goal at -10 73 -45: Iron: Fill a bucket with water - Walk to water at -16, 56, -45",
+   "Sol goal at -11 72 -44: Iron: Fill a bucket with water - Walk to water at -16, 56, -44",
+   "Sol goal at -12 72 -43: Iron: Fill a bucket with water - Walk to water at -16, 56, -43",
+   "Sol goal at -13 72 -42: Iron: Fill a bucket with water - Walk to water at -16, 56, -42",
+   "Sol goal at -14 73 -41: Iron: Fill a bucket with water - Walk to water at -16, 56, -41",
+   "Sol goal at -15 72 -40: Iron: Fill a bucket with water - Walk to water at -16, 56, -40",
+   "Sol goal at -17 73 -38: Iron: Fill a bucket with water - Walk to water at -17, 56, -38",
+   "Sol goal at -18 72 -37: Iron: Fill a bucket with water - Walk to water at -18, 56, -37",
+   "Sol goal at -19 72 -36: Iron: Fill a bucket with water - Walk to water at -18, 56, -36",
+   "Sol goal at -20 72 -35: Iron: Fill a bucket with water - Walk to water at -18, 56, -35"
+  ],
+  "insideLines": 375,
+  "firstStep": "Sol goal at -21 69 -36: Iron: Fill a bucket with water - Walk to water at -18, 56, -36",
+  "firstInside": [
+   "Sol goal at -21 69 -36: Iron: Fill a bucket with water - Walk to water at -18, 56, -36",
+   "Sol goal at -21 67 -37: Iron: Fill a bucket with water - Walk to water at -18, 56, -37",
+   "Sol goal at -21 66 -38: Iron: Fill a bucket with water - Walk to water at -18, 56, -38"
+  ],
+  "labels": [
+   [
+    "native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    336
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [Explore the cave toward lava]",
+    12
+   ],
+   [
+    "Iron: Fill a bucket with water - Walk to water at N, N, N",
+    7
+   ],
+   [
+    "Iron: Fill a bucket with water while it is close - Walk to water at N, N, N",
+    5
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance",
+    5
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Explore the cave toward lava",
+    4
+   ],
+   [
+    "Iron: Fill a bucket with water while it is close - Fill a bucket at N, N, N",
+    3
+   ],
+   [
+    "native_goto COMPLETED [Walk to water at N, N, N]",
+    1
+   ],
+   [
+    "native_bucket COMPLETED [Fill a bucket at N, N, N]",
+    1
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Dig down toward lava: clear N, N, N",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Echo",
+  "tick": 15900,
+  "startTick": 12300,
+  "noProgressTicks": 3600,
+  "at": [
+   -2,
+   47,
+   -35
+  ],
+  "kind": "hemmed in",
+  "watchdogMatched": true,
+  "before10": [
+   "Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+   "Echo goal at 0 45 -35: Iron: Mine iron ore (0/19) - Tunnel past liquid toward iron: advance",
+   "Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+   "Echo goal at -1 45 -35: Iron: Mine iron ore (0/19) - Dig down toward iron: step down",
+   "Echo goal at -1 45 -34: Iron: no way on from here - Climb to find another way: to the wall",
+   "Echo goal at -1 44 -34: Iron: no way on from here - Climb to find another way: step up",
+   "Echo native_goto COMPLETED [Dig down toward iron: step down]",
+   "Echo goal at -1 45 -34: Iron: no way on from here - Climb to find another way: to the wall",
+   "Echo goal at -1 44 -34: Iron: no way on from here - Climb to find another way: step up",
+   "Echo goal at -1 44 -34: Iron: Mine iron ore (0/19) - Back to where it saw iron ore at 38, 29, -10"
+  ],
+  "insideLines": 478,
+  "firstStep": "Echo goal at -2 46 -33: Iron: Get out of the water: to dry ground",
+  "firstInside": [
+   "Echo native_goto COMPLETED [Climb to find another way: step up]",
+   "Echo goal at -2 46 -33: Iron: Get out of the water: to dry ground",
+   "Echo goal at -2 45 -33: Iron: Mine iron ore (0/19) - Back to where it saw iron ore at 38, 29, -10"
+  ],
+  "labels": [
+   [
+    "native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    213
+   ],
+   [
+    "Iron: no way on from here - Climb to find another way: step up",
+    28
+   ],
+   [
+    "native_wait COMPLETED [Hole up: recover behind the wall]",
+    28
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: step down",
+    26
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Tunnel past liquid toward iron: advance",
+    23
+   ],
+   [
+    "native_goto COMPLETED [Dig down toward iron: step down]",
+    20
+   ],
+   [
+    "native_goto COMPLETED [Climb to find another way: step up]",
+    19
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Tunnel past liquid toward iron: clear N, N, N",
+    13
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    9
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N",
+    9
+   ],
+   [
+    "native_break COMPLETED [Tunnel past liquid toward iron: clear N, N, N]",
+    7
+   ],
+   [
+    "native_break COMPLETED [Dig down toward iron: clear N, N, N]",
+    7
+   ],
+   [
+    "Iron: no way on from here - Climb to find another way: to the wall",
+    6
+   ],
+   [
+    "Iron: fight back - Fight enderman",
+    6
+   ],
+   [
+    "Iron: Get out of the water: to dry ground",
+    5
+   ],
+   [
+    "native_fight BLOCKED: The fight broke off [Fight enderman]",
+    5
+   ],
+   [
+    "fight: N hits, N critical - The fight broke off",
+    4
+   ],
+   [
+    "native_goto CANCELLED: A hostile mob is attacking; fight back first [Climb to find another way: step up]",
+    4
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Tunnel past liquid toward iron: step down",
+    4
+   ],
+   [
+    "Iron: no way on from here - Climb to find another way: pillar up beside the water",
+    3
+   ],
+   [
+    "native_pillar COMPLETED [Climb to find another way: pillar up beside the water]",
+    3
+   ],
+   [
+    "native_goto COMPLETED [Climb to find another way: to the wall]",
+    3
+   ],
+   [
+    "picked up N minecraft:diorite",
+    3
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Explore the cave toward iron",
+    3
+   ],
+   [
+    "native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    3
+   ],
+   [
+    "native_goto COMPLETED [Get out of the water: to dry ground]",
+    2
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Tunnel past liquid toward iron: fill N, N, N",
+    2
+   ],
+   [
+    "native_place COMPLETED [Tunnel past liquid toward iron: fill N, N, N]",
+    2
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Walk to iron ore at N, N, N",
+    2
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [Walk to iron ore at N, N, N]",
+    2
+   ],
+   [
+    "picked up N minecraft:dirt",
+    2
+   ],
+   [
+    "Iron: waiting for a feasible step",
+    2
+   ],
+   [
+    "native_goto COMPLETED [Tunnel past liquid toward iron: step down]",
+    2
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Back to where it saw iron ore at N, N, N",
+    1
+   ],
+   [
+    "native_goto BLOCKED: Route to N, N, N is blocked [Back to where it saw iron ore at N, N, N]",
+    1
+   ],
+   [
+    "native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward iron]",
+    1
+   ],
+   [
+    "Iron: get out of the water",
+    1
+   ],
+   [
+    "Iron: heal before going on",
+    1
+   ],
+   [
+    "Iron: outmatched - Hole up: recover behind the wall",
+    1
+   ],
+   [
+    "native_wait COMPLETED [Rest to heal]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Echo",
+  "tick": 33220,
+  "startTick": 29620,
+  "noProgressTicks": 3600,
+  "at": [
+   61,
+   34,
+   -19
+  ],
+  "kind": "busy-work loop",
+  "watchdogMatched": true,
+  "before10": [
+   "Echo goal at 74 58 -8: Iron: light the way - Craft torch",
+   "Echo goal at 75 58 -8: Iron: Mine iron ore (1/18) - Explore the cave toward iron",
+   "Echo goal at 75 57 -9: Iron: light the way - Craft torch",
+   "Echo goal at 75 57 -9: Iron: Mine iron ore (1/18) - Explore the cave toward iron",
+   "Echo goal at 76 56 -9: Iron: light the way - Craft torch",
+   "Echo goal at 76 56 -9: Iron: Mine iron ore (1/18) - Explore the cave toward iron",
+   "Echo goal at 76 55 -10: Iron: light the way - Craft torch",
+   "Echo goal at 76 55 -10: Iron: Mine iron ore (1/18) - Explore the cave toward iron",
+   "Echo goal at 77 54 -10: Iron: light the way - Craft torch",
+   "Echo goal at 77 53 -10: Iron: Mine iron ore (1/18) - Explore the cave toward iron"
+  ],
+  "insideLines": 63,
+  "firstStep": "Echo goal at 77 53 -10: Iron: light the way - Craft torch",
+  "firstInside": [
+   "Echo goal at 77 53 -10: Iron: light the way - Craft torch",
+   "Echo goal at 77 52 -11: Iron: Mine iron ore (1/18) - Explore the cave toward iron",
+   "Echo goal at 77 52 -11: Iron: light the way - Craft torch"
+  ],
+  "labels": [
+   [
+    "Iron: light the way - Craft torch",
+    6
+   ],
+   [
+    "Iron: light the way - Place a torch at N, N, N",
+    6
+   ],
+   [
+    "Iron: Wait for the food to cook - Wait by the furnace",
+    6
+   ],
+   [
+    "native_wait COMPLETED [Wait by the furnace]",
+    6
+   ],
+   [
+    "Iron: Collect smelted items from the furnace - Take smelted iron",
+    6
+   ],
+   [
+    "native_smelt COMPLETED [Take smelted iron]",
+    5
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Explore the cave toward iron",
+    4
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Walk to iron ore at N, N, N",
+    4
+   ],
+   [
+    "Iron: Cook the raw meat - Walk to the workstation",
+    4
+   ],
+   [
+    "Iron: Cook the raw meat - Cook N chicken",
+    2
+   ],
+   [
+    "Iron: Cook the raw meat - Cook N mutton",
+    2
+   ],
+   [
+    "native_goto BLOCKED: Route to N, N, N is blocked [Explore the cave toward iron]",
+    1
+   ],
+   [
+    "Iron: light the way - Ready a torch",
+    1
+   ],
+   [
+    "native_craft COMPLETED [Craft torch]",
+    1
+   ],
+   [
+    "native_swap COMPLETED [Ready a torch]",
+    1
+   ],
+   [
+    "native_place COMPLETED [Place a torch at N, N, N]",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Walk to iron ore at N, N, N]",
+    1
+   ],
+   [
+    "native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:N]",
+    1
+   ],
+   [
+    "native_smelt COMPLETED [Cook N mutton]",
+    1
+   ],
+   [
+    "native_smelt COMPLETED [Cook N chicken]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ]
+  ]
+ },
+ {
+  "seed": "505",
+  "player": "Echo",
+  "tick": 62380,
+  "startTick": 58780,
+  "noProgressTicks": 3600,
+  "at": [
+   26,
+   59,
+   30
+  ],
+  "kind": "no walkable route",
+  "watchdogMatched": false,
+  "before10": [
+   "Echo goal at 66 70 -16: Iron: Fill a bucket with water - Climb toward the surface for water: clear 66, 72, -17",
+   "Echo picked up 1 minecraft:dirt",
+   "Echo goal at 66 70 -16: Iron: Fill a bucket with water - Climb toward the surface for water: step up",
+   "Echo native_break COMPLETED [Climb toward the surface for water: clear 66, 72, -17]",
+   "Echo goal at 66 71 -16: Iron: Fill a bucket with water - Climb toward the surface for water: back the way it came",
+   "Echo picked up 1 minecraft:dirt",
+   "Echo native_goto COMPLETED [Climb toward the surface for water: step up]",
+   "Echo goal at 66 70 -16: Iron: Fill a bucket with water - Climb toward the surface for water: step up",
+   "Echo native_goto COMPLETED [Climb toward the surface for water: back the way it came]",
+   "Echo goal at 66 69 -15: Iron: Fill a bucket with water - Climb toward the surface for water: back the way it came"
+  ],
+  "insideLines": 160,
+  "firstStep": "Echo goal at 66 69 -15: Iron: Fill a bucket with water - Climb toward the surface for water: clear 66, 70, -14",
+  "firstInside": [
+   "Echo native_goto BLOCKED: No walkable route toward 67, 73, -5 [Climb toward the surface for water: back the way it came]",
+   "Echo goal at 66 69 -15: Iron: Fill a bucket with water - Climb toward the surface for water: clear 66, 70, -14",
+   "Echo goal at 66 69 -15: Iron: light the way - Place a torch at 66, 70, -16"
+  ],
+  "labels": [
+   [
+    "picked up N minecraft:dirt",
+    22
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [Explore the cave toward lava]",
+    12
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear N, N, N",
+    8
+   ],
+   [
+    "native_break COMPLETED [Tunnel past liquid toward lava: clear N, N, N]",
+    8
+   ],
+   [
+    "Iron: Fill a bucket with water - Climb toward the surface for water: clear N, N, N",
+    7
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Dig down toward lava: clear N, N, N",
+    7
+   ],
+   [
+    "native_break COMPLETED [Climb toward the surface for water: clear N, N, N]",
+    6
+   ],
+   [
+    "Iron: Fill a bucket with water while it is close - Walk to water at N, N, N",
+    5
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Explore the cave toward lava",
+    5
+   ],
+   [
+    "native_break COMPLETED [Dig down toward lava: clear N, N, N]",
+    5
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance",
+    4
+   ],
+   [
+    "native_goto COMPLETED [Tunnel past liquid toward lava: advance]",
+    4
+   ],
+   [
+    "Iron: waiting for a feasible step",
+    4
+   ],
+   [
+    "Iron: Fill a bucket with water - Climb toward the surface for water: step up",
+    3
+   ],
+   [
+    "native_goto COMPLETED [Climb toward the surface for water: step up]",
+    3
+   ],
+   [
+    "Iron: Fill a bucket with water - Cut through west for water: clear N, N, N",
+    3
+   ],
+   [
+    "Iron: Fill a bucket with water - Cut through west for water: advance",
+    3
+   ],
+   [
+    "native_break COMPLETED [Cut through west for water: clear N, N, N]",
+    3
+   ],
+   [
+    "native_goto COMPLETED [Cut through west for water: advance]",
+    3
+   ],
+   [
+    "Iron: Fill a bucket with water - Walk to water at N, N, N",
+    3
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Dig down toward lava: step down",
+    3
+   ],
+   [
+    "native_goto COMPLETED [Dig down toward lava: step down]",
+    3
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [Climb toward the surface for water: back the way it came]",
+    2
+   ],
+   [
+    "Iron: light the way - Place a torch at N, N, N",
+    2
+   ],
+   [
+    "native_place COMPLETED [Place a torch at N, N, N]",
+    2
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobblestone",
+    2
+   ],
+   [
+    "Iron: inventory full - Drop surplus diorite",
+    2
+   ],
+   [
+    "Iron: inventory full - Drop surplus granite",
+    2
+   ],
+   [
+    "native_discard COMPLETED [Drop surplus granite]",
+    2
+   ],
+   [
+    "Iron: Fill a bucket with water - Climb toward the surface for water: back the way it came",
+    1
+   ],
+   [
+    "Iron: Fill a bucket with water - Explore west for water",
+    1
+   ],
+   [
+    "native_goto BLOCKED: Route to N, N, N is blocked [Walk to water at N, N, N]",
+    1
+   ],
+   [
+    "Iron: Fill a bucket with water while it is close - Fill a bucket at N, N, N",
+    1
+   ],
+   [
+    "native_goto COMPLETED [Walk to water at N, N, N]",
+    1
+   ],
+   [
+    "native_bucket COMPLETED [Fill a bucket at N, N, N]",
+    1
+   ],
+   [
+    "native_discard COMPLETED [Drop surplus diorite]",
+    1
+   ],
+   [
+    "picked up N minecraft:diorite",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus dirt",
+    1
+   ],
+   [
+    "picked up N minecraft:granite",
+    1
+   ],
+   [
+    "native_discard COMPLETED [Drop surplus cobblestone]",
+    1
+   ],
+   [
+    "Iron: light the way - Ready a torch",
+    1
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus raw copper",
+    1
+   ],
+   [
+    "native_swap COMPLETED [Ready a torch]",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus gravel",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus rotten flesh",
+    1
+   ],
+   [
+    "native_discard COMPLETED [Drop surplus gravel]",
+    1
+   ],
+   [
+    "picked up N minecraft:gravel",
+    1
+   ],
+   [
+    "Iron: no way on from here - Climb to find another way: clear N, N, N",
+    1
+   ],
+   [
+    "native_break COMPLETED [Climb to find another way: clear N, N, N]",
+    1
+   ],
+   [
+    "has started nothing for N ticks on its goal: mayDecide=true admitted=true candidates=N decision=PROPOSE_TASK Active project goal: need N.N + bias +N.N = N.N current=false [bodyTicks=N age=N removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=BLOCKED busy=false workPending=false setupPending=false actionPending=false activity=IDLE flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=N/false build=none blocker=Blocked: No walkable route toward N, N, N.]",
+    1
+   ]
+  ]
+ }
+]
