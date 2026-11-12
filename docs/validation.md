@@ -128,6 +128,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 ## Entries by ID
 
+- [E-71e1](evidence/E-71e.md) (2026-11-12, mobs): a block asked for as cover is readied under its step's name, so a mob on it does not stop the swap; the staged fixture 0 of 3 before, 3 of 3 after, and the corpus's kindred-21883 alone 2 of 3 failing on main, 3 of 3 passing with it.
 - [F-22c31](evidence/F-22c31.md) (2026-11-09, diagnostics): the voice fixture's "same gather" failure names the action that ran instead, the work line and what was said.
 - [F-22c50](evidence/F-22c50.md) (2026-11-11, CI): main's runs are no longer cancelled by the next push; pull requests' still are.
 - [F-22c57](evidence/F-22c57.md) (2026-11-11): down its own scaffold over the column's middle, its drop not chased onto a slab beside; staged slab fixture slid 3 of 3 before, 6 of 6 on its column after; build and dig-down classes 3 runs; corpus gate passed (#165).
