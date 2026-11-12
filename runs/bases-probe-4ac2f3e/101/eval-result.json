@@ -1,0 +1,78 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=none; edits=on; ticks=36000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 36000,
+  "ticksRun": 36000,
+  "complete": true,
+  "days": 1.500,
+  "server": {"tickMsMean": 3.13, "tickMsWorst": 291.31, "tickMsWorstAt": 5838, "ticksOver50ms": 2, "ticksOver200ms": 1, "heapMbMax": 682, "samples": 1800},
+  "players": {
+    "Kindred": {
+      "stages": {},
+      "deaths": [
+        {"tick": 15424, "cause": "Kindred was slain by Zombie", "x": -271, "y": 71, "z": -112, "light": 4, "timeOfDay": 15586, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 16216, "cause": "Kindred was slain by Zombie", "x": -275, "y": 71, "z": -121, "light": 4, "timeOfDay": 16378, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 16934, "cause": "Kindred was slain by Zombie", "x": -272, "y": 61, "z": -103, "light": 1, "timeOfDay": 17096, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 18294, "cause": "Kindred was slain by Zombie Villager", "x": -281, "y": 71, "z": -110, "light": 4, "timeOfDay": 18456, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 19128, "cause": "Kindred was slain by Zombie Villager", "x": -279, "y": 71, "z": -111, "light": 4, "timeOfDay": 19290, "dimension": "minecraft:overworld", "hunger": 18, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 19922, "cause": "Kindred was slain by Zombie Villager", "x": -264, "y": 71, "z": -121, "light": 4, "timeOfDay": 20084, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 20727, "cause": "Kindred was slain by Zombie Villager", "x": -276, "y": 71, "z": -122, "light": 4, "timeOfDay": 20889, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2329,
+      "chunkMinutes": 8636.3
+    },
+    "Sol": {
+      "stages": {},
+      "deaths": [
+        {"tick": 15640, "cause": "Sol was slain by Zombie", "x": -268, "y": 71, "z": -109, "light": 4, "timeOfDay": 15802, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 16496, "cause": "Sol was slain by Zombie", "x": -266, "y": 70, "z": -126, "light": 4, "timeOfDay": 16658, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 17040, "cause": "Sol was slain by Zombie", "x": -275, "y": 71, "z": -133, "light": 4, "timeOfDay": 17202, "dimension": "minecraft:overworld", "hunger": 20, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 18172, "cause": "Sol was slain by Zombie", "x": -279, "y": 61, "z": -105, "light": 0, "timeOfDay": 18334, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 18534, "cause": "Sol was slain by Zombie Villager", "x": -284, "y": 72, "z": -120, "light": 4, "timeOfDay": 18696, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 19386, "cause": "Sol was slain by Zombie Villager", "x": -272, "y": 71, "z": -113, "light": 4, "timeOfDay": 19548, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 20377, "cause": "Sol was slain by Zombie Villager", "x": -267, "y": 70, "z": -132, "light": 4, "timeOfDay": 20539, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 21154, "cause": "Sol was slain by Zombie Villager", "x": -279, "y": 71, "z": -125, "light": 4, "timeOfDay": 21316, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 21580, "cause": "Sol was slain by Spider", "x": -271, "y": 67, "z": -103, "light": 4, "timeOfDay": 21742, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 22059, "cause": "Sol was slain by Zombie", "x": -279, "y": 71, "z": -123, "light": 4, "timeOfDay": 22221, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3281,
+      "chunkMinutes": 8621.8
+    },
+    "Echo": {
+      "stages": {},
+      "deaths": [
+        {"tick": 15862, "cause": "Echo was slain by Zombie", "x": -262, "y": 71, "z": -105, "light": 4, "timeOfDay": 16024, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 16746, "cause": "Echo was slain by Zombie", "x": -263, "y": 71, "z": -121, "light": 4, "timeOfDay": 16908, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 17380, "cause": "Echo was slain by Zombie", "x": -265, "y": 71, "z": -121, "light": 4, "timeOfDay": 17542, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 17900, "cause": "Echo was slain by Zombie Villager", "x": -262, "y": 71, "z": -121, "light": 4, "timeOfDay": 18062, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 18786, "cause": "Echo was slain by Zombie Villager", "x": -279, "y": 71, "z": -123, "light": 4, "timeOfDay": 18948, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 19662, "cause": "Echo was slain by Zombie Villager", "x": -267, "y": 71, "z": -116, "light": 4, "timeOfDay": 19824, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 20156, "cause": "Echo was slain by Zombie Villager", "x": -267, "y": 70, "z": -130, "light": 4, "timeOfDay": 20318, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"},
+        {"tick": 20922, "cause": "Echo was slain by Zombie Villager", "x": -276, "y": 71, "z": -119, "light": 4, "timeOfDay": 21084, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "no goal", "stance": "", "habits": "", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2873,
+      "chunkMinutes": 8631.5
+    }
+  }
+}

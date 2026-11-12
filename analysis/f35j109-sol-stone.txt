@@ -1,0 +1,102 @@
+# f35j-109-after-0476ee5, seed 109 (factions, goal=none, bases=true): Sol first holds stone tools at tick 56040 (eval-result).
+# The first Sol goal line past the Stone stage is console line 9387. 50 Sol "goal at" lines before it and 50 from it:
+9184 [02:15:42] [Server thread/INFO]: Sol goal at 97 63 68: Stone: on the way, for what comes later - Mine gravel at 96, 64, 67
+9191 [02:15:42] [Server thread/INFO]: Sol goal at 97 63 68: Stone: on the way, for what comes later - Set down gravel to dig for flint
+9193 [02:15:42] [Server thread/INFO]: Sol goal at 97 63 68: Stone: on the way, for what comes later - Dig gravel for flint
+9227 [02:15:45] [Server thread/INFO]: Sol goal at 122 63 74: Stone: on the way, for what comes later - Set down gravel to dig for flint
+9234 [02:15:46] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 125, 63, 77
+9238 [02:15:46] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 125, 62, 77
+9241 [02:15:46] [Server thread/INFO]: Sol goal at 124 63 77: Stone: on the way, for what comes later - Mine gravel at 124, 64, 76
+9254 [02:15:47] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9261 [02:15:47] [Server thread/INFO]: Sol goal at 124 64 76: Stone: on the way, for what comes later - Set down gravel to dig for flint
+9262 [02:15:47] [Server thread/INFO]: Sol goal at 124 64 76: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9265 [02:15:47] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 64, 78
+9271 [02:15:48] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 63, 78
+9277 [02:15:49] [Server thread/INFO]: Sol goal at 124 63 77: Stone: on the way, for what comes later - Mine gravel at 124, 64, 75
+9285 [02:15:50] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 78
+9286 [02:15:50] [Server thread/INFO]: Sol goal at 124 64 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 65, 78
+9289 [02:15:50] [Server thread/INFO]: Sol goal at 124 64 76: Stone: on the way, for what comes later - Set down gravel to dig for flint
+9292 [02:15:50] [Server thread/INFO]: Sol goal at 124 64 76: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9297 [02:15:50] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 78
+9305 [02:15:51] [Server thread/INFO]: Sol goal at 124 63 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9308 [02:15:51] [Server thread/INFO]: Sol goal at 124 62 78: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 77
+9313 [02:15:51] [Server thread/INFO]: Sol goal at 124 62 78: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 61, 77
+9315 [02:15:51] [Server thread/INFO]: Sol goal at 124 62 78: Stone: on the way, for what comes later - Mine gravel at 124, 64, 75
+9323 [02:15:52] [Server thread/INFO]: Sol goal at 124 62 78: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9325 [02:15:52] [Server thread/INFO]: Sol goal at 124 62 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 63, 76
+9327 [02:15:52] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 76
+9328 [02:15:52] [Server thread/INFO]: Sol goal at 124 62 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 63, 76
+9329 [02:15:52] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 76
+9330 [02:15:52] [Server thread/INFO]: Sol goal at 124 62 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 63, 76
+9331 [02:15:52] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 76
+9332 [02:15:52] [Server thread/INFO]: Sol goal at 124 62 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 63, 76
+9333 [02:15:52] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 76
+9334 [02:15:52] [Server thread/INFO]: Sol goal at 124 62 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 63, 76
+9335 [02:15:52] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 76
+9336 [02:15:52] [Server thread/INFO]: Sol goal at 124 62 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 63, 76
+9338 [02:15:53] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 62, 76
+9343 [02:15:53] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 61, 76
+9348 [02:15:53] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 60, 76
+9351 [02:15:53] [Server thread/INFO]: Sol goal at 124 61 77: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9352 [02:15:53] [Server thread/INFO]: Sol goal at 124 60 76: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 61, 75
+9356 [02:15:54] [Server thread/INFO]: Sol goal at 124 60 76: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 60, 75
+9359 [02:15:54] [Server thread/INFO]: Sol goal at 124 60 76: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 59, 75
+9362 [02:15:54] [Server thread/INFO]: Sol goal at 124 60 76: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9364 [02:15:54] [Server thread/INFO]: Sol goal at 124 60 75: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 61, 74
+9368 [02:15:55] [Server thread/INFO]: Sol goal at 124 59 75: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 60, 74
+9371 [02:15:55] [Server thread/INFO]: Sol goal at 124 59 75: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 59, 74
+9375 [02:15:55] [Server thread/INFO]: Sol goal at 124 59 75: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 124, 58, 74
+9379 [02:15:56] [Server thread/INFO]: Sol goal at 124 59 75: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+9380 [02:15:56] [Server thread/INFO]: Sol goal at 124 59 74: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 125, 60, 74
+9383 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Stone: Place a crafting table - Place a crafting table
+9385 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Stone: Craft stone pickaxe - Craft stone pickaxe
+9387 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft spare sticks for later pickaxes - Craft stick
+9391 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft planks for spare sticks - Craft birch planks
+9393 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft spare sticks for later pickaxes - Craft stick
+9396 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft planks for spare sticks - Craft birch planks
+9397 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft spare sticks for later pickaxes - Craft stick
+9401 [02:15:56] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft planks for spare sticks - Craft birch planks
+9403 [02:15:57] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft spare sticks for later pickaxes - Craft stick
+9408 [02:15:57] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft planks for spare sticks - Craft birch planks
+9411 [02:15:57] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Dig gravel for flint
+9415 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9416 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Walk to room for a workstation
+9421 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft spare sticks for later pickaxes - Craft stick
+9424 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft planks for spare sticks - Craft oak planks
+9425 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft spare sticks for later pickaxes - Craft stick
+9434 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft planks for spare sticks - Craft oak planks
+9437 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Craft spare sticks for later pickaxes - Craft stick
+9441 [02:15:58] [Server thread/INFO]: Sol goal at 124 58 74: Iron: take workstations along - Pick up the crafting table
+9445 [02:16:00] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Pick up crafting table
+9448 [02:16:00] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9450 [02:16:00] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 125, 59, 74
+9451 [02:16:00] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9456 [02:16:00] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 125, 59, 74
+9459 [02:16:01] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 124, 59, 75
+9462 [02:16:01] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Ready gravel
+9465 [02:16:01] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9468 [02:16:01] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 124, 59, 75
+9470 [02:16:02] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9473 [02:16:02] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 124, 59, 75
+9477 [02:16:02] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9479 [02:16:02] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 124, 59, 75
+9481 [02:16:02] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9484 [02:16:02] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 124, 59, 75
+9486 [02:16:03] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9489 [02:16:03] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 124, 59, 75
+9492 [02:16:03] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Tunnel for stone: clear 123, 59, 74
+9494 [02:16:03] [Server thread/INFO]: Sol goal at 124 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9496 [02:16:03] [Server thread/INFO]: Sol goal at 124 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 124, 59, 75
+9499 [02:16:03] [Server thread/INFO]: Sol goal at 123 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 123, 59, 75
+9502 [02:16:04] [Server thread/INFO]: Sol goal at 123 58 74: Iron: on the way, for what comes later - Dig gravel for flint
+9520 [02:16:05] [Server thread/INFO]: Sol goal at 123 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9524 [02:16:05] [Server thread/INFO]: Sol goal at 123 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 123, 59, 75
+9526 [02:16:05] [Server thread/INFO]: Sol goal at 123 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9529 [02:16:05] [Server thread/INFO]: Sol goal at 123 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 123, 59, 75
+9535 [02:16:06] [Server thread/INFO]: Sol goal at 123 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9537 [02:16:06] [Server thread/INFO]: Sol goal at 123 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 123, 59, 75
+9541 [02:16:06] [Server thread/INFO]: Sol goal at 123 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9544 [02:16:06] [Server thread/INFO]: Sol goal at 123 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 123, 59, 75
+9548 [02:16:07] [Server thread/INFO]: Sol goal at 123 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
+9550 [02:16:07] [Server thread/INFO]: Sol goal at 123 58 74: Iron: Mine cobblestone for a furnace and portal corners - Dig for stone: clear 123, 59, 75
+9552 [02:16:07] [Server thread/INFO]: Sol goal at 123 58 74: Iron: on the way, for what comes later - Set down gravel to dig for flint
