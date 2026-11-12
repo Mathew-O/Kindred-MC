@@ -40,3 +40,22 @@ Its output is `analysis/endidle-e40c3.txt`, and the table below is `analysis/end
 - This is a diagnostic, not the watchdog's own measure.
 
 The consoles scan to 0 for keys and model IDs.
+
+## Nether ground for staging (added 20:50 UTC, for LOOPS)
+
+Each scene has one Nether region file, which covers at least ±64 blocks of the spot. These are the kept world's files as the run left them at its end, tick 288000.
+
+| Scene | Player, tick | Nether position | Region file |
+| --- | --- | --- | --- |
+| 303: the blaze fight cancelled 390 times "urgent retreat required" | Kindred, about 182310 to the end | 43 24 -90, at the fortress | `runs/e40c3-2c67d67/303/world-kept/DIM-1/region/r.0.-1.mca` (x 0..511, z -512..-1) |
+| 8675309: the reconciliation hold after a cancelled pillar step (console line 25923) | Echo, about 94356 | -75 43 -142 | `runs/e40c3-2c67d67/8675309/world-kept/DIM-1/region/r.-1.-1.mca` (x -512..-1, z -512..-1) |
+
+**What is not available:**
+- **No playerdata.** `run.py --keep-world` keeps only region files and `kindred/companions.sqlite`, so neither the players' end-of-run saves nor `level.dat` exist. The companion database holds no inventories, since physical items live in the native saves.
+- **Use instead:** the build `2c67d67`, `goal=dragon; ticks=288000`, and the seed.
+
+**The nearest inventory record** is each player's last replay before the stall. Both are in the Overworld, before the Nether trip, so they are stale for the stall:
+- `runs/e40c3-2c67d67/8675309/replays/world/Echo-87180/` (spell replay, tick 87180, 7176 ticks before the hold);
+- `runs/e40c3-2c67d67/303/replays/world/Kindred-43440/` (spell replay, tick 43440, Kindred's last).
+
+The same two region files are also on `claude/corpus-data-e40c3-nether-1112` (9ae049b), with the two consoles.
