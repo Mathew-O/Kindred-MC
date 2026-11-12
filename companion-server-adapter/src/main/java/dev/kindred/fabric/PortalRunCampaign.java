@@ -4086,7 +4086,11 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         BlockPos support = feet.down();
         var harvest = new java.util.HashMap<BlockState, Boolean>();
+        // Nor a block below its feet whose breaking would leave no ground within a safe drop under it, the dig-down's own
+        // landing rule (landingWithin): on a floor one block thick over a drop, mined from round where it stood, it
+        // stepped into the hole and fell thirty blocks (#224's CI, the back-off fixture's sky island; F-35l).
         return p -> !blocked(p) && !unreachable(p) && !dangerous(p) && !p.equals(support) && p.getSquaredDistance(feet) <= radius * radius
+                && (p.getY() >= feet.getY() || landingWithin(world, p, feet))
                 && also.test(p)
                 && (kind != WorldKnowledge.Kind.OBSIDIAN || madeFromLava(world, p))
                 && mayWork(player, p)
