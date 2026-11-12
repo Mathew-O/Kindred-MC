@@ -134,6 +134,7 @@
       "dev.kindred.fabric.NativeAuctionScreenGameTests",
       "dev.kindred.fabric.NativeMarketScreenGameTests",
       "dev.kindred.fabric.NativeCaptureGameTests",
+      "dev.kindred.fabric.NativeFactionNoticesGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
       "dev.kindred.fabric.NativeFactionRefusedLogsGameTests",
       "dev.kindred.fabric.NativeFactionTellGameTests",
