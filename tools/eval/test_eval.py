@@ -230,5 +230,31 @@ class NightsMeasureTest(unittest.TestCase):
         self.assertNotIn('Chunk-loads', score.markdown(s))
 
 
+class BridgeMeasureTest(unittest.TestCase):
+    """E-71a: bridge blocks a second, per player and for the team, over every bridge run."""
+
+    def test_01_bridge_blocks_a_second(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root) / 'b' / '101'
+            folder.mkdir(parents=True)
+            p = {'stages': {}, 'deaths': [], 'deathsNotListed': 0, 'stuck': [], 'tokens': 0, 'bridgeBlocks': 17, 'bridgeSeconds': 6.0}
+            q = {'stages': {}, 'deaths': [], 'deathsNotListed': 0, 'stuck': [], 'tokens': 0, 'bridgeBlocks': 0, 'bridgeSeconds': 0.0}
+            result = {'scenario': 'goal=nether; ticks=144000', 'kind': 'earned', 'build': 'x', 'seed': 101, 'ticks': 144000,
+                      'ticksRun': 144000, 'complete': True, 'players': {'Kindred': p, 'Sol': q}}
+            (folder / 'eval-result.json').write_text(json.dumps(result), encoding='utf-8')
+            s = score.score(folder.parent, use_metrics=False)
+        seed = s['perSeed']['101']
+        self.assertEqual(2.83, seed['players']['Kindred']['bridgeBlocksPerSecond'])
+        self.assertNotIn('bridgeBlocksPerSecond', seed['players']['Sol'])
+        self.assertEqual(2.83, seed['teamBridgeBlocksPerSecond'])
+        self.assertIn('| Bridge blocks a second, the team | 2.83', score.markdown(s))
+
+    def test_02_a_run_that_never_bridged_has_no_rate(self):
+        with tempfile.TemporaryDirectory() as root:
+            s = score.score(FreeSwitchTest().run_dir(root, {}), use_metrics=False)
+        self.assertNotIn('teamBridgeBlocksPerSecond', s['team'])
+        self.assertNotIn('Bridge blocks', score.markdown(s))
+
+
 if __name__ == '__main__':
     unittest.main()

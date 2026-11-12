@@ -385,6 +385,11 @@ final class EvalBootstrap implements RunObserver {
         if ("native_ignite_portal".equals(skill)) record.reached(player, "portal_lit", runTick(lastTick));
     }
 
+    @Override
+    public void bridged(String player, long blocks, long ticks) {
+        record.bridged(player, blocks, ticks);
+    }
+
     /** A server tick as ticks into the run: from when the goals were set, none before. */
     private long runTick(long serverTick) {
         return startTick < 0 ? 0 : Math.max(0, serverTick - startTick);
