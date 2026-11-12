@@ -4235,7 +4235,9 @@ final class PortalRunCampaign {
         // Under cover the climb to the surface came first ({@link #waterUp}); here only when it had no way up, said why.
         if (underground(player)) {
             // Each tunnel says why it is not the climb, for the count: the night, its own tunnel held, or no way up.
-            String why = night(player.getServerWorld()) ? "at night" : waterHeld() && waterDug.contains(lastFeet.asLong()) ? "on along its own" : "no way up";
+            String why = night(player.getServerWorld()) ? "at night" : waterHeld() && waterDug.contains(lastFeet.asLong()) ? "on along its own"
+                    : knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, lastFeet,
+                            water -> water.getSquaredDistance(lastFeet) <= WATER_NEAR * WATER_NEAR).isPresent() ? "toward water seen" : "no way up";
             return tunnel(body, "Tunnel for water (" + why + ")").or(() -> explore(body, "water"));
         }
         Optional<Task> look = explore(body, "water").or(() -> exploreWider(player, "water"));
@@ -4294,6 +4296,11 @@ final class PortalRunCampaign {
         var player = body.entity();
         if (!underground(player) && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos()))) return Optional.empty();
         if (waterHeld() && waterDug.contains(lastFeet.asLong())) return Optional.empty();
+        // Water it has seen close by, not yet reached: no climb away from it, its search digs on toward it. In a staged pit
+        // its tunnel opened a cave's pool a block ahead before its floor there was dug, the walk to it found no way yet,
+        // and its climb took it back out (NativeWaterCutGameTests, one run in six). The climb is for no water seen.
+        if (knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, lastFeet,
+                water -> water.getSquaredDistance(lastFeet) <= WATER_NEAR * WATER_NEAR).isPresent()) return Optional.empty();
         if (night(player.getServerWorld())) return lavaMeanwhile(body).or(() -> daylightBelow(body));
         // Not back the way it came while its own dig for water lies within reach of the walk back: past the hold's eight
         // blocks the way back walked it into that dig again, its dig went on, and the two undid each other at that scale,
@@ -4317,6 +4324,9 @@ final class PortalRunCampaign {
         }
         return Optional.empty();
     }
+
+    /** How near seen water keeps the water fetch from climbing away from it (F-35o). */
+    static final int WATER_NEAR = 16;
 
     /** While the water fetch asks for a way up with its own dig for water near: no walk back the way it came (F-35o). */
     private boolean retraceBarred;
