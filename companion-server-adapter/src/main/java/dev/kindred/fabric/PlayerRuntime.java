@@ -10194,6 +10194,8 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
+        int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
         long fetchFrom;
         /**
@@ -10588,6 +10590,11 @@ final class PlayerRuntime {
                     return bringCandidates(entry, body);
                 }
                 if (!reaches(player, b.door)) return List.of(goNear(task, b.door.south()));
+                // In reach but out of the server's sight, the hall's own wall between (come at the door from beside the hall):
+                // to the ground before its front first, where the OPEN step stands too. Broken from where it was, refused three
+                // times as out of sight, the bring was given up, "door went wrong three times over" (F-22c62).
+                var front = b.door.south().down();
+                if (!body.miningEligible(b.door) && !player.getBlockPos().equals(front)) return List.of(standAt(bringTask(entry, "to the door"), front));
                 return List.of(breakAt(task, b.door));
             }
             case OPEN -> {
@@ -10879,6 +10886,7 @@ final class PlayerRuntime {
                     }
                     return List.of(breakAt(bringTask(entry, "front rail"), b.slot));
                 }
+                if (b.railsNoted == 0) noteRailsByCell(entry, world, b, "the front rail taken up");
                 if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
                     BlockPos opening = b.slot.up();
                     var job = net.minecraft.block.Block.getBlockFromItem(b.jobBlock);
@@ -10914,6 +10922,7 @@ final class PlayerRuntime {
                     KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach", entry.data.displayName(), item.getStack(), b.noun, item.getPos());
                     b.unreached.add(item.getBlockPos());
                 }
+                if (b.railsNoted == 1) noteRailsByCell(entry, world, b, "the cart left in the cell");
                 KindredMod.LOGGER.info("{} bringing: the cart left in the {}'s cell, the {} {} it", entry.data.displayName(), b.noun, b.noun,
                         villager.getVehicle() != null ? "in" : "by");
                 b.phase = Bring.Phase.CLOSE;
@@ -11101,7 +11110,14 @@ final class PlayerRuntime {
                     // up what lies a block off, then let be. On CI a rail broken out of the way came down a block up, by
                     // the hall's wall, the walk to its cell found no route, and the rail was left: 62 of 63 back (F-22c12).
                     if (b.failed > 0 && b.lastPickup != null) {
-                        if (!b.reachTried.add(b.lastPickup)) b.unreached.add(b.lastPickup);
+                        if (!b.reachTried.add(b.lastPickup)) {
+                            b.unreached.add(b.lastPickup);
+                            if (b.railsNoted < 6) {
+                                b.railsNoted = Math.max(b.railsNoted, 2) + 1;
+                                KindredMod.LOGGER.info("{} bringing: what it took up at {} let be, two walks to it ended without it (cell floor {})",
+                                        entry.data.displayName(), b.lastPickup.toShortString(), b.floor.toShortString());
+                            }
+                        }
                         b.failed = 0;
                     }
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box.expand(4, 2, 4),
@@ -11115,6 +11131,17 @@ final class PlayerRuntime {
                         KindredMod.LOGGER.info("{} bringing: picking up what it took up ({}), at {}", entry.data.displayName(), item.getStack(), drop.toShortString());
                         return List.of(new NativeTaskCandidate(bringTask(entry, "pick up:" + drop.asLong()), "native_goto", Map.of("x", String.valueOf(drop.getX()),
                                 "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()), "range", b.reachTried.contains(drop) ? "1.2" : "0.5", "partial", "true")));
+                    }
+                    // Rails it ends without, in blocks it could not get to: said once, where they lie (F-22c64).
+                    if (b.railsNoted < 6) {
+                        var left = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box.expand(4, 2, 4),
+                                item -> item.isAlive() && item.getStack().isOf(Items.RAIL));
+                        if (!left.isEmpty()) {
+                            b.railsNoted = 6;
+                            KindredMod.LOGGER.info("{} bringing: rails left lying, unreached: {} (cell floor {}, unreached blocks {})", entry.data.displayName(),
+                                    left.stream().map(item -> item.getStack().getCount() + " at " + item.getBlockPos().toShortString()).toList(),
+                                    b.floor.toShortString(), b.unreached.stream().map(BlockPos::toShortString).toList());
+                        }
                     }
                     b.phase = Bring.Phase.DOOR_BACK;
                     return bringCandidates(entry, body);
@@ -11579,6 +11606,21 @@ final class PlayerRuntime {
         b.doorTries = 0;
         b.phase = Bring.Phase.UNDO;
         return bringCandidates(entry, body);
+    }
+
+    /**
+     * Rails lying in and by the cell, from its front to its bed, and what is in the front, said once at a step of the cart
+     * left in the cell (F-22c64): a bring ended a rail short in CI, the front rail's drop not picked up by its break and
+     * found on the bed, out of reach, or not found at all. Diagnostics only; nothing is decided from it.
+     */
+    private static void noteRailsByCell(Entry entry, net.minecraft.server.world.ServerWorld world, Bring b, String when) {
+        b.railsNoted++;
+        var cell = new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0.5, 1, 0.5);
+        var rails = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell, item -> item.isAlive() && item.getStack().isOf(Items.RAIL));
+        KindredMod.LOGGER.info("{} bringing: {}: rails lying by the cell {} (front {} is {}, floor {})", entry.data.displayName(), when,
+                rails.stream().map(item -> item.getStack().getCount() + " at " + String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f",
+                        item.getX(), item.getY(), item.getZ()) + " age " + item.age).toList(), b.slot.toShortString(),
+                world.getBlockState(b.slot).getBlock().getName().getString(), b.floor.toShortString());
     }
 
     /** Bringing it ended: said, and a while before it looks again for one to bring. */

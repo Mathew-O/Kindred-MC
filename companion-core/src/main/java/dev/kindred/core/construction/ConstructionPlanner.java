@@ -373,7 +373,7 @@ public final class ConstructionPlanner {
                 float pitch = (float) Math.toDegrees(-Math.atan2(dy, Math.hypot(dx, dz)));
                 // Well inside the facing's quarter, so a body a little off the middle of its spot still faces the same way.
                 if (mustFace != null && (Placement.facingOf(yaw) != mustFace || offQuarter(yaw) > FACING_MARGIN)) continue;
-                if (!clearSight(site, new double[] {ex, ey, ez}, hit, support, b.at())) continue;
+                if (!clearSight(site, new double[] {ex, ey, ez}, hit, support, b.at(), false)) continue;
                 if (box.inside(stance) && sealedIn(site, stance, b.at(), wanted, box)) continue;
                 double cost = Math.sqrt(stance.distanceSquared(feet)) + (box.inside(stance) ? 3 : 0) + reach * 0.1;
                 if (cost < bestCost) {
@@ -397,7 +397,7 @@ public final class ConstructionPlanner {
             double ex = stance.x() + 0.5, ey = stance.y() + EYE, ez = stance.z() + 0.5;
             double reach = Math.sqrt(Math.pow(middle[0] - ex, 2) + Math.pow(middle[1] - ey, 2) + Math.pow(middle[2] - ez, 2));
             if (reach > REACH - 0.05) continue;
-            if (!clearSight(site, new double[] {ex, ey, ez}, middle, target, target)) continue;
+            if (!clearSight(site, new double[] {ex, ey, ez}, middle, target, target, true)) continue;
             double cost = Math.sqrt(stance.distanceSquared(feet)) + (box.inside(stance) ? 3 : 0);
             if (cost < bestCost) { bestCost = cost; best = stance; }
         }
@@ -745,18 +745,70 @@ public final class ConstructionPlanner {
         return new double[] {x - face.dx * 0.01, y - face.dy * 0.01, z - face.dz * 0.01};
     }
 
-    /** Nothing solid between the eyes and the point, but the block clicked and the target itself. */
-    private static boolean clearSight(BuildSite site, double[] eye, double[] to, Pos support, Pos target) {
-        double dx = to[0] - eye[0], dy = to[1] - eye[1], dz = to[2] - eye[2];
-        int steps = (int) Math.ceil(Math.sqrt(dx * dx + dy * dy + dz * dz) * 8);
-        for (int i = 1; i < steps; i++) {
-            double t = (double) i / steps;
-            Pos at = new Pos((int) Math.floor(eye[0] + dx * t), (int) Math.floor(eye[1] + dy * t), (int) Math.floor(eye[2] + dz * t));
+    /**
+     * Nothing solid between the eyes and the point, but the block clicked and the target itself. With {@code outlines}, a
+     * break's look: nor a block of no collision with a shape of its own (a torch, a flower, a sign), which the server's
+     * look at a block to break meets first. A placement's click is no such look, and sees past them (F-22c58).
+     */
+    static boolean clearSight(BuildSite site, double[] eye, double[] to, Pos support, Pos target, boolean outlines) {
+        // A break's look: every cell the line passes through, in order, as the server's look meets blocks, a corner the line
+        // clips for a thirtieth of a block among them. Sampled every eighth of a block, such a corner was stepped over; the
+        // server refused the break as out of sight, and a hideout's last block in the way was waited on to the end. A
+        // placement's click is no look the server checks, and keeps the sampled line (F-22c58).
+        for (Pos at : outlines ? cellsOnLine(eye, to) : sampledLine(eye, to)) {
             if (at.equals(support) || at.equals(target)) continue;
             var cell = site.cell(at);
             if (cell.isEmpty() || !cell.get().passable() && cell.get().kind() != BuildSite.Kind.REPLACEABLE) return false;
+            // No bar to the feet but in the eyes' way for a break: a torch, a sign, a flower. The server's look at a block to
+            // break meets its shape first and refuses it as out of sight; seen through one, a hideout's last block in the way
+            // was refused from every spot it was planned from (#148's CI; F-22c56's diagnostics). Barred for placements too,
+            // a pasture ward on a field of flowers was sent to farther spots to place from, and stopped on walks to them
+            // (F-22c58).
+            if (outlines && cell.get().kind() == BuildSite.Kind.PASSABLE) return false;
         }
         return true;
+    }
+
+    /** The cells at every eighth of a block along the segment, its ends left out: the line a placement is planned by. */
+    private static List<Pos> sampledLine(double[] eye, double[] to) {
+        double dx = to[0] - eye[0], dy = to[1] - eye[1], dz = to[2] - eye[2];
+        int steps = (int) Math.ceil(Math.sqrt(dx * dx + dy * dy + dz * dz) * 8);
+        var cells = new ArrayList<Pos>();
+        for (int i = 1; i < steps; i++) {
+            double t = (double) i / steps;
+            cells.add(new Pos((int) Math.floor(eye[0] + dx * t), (int) Math.floor(eye[1] + dy * t), (int) Math.floor(eye[2] + dz * t)));
+        }
+        return cells;
+    }
+
+    /**
+     * The cells the segment from {@code from} to {@code to} passes through, from the first cell after {@code from}'s own to
+     * {@code to}'s, one cell face at a time, in the order and with the ties of vanilla's block raycast (BlockView.raycast):
+     * the server's look at a block meets them so.
+     */
+    static List<Pos> cellsOnLine(double[] from, double[] to) {
+        var cells = new ArrayList<Pos>();
+        int x = (int) Math.floor(from[0]), y = (int) Math.floor(from[1]), z = (int) Math.floor(from[2]);
+        int ex = (int) Math.floor(to[0]), ey = (int) Math.floor(to[1]), ez = (int) Math.floor(to[2]);
+        double dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
+        int sx = dx > 0 ? 1 : dx < 0 ? -1 : 0, sy = dy > 0 ? 1 : dy < 0 ? -1 : 0, sz = dz > 0 ? 1 : dz < 0 ? -1 : 0;
+        double stepX = sx == 0 ? Double.MAX_VALUE : sx / dx, stepY = sy == 0 ? Double.MAX_VALUE : sy / dy, stepZ = sz == 0 ? Double.MAX_VALUE : sz / dz;
+        double nextX = stepX * (sx > 0 ? 1 - (from[0] - Math.floor(from[0])) : from[0] - Math.floor(from[0]));
+        double nextY = stepY * (sy > 0 ? 1 - (from[1] - Math.floor(from[1])) : from[1] - Math.floor(from[1]));
+        double nextZ = stepZ * (sz > 0 ? 1 - (from[2] - Math.floor(from[2])) : from[2] - Math.floor(from[2]));
+        int guard = Math.abs(ex - x) + Math.abs(ey - y) + Math.abs(ez - z) + 3;
+        while ((nextX <= 1 || nextY <= 1 || nextZ <= 1) && guard-- > 0) {
+            if (nextX < nextY) {
+                if (nextX < nextZ) { x += sx; nextX += stepX; } else { z += sz; nextZ += stepZ; }
+            } else if (nextY < nextZ) {
+                y += sy; nextY += stepY;
+            } else {
+                z += sz; nextZ += stepZ;
+            }
+            cells.add(new Pos(x, y, z));
+            if (x == ex && y == ey && z == ez) break;
+        }
+        return cells;
     }
 
     /**
