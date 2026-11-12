@@ -153,6 +153,31 @@ public final class NativeBridgeGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * Lava under the gap with a water bucket in the hotbar: water does not save a fall into lava, so the crouch is held for
+     * the whole run all the same (MODES' review of #263).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bridgeLavaBucket", tickLimit = 2000)
+    public void overLavaWithAWaterBucketItStillHoldsTheCrouchThroughout(TestContext context) {
+        var run = new Run(context);
+        var m = new Measure();
+        run.f.runnerAwaitingReady(context, "Ready")
+                .createAndAdd(() -> run.f.runtime.createNative(run.f.source, "Wise"))
+                .createAndAdd(() -> run.f.established(context))
+                .createAndAdd(() -> context.assertTrue(run.f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> run.build(Floor.LAVA, 16, true))
+                .createAndAdd(() -> context.assertTrue(run.f.player().isOnGround(), "On the pad"))
+                .createAndAdd(() -> run.start("auto", m))
+                .createAndAdd(() -> run.follow(m))
+                .createAndAdd(() -> {
+                    run.expectCompleted(m);
+                    KindredMod.LOGGER.info("Over lava with a bucket: {} ticks, {} sneaking", m.ticks, m.sneaking);
+                    context.assertTrue(m.sneaking >= m.ticks - 1, "Crouched throughout over lava, bucket or not: " + m.sneaking + " of " + m.ticks);
+                    run.f.runtime.stop();
+                })
+                .completeIfSuccessful();
+    }
+
     /** A zombie brought within eight blocks after the fourth block: from then on the crouch is held. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bridgeZombie", tickLimit = 2000)
     public void aZombieWithinEightMidRunSwitchesItToTheHeldCrouch(TestContext context) {

@@ -293,9 +293,10 @@ final class NativeBridgeAction extends NativeRecordedAction {
     }
 
     /**
-     * Whether, by what the player itself sees, bridging upright could kill it: under the next cell lava, a drop it would
-     * not survive, or no ground in sight, with no water bucket in its hotbar to land in; a hostile in sight within
-     * {@link #NEAR_MOB}; or a hit or an arrow at it in the last {@link #SHOT_TICKS}.
+     * Whether, by what the player itself sees, bridging upright could kill it: lava under the next cell, whatever it
+     * holds (water does not save a fall into lava); a drop it would not survive, or no ground in sight, with no water
+     * bucket in its hotbar to land in; a hostile in sight within {@link #NEAR_MOB}; or a hit or an arrow at it in the
+     * last {@link #SHOT_TICKS}.
      */
     private boolean danger(net.minecraft.server.network.ServerPlayerEntity player, int next, long now) {
         if (now - lastShotAt <= SHOT_TICKS) return true;
@@ -305,11 +306,10 @@ final class NativeBridgeAction extends NativeRecordedAction {
         if (hostile) return true;
         boolean bucket = false;
         for (int s = 0; s < 9; s++) if (player.getInventory().getStack(s).isOf(Items.WATER_BUCKET)) bucket = true;
-        if (bucket) return false;
         BlockPos column = cell(next);
         for (int down = 1; down <= SIGHT_DOWN; down++) {
             BlockPos at = column.down(down);
-            if (!world.isChunkLoaded(at) || at.getY() < world.getBottomY()) return true;
+            if (!world.isChunkLoaded(at) || at.getY() < world.getBottomY()) return !bucket;
             var fluid = world.getFluidState(at);
             if (fluid.isIn(FluidTags.LAVA)) return true;
             if (fluid.isIn(FluidTags.WATER)) return false;
@@ -317,10 +317,10 @@ final class NativeBridgeAction extends NativeRecordedAction {
             if (!state.getCollisionShape(world, at).isEmpty()) {
                 // A fall of {@code drop} blocks onto it: a point of damage for each block past three.
                 int drop = start.getY() - (at.getY() + 1);
-                return Math.max(0, drop - 3) >= player.getHealth() - 1;
+                return !bucket && Math.max(0, drop - 3) >= player.getHealth() - 1;
             }
         }
-        return true;
+        return !bucket;
     }
 
     /** An arrow in flight toward it, near: being shot at. */

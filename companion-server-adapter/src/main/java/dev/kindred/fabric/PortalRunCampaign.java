@@ -4887,15 +4887,21 @@ final class PortalRunCampaign {
 
     /**
      * Where a bridge run that stopped short stopped, and why (E-71a), from its end's report: a cell it was refused, by a
-     * claim or the policy, or could make no way past is set aside for the next plan; one stopped by a hit is not.
+     * claim or the policy, could make no way past or fell from is set aside for the next plan, so the same run is not
+     * started again from where it landed; one stopped by a hit is not, as the danger passes. A report it cannot read sets
+     * nothing aside.
      */
     void bridgeEnded(Map<String, String> report) {
         bridgeStop = null;
         String at = report.get("stopped_at"), reason = report.get("reason");
-        if (at == null || reason == null || !java.util.Set.of("claim", "policy", "no_blocks", "stuck").contains(reason)) return;
+        if (at == null || reason == null || !java.util.Set.of("claim", "policy", "no_blocks", "stuck", "fell").contains(reason)) return;
         String[] parts = at.split(",\\s*");
         if (parts.length != 3) return;
-        bridgeStop = new BlockPos(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()), Integer.parseInt(parts[2].trim()));
+        try {
+            bridgeStop = new BlockPos(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()), Integer.parseInt(parts[2].trim()));
+        } catch (NumberFormatException unreadable) {
+            bridgeStop = null;
+        }
     }
 
     /** The cell the last bridge run stopped at, to set aside, or null. */
