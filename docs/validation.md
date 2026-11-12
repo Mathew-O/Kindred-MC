@@ -53,6 +53,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
+
+- [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
+
 ## A founder claims the ground its first base will stand on (M-06i) — 12 November 2026 (`claude/m06i-base-site-1111`)
 
 - [M-06i: a founder claims the ground its first base will stand on](evidence/M-06i.md#a-founder-claims-the-ground-its-first-base-will-stand-on-2026-11-12-claudem06i-base-site-1111).
