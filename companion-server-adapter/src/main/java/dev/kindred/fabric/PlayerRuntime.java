@@ -9664,6 +9664,10 @@ final class PlayerRuntime {
         // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
         // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
         if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
+        // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
+        // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
+        // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && nightYield(entry, play, player, tick)) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9700,6 +9704,25 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /**
+     * Whether a faction walk waits this decision for the goal's dig-in for the night (F-35h2b): only at night, with a goal
+     * running, while the campaign may still shelter (not yet dug in, a part-dug shelter included), and never for nothing. The night's first
+     * decision yields once, so that the campaign is asked; after that only while the campaign's step was a dig-in for the
+     * night. Where it could not dig, the walk goes on at the next decision: a yield costs at most one.
+     */
+    private boolean nightYield(Entry entry, FactionsPlayer play, ServerPlayerEntity player, long tick) {
+        var campaign = entry.campaign;
+        if (campaign == null || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE || !campaign.wouldShelterForTheNight(player)) {
+            play.nightYieldAt = Long.MIN_VALUE;
+            return false;
+        }
+        if (play.nightYieldAt == Long.MIN_VALUE) {
+            play.nightYieldAt = tick;
+            return true;
+        }
+        return campaign.progress().contains(PortalRunCampaign.SHELTER_FOR_THE_NIGHT);
     }
 
     /** Whether the way toward a faction walk's end {@code to} is open water the player saw (F-35j); a dry answer kept a second for the same end. */
@@ -10040,6 +10063,15 @@ final class PlayerRuntime {
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
         var body = entry.nativeBody.entity();
         return entry.factionPlay.paused(server.getTicks(), body.getBlockPos(), FactionsPlayer.atSurface(body));
+    }
+
+    /** For fixtures: its faction walk staged as already chosen, {@code move}, and not weighed again till its interval is out. */
+    void factionMoveSetForTest(UUID player, dev.kindred.core.factions.FactionPlay.Choice move) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return;
+        entry.factionPlay.move = move;
+        entry.factionPlay.decidedAt = server.getTicks();
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
