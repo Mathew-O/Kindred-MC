@@ -9444,10 +9444,46 @@ final class PlayerRuntime {
             for (var quote : estimate.quotes().entrySet()) spare.add(new dev.kindred.core.factions.FactionPlay.Spare(quote.getKey(), quote.getValue().count(), quote.getValue().cents()));
         }
         boolean healthy = player.getHealth() >= player.getMaxHealth() * 0.6f && player.getHungerManager().getFoodLevel() >= 12;
+        var wants = new ArrayList<dev.kindred.core.factions.FactionPlay.Want>();
+        var asks = new java.util.HashMap<String, Long>();
+        factionWants(entry, player, wants, asks);
         return new dev.kindred.core.factions.FactionPlay.View(id, entry.profile.personality(), ledgers.factions(), ledgers.power(), ledgers.claims(),
                 ledgers.safe().chunks(), ledgers.captures(), ledgers.coins().of(id), factions.settings(), factions.now(), site, java.util.Optional.of(here),
-                healthy, spare, List.of(), Map.of(), ledgers.auctions(), entry.factionPlay.seen(), entry.factionPlay.met(),
+                healthy, spare, wants, asks, ledgers.auctions(), entry.factionPlay.seen(), entry.factionPlay.met(),
                 entry.factionPlay.setAside(server.getTicks()));
+    }
+
+    /**
+     * What its run lacks, for the faction world's buys and bids (M-06i): the run's provisions (what its goal's assessment
+     * found it short of, a need and how many), each need that one item satisfies, its count summed, quoted by the market
+     * for the whole count. The most it would pay is that quote: it buys at the market's price and bids on a listing only
+     * for less. A need the market does not sell (a tag, the food component, an item not sold or not yet valued) is no
+     * want here; its goal still gathers or crafts it. Only the count still lacking: what it holds of the item beyond what
+     * it held at the assessment is taken off, so a purchase settled is not bought again before its goal looks again (one
+     * still being saved holds every faction choice of its, {@link #factionChoose}).
+     */
+    private void factionWants(Entry entry, ServerPlayerEntity player, List<dev.kindred.core.factions.FactionPlay.Want> wants, Map<String, Long> asks) {
+        if (entry.campaign == null) return;
+        var provisions = entry.campaign.followUps().provisions();
+        var lacking = new java.util.LinkedHashMap<String, Integer>();
+        var assessed = new java.util.HashMap<String, Integer>();
+        for (var chunk : provisions.chunks()) {
+            String item = chunk.need().satisfiedBy();
+            if (chunk.count() <= 0 || !item.matches("[a-z0-9_.-]+:[a-z0-9_/.-]+")) continue;
+            lacking.merge(item, chunk.count(), Integer::sum);
+            assessed.put(item, provisions.held().getOrDefault(chunk.need(), 0));
+        }
+        long now = System.currentTimeMillis();
+        for (var lack : lacking.entrySet()) {
+            var type = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(lack.getKey()));
+            int got = Math.max(0, player.getInventory().count(type) - assessed.get(lack.getKey()));
+            int count = lack.getValue() - got;
+            if (count <= 0) continue;
+            var quote = dev.kindred.core.market.Market.quoteBuy(market.pricing(), market.book(), lack.getKey(), count, now);
+            if (!quote.accepted()) continue;
+            wants.add(new dev.kindred.core.factions.FactionPlay.Want(lack.getKey(), count, quote.cents()));
+            asks.put(lack.getKey(), quote.cents());
+        }
     }
 
     /** What it chooses now in the faction world, the first of its choices; nothing while a trade of its is being saved. */
@@ -9554,6 +9590,15 @@ final class PlayerRuntime {
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) throw new IllegalStateException("No connected body");
         entry.factionPlay.chosen = new dev.kindred.core.factions.FactionPlay.Choice(kind, target, amount, "a fixture's act");
         return factionAct(entry, kind, target, amount);
+    }
+
+    /** A fixture's AI player (by its companion id): what its run lacks, as its goal's assessment would have left it. */
+    void provisionsForTest(UUID player, dev.kindred.core.survival.StrongholdRunPlanner.Provisions staged) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) throw new IllegalStateException("No such player");
+        if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
+        entry.campaign.followUps().provisionsForTest(staged);
     }
 
     /** A fixture's AI player (by its companion id) weighs the faction world now; what it chose is left for its turn. */
