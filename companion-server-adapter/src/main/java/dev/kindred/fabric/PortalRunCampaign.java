@@ -710,7 +710,12 @@ final class PortalRunCampaign {
                 Direction first = Direction.byName(task.args().getOrDefault("dirs", "").split(",")[0]);
                 if (first != null) aside = aside.offset(first);
             }
-            cellsAside.until(aside.asLong(), tick + 1200);
+            // A bridge run sets aside the cell it stopped at, by its own report, and nothing when a hit stopped it.
+            if ("native_bridge".equals(task.skill())) {
+                aside = bridgeStop;
+                bridgeStop = null;
+            }
+            if (aside != null) cellsAside.until(aside.asLong(), tick + 1200);
         }
         // A walk back to a drop: one that ends by it, one more look round and on. One that ends short of it, refused or
         // stopped at the nearest it could get to, passes that drop over for the next nearest, three times at most. A kit
@@ -1473,6 +1478,11 @@ final class PortalRunCampaign {
 
     /** Tasks that failed or were refused lately, with why, oldest first: the last five, for a rescue's report. */
     private final java.util.ArrayDeque<String> blocked = new java.util.ArrayDeque<>();
+
+    /** Its last few steps refused or failed, oldest first, as its stuck report gives them: for fixtures. */
+    List<String> blockedForTest() {
+        return List.copyOf(blocked);
+    }
     /** The stuck spell a rescue is wanted for: a minute with no progress (F-29b); 0 for none. */
     private int rescueSpell;
     /** Rescue spells opened, for their numbers; whether rescues are on for this player (the bridge says, each look). */
@@ -2615,7 +2625,7 @@ final class PortalRunCampaign {
             Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
             if (dig.isPresent()) {
                 nightShelterAt = player.getBlockPos();
-                progress = stageLabel(stage) + ": shelter for the night - " + dig.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + dig.get().label();
                 return dig;
             }
         }
@@ -2625,7 +2635,7 @@ final class PortalRunCampaign {
         if (night && !groundBelow(player) && sheltered(player)) {
             Optional<Task> seal = player.isOnGround() ? seal(body) : Optional.empty();
             if (seal.isPresent()) {
-                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + seal.get().label();
                 return seal;
             }
             progress = stageLabel(stage) + ": wait for daylight in the shelter";
@@ -2659,7 +2669,7 @@ final class PortalRunCampaign {
             // Waiting out the night: close the way in first, so nothing walks or shoots down the staircase.
             Optional<Task> seal = underground(player) && player.isOnGround() ? seal(body) : Optional.empty();
             if (seal.isPresent()) {
-                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + seal.get().label();
                 return seal;
             }
             progress = stageLabel(stage) + ": wait for daylight before going up for logs - " + steps.getLast().why();
@@ -3729,11 +3739,32 @@ final class PortalRunCampaign {
         spots.add(feet.up().offset(digDirection().getOpposite()));
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
+            if (onTheWay(spot, feet)) continue;
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
         }
         return Optional.empty();
+    }
+
+    /**
+     * A cell of the way it is making (F-22c70): no torch there while that way is its plan. The way is its plan until the
+     * next one is made, or until the player stands more than {@link #WAY_LEFT} blocks from every cell of it.
+     */
+    boolean onTheWay(BlockPos cell, BlockPos feet) {
+        if (wayCells.isEmpty()) return false;
+        boolean near = false;
+        for (long key : wayCells) {
+            if (BlockPos.fromLong(key).getSquaredDistance(feet) <= WAY_LEFT * WAY_LEFT) {
+                near = true;
+                break;
+            }
+        }
+        if (!near) {
+            wayCells.clear();
+            return false;
+        }
+        return wayCells.contains(cell.asLong());
     }
 
     private static Map<String, String> coords(BlockPos pos, Map<String, String> extra) {
@@ -4850,10 +4881,20 @@ final class PortalRunCampaign {
         if (millis >= 20) KindredMod.LOGGER.info("{} planned a way toward {} in {} ms ({} positions, {})", player.getName().getString(),
                 target.toShortString(), millis, route.expanded(), route.complete() ? "complete" : "partial");
         if (route.steps().isEmpty()) return Optional.empty();
+        // The cells this way stands in and goes through, kept from the light of its torches while it is the way (F-22c70).
+        wayCells.clear();
+        for (var step : route.steps()) {
+            wayCells.add(step.from().asLong());
+            wayCells.add(step.to().asLong());
+            wayCells.add(step.to().up().asLong());
+            for (BlockPos cell : step.cells()) wayCells.add(cell.asLong());
+        }
         int edit = route.firstEdit();
         if (edit < 0) return needEdit ? Optional.empty() : Optional.of(go(route.steps().getLast().to(), 0.5, true, label));
         if (edit > 0) return Optional.of(go(route.steps().get(edit - 1).to(), 0.4, false, label + ": walk on"));
-        Optional<Task> change = route.steps().getFirst().kind() == NativeRoutePlanner.Kind.STAIR ? stairs(body, route, label)
+        var firstKind = route.steps().getFirst().kind();
+        Optional<Task> change = firstKind == NativeRoutePlanner.Kind.STAIR ? stairs(body, route, label)
+                : firstKind == NativeRoutePlanner.Kind.BRIDGE ? bridges(body, route, label)
                 : routeEdit(body, route.steps().getFirst(), label);
         lastRouteEdit = change.orElse(null);
         return change;
@@ -4861,6 +4902,15 @@ final class PortalRunCampaign {
 
     /** The last change a made way asked for: if it fails, its cell is set aside so the next plan goes another way. */
     private Task lastRouteEdit;
+    /**
+     * The cells of the way last planned to be made (F-22c70): every cell of it where it stands, steps and digs. No torch goes
+     * in one while it is the plan: a torch put in the cell its way had just dug, its next stand, left it unable to pillar up
+     * from there ("The cell it stands in is not open"), sealed in below its portal (NativeNightShelterGameTests, about one
+     * run in 15). Kept for the plan's own life, not a time: a long pillar or stair takes as long as it takes.
+     */
+    private final Set<Long> wayCells = new HashSet<>();
+    /** Farther than this from every cell of its last way, the player has left it and the way's cells are no longer kept. */
+    static final int WAY_LEFT = 8;
 
     private Optional<Task> routeEdit(NativePlayerBody body, NativeRoutePlanner.Step step, String label) {
         var player = body.entity();
@@ -4912,6 +4962,57 @@ final class PortalRunCampaign {
         return Optional.of(new Task("native_stair", coords(feet, Map.of("dirs", String.join(",", directions), "slot", String.valueOf(slot))),
                 label + ": stairs up " + directions.size()));
     }
+
+    /**
+     * The route's bridge from where the player stands, as one run (E-71a): its straight run of bridge steps one after
+     * another, as many as the blocks in one hotbar slot cover, up to {@link NativeBridgeAction#MAX_RUN}. A turn ends the
+     * run; the next plan starts the next from where it stops. The crouch is the skill's own choice ({@code auto}).
+     */
+    private Optional<Task> bridges(NativePlayerBody body, NativeRoutePlanner.Route route, String label) {
+        var inventory = body.entity().getInventory();
+        int slot = wayBlockSlot(inventory);
+        if (slot < 0) return Optional.empty();
+        if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
+        int blocks = inventory.getStack(slot).getCount();
+        Direction along = null;
+        int run = 0;
+        for (var step : route.steps()) {
+            if (step.kind() != NativeRoutePlanner.Kind.BRIDGE || run == NativeBridgeAction.MAX_RUN || run >= blocks) break;
+            BlockPos from = step.from(), to = step.to();
+            int dx = to.getX() - from.getX(), dz = to.getZ() - from.getZ();
+            if (to.getY() != from.getY() || Math.abs(dx) + Math.abs(dz) != 1 || !step.cells().getFirst().equals(to.down())) break;
+            Direction heading = Direction.fromVector(dx, 0, dz);
+            if (along != null && heading != along) break;
+            along = heading;
+            run++;
+        }
+        if (run == 0) return routeEdit(body, route.steps().getFirst(), label);
+        BlockPos feet = route.steps().getFirst().from();
+        return Optional.of(new Task("native_bridge", coords(feet, Map.of("dir", along.asString(), "n", String.valueOf(run), "slot", String.valueOf(slot))),
+                label + ": bridge " + run));
+    }
+
+    /**
+     * Where a bridge run that stopped short stopped, and why (E-71a), from its end's report: a cell it was refused, by a
+     * claim or the policy, could make no way past or fell from is set aside for the next plan, so the same run is not
+     * started again from where it landed; one stopped by a hit is not, as the danger passes. A report it cannot read sets
+     * nothing aside.
+     */
+    void bridgeEnded(Map<String, String> report) {
+        bridgeStop = null;
+        String at = report.get("stopped_at"), reason = report.get("reason");
+        if (at == null || reason == null || !java.util.Set.of("claim", "policy", "no_blocks", "stuck", "fell").contains(reason)) return;
+        String[] parts = at.split(",\\s*");
+        if (parts.length != 3) return;
+        try {
+            bridgeStop = new BlockPos(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()), Integer.parseInt(parts[2].trim()));
+        } catch (NumberFormatException unreadable) {
+            bridgeStop = null;
+        }
+    }
+
+    /** The cell the last bridge run stopped at, to set aside, or null. */
+    private BlockPos bridgeStop;
 
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
     Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
@@ -5532,6 +5633,18 @@ final class PortalRunCampaign {
         Optional<BlockPos> top = WorldKnowledge.looks(player, 1).ground(to.getX(), to.getZ());
         if (top.isPresent()) return to.getY() >= top.get().getY();
         return to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ()) - 1;
+    }
+
+    /** The words of a goal step that shelters for the night: a dig in, a seal (F-35h2b reads them). */
+    static final String SHELTER_FOR_THE_NIGHT = ": shelter for the night - ";
+
+    /**
+     * Whether its plan may still shelter for the night now (F-35h2b): night, and not yet dug in for it. A shelter part dug,
+     * sheltered but not sealed, still counts: the walk that would take it out of it waits as before. Asks the plan's own
+     * tests and changes nothing.
+     */
+    boolean wouldShelterForTheNight(ServerPlayerEntity player) {
+        return night(player.getServerWorld()) && !dugInForTheNight(player);
     }
 
     /** Night where there is a sky: a player that learned to shelter early counts the last of the afternoon as night already. */
