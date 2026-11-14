@@ -2651,9 +2651,15 @@ final class PortalRunCampaign {
             }
         }
         // Below ground the night changes nothing: the route's iron is mined meanwhile, and only the climb out to the trees
-        // waits for morning (in B7's first paired run up to a tenth of a player's time was spent waiting below).
-        Optional<PortalRunPlanner.Step> meanwhile = night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS && underground(player)
-                ? PortalRunPlanner.withoutWood(snapshot, facts) : Optional.empty();
+        // waits for morning (in B7's first paired run up to a tenth of a player's time was spent waiting below). Not from
+        // the shelter it dug tonight: it is there for the night, sealed and waited in, and the iron's walk is no reason
+        // to leave it. A walk on into a cave it had seen went up its own stair and over the ground, out of the shelter it
+        // had just dug, and it dug in again twelve blocks off (NativeFactionShelterGameTests, five CI runs on 12
+        // November); the hold on walks out under the sky (F-25c4cd) looks at where a walk ends, not where it goes
+        // (F-22c72). Below ground at nightfall, it dug no shelter and mines on as before.
+        boolean tonightsShelter = nightShelterAt != null && inNightShelter(player);
+        Optional<PortalRunPlanner.Step> meanwhile = night && !tonightsShelter && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS
+                && underground(player) ? PortalRunPlanner.withoutWood(snapshot, facts) : Optional.empty();
         if (meanwhile.isPresent()) steps.set(steps.size() - 1, meanwhile.get());
         if (night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS) {
             // Waiting out the night: close the way in first, so nothing walks or shoots down the staircase.
