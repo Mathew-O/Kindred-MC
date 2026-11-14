@@ -66,6 +66,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## Out of the lava with no cell beside it out of the lava (F-25c6a) — 14 November 2026 (`claude/lava-escape-1112`)
+
+- [F-25c6a: the probe, the two staged escape fixtures (3 of 3 failing before, 3 of 3 passing after) and the corpus gate (0 confirmed)](evidence/F-25c6a.md).
+
 ## A crafting table set down only for a craft it can make there, and kept down for it (F-25c7a, F-25c7b) — 12 November 2026 (`claude/table-loop-1112`)
 
 - **[F-25c7a and F-25c7b](evidence/F-25c7a.md):** the take-and-place table loop of 18 of e40a21's 76 stuck spells.
