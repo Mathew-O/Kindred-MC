@@ -1,0 +1,66 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 9947, "paid": 9947, "lapsed": 242, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 93.5, "snapshotMicrosMax": 8169.6, "tagMicrosMean": 105.2, "tagMicrosMax": 17258.8, "bySource": {"container.take:furnace": 89, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 7559, "pickup:class_3222.method_7329": 1537, "pickup:class_52.method_331": 97, "screen:class_1714": 93, "screen:class_1723": 793, "use:item": 20}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 5, "class_1540.method_5773": 5, "class_2248.method_36993": 7591, "class_3222.method_7329": 212, "class_52.method_331": 282}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 12.93, "tickMsWorst": 1103.15, "tickMsWorstAt": 5838, "ticksOver50ms": 538, "ticksOver200ms": 6, "heapMbMax": 1016, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 660, "stone_tools": 1360, "iron_ingot": 8320, "iron_pickaxe": 15280},
+      "deaths": [
+        {"tick": 51168, "cause": "Kindred tried to swim in lava to escape Zombie", "x": -61, "y": -53, "z": 128, "light": 15, "timeOfDay": 3330, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "Fight zombie"},
+        {"tick": 68129, "cause": "Kindred was slain by Zombie", "x": 0, "y": 80, "z": 134, "light": 4, "timeOfDay": 20291, "dimension": "minecraft:overworld", "hunger": 13, "underSky": true, "stage": "Iron: fight back - Back off from stray", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 134474, "cause": "Kindred was shot by Skeleton", "x": 68, "y": 30, "z": -104, "light": 4, "timeOfDay": 14636, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: outmatched - Hole up: recover behind the wall", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 135981, "cause": "Kindred was slain by Zombie", "x": -12, "y": 64, "z": -14, "light": 6, "timeOfDay": 16143, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Wood: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 87460, "x": 5, "y": 21, "z": -128, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 12262,
+      "chunkMinutes": 34665.6,
+      "bridgeBlocks": 12,
+      "bridgeSeconds": 7.4
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3900, "stone_tools": 5880, "iron_ingot": 12760, "iron_pickaxe": 58020, "obsidian": 119580},
+      "deaths": [
+        {"tick": 23949, "cause": "Sol was slain by Zombie", "x": 13, "y": 21, "z": -116, "light": 3, "timeOfDay": 111, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 12732,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 8,
+      "bridgeSeconds": 3.3
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 4200, "iron_ingot": 12480, "iron_pickaxe": 27480},
+      "deaths": [
+        {"tick": 2435, "cause": "Echo suffocated in a wall", "x": 8, "y": 59, "z": -135, "light": 15, "timeOfDay": 2597, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Stone: stuck in a wall - Dig out of the wall: out from under the falling sand to 8, 59, -135", "stance": "PRESS_ON", "habits": "[]", "task": "Dig out of the wall: out from under the falling sand to 8, 59, -135"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 59160, "x": 112, "y": 63, "z": 16, "attempt": 1}, {"tick": 115880, "x": -36, "y": -54, "z": -94, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4434,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 5826, "paid": 5826, "lapsed": 234, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 90.6, "snapshotMicrosMax": 6238.6, "tagMicrosMean": 106.9, "tagMicrosMax": 10050.1, "bySource": {"container.take:furnace": 61, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 4975, "pickup:class_3222.method_7329": 207, "pickup:class_52.method_331": 28, "screen:class_1714": 67, "screen:class_1723": 678, "use:item": 43}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 277, "class_1540.method_5773": 4, "class_2248.method_36993": 5010, "class_3222.method_7329": 87, "class_52.method_331": 53}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 11.19, "tickMsWorst": 732.89, "tickMsWorstAt": 5838, "ticksOver50ms": 167, "ticksOver200ms": 4, "heapMbMax": 967, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1660, "stone_tools": 3120, "iron_ingot": 8100, "iron_pickaxe": 72300},
+      "deaths": [
+        {"tick": 42669, "cause": "Kindred was slain by Zombie", "x": 66, "y": 7, "z": 20, "light": 0, "timeOfDay": 18831, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 120240, "x": -36, "y": 51, "z": 211, "attempt": 1}, {"tick": 124180, "x": -36, "y": 51, "z": 212, "attempt": 2}, {"tick": 128200, "x": -36, "y": 51, "z": 193, "attempt": 1}, {"tick": 135400, "x": -36, "y": 51, "z": 210, "attempt": 2}, {"tick": 139080, "x": -36, "y": 52, "z": 208, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4331,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 24,
+      "bridgeSeconds": 18.4
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2600, "stone_tools": 4740, "iron_ingot": 13060},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 22660, "x": 25, "y": 19, "z": 102, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1700,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 4.8
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 720, "stone_tools": 2820, "iron_ingot": 4960, "iron_pickaxe": 29920, "obsidian": 44571, "portal_lit": 45873},
+      "deaths": [
+        {"tick": 8941, "cause": "Echo was shot by Skeleton", "x": 28, "y": 32, "z": 66, "light": 0, "timeOfDay": 9103, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: hurt and out of food - Climb toward the surface for food: to the wall", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1682,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 8,
+      "bridgeSeconds": 9.8
+    }
+  }
+}

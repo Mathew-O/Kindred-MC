@@ -148,6 +148,7 @@
       "dev.kindred.fabric.NativeFirstDayGameTests",
       "dev.kindred.fabric.NativeFactionNoticesGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
+      "dev.kindred.fabric.NativeFactionScoutHereGameTests",
       "dev.kindred.fabric.NativeFactionBaseSiteGameTests",
       "dev.kindred.fabric.NativeFactionRefusedLogsGameTests",
       "dev.kindred.fabric.NativeFactionHubWalkOutGameTests",
@@ -162,6 +163,8 @@
       "dev.kindred.fabric.NativeFactionShelterGameTests",
       "dev.kindred.fabric.NativeFootingGameTests",
       "dev.kindred.fabric.NativeSeenColumnsGameTests",
+      "dev.kindred.fabric.NativeSeenSiteGameTests",
+      "dev.kindred.fabric.NativePlotGrassGameTests",
       "dev.kindred.fabric.NativeWaterBoxGameTests",
       "dev.kindred.fabric.NativeWaterCutGameTests",
       "dev.kindred.fabric.NativeWaterHillGameTests",
@@ -233,7 +236,8 @@
       "dev.kindred.fabric.NativeGatherTargetGameTests",
       "dev.kindred.fabric.NativeGiftGameTests",
       "dev.kindred.fabric.NativeOutingGameTests",
-      "dev.kindred.fabric.NativeAttentionGameTests"
+      "dev.kindred.fabric.NativeAttentionGameTests",
+      "dev.kindred.fabric.NativePitPocketGameTests"
     ]
   },
   "depends": {
