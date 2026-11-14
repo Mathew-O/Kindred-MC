@@ -1,10 +1,20 @@
 package dev.kindred.fabric;
 
+import dev.kindred.core.ActionArbiter;
+import dev.kindred.core.Companion;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
+import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * A walk to a drop in a pocket of its own pit that no body can get into: the route search spends all of its positions
@@ -50,6 +60,72 @@ public final class NativePitPocketGameTests implements FabricGameTest {
         context.assertTrue(found.expanded() < 50, "The way into the pocket with head room took " + found.expanded() + " positions");
         FixtureGround.restore(context);
         context.complete();
+    }
+
+    /**
+     * The pickup itself (F-22c74): the player in its pit with a stone pickaxe, a drop it keeps (raw iron, as the pit's
+     * cobblestone was for its cabin) lying in the cell under the pocket. The stone over the pocket is opened first, a break it may make, and the walk asked only after.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "pitPocketPickup", tickLimit = 200)
+    public void itsDropUnderThePocketHasItsHeadRoomOpenedFirst(TestContext context) {
+        BlockPos p = stage(context, false);
+        pickup(context, p, Blocks.STONE, task -> task.isPresent() && "native_break".equals(task.get().skill())
+                && p.add(1, 1, 0).equals(position(task.get())) && task.get().label().startsWith("Open the head room over the drop"),
+                "the stone over the pocket broken first");
+    }
+
+    /** The same with bedrock over the pocket: no way in, nor one to be made; set aside, no walk asked. */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "pitPocketBedrock", tickLimit = 200)
+    public void itsDropUnderABedrockPocketIsSetAsideNotWalkedTo(TestContext context) {
+        BlockPos p = stage(context, false);
+        pickup(context, p, Blocks.BEDROCK, task -> task.isEmpty(), "set aside, no walk asked");
+    }
+
+    /** The control: its head room open, the pickup walks to the drop as before. */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "pitPocketPickupOpen", tickLimit = 200)
+    public void itsDropUnderAnOpenPocketIsWalkedTo(TestContext context) {
+        BlockPos p = stage(context, true);
+        pickup(context, p, null, task -> task.isPresent() && "native_goto".equals(task.get().skill())
+                && p.add(1, -1, 0).equals(position(task.get())), "a walk to the drop");
+    }
+
+    private static BlockPos position(PortalRunCampaign.Task task) {
+        try {
+            return new BlockPos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z")));
+        } catch (RuntimeException none) {
+            return null;
+        }
+    }
+
+    private static void pickup(TestContext context, BlockPos p, Block head, java.util.function.Predicate<Optional<PortalRunCampaign.Task>> expected, String what) {
+        var world = context.getWorld();
+        if (head != null) world.setBlockState(p.add(1, 1, 0), head.getDefaultState(), 2);
+        Companion identity = Companion.create(UUID.randomUUID(), UUID.randomUUID(), "Digger", UUID.randomUUID(),
+                world.getRegistryKey().getValue().toString()).withEntityId(UUID.randomUUID());
+        NativePlayerBody body = new NativePlayerBody(world, identity, new Vec3d(p.getX() + 0.5, p.getY(), p.getZ() + 0.5), (lease, intent, target) -> false);
+        body.bind(new ActionArbiter(identity, body));
+        body.connect(Optional.empty(), false);
+        body.entity().getInventory().clear();
+        body.entity().getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+        BlockPos at = p.add(1, -1, 0);
+        var drop = new ItemEntity(world, at.getX() + 0.5, at.getY() + 0.1, at.getZ() + 0.5, new ItemStack(Items.RAW_IRON, 3));
+        drop.setVelocity(Vec3d.ZERO);
+        world.spawnEntity(drop);
+        context.runAtTick(5, () -> {
+            try {
+                // World edits allowed, as on the server whose cabin dug this pit; with them off, no head room is opened.
+                var campaign = new PortalRunCampaign();
+                campaign.policy(dev.kindred.core.EditPolicy.ServerPolicy.deferredD4().withEdits(true));
+                var task = campaign.pickUpLooseForTest(body);
+                KindredMod.LOGGER.info("Pit pocket pickup ({}): {}", what, task.map(t -> t.skill() + " " + t.args() + " [" + t.label() + "]").orElse("none"));
+                context.assertTrue(expected.test(task), "Its drop under the pocket: " + what + ", not " + task.map(t -> t.skill() + " " + t.args() + " [" + t.label() + "]").orElse("none"));
+                drop.discard();
+                FixtureGround.restore(context);
+                context.complete();
+            } finally {
+                body.disconnect();
+            }
+        });
     }
 
     private static NativeNavigator.Path search(TestContext context, BlockPos from, BlockPos target) {
