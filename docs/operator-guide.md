@@ -850,7 +850,9 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    cannot be connected (`aiplayer recover` is the legacy companion's, not a native body's). Settle it first (F-31g1):
    - `aiplayer native settle <name>` settles each action the crash left without an outcome where the evidence is
      plain: the block it was digging still there and what it holds exactly as when it began (not done), or the block
-     gone and what it holds exactly as when it began (done).
+     gone and what it holds exactly as when it began (done). A pillar step (a block put under its feet to climb) is
+     settled not done when its cell is still open and what it holds is exactly as when it began. Its block in the cell
+     cannot be shown to be the step's from the save alone, so that one is yours to choose (F-31g2).
    - Otherwise it shows what it saw and the player stays blocked: choose with `aiplayer native settle <name> done` or
      `... notdone`. After a crash the save is usually from the last autosave, so what it holds often differs, and the
      choice is yours: the block still there, `notdone`; gone, `done`.
@@ -970,6 +972,8 @@ never written. The next start blocks that player; nothing is done again and no i
 3. **Choose from what it shows.**
    - The block named is **still there**: `aiplayer native settle <name> notdone`.
    - It is **gone**: `aiplayer native settle <name> done`.
+   - For a `native_pillar` step, the cell is named: its block **in the cell** under where the player stood, `done`;
+     the cell **open**, `notdone`.
    - The inventory almost always "differs" after a crash: the save is the last autosave's, older than the action. That
      is why it asks you. Either choice writes only the action's outcome; neither makes or removes an item.
    - It answers `Settled Bram's native_break as not done (the console, the operator's choice): <what it saw>`, then

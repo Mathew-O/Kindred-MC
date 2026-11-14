@@ -35,7 +35,8 @@ final class FixtureGround {
 
     private record Kept(BlockPos min, BlockPos max, BlockState[] states) { }
 
-    private static final Map<TestContext, Kept> KEPT = Collections.synchronizedMap(new IdentityHashMap<>());
+    /** Every box each test keeps, in the order kept: a test that keeps two (a pad and a floor) gets both back. */
+    private static final Map<TestContext, java.util.List<Kept>> KEPT = Collections.synchronizedMap(new IdentityHashMap<>());
 
     private FixtureGround() { }
 
@@ -64,8 +65,11 @@ final class FixtureGround {
         for (int x = 0; x < dx; x++) for (int y = 0; y < dy; y++) for (int z = 0; z < dz; z++) {
             states[i++] = world.getBlockState(at.set(min.getX() + x, min.getY() + y, min.getZ() + z));
         }
-        KEPT.put(context, new Kept(min.toImmutable(), max.toImmutable(), states));
-        whenDone(context, () -> restore(context));
+        // A second box kept by the same test once replaced the first, which was then never put back (F-22c75b).
+        var boxes = KEPT.computeIfAbsent(context, c -> Collections.synchronizedList(new java.util.ArrayList<>()));
+        boxes.add(new Kept(min.toImmutable(), max.toImmutable(), states));
+        FixtureBounds.kept(stateOf(context), min, max);
+        if (boxes.size() == 1) whenDone(context, () -> restore(context));
     }
 
     /**
@@ -90,23 +94,61 @@ final class FixtureGround {
 
     /**
      * Every block kept put back, without updates to its neighbours, then everything on the ground but players taken
-     * away: animals, mobs, and the items a container put back scattered.
+     * away: animals, mobs, and the items a container put back scattered. What lies in another test's plot is left as
+     * it is (F-22c75b): the server places the next batch within the tick that ends this one, before this test's own
+     * listeners run, and the tests of a batch run side by side, so a box kept past this test's plot held cells that
+     * are now a neighbour's, its barriers, its ground and its animals among them.
      */
     static void restore(TestContext context) {
-        var kept = KEPT.remove(context);
-        if (kept == null) return;
+        var boxes = KEPT.remove(context);
+        if (boxes == null) return;
         var world = context.getWorld();
-        var min = kept.min();
-        var max = kept.max();
-        int dx = max.getX() - min.getX() + 1, dy = max.getY() - min.getY() + 1, dz = max.getZ() - min.getZ() + 1;
-        var at = new BlockPos.Mutable();
-        int i = 0;
-        for (int x = 0; x < dx; x++) for (int y = 0; y < dy; y++) for (int z = 0; z < dz; z++) {
-            var state = kept.states()[i++];
-            at.set(min.getX() + x, min.getY() + y, min.getZ() + z);
-            if (world.getBlockState(at) != state) world.setBlockState(at, state, Block.NOTIFY_LISTENERS | Block.FORCE_STATE | Block.SKIP_DROPS);
+        var self = stateOf(context);
+        var others = FixtureBounds.othersPlots(self);
+        int left = 0, spared = 0;
+        // The last kept first: a box kept after the fixture laid ground over an earlier one holds that ground, and the
+        // earlier box what was there before it.
+        for (int k = boxes.size() - 1; k >= 0; k--) {
+            var kept = boxes.get(k);
+            var min = kept.min();
+            var max = kept.max();
+            int dx = max.getX() - min.getX() + 1, dy = max.getY() - min.getY() + 1, dz = max.getZ() - min.getZ() + 1;
+            var at = new BlockPos.Mutable();
+            int i = 0;
+            for (int x = 0; x < dx; x++) for (int y = 0; y < dy; y++) for (int z = 0; z < dz; z++) {
+                var state = kept.states()[i++];
+                at.set(min.getX() + x, min.getY() + y, min.getZ() + z);
+                if (world.getBlockState(at) == state) continue;
+                if (within(others, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5)) {
+                    left++;
+                    continue;
+                }
+                world.setBlockState(at, state, Block.NOTIFY_LISTENERS | Block.FORCE_STATE | Block.SKIP_DROPS);
+            }
+            var box = new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 8, max.getZ() + 1);
+            for (Entity entity : world.getEntitiesByClass(Entity.class, box, e -> !(e instanceof PlayerEntity))) {
+                if (within(others, entity.getX(), entity.getY(), entity.getZ())) spared++;
+                else entity.discard();
+            }
         }
-        var box = new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 8, max.getZ() + 1);
-        for (Entity entity : world.getEntitiesByClass(Entity.class, box, e -> !(e instanceof PlayerEntity))) entity.discard();
+        if (left > 0 || spared > 0) {
+            KindredMod.LOGGER.info("{}: its ground put back but {} blocks and {} entities within another test's plot left as they are",
+                    self == null ? "A fixture" : self.getTemplatePath(), left, spared);
+        }
+    }
+
+    private static boolean within(java.util.List<Box> plots, double x, double y, double z) {
+        for (var plot : plots) if (plot.contains(x, y, z)) return true;
+        return false;
+    }
+
+    private static net.minecraft.test.GameTestState stateOf(TestContext context) {
+        try {
+            var field = TestContext.class.getDeclaredField("test");
+            field.setAccessible(true);
+            return (net.minecraft.test.GameTestState) field.get(context);
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            return null;
+        }
     }
 }
