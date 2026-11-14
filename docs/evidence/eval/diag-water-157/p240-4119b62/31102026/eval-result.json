@@ -1,0 +1,55 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 13.16, "tickMsWorst": 7427.48, "tickMsWorstAt": 1, "ticksOver50ms": 905, "ticksOver200ms": 15, "heapMbMax": 1220, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 9720, "stone_tools": 12200, "iron_ingot": 14420, "iron_pickaxe": 23040, "obsidian": 142775},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 100880, "x": 56, "y": 63, "z": 420, "attempt": 1}, {"tick": 106020, "x": 60, "y": 64, "z": 448, "attempt": 2}, {"tick": 125640, "x": 30, "y": 66, "z": 462, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7129,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 4780, "stone_tools": 5280, "iron_ingot": 6920},
+      "deaths": [
+        {"tick": 101463, "cause": "Sol suffocated in a wall", "x": -69, "y": 80, "z": 167, "light": 0, "timeOfDay": 5625, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "Wood: no progress here for a while - make a way elsewhere: bridge -70, 79, 167", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "make a way elsewhere: bridge -70, 79, 167"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29000, "x": 6, "y": 29, "z": 148, "attempt": 1}, {"tick": 45960, "x": 6, "y": 29, "z": 149, "attempt": 2}, {"tick": 56500, "x": 10, "y": 28, "z": 144, "attempt": 1}, {"tick": 101380, "x": -70, "y": 77, "z": 167, "attempt": 1}, {"tick": 125280, "x": 110, "y": 69, "z": 313, "attempt": 1}, {"tick": 128940, "x": 92, "y": 68, "z": 312, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4527,
+      "chunkMinutes": 34675.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 53060, "stone_tools": 54120, "iron_ingot": 60560, "iron_pickaxe": 75280},
+      "deaths": [
+        {"tick": 32162, "cause": "Echo was shot by Skeleton", "x": 134, "y": 60, "z": 171, "light": 0, "timeOfDay": 8324, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "Wood: hurt and out of food - Climb toward the surface for food: clear 134, 62, 171 by hand", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 102210, "cause": "Echo was slain by Zombie", "x": 95, "y": -15, "z": 155, "light": 0, "timeOfDay": 6372, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 123200, "x": 86, "y": 68, "z": 405, "attempt": 1}, {"tick": 128680, "x": 86, "y": 69, "z": 355, "attempt": 2}, {"tick": 132360, "x": 87, "y": 68, "z": 334, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 9816,
+      "chunkMinutes": 34670.4
+    }
+  }
+}

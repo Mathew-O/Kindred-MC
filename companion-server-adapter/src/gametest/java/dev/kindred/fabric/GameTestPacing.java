@@ -54,6 +54,7 @@ public final class GameTestPacing implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        FixtureBounds.install();
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             if (!(server instanceof TestServer)) return;
             server.getPlayerManager().setViewDistance(SIMULATION_DISTANCE);
