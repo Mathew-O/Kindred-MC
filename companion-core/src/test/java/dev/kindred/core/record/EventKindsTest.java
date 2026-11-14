@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
  */
 class EventKindsTest {
     /** The saved values, spelled out: a registry must never change what is already on disk. */
-    private static final Set<String> SAVED = Set.of("action", "action.folded", "journal", "claim", "unclaim", "capture", "death", "match",
+    private static final Set<String> SAVED = Set.of("action", "action.folded", "action.pruned", "journal", "claim", "unclaim", "capture", "death", "match",
             "ledger_check", "faction.create", "faction.invite", "faction.join", "faction.leave", "faction.rank", "faction.wish",
             "faction.home", "faction.colour", "faction.disband", "power.online", "power.loss", "power.set", "account.seen",
             "faction.vulnerable", "faction.secure", "coins", "safe.zone", "market.sale", "market.buy", "market.baseline",

@@ -22,6 +22,11 @@ public final class ActionLedgerView implements Ledger<Map<UUID, ActionLedgerView
     public static final String JOURNAL = "journal";
     /** A settled action's history compacted into its final row (the action fold): not news, its id fresh. */
     public static final String FOLDED = "action.folded";
+    /**
+     * A tally of settled actions pruned past the action bound (F-31b1): for one game day of the fold's clock, how many
+     * were pruned by state and the first and last of them. Not a ledger kind: a pruned action has neither row nor event.
+     */
+    public static final String PRUNED = "action.pruned";
 
     /** Whether an action in {@code state} is settled: verified, failed or cancelled. */
     public static boolean settled(String state) {

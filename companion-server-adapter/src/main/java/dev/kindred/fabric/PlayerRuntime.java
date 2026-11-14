@@ -17710,7 +17710,8 @@ final class PlayerRuntime {
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
                     // three game days compacted on the writer, a batch at a time, never on the tick.
-                    if (agree && running) foldActions(database, System.currentTimeMillis() - ACTION_FOLD_AGE_MS, ACTION_FOLD_PASSES, new long[3]);
+                    // Then the action bound (F-31b1), on the same pass's check: settled history past 30 game days pruned.
+                    if (agree && running) foldActions(database, actions, System.currentTimeMillis(), ACTION_FOLD_PASSES, new long[3]);
                     result.complete(agree);
                 }));
         return result;
@@ -17720,8 +17721,8 @@ final class PlayerRuntime {
      * The action fold's passes (F-31): each a separate job on the writer, so other writes run between them; another
      * while the last took its full share, at most {@code passes}; the totals logged once at the end.
      */
-    private static void foldActions(SqliteCompanionStore database, long olderThanMs, int passes, long[] totals) {
-        database.foldSettledActions(olderThanMs, ACTION_FOLD_MAX).whenComplete((fold, unfolded) -> {
+    private static void foldActions(SqliteCompanionStore database, SqliteCompanionStore.LedgerCheck check, long now, int passes, long[] totals) {
+        database.foldSettledActions(now - ACTION_FOLD_AGE_MS, ACTION_FOLD_MAX).whenComplete((fold, unfolded) -> {
             if (unfolded != null) {
                 KindredMod.LOGGER.warn("Action fold could not run: {}", unfolded.toString());
                 return;
@@ -17730,10 +17731,36 @@ final class PlayerRuntime {
             totals[1] += fold.eventsRemoved();
             totals[2] += fold.millis();
             if (fold.actions() == ACTION_FOLD_MAX && passes > 1) {
-                foldActions(database, olderThanMs, passes - 1, totals);
+                foldActions(database, check, now, passes - 1, totals);
                 return;
             }
             if (totals[0] > 0) KindredMod.LOGGER.info("Kindred action fold: {} settled actions, {} events, folded in {} ms on the writer",
+                    totals[0], totals[1], totals[2]);
+            pruneActions(database, check, now - ACTION_BOUND_AGE_MS, ACTION_FOLD_PASSES, new long[3]);
+        });
+    }
+
+    /** Settled action history is kept this long on the fold's clock, then pruned with a day's tally (F-31b1): 30 game days. */
+    static final long ACTION_BOUND_AGE_MS = 30L * SqliteCompanionStore.GAME_DAY_MS;
+
+    /**
+     * The action bound's passes (F-31b1), after the fold, on the check that let the fold run: each a separate job on the
+     * writer, another while the last took its full share, at most {@code passes}; the totals logged once at the end.
+     */
+    private static void pruneActions(SqliteCompanionStore database, SqliteCompanionStore.LedgerCheck check, long olderThanMs, int passes, long[] totals) {
+        database.pruneSettledActions(check, olderThanMs, ACTION_FOLD_MAX).whenComplete((prune, failed) -> {
+            if (failed != null) {
+                KindredMod.LOGGER.warn("Action bound could not run: {}", failed.toString());
+                return;
+            }
+            totals[0] += prune.actions();
+            totals[1] += prune.days();
+            totals[2] += prune.millis();
+            if (prune.actions() == ACTION_FOLD_MAX && passes > 1) {
+                pruneActions(database, check, olderThanMs, passes - 1, totals);
+                return;
+            }
+            if (totals[0] > 0) KindredMod.LOGGER.info("Kindred action bound: {} settled actions older than 30 game days pruned, {} day tallies, in {} ms on the writer",
                     totals[0], totals[1], totals[2]);
         });
     }
