@@ -55,6 +55,8 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
                     chunks(world, o.add(-8, 0, -8), o.add(AWAY + 10, 0, 8), true);
+                    // Its causeway, laid twenty up past its plot, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-6, -3, -5), o.add(AWAY + 8, 4, 5));
                     // A walled causeway in the open, three blocks of stone thick, the sky over it.
                     for (int x = -6; x <= AWAY + 8; x++) for (int z = -5; z <= 5; z++) {
                         for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
@@ -143,6 +145,8 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
                     chunks(world, o.add(-8, 0, -8), o.add(8, 0, 8), true);
+                    // Its pad, laid twenty up past its plot, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-6, -3, -5), o.add(6, 4, 5));
                     // A walled pad of stone in the open, three blocks thick, the sky over it; no ore anywhere.
                     for (int x = -6; x <= 6; x++) for (int z = -5; z <= 5; z++) {
                         for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
@@ -211,6 +215,8 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
                     chunks(world, o.add(-8, 0, -8), o.add(AWAY + 10, 0, 8), true);
+                    // Its causeway, laid twenty up past its plot, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-6, -3, -5), o.add(AWAY + 8, 4, 5));
                     for (int x = -6; x <= AWAY + 8; x++) for (int z = -5; z <= 5; z++) {
                         for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
                         boolean edge = x == -6 || x == AWAY + 8 || z == -5 || z == 5;
@@ -293,6 +299,8 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
                     chunks(world, o.add(-8, 0, -8), o.add(AWAY + 10, 0, 8), true);
+                    // Its causeway, laid twenty up past its plot, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-6, -3, -5), o.add(AWAY + 8, 4, 5));
                     for (int x = -6; x <= AWAY + 8; x++) for (int z = -5; z <= 5; z++) {
                         for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
                         boolean edge = x == -6 || x == AWAY + 8 || z == -5 || z == 5;
@@ -547,6 +555,9 @@ public final class NativeAtlasGameTests implements FabricGameTest {
                     start[0] = c.add(-10, 0, 8);
                     goal[0] = c.add(26, 0, 8);
                     chunks(world, c.add(-16, 0, -8), c.add(32, 0, 24), true);
+                    // Its floor, laid twenty up past its plot, put back as the test ends, passed or failed (F-22c75b):
+                    // left standing, it lay over the plot of the bring placed after it, which then found no rail line.
+                    FixtureGround.keep(context, c.add(-14, -1, -6), c.add(30, 3, 22));
                     for (int x = -14; x <= 30; x++) for (int z = -6; z <= 22; z++) {
                         world.setBlockState(c.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 3; y++) world.setBlockState(c.add(x, y, z), Blocks.AIR.getDefaultState());

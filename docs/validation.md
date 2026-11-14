@@ -150,7 +150,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c69](evidence/F-22c69.md) (2026-11-12, CI): the build job's limit from 90 to 120 minutes, the suite having outgrown 90; the GameTests' split across jobs to follow.
 - [F-22c70](evidence/F-22c70.md) (2026-11-12, night shelter): no torch in a cell of the way it is making; the staged fixture 0 of 3 before, 9 of 9 after.
 - [F-22c75a](evidence/F-22c75a.md) (2026-11-14, test-only): the kiosk fixture's ground put back as its test ends, passed or failed; the pit test in CI's 13-class layout 0 of 3 before, 3 of 3 after.
-- [F-22c75b](evidence/F-22c75b.md) (2026-11-14, test-only): an audit of the blocks each fixture sets outside its plot, 345 of 818 tests in 102 classes; a restore never writes into another test's plot, where each bring test's wrote 390 cells into the next one's; CI on the PR remaining.
+- [F-22c75b](evidence/F-22c75b.md) (2026-11-14, test-only): an audit of the blocks each fixture sets outside its plot (345 of 818 tests in 102 classes); a restore never writes into another test's plot; a second kept box put back; the atlas fixtures keep their raised ground, whose night floor failed two bring tests placed after it 2 of 2 on main's code, 31 of 31 in 5 runs after; CI on the PR remaining.
 - [F-35h2b](evidence/F-35h2b.md) (2026-11-12, factions at night): at nightfall, not dug in, a faction walk other than DEFEND yields to the goal's dig-in, never for nothing; the staged fixture 0 of 3 before, 3 of 3 after, on its own land; the corpus gate passes; CI on the PR remaining.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)

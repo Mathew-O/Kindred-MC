@@ -22,8 +22,13 @@ public final class FixtureBounds {
     private static final ThreadLocal<GameTestState> CURRENT = new ThreadLocal<>();
     private static final ThreadLocal<int[]> PLACING = ThreadLocal.withInitial(() -> new int[1]);
 
+    /** The boxes each test keeps, put back as it ends: what it sets there is not left behind. */
+    private static final Map<GameTestState, java.util.List<Box>> KEPT = Collections.synchronizedMap(new IdentityHashMap<>());
+
     private static final class Outside {
         final Box plot;
+        /** Of those set outside its plot, how many lie in ground it keeps and puts back as it ends. */
+        int kept;
         /** What it set outside, by block, and how many of those stood above the plot's floor, air apart. */
         final Map<String, Integer> kinds = new TreeMap<>();
         int above;
@@ -46,6 +51,13 @@ public final class FixtureBounds {
     }
 
     /** {@code test} placed by the server: from now until it ends its plot is its own. */
+    /** {@code test} keeps the box from {@code min} to {@code max}, to put back as it ends. */
+    static void kept(GameTestState test, BlockPos min, BlockPos max) {
+        if (test == null) return;
+        KEPT.computeIfAbsent(test, t -> Collections.synchronizedList(new java.util.ArrayList<>()))
+                .add(new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 1, max.getZ() + 1));
+    }
+
     public static GameTestState placed(GameTestState test) {
         if (test != null) LIVE.add(test);
         return test;
@@ -75,13 +87,19 @@ public final class FixtureBounds {
         CURRENT.set(outer);
         if (!test.isCompleted()) return;
         LIVE.remove(test);
+        KEPT.remove(test);
         var outside = OUTSIDE.remove(test);
         if (outside == null) return;
         var plot = outside.plot;
+        if (outside.count == outside.kept) {
+            KindredMod.LOGGER.info("Fixture ground outside its plot: {} set {} blocks, all in ground it keeps", test.getTemplatePath(), outside.count);
+            return;
+        }
         String kinds = outside.kinds.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(8)
                 .map(e -> e.getKey() + " " + e.getValue()).collect(Collectors.joining(", "));
-        KindredMod.LOGGER.warn("Fixture ground outside its plot: {} set {} blocks ({} not air above its floor; {}) from {}, {}, {} to {}, {}, {}; its plot {}, {}, {} to {}, {}, {}",
-                test.getTemplatePath(), outside.count, outside.above, kinds, outside.minX, outside.minY, outside.minZ, outside.maxX, outside.maxY, outside.maxZ,
+        KindredMod.LOGGER.warn("Fixture ground outside its plot: {} set {} blocks, {} in ground it keeps; left: {} not air above its floor; {}; from {}, {}, {} to {}, {}, {}; its plot {}, {}, {} to {}, {}, {}",
+                test.getTemplatePath(), outside.count, outside.kept, outside.above, kinds,
+                outside.minX, outside.minY, outside.minZ, outside.maxX, outside.maxY, outside.maxZ,
                 (int) plot.minX, (int) plot.minY, (int) plot.minZ, (int) plot.maxX - 1, (int) plot.maxY - 1, (int) plot.maxZ - 1);
     }
 
@@ -107,6 +125,17 @@ public final class FixtureBounds {
         if (x >= plot.minX && x < plot.maxX && y >= plot.minY && y < plot.maxY && z >= plot.minZ && z < plot.maxZ) return;
         var outside = OUTSIDE.computeIfAbsent(test, t -> new Outside(plot));
         outside.count++;
+        var boxes = KEPT.get(test);
+        if (boxes != null) {
+            synchronized (boxes) {
+                for (var box : boxes) {
+                    if (box.contains(x + 0.5, y + 0.5, z + 0.5)) {
+                        outside.kept++;
+                        return;
+                    }
+                }
+            }
+        }
         outside.kinds.merge(Registries.BLOCK.getId(state.getBlock()).getPath(), 1, Integer::sum);
         if (!state.isAir() && y > plot.minY) outside.above++;
         outside.minX = Math.min(outside.minX, x); outside.minY = Math.min(outside.minY, y); outside.minZ = Math.min(outside.minZ, z);
