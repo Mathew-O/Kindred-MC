@@ -205,7 +205,8 @@ public final class ReplayGameTests implements FabricGameTest {
      * mobs, at the test's own x and z and the height it was recorded at (64 for a scene with none), the copies left in the
      * test world taken out. Walled round with barrier as the test world walls every test, and roofed, so that the
      * dimension's own lava and mobs beyond the scene stay out as the test world's open ground does. Its chunks are kept
-     * loaded until its test has ended. STAGED as every replay is; nothing is given.
+     * loaded until its test has ended, and the dimension's own ground there is put back then. STAGED as every replay is;
+     * nothing is given.
      */
     private static BlockPos stageIn(net.minecraft.server.world.ServerWorld to, TestContext context, BlockPos testBox, JsonObject state, PlayerRuntime runtime) {
         int w = sizeOf(state, 0, DeathReplays.WIDTH), h = sizeOf(state, 1, DeathReplays.HEIGHT), d = sizeOf(state, 2, DeathReplays.WIDTH);
@@ -218,9 +219,19 @@ public final class ReplayGameTests implements FabricGameTest {
                 to.setChunkForced(cx, cz, true);
                 chunks.add(new net.minecraft.util.math.ChunkPos(cx, cz));
             }
-        FORCED.put(runtime, () -> chunks.forEach(c -> to.setChunkForced(c.x, c.z, false)));
         var shell = new net.minecraft.util.math.Box(at.getX() - 1, at.getY() - 1, at.getZ() - 1, at.getX() + w + 1, at.getY() + h + 1, at.getZ() + d + 1);
         for (var left : to.getOtherEntities(null, shell, e -> !(e instanceof net.minecraft.entity.player.PlayerEntity))) left.discard();
+        // The dimension's own ground under the scene and its walls, put back as its test ends, its mobs taken out: nothing of
+        // the replay is left there for a later one (F-22c75b's audit).
+        BlockPos corner = at.add(-1, 0, -1);
+        var ground = new StructureTemplate();
+        ground.saveFromWorld(to, corner, new Vec3i(w + 2, h + 1, d + 2), false, null);
+        FixtureBounds.kept(testOf(context), corner, corner.add(w + 1, h, d + 1));
+        FORCED.put(runtime, () -> {
+            for (var left : to.getOtherEntities(null, shell, e -> !(e instanceof net.minecraft.entity.player.PlayerEntity))) left.discard();
+            ground.place(to, corner, corner, new net.minecraft.structure.StructurePlacementData(), to.getRandom(), net.minecraft.block.Block.NOTIFY_LISTENERS);
+            chunks.forEach(c -> to.setChunkForced(c.x, c.z, false));
+        });
         var template = new StructureTemplate();
         var test = context.getWorld();
         template.saveFromWorld(test, testBox, new Vec3i(w, h, d), true, null);
