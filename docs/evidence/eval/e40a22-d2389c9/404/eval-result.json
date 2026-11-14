@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 12145, "paid": 12145, "lapsed": 370, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 106.0, "snapshotMicrosMax": 6754.5, "tagMicrosMean": 109.2, "tagMicrosMax": 12069.3, "bySource": {"container.take:furnace": 74, "pickup:class_2248.method_36993": 6876, "pickup:class_3222.method_7329": 4806, "pickup:class_52.method_331": 16, "screen:class_1714": 71, "screen:class_1723": 548, "use:item": 124}, "dropsByOrigin": {"class_1428.method_6007": 106, "class_1540.method_5773": 31, "class_2248.method_36993": 6907, "class_3222.method_7329": 219, "class_52.method_331": 83}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 16.41, "tickMsWorst": 2042.62, "tickMsWorstAt": 47175, "ticksOver50ms": 602, "ticksOver200ms": 11, "heapMbMax": 1048, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 660, "stone_tools": 2460, "iron_ingot": 13300, "iron_pickaxe": 25140, "obsidian": 41572, "portal_lit": 47171},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1394,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 420, "stone_tools": 2060, "iron_ingot": 4640, "iron_pickaxe": 70400, "obsidian": 85273, "portal_lit": 86374},
+      "deaths": [
+        {"tick": 50770, "cause": "Sol suffocated in a wall", "x": 80, "y": 19, "z": -105, "light": 3, "timeOfDay": 2932, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 80, 19, -105", "stance": "PRESS_ON", "habits": "[]", "task": "Dig out of the wall: out from under the falling gravel to 80, 19, -105"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 35520, "x": 95, "y": 17, "z": -104, "attempt": 1}, {"tick": 39920, "x": 89, "y": 17, "z": -113, "attempt": 2}, {"tick": 44300, "x": 93, "y": 17, "z": -112, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6100,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 2.8
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 380, "stone_tools": 1840, "iron_ingot": 4080, "iron_pickaxe": 18320, "obsidian": 58764, "portal_lit": 81006},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 67600, "x": 128, "y": -54, "z": -104, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2834,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

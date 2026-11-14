@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 8.460,
+  "items": {"windows": 7209, "gained": 5412, "paid": 5412, "lapsed": 445, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 106.0, "snapshotMicrosMax": 12183.3, "tagMicrosMean": 113.2, "tagMicrosMax": 6219.7, "bySource": {"container.take:furnace": 96, "pickup:class_1308.method_6099": 1, "pickup:class_1428.method_6007": 5, "pickup:class_2248.method_36993": 3972, "pickup:class_3222.method_7329": 962, "pickup:class_52.method_331": 112, "screen:class_1714": 62, "screen:class_1723": 543, "use:item": 104}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 231, "class_1540.method_5773": 5, "class_2248.method_36993": 3930, "class_3222.method_7329": 142, "class_52.method_331": 143}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 13.99, "tickMsWorst": 775.69, "tickMsWorstAt": 5838, "ticksOver50ms": 478, "ticksOver200ms": 6, "heapMbMax": 1166, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1840, "stone_tools": 3880, "iron_ingot": 5860, "iron_pickaxe": 15800, "obsidian": 35472},
+      "deaths": [
+        {"tick": 36978, "cause": "Kindred burned to death", "x": -97, "y": -54, "z": 42, "light": 14, "timeOfDay": 11547, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: hurt and out of food - Climb toward the surface for food: to the wall", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 48681, "cause": "Kindred was slain by Zombie", "x": -93, "y": 19, "z": 104, "light": 7, "timeOfDay": 10490, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: fight back - Back off from zombie (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 54324, "cause": "Kindred was slain by Drowned", "x": -80, "y": 18, "z": 130, "light": 3, "timeOfDay": 16133, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 45960, "x": -90, "y": 17, "z": 108, "attempt": 1}, {"tick": 112920, "x": -178, "y": 17, "z": 95, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6788,
+      "chunkMinutes": 34665.6,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 6980, "stone_tools": 8460, "iron_ingot": 12180, "iron_pickaxe": 22000},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2052,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 3,
+      "bridgeSeconds": 1.4
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3080, "stone_tools": 4720, "iron_ingot": 10700, "iron_pickaxe": 21380, "obsidian": 68731, "portal_lit": 72002},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 42220, "x": -126, "y": -12, "z": -30, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4875,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
