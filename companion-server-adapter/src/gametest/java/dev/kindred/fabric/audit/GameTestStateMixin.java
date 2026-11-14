@@ -24,9 +24,20 @@ abstract class GameTestStateMixin {
         }
     }
 
-    /** The server's own placing and clearing of the test's area, not the fixture's. */
+    /** The server's own placing and clearing of a test's area, not the fixture's. */
     @WrapMethod(method = "initialize")
     private boolean kindred$placing(Operation<Boolean> original) {
+        FixtureBounds.placing(true);
+        try {
+            return original.call();
+        } finally {
+            FixtureBounds.placing(false);
+        }
+    }
+
+    /** The server placing the next batch's tests, within the tick of the test that ends the batch before. */
+    @WrapMethod(method = "init")
+    private GameTestState kindred$placingNext(Operation<GameTestState> original) {
         FixtureBounds.placing(true);
         try {
             return original.call();
