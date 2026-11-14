@@ -17,17 +17,49 @@ import java.util.HexFormat;
 record InventoryEvidence(ItemStack[] stacks, String description) {
     /** A snapshot of the player's inventory as it is now, with a short fingerprint of it. */
     static InventoryEvidence capture(NativePlayerBody body) {
-        var inventory = body.entity().getInventory();
+        return capture(body.entity().getInventory());
+    }
+
+    /** As above, of an inventory itself (a fixture's player, F-31g1). */
+    static InventoryEvidence capture(net.minecraft.entity.player.PlayerInventory inventory) {
         var stacks = new ItemStack[inventory.size()];
+        for (int i = 0; i < stacks.length; i++) stacks[i] = inventory.getStack(i).copy();
+        return new InventoryEvidence(stacks, describe(stacks));
+    }
+
+    /** A player inventory's size: 36 main slots, 4 armour, the offhand. */
+    static final int SLOTS = 41;
+
+    /**
+     * In plain terms: the same fingerprint {@link #capture} takes of a player's inventory, read from its native save on
+     * disk with no body in the world: what a settlement after a crash compares with an action's before-evidence (F-31g1).
+     *
+     * Technical: the save's {@code Inventory} list read as {@code PlayerInventory.readNbt} reads it ({@code Slot} 0..35 the
+     * main inventory, 100..103 the armour, 150 the offhand, as unsigned bytes), each stack decoded by
+     * {@code ItemStack.fromNbt}, and fingerprinted slot by slot as a live inventory is.
+     */
+    static String describeSave(net.minecraft.nbt.NbtCompound save, net.minecraft.registry.RegistryWrapper.WrapperLookup registries) {
+        var stacks = new ItemStack[SLOTS];
+        java.util.Arrays.fill(stacks, ItemStack.EMPTY);
+        var list = save.getList("Inventory", net.minecraft.nbt.NbtElement.COMPOUND_TYPE);
+        for (int k = 0; k < list.size(); k++) {
+            var tag = list.getCompound(k);
+            int slot = tag.getByte("Slot") & 255;
+            int index = slot < 36 ? slot : slot >= 100 && slot < 104 ? 36 + slot - 100 : slot == 150 ? 40 : -1;
+            if (index >= 0) stacks[index] = ItemStack.fromNbt(registries, tag).orElse(ItemStack.EMPTY);
+        }
+        return describe(stacks);
+    }
+
+    private static String describe(ItemStack[] stacks) {
         try {
             var digest = MessageDigest.getInstance("SHA-256");
             for (int i = 0; i < stacks.length; i++) {
-                var stack = inventory.getStack(i);
-                stacks[i] = stack.copy();
+                var stack = stacks[i];
                 String data = i + ":" + Registries.ITEM.getId(stack.getItem()) + ":" + stack.getCount() + ":" + stack.getComponents() + "\n";
                 digest.update(data.getBytes(StandardCharsets.UTF_8));
             }
-            return new InventoryEvidence(stacks, "native owned inventory slots=" + stacks.length + "; sha256=" + HexFormat.of().formatHex(digest.digest()));
+            return "native owned inventory slots=" + stacks.length + "; sha256=" + HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 

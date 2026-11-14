@@ -128,6 +128,7 @@
       "dev.kindred.fabric.NativeEncounterGameTests",
       "dev.kindred.fabric.NativeMatchGameTests",
       "dev.kindred.fabric.NativeWorldRecordGameTests",
+      "dev.kindred.fabric.NativeSettleGameTests",
       "dev.kindred.fabric.NativeFactionPowerGameTests",
       "dev.kindred.fabric.NativeTerritoryGameTests",
       "dev.kindred.fabric.NativeMobGriefGameTests",

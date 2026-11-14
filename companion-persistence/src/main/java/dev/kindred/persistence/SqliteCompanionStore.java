@@ -677,7 +677,33 @@ public final class SqliteCompanionStore {
     /** Applies one durable state transition; the stored row's state and revision must match. */
     public CompletableFuture<ActionRecord> transitionAction(ActionRecord next, long expectedRevision) {
         Objects.requireNonNull(next);
+        return submit(() -> transaction(() -> applyTransition(next, expectedRevision)));
+    }
+
+    /**
+     * An uncertain action settled after a restart (F-31g1): its outcome written as {@link #transitionAction} writes one,
+     * and in the same transaction {@code settled}, the Record's note of who settled it and what was seen. Only an
+     * UNCERTAIN row may be settled, and only to VERIFIED or FAILED; the stored state and revision are checked here, at the
+     * write, so a row settled or changed meanwhile is refused and nothing is written.
+     */
+    public CompletableFuture<ActionRecord> settleAction(ActionRecord next, long expectedRevision, WorldEvent settled) {
+        Objects.requireNonNull(next);
+        Objects.requireNonNull(settled);
+        if (next.state() != ActionRecord.State.VERIFIED && next.state() != ActionRecord.State.FAILED) {
+            throw new IllegalArgumentException("A settlement is done or not done, never " + next.state());
+        }
         return submit(() -> transaction(() -> {
+            ActionRecord stored = selectAction(next.actionId()).orElseThrow(() -> new IllegalArgumentException("Unknown action " + next.actionId()));
+            if (stored.state() != ActionRecord.State.UNCERTAIN) throw new IllegalStateException("Only an uncertain action is settled, not " + stored.state());
+            ActionRecord written = applyTransition(next, expectedRevision);
+            insertWorldEvent(settled);
+            insertEvent(next.companionId(), Instant.now(), "ACTION_SETTLED", next.kind() + " " + next.actionId() + ": " + next.detail());
+            return written;
+        }));
+    }
+
+    /** One transition's checks and writes, inside the caller's transaction on the ordered writer. */
+    private ActionRecord applyTransition(ActionRecord next, long expectedRevision) throws SQLException {
             ActionRecord stored = selectAction(next.actionId()).orElseThrow(() -> new IllegalArgumentException("Unknown action " + next.actionId()));
             requireRevision(stored.revision(), expectedRevision);
             if (next.revision() != Math.incrementExact(expectedRevision)) throw new IllegalArgumentException("Action revisions advance by one");
@@ -711,8 +737,7 @@ public final class SqliteCompanionStore {
             if (next.state() == ActionRecord.State.UNCERTAIN) {
                 insertEvent(next.companionId(), Instant.now(), "ACTION_UNCERTAIN", next.kind() + " " + next.actionId() + ": " + next.detail());
             }
-            return next;
-        }));
+        return next;
     }
 
     public CompletableFuture<Optional<ActionRecord>> findAction(UUID actionId) {
