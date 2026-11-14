@@ -1,1 +1,2 @@
 branch-1 (9fe4c209): 42 min, peak 2931 MB, 118 required tests failed, fence-top 23, disk 6.1G
+branch-2 (42e2a2a2): 44 min, peak 3474 MB, 109 required tests failed, fence-top 32, disk 6.2G
