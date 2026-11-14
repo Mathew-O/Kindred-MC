@@ -892,6 +892,10 @@ In a faction world:
   2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
   The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
   for a long run; for eight players and a month, see "A month-long run: what grows on disk" below.
+  The same line counts the messages the Wire refused since start, by why and on which channel, for example
+  `Wire 3 refused since start (BUDGET on team 1, DUPLICATE on faction 2)` (F-34e). It never says what a refused message
+  said, who sent it or to whom. A refusal now and then is routine (a channel's minute spent, the same news twice), but a
+  count that keeps climbing on one channel means news players should have had is not going out.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
