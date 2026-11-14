@@ -2422,6 +2422,75 @@ final class PlayerRuntime {
         return java.util.Optional.empty();
     }
 
+    /**
+     * The fire carried out of lava put out by earned means (F-25c6b), or its water taken back up after, or null. Burning
+     * where nothing at its feet burns, no fire resistance, outside the Nether (water boils away there): with a water bucket
+     * it pours water at its feet, the fire out the moment it stands in it; with none, it walks into water in plain sight
+     * within six blocks. Once out, the water it poured is filled back into its bucket. Lava leaves some fifteen seconds of
+     * burning, about fifteen health: out of a lake on six to nine, F-25c6a's escape burned to death on the bank.
+     */
+    private NativeTaskCandidate fireOutCandidate(Entry entry, ServerPlayerEntity player, boolean mayEdit) {
+        var world = player.getServerWorld();
+        long now = server.getTicks();
+        BlockPos feet = player.getBlockPos();
+        if (entry.firePoured != null && (now > entry.firePouredUntil || !world.getFluidState(entry.firePoured).isIn(FluidTags.WATER)
+                || !world.getFluidState(entry.firePoured).isStill())) {
+            entry.firePoured = null;
+        }
+        boolean burning = player.isOnFire() && !player.isInLava() && !player.isTouchingWater() && !isHazardousSituation(player, false)
+                && !player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.FIRE_RESISTANCE) && !world.getDimension().ultrawarm();
+        if (!burning) {
+            // Out: the water it poured, taken back up into its bucket.
+            if (entry.firePoured == null || !player.isOnGround() && !player.isTouchingWater() || !mayEdit
+                    || player.getInventory().count(Items.BUCKET) == 0) return null;
+            BlockPos water = entry.firePoured;
+            if (NativeBucketAction.fillAim(player, water).isEmpty()) return null;
+            return fireOutTask(entry, "fire_refill:" + water.asLong() + ":" + now / 100, 70.0, "native_bucket",
+                    Map.of("x", String.valueOf(water.getX()), "y", String.valueOf(water.getY()), "z", String.valueOf(water.getZ()), "mode", "fill"));
+        }
+        // A water bucket at hand: poured where it stands, onto the ground under it.
+        BlockPos ground = feet.down();
+        if (mayEdit && player.getInventory().count(Items.WATER_BUCKET) > 0 && player.isOnGround()
+                && world.getBlockState(feet).isReplaceable() && world.getFluidState(feet).isEmpty()
+                && !world.getBlockState(ground).getCollisionShape(world, ground).isEmpty()) {
+            entry.firePoured = feet.toImmutable();
+            entry.firePouredUntil = now + 600;
+            return fireOutTask(entry, "fire_pour:" + feet.asLong() + ":" + now / 40, 99.5, "native_bucket",
+                    Map.of("x", String.valueOf(feet.getX()), "y", String.valueOf(feet.getY()), "z", String.valueOf(feet.getZ()), "mode", "pour"));
+        }
+        // Else water in plain sight close by, walked into.
+        Vec3d eye = player.getEyePos();
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (BlockPos cell : BlockPos.iterate(feet.add(-6, -2, -6), feet.add(6, 1, 6))) {
+            double distance = cell.getSquaredDistance(feet);
+            if (distance >= bestDistance || distance > 36 || !world.isChunkLoaded(cell) || !world.getFluidState(cell).isIn(FluidTags.WATER)) continue;
+            if (!world.getBlockState(cell.up()).getCollisionShape(world, cell.up()).isEmpty()) continue;
+            // Seen as a player sees water, by its surface: a clear line to a point on its top, over fluids and past nothing solid.
+            boolean seen = false;
+            for (double dx : new double[]{0, 0.3, -0.3}) for (double dz : new double[]{0, 0.3, -0.3}) {
+                if (seen) break;
+                Vec3d surface = new Vec3d(cell.getX() + 0.5 + dx, cell.getY() + 0.85, cell.getZ() + 0.5 + dz);
+                seen = world.raycast(new net.minecraft.world.RaycastContext(eye, surface, net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
+                        net.minecraft.world.RaycastContext.FluidHandling.NONE, player)).getType() == net.minecraft.util.hit.HitResult.Type.MISS;
+            }
+            if (!seen) continue;
+            best = cell.toImmutable();
+            bestDistance = distance;
+        }
+        if (best == null) return null;
+        return fireOutTask(entry, "fire_water:" + best.asLong() + ":" + now / 40, 99.5, "native_goto",
+                Map.of("x", String.valueOf(best.getX()), "y", String.valueOf(best.getY()), "z", String.valueOf(best.getZ()), "range", "0.5", "partial", "true"));
+    }
+
+    private NativeTaskCandidate fireOutTask(Entry entry, String key, double score, String skill, Map<String, String> arguments) {
+        UUID taskId = UUID.nameUUIDFromBytes((key + ":" + entry.data.id()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        entry.fireOutTaskId = taskId;
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, score,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return new NativeTaskCandidate(candidate, skill, arguments);
+    }
+
     static boolean isHazardousSituation(ServerPlayerEntity player) {
         return isHazardousSituation(player, true);
     }
@@ -3132,6 +3201,12 @@ final class PlayerRuntime {
             var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 100.0,
                     dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
             candidates.add(new NativeTaskCandidate(candidate, "native_clutch", Map.of("slot", String.valueOf(clutchSlot))));
+            return candidates;
+        }
+        // 00b. Burning, out of lava and fire (F-25c6b): put out by what it has earned, before a step aside that puts out nothing.
+        var fireOut = fireOutCandidate(entry, player, mayEdit);
+        if (fireOut != null) {
+            candidates.add(fireOut);
             return candidates;
         }
         // 0. Hit hard by a player (E-41g): defended against, or got away from, before anything but a fall.
@@ -7173,9 +7248,11 @@ final class PlayerRuntime {
         // Burning from a blaze's fireball is no reason to drop the fight with it; standing in fire or lava still is.
         boolean burningInFight = "native_fight".equals(entry.skillId) && body.entity().isOnFire() && !body.entity().isInLava()
                 && !isHazardousSituation(body.entity(), false);
+        // Nor a stop to putting that fire out, its own water poured or walked into (F-25c6b).
+        boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false);
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
-        if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight || creeperThreat && !handlingCreeper || breakFall)
+        if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight && !puttingOut || creeperThreat && !handlingCreeper || breakFall)
                 && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
                 && !escapingWater) {
             entry.hazardInterrupted = true;
@@ -18000,6 +18077,11 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
+        /** The task putting out the fire carried out of lava, let through the hazard abort (F-25c6b). */
+        private UUID fireOutTaskId;
+        /** Water it poured at its feet to put out a fire, and until when it means to take it back up (F-25c6b). */
+        private BlockPos firePoured;
+        private long firePouredUntil;
         /** Walks of its own that found no way, since it came into play: a measure of how often it sets out in vain. */
         private int walksFailed;
         /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
