@@ -1,1 +1,2 @@
 branch-1 (00864c73): 46 min, peak 3322 MB, 113 required tests failed, fence-top 24, disk 5.5G
+branch-2 (00864c73): 45 min, peak 3374 MB, 126 required tests failed, fence-top 38, disk 5.4G
