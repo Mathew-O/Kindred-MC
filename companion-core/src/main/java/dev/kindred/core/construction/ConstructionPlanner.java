@@ -854,6 +854,11 @@ public final class ConstructionPlanner {
     }
 
     private static boolean sealedIn(BuildSite site, Pos stance, Pos placing, Map<Pos, BlockSpec> wanted, Box box) {
+        // Over the build as it will stand: every block still wanted in place (a door still to go a way through all the
+        // same), and the one being placed. Sideways and down through open cells, as before: a drop of any height, or down
+        // its own scaffold, is a way out. Up only as a player goes up on foot: a step of one onto something to stand on,
+        // with head room for the jump. Before, up was any open cell, through the air over a wall; a ring's last gap, two
+        // high, was filled from inside whenever no spot outside reached it, and the player shut in (E-08a1).
         var seen = new HashSet<Pos>();
         var queue = new ArrayDeque<Pos>();
         queue.add(stance);
@@ -862,16 +867,39 @@ public final class ConstructionPlanner {
         while (!queue.isEmpty() && budget-- > 0) {
             Pos at = queue.poll();
             if (!box.inside(at)) return false;
-            for (Face f : Face.values()) {
+            Pos down = at.down();
+            if (openBuilt(site, down, placing, wanted) && seen.add(down)) queue.add(down);
+            boolean standing = floorBuilt(site, down, placing, wanted);
+            for (Face f : SIDES) {
                 Pos next = at.offset(f);
-                if (!seen.add(next) || next.equals(placing)) continue;
-                // A door still to go is a way out all the same.
-                if (wanted.containsKey(next) && !doorway(wanted.get(next)) || wanted.containsKey(next.up()) && !doorway(wanted.get(next.up()))) continue;
-                if (!through(site, next) || !through(site, next.up())) continue;
-                queue.add(next);
+                if (openBuilt(site, next, placing, wanted) && openBuilt(site, next.up(), placing, wanted)) {
+                    if (seen.add(next)) queue.add(next);
+                    continue;
+                }
+                Pos up = next.up();
+                if (standing && floorBuilt(site, next, placing, wanted) && openBuilt(site, up, placing, wanted)
+                        && openBuilt(site, up.up(), placing, wanted) && openBuilt(site, at.add(0, 2, 0), placing, wanted) && seen.add(up)) {
+                    queue.add(up);
+                }
             }
         }
         return true;
+    }
+
+    /** A cell feet or head may pass once built: not the block placed, nor one still wanted but a wooden door. */
+    private static boolean openBuilt(BuildSite site, Pos at, Pos placing, Map<Pos, BlockSpec> wanted) {
+        if (at.equals(placing)) return false;
+        var spec = wanted.get(at);
+        if (spec != null) return doorway(spec);
+        return through(site, at);
+    }
+
+    /** A cell to stand on once built: the block placed, a block still wanted (not a door), or a floor there now. */
+    private static boolean floorBuilt(BuildSite site, Pos at, Pos placing, Map<Pos, BlockSpec> wanted) {
+        if (at.equals(placing)) return true;
+        var spec = wanted.get(at);
+        if (spec != null) return !doorway(spec);
+        return site.cell(at).map(Cell::floor).orElse(false);
     }
 
     /** The build's bounding box, by x and z: inside it a player is among the build. */
