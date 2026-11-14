@@ -2,6 +2,7 @@
 //   ./gradlew :companion-testkit:run                  the self-check demo
 //   ./gradlew :companion-testkit:runPersonalityDemo   how personality changes job choice
 //   ./gradlew :companion-testkit:runMetrics --args=<server log>   scores a play session
+//   ./gradlew :companion-testkit:runRecordAudit --args=<companions.sqlite>   the faction rules over a kept Record
 plugins { id 'application' }
 
 dependencies {
@@ -29,4 +30,10 @@ tasks.register('trainMelee', JavaExec) {
     dependsOn classes
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'dev.kindred.testkit.TrainMelee'
+}
+
+tasks.register('runRecordAudit', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.kindred.testkit.RecordAudit'
 }
