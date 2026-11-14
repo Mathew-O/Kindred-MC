@@ -185,10 +185,10 @@ final class PlayerMemoryStore implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 if (Files.isRegularFile(peersFile(id))) {
-                    return gson.fromJson(Files.readString(peersFile(id), StandardCharsets.UTF_8), dev.kindred.core.social.PeerLedger.Snapshot.class);
+                    return DurableFiles.parse(peersFile(id), gson, dev.kindred.core.social.PeerLedger.Snapshot.class);
                 }
             } catch (IOException | RuntimeException unreadable) {
-                KindredMod.LOGGER.warn("What {} knows of the others could not be read; starting afresh: {}", name, unreadable.toString());
+                LOG.warn("What {} knows of the others could not be read; it starts with none of it, and the file is kept: {}", name, unreadable.toString());
             }
             return null;
         }, io);
@@ -201,7 +201,7 @@ final class PlayerMemoryStore implements AutoCloseable {
             try {
                 json = gson.toJson(snapshot);
             } catch (RuntimeException failed) {
-                KindredMod.LOGGER.warn("What {} knows of the others could not be written: {}", name, failed.toString());
+                LOG.warn("What {} knows of the others could not be written: {}", name, failed.toString());
                 return;
             }
             writeNow(peersFile(id), json, name);
@@ -247,7 +247,7 @@ final class PlayerMemoryStore implements AutoCloseable {
             Path file = storesFile(id);
             if (!Files.isRegularFile(file)) return null;
             try {
-                var read = gson.fromJson(Files.readString(file, StandardCharsets.UTF_8), StoreMemory.class);
+                var read = DurableFiles.parse(file, gson, StoreMemory.class, false);
                 if (read == null) throw new IllegalStateException("empty");
                 var kept = new StoreMemory();
                 kept.player = name;
@@ -317,7 +317,7 @@ final class PlayerMemoryStore implements AutoCloseable {
     /** A file as it stands, or none: one that cannot be read is left for its own read to set aside. On the store's thread only. */
     private <T> T readQuietly(Path file, Class<T> type) {
         try {
-            return Files.isRegularFile(file) ? gson.fromJson(Files.readString(file, StandardCharsets.UTF_8), type) : null;
+            return Files.isRegularFile(file) ? DurableFiles.parse(file, gson, type, false) : null;
         } catch (IOException | RuntimeException unreadable) {
             return null;
         }
@@ -379,7 +379,7 @@ final class PlayerMemoryStore implements AutoCloseable {
             Path file = villagersFile(id);
             if (!Files.isRegularFile(file)) return null;
             try {
-                var read = gson.fromJson(Files.readString(file, StandardCharsets.UTF_8), VillagerMemory.class);
+                var read = DurableFiles.parse(file, gson, VillagerMemory.class, false);
                 if (read == null) throw new IllegalStateException("empty");
                 var kept = new VillagerMemory();
                 kept.player = name;
@@ -469,10 +469,10 @@ final class PlayerMemoryStore implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 if (Files.isRegularFile(rapportFile(id))) {
-                    return gson.fromJson(Files.readString(rapportFile(id), StandardCharsets.UTF_8), dev.kindred.core.social.Rapport.Snapshot.class);
+                    return DurableFiles.parse(rapportFile(id), gson, dev.kindred.core.social.Rapport.Snapshot.class);
                 }
             } catch (IOException | RuntimeException unreadable) {
-                KindredMod.LOGGER.warn("How {} stands with the others could not be read; starting afresh: {}", name, unreadable.toString());
+                LOG.warn("How {} stands with the others could not be read; it starts with none of it, and the file is kept: {}", name, unreadable.toString());
             }
             return null;
         }, io);
@@ -485,7 +485,7 @@ final class PlayerMemoryStore implements AutoCloseable {
             try {
                 json = gson.toJson(snapshot);
             } catch (RuntimeException failed) {
-                KindredMod.LOGGER.warn("How {} stands with the others could not be written: {}", name, failed.toString());
+                LOG.warn("How {} stands with the others could not be written: {}", name, failed.toString());
                 return;
             }
             writeNow(rapportFile(id), json, name);
@@ -497,10 +497,10 @@ final class PlayerMemoryStore implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 if (Files.isRegularFile(atlasFile(id))) {
-                    return gson.fromJson(Files.readString(atlasFile(id), StandardCharsets.UTF_8), dev.kindred.core.atlas.Atlas.Snapshot.class);
+                    return DurableFiles.parse(atlasFile(id), gson, dev.kindred.core.atlas.Atlas.Snapshot.class);
                 }
             } catch (IOException | RuntimeException unreadable) {
-                KindredMod.LOGGER.warn("The atlas of {} could not be read; starting afresh: {}", name, unreadable.toString());
+                LOG.warn("The atlas of {} could not be read; it starts with none of it, and the file is kept: {}", name, unreadable.toString());
             }
             return null;
         }, io);
@@ -513,7 +513,7 @@ final class PlayerMemoryStore implements AutoCloseable {
             try {
                 json = gson.toJson(snapshot);
             } catch (RuntimeException failed) {
-                KindredMod.LOGGER.warn("The atlas of {} could not be written: {}", name, failed.toString());
+                LOG.warn("The atlas of {} could not be written: {}", name, failed.toString());
                 return;
             }
             writeNow(atlasFile(id), json, name);
@@ -524,9 +524,9 @@ final class PlayerMemoryStore implements AutoCloseable {
     CompletableFuture<Work> loadWork(UUID id, String name) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                if (Files.isRegularFile(workFile(id))) return gson.fromJson(Files.readString(workFile(id), StandardCharsets.UTF_8), Work.class);
+                if (Files.isRegularFile(workFile(id))) return DurableFiles.parse(workFile(id), gson, Work.class);
             } catch (IOException | RuntimeException unreadable) {
-                KindredMod.LOGGER.warn("The work of {} could not be read; none taken up: {}", name, unreadable.toString());
+                LOG.warn("The work of {} could not be read; none taken up: {}", name, unreadable.toString());
             }
             return null;
         }, io);
@@ -543,7 +543,7 @@ final class PlayerMemoryStore implements AutoCloseable {
             try {
                 Files.deleteIfExists(workFile(id));
             } catch (IOException failed) {
-                KindredMod.LOGGER.warn("The work of {} could not be cleared: {}", name, failed.toString());
+                LOG.warn("The work of {} could not be cleared: {}", name, failed.toString());
             }
         });
     }
@@ -553,9 +553,9 @@ final class PlayerMemoryStore implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> {
             Bases bases = null;
             try {
-                if (Files.isRegularFile(basesFile(id))) bases = gson.fromJson(Files.readString(basesFile(id), StandardCharsets.UTF_8), Bases.class);
+                if (Files.isRegularFile(basesFile(id))) bases = DurableFiles.parse(basesFile(id), gson, Bases.class);
             } catch (IOException | RuntimeException unreadable) {
-                KindredMod.LOGGER.warn("The bases of {} could not be read; starting afresh: {}", name, unreadable.toString());
+                LOG.warn("The bases of {} could not be read; it starts with none of it, and the file is kept: {}", name, unreadable.toString());
             }
             if (bases == null) bases = new Bases();
             if (bases.built == null) bases.built = new ArrayList<>();
@@ -574,9 +574,9 @@ final class PlayerMemoryStore implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> {
             Memory memory = null;
             try {
-                if (Files.isRegularFile(file(id))) memory = gson.fromJson(Files.readString(file(id), StandardCharsets.UTF_8), Memory.class);
+                if (Files.isRegularFile(file(id))) memory = DurableFiles.parse(file(id), gson, Memory.class);
             } catch (IOException | RuntimeException unreadable) {
-                KindredMod.LOGGER.warn("Memory of {} could not be read; starting afresh: {}", name, unreadable.toString());
+                LOG.warn("Memory of {} could not be read; it starts with none of it, and the file is kept: {}", name, unreadable.toString());
             }
             if (memory == null) memory = new Memory();
             if (memory.flights == null) memory.flights = new ArrayList<>();
@@ -595,19 +595,12 @@ final class PlayerMemoryStore implements AutoCloseable {
         io.execute(() -> writeNow(target, json, player));
     }
 
-    /** On the store's own thread: the file replaced whole, so a crash leaves the last complete one. */
+    /** On the store's own thread: the file replaced whole and on disk, so a crash or a power loss leaves the last complete one. */
     private void writeNow(Path target, String json, String player) {
         try {
-            Files.createDirectories(folder);
-            Path temp = target.resolveSibling(target.getFileName() + ".tmp");
-            Files.writeString(temp, json, StandardCharsets.UTF_8);
-            try {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException plain) {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            DurableFiles.write(target, json); // F-31h: forced to disk, folder and all.
         } catch (IOException failed) {
-            KindredMod.LOGGER.warn("Memory of {} could not be written: {}", player, failed.toString());
+            LOG.warn("Memory of {} could not be written: {}", player, failed.toString());
         }
     }
 

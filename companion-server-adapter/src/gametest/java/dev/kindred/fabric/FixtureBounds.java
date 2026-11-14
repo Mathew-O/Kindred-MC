@@ -20,6 +20,12 @@ import java.util.stream.Collectors;
  */
 public final class FixtureBounds {
     private static final ThreadLocal<GameTestState> CURRENT = new ThreadLocal<>();
+    /** The player whose own placing or breaking is under way, on the server's tick, outside any test's step. */
+    private static final ThreadLocal<net.minecraft.server.network.ServerPlayerEntity> ACTING = new ThreadLocal<>();
+    /** Each test's players, by the test whose step brought them into the world. */
+    private static final Map<java.util.UUID, GameTestState> OWNER = new java.util.concurrent.ConcurrentHashMap<>();
+    /** What a test's players set outside its plot, apart from what its fixture set. */
+    private static final Map<GameTestState, Outside> BY_PLAYERS = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final ThreadLocal<int[]> PLACING = ThreadLocal.withInitial(() -> new int[1]);
 
     /** The boxes each test keeps, put back as it ends: what it sets there is not left behind. */
@@ -51,6 +57,51 @@ public final class FixtureBounds {
     }
 
     /** {@code test} placed by the server: from now until it ends its plot is its own. */
+    /**
+     * Each player that comes into the world is the test's whose plot it comes into, or the nearest placed test's within
+     * sixteen blocks: a test's players are made in its plot, their bodies brought up after the step that asks for them.
+     * One already known keeps its test (a body made again after a death or a restart).
+     */
+    public static void install() {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            if (!(entity instanceof net.minecraft.server.network.ServerPlayerEntity) || OWNER.containsKey(entity.getUuid())) return;
+            var test = CURRENT.get();
+            if (test == null) test = plotOf(entity.getX(), entity.getY(), entity.getZ());
+            if (test != null) OWNER.put(entity.getUuid(), test);
+        });
+    }
+
+    private static GameTestState plotOf(double x, double y, double z) {
+        GameTestState nearest = null;
+        double best = 16 * 16;
+        synchronized (LIVE) {
+            for (var test : LIVE) {
+                if (test.isCompleted()) continue;
+                Box plot;
+                try {
+                    plot = test.getBoundingBox();
+                } catch (RuntimeException unplaced) {
+                    continue;
+                }
+                if (plot.expand(1).contains(x, y, z)) return test;
+                double dx = Math.max(0, Math.max(plot.minX - x, x - plot.maxX)), dz = Math.max(0, Math.max(plot.minZ - z, z - plot.maxZ));
+                double d = dx * dx + dz * dz;
+                if (d < best) {
+                    best = d;
+                    nearest = test;
+                }
+            }
+        }
+        return nearest;
+    }
+
+    /** {@code player}'s own placing or breaking begins ({@code null}: it ends); the one before it, to put back after. */
+    public static net.minecraft.server.network.ServerPlayerEntity acting(net.minecraft.server.network.ServerPlayerEntity player) {
+        var outer = ACTING.get();
+        ACTING.set(player);
+        return outer;
+    }
+
     /** {@code test} keeps the box from {@code min} to {@code max}, to put back as it ends. */
     static void kept(GameTestState test, BlockPos min, BlockPos max) {
         if (test == null) return;
@@ -87,18 +138,24 @@ public final class FixtureBounds {
         CURRENT.set(outer);
         if (!test.isCompleted()) return;
         LIVE.remove(test);
+        var byPlayers = BY_PLAYERS.remove(test);
+        if (byPlayers != null) report(test, byPlayers, "its players");
         KEPT.remove(test);
         var outside = OUTSIDE.remove(test);
         if (outside == null) return;
+        report(test, outside, "it");
+    }
+
+    private static void report(GameTestState test, Outside outside, String who) {
         var plot = outside.plot;
         if (outside.count == outside.kept) {
-            KindredMod.LOGGER.info("Fixture ground outside its plot: {} set {} blocks, all in ground it keeps", test.getTemplatePath(), outside.count);
+            KindredMod.LOGGER.info("Fixture ground outside its plot: {}: {} set {} blocks, all in ground it keeps", test.getTemplatePath(), who, outside.count);
             return;
         }
         String kinds = outside.kinds.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(8)
                 .map(e -> e.getKey() + " " + e.getValue()).collect(Collectors.joining(", "));
-        KindredMod.LOGGER.warn("Fixture ground outside its plot: {} set {} blocks, {} in ground it keeps; left: {} not air above its floor; {}; from {}, {}, {} to {}, {}, {}; its plot {}, {}, {} to {}, {}, {}",
-                test.getTemplatePath(), outside.count, outside.kept, outside.above, kinds,
+        KindredMod.LOGGER.warn("Fixture ground outside its plot: {}: {} set {} blocks, {} in ground it keeps; left: {} not air above its floor; {}; from {}, {}, {} to {}, {}, {}; its plot {}, {}, {} to {}, {}, {}",
+                test.getTemplatePath(), who, outside.count, outside.kept, outside.above, kinds,
                 outside.minX, outside.minY, outside.minZ, outside.maxX, outside.maxY, outside.maxZ,
                 (int) plot.minX, (int) plot.minY, (int) plot.minZ, (int) plot.maxX - 1, (int) plot.maxY - 1, (int) plot.maxZ - 1);
     }
@@ -113,8 +170,16 @@ public final class FixtureBounds {
     }
 
     public static void wrote(BlockPos pos, BlockState state) {
+        if (PLACING.get()[0] > 0) return;
         var test = CURRENT.get();
-        if (test == null || PLACING.get()[0] > 0) return;
+        var into = OUTSIDE;
+        if (test == null) {
+            var player = ACTING.get();
+            if (player == null) return;
+            test = OWNER.get(player.getUuid());
+            if (test == null || test.isCompleted()) return;
+            into = BY_PLAYERS;
+        }
         Box plot;
         try {
             plot = test.getBoundingBox();
@@ -123,7 +188,7 @@ public final class FixtureBounds {
         }
         int x = pos.getX(), y = pos.getY(), z = pos.getZ();
         if (x >= plot.minX && x < plot.maxX && y >= plot.minY && y < plot.maxY && z >= plot.minZ && z < plot.maxZ) return;
-        var outside = OUTSIDE.computeIfAbsent(test, t -> new Outside(plot));
+        var outside = into.computeIfAbsent(test, t -> new Outside(plot));
         outside.count++;
         var boxes = KEPT.get(test);
         if (boxes != null) {
