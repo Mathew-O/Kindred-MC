@@ -67,6 +67,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [F-25c6a: the probe, the two staged escape fixtures (3 of 3 failing before, 3 of 3 passing after) and the corpus gate (0 confirmed)](evidence/F-25c6a.md).
 
+## Replay players acting after their own batch: not reproduced, closed (F-27a1) — 14 November 2026 (`claude/harness-bleed-1114`)
+
+- [F-27a1: 13 full corpus runs since #258 on five trees, all 0; the one sighting predates #258](evidence/F-27a1.md).
+
 ## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
 
 - [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
@@ -147,7 +151,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
 - [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
-- [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs; 2026-11-12, a break's collection that ends with its own drop uncollected says why (pure line test 2 of 2).
+- [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs; 2026-11-12, a break's collection that ends with its own drop uncollected says why (pure line test 2 of 2). 2026-11-14, the arm named by a probe (one failure in 35 runs): the drop born inside the boat's box over the front, pushed out onto the cell's bed; two fixes taken back; open.
 - [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs; the build green on the merged tree; the corpus gate passes, its three flagged scenes cleared by the lead (reasons in the evidence).
 - [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
 - [F-22c68](evidence/F-22c68.md) (2026-11-12, test only): the late toss-cap staging moves the server's tick only forward; from a start in a day's last 30 ticks the old line stops the server ("Backward tick"), the new one passes 3 of 3; NativeTrustGameTests 9 of 9, 3 runs.
@@ -155,6 +159,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c70](evidence/F-22c70.md) (2026-11-12, night shelter): no torch in a cell of the way it is making; the staged fixture 0 of 3 before, 9 of 9 after.
 - [F-22c72](evidence/F-22c72.md) (2026-11-14, night shelter): dug in for the night, no mining step meanwhile from the shelter it dug; the staged fixture 0 of 3 before, 3 of 3 after; 15 night and campaign classes 151 of 151, 3 runs.
 - [F-22c73](evidence/F-22c73.md) (2026-11-14, stranding): refused walks to pick up a drop do not strand it; the staged fixture 0 of 3 before, 18 of 18 with its control after.
+- [F-22c75a](evidence/F-22c75a.md) (2026-11-14, test-only): the kiosk fixture's ground put back as its test ends, passed or failed; the pit test in CI's 13-class layout 0 of 3 before, 3 of 3 after.
 - [F-35h2b](evidence/F-35h2b.md) (2026-11-12, factions at night): at nightfall, not dug in, a faction walk other than DEFEND yields to the goal's dig-in, never for nothing; the staged fixture 0 of 3 before, 3 of 3 after, on its own land; the corpus gate passes; CI on the PR remaining.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)

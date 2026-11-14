@@ -1,0 +1,57 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 12.312,
+  "server": {"tickMsMean": 11.07, "tickMsWorst": 964.69, "tickMsWorstAt": 1, "ticksOver50ms": 1824, "ticksOver200ms": 8, "heapMbMax": 971, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 920, "stone_tools": 1780, "iron_ingot": 19940, "iron_pickaxe": 85760, "obsidian": 102387},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 51420, "x": -256, "y": 25, "z": -124, "attempt": 1}, {"tick": 116780, "x": -461, "y": -46, "z": -216, "attempt": 1}, {"tick": 287160, "x": -501, "y": 68, "z": -392, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8096,
+      "chunkMinutes": 69360.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3120, "stone_tools": 4780, "iron_ingot": 11240, "iron_pickaxe": 21040},
+      "deaths": [
+        {"tick": 238123, "cause": "Sol was shot by Skeleton", "x": -388, "y": 30, "z": -153, "light": 7, "timeOfDay": 5764, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: fight back - Take cover from skeleton (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 54480, "x": -333, "y": 43, "z": 12, "attempt": 1}, {"tick": 77700, "x": -332, "y": 43, "z": -28, "attempt": 2}, {"tick": 82820, "x": -309, "y": 44, "z": -23, "attempt": 3}, {"tick": 103460, "x": -339, "y": 43, "z": -29, "attempt": 1}, {"tick": 107140, "x": -333, "y": 43, "z": -30, "attempt": 2}, {"tick": 218500, "x": -387, "y": 16, "z": -153, "attempt": 1}, {"tick": 257840, "x": -331, "y": 47, "z": -57, "attempt": 1}, {"tick": 263780, "x": -332, "y": 48, "z": -56, "attempt": 2}, {"tick": 281160, "x": -331, "y": 47, "z": -57, "attempt": 3}, {"tick": 285580, "x": -332, "y": 48, "z": -56, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7936,
+      "chunkMinutes": 69355.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1500, "stone_tools": 2420, "iron_ingot": 16480, "iron_pickaxe": 117260, "diamond": 158780, "obsidian": 168340},
+      "deaths": [
+        {"tick": 8116, "cause": "Echo was slain by Zombie", "x": -398, "y": 30, "z": -150, "light": 0, "timeOfDay": 8278, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 195213, "cause": "Echo was blown up by Creeper", "x": -472, "y": 5, "z": -123, "light": 0, "timeOfDay": 10854, "dimension": "minecraft:overworld", "hunger": 5, "underSky": false, "stage": "Obsidian: fight back - Fight creeper (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 196061, "cause": "Echo was slain by Spider", "x": -351, "y": 34, "z": -155, "light": 0, "timeOfDay": 11702, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Interrupted: Climb toward the surface for food: back the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 196978, "cause": "Echo was slain by Spider", "x": -352, "y": 31, "z": -182, "light": 11, "timeOfDay": 12619, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: fight back - Back off from spider", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 30180, "x": -311, "y": 19, "z": -199, "attempt": 1}, {"tick": 35040, "x": -300, "y": 20, "z": -195, "attempt": 2}, {"tick": 50680, "x": -300, "y": 23, "z": -194, "attempt": 3}, {"tick": 57900, "x": -299, "y": 28, "z": -190, "attempt": 4}, {"tick": 175020, "x": -450, "y": -54, "z": -97, "attempt": 1}, {"tick": 181640, "x": -451, "y": -54, "z": -97, "attempt": 2}, {"tick": 188000, "x": -450, "y": -54, "z": -99, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 13320,
+      "chunkMinutes": 69345.6
+    }
+  }
+}

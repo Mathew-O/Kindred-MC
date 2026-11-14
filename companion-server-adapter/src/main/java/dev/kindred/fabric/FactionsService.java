@@ -284,19 +284,19 @@ final class FactionsService {
             dev.kindred.core.factions.Coins.start(ledgers.get().coins(), player, settings, at("")).ifPresent(events::add);
             record.accept(events);
         }
-        online.putIfAbsent(player, new long[] {System.currentTimeMillis(), 0});
+        online.putIfAbsent(player, new long[] {now(), 0});
     }
 
     /** A player left: its online time written. */
     void disconnected(UUID player) {
-        measure(player, System.currentTimeMillis());
+        measure(player, now());
         flushOnline(player);
         online.remove(player);
     }
 
     /** Once a second: each online player's time measured, and written once it reaches five minutes. */
     void tick(Iterable<ServerPlayerEntity> players) {
-        long now = System.currentTimeMillis();
+        long now = now();
         var present = new java.util.HashSet<UUID>();
         for (var player : players) {
             present.add(player.getUuid());
@@ -309,7 +309,7 @@ final class FactionsService {
 
     /** Every online player's time written, as at a stop. */
     void flushAll() {
-        long now = System.currentTimeMillis();
+        long now = now();
         for (UUID player : new ArrayList<>(online.keySet())) {
             measure(player, now);
             flushOnline(player);

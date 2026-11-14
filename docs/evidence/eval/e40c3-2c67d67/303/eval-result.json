@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 17.531,
+  "server": {"tickMsMean": 16.23, "tickMsWorst": 1667.77, "tickMsWorstAt": 147151, "ticksOver50ms": 1056, "ticksOver200ms": 13, "heapMbMax": 1115, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 660, "stone_tools": 1540, "iron_ingot": 12080, "iron_pickaxe": 82420, "obsidian": 143656, "portal_lit": 147149, "nether_entered": 159240},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 39000, "x": 97, "y": 19, "z": -19, "attempt": 1}, {"tick": 43280, "x": 79, "y": 19, "z": -24, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 10687,
+      "chunkMinutes": 69360.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 4080, "stone_tools": 4320, "iron_ingot": 22300, "iron_pickaxe": 80160, "obsidian": 160840, "portal_lit": 169872},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 101860, "x": 115, "y": 98, "z": 273, "attempt": 1}, {"tick": 121120, "x": 106, "y": 96, "z": 275, "attempt": 2}, {"tick": 130840, "x": 119, "y": 100, "z": 260, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8663,
+      "chunkMinutes": 69360.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2880, "stone_tools": 4040, "iron_ingot": 10580, "iron_pickaxe": 32020, "obsidian": 85954, "portal_lit": 89475},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2410,
+      "chunkMinutes": 69360.0
+    }
+  }
+}

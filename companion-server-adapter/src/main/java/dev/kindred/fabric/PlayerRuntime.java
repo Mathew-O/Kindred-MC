@@ -387,6 +387,10 @@ final class PlayerRuntime {
     private final Map<UUID, List<dev.kindred.core.construction.Blueprint>> libraryDesigns = new HashMap<>();
     /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
     private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
+    /** Each running hunt's one issued tracking compass per hunter (M-06k2): replaced only when provably gone. */
+    private final Map<UUID, Map<UUID, UUID>> huntIssued = new HashMap<>();
+    /** The hunts that have ended here: a compass of one is taken back wherever it next turns up (M-06k2). */
+    private final java.util.Set<UUID> huntsOver = new java.util.HashSet<>();
     /** Each builder's own things set aside for its build battle (M-06k3), kept on disk until they are back. */
     private final BuilderHolds builderHolds;
     /** The holds of builders in a battle now, as written: what each gets back at the end. */
@@ -16551,10 +16555,12 @@ final class PlayerRuntime {
         counts.merge("minecraft:dirt", 64, Integer::sum);
         var inventory = player.getInventory();
         int slot = 0;
+        EvalItemSources.enter(player);
         for (var e : counts.entrySet()) {
             var item = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(e.getKey()));
             for (int left = e.getValue(); left > 0 && slot < 36; left -= 64) inventory.setStack(slot++, new ItemStack(item, Math.min(64, left)));
         }
+        EvalItemSources.exit(player, "rule:builder-stock");
     }
 
     /** The blocks standing on a plot, over its floor, by kind: what a voter sees of a build. */
@@ -16899,6 +16905,9 @@ final class PlayerRuntime {
             }
         }
         if (over) {
+            huntsOver.add(match.id());
+            var issued = huntIssued.remove(match.id());
+            if (issued != null) issued.values().forEach(HuntCompass::forget);
             hunts.remove(match.id());
             for (UUID runner : match.runners()) trails.remove(runner);
         }
@@ -16910,6 +16919,13 @@ final class PlayerRuntime {
      * with none (a new one, or one on its feet after a death took it) is handed one.
      */
     private void pollHunts() {
+        // A hunt's compass outlives its hunt only where no player holds it (a chest, the ground): taken back wherever it
+        // next turns up in a player's inventory, cursor or ender chest (M-06k2). Only the hunts this runtime saw end.
+        if (!huntsOver.isEmpty()) {
+            for (var player : server.getPlayerManager().getPlayerList()) {
+                if (HuntCompass.sweep(player, huntsOver) > 0) KindredMod.LOGGER.info("Manhunt: a tracking compass of a hunt now over taken back from {}", player.getName().getString());
+            }
+        }
         for (var match : matches.list()) {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING) continue;
             var runners = new ArrayList<ServerPlayerEntity>();
@@ -16930,8 +16946,17 @@ final class PlayerRuntime {
                                 .map(trail -> trail.get(world)).filter(java.util.Objects::nonNull)
                                 .min(java.util.Comparator.comparingDouble(pos -> pos.getSquaredDistance(hunter.getPos()))).orElse(null));
                 var target = at == null ? java.util.Optional.<net.minecraft.util.math.GlobalPos>empty() : java.util.Optional.of(net.minecraft.util.math.GlobalPos.create(world, at));
-                if (HuntCompass.point(hunter, match.id(), target) > 0) {
-                    KindredMod.LOGGER.info("Manhunt {}: a tracking compass handed to {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(hunterId));
+                HuntCompass.aim(hunter, match.id(), target);
+                // Issued once (M-06k2): the first at the start, another only when the hunter's own is provably gone.
+                var issued = huntIssued.computeIfAbsent(match.id(), id -> new HashMap<>());
+                UUID own = issued.get(hunterId);
+                if (own != null && (HuntCompass.holds(hunter, own) || !HuntCompass.gone(own))) continue;
+                UUID next = UUID.randomUUID();
+                if (HuntCompass.issue(hunter, match.id(), next, target)) {
+                    if (own != null) HuntCompass.forget(own);
+                    issued.put(hunterId, next);
+                    KindredMod.LOGGER.info("Manhunt {}: a tracking compass {} {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                            own == null ? "issued to" : "issued again, its own destroyed, to", playerName(hunterId));
                 }
             }
         }

@@ -1,0 +1,50 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 16.781,
+  "server": {"tickMsMean": 13.92, "tickMsWorst": 1372.24, "tickMsWorstAt": 43668, "ticksOver50ms": 344, "ticksOver200ms": 9, "heapMbMax": 1079, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1140, "stone_tools": 3940, "iron_ingot": 18180, "iron_pickaxe": 52940, "obsidian": 67603, "portal_lit": 84158},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 11020, "x": 271, "y": 67, "z": 17, "attempt": 1}, {"tick": 26580, "x": 284, "y": 10, "z": -1, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5806,
+      "chunkMinutes": 69360.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 220, "stone_tools": 2480, "iron_ingot": 17020, "iron_pickaxe": 46460},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 25900, "x": 300, "y": 3, "z": -60, "attempt": 1}, {"tick": 30440, "x": 301, "y": 3, "z": -60, "attempt": 2}, {"tick": 35000, "x": 320, "y": 3, "z": -60, "attempt": 3}, {"tick": 50680, "x": 236, "y": 28, "z": -83, "attempt": 1}, {"tick": 55180, "x": 236, "y": 28, "z": -84, "attempt": 2}, {"tick": 59500, "x": 258, "y": 26, "z": -86, "attempt": 3}, {"tick": 77400, "x": 239, "y": 56, "z": -64, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3551,
+      "chunkMinutes": 69360.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1480, "stone_tools": 6880, "iron_ingot": 10080, "iron_pickaxe": 19180, "obsidian": 36543, "portal_lit": 43664, "nether_entered": 44460},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 40320, "x": 183, "y": -54, "z": -102, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 20059,
+      "chunkMinutes": 69360.0
+    }
+  }
+}
