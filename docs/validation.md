@@ -13,8 +13,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   committed.
 - **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
   `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
-  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes), each run from an empty corpus world
-  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). A change that
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 40 minutes on a 4-core container), each run from an empty corpus world
+  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). Scenes run up to ten
+  to a batch, sharing difficulty and weather, and only with scenes whose nights fall on the same ticks of their runs
+  under any batch-mate's time, by vanilla's `isNight` (`CorpusGameTests.clockFits`; `tools/corpus/batches.py` lists them). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
   run alone, in a run of its own with no other scene to share its batch's clock, ×3 on the branch and ×3 on main as the
@@ -45,6 +47,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
 - F-35h2, no faction walk out through its own night shelter's seal (Factions 110): [evidence](evidence/F-35h2.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
+- F-35i1, the back-off fixture counts apart a walk whose move was settled as it ran: [evidence](evidence/F-35i1.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
 - F-35j1, a refused faction walk's wait served and open water set aside counted toward the pause (Factions 110): [evidence](evidence/F-35j1.md).
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
@@ -66,6 +69,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 ## Out of the lava with no cell beside it out of the lava (F-25c6a) — 14 November 2026 (`claude/lava-escape-1112`)
 
 - [F-25c6a: the probe, the two staged escape fixtures (3 of 3 failing before, 3 of 3 passing after) and the corpus gate (0 confirmed)](evidence/F-25c6a.md).
+
+## A pillar step cut short once its block is down is recorded for what it did (F-25c6c) — 14 November 2026 (`claude/pillar-reconcile-1114`)
+
+- [F-25c6c: the staged fixture (3 of 3 failing before, 3 of 3 passing after), the 14 pillar fixture classes and the corpus gate (0 confirmed)](evidence/F-25c6c.md).
 
 ## Replay players acting after their own batch: not reproduced, closed (F-27a1) — 14 November 2026 (`claude/harness-bleed-1114`)
 
@@ -161,6 +168,8 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c73](evidence/F-22c73.md) (2026-11-14, stranding): refused walks to pick up a drop do not strand it; the staged fixture 0 of 3 before, 18 of 18 with its control after.
 - [F-22c75a](evidence/F-22c75a.md) (2026-11-14, test-only): the kiosk fixture's ground put back as its test ends, passed or failed; the pit test in CI's 13-class layout 0 of 3 before, 3 of 3 after.
 - [F-35h2b](evidence/F-35h2b.md) (2026-11-12, factions at night): at nightfall, not dug in, a faction walk other than DEFEND yields to the goal's dig-in, never for nothing; the staged fixture 0 of 3 before, 3 of 3 after, on its own land; the corpus gate passes; CI on the PR remaining.
+- [M-06i1](evidence/M-06i.md#the-standing-goal-on-ten-seeds-and-out-of-the-hub-to-wood-2026-11-12-claudem06i1-hub-walk-out-1112) (2026-11-12, factions): out of the hub to wood, a tree it may not cut not walked toward and a home it may not work no explore anchor; the planning fixture 0 of 3 before, 3 of 3 after; the gate passed; the M-06i standing-goal run on ten seeds with it; its seeds-10 re-run mixed (4 → 2 without a wooden tool, 8 → 6 slow, four seeds worse from faction walks before the tool), M-06i1a next.
+- [M-06i1a](evidence/M-06i.md#faction-walks-wait-for-the-first-wooden-tool-m-06i1a-2026-11-14-claudem06i1-hub-walk-out-1112) (2026-11-14, factions): faction walks other than DEFEND wait while the goal is at its Wood stage, the walk kept; held only while the goal has a step it can take; the staged fixture 0 of 3 before, 3 of 3 after; Factions 38 of 38 ×3; the gate passed; seeds-10 on `61469ca1`: no wooden tool 4 → 1, slow 8 → 4, faction walks before the tool 652 → 44.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
