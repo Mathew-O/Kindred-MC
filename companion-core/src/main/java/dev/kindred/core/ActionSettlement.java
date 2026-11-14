@@ -20,11 +20,14 @@ import java.util.regex.Pattern;
 public final class ActionSettlement {
     private ActionSettlement() { }
 
-    /** The one kind settled without an operator. */
+    /** A break, settled from its block and the inventory's fingerprint. */
     public static final String BREAK = "native_break";
+    /** A pillar step, settled by its own rule ({@code NativePillarAction.settleFromEvidence}): not done, or held. */
+    public static final String PILLAR = "native_pillar";
 
     private static final Pattern TARGET = Pattern.compile("^([a-z0-9_.-]+:[a-z0-9_/.-]+) at (-?\\d+), (-?\\d+), (-?\\d+)$");
     private static final Pattern HASH = Pattern.compile("sha256=([0-9a-f]{64})");
+    private static final Pattern PILLAR_CELL = Pattern.compile("^block=([a-z0-9_.-]+:[a-z0-9_/.-]+); pos=(-?\\d+), (-?\\d+), (-?\\d+)(;.*)?$");
 
     /** A block an action meant to change, as its preconditions name it. */
     public record Target(String block, int x, int y, int z) {
@@ -51,6 +54,30 @@ public final class ActionSettlement {
         if (!match.matches()) return Optional.empty();
         return Optional.of(new Target(match.group(1), Integer.parseInt(match.group(2)), Integer.parseInt(match.group(3)),
                 Integer.parseInt(match.group(4))));
+    }
+
+    /**
+     * The cell a {@code native_pillar} step's preconditions name and the block it puts there ({@code block=<id>; pos=x, y,
+     * z; setupRevision=n}), or none for any other text.
+     */
+    public static Optional<Target> pillarCell(String kind, String preconditions) {
+        if (!PILLAR.equals(kind) || preconditions == null) return Optional.empty();
+        var match = PILLAR_CELL.matcher(preconditions.trim());
+        if (!match.matches()) return Optional.empty();
+        return Optional.of(new Target(match.group(1), Integer.parseInt(match.group(2)), Integer.parseInt(match.group(3)),
+                Integer.parseInt(match.group(4))));
+    }
+
+    /**
+     * A break's rule (F-31g1), shared by {@link #decide} and the adapter's {@code NativeBreakAction.settleFromEvidence}: with
+     * the inventory's fingerprint exactly as before the break, not done if its block still stands and done if it is gone;
+     * anything else, or a fingerprint missing on either side, is for an operator.
+     */
+    public static Verdict breakRule(boolean blockPresent, String beforeEvidence, String observedEvidence) {
+        var before = fingerprint(beforeEvidence);
+        var now = fingerprint(observedEvidence);
+        if (before.isEmpty() || now.isEmpty() || !before.get().equals(now.get())) return Verdict.AMBIGUOUS;
+        return blockPresent ? Verdict.NOT_DONE : Verdict.DONE;
     }
 
     /** The inventory fingerprint in an evidence text, or none. */
@@ -87,9 +114,7 @@ public final class ActionSettlement {
         boolean same = before.get().equals(now.get());
         String inventory = same ? "the saved inventory exactly as before the action (sha256=" + now.get() + ")"
                 : "the saved inventory differs from before the action (before sha256=" + before.get() + ", now sha256=" + now.get() + ")";
-        if (present && same) return new Decision(Verdict.NOT_DONE, block + ", still there; " + inventory);
-        if (!present && same) return new Decision(Verdict.DONE, block + ", gone; " + inventory);
-        return new Decision(Verdict.AMBIGUOUS, block + (present ? ", still there; " : ", gone; ") + inventory);
+        return new Decision(breakRule(present, action.beforeEvidence(), observedEvidence), block + (present ? ", still there; " : ", gone; ") + inventory);
     }
 
     /** The action settled as {@code done} or not, with the evidence and who settled it in its note: never a replay. */
