@@ -1,0 +1,43 @@
+[05:59:58] [Server thread/INFO] (Minecraft) Running test batch 'corpus_8:0' (4 tests)...
+[05:59:59] [Server thread/INFO] (Kindred) Corpus scene e40c1-eed2dc5-505-echo-104879 placed at 9821756, -60, 6464066
+[05:59:59] [Server thread/INFO] (Kindred) Corpus scene f29e-on-4h-8675309-echo-81027 placed at 9821889, -60, 6464066
+[06:00:10] [Server thread/INFO] (Minecraft) Running test batch 'corpus_7:0' (10 tests)...
+[06:00:11] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-20261030-kindred-99600 placed at 9822022, -60, 6464066
+[06:00:11] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-505-echo-29000 placed at 9822155, -60, 6464066
+[06:00:11] [Server thread/INFO] (Kindred) Corpus scene factions-110-d5057a4-110-echo-125906 placed at 9821756, -60, 6464202
+[06:00:11] [Server thread/INFO] (Kindred) Corpus scene factions-e40a16seeds-b7b4bec-606-kindred-127222 placed at 9821889, -60, 6464202
+[06:00:11] [Server thread/INFO] (Kindred) Corpus scene f29e-on-303-kindred-103976 placed at 9822022, -60, 6464202
+[06:00:36] [Server thread/INFO] (Minecraft) Running test batch 'corpus_10:0' (2 tests)...
+[06:00:36] [Server thread/INFO] (Kindred) Corpus scene factions-110-d5057a4-110-kindred-250818 placed at 9822155, -60, 6464202
+[06:00:44] [Server thread/INFO] (Minecraft) Running test batch 'corpus_11:0' (2 tests)...
+[06:00:44] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-20261030-kindred-131420 placed at 9821756, -60, 6464338
+[06:00:55] [Server thread/INFO] (Minecraft) Running test batch 'corpus_9:0' (2 tests)...
+[06:00:56] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-20261030-kindred-105620 placed at 9821889, -60, 6464338
+[06:00:59] [Server thread/INFO] (Minecraft) Running test batch 'corpus_0:0' (12 tests)...
+[06:00:59] [Server thread/INFO] (Kindred) Corpus scene e40c1-eed2dc5-101-echo-59004 placed at 9822022, -60, 6464338
+[06:00:59] [Server thread/INFO] (Kindred) Corpus scene diag-factions303-079bdc2-303-kindred-35080 placed at 9822155, -60, 6464338
+[06:00:59] [Server thread/INFO] (Kindred) Corpus scene f29e-on-202-echo-35084 placed at 9821756, -60, 6464474
+[06:00:59] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-404-kindred-59140 placed at 9821889, -60, 6464474
+[06:00:59] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-404-kindred-131200 placed at 9822022, -60, 6464474
+[06:00:59] [Server thread/INFO] (Kindred) Corpus scene f29e-on-1530142077-echo-83228 placed at 9822155, -60, 6464474
+[06:01:27] [Server thread/INFO] (Minecraft) Running test batch 'corpus_2:0' (4 tests)...
+[06:01:27] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-101-sol-107500 placed at 9821756, -60, 6464610
+[06:01:27] [Server thread/INFO] (Kindred) Corpus scene f29e-on-707-sol-11529 placed at 9821889, -60, 6464610
+[06:02:01] [Server thread/INFO] (Minecraft) Running test batch 'corpus_1:0' (4 tests)...
+[06:02:02] [Server thread/INFO] (Kindred) Corpus scene e40a15-dbf4e5c-101-echo-11286 placed at 9822022, -60, 6464610
+[06:02:02] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-8675309-kindred-83380 placed at 9822155, -60, 6464610
+[06:02:24] [Server thread/INFO] (Minecraft) Running test batch 'corpus_4:0' (8 tests)...
+[06:02:24] [Server thread/INFO] (Kindred) Corpus scene e40a14-80b7150-606-echo-71006 placed at 9821756, -60, 6464746
+[06:02:24] [Server thread/INFO] (Kindred) Corpus scene f29e-on-4h-202-sol-95132 placed at 9821889, -60, 6464746
+[06:02:24] [Server thread/INFO] (Kindred) Corpus scene e40c1-eed2dc5-20261030-echo-239135 placed at 9822022, -60, 6464746
+[06:02:24] [Server thread/INFO] (Kindred) Corpus scene f29e-on-779795571-kindred-47186 placed at 9822155, -60, 6464746
+[06:02:35] [Server thread/INFO] (Minecraft) Running test batch 'corpus_3:0' (4 tests)...
+[06:02:35] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-505-kindred-60851 placed at 9821756, -60, 6464882
+[06:02:35] [Server thread/INFO] (Kindred) Corpus scene f29e-on-707-sol-12912 placed at 9821889, -60, 6464882
+[06:02:57] [Server thread/INFO] (Minecraft) Running test batch 'corpus_6:0' (2 tests)...
+[06:02:57] [Server thread/INFO] (Kindred) Corpus scene factions-e40a16seeds-b7b4bec-404-kindred-143470 placed at 9822022, -60, 6464882
+[06:03:07] [Server thread/INFO] (Minecraft) Running test batch 'corpus_5:0' (6 tests)...
+[06:03:07] [Server thread/INFO] (Kindred) Corpus scene e40a15-dbf4e5c-31102026-echo-95216 placed at 9822155, -60, 6464882
+[06:03:08] [Server thread/INFO] (Kindred) Corpus scene e40a20-79a9aad-202-echo-143360 placed at 9821756, -60, 6465018
+[06:03:08] [Server thread/INFO] (Kindred) Corpus scene f29e-on-891567637-kindred-23384 placed at 9821889, -60, 6465018
+[06:04:59] [Server thread/INFO] (Minecraft) ========= 60 GAME TESTS COMPLETE IN 5.029 min ======================
