@@ -1,0 +1,56 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 12.000,
+  "server": {"tickMsMean": 12.39, "tickMsWorst": 1748.29, "tickMsWorstAt": 115178, "ticksOver50ms": 818, "ticksOver200ms": 17, "heapMbMax": 1255, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 3700, "stone_tools": 4240, "iron_ingot": 14740, "iron_pickaxe": 21920},
+      "deaths": [
+        {"tick": 107306, "cause": "Kindred suffocated in a wall", "x": 96, "y": 57, "z": 373, "light": 0, "timeOfDay": 11468, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "Wood: no progress here for a while - dig toward elsewhere: advance", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "dig toward elsewhere: advance"},
+        {"tick": 148238, "cause": "Kindred was shot by Skeleton", "x": 155, "y": 63, "z": 91, "light": 10, "timeOfDay": 4400, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Wood: fight back - Fight skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 182856, "cause": "Kindred was slain by Spider", "x": 58, "y": 62, "z": 116, "light": 3, "timeOfDay": 15018, "dimension": "minecraft:overworld", "hunger": 19, "underSky": true, "stage": "Wood: Get out of the water: to dry ground (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 217869, "cause": "Kindred was killed by Witch using magic", "x": -24, "y": 62, "z": 325, "light": 14, "timeOfDay": 2031, "dimension": "minecraft:overworld", "hunger": 16, "underSky": true, "stage": "Wood: fight back - Back off from witch", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 224607, "cause": "Kindred suffocated in a wall", "x": 130, "y": 51, "z": 147, "light": 15, "timeOfDay": 8769, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: stuck in a wall - Dig out of the wall: out from under the falling sand to 130, 51, 147", "stance": "PRESS_ON", "habits": "[]", "task": "Dig out of the wall: out from under the falling sand to 130, 51, 147"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 99860, "x": 97, "y": 56, "z": 375, "attempt": 1}, {"tick": 107060, "x": 97, "y": 57, "z": 373, "attempt": 2}, {"tick": 172900, "x": 205, "y": 72, "z": 259, "attempt": 1}, {"tick": 176580, "x": 206, "y": 75, "z": 240, "attempt": 2}, {"tick": 180320, "x": 225, "y": 71, "z": 240, "attempt": 3}, {"tick": 244380, "x": -83, "y": 69, "z": 254, "attempt": 1}, {"tick": 248200, "x": -82, "y": 65, "z": 277, "attempt": 2}, {"tick": 251900, "x": -62, "y": 65, "z": 275, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 13587,
+      "chunkMinutes": 69335.9
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 7140, "stone_tools": 9120, "iron_ingot": 12900, "iron_pickaxe": 44300, "obsidian": 65903},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 43420, "x": 158, "y": 13, "z": 232, "attempt": 1}, {"tick": 153800, "x": 207, "y": 72, "z": 258, "attempt": 1}, {"tick": 171540, "x": 210, "y": 73, "z": 242, "attempt": 2}, {"tick": 178780, "x": 102, "y": 64, "z": 361, "attempt": 3}, {"tick": 227720, "x": 4, "y": 66, "z": 253, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 9954,
+      "chunkMinutes": 69360.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 6120, "stone_tools": 8940, "iron_ingot": 24280, "iron_pickaxe": 83860, "obsidian": 109745, "portal_lit": 115132, "nether_entered": 115900},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29740, "x": 98, "y": 22, "z": 284, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 9350,
+      "chunkMinutes": 69360.0
+    }
+  }
+}
