@@ -38,6 +38,9 @@ public final class NativeHouseGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
+                    // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
+                    FixtureGround.keep(context, o.add(-8, 1, -8), o.add(24, 16, 24));
                     for (int x = -8; x <= 24; x++) for (int z = -8; z <= 24; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -117,6 +120,9 @@ public final class NativeHouseGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
+                    // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
+                    FixtureGround.keep(context, o.add(-8, 1, -8), o.add(24, 20, 28));
                     for (int x = -8; x <= 24; x++) for (int z = -8; z <= 28; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -196,6 +202,9 @@ public final class NativeHouseGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
+                    // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
+                    FixtureGround.keep(context, o.add(-8, 1, -8), o.add(28, 20, 32));
                     for (int x = -8; x <= 28; x++) for (int z = -8; z <= 32; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
