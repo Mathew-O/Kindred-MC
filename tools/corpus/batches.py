@@ -119,7 +119,8 @@ def worst(scenes, batch):
 
 
 def from_log(log):
-    """A run's batches as it logged them: {batch name: [scene ids in placement order]}."""
+    """A run's batches as it logged them: {batch name: [scene ids as logged]}. A batch's "placed at" lines can come in
+    another order than its placement (run 4 of the 16cb7a2 re-baseline: corpus_15, corpus_18), so --log compares members."""
     got, cur = {}, None
     for line in log.read_text(encoding="utf-8", errors="replace").splitlines():
         m = re.search(r"Running test batch '(corpus_\d+):\d+'", line)
@@ -141,7 +142,7 @@ def main():
     made = batches(scenes)
     if args.log:
         got = from_log(args.log)
-        wrong = [f"corpus_{n}" for n, b in enumerate(made) if all("timeOfDay" in scenes[i] for i in b) and got.get(f"corpus_{n}") != b]
+        wrong = [f"corpus_{n}" for n, b in enumerate(made) if all("timeOfDay" in scenes[i] for i in b) and sorted(got.get(f"corpus_{n}", [])) != sorted(b)]
         print(f"{len(made)} batches; the log's differ in {len(wrong)}" + (": " + ", ".join(wrong) if wrong else ""))
         sys.exit(1 if wrong else 0)
     for n, b in enumerate(made):
