@@ -1,1 +1,2 @@
 branch-1 (7d5968c4): 46 min, peak 3676 MB, 123 required tests failed, fence-top 32, disk 4.1G
+branch-2 (7d5968c4): 44 min, peak 2936 MB, 119 required tests failed, fence-top 24, disk 4.1G
