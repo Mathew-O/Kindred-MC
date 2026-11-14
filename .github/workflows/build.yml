@@ -30,6 +30,8 @@ jobs:
         run: python3 -m unittest discover -s tools/eval -v
       - name: Test the corpus gate's confirm ref and the scenes' layout
         run: python3 -m unittest discover -s tools/corpus -v
+      - name: Test the restart soak's checks
+        run: python3 -m unittest discover -s tools/soak -v
       - name: Check pinned versions
         run: python3 tools/support-batch-01/support.py manifest
       - name: Check tracker IDs and evidence references
@@ -38,8 +40,10 @@ jobs:
         run: python3 tools/support-batch-01/support.py entrypoints
   build:
     runs-on: ubuntu-latest
-    # The build and the whole native suite: on 2 November the suite outgrew 60 minutes (cut off at about 93%).
-    timeout-minutes: 90
+    # The build and the whole native suite: on 2 November the suite outgrew 60 minutes (cut off at about 93%), and on
+    # 12 November 90 (#263's run cancelled partway through the GameTests; build jobs that day 77 to 88 minutes). This is
+    # the job's wall-clock limit, not a game-side timeout; the suite is to be split across parallel jobs (F-22c69).
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

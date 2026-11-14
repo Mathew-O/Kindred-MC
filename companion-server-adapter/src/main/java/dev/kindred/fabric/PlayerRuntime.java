@@ -387,6 +387,22 @@ final class PlayerRuntime {
     private final Map<UUID, List<dev.kindred.core.construction.Blueprint>> libraryDesigns = new HashMap<>();
     /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
     private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
+    /** Each builder's own things set aside for its build battle (M-06k3), kept on disk until they are back. */
+    private final BuilderHolds builderHolds;
+    /** The holds of builders in a battle now, as written: what each gets back at the end. */
+    private final Map<UUID, net.minecraft.nbt.NbtCompound> builderHold = new HashMap<>();
+    /** Players whose hold is being read back at a join or connect: one restore at a time each. */
+    private final java.util.Set<UUID> holdsRestoring = new java.util.HashSet<>();
+    /** The world each battle's plots and arena were laid out in, to reclaim what creative left there (M-06k3). */
+    private final Map<UUID, net.minecraft.registry.RegistryKey<net.minecraft.world.World>> arenaWorlds = new HashMap<>();
+    /** Each battle's arena as it was before it was laid out (M-06k3a), until it is put back. */
+    private final ArenaSnapshots arenaSnapshots;
+    private final Map<UUID, net.minecraft.nbt.NbtCompound> arenaSnapshot = new HashMap<>();
+    /** When each finished battle's arena is put back: the server tick, the podium shown till then. */
+    private final Map<UUID, Long> arenaRestoreAt = new HashMap<>();
+    /** How long the podium stands before the arena is put back: thirty seconds, announced at the end. */
+    static final int ARENA_SHOWN_TICKS = 600;
+    private int arenaShownTicks = ARENA_SHOWN_TICKS;
     /** Build battles whose building has begun, by match. */
     private final Set<UUID> buildsBegun = new HashSet<>();
     /** Manhunts begun, by match (M-02a). */
@@ -529,6 +545,8 @@ final class PlayerRuntime {
         this.memory.chronicle(id -> chronicle.pages(id)); // F-33: the report reads a player's latest page.
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.recipeStore = new RescueRecipeStore(metadataDirectory);
+        this.builderHolds = new BuilderHolds(metadataDirectory);
+        this.arenaSnapshots = new ArenaSnapshots(metadataDirectory);
         this.rescueBook = recipeStore.load();
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
@@ -853,6 +871,7 @@ final class PlayerRuntime {
                     }));
                     entries.putAll(pendingEntries);
                     ready = true;
+                    restoreLeftoverArenas();
                     edits = loaded.edits();
                     dragonFight = loaded.dragonFight();
                     bases = loaded.bases();
@@ -1046,6 +1065,167 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /** For fixtures: whether a player's ledger is clear and no settlement is under way (F-31g1). */
+    boolean ledgerClearForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry != null && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR && !entry.settling;
+    }
+
+    /** For fixtures: whether a settlement of a player's actions is under way. */
+    boolean settlingForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry != null && entry.settling;
+    }
+
+    /** Ticks a settlement waits for its target's chunk to load before it reads the block as unreadable. */
+    private static final int SETTLE_LOAD_TICKS = 200;
+
+    /**
+     * In plain terms: after a crash, an operator's way back for an AI player stopped by an action whose outcome was never
+     * written (F-31g1). Each such action is settled from what can be seen now: where the evidence is plain (the block it
+     * was digging still there and its things exactly as when it began, or the block gone and its things exactly as when it
+     * began), without more; otherwise the operator chooses, {@code done} or {@code notdone}, having been shown what was
+     * seen. Nothing is done again and no item is made: only the action's outcome is written, with who settled it and the
+     * evidence, in the World Record. Once none is left, the player can be connected and resumed as after any restart.
+     *
+     * Technical: native bodies only, offline, blocked by unresolved action rows; operators only. The unresolved rows are
+     * read on the ordered writer, the native save off the server thread, the target's chunk loaded by a ticket; the
+     * decision is {@link dev.kindred.core.ActionSettlement}'s. At each write the runtime, the entry, its generation, the
+     * operator's authority and the body's absence are checked again on the server thread, and the store checks the row
+     * is still uncertain at its revision, in the same transaction that records the {@code action.settled} event. A
+     * PREPARED or DISPATCHED row (not yet marked uncertain by a start) is refused. Shared tasks held for the player are
+     * released as {@code recover} releases them.
+     */
+    int settleNative(ServerCommandSource source, UUID requestedId, String choice) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        UUID id = requestedId != null ? requestedId : defaultBotId();
+        if (id == null) return reject(source, "Specify an AI player name or UUID. Available: " + availableBotNames());
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeState == null) return reject(source, "Settlement is for native AI players; '/aiplayer recover' is the legacy companion's.");
+        Actor actor = nativeActor(source);
+        if (actor == null || !actor.operator() || !nativeMayControl(source, entry)) return reject(source, "Only an operator may settle an AI player's actions.");
+        Boolean chosen;
+        if (choice == null || choice.isBlank()) chosen = null;
+        else if (choice.equalsIgnoreCase("done")) chosen = true;
+        else if (choice.equalsIgnoreCase("notdone")) chosen = false;
+        else return reject(source, "Settle as 'done' or 'notdone', or give no choice to settle only what the evidence shows.");
+        if (entry.ledgerState != LedgerCheckState.BLOCKED) return reject(source, entry.data.displayName() + " has no action to settle.");
+        if (entry.nativeBody != null || entry.nativePending || entry.settling) return reject(source, entry.data.displayName() + " must be offline and idle to settle.");
+        entry.settling = true;
+        long generation = entry.generation;
+        String by = actor.playerId() == null ? "the console" : playerName(actor.playerId()) + " (" + actor.playerId() + ")";
+        store.unresolvedActions(entry.data.id()).thenCombine(
+                nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), entry.data.entityId()), java.util.Map::entry)
+                .whenComplete((read, failure) -> handBack(() -> {
+                    if (!running || entries.get(id) != entry || entry.generation != generation) { entry.settling = false; return; }
+                    if (failure != null) {
+                        entry.settling = false;
+                        reject(source, "The ledger or the native save could not be read; nothing was settled.");
+                        return;
+                    }
+                    String observed;
+                    try {
+                        observed = read.getValue().map(bytes -> InventoryEvidence.describeSave(bytes.decode(server), server.getRegistryManager())).orElse(null);
+                    } catch (RuntimeException unreadable) {
+                        observed = null;
+                    }
+                    settleEach(source, entry, generation, by, chosen, new java.util.ArrayList<>(read.getKey()), observed, 0, 0, 0);
+                }));
+        return 1;
+    }
+
+    /** Settles the actions left, one at a time, each written before the next is looked at. */
+    private void settleEach(ServerCommandSource source, Entry entry, long generation, String by, Boolean chosen,
+                            java.util.List<dev.kindred.core.ActionRecord> left, String observed, int settled, int waiting, int waited) {
+        if (!running || entries.get(entry.data.id()) != entry || entry.generation != generation) { entry.settling = false; return; }
+        if (left.isEmpty()) { finishSettling(source, entry, settled, waiting); return; }
+        var action = left.get(0);
+        if (action.state() != dev.kindred.core.ActionRecord.State.UNCERTAIN) {
+            entry.settling = false;
+            reject(source, "An action of " + entry.data.displayName() + "'s is " + action.state() + ", not yet marked uncertain by a start; nothing more was settled.");
+            return;
+        }
+        var target = dev.kindred.core.ActionSettlement.target(action.kind(), action.preconditions());
+        String block = null;
+        if (target.isPresent()) {
+            var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(entry.data.dimension())));
+            if (world != null) {
+                var pos = new BlockPos(target.get().x(), target.get().y(), target.get().z());
+                if (!world.isChunkLoaded(pos) && waited < SETTLE_LOAD_TICKS) {
+                    var chunk = new net.minecraft.util.math.ChunkPos(pos);
+                    world.getChunkManager().addTicket(NATIVE_CONNECT, chunk, 1, chunk);
+                    NextTick.run(() -> settleEach(source, entry, generation, by, chosen, left, observed, settled, waiting, waited + 1));
+                    return;
+                }
+                if (world.isChunkLoaded(pos)) block = Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString();
+            }
+        }
+        var decision = dev.kindred.core.ActionSettlement.decide(action, block, observed);
+        Boolean done = switch (decision.verdict()) {
+            case DONE -> true;
+            case NOT_DONE -> false;
+            case AMBIGUOUS -> chosen;
+        };
+        left.remove(0);
+        if (done == null) {
+            feedback(source, entry.data.displayName() + "'s " + action.kind() + " " + action.actionId() + " is not plain from the evidence: "
+                    + decision.evidence() + ". Choose: aiplayer native settle " + entry.data.displayName() + " done|notdone");
+            settleEach(source, entry, generation, by, chosen, left, observed, settled, waiting + 1, 0);
+            return;
+        }
+        boolean operator = decision.verdict() == dev.kindred.core.ActionSettlement.Verdict.AMBIGUOUS;
+        String who = operator ? by + ", the operator's choice" : by + ", from the evidence";
+        var next = dev.kindred.core.ActionSettlement.settled(action, done, decision.evidence(), who);
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("kind", action.kind());
+        data.put("outcome", done ? "done" : "not done");
+        data.put("by", by);
+        data.put("decided", operator ? "operator" : "evidence");
+        data.put("evidence", decision.evidence().length() > 2000 ? decision.evidence().substring(0, 2000) : decision.evidence());
+        var note = dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), worldId.toString(), "action.settled", entry.data.id(),
+                action.actionId().toString(), target.map(dev.kindred.core.ActionSettlement.Target::describe).orElse(""), data);
+        // Checked again at the write: the operator still is one, the body still away, the row still uncertain at its revision.
+        if (nativeActor(source) == null || !nativeActor(source).operator() || entry.nativeBody != null || entry.nativePending) {
+            entry.settling = false;
+            reject(source, "Settlement stopped: authority or the body changed; nothing more was settled.");
+            return;
+        }
+        store.settleAction(next, action.revision(), note).whenComplete((written, failure) -> handBack(() -> {
+            if (failure != null) {
+                entry.settling = false;
+                reject(source, "Settling " + action.actionId() + " was refused (" + failure.getMessage() + "); nothing more was settled.");
+                return;
+            }
+            KindredMod.LOGGER.info("Settled {}'s {} {} as {} ({}): {}", entry.data.displayName(), action.kind(), action.actionId(),
+                    done ? "done" : "not done", who, decision.evidence());
+            feedback(source, "Settled " + entry.data.displayName() + "'s " + action.kind() + " as " + (done ? "done" : "not done") + " (" + who + "): " + decision.evidence());
+            settleEach(source, entry, generation, by, chosen, left, observed, settled + 1, waiting, 0);
+        }));
+    }
+
+    /** Once the actions looked at are written: the player freed when the store holds none unresolved, as at a clear start. */
+    private void finishSettling(ServerCommandSource source, Entry entry, int settled, int waiting) {
+        long generation = entry.generation;
+        store.unresolvedActions(entry.data.id()).whenComplete((left, failure) -> handBack(() -> {
+            entry.settling = false;
+            if (!running || entries.get(entry.data.id()) != entry || entry.generation != generation) return;
+            if (failure != null || left == null || !left.isEmpty()) {
+                feedback(source, entry.data.displayName() + ": " + settled + " settled; " + (failure != null ? "the ledger could not be read again"
+                        : left.size() + " left to settle") + ". It stays blocked.");
+                return;
+            }
+            entry.ledgerState = LedgerCheckState.KNOWN_LEDGER_CLEAR;
+            entry.reconciliationBlocked = false;
+            // As recover does: a shared task held for it through the restart is free again, its reservation released.
+            teamCoordinator.handlePlayerStop(entry.data.id());
+            entry.blocker = "Settled; native body is offline; explicit connect is required.";
+            feedback(source, entry.data.displayName() + ": every action settled (" + settled + "). Connect it, then resume it.");
+        }));
+    }
+
     private Actor nativeActor(ServerCommandSource source) {
         if (source.getEntity() instanceof ServerPlayerEntity player) {
             if (server.getPlayerManager().getPlayer(player.getUuid()) != player) return null;
@@ -1168,6 +1348,8 @@ final class PlayerRuntime {
             body.onGift((from, stack) -> gifted(entry, from, stack));
             body.connect(state, !fresh);
             entry.data = entry.arbiter.snapshot();
+            // A hold left from a build battle it was away for at the end, or one a crash cut short (M-06k3).
+            if (!fresh) restoreHoldOnJoin(body.entity());
             if (fresh) establishNative(source, entry, body, body.saveNow());
             else {
                 entry.nativePending = false;
@@ -1653,6 +1835,20 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_throw_eye", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw)));
     }
 
+    /** The native player's running or last skill, by identity, and its runner's state, for fixtures: {@code [identity, state]}. */
+    String[] nativeTaskForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.runner == null) return new String[] {"", "IDLE"};
+        return new String[] {entry.nativeTask == null ? "" : Integer.toHexString(System.identityHashCode(entry.nativeTask)), entry.runner.state().name()};
+    }
+
+    /** The world identity a native player's claims are keyed by, for fixtures. */
+    UUID nativeWorldIdForTest(UUID id) {
+        requireThread();
+        return entries.get(id).data.worldId();
+    }
+
     /** What the native player's last skill reported (an eye's flight, a block's position), for fixtures. */
     Map<String, String> nativeLastResult(UUID id) {
         requireThread();
@@ -1770,6 +1966,14 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         directions, Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_bridge")) {
+                var direction = net.minecraft.util.math.Direction.byName(arguments.get("dir").trim());
+                if (direction == null) throw new IllegalArgumentException("Unknown bridge direction " + arguments.get("dir"));
+                task = new NativeBridgeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), this::handBack,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        direction, Integer.parseInt(arguments.get("n")), Integer.parseInt(arguments.get("slot")),
+                        NativeBridgeAction.Crouch.of(arguments.get("crouch")));
             } else if (skill.equals("native_clutch")) {
                 task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")));
@@ -2001,12 +2205,13 @@ final class PlayerRuntime {
                     || entry.metadataFault || entry.reconciliationBlocked
                     || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR
                     || entry.snapshot().stopLatched()
-                    || entry.arbiter.cancellationPending() || entry.hazardInterrupted) {
+                    // The body gone meanwhile (a disconnect while the budget loaded): dropped, as any other stale dispatch.
+                    || entry.arbiter == null || entry.arbiter.cancellationPending() || entry.hazardInterrupted) {
                 entry.nativeWorkPending = false;
                 admission.release(id);
                 if (running) dispatchDropped(entry, skill, "generation=" + (entry.generation == generation)
                         + " fault=" + entry.metadataFault + " reconciling=" + entry.reconciliationBlocked + " ledger=" + entry.ledgerState
-                        + " stop=" + entry.snapshot().stopLatched() + " cancelling=" + entry.arbiter.cancellationPending()
+                        + " stop=" + entry.snapshot().stopLatched() + " cancelling=" + (entry.arbiter == null ? "no body" : entry.arbiter.cancellationPending())
                         + " hazard=" + entry.hazardInterrupted);
                 return;
             }
@@ -2322,7 +2527,8 @@ final class PlayerRuntime {
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_bed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SLEEP
                         || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId)) && (intent == NativePlayerBody.Intent.PLACE
+                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId))
+                        && (intent == NativePlayerBody.Intent.PLACE
                         || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pearl".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -2491,13 +2697,43 @@ final class PlayerRuntime {
     private void primeWorkstationCaches(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         var world = player.getServerWorld();
-        BlockPos center = BlockPos.ofFloored(player.getEyePos());
+        Vec3d eye = player.getEyePos();
         if (entry.cachedCraftingTablePos == null) {
-            entry.cachedCraftingTablePos = locateWorkstationBlock(world, center, Blocks.CRAFTING_TABLE, 4.5);
+            entry.cachedCraftingTablePos = workstationInReach(world, eye, Blocks.CRAFTING_TABLE, 4.5);
         }
         if (entry.cachedFurnacePos == null) {
-            entry.cachedFurnacePos = locateWorkstationBlock(world, center, Blocks.FURNACE, 4.5);
+            entry.cachedFurnacePos = workstationInReach(world, eye, Blocks.FURNACE, 4.5);
         }
+    }
+
+    /**
+     * The nearest block of {@code block} whose middle is within {@code reach} of the eye: reach as the player's own use of
+     * it is measured ({@link NativePlayerBody#planCraft}, the campaign's walk to a table). Measured instead from the block
+     * the eye is in, a table at a diagonal 4.0 from the eye was out of reach here and in reach to the goal: the goal asked
+     * for the craft, the dispatch dropped it as no longer executable, and the goal, with the table in reach, never walked
+     * nearer (CI on #261: a golden helmet never made from five ingots).
+     */
+    static BlockPos workstationInReach(ServerWorld world, Vec3d eye, net.minecraft.block.Block block, double reach) {
+        BlockPos center = BlockPos.ofFloored(eye);
+        int radius = (int) Math.ceil(reach);
+        int vertical = Math.min(radius, 3) + 1;
+        BlockPos best = null;
+        double bestDistSq = reach * reach;
+        for (int dy = -vertical; dy <= vertical; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = center.add(dx, dy, dz);
+                    double distSq = eye.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                    if (distSq > bestDistSq) continue;
+                    if (!world.isChunkLoaded(pos)) continue;
+                    if (world.getBlockState(pos).isOf(block)) {
+                        bestDistSq = distSq;
+                        best = pos.toImmutable();
+                    }
+                }
+            }
+        }
+        return best;
     }
 
     private static BlockPos locateWorkstationBlock(ServerWorld world, BlockPos center, net.minecraft.block.Block block, double reach) {
@@ -2696,6 +2932,7 @@ final class PlayerRuntime {
         recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
+        if (!arenaRestoreAt.isEmpty()) restoreArenasDue();
         if (tick % 20 == 17) pollBuildBattles();
         if (tick % 100 == 41) pollGroupPace();
         races.keySet().removeIf(id -> matches.get(id).isEmpty());
@@ -4653,6 +4890,7 @@ final class PlayerRuntime {
                     entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
                 }
             }
+            if ("native_bridge".equals(task.skill())) entry.campaign.bridgeEnded(completed ? Map.of() : entry.runner.lastProgress());
             entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
@@ -6946,6 +7184,7 @@ final class PlayerRuntime {
             reconcileExpeditionArrival(entry);
             if (server.getTicks() % 10 == 0) {
                 keepStores(entry);
+                keepVillagers(entry);
                 noteChestUse(entry, body.entity());
                 storageAskLapsed(entry);
             }
@@ -8091,6 +8330,7 @@ final class PlayerRuntime {
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.tradeTaskId) && entry.tradeVillager != null) {
             entry.villagerVisitAt.put(entry.tradeVillager, (long) server.getTicks() + 1200);
+            entry.villagersDirty = true;
             entry.routineRefreshPending = true;
         }
         // Tidied, or nothing to tidy: its chest is let be a while, not looked over again at once.
@@ -8144,6 +8384,15 @@ final class PlayerRuntime {
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
                     + (label.isEmpty() ? "" : " [" + label + "]"));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
+            if ("native_bridge".equals(entry.skillId) && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED)) {
+                var report = entry.runner.lastProgress();
+                try {
+                    runObserver.bridged(entry.data.displayName(), Long.parseLong(report.getOrDefault("blocks", "0")),
+                            Long.parseLong(report.getOrDefault("ticks", "0")));
+                } catch (NumberFormatException unreported) {
+                    // A run that ended before it reported (a refusal at its start) bridged nothing.
+                }
+            }
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
@@ -8185,7 +8434,7 @@ final class PlayerRuntime {
                             + (finishedLease != null ? " (action " + finishedLease.actionId() + ")" : ""), observed);
                 }
                 if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId)
-                        || "native_stair".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
+                        || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
                     entry.cachedCraftingTablePos = null;
                     entry.cachedFurnacePos = null;
                     primeWorkstationCaches(entry, entry.nativeBody);
@@ -9664,6 +9913,10 @@ final class PlayerRuntime {
         // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
         // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
         if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
+        // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
+        // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
+        // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && nightYield(entry, play, player, tick)) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9700,6 +9953,25 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /**
+     * Whether a faction walk waits this decision for the goal's dig-in for the night (F-35h2b): only at night, with a goal
+     * running, while the campaign may still shelter (not yet dug in, a part-dug shelter included), and never for nothing. The night's first
+     * decision yields once, so that the campaign is asked; after that only while the campaign's step was a dig-in for the
+     * night. Where it could not dig, the walk goes on at the next decision: a yield costs at most one.
+     */
+    private boolean nightYield(Entry entry, FactionsPlayer play, ServerPlayerEntity player, long tick) {
+        var campaign = entry.campaign;
+        if (campaign == null || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE || !campaign.wouldShelterForTheNight(player)) {
+            play.nightYieldAt = Long.MIN_VALUE;
+            return false;
+        }
+        if (play.nightYieldAt == Long.MIN_VALUE) {
+            play.nightYieldAt = tick;
+            return true;
+        }
+        return campaign.progress().contains(PortalRunCampaign.SHELTER_FOR_THE_NIGHT);
     }
 
     /** Whether the way toward a faction walk's end {@code to} is open water the player saw (F-35j); a dry answer kept a second for the same end. */
@@ -10040,6 +10312,15 @@ final class PlayerRuntime {
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
         var body = entry.nativeBody.entity();
         return entry.factionPlay.paused(server.getTicks(), body.getBlockPos(), FactionsPlayer.atSurface(body));
+    }
+
+    /** For fixtures: its faction walk staged as already chosen, {@code move}, and not weighed again till its interval is out. */
+    void factionMoveSetForTest(UUID player, dev.kindred.core.factions.FactionPlay.Choice move) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return;
+        entry.factionPlay.move = move;
+        entry.factionPlay.decidedAt = server.getTicks();
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
@@ -10410,6 +10691,111 @@ final class PlayerRuntime {
     private record Villager(dev.kindred.core.guide.Trades.Profession profession, int level, List<dev.kindred.core.guide.Trades.Offer> offers,
                             long seenAt) { }
 
+    /**
+     * F-30d3: what it knows of the villagers, kept across a restart as it holds it in memory: each it has looked at, its
+     * offers as seen; each it lets be, with what is left of the wait; each it has told of once. Read back once a start off
+     * the thread, ages and waits set against the server's ticks then, so each wait ends when it would have (down time does
+     * not count, as the server's ticks do not); what it has seen or decided since the start is newer and is kept over it.
+     * Written after a look or a trade, otherwise at most every ten seconds after a change, once a minute while it knows
+     * any, and at the stop; before its file has been read back, merged with it on the store's thread, so that neither is lost. With no file nothing is added: a fresh start is as
+     * before. A villager whose offers do not make sense is left out.
+     */
+    private void keepVillagers(Entry entry) {
+        if (!entry.villagersRead) {
+            if (entry.villagersReading) return;
+            entry.villagersReading = true;
+            UUID id = entry.data.id();
+            memories.loadVillagers(id, entry.data.displayName()).whenComplete((read, failure) -> handBack(() -> {
+                entry.villagersReading = false;
+                if (!running || entries.get(id) != entry || entry.villagersRead) return;
+                entry.villagersRead = true;
+                if (failure != null || read == null) return;
+                long now = server.getTicks();
+                int seen = 0;
+                for (var each : read.seen) {
+                    Villager back;
+                    try {
+                        var offers = new ArrayList<dev.kindred.core.guide.Trades.Offer>();
+                        for (var offer : each.offers()) offers.add(offerOf(offer));
+                        back = new Villager(dev.kindred.core.guide.Trades.Profession.valueOf(each.profession()), each.level(), List.copyOf(offers), now - each.age());
+                    } catch (RuntimeException nonsense) {
+                        KindredMod.LOGGER.warn("{}: a villager it looked at before the restart is left out: {}", entry.data.displayName(), nonsense.toString());
+                        continue;
+                    }
+                    if (entry.villagers.putIfAbsent(UUID.fromString(each.villager()), back) == null) seen++;
+                }
+                int waits = 0, told = 0;
+                for (var each : read.waits) if (entry.villagerVisitAt.putIfAbsent(UUID.fromString(each.villager()), now + each.left()) == null) waits++;
+                for (var each : read.told) if (entry.villagersTold.add(UUID.fromString(each))) told++;
+                // Only what it did not know already: a file it wrote itself before this read (merged) adds nothing.
+                if (seen + waits + told > 0) {
+                    entry.routineRefreshPending = true;
+                    KindredMod.LOGGER.info("{} remembers {} villager(s) it looked at, {} it lets be and {} it told of, from before the restart",
+                            entry.data.displayName(), seen, waits, told);
+                }
+            }));
+            return;
+        }
+        long since = server.getTicks() - entry.villagersSavedAt;
+        boolean known = !entry.villagers.isEmpty() || !entry.villagerVisitAt.isEmpty() || !entry.villagersTold.isEmpty();
+        if (entry.villagersDirty && since >= 200 || known && since >= 1200) saveVillagers(entry);
+    }
+
+    /** What it knows of the villagers, written as it is now; before its file has been read back, merged with it. */
+    private void saveVillagers(Entry entry) {
+        entry.villagersDirty = false;
+        long now = server.getTicks();
+        entry.villagersSavedAt = now;
+        var out = new PlayerMemoryStore.VillagerMemory();
+        out.player = entry.data.displayName();
+        for (var each : entry.villagers.entrySet()) {
+            var villager = each.getValue();
+            var offers = new ArrayList<PlayerMemoryStore.OfferSeen>();
+            for (var offer : villager.offers()) offers.add(seenOf(offer));
+            out.seen.add(new PlayerMemoryStore.VillagerSeen(each.getKey().toString(), villager.profession().name(), villager.level(), offers,
+                    Math.max(0, now - villager.seenAt())));
+        }
+        for (var each : entry.villagerVisitAt.entrySet()) {
+            if (each.getValue() > now) out.waits.add(new PlayerMemoryStore.VillagerWait(each.getKey().toString(), each.getValue() - now));
+        }
+        for (UUID each : entry.villagersTold) out.told.add(each.toString());
+        // Before the file is read back, written merged with it, after that read on the store's thread: nothing lost either way.
+        if (entry.villagersRead) memories.saveVillagers(entry.data.id(), out);
+        else memories.saveVillagersMerging(entry.data.id(), out);
+    }
+
+    private static PlayerMemoryStore.OfferSeen seenOf(dev.kindred.core.guide.Trades.Offer offer) {
+        var enchants = new ArrayList<PlayerMemoryStore.EnchantSeen>();
+        for (var each : offer.enchants()) enchants.add(new PlayerMemoryStore.EnchantSeen(each.id(), each.level()));
+        return new PlayerMemoryStore.OfferSeen(goodsSeen(offer.first()), offer.second() == null ? null : goodsSeen(offer.second()),
+                goodsSeen(offer.result()), enchants, offer.uses(), offer.maxUses());
+    }
+
+    private static PlayerMemoryStore.GoodsSeen goodsSeen(dev.kindred.core.guide.Trades.Goods goods) {
+        return new PlayerMemoryStore.GoodsSeen(goods.item(), goods.count());
+    }
+
+    /** An offer kept back as Trades' own, which checks it; one that does not make sense throws. */
+    private static dev.kindred.core.guide.Trades.Offer offerOf(PlayerMemoryStore.OfferSeen seen) {
+        var enchants = new ArrayList<dev.kindred.core.guide.Trades.Enchant>();
+        for (var each : seen.enchants() == null ? List.<PlayerMemoryStore.EnchantSeen>of() : seen.enchants()) {
+            enchants.add(new dev.kindred.core.guide.Trades.Enchant(each.id(), each.level()));
+        }
+        return new dev.kindred.core.guide.Trades.Offer(goodsOf(seen.first()), seen.second() == null ? null : goodsOf(seen.second()),
+                goodsOf(seen.result()), enchants, seen.uses(), seen.maxUses());
+    }
+
+    private static dev.kindred.core.guide.Trades.Goods goodsOf(PlayerMemoryStore.GoodsSeen seen) {
+        return new dev.kindred.core.guide.Trades.Goods(seen.item(), seen.count());
+    }
+
+    /** Fixtures: whether what it knows of the villagers has been read back from its file this start. */
+    boolean villagersReadForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry != null && entry.villagersRead;
+    }
+
     /** How near a villager it has not looked at must be to be looked at in passing; and one worth trading with, to go to. */
     static final int LOOK_RANGE = 16, TRADE_RANGE = 48;
     /** A villager with nothing worth trading is let be until it has restocked: half a day. */
@@ -10448,6 +10834,7 @@ final class PlayerRuntime {
             if (unseen && (distance > LOOK_RANGE * LOOK_RANGE || !player.canSee(villager))) continue;
             if (!unseen && dev.kindred.core.guide.Trades.plan(known.offers(), holding, emeralds).empty()) {
                 entry.villagerVisitAt.put(villager.getUuid(), now + RESTOCK);
+                entry.villagersDirty = true;
                 continue;
             }
             if (distance < nearest) {
@@ -10481,6 +10868,15 @@ final class PlayerRuntime {
      * cannot yet pay for told of once; each villager let be a while after.
      */
     private void tradeEnded(Entry entry, NativeTradeAction trade, SkillRunner.State state) {
+        try {
+            tradeEndedNow(entry, trade, state);
+        } finally {
+            entry.villagersDirty = true;
+            saveVillagers(entry); // F-30d3: a look or a trade is kept at once.
+        }
+    }
+
+    private void tradeEndedNow(Entry entry, NativeTradeAction trade, SkillRunner.State state) {
         long now = server.getTicks();
         UUID id = trade.villager();
         entry.routineRefreshPending = true;
@@ -11795,7 +12191,7 @@ final class PlayerRuntime {
         var task = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         // Sticks take no table.
-        if (!recipe.equals("stick") && locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (!recipe.equals("stick") && workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 16);
             if (table == null) {
                 noteBring(entry, "No crafting table near to make " + recipe.replace('_', ' ') + " at");
@@ -12433,7 +12829,7 @@ final class PlayerRuntime {
      * its age then, so it fades as it would have (down time does not count, as the server's ticks do not); what it has
      * seen, looked into or changed since the start is newer and is kept over it. Written when it sees someone new or
      * looks, and otherwise at most every ten seconds while something changed, once a minute while it knows anything, and
-     * at the stop; never before its file has been read back. With no file nothing is added: a fresh start is as before.
+     * at the stop; before its file has been read back, merged with it on the store's thread, so that neither is lost. With no file nothing is added: a fresh start is as before.
      */
     private void keepStores(Entry entry) {
         if (!entry.storesRead) {
@@ -12470,9 +12866,8 @@ final class PlayerRuntime {
         if (changed && since >= 200 || known && since >= 1200) saveStores(entry);
     }
 
-    /** What it knows of its stores, written as it is now with its ages; nothing before its file has been read back. */
+    /** What it knows of its stores, written as it is now with its ages; before its file has been read back, merged with it. */
     private void saveStores(Entry entry) {
-        if (!entry.storesRead) return;
         entry.seenAtStoresDirty = false;
         long now = server.getTicks();
         entry.storesSavedAt = now;
@@ -12490,7 +12885,9 @@ final class PlayerRuntime {
             out.stores.add(new PlayerMemoryStore.StoreCount(place.world(), place.x(), place.y(), place.z(), store.whose().name(),
                     new java.util.TreeMap<>(store.counts()), Math.max(0, now - store.seenAt())));
         }
-        memories.saveStores(entry.data.id(), out);
+        // Before the file is read back, written merged with it, after that read on the store's thread: nothing lost either way.
+        if (entry.storesRead) memories.saveStores(entry.data.id(), out);
+        else memories.saveStoresMerging(entry.data.id(), out);
     }
 
     /** Fixtures: who it saw at its stores, as "name at x, y, z, teammate or not, ticks ago"; empty for no such player. */
@@ -13006,7 +13403,7 @@ final class PlayerRuntime {
             entry.kitNamesAt = now + 2400;
             return null;
         }
-        if (locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 12);
             if (table == null) {
                 entry.kitNamesAt = now + 2400;
@@ -14941,6 +15338,7 @@ final class PlayerRuntime {
     }
 
     void stop() {
+        if (store != null) store.stopChecks(); // F-31f: a check under way is stopped at once and reports nothing.
         requireThread();
         ready = false;
         // The stop barrier first: whatever stop() itself waits on (the store's last writes) may hand callbacks back on
@@ -14964,15 +15362,22 @@ final class PlayerRuntime {
         racePace.clear();
         raceGoal.clear();
         // A build battle's creative mode goes with it: blocks cleared, game modes back, before anything is saved.
-        for (var builder : new ArrayList<>(modeBefore.entrySet())) {
-            var player = server.getPlayerManager().getPlayer(builder.getKey());
-            if (player == null) continue;
-            Entry builderEntry = entryForPlayer(builder.getKey());
-            if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(false);
-            player.getInventory().clear();
-            player.changeGameMode(builder.getValue());
+        // Each builder online gets its own things back from its hold (M-06k3); one away gets them at its next join.
+        for (var held : new ArrayList<>(builderHold.entrySet())) {
+            var player = server.getPlayerManager().getPlayer(held.getKey());
+            if (player != null) restoreBuilder(player, held.getValue(), true);
         }
+        builderHold.clear();
         modeBefore.clear();
+        builderHolds.close();
+        // Every arena not yet put back, put back now where its ground is loaded; the rest at the next start (M-06k3a).
+        for (UUID match : new ArrayList<>(arenaSnapshot.keySet())) {
+            if (!restoreArena(match, true)) KindredMod.LOGGER.info("Build battle {}: the arena is put back at the next start", dev.kindred.core.match.MatchRegistry.shortId(match));
+            ArenaSnapshots.open(match);
+        }
+        arenaSnapshot.clear();
+        arenaRestoreAt.clear();
+        arenaSnapshots.close();
         // A hunt's compasses go with the hunt (D6).
         for (var match : matches.list()) {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT) continue;
@@ -15004,13 +15409,19 @@ final class PlayerRuntime {
             // F-30d2 and F-30d2a: with the ages as at the stop; nothing if it knows nothing, or its file was never read back.
             if (entry.seenAtStoresDirty || entry.storage.revision() != entry.storesSavedRevision
                     || !entry.seenAtStores.isEmpty() || !entry.storage.stores().isEmpty()) saveStores(entry);
+            // F-30d3: with the waits as at the stop; nothing if it knows of none, or its file was never read back.
+            if (entry.villagersDirty || !entry.villagers.isEmpty() || !entry.villagerVisitAt.isEmpty() || !entry.villagersTold.isEmpty()) saveVillagers(entry);
         }
-        memories.close();
+        // F-31e: the memory files' last writes, waited for after the Record's, under the same bound; the time logged.
+        long memoryClosing = System.nanoTime();
+        CompletableFuture<Void> memoryWrites = memories.closeAsync().whenComplete((ignored, failure) -> KindredMod.LOGGER.info(
+                "Kindred memory files written at the stop in {} ms", (System.nanoTime() - memoryClosing) / 1_000_000));
         recipeStore.saveIfChanged(rescueBook);
         recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
-                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).handle((ignored, failure) -> null);
+                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).thenCompose(ignored -> memoryWrites)
+                .handle((ignored, failure) -> null);
         shutdown = writes.thenCompose(ignored -> startup.handle((loaded, failure) ->
                 loaded == null ? CompletableFuture.<Void>completedFuture(null) : loaded.store().closeAsync())
                 .thenCompose(future -> future));
@@ -15577,6 +15988,8 @@ final class PlayerRuntime {
     /** A player joining the server is told the world's mode and its rules, where one is chosen. */
     void playerJoined(ServerPlayerEntity player) {
         requireThread();
+        // A person's builder hold at its join (M-06k3); an AI player's is restored as its body connects.
+        if (ready && running && entryForPlayer(player.getUuid()) == null) restoreHoldOnJoin(player);
         if (!ready || worldMode == null || entryForPlayer(player.getUuid()) != null) return;
         player.sendMessage(Text.literal("This world plays " + worldMode.label + ".").formatted(net.minecraft.util.Formatting.GOLD), false);
         tellRules(player, dev.kindred.core.match.GameModes.rules(worldMode));
@@ -15783,6 +16196,10 @@ final class PlayerRuntime {
         }
         var result = matches.proposeBuild(builders, buildTicks);
         if (!result.accepted()) return reject(source, result.reason());
+        // M-06k3a: everything the battle will change, noted before anything is: the plots to build height, the arena and
+        // the podium's places. Put back once the podium has been shown, at a stop, or at the next start after a crash.
+        var arenaBox = arenaBox(plots, dev.kindred.core.match.BuildArena.around(plots));
+        var before = ArenaSnapshots.capture(world, arenaBox);
         // The plots, marked out: white concrete, a grey edge, plants cleared off them.
         for (var plot : plots) {
             var o = plot.origin();
@@ -15802,6 +16219,14 @@ final class PlayerRuntime {
         }
         var match = enter(result.match().orElseThrow());
         arenas.put(match.id(), arena);
+        arenaWorlds.put(match.id(), world.getRegistryKey());
+        arenaSnapshot.put(match.id(), before);
+        ArenaSnapshots.close(match.id(), world.getRegistryKey(), arenaBox);
+        UUID snapshotOf = match.id();
+        arenaSnapshots.write(snapshotOf, before).whenComplete((done, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("Build battle {}: the arena's snapshot could not be written; a crash before its restore leaves it standing",
+                    dev.kindred.core.match.MatchRegistry.shortId(snapshotOf), failure);
+        });
         var round = new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots);
         battles.put(match.id(), round);
         // Reference designs for the theme: schematics the operator put in the library whose names name it and that fit a
@@ -15836,38 +16261,236 @@ final class PlayerRuntime {
     private void startBuilding(dev.kindred.core.match.MatchRegistry.Match match) {
         var battle = battles.get(match.id());
         if (battle == null) return;
-        int seconds = matches.limit(match.id()) / 20;
         for (UUID builder : match.joined()) {
             var player = server.getPlayerManager().getPlayer(builder);
             if (player == null) continue;
-            modeBefore.putIfAbsent(builder, player.interactionManager.getGameMode());
-            Entry builderEntry = entryForPlayer(builder);
-            if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
-            player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
-            presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
-                    + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60), dev.kindred.core.match.MatchPresentation.Cue.START));
-            Entry entry = entryForPlayer(builder);
-            var plot = battle.plot(builder).orElse(null);
-            if (entry == null || plot == null) continue;
-            var random = new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits());
-            // A reference design from the library for the theme where there is one (M-05), credited; else its own design.
-            var library = libraryDesigns.getOrDefault(match.id(), List.of());
-            var design = library.isEmpty() ? dev.kindred.core.match.BuildBattle.design(battle.theme(), random) : library.get(random.nextInt(library.size()));
-            if (!library.isEmpty()) {
-                String credit = "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + ": " + playerName(builder) + " builds '"
-                        + design.name() + "' from the schematic library, " + SchematicLibrary.credit(design);
-                KindredMod.LOGGER.info(credit);
-                for (UUID invited : match.invited()) {
-                    var other = server.getPlayerManager().getPlayer(invited);
-                    if (other != null && entryForPlayer(invited) == null) other.sendMessage(Text.literal(credit), false);
+            // M-06k3: its own things and game mode set aside on disk before anything of theirs is touched; a builder in
+            // twice keeps its first hold. Creative and the stock only once the hold is written.
+            if (builderHold.containsKey(builder)) { beginBuilding(match, builder); continue; }
+            var hold = BuilderHolds.capture(player);
+            builderHold.put(builder, hold);
+            builderHolds.write(builder, hold).whenComplete((wrote, failure) -> handBack(() -> {
+                if (!running) return;
+                if (failure != null) {
+                    builderHold.remove(builder);
+                    KindredMod.LOGGER.error("Build battle {}: {}'s things could not be set aside; it does not build", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                            playerName(builder), failure);
+                    return;
+                }
+                var now = matches.list().stream().filter(m -> m.id().equals(match.id())).findFirst().orElse(null);
+                if (now == null || now.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING || !now.playing(builder)) return;
+                beginBuilding(now, builder);
+            }));
+        }
+    }
+
+    /** One builder into its battle, its own things already set aside: cleared, creative, an AI builder stocked. */
+    private void beginBuilding(dev.kindred.core.match.MatchRegistry.Match match, UUID builder) {
+        var battle = battles.get(match.id());
+        var player = server.getPlayerManager().getPlayer(builder);
+        if (battle == null || player == null) return;
+        int seconds = matches.limit(match.id()) / 20;
+        modeBefore.putIfAbsent(builder, player.interactionManager.getGameMode());
+        player.getInventory().clear();
+        player.getEnderChestInventory().clear();
+        Entry builderEntry = entryForPlayer(builder);
+        if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
+        player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
+        ArenaSnapshots.building(builder, true);
+        presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
+                + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60), dev.kindred.core.match.MatchPresentation.Cue.START));
+        Entry entry = entryForPlayer(builder);
+        var plot = battle.plot(builder).orElse(null);
+        if (entry == null || plot == null) return;
+        var random = new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits());
+        // A reference design from the library for the theme where there is one (M-05), credited; else its own design.
+        var library = libraryDesigns.getOrDefault(match.id(), List.of());
+        var design = library.isEmpty() ? dev.kindred.core.match.BuildBattle.design(battle.theme(), random) : library.get(random.nextInt(library.size()));
+        if (!library.isEmpty()) {
+            String credit = "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + ": " + playerName(builder) + " builds '"
+                    + design.name() + "' from the schematic library, " + SchematicLibrary.credit(design);
+            KindredMod.LOGGER.info(credit);
+            for (UUID invited : match.invited()) {
+                var other = server.getPlayerManager().getPlayer(invited);
+                if (other != null && entryForPlayer(invited) == null) other.sendMessage(Text.literal(credit), false);
+            }
+        }
+        var site = plot.site(design);
+        stockFor(player, design);
+        startBuild(server.getCommandSource(), entry.data.id(), design, new BlockPos(site.x(), site.y(), site.z()), 0);
+        KindredMod.LOGGER.info("Build battle {}: {} builds {} at {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
+                design.name(), site);
+    }
+
+    /**
+     * A builder out of its battle given back exactly its own things and game mode (M-06k3): everything creative made or
+     * the match gave cleared, the hold put back, the player saved, then the hold forgotten. Online players only; one away
+     * gets it back when it next joins.
+     */
+    private void restoreBuilder(ServerPlayerEntity player, net.minecraft.nbt.NbtCompound hold, boolean waitForDelete) {
+        UUID id = player.getUuid();
+        ArenaSnapshots.building(id, false);
+        Entry entry = entryForPlayer(id);
+        if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
+        var mode = BuilderHolds.restore(player, hold);
+        if (entry != null && entry.nativeBody != null) {
+            entry.nativeBody.allowCreative(false);
+            entry.nativeBody.allowAdventure(false);
+        }
+        player.changeGameMode(mode);
+        if (entry != null && entry.nativeBody != null) persistNativeSaveReceipt(entry);
+        else ((dev.kindred.fabric.mixin.PlayerManagerSaveInvoker) server.getPlayerManager()).kindred$saveNativePlayer(player);
+        if (waitForDelete) builderHolds.deleteNow(id);
+        else builderHolds.delete(id).whenComplete((done, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("A builder's hold could not be deleted; it is restored again at the next login", failure);
+        });
+        KindredMod.LOGGER.info("Build battle: {} given back its own things and {} mode", player.getName().getString(), mode.asString());
+    }
+
+    /**
+     * A battle over (M-06k3): every container on its plots and in its arena emptied and every item lying there discarded,
+     * so nothing creative made leaves Builder. The builds themselves stand for the podium.
+     */
+    private void reclaimArena(dev.kindred.core.match.MatchRegistry.Match match) {
+        var battle = battles.get(match.id());
+        var key = arenaWorlds.remove(match.id());
+        var world = key == null ? null : server.getWorld(key);
+        if (battle == null || world == null) return;
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        var corners = new ArrayList<dev.kindred.core.construction.Pos>();
+        for (var plot : battle.plots()) {
+            var o = plot.origin();
+            corners.add(o);
+            corners.add(new dev.kindred.core.construction.Pos(o.x() + dev.kindred.core.match.BuildBattle.PLOT - 1, o.y() + 24, o.z() + dev.kindred.core.match.BuildBattle.PLOT - 1));
+        }
+        var arena = arenas.get(match.id());
+        if (arena != null) corners.addAll(arena.blocks().keySet());
+        for (var c : corners) {
+            minX = Math.min(minX, c.x()); minY = Math.min(minY, c.y()); minZ = Math.min(minZ, c.z());
+            maxX = Math.max(maxX, c.x()); maxY = Math.max(maxY, c.y() + 8); maxZ = Math.max(maxZ, c.z());
+        }
+        if (corners.isEmpty()) return;
+        int emptied = 0, discarded = 0;
+        for (int cx = minX >> 4; cx <= maxX >> 4; cx++) for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
+            if (!world.isChunkLoaded(cx, cz)) continue;
+            for (var blockEntity : new ArrayList<>(world.getChunk(cx, cz).getBlockEntities().values())) {
+                var at = blockEntity.getPos();
+                if (at.getX() < minX || at.getX() > maxX || at.getY() < minY || at.getY() > maxY || at.getZ() < minZ || at.getZ() > maxZ) continue;
+                if (blockEntity instanceof net.minecraft.inventory.Inventory inventory && !inventory.isEmpty()) {
+                    inventory.clear();
+                    blockEntity.markDirty();
+                    emptied++;
                 }
             }
-            var site = plot.site(design);
-            stockFor(player, design);
-            startBuild(server.getCommandSource(), entry.data.id(), design, new BlockPos(site.x(), site.y(), site.z()), 0);
-            KindredMod.LOGGER.info("Build battle {}: {} builds {} at {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
-                    design.name(), site);
         }
+        var box = new net.minecraft.util.math.Box(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
+        for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box, e -> true)) {
+            item.discard();
+            discarded++;
+        }
+        if (emptied > 0 || discarded > 0) {
+            KindredMod.LOGGER.info("Build battle {}: {} containers emptied and {} items lying about cleared from the arena", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                    emptied, discarded);
+        }
+    }
+
+    /** The box a battle changes: its plots to 32 over their floors, the arena, and the podium's places and signs. */
+    private static net.minecraft.util.math.BlockBox arenaBox(List<dev.kindred.core.match.BuildBattle.Plot> plots, dev.kindred.core.match.BuildArena arena) {
+        var points = new ArrayList<dev.kindred.core.construction.Pos>();
+        for (var plot : plots) {
+            var o = plot.origin();
+            points.add(o);
+            points.add(new dev.kindred.core.construction.Pos(o.x() + dev.kindred.core.match.BuildBattle.PLOT - 1, o.y() + 32, o.z() + dev.kindred.core.match.BuildBattle.PLOT - 1));
+        }
+        points.addAll(arena.blocks().keySet());
+        points.addAll(arena.podiumBlocks(3).keySet());
+        points.addAll(arena.podium());
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (var p : points) {
+            minX = Math.min(minX, p.x()); minY = Math.min(minY, p.y()); minZ = Math.min(minZ, p.z());
+            maxX = Math.max(maxX, p.x()); maxY = Math.max(maxY, p.y() + 2); maxZ = Math.max(maxZ, p.z());
+        }
+        return new net.minecraft.util.math.BlockBox(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    /** Each finished battle whose podium has been shown long enough: its arena put back (M-06k3a). */
+    private void restoreArenasDue() {
+        long now = server.getTicks();
+        for (var due : new ArrayList<>(arenaRestoreAt.entrySet())) {
+            if (due.getValue() > now) continue;
+            if (restoreArena(due.getKey(), false)) arenaRestoreAt.remove(due.getKey());
+        }
+    }
+
+    /**
+     * A battle's arena put back as it was, dropping nothing, its containers emptied and items cleared first (M-06k3a).
+     * False when its chunks are not all loaded yet: they are asked for, and it is tried again next time.
+     */
+    private boolean restoreArena(UUID match, boolean atStop) {
+        var snapshot = arenaSnapshot.get(match);
+        if (snapshot == null) { ArenaSnapshots.open(match); return true; }
+        var world = server.getWorld(ArenaSnapshots.world(snapshot));
+        if (world == null) return true;
+        if (!ArenaSnapshots.loaded(world, snapshot)) {
+            if (atStop) return false;
+            var box = ArenaSnapshots.box(snapshot);
+            for (int cx = box.getMinX() >> 4; cx <= box.getMaxX() >> 4; cx++) for (int cz = box.getMinZ() >> 4; cz <= box.getMaxZ() >> 4; cz++) {
+                var chunk = new net.minecraft.util.math.ChunkPos(cx, cz);
+                world.getChunkManager().addTicket(NATIVE_CONNECT, chunk, 1, chunk);
+            }
+            return false;
+        }
+        int changed = ArenaSnapshots.restore(world, snapshot);
+        arenaSnapshot.remove(match);
+        ArenaSnapshots.open(match);
+        arenaSnapshots.markRestored(match);
+        KindredMod.LOGGER.info("Build battle {}: the arena put back as it was ({} blocks)", dev.kindred.core.match.MatchRegistry.shortId(match), changed);
+        for (var player : world.getPlayers()) {
+            if (ArenaSnapshots.box(snapshot).contains(player.getBlockPos())) player.sendMessage(Text.literal("The arena is cleared.").formatted(net.minecraft.util.Formatting.GOLD), false);
+        }
+        return true;
+    }
+
+    /** At the start: an arena a crash left standing, put back as soon as its ground is loaded (M-06k3a). */
+    private void restoreLeftoverArenas() {
+        arenaSnapshots.readAll().whenComplete((left, failure) -> handBack(() -> {
+            if (!running || failure != null || left == null) {
+                if (failure != null) KindredMod.LOGGER.error("Arena snapshots could not be read at the start", failure);
+                return;
+            }
+            for (var each : left.entrySet()) {
+                if (arenaSnapshot.containsKey(each.getKey())) continue;
+                arenaSnapshot.put(each.getKey(), each.getValue());
+                ArenaSnapshots.close(each.getKey(), ArenaSnapshots.world(each.getValue()), ArenaSnapshots.box(each.getValue()));
+                arenaRestoreAt.put(each.getKey(), (long) server.getTicks());
+                KindredMod.LOGGER.info("Build battle {}: a crash left its arena standing; it is put back now", dev.kindred.core.match.MatchRegistry.shortId(each.getKey()));
+            }
+        }));
+    }
+
+    /** For fixtures: the podium's time before the arena is put back, in ticks. */
+    void arenaShownTicksForTest(int ticks) { requireThread(); arenaShownTicks = ticks; }
+
+    /** For fixtures: whether a battle's arena is still waiting to be put back. */
+    boolean arenaPendingForTest(UUID match) { requireThread(); return arenaSnapshot.containsKey(match); }
+
+    /** For fixtures: whether a battle's restored arena's snapshot still waits for a whole save. */
+    boolean arenaAwaitingSaveForTest(UUID match) { requireThread(); return arenaSnapshots.awaitingSave(match); }
+
+    /** A player joining with a hold left from a battle it was away for at the end, or one a crash cut short (M-06k3). */
+    private void restoreHoldOnJoin(ServerPlayerEntity player) {
+        UUID id = player.getUuid();
+        if (builderHold.containsKey(id) || !holdsRestoring.add(id)) return;
+        builderHolds.read(id).whenComplete((hold, failure) -> handBack(() -> {
+            holdsRestoring.remove(id);
+            if (!running || failure != null || hold == null || hold.isEmpty() || builderHold.containsKey(id)) {
+                if (failure != null) KindredMod.LOGGER.error("{}'s builder hold could not be read; it stays for an operator", player.getName().getString(), failure);
+                return;
+            }
+            var now = server.getPlayerManager().getPlayer(id);
+            if (now == null || now.isDisconnected()) return;
+            restoreBuilder(now, hold.get(), false);
+        }));
     }
 
     /** An AI builder's inventory filled with what its design takes, and scaffolding: free in creative, in Builder only. */
@@ -15962,19 +16585,16 @@ final class PlayerRuntime {
         boolean over = match.state() == dev.kindred.core.match.MatchRegistry.State.ENDED;
         for (UUID builder : match.invited()) {
             if (!over && match.playing(builder)) continue;
-            var mode = modeBefore.remove(builder);
-            if (mode == null) continue;
+            modeBefore.remove(builder);
+            ArenaSnapshots.building(builder, false);
+            var hold = builderHold.remove(builder);
+            if (hold == null) continue;
+            // Away at the end: its hold stays on disk, and it gets its own things back when it next joins (M-06k3).
             var player = server.getPlayerManager().getPlayer(builder);
             if (player == null) continue;
-            Entry entry = entryForPlayer(builder);
-            if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            if (entry != null && entry.nativeBody != null) {
-                entry.nativeBody.allowCreative(false);
-                entry.nativeBody.allowAdventure(false);
-            }
-            player.getInventory().clear();
-            player.changeGameMode(mode);
+            restoreBuilder(player, hold, false);
         }
+        if (over) reclaimArena(match);
         var battle = battles.get(match.id());
         if (!over || battle == null) return;
         var world = server.getOverworld();
@@ -16017,6 +16637,16 @@ final class PlayerRuntime {
             }
             podiums.put(match.id(), List.copyOf(names));
             KindredMod.LOGGER.info("Build battle {}: the podium {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), names);
+        }
+        // The podium shown, then the arena put back at an announced moment (M-06k3a); closed to breaking till then.
+        if (arenaSnapshot.containsKey(match.id())) {
+            arenaRestoreAt.put(match.id(), (long) server.getTicks() + arenaShownTicks);
+            String when = "The arena is cleared after the podium, in " + Math.max(1, arenaShownTicks / 20) + " seconds.";
+            for (UUID invited : match.invited()) {
+                var other = server.getPlayerManager().getPlayer(invited);
+                if (other != null) other.sendMessage(Text.literal(when).formatted(net.minecraft.util.Formatting.GOLD), false);
+            }
+            KindredMod.LOGGER.info("Build battle {}: {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), when);
         }
         battles.remove(match.id());
         libraryDesigns.remove(match.id());
@@ -16734,6 +17364,7 @@ final class PlayerRuntime {
             entry.nativeBody.allowAdventure(true);
             player.getInventory().clear();
             player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
+            ArenaSnapshots.building(player.getUuid(), false);
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
         }
@@ -16922,23 +17553,32 @@ final class PlayerRuntime {
         dev.kindred.core.record.Ledgers kept = ledgers;
         long through = ledgersThrough;
         var result = new CompletableFuture<Boolean>();
+        // F-31f: the action ledger read off the writer, from one snapshot, streamed; the writer goes on writing meanwhile.
         database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds())
-                .thenCombine(database.checkActionLedger(), (events, actions) -> {
+                .thenCombine(database.checkActionLedgerFromSnapshot(), (events, actions) -> {
                     var upTo = events.stream().filter(event -> event.id() <= through).toList();
-                    var checks = new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo));
-                    checks.add(actions);
-                    return checks;
-                }).whenComplete((checks, failure) -> handBack(() -> {
+                    return java.util.Map.entry(new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo)), actions);
+                }).whenComplete((both, failure) -> handBack(() -> {
                     if (failure != null) {
-                        KindredMod.LOGGER.error("World Record check could not run", failure);
+                        Throwable cause = failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+                        // Stopped with the server: no verdict, and none recorded; the next check reads it all again.
+                        if (cause instanceof java.util.concurrent.CancellationException) KindredMod.LOGGER.info("World Record check stopped before it was done; nothing reported");
+                        else KindredMod.LOGGER.error("World Record check could not run", failure);
                         result.complete(false);
                         return;
                     }
-                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees);
+                    var checks = both.getKey();
+                    var actions = both.getValue();
+                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees) && actions.agrees();
                     var data = new java.util.LinkedHashMap<String, String>();
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
+                    data.put(dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.agrees() ? "agrees" : actions.differing() > 0 ? "differs" : "not checked");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
+                    if (actions.differing() > 0) KindredMod.LOGGER.error("Ledger {} differs from the World Record in {} of {} actions: {}",
+                            dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.differing(), actions.rows(), actions.differences());
+                    if (actions.unchecked() > 0) KindredMod.LOGGER.error("Ledger {} not checked against the World Record: {} actions named other than as an id is written: {}",
+                            dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.unchecked(), actions.notChecked());
                     if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
@@ -17902,6 +18542,9 @@ final class PlayerRuntime {
         private final Map<UUID, Villager> villagers = new HashMap<>();
         private final Map<UUID, Long> villagerVisitAt = new HashMap<>();
         private final Set<UUID> villagersTold = new HashSet<>();
+        /** F-30d3: whether what it knows of the villagers has been read back this start, the read under way, a write due; its last write. */
+        private boolean villagersRead, villagersReading, villagersDirty;
+        private long villagersSavedAt;
         private UUID tradeTaskId, tradeVillager;
         private long tradeAt;
         /** The lectern reroll under way (E-45c), the villagers kept and given up on, and when it next looks for one. */
@@ -17949,6 +18592,8 @@ final class PlayerRuntime {
         private UUID barricadeTaskId;
         private long lastBarricadeTick = Long.MIN_VALUE / 2;
         private boolean nativePending;
+        /** A settlement of its unresolved actions under way (F-31g1): no second one, and no connection, meanwhile. */
+        private boolean settling;
         private ConnectionToken pendingConnection;
         private LedgerCheckState ledgerState = LedgerCheckState.PENDING;
         private boolean nativeSetupPending;

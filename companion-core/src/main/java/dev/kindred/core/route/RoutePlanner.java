@@ -48,7 +48,13 @@ public final class RoutePlanner {
         public static Allowance none() { return new Allowance(pos -> false, pos -> true, 0); }
     }
 
-    public static final double BRIDGE_COST = 6, PILLAR_COST = 7, OVER_LAVA = 14;
+    /**
+     * A bridge block's cost in blocks walked: the block spent and the time (E-71a). A run with the crouch timed to each
+     * edge takes about 7 ticks a block, against 12.75 placed and walked onto one at a time and 4.6 walking on the
+     * flat (NativeBridgeGameTests), so it costs a walk and a fifth less than it did. Over lava the crouch is held, at
+     * about 15.5 ticks a block, and the risk is still the larger part: {@link #OVER_LAVA}.
+     */
+    public static final double BRIDGE_COST = 5, PILLAR_COST = 7, OVER_LAVA = 14;
     /**
      * A step of a staircase (F-10h): a block, and a block's height and a block's way gained in one movement, so a little
      * less than a pillar's step, which gains only the height. A filler block under it, in the open, costs a bridge's

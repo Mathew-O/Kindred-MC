@@ -79,6 +79,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class SqliteCompanionStore {
     private static final int QUEUE_CAPACITY = 256;
+    /** What the write-ahead log is cut back to after a checkpoint (F-31f): a thousand pages and a little over, as #227 measured it. */
+    static final long JOURNAL_SIZE_LIMIT = 4_194_304;
     /** Every store's work queued or running, for diagnostics and the GameTest server's pacing (F-22c5). */
     private static final java.util.concurrent.atomic.AtomicInteger IN_FLIGHT = new java.util.concurrent.atomic.AtomicInteger();
     private final ThreadPoolExecutor writer;
@@ -89,6 +91,20 @@ public final class SqliteCompanionStore {
     private FileLock fileLock;
     private boolean closing;
     private CompletableFuture<Void> closeFuture;
+    /** The database file, for the agreement check's own read-only connection (F-31f). */
+    private volatile Path databasePath;
+    /**
+     * The agreement check's thread (F-31f): it reads from a read-only connection of its own, so that the writer is never
+     * held by it. It never writes; the writer above stays the only one that does.
+     */
+    private final java.util.concurrent.ExecutorService checker = java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+        Thread thread = new Thread(task, "kindred-metadata-check");
+        thread.setDaemon(true);
+        return thread;
+    });
+    /** The check's statements under way, to interrupt at a stop; whether checks are stopped. */
+    private final java.util.Set<Statement> checking = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private volatile boolean checksStopped;
 
     private SqliteCompanionStore(int maxCompanions) {
         this.maxCompanions = maxCompanions;
@@ -661,7 +677,33 @@ public final class SqliteCompanionStore {
     /** Applies one durable state transition; the stored row's state and revision must match. */
     public CompletableFuture<ActionRecord> transitionAction(ActionRecord next, long expectedRevision) {
         Objects.requireNonNull(next);
+        return submit(() -> transaction(() -> applyTransition(next, expectedRevision)));
+    }
+
+    /**
+     * An uncertain action settled after a restart (F-31g1): its outcome written as {@link #transitionAction} writes one,
+     * and in the same transaction {@code settled}, the Record's note of who settled it and what was seen. Only an
+     * UNCERTAIN row may be settled, and only to VERIFIED or FAILED; the stored state and revision are checked here, at the
+     * write, so a row settled or changed meanwhile is refused and nothing is written.
+     */
+    public CompletableFuture<ActionRecord> settleAction(ActionRecord next, long expectedRevision, WorldEvent settled) {
+        Objects.requireNonNull(next);
+        Objects.requireNonNull(settled);
+        if (next.state() != ActionRecord.State.VERIFIED && next.state() != ActionRecord.State.FAILED) {
+            throw new IllegalArgumentException("A settlement is done or not done, never " + next.state());
+        }
         return submit(() -> transaction(() -> {
+            ActionRecord stored = selectAction(next.actionId()).orElseThrow(() -> new IllegalArgumentException("Unknown action " + next.actionId()));
+            if (stored.state() != ActionRecord.State.UNCERTAIN) throw new IllegalStateException("Only an uncertain action is settled, not " + stored.state());
+            ActionRecord written = applyTransition(next, expectedRevision);
+            insertWorldEvent(settled);
+            insertEvent(next.companionId(), Instant.now(), "ACTION_SETTLED", next.kind() + " " + next.actionId() + ": " + next.detail());
+            return written;
+        }));
+    }
+
+    /** One transition's checks and writes, inside the caller's transaction on the ordered writer. */
+    private ActionRecord applyTransition(ActionRecord next, long expectedRevision) throws SQLException {
             ActionRecord stored = selectAction(next.actionId()).orElseThrow(() -> new IllegalArgumentException("Unknown action " + next.actionId()));
             requireRevision(stored.revision(), expectedRevision);
             if (next.revision() != Math.incrementExact(expectedRevision)) throw new IllegalArgumentException("Action revisions advance by one");
@@ -695,8 +737,7 @@ public final class SqliteCompanionStore {
             if (next.state() == ActionRecord.State.UNCERTAIN) {
                 insertEvent(next.companionId(), Instant.now(), "ACTION_UNCERTAIN", next.kind() + " " + next.actionId() + ": " + next.detail());
             }
-            return next;
-        }));
+        return next;
     }
 
     public CompletableFuture<Optional<ActionRecord>> findAction(UUID actionId) {
@@ -1460,6 +1501,7 @@ public final class SqliteCompanionStore {
     public synchronized CompletableFuture<Void> closeAsync() {
         if (closeFuture != null) return closeFuture;
         closing = true;
+        stopChecks(); // F-31f: a check off the writer never holds a close.
         closeFuture = new CompletableFuture<>();
         writer.execute(() -> {
             try {
@@ -1486,11 +1528,16 @@ public final class SqliteCompanionStore {
         // providers. Resolve the bundled JDBC driver through this module's defining loader.
         Class.forName("org.sqlite.JDBC", true, SqliteCompanionStore.class.getClassLoader());
         database = DriverManager.getConnection("jdbc:sqlite:" + path);
+        databasePath = path;
         try (Statement statement = database.createStatement()) {
             statement.execute("PRAGMA foreign_keys = ON");
             statement.execute("PRAGMA journal_mode = WAL");
             statement.execute("PRAGMA synchronous = FULL");
             statement.execute("PRAGMA busy_timeout = 5000");
+            // F-31f: the agreement check reads from a snapshot of its own, and while it reads no checkpoint can pass it,
+            // so the log grows with what is written meanwhile (about 60 MB over a 25-second check at thirty days). Once a
+            // checkpoint is past it, the log is cut back to this, its size between checks (#227: about 4 MB).
+            statement.execute("PRAGMA journal_size_limit = " + JOURNAL_SIZE_LIMIT);
             int schemaVersion;
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
@@ -1973,6 +2020,222 @@ public final class SqliteCompanionStore {
             }
             return ActionLedgerView.INSTANCE.check(events, Collections.unmodifiableMap(kept));
         });
+    }
+
+    /**
+     * The action ledger's agreement check as a stream (F-31f): whether it agrees, the rows and events it read, the first
+     * differences found (at most {@link #DIFFERENCES}) with how many there were, and the actions it did not check: named,
+     * in a row or an event, other than as the store writes an action's id (the first few of them, and how many). Any
+     * action not checked means it does not agree: never a pass for what it did not look at.
+     */
+    public record LedgerCheck(boolean agrees, long rows, long events, List<String> differences, long differing,
+                              List<String> notChecked, long unchecked) {
+        public LedgerCheck {
+            differences = List.copyOf(differences);
+            notChecked = List.copyOf(notChecked);
+        }
+    }
+
+    /** How many differences a check keeps to report; it counts them all. */
+    public static final int DIFFERENCES = 20;
+
+    /**
+     * The agreement check for the action ledger off the writer (F-31f): the same verdict as {@link #checkActionLedger},
+     * every row of {@code action_ledger} against the ledger rebuilt from the Record's action events, but read on its own
+     * thread from a connection of its own, opened read-only (the driver's read-only open flag, and {@code query_only}),
+     * inside one read transaction: the table and the events are one snapshot of the database, as it stood between two of
+     * the writer's transactions, as the writer-held check saw it, every row written with its event in one transaction.
+     * The writer is not held: writes go on while it reads. Streamed, a merge of the table in {@code action_id} order with
+     * each action's events in {@code (subject, id)} order (V13's index), so that it holds one action at a time, not the
+     * ledger. A row or an event that names an action other than as the store writes its id (in upper case, say; the store
+     * writes none) is not checked, and counted: the check then does not agree, and says how many, never a load of the
+     * whole ledger to read it another way. Stopped by {@link #stopChecks}: then it completes with a
+     * {@link java.util.concurrent.CancellationException}, never a verdict.
+     */
+    public CompletableFuture<LedgerCheck> checkActionLedgerFromSnapshot() {
+        var result = new CompletableFuture<LedgerCheck>();
+        if (checksStopped || closing || databasePath == null) {
+            result.completeExceptionally(new java.util.concurrent.CancellationException("The store's checks are stopped"));
+            return result;
+        }
+        try {
+            checker.execute(() -> {
+                try {
+                    if (checksStopped) throw new java.util.concurrent.CancellationException("The store's checks are stopped");
+                    result.complete(streamedCheck());
+                } catch (Throwable failure) {
+                    result.completeExceptionally(checksStopped ? new java.util.concurrent.CancellationException("Stopped while checking") : failure);
+                }
+            });
+        } catch (RejectedExecutionException stopped) {
+            result.completeExceptionally(new java.util.concurrent.CancellationException("The store's checks are stopped"));
+        }
+        return result;
+    }
+
+    /**
+     * Stops every agreement check off the writer at once (F-31f): one under way is interrupted where it reads, and none
+     * after starts. A stopped check reports nothing. Writes are not touched.
+     */
+    public void stopChecks() {
+        checksStopped = true;
+        for (Statement statement : checking) {
+            try { statement.cancel(); } catch (SQLException | RuntimeException ignored) { }
+        }
+        checker.shutdownNow();
+    }
+
+    private LedgerCheck streamedCheck() throws SQLException {
+        var config = new org.sqlite.SQLiteConfig();
+        config.setReadOnly(true);
+        config.setBusyTimeout(5000);
+        try (Connection reader = DriverManager.getConnection("jdbc:sqlite:" + databasePath, config.toProperties())) {
+            try (Statement pragma = reader.createStatement()) { pragma.execute("PRAGMA query_only = ON"); }
+            reader.setAutoCommit(false);
+            try (var table = reader.prepareStatement("SELECT action_id, state, revision FROM action_ledger ORDER BY action_id");
+                 var actions = reader.prepareStatement("SELECT subject, id, data FROM world_events WHERE kind = ? ORDER BY subject, id");
+                 var folded = reader.prepareStatement("SELECT subject, id, data FROM world_events WHERE kind = ? ORDER BY subject, id")) {
+                checking.add(table);
+                checking.add(actions);
+                checking.add(folded);
+                try {
+                    if (checksStopped) throw new java.util.concurrent.CancellationException("Stopped");
+                    actions.setString(1, ActionLedgerView.ACTION);
+                    folded.setString(1, ActionLedgerView.FOLDED);
+                    return merged(table.executeQuery(), actions.executeQuery(), folded.executeQuery());
+                } finally {
+                    checking.remove(table);
+                    checking.remove(actions);
+                    checking.remove(folded);
+                    reader.rollback();
+                }
+            }
+        }
+    }
+
+    /** One event of an action, as read: its subject, id and data. */
+    private record Read(String subject, long id, String data) { }
+
+    private static Read next(ResultSet rows) throws SQLException {
+        return rows.next() ? new Read(rows.getString(1), rows.getLong(2), rows.getString(3)) : null;
+    }
+
+    /** Two texts in SQLite's order for them (BINARY: their UTF-8 bytes), as its {@code ORDER BY} gave them. */
+    static int binary(String one, String other) {
+        boolean ascii = true;
+        for (int i = 0; ascii && i < one.length(); i++) ascii = one.charAt(i) < 0x80;
+        for (int i = 0; ascii && i < other.length(); i++) ascii = other.charAt(i) < 0x80;
+        if (ascii) return one.compareTo(other);
+        return java.util.Arrays.compareUnsigned(one.getBytes(StandardCharsets.UTF_8), other.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Whether {@code text} is an action id as the store writes one. */
+    private static boolean canonical(String text) {
+        try {
+            return text != null && UUID.fromString(text).toString().equals(text);
+        } catch (IllegalArgumentException notAnId) {
+            return false;
+        }
+    }
+
+    /** One action of the Record as the events give it: its id as written, and its row, or none when no event of it reads. */
+    private record Group(String subject, ActionLedgerView.Row row) { }
+
+    /** The two event streams, merged in {@code (subject, id)} order and taken an action at a time. */
+    private final class Groups {
+        private final ResultSet actions, folded;
+        private Read a, f;
+        private long events;
+        /** Actions named other than as the store writes an id: how many, and the first few. */
+        private long unchecked;
+        private final List<String> notChecked = new ArrayList<>();
+
+        Groups(ResultSet actions, ResultSet folded) throws SQLException {
+            this.actions = actions;
+            this.folded = folded;
+            a = SqliteCompanionStore.next(actions);
+            f = SqliteCompanionStore.next(folded);
+        }
+
+        /** The next action with a parseable id; null at the end. Subjects that are no id are no action, as ActionLedgerView reads them. */
+        Group next() throws SQLException {
+            while (a != null || f != null) {
+                if (checksStopped) throw new java.util.concurrent.CancellationException("Stopped");
+                String subject = a == null ? f.subject() : f == null ? a.subject() : binary(a.subject(), f.subject()) <= 0 ? a.subject() : f.subject();
+                ActionLedgerView.Row row = null;
+                boolean id;
+                try {
+                    UUID.fromString(subject);
+                    id = true;
+                } catch (IllegalArgumentException notAnId) {
+                    id = false;
+                }
+                while (a != null && a.subject().equals(subject) || f != null && f.subject().equals(subject)) {
+                    boolean fromA = f == null || !f.subject().equals(subject) || a != null && a.subject().equals(subject) && a.id() < f.id();
+                    Read event = fromA ? a : f;
+                    if (fromA) a = SqliteCompanionStore.next(actions); else f = SqliteCompanionStore.next(folded);
+                    events++;
+                    if (!id) continue;
+                    var data = EventData.decode(event.data());
+                    try {
+                        row = new ActionLedgerView.Row(data.getOrDefault("state", ""), Long.parseLong(data.getOrDefault("revision", "")));
+                    } catch (NumberFormatException malformed) {
+                        // A malformed event changes nothing, as ActionLedgerView reads it.
+                    }
+                }
+                if (!id) continue;
+                if (!canonical(subject)) {
+                    unchecked++;
+                    if (notChecked.size() < DIFFERENCES) notChecked.add(subject);
+                    continue;
+                }
+                return new Group(subject, row);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * The merge of the table, in {@code action_id} order, with the Record's actions, in subject order. A row or an event
+     * naming an action other than as the store writes its id is left out of it, and counted as not checked.
+     */
+    private LedgerCheck merged(ResultSet table, ResultSet actions, ResultSet folded) throws SQLException {
+        long rows = 0, differing = 0;
+        var differences = new ArrayList<String>();
+        var groups = new Groups(actions, folded);
+        Group group = groups.next();
+        boolean row = table.next();
+        while (group != null || row) {
+            if (checksStopped) throw new java.util.concurrent.CancellationException("Stopped");
+            String id = row ? table.getString(1) : null;
+            if (row && !canonical(id)) {
+                groups.unchecked++;
+                if (groups.notChecked.size() < DIFFERENCES) groups.notChecked.add(id);
+                row = table.next();
+                continue;
+            }
+            int order = !row ? 1 : group == null ? -1 : binary(id, group.subject());
+            String difference = null;
+            if (order < 0) {
+                rows++;
+                difference = id + ": kept " + new ActionLedgerView.Row(table.getString(2), table.getLong(3)) + ", the Record gives nothing";
+                row = table.next();
+            } else if (order > 0) {
+                if (group.row() != null) difference = group.subject() + ": kept nothing, the Record gives " + group.row();
+                group = groups.next();
+            } else {
+                rows++;
+                var kept = new ActionLedgerView.Row(table.getString(2), table.getLong(3));
+                if (!kept.equals(group.row())) difference = id + ": kept " + kept + ", the Record gives " + (group.row() == null ? "nothing" : group.row());
+                row = table.next();
+                group = groups.next();
+            }
+            if (difference != null) {
+                differing++;
+                if (differences.size() < DIFFERENCES) differences.add(difference);
+            }
+        }
+        return new LedgerCheck(differing == 0 && groups.unchecked == 0, rows, groups.events, differences, differing, groups.notChecked, groups.unchecked);
     }
 
     private Optional<BudgetState> selectBudget(UUID id, Instant start) throws SQLException {
