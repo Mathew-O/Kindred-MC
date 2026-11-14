@@ -1,0 +1,55 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 10.188,
+  "server": {"tickMsMean": 13.85, "tickMsWorst": 2130.16, "tickMsWorstAt": 92801, "ticksOver50ms": 1684, "ticksOver200ms": 15, "heapMbMax": 1156, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1160, "stone_tools": 2700, "iron_ingot": 8920, "iron_pickaxe": 37460, "diamond": 103440, "obsidian": 121434, "portal_lit": 122857},
+      "deaths": [
+        {"tick": 51468, "cause": "Kindred was shot by Skeleton", "x": -83, "y": -47, "z": 58, "light": 0, "timeOfDay": 1790, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 96468, "cause": "Kindred drowned", "x": -62, "y": 54, "z": 54, "light": 6, "timeOfDay": 7856, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: Get out of the water: up for air", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 59240, "x": 18, "y": 66, "z": 127, "attempt": 1}, {"tick": 70320, "x": 30, "y": 61, "z": 128, "attempt": 1}, {"tick": 107240, "x": -48, "y": -27, "z": 45, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7395,
+      "chunkMinutes": 34670.4
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 740, "stone_tools": 2340, "iron_ingot": 108340, "iron_pickaxe": 126140},
+      "deaths": [
+        {"tick": 9604, "cause": "Sol was shot by Skeleton", "x": 30, "y": 32, "z": -44, "light": 0, "timeOfDay": 9766, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 7840, "x": -15, "y": 57, "z": -52, "attempt": 1}, {"tick": 34780, "x": 121, "y": 74, "z": -32, "attempt": 1}, {"tick": 49140, "x": 147, "y": 71, "z": -51, "attempt": 2}, {"tick": 60680, "x": 184, "y": 72, "z": -92, "attempt": 3}, {"tick": 66820, "x": 4, "y": 61, "z": -31, "attempt": 1}, {"tick": 74820, "x": 9, "y": 73, "z": -18, "attempt": 2}, {"tick": 135880, "x": -17, "y": 57, "z": -50, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4869,
+      "chunkMinutes": 34675.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 900, "stone_tools": 2620, "iron_ingot": 20220, "iron_pickaxe": 51400, "obsidian": 87954, "portal_lit": 92798},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 15900, "x": -2, "y": 47, "z": -35, "attempt": 1}, {"tick": 33220, "x": 61, "y": 34, "z": -19, "attempt": 1}, {"tick": 62380, "x": 26, "y": 59, "z": 30, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4449,
+      "chunkMinutes": 34680.0
+    }
+  }
+}
