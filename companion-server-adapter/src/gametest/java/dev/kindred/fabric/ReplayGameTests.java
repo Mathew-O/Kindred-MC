@@ -67,6 +67,9 @@ public final class ReplayGameTests implements FabricGameTest {
         if (mobs != null) for (var mob : mobs) if (mob.isAlive()) mob.setAiDisabled(false);
     }
 
+    /** The chunks kept loaded for a replay staged in another dimension, let go once its test has ended (F-27a2). */
+    private static final java.util.Map<PlayerRuntime, Runnable> FORCED = new java.util.concurrent.ConcurrentHashMap<>();
+
     /** The test a context belongs to: TestContext keeps it private, and its end is what a finally would follow. */
     private static net.minecraft.test.GameTestState testOf(TestContext context) {
         for (var field : TestContext.class.getDeclaredFields()) {
@@ -129,6 +132,8 @@ public final class ReplayGameTests implements FabricGameTest {
             it.remove();
             TESTS.remove(live.getKey());
             release(live.getKey());
+            var forced = FORCED.remove(live.getKey());
+            if (forced != null) forced.run();
             if (live.getKey().running()) live.getKey().stop();
         }
     }
@@ -178,6 +183,60 @@ public final class ReplayGameTests implements FabricGameTest {
             new java.util.concurrent.ConcurrentHashMap<>();
     /** For fixtures: the replays' players whose scene's memory must be put back, or the replay fails at its start. */
     static final java.util.Set<String> MUST_RESTORE = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    /** For fixtures: the replays' players that must be made in their scene's recorded dimension, or the replay fails at its start. */
+    static final java.util.Set<String> MUST_STAGE_IN_DIMENSION = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * The world a scene was recorded in, when it is not the test world's own dimension (F-27a2): the Nether or the End, from
+     * the recorder's {@code dimension}. Null for an Overworld scene, or one recorded before scenes kept their dimension.
+     */
+    static net.minecraft.server.world.ServerWorld recordedWorld(net.minecraft.server.MinecraftServer server, JsonObject state,
+            net.minecraft.server.world.ServerWorld test) {
+        if (!state.has("dimension")) return null;
+        var key = net.minecraft.registry.RegistryKey.of(RegistryKeys.WORLD, Identifier.of(state.get("dimension").getAsString()));
+        if (key.equals(test.getRegistryKey())) return null;
+        var world = server.getWorld(key);
+        if (world == null) throw new net.minecraft.test.GameTestException("Its dimension, " + key.getValue() + ", is not on this server");
+        return world;
+    }
+
+    /**
+     * The scene the test placed, copied into the dimension it was recorded in (F-27a2): its blocks, their data and its
+     * mobs, at the test's own x and z and the height it was recorded at (64 for a scene with none), the copies left in the
+     * test world taken out. Walled round with barrier as the test world walls every test, and roofed, so that the
+     * dimension's own lava and mobs beyond the scene stay out as the test world's open ground does. Its chunks are kept
+     * loaded until its test has ended. STAGED as every replay is; nothing is given.
+     */
+    private static BlockPos stageIn(net.minecraft.server.world.ServerWorld to, TestContext context, BlockPos testBox, JsonObject state, PlayerRuntime runtime) {
+        int w = sizeOf(state, 0, DeathReplays.WIDTH), h = sizeOf(state, 1, DeathReplays.HEIGHT), d = sizeOf(state, 2, DeathReplays.WIDTH);
+        int y = state.has("origin") && state.get("origin").isJsonArray() ? state.getAsJsonArray("origin").get(1).getAsInt() : 64;
+        y = Math.max(to.getBottomY() + 1, Math.min(y, to.getTopY() - h - 2));
+        BlockPos at = new BlockPos(testBox.getX(), y, testBox.getZ());
+        var chunks = new java.util.ArrayList<net.minecraft.util.math.ChunkPos>();
+        for (int cx = (at.getX() - 1) >> 4; cx <= (at.getX() + w) >> 4; cx++)
+            for (int cz = (at.getZ() - 1) >> 4; cz <= (at.getZ() + d) >> 4; cz++) {
+                to.setChunkForced(cx, cz, true);
+                chunks.add(new net.minecraft.util.math.ChunkPos(cx, cz));
+            }
+        FORCED.put(runtime, () -> chunks.forEach(c -> to.setChunkForced(c.x, c.z, false)));
+        var shell = new net.minecraft.util.math.Box(at.getX() - 1, at.getY() - 1, at.getZ() - 1, at.getX() + w + 1, at.getY() + h + 1, at.getZ() + d + 1);
+        for (var left : to.getOtherEntities(null, shell, e -> !(e instanceof net.minecraft.entity.player.PlayerEntity))) left.discard();
+        var template = new StructureTemplate();
+        var test = context.getWorld();
+        template.saveFromWorld(test, testBox, new Vec3i(w, h, d), true, null);
+        template.place(to, at, at, new net.minecraft.structure.StructurePlacementData(), to.getRandom(), net.minecraft.block.Block.NOTIFY_LISTENERS);
+        var barrier = Blocks.BARRIER.getDefaultState();
+        for (int dx = -1; dx <= w; dx++)
+            for (int dz = -1; dz <= d; dz++) {
+                boolean side = dx == -1 || dx == w || dz == -1 || dz == d;
+                if (side) for (int dy = 0; dy <= h; dy++) to.setBlockState(at.add(dx, dy, dz), barrier, net.minecraft.block.Block.NOTIFY_LISTENERS);
+                to.setBlockState(at.add(dx, h, dz), barrier, net.minecraft.block.Block.NOTIFY_LISTENERS);
+            }
+        var placed = new net.minecraft.util.math.Box(testBox.getX(), testBox.getY(), testBox.getZ(), testBox.getX() + w, testBox.getY() + h, testBox.getZ() + d);
+        for (var copied : test.getOtherEntities(null, placed, e -> !(e instanceof net.minecraft.entity.player.PlayerEntity))) copied.discard();
+        KindredMod.LOGGER.info("Replay staged in {} at {}, as recorded", to.getRegistryKey().getValue(), at.toShortString());
+        return at;
+    }
 
     /** The scene box's size along {@code axis} as recorded, or the recorder's own when the scene has none. */
     private static int sizeOf(JsonObject state, int axis, int otherwise) {
@@ -202,13 +261,16 @@ public final class ReplayGameTests implements FabricGameTest {
 
     /** As {@link #play(TestContext, JsonObject, int, int)}, for the scene {@code scene} (its id; null for one staged). */
     static void play(TestContext context, JsonObject replay, String scene, int run, int ticks) {
-        var world = context.getWorld();
-        var server = world.getServer();
+        var testWorld = context.getWorld();
+        var server = testWorld.getServer();
         JsonObject state = replay;
         var at = state.getAsJsonArray("at");
         // A test's own position is its structure block's, one below the structure, so the structure's corner is (0, 1, 0).
-        BlockPos boxOrigin = context.getAbsolutePos(BlockPos.ORIGIN.up()).toImmutable();
-        Vec3d start = Vec3d.of(boxOrigin).add(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble());
+        BlockPos testBox = context.getAbsolutePos(BlockPos.ORIGIN.up()).toImmutable();
+        // Played in the dimension it was recorded in (F-27a2): a Nether scene in the Nether, with its heat, its water that
+        // boils away and its own mobs, not on Overworld ground.
+        var recorded = recordedWorld(server, state, testWorld);
+        var world = recorded != null ? recorded : testWorld;
         Path directory = server.getSavePath(WorldSavePath.ROOT).resolve("kindred-replay-" + UUID.randomUUID());
         // Made where it can stand, the nearest such cell, then set where it died: one that died falling, swimming or
         // knocked back died where no player can be made ("Make room on solid ground").
@@ -217,6 +279,12 @@ public final class ReplayGameTests implements FabricGameTest {
         Vec3d[] settling = new Vec3d[1];
         int[] settled = {0};
         var runtime = new PlayerRuntime(server, directory, NativePlayerSaves::read, writer -> writer);
+        BlockPos boxOrigin = recorded == null ? testBox : stageIn(recorded, context, testBox, state, runtime);
+        Vec3d start = Vec3d.of(boxOrigin).add(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble());
+        // Made in the test world, beside the scene as placed there, whichever dimension the scene plays in: a native player
+        // is made only in the Overworld (its new save's dimension, which a body made elsewhere does not match), and is moved
+        // into the scene's own dimension once established, as staging moves every replay's body to where it was recorded.
+        Vec3d makeNear = Vec3d.of(testBox).add(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble());
         try {
             Files.createDirectories(directory);
             Files.writeString(directory.resolve("edits.properties"), edits(state));
@@ -225,7 +293,7 @@ public final class ReplayGameTests implements FabricGameTest {
         }
         runtime.start();
         watch();
-        remember(server, world);
+        remember(server, testWorld);
         LIVE.put(runtime, (long) server.getTicks() + ticks + 600 + 20);
         var test = testOf(context);
         if (test != null) TESTS.put(runtime, test);
@@ -251,7 +319,7 @@ public final class ReplayGameTests implements FabricGameTest {
         context.createTimedTaskRunner()
                 .createAndAdd(() -> {
                     context.assertTrue(runtime.isReady(), "Ready");
-                    var box = new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
+                    var box = new net.minecraft.util.math.Box(boxOrigin.down()).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
                     for (var mob : world.getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, m -> !m.isAiDisabled())) {
                         mob.setAiDisabled(true);
                         held.add(mob);
@@ -262,31 +330,35 @@ public final class ReplayGameTests implements FabricGameTest {
                 // runtime as the player was made a few ticks on, no longer one to be made in by then, and the third
                 // run of echo-50149 was never made ("Creation area is no longer available", CI run 387) (F-22c6).
                 .createAndAdd(() -> {
-                    var box = new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
+                    var box = new net.minecraft.util.math.Box(boxOrigin.down()).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
                     boolean falling = !world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, box, e -> true).isEmpty();
-                    Vec3d cell = standNear(world, start);
+                    Vec3d cell = standNear(testWorld, makeNear);
                     settled[0] = !falling && cell.equals(settling[0]) ? settled[0] + 1 : 0;
                     settling[0] = cell;
                     context.assertTrue(settled[0] >= 40, "Its ground settled: " + (falling ? "gravel falling" : "the cell to make it in " + cell + " for " + settled[0] + " ticks"));
-                    made[0] = server.getCommandSource().withWorld(world).withPosition(cell);
+                    made[0] = server.getCommandSource().withWorld(testWorld).withPosition(cell);
                 })
                 .createAndAdd(() -> runtime.createNative(made[0], name))
                 .createAndAdd(() -> {
                     var statuses = runtime.nativeStatuses(Actor.console());
                     context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED && statuses.getFirst().connected(),
-                            "Established: " + statuses + "; made from " + made[0].getPosition() + ", " + creationCells(world, made[0].getPosition()));
+                            "Established: " + statuses + "; made from " + made[0].getPosition() + ", " + creationCells(testWorld, made[0].getPosition()));
                     id[0] = statuses.getFirst().id();
                     id[1] = statuses.getFirst().nativeId();
                 })
                 .createAndAdd(() -> {
                     ServerPlayerEntity body = server.getPlayerManager().getPlayer(id[1]);
+                    if (body.getServerWorld() != world) body.teleport(world, start.x, start.y, start.z, state.get("yaw").getAsFloat(), state.get("pitch").getAsFloat());
                     body.refreshPositionAndAngles(start.x, start.y, start.z, state.get("yaw").getAsFloat(), state.get("pitch").getAsFloat());
                     restore(body, state);
-                    world.setTimeOfDay(state.get("timeOfDay").getAsLong());
+                    if (state.has("dimension") && body.getServerWorld().getRegistryKey().getValue().toString().equals(state.get("dimension").getAsString()))
+                        MUST_STAGE_IN_DIMENSION.remove(state.get("player").getAsString());
+                    KindredMod.LOGGER.info("Replay {} of {}: made in {}", run, name, body.getServerWorld().getRegistryKey().getValue());
+                    testWorld.setTimeOfDay(state.get("timeOfDay").getAsLong());
                     // Its weather and difficulty as recorded (the corpus batches scenes that share them, F-27a).
                     if (state.has("raining")) {
                         boolean raining = state.get("raining").getAsBoolean(), thundering = state.has("thundering") && state.get("thundering").getAsBoolean();
-                        world.setWeather(raining ? 0 : 24000, raining ? 24000 : 0, raining, thundering);
+                        testWorld.setWeather(raining ? 0 : 24000, raining ? 24000 : 0, raining, thundering);
                     }
                     if (state.has("difficulty")) {
                         var difficulty = net.minecraft.world.Difficulty.byName(state.get("difficulty").getAsString());
@@ -316,6 +388,8 @@ public final class ReplayGameTests implements FabricGameTest {
                 })
                 // Its own step, changing nothing: a timed task that fails is tried again each tick until the test's time.
                 .createAndAdd(() -> context.assertFalse(MUST_RESTORE.contains(state.get("player").getAsString()), "Its scene's memory put back"))
+                .createAndAdd(() -> context.assertFalse(MUST_STAGE_IN_DIMENSION.contains(state.get("player").getAsString()),
+                        "Made in " + (state.has("dimension") ? state.get("dimension").getAsString() : "its dimension") + ", as recorded"))
                 .createAndAdd(() -> {
                     ServerPlayerEntity body = server.getPlayerManager().getPlayer(id[1]);
                     if (died[0] || body == null) {
@@ -573,6 +647,22 @@ public final class ReplayGameTests implements FabricGameTest {
             ON_RESTORE.remove("Plain");
             throw new net.minecraft.test.GameTestException("A memory put back for a scene that has none");
         });
+        play(context, scene, 1, 300);
+    }
+    /**
+     * In plain terms: a stall caught in the Nether is played again in the Nether, not on Overworld ground where its heat,
+     * its boiling water and its mobs are missing.
+     *
+     * Technical: F-27a2. The recorder keeps each scene's {@code dimension}, and {@link #play} staged every scene in the test
+     * world, the Overworld: e40c3's Nether stalls (303's blaze fight, 8675309's reconciliation hold) could not enter the inner
+     * loop as Nether scenes. STAGED: a scene made as the recorder writes one (above), recorded in the Nether; passes if its
+     * player is made in the Nether and lives the scene's 300 ticks there.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "replayNether", tickLimit = 1400)
+    public void aSceneRecordedInTheNetherIsPlayedInTheNether(TestContext context) {
+        var scene = pennedScene(context, "Netherbound", 4545, null);
+        scene.addProperty("dimension", "minecraft:the_nether");
+        MUST_STAGE_IN_DIMENSION.add("Netherbound");
         play(context, scene, 1, 300);
     }
 }
