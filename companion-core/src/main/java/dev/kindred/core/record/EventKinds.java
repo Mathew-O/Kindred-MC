@@ -39,7 +39,7 @@ public final class EventKinds {
     static {
         for (String kind : List.of(
                 // The Record's own ledgers (F-31a) and the journal and action ledger written as events.
-                ActionLedgerView.ACTION, ActionLedgerView.FOLDED, ActionLedgerView.JOURNAL, ClaimLedger.CLAIM, ClaimLedger.UNCLAIM, ClaimLedger.CAPTURE,
+                ActionLedgerView.ACTION, ActionLedgerView.FOLDED, ActionLedgerView.PRUNED, ActionLedgerView.JOURNAL, ClaimLedger.CLAIM, ClaimLedger.UNCLAIM, ClaimLedger.CAPTURE,
                 DeathLedger.DEATH, MatchLedger.MATCH, Ledgers.CHECK,
                 // Factions (M-06).
                 FactionLedger.CREATE, FactionLedger.INVITE, FactionLedger.JOIN, FactionLedger.LEAVE, FactionLedger.RANK,

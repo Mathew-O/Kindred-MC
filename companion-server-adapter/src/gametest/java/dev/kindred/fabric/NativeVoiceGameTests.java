@@ -63,8 +63,12 @@ public final class NativeVoiceGameTests implements FabricGameTest {
             return answer.apply(conversation);
         }
 
+        /** How many times it was asked for the stance (a consultation): the strategist's own use, apart from the voice. */
+        int advised;
+
         @Override
         public CompletableFuture<Outcome> advise(String report, List<StrategyAdvice.Place> reported) {
+            advised++;
             return CompletableFuture.completedFuture(new Outcome(Optional.empty(), 0, 0, 0, 0, Optional.of("a fixture's stub gives no advice")));
         }
 
@@ -200,6 +204,69 @@ public final class NativeVoiceGameTests implements FabricGameTest {
                     context.assertTrue(heard.contains("[faction] Echo: raid planned: target birch's gate, when dawn."),
                             "Words that dropped the facts: the plain line instead: " + heard);
                     context.assertTrue(heard.stream().noneMatch(line -> line.contains("Raid tonight")), "Never the model's words that dropped them");
+                    t.cleanup(context);
+                })
+                .completeIfSuccessful();
+    }
+
+    /**
+     * The strategist and the voice are separate switches (RUNNER 2's keyed run, 2026-11-14: {@code strategist=off;
+     * voice=on} consulted on the stance every 20 to 40 s). With the advice and rescues off, as {@code strategist=off}
+     * sets them whatever the voice, Echo at work on a goal is never asked for its stance, and a faction line from it is
+     * still said in its own words. The control, with the advice on, is asked.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voiceAlone", tickLimit = 1600)
+    public void withTheVoiceOnAndTheStrategistOffNoStanceIsAskedAndItsLinesAreStillVoiced(TestContext context) {
+        voiceAlone(context, false);
+    }
+
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "voiceAloneControl", tickLimit = 1600)
+    public void withTheStrategistOnItsStanceIsAsked(TestContext context) {
+        voiceAlone(context, true);
+    }
+
+    private static void voiceAlone(TestContext context, boolean strategistOn) {
+        var t = new Talk(context, true); // World edits on: a goal needs them.
+        var f = t.f;
+        var server = context.getWorld().getServer();
+        long[] since = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
+                .createAndAdd(() -> t.createOwned(context))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> t.quiet(context))
+                .createAndAdd(() -> {
+                    // As EvalBootstrap applies a scenario: strategist=off turns advice and rescues off, whatever the voice.
+                    f.runtime.advice(strategistOn);
+                    f.runtime.rescue(strategistOn);
+                    t.listen();
+                    f.runtime.setFactionOf(id -> id.equals(f.id) || id.equals(t.owner.getUuid()) ? "oak" : "");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1, "Echo on a goal");
+                    since[0] = server.getTicks();
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.goalStepForTest(f.id) != null, "Its goal at work");
+                    if (strategistOn) context.assertTrue(t.stub.advised > 0, "The control: with the strategist on, its stance is asked");
+                    else context.assertTrue(server.getTicks() - since[0] >= 400, "Four hundred ticks at work");
+                })
+                .createAndAdd(() -> {
+                    if (strategistOn) return;
+                    context.assertTrue(t.stub.advised == 0, "No stance asked with the strategist off: " + t.stub.advised);
+                    t.stub.answer = conversation -> Stub.says("Raid on birch's east wall at dusk, be there.");
+                    var d = f.runtime.wire().send(dev.kindred.core.wire.Message.of("faction.raid_planned", f.id, dev.kindred.core.wire.Scope.faction("oak"),
+                            raid("birch's east wall", "dusk"), List.of()));
+                    context.assertTrue(d.sent() && d.phrase().size() == 1, "Said to the owner: " + d);
+                })
+                .createAndAdd(() -> {
+                    if (!strategistOn) {
+                        var heard = t.heardBy(t.owner).stream().map(Heard::text).toList();
+                        context.assertTrue(heard.contains("[faction] Echo: Raid on birch's east wall at dusk, be there."), "Still voiced, in its own words: " + heard);
+                        context.assertTrue(t.stub.advised == 0, "And still no stance asked: " + t.stub.advised);
+                        var bridge = f.runtime.strategistForTest();
+                        context.assertTrue(bridge.usedToday(null, StrategistBridge.Use.VOICE) > 0 && bridge.usedToday(null, StrategistBridge.Use.ADVICE) == 0,
+                                "Charged to the voice's budget alone: voice " + bridge.usedToday(null, StrategistBridge.Use.VOICE) + ", advice "
+                                        + bridge.usedToday(null, StrategistBridge.Use.ADVICE));
+                    }
                     t.cleanup(context);
                 })
                 .completeIfSuccessful();

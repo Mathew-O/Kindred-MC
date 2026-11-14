@@ -191,6 +191,35 @@ class FactionPlayTest {
     }
 
     @Test
+    void itNeverScoutsTheChunkItStandsIn() {
+        UUID mine = found(self, "Red", "RED");
+        UUID blueLeader = UUID.randomUUID();
+        UUID blue = found(blueLeader, "Blue", "BLU");
+        now += 60 * H; // past both new-faction shields
+        claim(mine, 150, 150);
+        for (int[] c : new int[][] {{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}}) claim(blue, 200 + c[0], 200 + c[1]);
+        apply(List.of(PowerRules.set(blueLeader, 1, null, S, 1, now)));
+        var west = new Territory.Chunk(W, 199, 200);
+        var east = new Territory.Chunk(W, 201, 200);
+        var seenWest = List.of(new FactionPlay.Sighting(west.key(), blue.toString(), now - 60_000));
+        // Standing in Blue's west border chunk with too few coins to capture it there (under the claim reserve): no scout of
+        // the chunk it stands in, which would be arrived at at once and chosen again every tick.
+        var poor = FactionPlay.decide(view(person(50, 50, 50, 70), 0, Optional.empty(), Optional.of(west), List.of(), List.of(), Map.of(),
+                AuctionBook.EMPTY, seenWest));
+        assertTrue(poor.stream().noneMatch(c -> c.kind() == FactionPlay.Kind.SCOUT && c.target().equals(west.key())), "no scout of where it stands: " + poor);
+        // Another exposed border it saw: that is the one it scouts.
+        var seenBoth = List.of(new FactionPlay.Sighting(west.key(), blue.toString(), now - 60_000),
+                new FactionPlay.Sighting(east.key(), blue.toString(), now - 60_000));
+        var onward = FactionPlay.decide(view(person(50, 50, 50, 70), 0, Optional.empty(), Optional.of(west), List.of(), List.of(), Map.of(),
+                AuctionBook.EMPTY, seenBoth));
+        assertTrue(onward.stream().anyMatch(c -> c.kind() == FactionPlay.Kind.SCOUT && c.target().equals(east.key())), "the other border it saw: " + onward);
+        // Elsewhere, the west border is still the one it scouts, as before.
+        var away = FactionPlay.decide(view(person(50, 50, 50, 70), 10_000 * Coins.CENT, Optional.empty(), Optional.of(new Territory.Chunk(W, 150, 150)),
+                List.of(), List.of(), Map.of(), AuctionBook.EMPTY, seenWest));
+        assertEquals(new FactionPlay.Choice(FactionPlay.Kind.SCOUT, west.key(), 0, "Go to an exposed enemy's border it saw"), away.getFirst());
+    }
+
+    @Test
     void aNewFactionsShieldIsRespected() {
         UUID mine = found(self, "Red", "RED");
         UUID blueLeader = UUID.randomUUID();

@@ -156,4 +156,14 @@ public record EvalScenario(List<String> starters, Goal goal, boolean edits, long
         all.addAll(players);
         return List.copyOf(all);
     }
+
+    /**
+     * Whether a model is asked for the stance and the questions (advice): only with {@code strategist=on} and
+     * {@code advice} on. The voice is its own switch: {@code voice=on} with {@code strategist=off} gives the voice its
+     * lines and asks nothing else of a model (RUNNER 2's keyed run, 2026-11-14).
+     */
+    public boolean askAdvice() { return strategist && advice; }
+
+    /** Whether a model is asked for rescue plans (F-29): only with {@code strategist=on} and {@code rescue} on. */
+    public boolean askRescue() { return strategist && rescue; }
 }

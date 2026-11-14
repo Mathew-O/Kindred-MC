@@ -62,6 +62,8 @@ final class StrategistBridge implements AutoCloseable {
         ModelContextStore.PlayerContext context;
         boolean loading, inFlight, asking, talking, rescueInFlight;
         long lastAt, tokensToday, lessonsAt = Long.MIN_VALUE, rescueAt;
+        /** Its tokens today by use (advice, voice, pages), each against that use's own budget. */
+        final long[] usedToday = new long[Use.values().length];
         /** The stuck spell last asked about, asked or turned away (F-29), and its round (F-29c): each round is asked once. */
         int rescueSpell, rescueRound;
         int deaths = -1, stuck = -1, deathsRecorded, events = -1, strandingsRecorded;
@@ -76,10 +78,19 @@ final class StrategistBridge implements AutoCloseable {
     private final ModelContextStore store;
     private final Pace pace;
     private final long playerDailyTokens, dailyTokens;
+    /**
+     * What a consultation is for, each with its own daily budgets so one never spends another's: advice (the stance,
+     * questions and rescue plans), the voice (its talk and its Wire lines) and the Chronicle's pages. Advice's budgets
+     * are {@code KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS} and {@code KINDRED_STRATEGIST_DAILY_TOKENS}; the voice's and
+     * the pages' are {@code KINDRED_VOICE_*} and {@code KINDRED_CHRONICLE_*}, the same sizes unless set.
+     */
+    enum Use { ADVICE, VOICE, PAGES }
+    private final long[] usePlayerDaily = new long[Use.values().length], useDaily = new long[Use.values().length];
+    private final long[] usedToday = new long[Use.values().length];
+    private final boolean[] budgetLoggedFor = new boolean[Use.values().length];
     private final Map<UUID, State> states = new HashMap<>();
     private final ArrayDeque<Long> recent = new ArrayDeque<>();
     private long dayStartMs = System.currentTimeMillis(), tokensToday;
-    private boolean budgetLogged;
     /** Whether its own lessons are drawn from its deaths (E-46): on unless the operator or a scenario turns them off. */
     private boolean lessons = true;
     /** Whether a stuck player asks for a way out (F-29), and whether it asks for advice: both on unless turned off. */
@@ -119,6 +130,18 @@ final class StrategistBridge implements AutoCloseable {
         this.pace = pace;
         this.playerDailyTokens = playerDailyTokens;
         this.dailyTokens = dailyTokens;
+        java.util.Arrays.fill(usePlayerDaily, playerDailyTokens);
+        java.util.Arrays.fill(useDaily, dailyTokens);
+        usePlayerDaily[Use.VOICE.ordinal()] = tokensSetting("KINDRED_VOICE_PLAYER_DAILY_TOKENS", playerDailyTokens);
+        useDaily[Use.VOICE.ordinal()] = tokensSetting("KINDRED_VOICE_DAILY_TOKENS", dailyTokens);
+        usePlayerDaily[Use.PAGES.ordinal()] = tokensSetting("KINDRED_CHRONICLE_PLAYER_DAILY_TOKENS", playerDailyTokens);
+        useDaily[Use.PAGES.ordinal()] = tokensSetting("KINDRED_CHRONICLE_DAILY_TOKENS", dailyTokens);
+    }
+
+    /** The budgets of {@code use}, a player's and the server's, for fixtures. */
+    void budgetsForTest(Use use, long player, long all) {
+        usePlayerDaily[use.ordinal()] = player;
+        useDaily[use.ordinal()] = all;
     }
 
     private static long tokensSetting(String name, long fallback) {
@@ -156,9 +179,11 @@ final class StrategistBridge implements AutoCloseable {
         Pace pace = "realtime".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_STRATEGIST_PACE")).trim()) ? Pace.REALTIME : Pace.STEADY;
         long playerDaily = tokensSetting("KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS", pace.playerDailyTokens);
         long daily = tokensSetting("KINDRED_STRATEGIST_DAILY_TOKENS", pace.dailyTokens);
-        KindredMod.LOGGER.info("Kindred strategist on: {} model {} ({}), pace {}, daily token budgets {} a player and {} in all",
-                strategist.get().provider(), strategist.get().model(), strategist.get().pace(), pace.name().toLowerCase(java.util.Locale.ROOT), playerDaily, daily);
-        return Optional.of(new StrategistBridge(strategist.get(), new ModelContextStore(worldKindredFolder), pace, playerDaily, daily));
+        var bridge = new StrategistBridge(strategist.get(), new ModelContextStore(worldKindredFolder), pace, playerDaily, daily);
+        KindredMod.LOGGER.info("Kindred strategist on: {} model {} ({}), pace {}, daily token budgets a player and in all: advice {} and {}, voice {} and {}, pages {} and {}",
+                strategist.get().provider(), strategist.get().model(), strategist.get().pace(), pace.name().toLowerCase(java.util.Locale.ROOT), playerDaily, daily,
+                bridge.usePlayerDaily[Use.VOICE.ordinal()], bridge.useDaily[Use.VOICE.ordinal()], bridge.usePlayerDaily[Use.PAGES.ordinal()], bridge.useDaily[Use.PAGES.ordinal()]);
+        return Optional.of(bridge);
     }
 
     /** A bridge to a strategist given here, for fixtures: the steady pace and its budgets. */
@@ -191,7 +216,8 @@ final class StrategistBridge implements AutoCloseable {
         State state = states.computeIfAbsent(id, key -> new State());
         var answered = new java.util.concurrent.CompletableFuture<Optional<Strategist.Answer>>();
         long reserved = Strategist.reservation(question);
-        if (strategist == null || state.asking || !admit(System.currentTimeMillis(), state, reserved)) {
+        // A question is advice's: with advice off a strategist is asked for rescues alone.
+        if (strategist == null || !advice || state.asking || !admit(System.currentTimeMillis(), state, reserved, Use.ADVICE)) {
             answered.complete(Optional.empty());
             return answered;
         }
@@ -204,10 +230,7 @@ final class StrategistBridge implements AutoCloseable {
                 return;
             }
             long used = answer.inputTokens() - answer.cachedTokens() + (answer.cachedTokens() + 9) / 10 + answer.outputTokens();
-            if (used > 0) {
-                tokensToday = Math.max(0, tokensToday + used - reserved);
-                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
-            }
+            if (used > 0) charge(state, used - reserved, Use.ADVICE);
             if (answer.failure().isPresent()) KindredMod.LOGGER.info("{} strategist: no answer ({})", name, answer.failure().get());
             answered.complete(answer.failure().isPresent() ? Optional.empty() : Optional.of(answer));
         }));
@@ -225,7 +248,7 @@ final class StrategistBridge implements AutoCloseable {
         State state = states.computeIfAbsent(id, key -> new State());
         var answered = new java.util.concurrent.CompletableFuture<Optional<Strategist.Line>>();
         long reserved = Strategist.reservation(conversation);
-        if (strategist == null || state.talking || !admit(System.currentTimeMillis(), state, reserved)) {
+        if (strategist == null || state.talking || !admit(System.currentTimeMillis(), state, reserved, Use.VOICE)) {
             answered.complete(Optional.empty());
             return answered;
         }
@@ -248,10 +271,7 @@ final class StrategistBridge implements AutoCloseable {
                 return;
             }
             long used = line.inputTokens() - line.cachedTokens() + (line.cachedTokens() + 9) / 10 + line.outputTokens();
-            if (used > 0) {
-                tokensToday = Math.max(0, tokensToday + used - reserved);
-                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
-            }
+            if (used > 0) charge(state, used - reserved, Use.VOICE);
             if (state.context != null) {
                 state.context.conversations++;
                 state.context.inputTokens += line.inputTokens();
@@ -291,7 +311,7 @@ final class StrategistBridge implements AutoCloseable {
             paged.complete(Optional.empty());
             return paged;
         }
-        if (!admit(System.currentTimeMillis(), state, reserved)) {
+        if (!admit(System.currentTimeMillis(), state, reserved, Use.PAGES)) {
             // F-33c's run: the plain list was kept with no reason said; a page the budget or rate turns away says so.
             KindredMod.LOGGER.info("{} chronicle: no room for the model's page ({} tokens reserved; {} used today by it, {} in all); the plain list kept",
                     name, reserved, state.tokensToday, tokensToday);
@@ -305,10 +325,7 @@ final class StrategistBridge implements AutoCloseable {
                 return;
             }
             long used = page.inputTokens() - page.cachedTokens() + (page.cachedTokens() + 9) / 10 + page.outputTokens();
-            if (used > 0) {
-                tokensToday = Math.max(0, tokensToday + used - reserved);
-                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
-            }
+            if (used > 0) charge(state, used - reserved, Use.PAGES);
             if (page.failure().isPresent()) KindredMod.LOGGER.info("{} chronicle: no page ({})", name, page.failure().get());
             paged.complete(page.failure().isPresent() ? Optional.empty() : Optional.of(page));
         }));
@@ -432,7 +449,7 @@ final class StrategistBridge implements AutoCloseable {
             KindredMod.LOGGER.info("{} strategist report: {} characters with its chronicle, {} without", name, report.length(), without);
         }
         long reserved = Strategist.reservation(report);
-        if (!admit(now, state, reserved)) {
+        if (!admit(now, state, reserved, Use.ADVICE)) {
             state.lastAt = now; // Not again before the gap is over.
             return;
         }
@@ -453,10 +470,7 @@ final class StrategistBridge implements AutoCloseable {
                 return;
             }
             long used = outcome.inputTokens() - outcome.cachedTokens() + (outcome.cachedTokens() + 9) / 10 + outcome.outputTokens();
-            if (used > 0) { // Settle the reservation to what was used; without usage it stands.
-                tokensToday = Math.max(0, tokensToday + used - reserved);
-                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
-            }
+            if (used > 0) charge(state, used - reserved, Use.ADVICE); // Settle the reservation to what was used; without usage it stands.
             state.context.consultations++;
             state.context.inputTokens += outcome.inputTokens();
             state.context.outputTokens += outcome.outputTokens();
@@ -570,7 +584,7 @@ final class StrategistBridge implements AutoCloseable {
         state.rescueRound = round;
         String report = campaign.rescueReport(player, name);
         long reserved = Strategist.rescueReservation(report);
-        if (!admit(now, state, reserved)) {
+        if (!admit(now, state, reserved, Use.ADVICE)) {
             KindredMod.LOGGER.info("{} rescue: not asked (the rates or the day's budgets)", name);
             return;
         }
@@ -590,10 +604,7 @@ final class StrategistBridge implements AutoCloseable {
                 return;
             }
             long used = reply.inputTokens() - reply.cachedTokens() + (reply.cachedTokens() + 9) / 10 + reply.outputTokens();
-            if (used > 0) {
-                tokensToday = Math.max(0, tokensToday + used - reserved);
-                state.tokensToday = Math.max(0, state.tokensToday + used - reserved);
-            }
+            if (used > 0) charge(state, used - reserved, Use.ADVICE);
             if (state.context != null) {
                 state.context.inputTokens += reply.inputTokens();
                 state.context.outputTokens += reply.outputTokens();
@@ -635,16 +646,26 @@ final class StrategistBridge implements AutoCloseable {
     }
 
     /** Within the rates and the day's budgets with {@code reserved} tokens set aside; reserves them if so. */
-    private boolean admit(long now, State state, long reserved) {
+    /**
+     * Room for {@code reserved} tokens of {@code use} now: within that use's own daily budgets, a player's and the
+     * server's, and the shared rates; reserved if so. One use's budget spent leaves the others' as they were.
+     */
+    private boolean admit(long now, State state, long reserved, Use use) {
         if (now - dayStartMs > 86_400_000L) {
             dayStartMs = now;
             tokensToday = 0;
-            budgetLogged = false;
-            for (State each : states.values()) each.tokensToday = 0;
+            java.util.Arrays.fill(usedToday, 0);
+            java.util.Arrays.fill(budgetLoggedFor, false);
+            for (State each : states.values()) {
+                each.tokensToday = 0;
+                java.util.Arrays.fill(each.usedToday, 0);
+            }
         }
-        if (tokensToday + reserved > dailyTokens || state.tokensToday + reserved > playerDailyTokens) {
-            if (!budgetLogged) KindredMod.LOGGER.info("Kindred strategist: a daily token budget is spent; no more consultations today");
-            budgetLogged = true;
+        int u = use.ordinal();
+        if (usedToday[u] + reserved > useDaily[u] || state.usedToday[u] + reserved > usePlayerDaily[u]) {
+            if (!budgetLoggedFor[u]) KindredMod.LOGGER.info("Kindred strategist: the day's {} token budget is spent; no more {} today",
+                    use.name().toLowerCase(java.util.Locale.ROOT), use == Use.PAGES ? "pages" : use == Use.VOICE ? "lines" : "consultations");
+            budgetLoggedFor[u] = true;
             return false;
         }
         while (!recent.isEmpty() && now - recent.peekFirst() > 60_000L) recent.removeFirst();
@@ -652,9 +673,24 @@ final class StrategistBridge implements AutoCloseable {
         if (recent.size() >= GLOBAL_PER_MINUTE || state.recent.size() >= PLAYER_PER_MINUTE) return false;
         recent.addLast(now);
         state.recent.addLast(now);
-        tokensToday += reserved;
-        state.tokensToday += reserved;
+        charge(state, reserved, use);
         return true;
+    }
+
+    /** {@code tokens} (a reservation, or a correction of one to what was used) against {@code use}'s budgets and the totals. */
+    private void charge(State state, long tokens, Use use) {
+        int u = use.ordinal();
+        usedToday[u] = Math.max(0, usedToday[u] + tokens);
+        state.usedToday[u] = Math.max(0, state.usedToday[u] + tokens);
+        tokensToday = Math.max(0, tokensToday + tokens);
+        state.tokensToday = Math.max(0, state.tokensToday + tokens);
+    }
+
+    /** The tokens charged to {@code use} today, a player's ({@code id}) or, with none, the server's; for fixtures and runs. */
+    long usedToday(UUID id, Use use) {
+        if (id == null) return usedToday[use.ordinal()];
+        State state = states.get(id);
+        return state == null ? 0 : state.usedToday[use.ordinal()];
     }
 
     /** Closes the connection to the adviser and stops the memory's saving. */
