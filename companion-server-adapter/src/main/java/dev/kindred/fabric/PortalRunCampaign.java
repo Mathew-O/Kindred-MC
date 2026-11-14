@@ -1634,6 +1634,9 @@ final class PortalRunCampaign {
 
     java.util.List<String> completedForTest() { return java.util.List.copyOf(completedForTest); }
 
+    /** The pickup's next step for a fixture (F-22c74): what {@code pickUpLoose} would do now. */
+    Optional<Task> pickUpLooseForTest(NativePlayerBody body) { return pickUpLoose(body); }
+
     boolean relocatingForTest() { return relocate != null; }
 
     /** Where its next explore walk would go from where it stands (F-35m's fixtures), its heading kept as it turns. */
@@ -2687,7 +2690,7 @@ final class PortalRunCampaign {
         }
         // On an island the saplings its tree's leaves drop are picked up at night too: a night outlasts a drop.
         if (night && !groundBelow(player)) {
-            Optional<Task> loose = pickUpLoose(player);
+            Optional<Task> loose = pickUpLoose(body);
             if (loose.isPresent()) {
                 progress = stageLabel(stage) + ": " + loose.get().label();
                 return loose;
@@ -2719,7 +2722,7 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": pick up what was dropped at death - " + recover.get().label();
             return recover;
         }
-        Optional<Task> loose = pickUpLoose(player);
+        Optional<Task> loose = pickUpLoose(body);
         if (loose.isPresent()) {
             progress = stageLabel(stage) + ": " + loose.get().label();
             return loose;
@@ -8019,7 +8022,8 @@ final class PortalRunCampaign {
                 .map(drop -> go(drop.getBlockPos(), 0.6, true, "Pick up the log afloat"));
     }
 
-    private Optional<Task> pickUpLoose(ServerPlayerEntity player) {
+    private Optional<Task> pickUpLoose(NativePlayerBody body) {
+        var player = body.entity();
         // A drop in flowing water, such as the water poured for obsidian, waits until the water is taken back.
         var world = player.getServerWorld();
         boolean saplings = !groundBelow(player);
@@ -8050,7 +8054,34 @@ final class PortalRunCampaign {
         // the tunnel waits before it steps in (F-25c4bv). The walk to flint from gravel it broke two cells off went
         // through the cell the next block was coming down into, and was buried there (F-25c4cl).
         if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
-        return Optional.of(go(nearest.getBlockPos(), 0.6, false, label));
+        BlockPos at = nearest.getBlockPos();
+        Optional<Task> intoIt = intoTheDropsCell(body, at, label);
+        if (intoIt != null) return intoIt;
+        return Optional.of(go(at, 0.6, false, label));
+    }
+
+    /** How long a drop with no way into its cell is set aside, in ticks: a minute (F-22c74). */
+    private static final long DROP_NO_WAY = 1200;
+
+    /**
+     * A drop lying in a cell no walk gets into (F-22c74): under a pocket one high in its own pit, the cell under the pocket
+     * mined and the stone over the pocket left. Its head room is opened, as a player digs it out, when the block over the
+     * pocket is one it may break now; else the drop is set aside for a minute and the walk not asked, since every walk
+     * there was refused after the whole search. Null when a walk can get into the drop's cell.
+     */
+    private Optional<Task> intoTheDropsCell(NativePlayerBody body, BlockPos at, String label) {
+        var world = body.entity().getServerWorld();
+        var navigator = new NativeNavigator(world).throughDoors();
+        if (navigator.enterable(at, feet -> Math.sqrt(feet.getSquaredDistance(at)) <= 0.61)) return null;
+        BlockPos pocket = at.up(), head = at.up(2);
+        if (navigator.passable(pocket) && !navigator.passable(head) && breakableNow(body, head)
+                && world.getFluidState(head.up()).isEmpty() && !(world.getBlockState(head.up()).getBlock() instanceof net.minecraft.block.FallingBlock)) {
+            return Optional.of(breakAt(head, "Open the head room over the drop: " + label.toLowerCase(java.util.Locale.ROOT)));
+        }
+        setAside(at, lastTick + DROP_NO_WAY);
+        KindredMod.LOGGER.info("{} sets aside the drop at {}: no way into its cell, and its head room not to be opened ({})",
+                body.entity().getName().getString(), at.toShortString(), label);
+        return Optional.empty();
     }
 
     /** The drops it was told of leaving behind, by their id, each told once (F-22c60's diagnostics). */

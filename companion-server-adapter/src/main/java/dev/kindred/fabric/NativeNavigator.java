@@ -147,6 +147,11 @@ final class NativeNavigator {
         return path(core.find(cell(start), cell(target), cell -> goal.test(pos(cell)), maxNodes, maxHorizontalRadius));
     }
 
+    /** Whether some move the search makes ends in the goal round {@code target} (F-22c74): see the core's {@code enterable}. */
+    boolean enterable(BlockPos target, Predicate<BlockPos> goal) {
+        return core.enterable(cell(target), cell -> goal.test(pos(cell)));
+    }
+
     /**
      * A cell a body stands in on the lower half of a block, as on a bottom slab or a bottom stair, with room above it: no
      * stand to the search, which wants a full block's top under an empty cell.
