@@ -64,4 +64,52 @@ public final class NativeCraftHelperGameTests implements FabricGameTest {
             }
         });
     }
+
+    /**
+     * A table the goal has in reach is one the dispatch has in reach too (E-07e; CI on #261, run 43245862450). With five
+     * gold ingots, the player's eye 4.0 from its own table's middle on a diagonal: the goal asks to craft the golden
+     * helmet there, and the dispatch's check finds the same table in reach, so the craft is not dropped as no longer
+     * executable. Measured from the block the eye is in, the table was 4.6 off and not found, the scan with its budget
+     * of 128 blocks a tick ran out before it, and the goal, the table in its reach, asked again and never walked nearer:
+     * a golden helmet never made from five ingots, 1,200 ticks of nothing started.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 200)
+    public void aTableTheGoalHasInReachOnADiagonalIsInReachOfTheDispatch(TestContext context) {
+        Companion identity = Companion.create(UUID.randomUUID(), UUID.randomUUID(), "Goldsmith", UUID.randomUUID(),
+                context.getWorld().getRegistryKey().getValue().toString()).withEntityId(UUID.randomUUID());
+        for (int x = 1; x < 8; x++) for (int z = 1; z < 8; z++) {
+            context.setBlockState(x, 1, z, Blocks.STONE);
+            for (int y = 2; y < 6; y++) context.setBlockState(x, y, z, Blocks.AIR);
+        }
+        // Two across, four along and a block down from the block its eye is in: the root of 21 off, past 4.5; from the eye
+        // itself, near that block's corner toward the table, 4.0 to the table's middle.
+        context.setBlockState(4, 2, 6, Blocks.CRAFTING_TABLE);
+        NativePlayerBody body = new NativePlayerBody(context.getWorld(), identity, context.getAbsolute(new Vec3d(2.95, 2, 2.95)),
+                (lease, intent, target) -> false);
+        body.bind(new ActionArbiter(identity, body));
+        body.connect(Optional.empty(), false);
+        context.runAtTick(5, () -> {
+            try {
+                var player = body.entity();
+                var inventory = player.getInventory();
+                inventory.clear();
+                inventory.setStack(0, new ItemStack(Items.GOLD_INGOT, 5));
+                var campaign = new PortalRunCampaign();
+                var table = context.getAbsolutePos(new net.minecraft.util.math.BlockPos(4, 2, 6));
+                campaign.placedWorkstation(table);
+                campaign.knowledge().look(player, table, 2, 1, WorldKnowledge.Kind.CRAFTING_TABLE);
+                Vec3d eye = player.getEyePos();
+                double fromEye = eye.distanceTo(Vec3d.ofCenter(table));
+                context.assertTrue(fromEye > 3.9 && fromEye < 4.4, "The table in the goal's reach, from the eye: " + fromEye);
+                var asked = campaign.craft(body, "golden_helmet");
+                context.assertTrue(asked.isPresent() && asked.get().skill().equals("native_craft"), "The goal asks for the craft at the table: " + asked.map(PortalRunCampaign.Task::label));
+                var found = PlayerRuntime.workstationInReach(player.getServerWorld(), eye, Blocks.CRAFTING_TABLE, 4.5);
+                context.assertTrue(table.equals(found), "The dispatch finds the same table in reach: " + found + ", the table at " + table.toShortString());
+                context.assertTrue(body.planCraft("golden_helmet", found).isPresent(), "The craft planned at it");
+                context.complete();
+            } finally {
+                body.disconnect();
+            }
+        });
+    }
 }
