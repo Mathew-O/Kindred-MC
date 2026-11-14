@@ -1046,6 +1046,167 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /** For fixtures: whether a player's ledger is clear and no settlement is under way (F-31g1). */
+    boolean ledgerClearForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry != null && entry.ledgerState == LedgerCheckState.KNOWN_LEDGER_CLEAR && !entry.settling;
+    }
+
+    /** For fixtures: whether a settlement of a player's actions is under way. */
+    boolean settlingForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry != null && entry.settling;
+    }
+
+    /** Ticks a settlement waits for its target's chunk to load before it reads the block as unreadable. */
+    private static final int SETTLE_LOAD_TICKS = 200;
+
+    /**
+     * In plain terms: after a crash, an operator's way back for an AI player stopped by an action whose outcome was never
+     * written (F-31g1). Each such action is settled from what can be seen now: where the evidence is plain (the block it
+     * was digging still there and its things exactly as when it began, or the block gone and its things exactly as when it
+     * began), without more; otherwise the operator chooses, {@code done} or {@code notdone}, having been shown what was
+     * seen. Nothing is done again and no item is made: only the action's outcome is written, with who settled it and the
+     * evidence, in the World Record. Once none is left, the player can be connected and resumed as after any restart.
+     *
+     * Technical: native bodies only, offline, blocked by unresolved action rows; operators only. The unresolved rows are
+     * read on the ordered writer, the native save off the server thread, the target's chunk loaded by a ticket; the
+     * decision is {@link dev.kindred.core.ActionSettlement}'s. At each write the runtime, the entry, its generation, the
+     * operator's authority and the body's absence are checked again on the server thread, and the store checks the row
+     * is still uncertain at its revision, in the same transaction that records the {@code action.settled} event. A
+     * PREPARED or DISPATCHED row (not yet marked uncertain by a start) is refused. Shared tasks held for the player are
+     * released as {@code recover} releases them.
+     */
+    int settleNative(ServerCommandSource source, UUID requestedId, String choice) {
+        requireThread();
+        if (!ready || !running) return reject(source, "Kindred is loading saved records.");
+        UUID id = requestedId != null ? requestedId : defaultBotId();
+        if (id == null) return reject(source, "Specify an AI player name or UUID. Available: " + availableBotNames());
+        Entry entry = entries.get(id);
+        if (entry == null || entry.nativeState == null) return reject(source, "Settlement is for native AI players; '/aiplayer recover' is the legacy companion's.");
+        Actor actor = nativeActor(source);
+        if (actor == null || !actor.operator() || !nativeMayControl(source, entry)) return reject(source, "Only an operator may settle an AI player's actions.");
+        Boolean chosen;
+        if (choice == null || choice.isBlank()) chosen = null;
+        else if (choice.equalsIgnoreCase("done")) chosen = true;
+        else if (choice.equalsIgnoreCase("notdone")) chosen = false;
+        else return reject(source, "Settle as 'done' or 'notdone', or give no choice to settle only what the evidence shows.");
+        if (entry.ledgerState != LedgerCheckState.BLOCKED) return reject(source, entry.data.displayName() + " has no action to settle.");
+        if (entry.nativeBody != null || entry.nativePending || entry.settling) return reject(source, entry.data.displayName() + " must be offline and idle to settle.");
+        entry.settling = true;
+        long generation = entry.generation;
+        String by = actor.playerId() == null ? "the console" : playerName(actor.playerId()) + " (" + actor.playerId() + ")";
+        store.unresolvedActions(entry.data.id()).thenCombine(
+                nativeSaveReader.read(server.getSavePath(WorldSavePath.PLAYERDATA), entry.data.entityId()), java.util.Map::entry)
+                .whenComplete((read, failure) -> handBack(() -> {
+                    if (!running || entries.get(id) != entry || entry.generation != generation) { entry.settling = false; return; }
+                    if (failure != null) {
+                        entry.settling = false;
+                        reject(source, "The ledger or the native save could not be read; nothing was settled.");
+                        return;
+                    }
+                    String observed;
+                    try {
+                        observed = read.getValue().map(bytes -> InventoryEvidence.describeSave(bytes.decode(server), server.getRegistryManager())).orElse(null);
+                    } catch (RuntimeException unreadable) {
+                        observed = null;
+                    }
+                    settleEach(source, entry, generation, by, chosen, new java.util.ArrayList<>(read.getKey()), observed, 0, 0, 0);
+                }));
+        return 1;
+    }
+
+    /** Settles the actions left, one at a time, each written before the next is looked at. */
+    private void settleEach(ServerCommandSource source, Entry entry, long generation, String by, Boolean chosen,
+                            java.util.List<dev.kindred.core.ActionRecord> left, String observed, int settled, int waiting, int waited) {
+        if (!running || entries.get(entry.data.id()) != entry || entry.generation != generation) { entry.settling = false; return; }
+        if (left.isEmpty()) { finishSettling(source, entry, settled, waiting); return; }
+        var action = left.get(0);
+        if (action.state() != dev.kindred.core.ActionRecord.State.UNCERTAIN) {
+            entry.settling = false;
+            reject(source, "An action of " + entry.data.displayName() + "'s is " + action.state() + ", not yet marked uncertain by a start; nothing more was settled.");
+            return;
+        }
+        var target = dev.kindred.core.ActionSettlement.target(action.kind(), action.preconditions());
+        String block = null;
+        if (target.isPresent()) {
+            var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(entry.data.dimension())));
+            if (world != null) {
+                var pos = new BlockPos(target.get().x(), target.get().y(), target.get().z());
+                if (!world.isChunkLoaded(pos) && waited < SETTLE_LOAD_TICKS) {
+                    var chunk = new net.minecraft.util.math.ChunkPos(pos);
+                    world.getChunkManager().addTicket(NATIVE_CONNECT, chunk, 1, chunk);
+                    NextTick.run(() -> settleEach(source, entry, generation, by, chosen, left, observed, settled, waiting, waited + 1));
+                    return;
+                }
+                if (world.isChunkLoaded(pos)) block = Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString();
+            }
+        }
+        var decision = dev.kindred.core.ActionSettlement.decide(action, block, observed);
+        Boolean done = switch (decision.verdict()) {
+            case DONE -> true;
+            case NOT_DONE -> false;
+            case AMBIGUOUS -> chosen;
+        };
+        left.remove(0);
+        if (done == null) {
+            feedback(source, entry.data.displayName() + "'s " + action.kind() + " " + action.actionId() + " is not plain from the evidence: "
+                    + decision.evidence() + ". Choose: aiplayer native settle " + entry.data.displayName() + " done|notdone");
+            settleEach(source, entry, generation, by, chosen, left, observed, settled, waiting + 1, 0);
+            return;
+        }
+        boolean operator = decision.verdict() == dev.kindred.core.ActionSettlement.Verdict.AMBIGUOUS;
+        String who = operator ? by + ", the operator's choice" : by + ", from the evidence";
+        var next = dev.kindred.core.ActionSettlement.settled(action, done, decision.evidence(), who);
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("kind", action.kind());
+        data.put("outcome", done ? "done" : "not done");
+        data.put("by", by);
+        data.put("decided", operator ? "operator" : "evidence");
+        data.put("evidence", decision.evidence().length() > 2000 ? decision.evidence().substring(0, 2000) : decision.evidence());
+        var note = dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), worldId.toString(), "action.settled", entry.data.id(),
+                action.actionId().toString(), target.map(dev.kindred.core.ActionSettlement.Target::describe).orElse(""), data);
+        // Checked again at the write: the operator still is one, the body still away, the row still uncertain at its revision.
+        if (nativeActor(source) == null || !nativeActor(source).operator() || entry.nativeBody != null || entry.nativePending) {
+            entry.settling = false;
+            reject(source, "Settlement stopped: authority or the body changed; nothing more was settled.");
+            return;
+        }
+        store.settleAction(next, action.revision(), note).whenComplete((written, failure) -> handBack(() -> {
+            if (failure != null) {
+                entry.settling = false;
+                reject(source, "Settling " + action.actionId() + " was refused (" + failure.getMessage() + "); nothing more was settled.");
+                return;
+            }
+            KindredMod.LOGGER.info("Settled {}'s {} {} as {} ({}): {}", entry.data.displayName(), action.kind(), action.actionId(),
+                    done ? "done" : "not done", who, decision.evidence());
+            feedback(source, "Settled " + entry.data.displayName() + "'s " + action.kind() + " as " + (done ? "done" : "not done") + " (" + who + "): " + decision.evidence());
+            settleEach(source, entry, generation, by, chosen, left, observed, settled + 1, waiting, 0);
+        }));
+    }
+
+    /** Once the actions looked at are written: the player freed when the store holds none unresolved, as at a clear start. */
+    private void finishSettling(ServerCommandSource source, Entry entry, int settled, int waiting) {
+        long generation = entry.generation;
+        store.unresolvedActions(entry.data.id()).whenComplete((left, failure) -> handBack(() -> {
+            entry.settling = false;
+            if (!running || entries.get(entry.data.id()) != entry || entry.generation != generation) return;
+            if (failure != null || left == null || !left.isEmpty()) {
+                feedback(source, entry.data.displayName() + ": " + settled + " settled; " + (failure != null ? "the ledger could not be read again"
+                        : left.size() + " left to settle") + ". It stays blocked.");
+                return;
+            }
+            entry.ledgerState = LedgerCheckState.KNOWN_LEDGER_CLEAR;
+            entry.reconciliationBlocked = false;
+            // As recover does: a shared task held for it through the restart is free again, its reservation released.
+            teamCoordinator.handlePlayerStop(entry.data.id());
+            entry.blocker = "Settled; native body is offline; explicit connect is required.";
+            feedback(source, entry.data.displayName() + ": every action settled (" + settled + "). Connect it, then resume it.");
+        }));
+    }
+
     private Actor nativeActor(ServerCommandSource source) {
         if (source.getEntity() instanceof ServerPlayerEntity player) {
             if (server.getPlayerManager().getPlayer(player.getUuid()) != player) return null;
@@ -18149,6 +18310,8 @@ final class PlayerRuntime {
         private UUID barricadeTaskId;
         private long lastBarricadeTick = Long.MIN_VALUE / 2;
         private boolean nativePending;
+        /** A settlement of its unresolved actions under way (F-31g1): no second one, and no connection, meanwhile. */
+        private boolean settling;
         private ConnectionToken pendingConnection;
         private LedgerCheckState ledgerState = LedgerCheckState.PENDING;
         private boolean nativeSetupPending;
