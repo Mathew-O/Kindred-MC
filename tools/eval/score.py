@@ -340,6 +340,12 @@ def score(build_dir, use_metrics=True):
                 players[name]["chunkMinutes"] = p["chunkMinutes"]
                 players[name]["chunkLoadsPerHour"] = round(p["chunkLoads"] / hours, 1)
                 players[name]["chunkMinutesPerHour"] = round(p["chunkMinutes"] / hours, 1)
+            # E-71a: bridge blocks placed in its bridge runs, and how fast, over every run.
+            if "bridgeBlocks" in p:
+                players[name]["bridgeBlocks"] = p["bridgeBlocks"]
+                players[name]["bridgeSeconds"] = p["bridgeSeconds"]
+                if p["bridgeSeconds"] > 0:
+                    players[name]["bridgeBlocksPerSecond"] = round(p["bridgeBlocks"] / p["bridgeSeconds"], 2)
         # F-26c: every death and every stuck spell in a bucket; a listed spell with no watchdog line found is "unmatched".
         found = stuck_kinds_of(log_of(folder), result["players"])
         for name, p in result["players"].items():
@@ -366,6 +372,10 @@ def score(build_dir, use_metrics=True):
         if all("chunkLoads" in p for p in players.values()) and players:
             per_seed[folder.name]["teamChunkLoadsPerHour"] = round(sum(p["chunkLoads"] for p in players.values()) / hours, 1)
             per_seed[folder.name]["teamChunkMinutesPerHour"] = round(sum(p["chunkMinutes"] for p in players.values()) / hours, 1)
+        # E-71a: the team's bridge blocks over the seconds its bridge runs took, where it bridged at all.
+        bridge_seconds = sum(p.get("bridgeSeconds", 0) for p in players.values())
+        if bridge_seconds > 0:
+            per_seed[folder.name]["teamBridgeBlocksPerSecond"] = round(sum(p.get("bridgeBlocks", 0) for p in players.values()) / bridge_seconds, 2)
     team = {
         "teamFurthestIndex": spread([s["teamFurthestIndex"] for s in per_seed.values()]),
         "teamDeathsPerHour": spread([s["teamDeathsPerHour"] for s in per_seed.values()]),
@@ -389,7 +399,8 @@ def score(build_dir, use_metrics=True):
         "unaskedLines": spread([s["chatter"]["unaskedLines"] for s in per_seed.values()]),
         "silentMeetings": spread([s["chatter"]["silentMeetings"] for s in per_seed.values()]),
     }
-    for key in ("days", "teamDeathsPerDay", "teamStuckMinutesPerDay", "teamChunkLoadsPerHour", "teamChunkMinutesPerHour"):
+    for key in ("days", "teamDeathsPerDay", "teamStuckMinutesPerDay", "teamChunkLoadsPerHour", "teamChunkMinutesPerHour",
+                "teamBridgeBlocksPerSecond"):
         values = [s[key] for s in per_seed.values() if key in s]
         if values:
             team[key] = spread(values)
@@ -469,6 +480,8 @@ def markdown(summary):
     if "teamChunkLoadsPerHour" in t:
         lines.append("| Chunk-loads a game hour, the team | %s |" % fmt(t["teamChunkLoadsPerHour"]))
         lines.append("| Chunk-minutes a game hour, the team | %s |" % fmt(t["teamChunkMinutesPerHour"]))
+    if "teamBridgeBlocksPerSecond" in t:
+        lines.append("| Bridge blocks a second, the team | %s |" % fmt(t["teamBridgeBlocksPerSecond"]))
     lines.append("| Stuck spells, the team | %s |" % fmt(t["stuckSpells"]))
     lines.append("| Stuck game minutes, the team | %s |" % fmt(t["stuckMinutes"]))
     lines.append("| Rescue plans, the team (of them, out) | %s (%s) |" % (fmt(t["rescues"]), fmt(t["rescuesUnstuck"])))

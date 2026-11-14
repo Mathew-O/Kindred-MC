@@ -28,7 +28,10 @@
     "DoorInteractGoalAccessor",
     "SmithingTransformAccessor",
     "PlayerSaveHandlerMixin",
-    "SleepCountMixin"
+    "SleepCountMixin",
+    "ArenaBreakMixin",
+    "ArenaThrowMixin",
+    "ArenaSavedMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin",

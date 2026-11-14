@@ -200,4 +200,92 @@ public final class NativeTradeGameTests implements FabricGameTest {
                             "Nothing said of it: " + f.runtime.said(f.id));
                 });
     }
+
+    /**
+     * F-30d3: what it knows of a villager is kept across a restart. Hal looks at a librarian whose Mending book it is out
+     * of, tells of it once ("worth it, once it has restocked") and lets it be until it restocks; the server's runtime then
+     * stops and starts. After it, connected again and set going beside the same librarian, Hal knows its offers, does not
+     * open its screen again before its wait is over, and does not tell of it a second time. Before, all of it was lost
+     * in a restart: it looked again at once and told again. Staged as {@link #anOfferTheVillagerIsOutOfIsLeftAndNothingIsSoldForIt}.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "tradeKept", tickLimit = 3000)
+    public void aVillagerItLookedAtBeforeARestartIsNotLookedAtOrToldOfAgainAfterIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        VillagerEntity[] librarian = new VillagerEntity[1];
+        String told = "The librarian here sells a Mending book for 2 emeralds and a book: worth it, once it has restocked.";
+        int[] waited = {0};
+        boolean[] lookedAgain = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Hal"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    for (int x = -4; x <= 14; x++) for (int z = -4; z <= 14; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    world.setTimeOfDay(1000);
+                    var villager = EntityType.VILLAGER.create(world);
+                    BlockPos at = context.getAbsolutePos(LIBRARIAN);
+                    villager.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 90, 0);
+                    villager.setAiDisabled(true);
+                    villager.setVillagerData(new VillagerData(VillagerType.PLAINS, VillagerProfession.LIBRARIAN, 1));
+                    var list = new TradeOfferList();
+                    list.add(paper());
+                    list.add(bookOffer(book(context, Enchantments.MENDING, 1), 2, 12));
+                    villager.setOffers(list);
+                    world.spawnEntity(villager);
+                    librarian[0] = villager;
+                    var hal = f.player();
+                    BlockPos a = context.getAbsolutePos(HAL);
+                    hal.refreshPositionAndAngles(a.getX() + 0.5, a.getY(), a.getZ() + 0.5, -90, 0);
+                    var inventory = hal.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.BREAD, 8));
+                    inventory.setStack(2, new ItemStack(Items.PAPER, 48));
+                    inventory.setStack(3, new ItemStack(Items.BOOK));
+                    hal.setHealth(20);
+                    hal.getHungerManager().setFoodLevel(20);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Hal playing"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.villagersKnown(f.id) == 1, "Looked at its offers / " + f.runtime.nativeLastResult(f.id)))
+                .createAndAdd(() -> context.assertTrue(f.runtime.said(f.id).contains(told), "Told once what is worth coming back for: " + f.runtime.said(f.id)))
+                .createAndAdd(() -> {
+                    context.assertTrue(!librarian[0].hasCustomer(), "Its screen closed");
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", f.id) == 1, "Hal stopped");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped for the restart"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Restarted"))
+                // A restart never auto-spawns: Hal's body comes back when connected, stopped until set going.
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "connect", f.id) == 1, "Connected again"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.runtime.villagersReadForTest(f.id), "What it knows of the villagers read back"))
+                .createAndAdd(() -> {
+                    var hal = f.player();
+                    BlockPos a = context.getAbsolutePos(HAL);
+                    hal.refreshPositionAndAngles(a.getX() + 0.5, a.getY(), a.getZ() + 0.5, -90, 0);
+                    context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Hal playing again");
+                })
+                .createAndAdd(() -> {
+                    if (librarian[0].hasCustomer()) lookedAgain[0] = true;
+                    context.assertTrue(++waited[0] >= 300, "Fifteen seconds beside it");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.villagersKnown(f.id) == 1, "Its offers known after the restart");
+                    context.assertTrue(!lookedAgain[0], "Not looked at again before it restocks");
+                    context.assertTrue(f.runtime.said(f.id).stream().noneMatch(line -> line.startsWith("The librarian")), "Not told of again: " + f.runtime.said(f.id));
+                    var inventory = held(context, f);
+                    context.assertTrue(count(inventory, Items.PAPER) == 48 && count(inventory, Items.EMERALD) == 0 && !holdsMending(inventory), "Nothing traded");
+                    librarian[0].discard();
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }
