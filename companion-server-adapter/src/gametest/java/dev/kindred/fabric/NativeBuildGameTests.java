@@ -260,6 +260,11 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its ground put back as it found it when the test ends, passed or failed (F-22c75a): the kiosk and the
+                    // copy it builds stand past this test's own plot, oak logs among them, and a later batch's plot beside
+                    // them saw them. The pit fixture's player walked to the copy's posts, seven blocks off, for a log, and
+                    // missed the climb it is tested on.
+                    FixtureGround.keep(context, o.add(-6, 1, -6), o.add(18, 12, 14));
                     for (int x = -6; x <= 18; x++) for (int z = -6; z <= 14; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 12; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
