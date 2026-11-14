@@ -153,6 +153,7 @@
       "dev.kindred.fabric.NativeFactionHubWalkOutGameTests",
       "dev.kindred.fabric.NativeFactionWoodFirstGameTests",
       "dev.kindred.fabric.NativeFactionTellGameTests",
+      "dev.kindred.fabric.NativeFactionDeathGameTests",
       "dev.kindred.fabric.NativeFactionTradeGameTests",
       "dev.kindred.fabric.NativeFactionWantsGameTests",
       "dev.kindred.fabric.NativeFactionsModeGameTests",
