@@ -387,6 +387,14 @@ final class PlayerRuntime {
     private final Map<UUID, List<dev.kindred.core.construction.Blueprint>> libraryDesigns = new HashMap<>();
     /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
     private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
+    /** Each builder's own things set aside for its build battle (M-06k3), kept on disk until they are back. */
+    private final BuilderHolds builderHolds;
+    /** The holds of builders in a battle now, as written: what each gets back at the end. */
+    private final Map<UUID, net.minecraft.nbt.NbtCompound> builderHold = new HashMap<>();
+    /** Players whose hold is being read back at a join or connect: one restore at a time each. */
+    private final java.util.Set<UUID> holdsRestoring = new java.util.HashSet<>();
+    /** The world each battle's plots and arena were laid out in, to reclaim what creative left there (M-06k3). */
+    private final Map<UUID, net.minecraft.registry.RegistryKey<net.minecraft.world.World>> arenaWorlds = new HashMap<>();
     /** Build battles whose building has begun, by match. */
     private final Set<UUID> buildsBegun = new HashSet<>();
     /** Manhunts begun, by match (M-02a). */
@@ -529,6 +537,7 @@ final class PlayerRuntime {
         this.memory.chronicle(id -> chronicle.pages(id)); // F-33: the report reads a player's latest page.
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.recipeStore = new RescueRecipeStore(metadataDirectory);
+        this.builderHolds = new BuilderHolds(metadataDirectory);
         this.rescueBook = recipeStore.load();
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
@@ -1168,6 +1177,8 @@ final class PlayerRuntime {
             body.onGift((from, stack) -> gifted(entry, from, stack));
             body.connect(state, !fresh);
             entry.data = entry.arbiter.snapshot();
+            // A hold left from a build battle it was away for at the end, or one a crash cut short (M-06k3).
+            if (!fresh) restoreHoldOnJoin(body.entity());
             if (fresh) establishNative(source, entry, body, body.saveNow());
             else {
                 entry.nativePending = false;
@@ -2023,12 +2034,13 @@ final class PlayerRuntime {
                     || entry.metadataFault || entry.reconciliationBlocked
                     || entry.ledgerState != LedgerCheckState.KNOWN_LEDGER_CLEAR
                     || entry.snapshot().stopLatched()
-                    || entry.arbiter.cancellationPending() || entry.hazardInterrupted) {
+                    // The body gone meanwhile (a disconnect while the budget loaded): dropped, as any other stale dispatch.
+                    || entry.arbiter == null || entry.arbiter.cancellationPending() || entry.hazardInterrupted) {
                 entry.nativeWorkPending = false;
                 admission.release(id);
                 if (running) dispatchDropped(entry, skill, "generation=" + (entry.generation == generation)
                         + " fault=" + entry.metadataFault + " reconciling=" + entry.reconciliationBlocked + " ledger=" + entry.ledgerState
-                        + " stop=" + entry.snapshot().stopLatched() + " cancelling=" + entry.arbiter.cancellationPending()
+                        + " stop=" + entry.snapshot().stopLatched() + " cancelling=" + (entry.arbiter == null ? "no body" : entry.arbiter.cancellationPending())
                         + " hazard=" + entry.hazardInterrupted);
                 return;
             }
@@ -15178,15 +15190,14 @@ final class PlayerRuntime {
         racePace.clear();
         raceGoal.clear();
         // A build battle's creative mode goes with it: blocks cleared, game modes back, before anything is saved.
-        for (var builder : new ArrayList<>(modeBefore.entrySet())) {
-            var player = server.getPlayerManager().getPlayer(builder.getKey());
-            if (player == null) continue;
-            Entry builderEntry = entryForPlayer(builder.getKey());
-            if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(false);
-            player.getInventory().clear();
-            player.changeGameMode(builder.getValue());
+        // Each builder online gets its own things back from its hold (M-06k3); one away gets them at its next join.
+        for (var held : new ArrayList<>(builderHold.entrySet())) {
+            var player = server.getPlayerManager().getPlayer(held.getKey());
+            if (player != null) restoreBuilder(player, held.getValue(), true);
         }
+        builderHold.clear();
         modeBefore.clear();
+        builderHolds.close();
         // A hunt's compasses go with the hunt (D6).
         for (var match : matches.list()) {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT) continue;
@@ -15797,6 +15808,8 @@ final class PlayerRuntime {
     /** A player joining the server is told the world's mode and its rules, where one is chosen. */
     void playerJoined(ServerPlayerEntity player) {
         requireThread();
+        // A person's builder hold at its join (M-06k3); an AI player's is restored as its body connects.
+        if (ready && running && entryForPlayer(player.getUuid()) == null) restoreHoldOnJoin(player);
         if (!ready || worldMode == null || entryForPlayer(player.getUuid()) != null) return;
         player.sendMessage(Text.literal("This world plays " + worldMode.label + ".").formatted(net.minecraft.util.Formatting.GOLD), false);
         tellRules(player, dev.kindred.core.match.GameModes.rules(worldMode));
@@ -16022,6 +16035,7 @@ final class PlayerRuntime {
         }
         var match = enter(result.match().orElseThrow());
         arenas.put(match.id(), arena);
+        arenaWorlds.put(match.id(), world.getRegistryKey());
         var round = new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots);
         battles.put(match.id(), round);
         // Reference designs for the theme: schematics the operator put in the library whose names name it and that fit a
@@ -16056,38 +16070,151 @@ final class PlayerRuntime {
     private void startBuilding(dev.kindred.core.match.MatchRegistry.Match match) {
         var battle = battles.get(match.id());
         if (battle == null) return;
-        int seconds = matches.limit(match.id()) / 20;
         for (UUID builder : match.joined()) {
             var player = server.getPlayerManager().getPlayer(builder);
             if (player == null) continue;
-            modeBefore.putIfAbsent(builder, player.interactionManager.getGameMode());
-            Entry builderEntry = entryForPlayer(builder);
-            if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
-            player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
-            presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
-                    + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60), dev.kindred.core.match.MatchPresentation.Cue.START));
-            Entry entry = entryForPlayer(builder);
-            var plot = battle.plot(builder).orElse(null);
-            if (entry == null || plot == null) continue;
-            var random = new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits());
-            // A reference design from the library for the theme where there is one (M-05), credited; else its own design.
-            var library = libraryDesigns.getOrDefault(match.id(), List.of());
-            var design = library.isEmpty() ? dev.kindred.core.match.BuildBattle.design(battle.theme(), random) : library.get(random.nextInt(library.size()));
-            if (!library.isEmpty()) {
-                String credit = "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + ": " + playerName(builder) + " builds '"
-                        + design.name() + "' from the schematic library, " + SchematicLibrary.credit(design);
-                KindredMod.LOGGER.info(credit);
-                for (UUID invited : match.invited()) {
-                    var other = server.getPlayerManager().getPlayer(invited);
-                    if (other != null && entryForPlayer(invited) == null) other.sendMessage(Text.literal(credit), false);
+            // M-06k3: its own things and game mode set aside on disk before anything of theirs is touched; a builder in
+            // twice keeps its first hold. Creative and the stock only once the hold is written.
+            if (builderHold.containsKey(builder)) { beginBuilding(match, builder); continue; }
+            var hold = BuilderHolds.capture(player);
+            builderHold.put(builder, hold);
+            builderHolds.write(builder, hold).whenComplete((wrote, failure) -> handBack(() -> {
+                if (!running) return;
+                if (failure != null) {
+                    builderHold.remove(builder);
+                    KindredMod.LOGGER.error("Build battle {}: {}'s things could not be set aside; it does not build", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                            playerName(builder), failure);
+                    return;
+                }
+                var now = matches.list().stream().filter(m -> m.id().equals(match.id())).findFirst().orElse(null);
+                if (now == null || now.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING || !now.playing(builder)) return;
+                beginBuilding(now, builder);
+            }));
+        }
+    }
+
+    /** One builder into its battle, its own things already set aside: cleared, creative, an AI builder stocked. */
+    private void beginBuilding(dev.kindred.core.match.MatchRegistry.Match match, UUID builder) {
+        var battle = battles.get(match.id());
+        var player = server.getPlayerManager().getPlayer(builder);
+        if (battle == null || player == null) return;
+        int seconds = matches.limit(match.id()) / 20;
+        modeBefore.putIfAbsent(builder, player.interactionManager.getGameMode());
+        player.getInventory().clear();
+        player.getEnderChestInventory().clear();
+        Entry builderEntry = entryForPlayer(builder);
+        if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
+        player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
+        presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
+                + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60), dev.kindred.core.match.MatchPresentation.Cue.START));
+        Entry entry = entryForPlayer(builder);
+        var plot = battle.plot(builder).orElse(null);
+        if (entry == null || plot == null) return;
+        var random = new java.util.Random(match.id().getLeastSignificantBits() ^ builder.getMostSignificantBits());
+        // A reference design from the library for the theme where there is one (M-05), credited; else its own design.
+        var library = libraryDesigns.getOrDefault(match.id(), List.of());
+        var design = library.isEmpty() ? dev.kindred.core.match.BuildBattle.design(battle.theme(), random) : library.get(random.nextInt(library.size()));
+        if (!library.isEmpty()) {
+            String credit = "Build battle " + dev.kindred.core.match.MatchRegistry.shortId(match.id()) + ": " + playerName(builder) + " builds '"
+                    + design.name() + "' from the schematic library, " + SchematicLibrary.credit(design);
+            KindredMod.LOGGER.info(credit);
+            for (UUID invited : match.invited()) {
+                var other = server.getPlayerManager().getPlayer(invited);
+                if (other != null && entryForPlayer(invited) == null) other.sendMessage(Text.literal(credit), false);
+            }
+        }
+        var site = plot.site(design);
+        stockFor(player, design);
+        startBuild(server.getCommandSource(), entry.data.id(), design, new BlockPos(site.x(), site.y(), site.z()), 0);
+        KindredMod.LOGGER.info("Build battle {}: {} builds {} at {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
+                design.name(), site);
+    }
+
+    /**
+     * A builder out of its battle given back exactly its own things and game mode (M-06k3): everything creative made or
+     * the match gave cleared, the hold put back, the player saved, then the hold forgotten. Online players only; one away
+     * gets it back when it next joins.
+     */
+    private void restoreBuilder(ServerPlayerEntity player, net.minecraft.nbt.NbtCompound hold, boolean waitForDelete) {
+        UUID id = player.getUuid();
+        Entry entry = entryForPlayer(id);
+        if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
+        var mode = BuilderHolds.restore(player, hold);
+        if (entry != null && entry.nativeBody != null) {
+            entry.nativeBody.allowCreative(false);
+            entry.nativeBody.allowAdventure(false);
+        }
+        player.changeGameMode(mode);
+        if (entry != null && entry.nativeBody != null) persistNativeSaveReceipt(entry);
+        else ((dev.kindred.fabric.mixin.PlayerManagerSaveInvoker) server.getPlayerManager()).kindred$saveNativePlayer(player);
+        if (waitForDelete) builderHolds.deleteNow(id);
+        else builderHolds.delete(id).whenComplete((done, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("A builder's hold could not be deleted; it is restored again at the next login", failure);
+        });
+        KindredMod.LOGGER.info("Build battle: {} given back its own things and {} mode", player.getName().getString(), mode.asString());
+    }
+
+    /**
+     * A battle over (M-06k3): every container on its plots and in its arena emptied and every item lying there discarded,
+     * so nothing creative made leaves Builder. The builds themselves stand for the podium.
+     */
+    private void reclaimArena(dev.kindred.core.match.MatchRegistry.Match match) {
+        var battle = battles.get(match.id());
+        var key = arenaWorlds.remove(match.id());
+        var world = key == null ? null : server.getWorld(key);
+        if (battle == null || world == null) return;
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        var corners = new ArrayList<dev.kindred.core.construction.Pos>();
+        for (var plot : battle.plots()) {
+            var o = plot.origin();
+            corners.add(o);
+            corners.add(new dev.kindred.core.construction.Pos(o.x() + dev.kindred.core.match.BuildBattle.PLOT - 1, o.y() + 24, o.z() + dev.kindred.core.match.BuildBattle.PLOT - 1));
+        }
+        var arena = arenas.get(match.id());
+        if (arena != null) corners.addAll(arena.blocks().keySet());
+        for (var c : corners) {
+            minX = Math.min(minX, c.x()); minY = Math.min(minY, c.y()); minZ = Math.min(minZ, c.z());
+            maxX = Math.max(maxX, c.x()); maxY = Math.max(maxY, c.y() + 8); maxZ = Math.max(maxZ, c.z());
+        }
+        if (corners.isEmpty()) return;
+        int emptied = 0, discarded = 0;
+        for (int cx = minX >> 4; cx <= maxX >> 4; cx++) for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
+            if (!world.isChunkLoaded(cx, cz)) continue;
+            for (var blockEntity : new ArrayList<>(world.getChunk(cx, cz).getBlockEntities().values())) {
+                var at = blockEntity.getPos();
+                if (at.getX() < minX || at.getX() > maxX || at.getY() < minY || at.getY() > maxY || at.getZ() < minZ || at.getZ() > maxZ) continue;
+                if (blockEntity instanceof net.minecraft.inventory.Inventory inventory && !inventory.isEmpty()) {
+                    inventory.clear();
+                    blockEntity.markDirty();
+                    emptied++;
                 }
             }
-            var site = plot.site(design);
-            stockFor(player, design);
-            startBuild(server.getCommandSource(), entry.data.id(), design, new BlockPos(site.x(), site.y(), site.z()), 0);
-            KindredMod.LOGGER.info("Build battle {}: {} builds {} at {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(builder),
-                    design.name(), site);
         }
+        var box = new net.minecraft.util.math.Box(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
+        for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, box, e -> true)) {
+            item.discard();
+            discarded++;
+        }
+        if (emptied > 0 || discarded > 0) {
+            KindredMod.LOGGER.info("Build battle {}: {} containers emptied and {} items lying about cleared from the arena", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                    emptied, discarded);
+        }
+    }
+
+    /** A player joining with a hold left from a battle it was away for at the end, or one a crash cut short (M-06k3). */
+    private void restoreHoldOnJoin(ServerPlayerEntity player) {
+        UUID id = player.getUuid();
+        if (builderHold.containsKey(id) || !holdsRestoring.add(id)) return;
+        builderHolds.read(id).whenComplete((hold, failure) -> handBack(() -> {
+            holdsRestoring.remove(id);
+            if (!running || failure != null || hold == null || hold.isEmpty() || builderHold.containsKey(id)) {
+                if (failure != null) KindredMod.LOGGER.error("{}'s builder hold could not be read; it stays for an operator", player.getName().getString(), failure);
+                return;
+            }
+            var now = server.getPlayerManager().getPlayer(id);
+            if (now == null || now.isDisconnected()) return;
+            restoreBuilder(now, hold.get(), false);
+        }));
     }
 
     /** An AI builder's inventory filled with what its design takes, and scaffolding: free in creative, in Builder only. */
@@ -16182,19 +16309,15 @@ final class PlayerRuntime {
         boolean over = match.state() == dev.kindred.core.match.MatchRegistry.State.ENDED;
         for (UUID builder : match.invited()) {
             if (!over && match.playing(builder)) continue;
-            var mode = modeBefore.remove(builder);
-            if (mode == null) continue;
+            modeBefore.remove(builder);
+            var hold = builderHold.remove(builder);
+            if (hold == null) continue;
+            // Away at the end: its hold stays on disk, and it gets its own things back when it next joins (M-06k3).
             var player = server.getPlayerManager().getPlayer(builder);
             if (player == null) continue;
-            Entry entry = entryForPlayer(builder);
-            if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
-            if (entry != null && entry.nativeBody != null) {
-                entry.nativeBody.allowCreative(false);
-                entry.nativeBody.allowAdventure(false);
-            }
-            player.getInventory().clear();
-            player.changeGameMode(mode);
+            restoreBuilder(player, hold, false);
         }
+        if (over) reclaimArena(match);
         var battle = battles.get(match.id());
         if (!over || battle == null) return;
         var world = server.getOverworld();
