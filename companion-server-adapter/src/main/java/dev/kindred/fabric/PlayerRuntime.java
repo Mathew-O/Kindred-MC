@@ -2565,7 +2565,7 @@ final class PlayerRuntime {
                 && java.util.Objects.equals(entry.lease, lease) && entry.arbiter.isCurrent(lease)
                 && (("native_eat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.EAT || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
-                        || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                        || "native_lava_escape".equals(entry.skillId) || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
                     // A far walk ridden on its own horse (M-01a): getting on and off it, the trip's own step permits checked too.
                     || ("native_goto".equals(entry.skillId) && intent == NativePlayerBody.Intent.RIDE && entry.skillArgs.containsKey("horse"))
@@ -2638,6 +2638,39 @@ final class PlayerRuntime {
             case MOVE, LOOK, SELECT_SLOT, EAT, EQUIP, ATTACK, BLOCK, SHOOT, THROW, TOSS, SWAP, FISH, BOAT, FEED, SHEAR, TRADE, RENAME -> true;
             default -> TerritoryGuard.mayChange(entry.nativeBody.entity(), target);
         };
+    }
+
+    /**
+     * The nearest dry ground a player in lava can see and make for (F-25c6a): level with its feet or above, never below
+     * (it cannot go down through the lake's floor), within 16 blocks across and 8 up, and in plain sight from its eyes, so
+     * a pocket of air behind stone or under the floor is never chosen: the first try took one under the pool's floor.
+     */
+    static java.util.Optional<BlockPos> lavaBank(ServerPlayerEntity player, BlockPos feetPos) {
+        var world = player.getServerWorld();
+        var navigator = new NativeNavigator(world);
+        Vec3d eye = player.getEyePos();
+        for (int ring = 1; ring <= 16; ring++) {
+            BlockPos best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (int dx = -ring; dx <= ring; dx++) {
+                for (int dz = -ring; dz <= ring; dz++) {
+                    if (Math.abs(dx) != ring && Math.abs(dz) != ring) continue;
+                    for (int dy = 0; dy <= 8; dy++) {
+                        BlockPos feet = feetPos.add(dx, dy, dz);
+                        double distance = feet.getSquaredDistance(feetPos);
+                        if (distance >= bestDistance || !world.isChunkLoaded(feet) || !navigator.standable(feet)
+                                || !world.getFluidState(feet).isEmpty() || !world.getFluidState(feet.down()).isEmpty()) continue;
+                        var hit = world.raycast(new net.minecraft.world.RaycastContext(eye, Vec3d.ofCenter(feet),
+                                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+                        if (hit.getType() != net.minecraft.util.hit.HitResult.Type.MISS) continue;
+                        best = feet;
+                        bestDistance = distance;
+                    }
+                }
+            }
+            if (best != null) return java.util.Optional.of(best);
+        }
+        return java.util.Optional.empty();
     }
 
     static boolean isHazardousSituation(ServerPlayerEntity player) {
@@ -3383,6 +3416,23 @@ final class PlayerRuntime {
                         dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
                 candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", dirs[d], "blocks", "1")));
                 break;
+            }
+            // In lava with lava on every side (F-25c6a): no cell beside it to step to, so it makes for the nearest dry
+            // ground it can see, up and across, rather than giving up every task it begins as a hazard with nothing in
+            // their place (E-40c3: seed 303 Kindred at the bottom of the Nether's lava sea for some 105,000 ticks).
+            if (candidates.isEmpty() && (player.isInLava() || world.getFluidState(feetPos).isIn(FluidTags.LAVA))) {
+                var bank = lavaBank(player, feetPos);
+                if (bank.isPresent()) {
+                    BlockPos dry = bank.get();
+                    UUID taskId = UUID.nameUUIDFromBytes(("lava_escape:" + entry.data.id() + ":" + dry.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
+                            dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                    candidates.add(new NativeTaskCandidate(candidate, "native_lava_escape", Map.of("x", String.valueOf(dry.getX()),
+                            "y", String.valueOf(dry.getY()), "z", String.valueOf(dry.getZ()))));
+                } else if (server.getTicks() - entry.lavaEscapeLoggedTick >= 1200) {
+                    entry.lavaEscapeLoggedTick = server.getTicks();
+                    KindredMod.LOGGER.info("{}: in lava with no dry ground in sight to make for, at {}", entry.data.displayName(), feetPos.toShortString());
+                }
             }
         }
 
@@ -5361,6 +5411,8 @@ final class PlayerRuntime {
 
     /** How often a player with no goal looks to its base (M-01c), after finding nowhere to put one, after a stage ended short. */
     private static final int BASE_LOOK = 200, BASE_NO_SITE = 1200, BASE_RETRY = 6000;
+    /** A workstation cell let be after this many refused placements in a row, for this many ticks (F-22c77). */
+    static final int PLACE_REFUSALS = 3, PLACE_SET_ASIDE = 1200;
     /** How far from its anchor a player looks for ground for a base, and how often a stage that ends short is tried. */
     private static final int BASE_RADIUS = 24, BASE_TRIES = 3;
     /** How far a player looks round it for animals to keep (M-01a); its wheat plot's side. */
@@ -7489,7 +7541,8 @@ final class PlayerRuntime {
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
         if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight || creeperThreat && !handlingCreeper || breakFall)
-                && !"native_retreat".equals(entry.skillId) && !"native_clutch".equals(entry.skillId) && !escapingWater) {
+                && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
+                && !escapingWater) {
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort(breakFall && !isHazardousSituation(body.entity()) ? "Falling: the fall to be broken with water"
@@ -8346,6 +8399,23 @@ final class PlayerRuntime {
             if (entry.emptying != null || !entry.seenAtStores.isEmpty()) entry.lookAt = server.getTicks() + 200;
             else entry.storeAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
+        }
+        // The same placement refused at a cell, the block not going down (F-22c77): counted; the third time running, the
+        // cell let be a minute, so that a workstation is put down somewhere else rather than at it tick after tick.
+        if (entry.nativeTask instanceof NativePlaceAction place && place.placedCell() != null) {
+            long cell = place.placedCell().asLong();
+            if (state == SkillRunner.State.BLOCKED && entry.runner.reason().filter(r -> r.startsWith(NativePlaceAction.NO_EFFECT)).isPresent()) {
+                if (entry.placeRefusals.size() > 64) entry.placeRefusals.clear();
+                int refused = entry.placeRefusals.merge(cell, 1, Integer::sum);
+                if (refused >= PLACE_REFUSALS) {
+                    entry.placeRefusals.remove(cell);
+                    entry.placeSetAside.put(cell, (long) server.getTicks() + PLACE_SET_ASIDE);
+                    KindredMod.LOGGER.info("{} lets {} be a while: its placement there refused {} times", entry.data.displayName(),
+                            place.placedCell().toShortString(), refused);
+                }
+            } else if (state == SkillRunner.State.COMPLETED) {
+                entry.placeRefusals.remove(cell);
+            }
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)) {
             entry.netheriteAt = server.getTicks() + 600;
@@ -13593,7 +13663,7 @@ final class PlayerRuntime {
             return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
         }
         if (held >= 0) {
-            BlockPos spot = anvilSpot(player, entry.setup);
+            BlockPos spot = anvilSpot(entry, player);
             if (spot == null) {
                 entry.kitNamesAt = now + 600;
                 return null;
@@ -14142,7 +14212,7 @@ final class PlayerRuntime {
             for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
             return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
         }
-        BlockPos spot = workstationSpot(player, entry.setup, "minecraft:enchanting_table");
+        BlockPos spot = workstationSpot(entry, player, "minecraft:enchanting_table");
         if (spot == null) {
             entry.enchantAt = now + 600;
             return null;
@@ -14220,7 +14290,7 @@ final class PlayerRuntime {
                 for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
                 return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tableSlot), "target", String.valueOf(free))));
             }
-            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:smithing_table");
+            BlockPos spot = workstationSpot(entry, player, "minecraft:smithing_table");
             if (spot == null) {
                 entry.netheriteAt = now + 600;
                 return null;
@@ -14365,7 +14435,7 @@ final class PlayerRuntime {
                 for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
                 return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(standSlot), "target", String.valueOf(free))));
             }
-            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:brewing_stand");
+            BlockPos spot = workstationSpot(entry, player, "minecraft:brewing_stand");
             if (spot == null) {
                 entry.brewAt = now + 600;
                 return null;
@@ -14432,15 +14502,18 @@ final class PlayerRuntime {
      * Where to put its anvil down: on solid ground beside it, open, within reach, and allowed by its work area's rules,
      * or the server's roaming rules with none.
      */
-    private BlockPos anvilSpot(ServerPlayerEntity player, WorkSetup setup) {
-        return workstationSpot(player, setup, "minecraft:anvil");
+    private BlockPos anvilSpot(Entry entry, ServerPlayerEntity player) {
+        return workstationSpot(entry, player, "minecraft:anvil");
     }
 
     /** As {@link #anvilSpot}, for a workstation of {@code block}. */
-    private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
+    private BlockPos workstationSpot(Entry entry, ServerPlayerEntity player, String block) {
         var world = player.getServerWorld();
+        var setup = entry.setup;
         BlockPos feet = player.getBlockPos();
         var state = Registries.BLOCK.get(Identifier.of(block)).getDefaultState();
+        long now = server.getTicks();
+        entry.placeSetAside.values().removeIf(until -> until <= now);
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
             for (BlockPos pos : List.of(feet.offset(side), feet.offset(side).offset(side.rotateYClockwise()))) {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
@@ -14448,11 +14521,36 @@ final class PlayerRuntime {
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
                 // Not where something stands, as the server's own placement checks: its tamed wolf sat in the cell it
                 // chose, and it chose that cell again on every decision, refused each time (#74's CI, run 42556590202).
-                if (!world.canPlace(state, pos, net.minecraft.block.ShapeContext.of(player))) continue;
+                if (!placeableEveryWay(world, state, pos, player)) continue;
+                // A cell its placement was refused at again and again, the cell looking open each time it was chosen: let
+                // be a while, another chosen (F-22c77). The pet fixture on #281's CI put its anvil down 1,087 times at one
+                // cell and was refused each time, for some 6,800 ticks, till its runtime stopped.
+                if (entry.placeSetAside.containsKey(pos.asLong())) continue;
                 if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
         return null;
+    }
+
+    /**
+     * Whether {@code state} can go down at {@code pos} whichever way it would be turned as it is put down: a block that
+     * faces the way its placer faces (an anvil, turned a quarter from it) takes another shape each way, and its default
+     * state is only one of them. An anvil's top spans the cell one way and leaves its edges open the other: a tamed wolf
+     * sitting a tenth of a block into the cell's edge passed the default anvil's check and blocked the anvil it put down,
+     * facing the other way, every time (F-22c77).
+     */
+    static boolean placeableEveryWay(net.minecraft.world.World world, net.minecraft.block.BlockState state, BlockPos pos,
+                                     ServerPlayerEntity player) {
+        var context = net.minecraft.block.ShapeContext.of(player);
+        if (!world.canPlace(state, pos, context)) return false;
+        for (var property : List.of(net.minecraft.state.property.Properties.HORIZONTAL_FACING, net.minecraft.state.property.Properties.FACING)) {
+            if (!state.contains(property)) continue;
+            for (Direction facing : Direction.Type.HORIZONTAL) {
+                if (!property.getValues().contains(facing)) continue;
+                if (!world.canPlace(state.with(property, facing), pos, context)) return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -14971,7 +15069,7 @@ final class PlayerRuntime {
         @Override public int friendship(UUID id, UUID other) { return friendshipOf(id, other); }
         /** A fight, a flight, a bed and the like: no talk. */
         private static final java.util.Set<String> BUSY = java.util.Set.of("native_attack", "native_fight", "native_block", "native_shoot",
-                "native_retreat", "native_clutch", "native_dragon", "native_pearl", "native_sleep");
+                "native_retreat", "native_lava_escape", "native_clutch", "native_dragon", "native_pearl", "native_sleep");
 
         @Override public List<CompanionSocials.Participant> players() { return new InitiativeSource().players(); }
         @Override public Optional<dev.kindred.core.social.PeerLedger> ledger(UUID id) { return peerRadio.ledger(id); }
@@ -18628,6 +18726,8 @@ final class PlayerRuntime {
         private UUID currentTaskId;
         private UUID waterEscapeTaskId;
         private long waterEscapeRetryTick;
+        /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
+        private long lavaEscapeLoggedTick = -1200;
         /** Walks of its own that found no way, since it came into play: a measure of how often it sets out in vain. */
         private int walksFailed;
         /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
@@ -18673,6 +18773,9 @@ final class PlayerRuntime {
         private boolean kitNameAsking;
         private final Set<String> kitNamesGiven = new HashSet<>();
         private BlockPos anvil;
+        /** Workstation cells its placement was refused at, by the number of times, and those let be till a tick (F-22c77). */
+        private final Map<Long, Integer> placeRefusals = new HashMap<>();
+        private final Map<Long, Long> placeSetAside = new HashMap<>();
         private long kitNamesAt;
         /** Its enchanting table, once it put one down (E-16a), and when it next looks to enchant. */
         private BlockPos enchantTable;
@@ -19952,7 +20055,7 @@ final class PlayerRuntime {
                         return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
                     }
                     if (held >= 0) {
-                        BlockPos spot = anvilSpot(player, entry.setup);
+                        BlockPos spot = anvilSpot(entry, player);
                         if (spot != null) {
                             entry.anvil = spot.toImmutable();
                             return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(held), "x", String.valueOf(spot.getX()),
