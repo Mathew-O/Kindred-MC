@@ -40,7 +40,7 @@ abstract class GameTestStateMixin {
     private GameTestState kindred$placingNext(Operation<GameTestState> original) {
         FixtureBounds.placing(true);
         try {
-            return original.call();
+            return FixtureBounds.placed(original.call());
         } finally {
             FixtureBounds.placing(false);
         }

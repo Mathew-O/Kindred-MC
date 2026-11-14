@@ -32,6 +32,9 @@ public final class FixtureBounds {
         Outside(Box plot) { this.plot = plot; }
     }
 
+    /** The tests placed and not yet ended: their plots are theirs, whatever a neighbour kept there. */
+    private static final java.util.Set<GameTestState> LIVE = Collections.synchronizedSet(Collections.newSetFromMap(new IdentityHashMap<>()));
+
     private static final Map<GameTestState, Outside> OUTSIDE = Collections.synchronizedMap(new IdentityHashMap<>());
 
     private FixtureBounds() { }
@@ -42,9 +45,36 @@ public final class FixtureBounds {
         return outer;
     }
 
+    /** {@code test} placed by the server: from now until it ends its plot is its own. */
+    public static GameTestState placed(GameTestState test) {
+        if (test != null) LIVE.add(test);
+        return test;
+    }
+
+    /**
+     * The plots of the tests placed and not yet ended other than {@code self}'s, each with the barriers and structure
+     * block the server sets round it: what a fixture putting its ground back must leave as it is. Empty where no
+     * test was seen placed (the failure corpus runs without this audit).
+     */
+    static java.util.List<Box> othersPlots(GameTestState self) {
+        java.util.List<Box> plots = new java.util.ArrayList<>();
+        synchronized (LIVE) {
+            for (var test : LIVE) {
+                if (test == self || test.isCompleted()) continue;
+                try {
+                    plots.add(test.getBoundingBox().expand(1));
+                } catch (RuntimeException unplaced) {
+                    // Not yet in the world: nothing of its own to leave.
+                }
+            }
+        }
+        return plots;
+    }
+
     public static void exit(GameTestState test, GameTestState outer) {
         CURRENT.set(outer);
         if (!test.isCompleted()) return;
+        LIVE.remove(test);
         var outside = OUTSIDE.remove(test);
         if (outside == null) return;
         var plot = outside.plot;
