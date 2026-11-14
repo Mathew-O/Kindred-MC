@@ -40,6 +40,8 @@ final class FactionsPlayer {
         @Override protected boolean removeEldestEntry(Map.Entry<String, FactionPlay.Sighting> eldest) { return size() > SEEN_MAX; }
     };
     long decidedAt = Long.MIN_VALUE / 2;
+    /** When its faction walk first yielded to the goal's dig-in this night (F-35h2b); {@code Long.MIN_VALUE} by day. */
+    long nightYieldAt = Long.MIN_VALUE;
     /** Where it is going, and why: a claim beside its land, a seen border to scout, or home. */
     FactionPlay.Choice move;
     /** What it chose to ask for, waiting for its turn to act. */
