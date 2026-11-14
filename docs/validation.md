@@ -63,6 +63,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## Replay players acting after their own batch: not reproduced, closed (F-27a1) — 14 November 2026 (`claude/harness-bleed-1114`)
+
+- [F-27a1: 13 full corpus runs since #258 on five trees, all 0; the one sighting predates #258](evidence/F-27a1.md).
+
 ## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
 
 - [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
