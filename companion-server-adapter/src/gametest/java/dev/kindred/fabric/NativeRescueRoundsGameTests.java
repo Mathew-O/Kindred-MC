@@ -116,6 +116,9 @@ public final class NativeRescueRoundsGameTests implements FabricGameTest {
         var world = context.getWorld();
         BlockPos up = f.player().getBlockPos().up(20);
         BlockPos b = base[0] = newGroundNorth ? new BlockPos(up.getX(), up.getY(), (up.getZ() & ~7) + 1) : up.toImmutable();
+        // Its scene, twenty over the plot and wider than it, put back as the test ends, passed or failed (F-22c75b): left
+        // standing, its stone, obsidian pit, oak and torch lay in or beside a later test's plot.
+        FixtureGround.keep(context, b.add(-8, -5, -8), b.add(8, 8, 8));
         scene.build(world, b);
         world.setTimeOfDay(1000);
         var player = f.player();
