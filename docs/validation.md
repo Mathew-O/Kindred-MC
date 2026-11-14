@@ -158,6 +158,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c73](evidence/F-22c73.md) (2026-11-14, stranding): refused walks to pick up a drop do not strand it; the staged fixture 0 of 3 before, 18 of 18 with its control after.
 - [F-22c75a](evidence/F-22c75a.md) (2026-11-14, test-only): the kiosk fixture's ground put back as its test ends, passed or failed; the pit test in CI's 13-class layout 0 of 3 before, 3 of 3 after.
 - [F-35h2b](evidence/F-35h2b.md) (2026-11-12, factions at night): at nightfall, not dug in, a faction walk other than DEFEND yields to the goal's dig-in, never for nothing; the staged fixture 0 of 3 before, 3 of 3 after, on its own land; the corpus gate passes; CI on the PR remaining.
+- [M-06i1b](evidence/M-06i1b.md) (2026-11-14, factions): no scout of the chunk it stands in, so no per-tick re-decide; the unit test 12 of 13 before, 13 of 13 after; the staged fixture 0 of 3 before (64 decisions in 300 ticks), 3 of 3 after; the Factions classes and the gate remaining.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

@@ -145,6 +145,7 @@
       "dev.kindred.fabric.NativeFirstDayGameTests",
       "dev.kindred.fabric.NativeFactionNoticesGameTests",
       "dev.kindred.fabric.NativeFactionPlayGameTests",
+      "dev.kindred.fabric.NativeFactionScoutHereGameTests",
       "dev.kindred.fabric.NativeFactionBaseSiteGameTests",
       "dev.kindred.fabric.NativeFactionRefusedLogsGameTests",
       "dev.kindred.fabric.NativeFactionTellGameTests",

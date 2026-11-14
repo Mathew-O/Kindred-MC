@@ -290,8 +290,12 @@ public final class FactionPlay {
                 return out;
             }
         }
+        // Never the chunk it stands in (M-06i1b): there, the capture above was refused, and a scout there is arrived at once and
+        // weighed again at once, the same scout chosen every tick (583 times in 13 s on main 99063e9, MODES's trace).
+        String here = view.standing().map(Territory.Chunk::key).orElse(null);
         var targets = view.seen().stream()
                 .filter(s -> s.faction().equals(view.claims().get(s.chunk())) && !view.setAside().contains(s.chunk()))
+                .filter(s -> !s.chunk().equals(here))
                 .filter(s -> capturable(view, mine, s))
                 .sorted(Comparator.comparingDouble((Sighting s) -> distance(view, s)).thenComparing(Sighting::chunk))
                 .toList();
