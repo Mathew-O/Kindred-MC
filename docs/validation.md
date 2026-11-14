@@ -13,8 +13,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   committed.
 - **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
   `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
-  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes), each run from an empty corpus world
-  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). A change that
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 40 minutes on a 4-core container), each run from an empty corpus world
+  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). Scenes run up to ten
+  to a batch, sharing difficulty and weather, and only with scenes whose nights fall on the same ticks of their runs
+  under any batch-mate's time, by vanilla's `isNight` (`CorpusGameTests.clockFits`; `tools/corpus/batches.py` lists them). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
   run alone, in a run of its own with no other scene to share its batch's clock, ×3 on the branch and ×3 on main as the
