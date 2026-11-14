@@ -116,8 +116,14 @@ final class FactionsPlayer {
     private net.minecraft.util.math.BlockPos streakFrom;
     private boolean streakAtSurface = true;
 
-    /** Faction walks that came back refused, and the refusals the back-off counted of them: equal when it holds. */
-    int blockedWalks, refusalsCounted;
+    /**
+     * Faction walks that came back refused, the refusals the back-off counted of them, and those whose move was settled
+     * while the walk still ran (there in its chunk, the place set aside, its end seen to be open water), which are no
+     * refusal of a move still to be made: the first is the sum of the other two when it holds.
+     */
+    int blockedWalks, refusalsCounted, blockedSettled;
+    /** The task id of the faction walk whose move was settled while it ran, if any: for {@link #blockedSettled}. */
+    UUID settledWalk;
     /** Faction walks that ended, however they ended: asked of the navigator at all (F-35j's fixtures). */
     int walksEnded;
     /** For the fixtures (F-35j1): each faction walk that ended, its target and tick, and each choice's tick; the last 64 of each. */
