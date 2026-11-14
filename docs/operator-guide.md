@@ -242,7 +242,7 @@ See [M-03a](evidence/M-03a.md).
 - **Everyone starts with nothing.** It needs the server's PvP on. An AI player in it needs `/aiplayer edits on`, and an AI runner `/aiplayer dragonfight on` as well.
 - **The runners** make for the dragon. An AI runner plays the dragon goal quickly but reliably, at its own steady pace rather than speedrun pace. It keeps its distance from a hunter it can see within twenty blocks, running off away from it, and fights only once caught. It never runs toward its home, its base or else the bed its spawn is set by, while any other way off is open, so it does not lead its hunters there. Running weighs more than eating, so it eats only once no hunter is in sight within twenty blocks. A runner who falls is out. When no runner is left, the hunters win. A runner who frees the End wins it for every runner.
 - **The hunters** respawn when they fall. An AI hunter first makes its kit on the run's own route: its tools, then an iron sword and a shield from the iron it mines. Then it hunts: it follows its compass, and fights a runner it can see. It gears up as the hunt goes on: iron armour from the iron it holds (a chestplate, leggings, a helmet, boots, in that order), made and put on before it follows the needle on.
-- **The tracking compass (D6).** The one item a manhunt hands out, by a rule announced to everyone at the start, the same for human and AI hunters. Every hunter holds one while the hunt runs. It points at the nearest runner in the hunter's world, or where a runner last left that world, and spins when there is neither. It carries the curse of vanishing, so a hunter's death takes it, and a new one is handed out once the hunter is on its feet. Every one is taken back when the hunt ends. An AI hunter reads only the needle's direction, as a player does, never the runner's place.
+- **The tracking compass (D6).** The one item a manhunt hands out, by a rule announced to everyone at the start, the same for human and AI hunters. Every hunter holds one while the hunt runs. It points at the nearest runner in the hunter's world, or where a runner last left that world, and spins when there is neither. It carries the curse of vanishing, so a hunter's death takes it, and a new one is handed out once the hunter is on its feet. Each hunter is issued one, and only one (M-06k2): it is replaced only when it is provably gone, lost to a death (with keepInventory off) or destroyed lying on the ground (burnt, blown up, fallen out of the world, despawned). One set down, put in a chest or taken by another player is not replaced: the hunter has to fetch it, and an AI hunter never puts its own away. It makes nothing at a crafting table or in a player's own grid, and the auction house will not list it. Every one is taken back when the hunt ends, and one left in a chest then is taken back from whoever next takes it out. An AI hunter reads only the needle's direction, as a player does, never the runner's place.
 - **A head start.** `headstart <seconds>` at the end (up to 120) gives the runners a head start. It is announced with the compass rule. Until it is over, every hunter is held where it stands, human or AI alike, and nobody may strike.
 - **Strikes the match does not allow.** A strike by one player at another in the same unfinished match is refused unless the match allows it now. That covers its lobby, countdown and head start, two players on the same side, and a mode with no striking. It is the same for humans and AI players; outside matches the server's own PvP setting stands.
 - **Blocking pursuit.** An AI runner going through a way one block wide, with a hunter coming along it behind, shuts the gap behind it with two of its own filler blocks (cobblestone, dirt, stone and the like) and runs on. A runner within a hunter's reach fights back only when the match allows a strike; in a head start it runs.
@@ -259,7 +259,7 @@ See [M-01a](evidence/M-01a.md).
 **Build battles (M-04).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
 - **The plots.** One per builder, fifteen blocks a side, in a row east of where you stand, three apart, marked in white concrete with a grey edge. They need open, level ground, clear sixteen blocks up.
 - **The theme.** Announced as a title at the start, by chance or as you name it: cottage, watchtower, pyramid or lighthouse. The build lasts five minutes unless you say otherwise (`for 120`; thirty seconds to half an hour).
-- **Free blocks in this mode only.** Every builder must arrive with nothing, builds in creative mode on its own plot, and leaves with nothing in its own game mode. Whatever creative gave is cleared when the build's time is up, and again at the end, a server stop included.
+- **Free blocks in this mode only.** Every builder must arrive with nothing, builds in creative mode on its own plot, and leaves in its own game mode. Whatever creative gave is cleared when the build's time is up, and again at the end, a server stop included. Each builder's own things are kept safe meanwhile (M-06k3): when the build starts, what it holds then (anything it picked up since it was asked to arrive empty), its ender chest and its game mode are written to `kindred/builder-holds/<uuid>.nbt`, and only then is it cleared and put in creative. However the battle ends, the match over, the server stopped, the builder away at the end, or a crash, it gets exactly those back and nothing creative made: an online builder at once, a person away at the end at its next join, an AI player when it is next connected. The file goes once it is back. At the end, every chest or other container on the plots and in the arena is emptied, and items lying there are cleared. The builds stand while the podium is shown; then, at a moment announced to the battle's players ("The arena is cleared after the podium, in 30 seconds."), the whole arena, plots, walkway and podium, is put back block for block as it was before the battle, dropping nothing (M-06k3a). Until then no block in it can be broken by anyone but a builder building, so nothing there drops, and a builder in creative cannot throw anything out. What it was is noted in `kindred/arena-snapshots/<match>.nbt` when the battle is proposed; a stop puts the arena back at once, and after a crash the next start does. The file goes after the server's next save.
 - **Each to its own plot.** While it builds, a human may break or place only on its own plot, and nobody may on another's.
 - **AI builders** turn the theme into a design of their own, with a size and materials by chance, and build it block by block with the same planner as a survival build. The theme alone decides the design.
 - **The vote.** When the time is up, everyone looks on in adventure mode and scores every other build one to five: AI players at once by what they see standing on each plot, humans by clicking a score in chat or `/aiplayer match vote <builder> <score>`. Once everyone has voted, or after thirty seconds, the best mean wins (ties together), with fireworks over the winner's plot. With no votes it is a draw.
@@ -843,8 +843,21 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    The auction house works the same way: `/faction as <player> ah sell <start> [buyNow] [hours]` lists what the player
    holds (25 coins a listing, five at a time, 48 hours unless given), `ah buy <id>` pays the buy-now price, and the seller
    is paid it less 3%.
-5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
-   `aiplayer native connect <UUID>` for each.
+5. After a restart every AI player waits offline: `aiplayer native list`, then `aiplayer native connect <name or UUID>`
+   for each. Connected, each is still stopped ("Resume explicitly"): `aiplayer native resume <name or UUID>` for each,
+   and it plays on from its saves. There is no form for all at once: two commands a player (found in F-31g's restart
+   soak, 2026-11-12). A player blocked for reconciliation after a crash ("Unresolved action ledger rows detected")
+   cannot be connected (`aiplayer recover` is the legacy companion's, not a native body's). Settle it first (F-31g1):
+   - `aiplayer native settle <name>` settles each action the crash left without an outcome where the evidence is
+     plain: the block it was digging still there and what it holds exactly as when it began (not done), or the block
+     gone and what it holds exactly as when it began (done). A pillar step (a block put under its feet to climb) is
+     settled not done when its cell is still open and what it holds is exactly as when it began. Its block in the cell
+     cannot be shown to be the step's from the save alone, so that one is yours to choose (F-31g2).
+   - Otherwise it shows what it saw and the player stays blocked: choose with `aiplayer native settle <name> done` or
+     `... notdone`. After a crash the save is usually from the last autosave, so what it holds often differs, and the
+     choice is yours: the block still there, `notdone`; gone, `done`.
+   - Nothing is done again and no item is made: only the action's outcome is written, with who settled it and what was
+     seen (`action.settled` in the World Record). Then connect and resume it as above.
 6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
    read from the console. The overworld's size, centre and warning distance are in `world/level.dat` once the server
    has stopped (BorderSize, BorderCenterX/Z, BorderWarningBlocks).
@@ -911,6 +924,113 @@ In a faction world:
   ordinary client the same essentials are in a sidebar, and crossing into other land is said once on the action bar.
   Nobody is sent another faction's private numbers.
 
+## The month run: a runbook (M-06k4)
+
+For the owner's Factions server, with the world made and the mode chosen as "Setting up a Factions server" says. Every
+console command here was run on a real server start on 2026-11-14 (main `9d33596`, seed 101, 8 AI players), the
+way F-31g's restart soak ran: a world made, a plain start, play, a kill (SIGKILL), and the start after it. The
+answers quoted are that run's. Players' names, ids and places are that run's; yours differ.
+
+### Every start
+
+1. **Start the server.** Kindred loads its records first and says how many:
+   `Kindred AI-player foundation ready: 8 durable records; ...`. No AI player is in the world yet; none comes back by
+   itself (F-31g, finding 1).
+2. **See where each stands:** `aiplayer native list`. One line a player:
+   - `Kindred (<id>): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required.` Ready to
+     connect.
+   - `Bram (<id>): ESTABLISHED, offline. Unresolved action ledger rows detected (1); operator reconciliation required.
+     ...` A crash caught it mid-action: settle it first (below). Connect is refused until then.
+3. **Settle any player the list shows blocked** (after a crash only; below).
+4. **Connect each:** `aiplayer native connect <name>`. It answers `Native body connected; stopped. Resume explicitly.`
+   (or, after a crash, `... automatic progression remains disabled.`), and the player joins the game where its save
+   left it: `<name> joined the game`, then `<name> recalls N sighting(s) its atlas kept from before this start`.
+5. **Resume each:** `aiplayer native resume <name>`. It answers
+   `Resumed; autonomous progression active (OPTIMAL_SURVIVAL).` and the player plays on from its saves.
+6. **Check the mode:** `aiplayer mode world` prints `Factions (this world's mode):` and its rules. The mode is kept
+   across restarts.
+7. **Check the tick:** `tick query` (vanilla). On the walk, 8 players at play: `P50: 24.6ms P95: 43.8ms P99: 60.7ms`.
+   The 50 ms budget is the line; F-31g measured 23.6 ms mean at 20 tps with 8 players.
+
+There is no form for all at once: 16 commands for 8 players (a bulk form is proposed, waiting on the owner's decision
+on auto-resume).
+
+### After a crash: settling a blocked player
+
+A crash (a kill, an out-of-memory, the host going down) can catch a player in the middle of an action whose outcome was
+never written. The next start blocks that player; nothing is done again and no item is made. For each blocked player:
+
+1. `aiplayer native status <name>` shows the block: `... Unresolved action ledger rows detected (1); operator
+   reconciliation required. ...`
+2. `aiplayer native settle <name>` settles every such action the evidence makes plain, and shows the rest:
+   ```
+   Bram's native_break 72cbb812-... is not plain from the evidence: minecraft:andesite at -390, 51, -194: now
+   minecraft:andesite, still there; the saved inventory differs from before the action (before sha256=1b8d6e...,
+   now sha256=a4b9a6...). Choose: aiplayer native settle Bram done|notdone
+   Bram: 0 settled; 1 left to settle. It stays blocked.
+   ```
+3. **Choose from what it shows.**
+   - The block named is **still there**: `aiplayer native settle <name> notdone`.
+   - It is **gone**: `aiplayer native settle <name> done`.
+   - For a `native_pillar` step, the cell is named: its block **in the cell** under where the player stood, `done`;
+     the cell **open**, `notdone`.
+   - The inventory almost always "differs" after a crash: the save is the last autosave's, older than the action. That
+     is why it asks you. Either choice writes only the action's outcome; neither makes or removes an item.
+   - It answers `Settled Bram's native_break as not done (the console, the operator's choice): <what it saw>`, then
+     `Bram: every action settled (1). Connect it, then resume it.`
+4. `aiplayer native list` now shows `Settled; native body is offline; explicit connect is required.` Connect and
+   resume it as at every start.
+
+On the walk, the kill caught 2 of the 8 (both digging andesite); both were settled `notdone`, and all 8 played on.
+
+### Checking the World Record after a crash
+
+With the server **stopped**, on a copy of `world/kindred/companions.sqlite` (with its `-wal` beside it, if one is
+there). Python 3's standard library is enough:
+
+```
+mkdir check && cp world/kindred/companions.sqlite* check/
+python3 -c "import sqlite3; db = sqlite3.connect('file:check/companions.sqlite?mode=ro', uri=True); \
+print(db.execute('PRAGMA integrity_check').fetchone()[0]); \
+print(db.execute(\"SELECT COUNT(*) FROM action_ledger WHERE state IN ('PREPARED','DISPATCHED','UNCERTAIN')\").fetchone()[0]); \
+[print(r) for r in db.execute(\"SELECT subject, data FROM world_events WHERE kind = 'action.settled'\")]"
+```
+
+Walked in bash on Linux. On Windows (not walked): `copy` for `cp`, `gradlew.bat` for `./gradlew`, and the
+`python3 -c` command on one line without the trailing backslashes.
+
+- **`ok`:** the database is whole.
+- **The count:** actions still waiting to be settled. After step 3 above, `0`.
+- **One line per settlement:** who settled which action, how it was decided, and what was seen:
+  `kind=native_break&outcome=not done&by=the console&decided=operator&evidence=...`.
+
+The faction world's rules over the whole Record, every restart in it, from a checkout of this repository (F-31g):
+
+```
+./gradlew :companion-testkit:runRecordAudit --args=<path>/check/companions.sqlite
+```
+
+On the walk:
+`{"audited": 116, "counts": {"events": 116, "factions": 3, "claims": 4, ... "purchases": 24, ...}, "violations": []}`.
+Any violation is a rule broken. Stop and report it with the file; do not play on.
+
+The factions themselves, from the console (an operator acts as a player):
+- `faction as Kindred list`: each faction, its members, power and claims;
+- `faction as Kindred info`;
+- `faction as Kindred power`;
+- `faction as Kindred coins`.
+
+`faction list` alone is refused from the console ("Only a player makes faction requests").
+
+### Stopping
+
+`stop` at the console. Kindred writes its records and the players' memory first, then vanilla saves the world: two
+seconds on the walk. Wait for `All dimensions are saved` before you take a backup.
+
+Once on the walk, the evaluation run's own stop (not a console `stop`) spun for 20 minutes in vanilla's chunk saving
+after Kindred had written everything, and was killed. That is reported (M-06k4's evidence) and not seen at a console
+stop. If a stop ever hangs past `Saving worlds`, kill it and treat the next start as after a crash.
+
 ## A month-long run: what grows on disk
 
 Each figure names the run it was measured on. Sizes scale with the number of players and with what they do.
@@ -926,7 +1046,7 @@ Each figure names the run it was measured on. Sizes scale with the number of pla
 | The server log | `logs/latest.log`, rotated daily to `.log.gz` | Rotated, never deleted by the server | **8 players:** 1.46 MB of `latest.log` and a 0.44 MB `.gz` over the 6 days. **3 players, 12 days:** 4.9 MB (0.28 MB gzipped) |
 | Death and stuck replays | `kindred/replays/` (beside the world) | Written only with `KINDRED_REPLAYS=on` (on by default in evaluation runs); at most one a minute per player; never pruned | **8 players, 6 days:** 20 replays, 11.2 MB. **3 players, 12 days:** 3 replays, 2.0 MB. For a month run, leave it off or clear it by hand |
 | Encounter records | `kindred/encounters/<player>/` | Each fight's file stops at about 100 kB; the newest 50 are kept a player | 6.3 MB in 96 files for 8 players after 6 days; at most about 5 MB a player |
-| Players' memory, with each atlas | `<world>/kindred/memory/` | An atlas keeps at most 4,096 chunks, 1,024 danger cells and 64 shelters; `.stores.json`, one entry per store it uses and per sighting at one | 376 kB for 8 players: atlases 23 to 46 kB each, peers 8 to 10 kB each |
+| Players' memory, with each atlas | `<world>/kindred/memory/` | An atlas keeps at most 4,096 chunks, 1,024 danger cells and 64 shelters; `.stores.json`, one entry per store it uses and per sighting at one | 376 kB for 8 players: atlases 23 to 46 kB each, peers 8 to 10 kB each. Each file is written whole and forced to disk (F-31h). One that cannot be read at a start, after a power loss say, is set aside as `<name>.corrupt-<date and time>` (a stores or villagers file as `<name>.unreadable`) and named in one warning, and that player starts with none of that part. Nothing is deleted: look there before deleting anything |
 | Settings and small files | `edits.properties`, `world.uuid`, `model-context/` | Fixed | Under 10 kB |
 
 **A month at 8 players.** The projection rests on these assumptions:
@@ -971,7 +1091,7 @@ Mine executes a single scoped log break using owned hotbar contents, native surv
 
 A block is placed only against one still there to click: if that block was dug out meanwhile, the placement is refused and the player goes on, where before it was stopped for reconciliation (F-25c4u). A placement that still cannot be verified records which slots changed and what is at the target.
 
-Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
+Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. An action a crash left without an outcome blocks too, until settled with `aiplayer native settle <name> [done|notdone]` (F-31g1; the Factions setup, step 5). Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
 
 Legacy owner/mode/scope fields preserve access and saves; they are not the new product interface. Native creation has its development cap; team management and legacy migration remain unfinished. Combat/duels reject until qualified native skills use the arbiter. Timezone changes reject until safe accounting transitions exist; spent activity is not reset.
 

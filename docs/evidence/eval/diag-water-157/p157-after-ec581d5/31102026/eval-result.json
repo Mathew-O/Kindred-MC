@@ -1,0 +1,54 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 13.16, "tickMsWorst": 7104.81, "tickMsWorstAt": 1, "ticksOver50ms": 751, "ticksOver200ms": 15, "heapMbMax": 1150, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 10700, "stone_tools": 13240, "iron_ingot": 15680, "iron_pickaxe": 49540, "diamond": 98480, "obsidian": 94204},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28080, "x": 151, "y": 17, "z": 332, "attempt": 1}, {"tick": 97980, "x": -58, "y": -23, "z": 25, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6425,
+      "chunkMinutes": 34680.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 10500, "stone_tools": 11820, "iron_ingot": 44280},
+      "deaths": [
+        {"tick": 81600, "cause": "Sol suffocated in a wall", "x": 122, "y": 68, "z": 209, "light": 0, "timeOfDay": 9762, "dimension": "minecraft:overworld", "hunger": 7, "underSky": false, "stage": "Wood: no progress here for a while - make a way elsewhere: walk on", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "make a way elsewhere: walk on"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 36480, "x": 209, "y": 57, "z": 227, "attempt": 1}, {"tick": 75540, "x": 122, "y": 66, "z": 207, "attempt": 1}, {"tick": 81520, "x": 122, "y": 67, "z": 208, "attempt": 2}, {"tick": 126060, "x": 25, "y": 57, "z": 183, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8574,
+      "chunkMinutes": 34675.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 9060, "stone_tools": 11620, "iron_ingot": 13900, "iron_pickaxe": 24300, "obsidian": 94582},
+      "deaths": [
+        {"tick": 116862, "cause": "Echo was slain by Slime", "x": 0, "y": -4, "z": 29, "light": 4, "timeOfDay": 21024, "dimension": "minecraft:overworld", "hunger": 18, "underSky": false, "stage": "Iron: fight back - Back off from spider", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52340, "x": -105, "y": 62, "z": 149, "attempt": 1}, {"tick": 59360, "x": -102, "y": 66, "z": 150, "attempt": 2}, {"tick": 77380, "x": -76, "y": 75, "z": 164, "attempt": 3}, {"tick": 102960, "x": 70, "y": -49, "z": -1, "attempt": 1}, {"tick": 108160, "x": 53, "y": -37, "z": -1, "attempt": 2}, {"tick": 126600, "x": 30, "y": -19, "z": 33, "attempt": 1}, {"tick": 131820, "x": 30, "y": -19, "z": 32, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7158,
+      "chunkMinutes": 34675.2
+    }
+  }
+}

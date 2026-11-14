@@ -87,6 +87,10 @@ public final class Digger {
     public static final int LAVA_BRANCH_LEG = 48, LAVA_BRANCH_STEP = 16;
     /** How far along under water over its head a climb goes, with no dry ground over it, before handing back (F-35g). */
     public static final int UNDER_WATER_REACH = BRANCH_LEG;
+    /** Steps under the water with no farther along before the climb hands back, short of the reach (F-35n). */
+    public static final int UNDER_WATER_STALLS = UNDER_WATER_REACH;
+    /** How far from where it gave up under the water it must move before that place is tried again (F-35n). */
+    public static final int MOVED_OFF = 8;
 
     /** The deepest drop a step down lands after: the navigator's safe drop. */
     private static final int MAX_SAFE_DROP = Navigator.MAX_SAFE_DROP;
@@ -109,6 +113,13 @@ public final class Digger {
     /** Where its way along under the water began, and where and when it last found the water too wide (F-35g). */
     private Cell underWaterFrom, underWaterGaveUpAt;
     private long underWaterGaveUpTick = Long.MIN_VALUE / 2;
+    /**
+     * The farthest it has got along under the water from {@link #underWaterFrom}, and its steps since it last got farther:
+     * boxed in under it, it turns at each wall and never gets farther (F-35n).
+     */
+    private int underWaterFarthest, underWaterStalls;
+    /** Where it stood at its last step under the water: a stall is a step to another cell, not a block dug where it stands. */
+    private Cell underWaterLast;
     /** Whether the last staircase step down it chose was the step itself, not a block cleared for it. */
     private boolean steppedDown;
     private Cell settleAt;
@@ -146,6 +157,9 @@ public final class Digger {
     public Cell underWaterAt() { return underWaterAt; }
 
     public long underWaterTick() { return underWaterTick; }
+
+    /** Where its climb last gave up getting out from under the water (F-35n), or null. */
+    public Cell underWaterGaveUpAt() { return underWaterGaveUpAt; }
 
     /** A cell it cleared: counted as dug. */
     public void dug(Cell cell) {
@@ -607,16 +621,39 @@ public final class Digger {
             // last found that so: the water is too wide to get out from under this way, and the climb ends there, handed
             // back to what the goal does next. On 606 in E-40's iteration 18 (`e40a18`) Kindred, in its tunnel under the
             // open sea, went to and fro under it through 12 stuck spells (F-35g).
-            if (underWaterFrom == null || now - underWaterTick > 600) underWaterFrom = feet;
+            if (underWaterFrom == null || now - underWaterTick > 600) {
+                underWaterFrom = feet;
+                underWaterFarthest = 0;
+                underWaterStalls = 0;
+                underWaterLast = feet;
+            }
+            // Where it last gave up, not again soon, nor while it has not moved off (F-35n): with only the time, it came back
+            // into the same box under the water once the wait was out, the way it had left it.
             boolean gaveUp = underWaterGaveUpAt != null && underWaterGaveUpAt.squaredDistance(feet) <= 24 * 24
-                    && now - underWaterGaveUpTick < 2400;
+                    && (now - underWaterGaveUpTick < 2400 || underWaterGaveUpAt.squaredDistance(feet) <= MOVED_OFF * MOVED_OFF);
             int along = Math.max(Math.abs(feet.x() - underWaterFrom.x()), Math.abs(feet.z() - underWaterFrom.z()));
-            if (gaveUp || along >= UNDER_WATER_REACH) {
+            if (along > underWaterFarthest) {
+                underWaterFarthest = along;
+                underWaterStalls = 0;
+            } else if (!feet.equals(underWaterLast)) {
+                // A step to another cell that got it no farther; blocks dug where it stands are not (by hand, a block takes
+                // many: a climb out by hand from under a lake was handed back before it had moved at all, CI on #269).
+                underWaterStalls++;
+            }
+            underWaterLast = feet;
+            // Or {@value #UNDER_WATER_STALLS} steps under it with no farther along than before, short of the reach: boxed in
+            // under it, it turned at each wall and never got far from where it began. On 505 in E-40's iteration 21
+            // (`e40a21-2354e67`) Kindred, at Y -51 under an aquifer, went round within seven blocks for whole stuck spells, some
+            // 520 to 570 of the climb's lines a spell, the reach never met (F-35n). A way under it that keeps getting farther,
+            // however it winds, goes on to the reach as before.
+            boolean boxed = underWaterStalls >= UNDER_WATER_STALLS;
+            if (gaveUp || along >= UNDER_WATER_REACH || boxed) {
                 if (!gaveUp) {
                     underWaterGaveUpAt = feet;
                     underWaterGaveUpTick = now;
                     body.event("the water over its tunnel at " + feet.x() + ", " + feet.y() + ", " + feet.z() + " too wide to get out from under: "
-                            + along + " blocks along under it with no dry ground over its head; the climb handed back");
+                            + along + " blocks along under it" + (along < UNDER_WATER_REACH ? ", no farther in " + underWaterStalls + " steps" : "")
+                            + " with no dry ground over its head; the climb handed back");
                 }
                 underWaterAt = feet;
                 underWaterTick = now;

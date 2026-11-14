@@ -792,6 +792,25 @@ public final class PlayerCommands {
                         return runtime.nativeLifecycle(context.getSource(), verb, id);
                     })));
         }
+        // F-31g1: an AI player blocked after a crash by an action whose outcome was never written, settled from the evidence
+        // (no choice), or the actions the evidence leaves open settled as the operator chooses (done or notdone).
+        nativePlayers.then(CommandManager.literal("settle")
+                .then(CommandManager.argument("target", StringArgumentType.string())
+                        .suggests((context, builder) -> suggestBots(builder))
+                        .executes(context -> {
+                            var runtime = KindredMod.runtime();
+                            if (runtime == null) return unavailable(context.getSource());
+                            UUID id = resolveBotTarget(context, "target", runtime);
+                            return id == null ? 0 : runtime.settleNative(context.getSource(), id, null);
+                        })
+                        .then(CommandManager.argument("choice", StringArgumentType.word())
+                                .suggests((context, builder) -> builder.suggest("done").suggest("notdone").buildFuture())
+                                .executes(context -> {
+                                    var runtime = KindredMod.runtime();
+                                    if (runtime == null) return unavailable(context.getSource());
+                                    UUID id = resolveBotTarget(context, "target", runtime);
+                                    return id == null ? 0 : runtime.settleNative(context.getSource(), id, StringArgumentType.getString(context, "choice"));
+                                }))));
         for (String task : new String[]{"wait", "eat", "equip"}) {
             nativePlayers.then(CommandManager.literal(task)
                     .then(CommandManager.argument("value", IntegerArgumentType.integer(task.equals("wait") ? 1 : 0,

@@ -154,6 +154,17 @@ final class PortalRunCampaign {
      * at first as half the least long, as {@link #surfaceClimbTick}: the least long itself overflowed the hold's test.
      */
     private long waterClimbTick = Long.MIN_VALUE / 2;
+    /**
+     * The water fetch's hold (F-35o): the cells its search's tunnel for water went into, which its climb or way back for
+     * water does not walk straight back out over; and where the hold began, with the water it knew of and the water it
+     * carried then. A bucket filled, water newly seen or the player more than {@value #WATER_HOLD_OFF} blocks from where
+     * the hold began ends it: nothing else, and nothing timed. The other way, its search does not undo its climb: on the
+     * surface its tunnel keeps to its own floor ({@link #searchForWater}).
+     */
+    private final java.util.Set<Long> waterDug = new java.util.HashSet<>();
+    private BlockPos waterHoldAt;
+    private int waterHoldSeen = -1, waterHoldBuckets = -1;
+    static final int WATER_HOLD_OFF = 8;
     private Direction exploreHeading;
     private int exploreFailures;
     private BlockPos exploredFrom;
@@ -224,6 +235,15 @@ final class PortalRunCampaign {
     }
 
     String progress() { return progress; }
+
+    /** Its last step's words when it had nothing it could do where it is: no step, none here for a while, or water it cannot leave. */
+    static final String WAITING_FOR_A_STEP = ": waiting for a feasible step", NO_PROGRESS_HERE = ": no progress here for a while - ",
+            DEEP_WATER_NO_WAY = ": in deep water with no way out it can reach";
+
+    /** Whether its last step was one of having nothing it could do where it is (M-06i1a): a faction walk held for it goes on. */
+    boolean stalled() {
+        return progress != null && (progress.endsWith(WAITING_FOR_A_STEP) || progress.contains(NO_PROGRESS_HERE) || progress.endsWith(DEEP_WATER_NO_WAY));
+    }
     PortalRunPlanner.Stage stage() { return stage; }
 
     // ------------------------------------------------------------------ strategist (F-19b)
@@ -657,6 +677,20 @@ final class PortalRunCampaign {
 
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
+        if (task != null && completed) {
+            if (completedForTest.size() >= 64) completedForTest.removeFirst();
+            completedForTest.addLast(task.label());
+        }
+        // The water fetch's halves (F-35o): a step of its search's tunnel for water, or of its walk to look cutting a way
+        // through for water, and its climb or way back for water. In a staged pit the walk's cut went a block into the rock
+        // and its way back walked it out again, by turns, as the search's tunnel had on 303 (NativeWaterCutGameTests).
+        if (task != null && completed && waterDigLabel(task.label()) && position(task.args()) != null) {
+            if (waterDug.size() < 4_096) waterDug.add(position(task.args()).asLong());
+            waterHoldBegins();
+        }
+        // A bucket that could not be filled where it stood: not asked for again there for a minute, now that water in reach is
+        // filled from whatever became of a walk to it (F-35o).
+        if (task != null && !completed && fillingBucket(task) && position(task.args()) != null) cellsAside.until(position(task.args()).asLong(), tick + 1200);
         if (task != null && !completed) {
             if (blocked.size() >= 5) blocked.removeFirst();
             blocked.addLast("at " + tick / 20 + "s: " + task.label() + (why == null || why.isBlank() ? "" : " - " + why));
@@ -683,7 +717,10 @@ final class PortalRunCampaign {
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
         // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
         // has failed for a minute, it is stranded no longer.
-        if (task != null && "native_goto".equals(task.skill()) && !completed) {
+        // A walk to pick up a drop is not a way out: refused, it says the drop is out of reach, not the player shut in. In
+        // NativeBaseGameTests' stone-tools cabin, three refused walks to its own cobblestone in the pit it mined stranded
+        // the builder, and its trip for logs then found none, a tree twenty off usable (F-22c73).
+        if (task != null && "native_goto".equals(task.skill()) && !completed && !task.label().startsWith("Pick up ")) {
             if (strandedAt != null && strandedAt.getSquaredDistance(lastFeet) <= 3 * 3 && tick - strandedTick <= STRANDED_FOR) {
                 strandedWalks++;
             } else {
@@ -1134,7 +1171,7 @@ final class PortalRunCampaign {
         // thirteen times a second in a sealed pool. Held instead, the spell's watchdog counts the time as it would any
         // spell with nothing feasible.
         if (given.isPresent() && DEEP_WATER_STOP.equals(stopFor(body.entity(), given.get()))) {
-            progress = stageLabel(stage) + ": in deep water with no way out it can reach";
+            progress = stageLabel(stage) + DEEP_WATER_NO_WAY;
             given = Optional.empty();
         }
         lastGiven = given.orElse(null);
@@ -1314,7 +1351,7 @@ final class PortalRunCampaign {
                 away = Optional.empty();
             }
             if (away.isPresent()) {
-                progress = stageLabel(stage) + ": no progress here for a while - " + away.get().label();
+                progress = stageLabel(stage) + NO_PROGRESS_HERE + away.get().label();
                 lastActive = true;
                 return away;
             }
@@ -1592,6 +1629,11 @@ final class PortalRunCampaign {
     List<String> rescues() { return List.copyOf(rescues); }
 
     /** For fixtures (F-29b): whether a move elsewhere is under way, and whether it was begun early for a rescue. */
+    /** Its last steps that completed, by label, oldest first, at most 64 (F-35n's fixture). */
+    private final java.util.ArrayDeque<String> completedForTest = new java.util.ArrayDeque<>();
+
+    java.util.List<String> completedForTest() { return java.util.List.copyOf(completedForTest); }
+
     boolean relocatingForTest() { return relocate != null; }
 
     /** Where its next explore walk would go from where it stands (F-35m's fixtures), its heading kept as it turns. */
@@ -2334,6 +2376,7 @@ final class PortalRunCampaign {
     private Optional<Task> plan(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         lastTick = tick;
         lastFeet = body.entity().getBlockPos().toImmutable();
+        noteWorkableGround(body.entity(), lastFeet);
         pacedWhere();
         atlasWorld = body.entity().getServerWorld();
         holdCover(body.entity().getServerWorld());
@@ -2615,7 +2658,7 @@ final class PortalRunCampaign {
             Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
             if (dig.isPresent()) {
                 nightShelterAt = player.getBlockPos();
-                progress = stageLabel(stage) + ": shelter for the night - " + dig.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + dig.get().label();
                 return dig;
             }
         }
@@ -2625,7 +2668,7 @@ final class PortalRunCampaign {
         if (night && !groundBelow(player) && sheltered(player)) {
             Optional<Task> seal = player.isOnGround() ? seal(body) : Optional.empty();
             if (seal.isPresent()) {
-                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + seal.get().label();
                 return seal;
             }
             progress = stageLabel(stage) + ": wait for daylight in the shelter";
@@ -2651,15 +2694,21 @@ final class PortalRunCampaign {
             }
         }
         // Below ground the night changes nothing: the route's iron is mined meanwhile, and only the climb out to the trees
-        // waits for morning (in B7's first paired run up to a tenth of a player's time was spent waiting below).
-        Optional<PortalRunPlanner.Step> meanwhile = night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS && underground(player)
-                ? PortalRunPlanner.withoutWood(snapshot, facts) : Optional.empty();
+        // waits for morning (in B7's first paired run up to a tenth of a player's time was spent waiting below). Not from
+        // the shelter it dug tonight: it is there for the night, sealed and waited in, and the iron's walk is no reason
+        // to leave it. A walk on into a cave it had seen went up its own stair and over the ground, out of the shelter it
+        // had just dug, and it dug in again twelve blocks off (NativeFactionShelterGameTests, five CI runs on 12
+        // November); the hold on walks out under the sky (F-25c4cd) looks at where a walk ends, not where it goes
+        // (F-22c72). Below ground at nightfall, it dug no shelter and mines on as before.
+        boolean tonightsShelter = nightShelterAt != null && inNightShelter(player);
+        Optional<PortalRunPlanner.Step> meanwhile = night && !tonightsShelter && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS
+                && underground(player) ? PortalRunPlanner.withoutWood(snapshot, facts) : Optional.empty();
         if (meanwhile.isPresent()) steps.set(steps.size() - 1, meanwhile.get());
         if (night && steps.getLast().action() == PortalRunPlanner.Action.GATHER_LOGS) {
             // Waiting out the night: close the way in first, so nothing walks or shoots down the staircase.
             Optional<Task> seal = underground(player) && player.isOnGround() ? seal(body) : Optional.empty();
             if (seal.isPresent()) {
-                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + seal.get().label();
                 return seal;
             }
             progress = stageLabel(stage) + ": wait for daylight before going up for logs - " + steps.getLast().why();
@@ -2755,7 +2804,7 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": no way on from here - " + drop.get().label();
             return drop;
         }
-        progress = stageLabel(stage) + ": waiting for a feasible step";
+        progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         return Optional.empty();
     }
 
@@ -3113,7 +3162,7 @@ final class PortalRunCampaign {
     private Optional<Task> pickUpWorkstation(NativePlayerBody body, PortalRunSnapshot s) {
         var player = body.entity();
         var world = player.getServerWorld();
-        if (s.craftingTables() == 0) {
+        if (s.craftingTables() == 0 && !tableHeldFor(body)) {
             // Its own table, just used: whatever was set aside around here, this is in reach (live run 57 left one in
             // a branch tunnel where an earlier target had failed, and later lost its last pickaxe with no table).
             BlockPos feet = player.getBlockPos();
@@ -3292,9 +3341,51 @@ final class PortalRunCampaign {
     /** Craft at a crafting table: one close by, else one it carries set down, else one made from four planks. */
     Optional<Task> craftAtTable(NativePlayerBody body, String item) {
         Optional<Task> made = craft(body, item);
-        if (made.isPresent() || tableNear(body)) return made;
-        if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) return placeTable(body);
+        if (made.isPresent()) return made;
+        // What it holds makes it, or would with its logs as planks, before a table is set down for it (F-25c7a): on seed
+        // 303 Sol, with the wool for a bed and logs but no planks, set its table down for the bed, could not make it
+        // there, and "take workstations along" picked the table straight back up, 35 times in one stuck spell.
+        String recipe = item.equals("planks") ? planksRecipe(body) : item.equals("boat") ? boatRecipe(body) : item;
+        var makings = recipe == null ? dev.kindred.core.guide.Makings.Choice.NONE : body.makings(recipe);
+        if (makings == dev.kindred.core.guide.Makings.Choice.PLANKS_FIRST) return craft(body, "planks");
+        if (tableNear(body)) return made;
+        if (makings == dev.kindred.core.guide.Makings.Choice.NONE) {
+            long now = body.entity().getServerWorld().getTime();
+            Long said = unmakeable.get("table:" + item);
+            if (said == null || now - said >= 1_200) {
+                unmakeable.put("table:" + item, now);
+                KindredMod.LOGGER.info("{} sets no table down for {}: not the makings", body.entity().getName().getString(), item);
+            }
+            return Optional.empty();
+        }
+        if (body.entity().getInventory().count(Items.CRAFTING_TABLE) > 0) {
+            // Set down for this craft: kept down for it while what it holds still makes it (pickUpWorkstation).
+            tableFor = recipe;
+            tableForUntil = lastTick + TABLE_FOR_TICKS;
+            return placeTable(body);
+        }
         return craft(body, "crafting_table");
+    }
+
+    /**
+     * The recipe its table was last set down for, and until when that table is kept down for it (F-25c7a). On e40a21's
+     * 20261030 Sol (80040) the table went down for a white bed it had the makings of, and on the next pass "take
+     * workstations along", which comes before what is taken on the way, picked it up before the bed was made: 37 times a
+     * replay. Kept only while the makings are still held, so the hold ends with the craft, and never past
+     * {@link #TABLE_FOR_TICKS}.
+     */
+    private String tableFor;
+    private long tableForUntil;
+    private static final long TABLE_FOR_TICKS = 400;
+
+    /** Whether its table is still down for a craft it can make there now. */
+    private boolean tableHeldFor(NativePlayerBody body) {
+        if (tableFor == null) return false;
+        if (lastTick > tableForUntil || body.makings(tableFor) != dev.kindred.core.guide.Makings.Choice.HELD) {
+            tableFor = null;
+            return false;
+        }
+        return true;
     }
 
     /** Set down a crafting table it carries. */
@@ -3395,11 +3486,12 @@ final class PortalRunCampaign {
                     // The water it saw over its head first, one block of its own ceiling between: opened, filled from and
                     // closed again, rather than a climb that the same water refuses every step of (F-35g).
                     .or(() -> waterOverhead(body))
-                    .or(() -> fillWater(body)).or(() -> !underground(player)
-                            && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos())) ? Optional.<Task>empty()
-                            : night(player.getServerWorld()) ? lavaMeanwhile(body).or(() -> daylightBelow(body))
-                            : wayUp(body, "Climb toward the surface for water").map(climb -> { waterClimbTick = lastTick; return climb; }))
-                    .or(() -> search(body, "water"));
+                    // Standing in its own search's tunnel for water, no climb or way back straight back out over it: the
+                    // search goes on (F-35o). On 303 in E-40's iteration 21 (`e40a21-2354e67`) Kindred, at the mouth of its cut
+                    // into a hill, stepped a block in for water and a block back out for the surface by turns, some 160 times
+                    // a run of that spell's replay, and filled no bucket.
+                    .or(() -> fillWater(body)).or(() -> waterUp(body))
+                    .or(() -> searchForWater(body));
             case MAKE_OBSIDIAN -> gather(body, WorldKnowledge.Kind.OBSIDIAN, 32, "obsidian", true).or(() -> obsidian(body))
                     .or(() -> cave(body, "lava", DIAMOND_TARGET))
                     .or(this::lookAround).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
@@ -3557,7 +3649,7 @@ final class PortalRunCampaign {
         // blocks when near enough, or else the whole pocket let go, not cell by cell (e40a17: 972 such refusals).
         var climb = pocket(body, what, feet);
         if (climb != null) return climb;
-        BlockPos anchor = home == null ? feet : home;
+        BlockPos anchor = exploreAnchor(body.entity(), feet);
         int gapNow = Math.abs(feet.getY() - targetY);
         // About eight blocks on is a good stride: far enough to open new views, near enough to stay on known ground.
         return knowledge.best(world, WorldKnowledge.Kind.CAVE,
@@ -4066,6 +4158,8 @@ final class PortalRunCampaign {
         if (!harvestable(body, log)) return new KeptOut("not harvestable", "");
         if (log.getY() > feet.getY() + TRUNK_REACH) return new KeptOut("above its trunk reach", "");
         if (trunkFoot(world, log).isEmpty()) return new KeptOut(WorldKnowledge.builtIn(world, log) ? "built in" : "no trunk foot", "");
+        // Stranded, its gather offers no walk at all, whichever log (F-22c73): said, so a usable log is not reported usable.
+        if (stranded()) return new KeptOut("stranded", "from " + strandedAt.toShortString() + " after " + strandedWalks + " refused walks");
         return new KeptOut("usable", approaches.getOrDefault(at, 0) + " approaches");
     }
 
@@ -4225,6 +4319,165 @@ final class PortalRunCampaign {
      * Underground, search by tunnelling along the current level; on the surface, walk out and look. Over the void
      * there is nothing to tunnel toward: a cut through a sky island only spends it.
      */
+    /**
+     * The search for water (F-35o). Under cover, as {@link #search}: its tunnel, then a walk to look. On the surface, with
+     * no water it knows of, a walk to look, then a wider one (the eight ways round, farther), and only then its tunnel,
+     * on its own floor, never a step down: from the surface its tunnel found water about one time in six, after hundreds
+     * of steps (F-35o's count over E-40's iterations 20 and 21), and a step down there was back under the cover its climb
+     * for water had just brought it out of.
+     */
+    private Optional<Task> searchForWater(NativePlayerBody body) {
+        var player = body.entity();
+        if (!groundBelow(player)) return search(body, "water");
+        // Under cover the climb to the surface came first ({@link #waterUp}); here only when it had no way up, said why.
+        if (underground(player)) {
+            // Each tunnel says why it is not the climb, for the count: the night, its own tunnel held, or no way up.
+            String why = night(player.getServerWorld()) ? "at night" : waterHeld() && waterDug.contains(lastFeet.asLong()) ? "on along its own"
+                    : knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, lastFeet,
+                            water -> water.getSquaredDistance(lastFeet) <= WATER_NEAR * WATER_NEAR).isPresent() ? "toward water seen" : "no way up";
+            return tunnel(body, "Tunnel for water (" + why + ")").or(() -> explore(body, "water"));
+        }
+        Optional<Task> look = explore(body, "water").or(() -> exploreWider(player, "water"));
+        if (look.isPresent()) return look;
+        int floor = digger.tunnelFloor();
+        digger.tunnelFloor(player.getBlockY());
+        try {
+            return tunnel(body, "Tunnel for water (on the surface)");
+        } finally {
+            digger.tunnelFloor(floor);
+        }
+    }
+
+    /**
+     * A wider walk to look than {@link #explore(ServerPlayerEntity, String)}: the eight ways round, {@value #EXPLORE_WIDER}
+     * blocks out, then the four between the ways it looks at first, its own distance out (F-35o). Bounded by ground, not
+     * time: within the explore radius of home, and never to a place it has set aside or found no way to.
+     */
+    private Optional<Task> exploreWider(ServerPlayerEntity player, String what) {
+        var world = player.getServerWorld();
+        BlockPos anchor = home == null ? player.getBlockPos() : home;
+        BlockPos feet = player.getBlockPos();
+        // The ground there as it sees it from where it stands, as explore's (F-35m): a top out of its sight gives the walk
+        // its own height, and the heightmap of a column it cannot see is never used. A sight line for each of its twelve.
+        var looks = WorldKnowledge.looks(player, 12);
+        for (int out : new int[] {EXPLORE_WIDER, 28}) {
+            for (int way = 0; way < 8; way++) {
+                if (out == 28 && way % 2 == 0) continue; // The four straight ways at 28 are explore's own.
+                double angle = Math.toRadians(way * 45);
+                int dx = (int) Math.round(-Math.sin(angle) * out), dz = (int) Math.round(-Math.cos(angle) * out);
+                BlockPos ahead = feet.add(dx, 0, dz);
+                if (!world.isChunkLoaded(ahead)) continue;
+                if (Math.hypot(ahead.getX() - anchor.getX(), ahead.getZ() - anchor.getZ()) > EXPLORE_RADIUS) continue;
+                Optional<BlockPos> top = looks.ground(ahead.getX(), ahead.getZ());
+                if (top.isPresent() && NativeNavigator.unseen(world.getBlockState(top.get()))) continue;
+                boolean onSurface = top.isPresent() && player.getBlockY() > top.get().getY() + 1 - 8;
+                // Water it sees there is water it knows of, fetched before any walk to look; water it does not see is not read.
+                if (onSurface && !world.getFluidState(top.get()).isEmpty()) continue;
+                BlockPos target = new BlockPos(ahead.getX(), onSurface ? top.get().getY() + 1 : player.getBlockY(), ahead.getZ());
+                if (blocked(target) || unreachable(target)) continue;
+                return Optional.of(go(target, 3, true, "Explore wider for " + what));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Under cover with no water it knows of, up to the surface first (F-35o's option 1), where {@link #searchForWater}
+     * looks, the wider walk too, rather than its search's tunnel at depth: on 303, 707 and 505 in E-40's iteration 21
+     * (`e40a21-2354e67`) that tunnel and the climb undid each other by turns, and filled no bucket. Its tunnel for water
+     * comes only when the climb has no way up at all, said once for where it stands and why; and at night, as before,
+     * lava or the daylight below it meanwhile. Not under cover, nothing here. In its own search's tunnel for water (the
+     * hold, {@link #waterHeld}) nothing either: the search goes on rather than the climb undoing it.
+     */
+    private Optional<Task> waterUp(NativePlayerBody body) {
+        var player = body.entity();
+        if (!underground(player) && !(lastTick - waterClimbTick <= 200 && belowRim(player.getServerWorld(), player.getBlockPos()))) return Optional.empty();
+        if (waterHeld() && waterDug.contains(lastFeet.asLong())) return Optional.empty();
+        // Water it has seen close by, not yet reached: no climb away from it, its search digs on toward it. In a staged pit
+        // its tunnel opened a cave's pool a block ahead before its floor there was dug, the walk to it found no way yet,
+        // and its climb took it back out (NativeWaterCutGameTests, one run in six). The climb is for no water seen.
+        if (knowledge.nearest(player.getServerWorld(), WorldKnowledge.Kind.WATER, lastFeet,
+                water -> water.getSquaredDistance(lastFeet) <= WATER_NEAR * WATER_NEAR).isPresent()) return Optional.empty();
+        if (night(player.getServerWorld())) return lavaMeanwhile(body).or(() -> daylightBelow(body));
+        // Not back the way it came while its own dig for water lies within reach of the walk back: past the hold's eight
+        // blocks the way back walked it into that dig again, its dig went on, and the two undid each other at that scale,
+        // 76 to 149 walks back a run of 505's replay against 6 to 9 on main (F-35o).
+        retraceBarred = waterDug.stream().anyMatch(cell -> BlockPos.fromLong(cell).getSquaredDistance(lastFeet) <= 20 * 20);
+        Optional<Task> up;
+        try {
+            up = wayUp(body, "Climb toward the surface for water");
+        } finally {
+            retraceBarred = false;
+        }
+        if (up.isPresent()) {
+            waterClimbTick = lastTick;
+            return up;
+        }
+        if (waterNoWayUpAt != lastFeet.asLong()) {
+            waterNoWayUpAt = lastFeet.asLong();
+            String why = noWayUpWhy(player);
+            KindredMod.LOGGER.info("{} no way up for water at {}: {}", player.getName().getString(), lastFeet.toShortString(), why);
+            event("No way up to the surface for water from " + lastFeet.toShortString() + ": " + why + "; its search tunnels instead");
+        }
+        return Optional.empty();
+    }
+
+    /** How near seen water keeps the water fetch from climbing away from it (F-35o). */
+    static final int WATER_NEAR = 16;
+
+    /** While the water fetch asks for a way up with its own dig for water near: no walk back the way it came (F-35o). */
+    private boolean retraceBarred;
+
+    /** Where it last said it had no way up for water (F-35o), so that it says so once for each place. */
+    private long waterNoWayUpAt = Long.MIN_VALUE;
+
+    /** Why every way up was refused, as {@link #wayUpBy} tries them (F-35o). */
+    private String noWayUpWhy(ServerPlayerEntity player) {
+        var why = new java.util.ArrayList<String>();
+        BlockPos gaveUpAt = digger.underWaterGaveUpAt() == null ? null : pos(digger.underWaterGaveUpAt());
+        if (gaveUpAt != null && gaveUpAt.getSquaredDistance(lastFeet) <= 24 * 24) why.add("its climb gave up under the water at " + gaveUpAt.toShortString());
+        else why.add("its climb found no step up");
+        boolean dugNear = waterDug.stream().anyMatch(cell -> BlockPos.fromLong(cell).getSquaredDistance(lastFeet) <= 20 * 20);
+        why.add(dugNear ? "its way back runs into its own dig for water" : trail.size() < 2 ? "no way back it came"
+                : lastTick < retraceStalledUntil ? "its way back stalled" : "no way back higher than here");
+        if (ownSeals.isEmpty()) why.add("no shelter of its own to open");
+        else why.add("its shelter not to be opened");
+        return String.join(", ", why);
+    }
+
+    /** How far out the wider walk to look goes first (F-35o). */
+    static final int EXPLORE_WIDER = 56;
+
+    /** Whether a step is one of the water fetch's own digs on along the ground for water (F-35o). */
+    static boolean waterDigLabel(String label) {
+        return label.startsWith("Tunnel for water") || label.startsWith("Cut through ") && label.contains(" for water");
+    }
+
+    /** The water fetch's hold begins here, if it has not already (F-35o). */
+    private void waterHoldBegins() {
+        if (waterHoldAt != null) return;
+        waterHoldAt = lastFeet;
+        waterHoldSeen = knowledge.count(WorldKnowledge.Kind.WATER);
+        waterHoldBuckets = rescueBody == null ? -1 : ItemMoves.count(rescueBody.entity().getInventory(), Items.WATER_BUCKET);
+    }
+
+    /**
+     * Whether the water fetch's hold is on (F-35o); ended, and forgotten, by a bucket filled, water newly seen, or the
+     * player more than {@value #WATER_HOLD_OFF} blocks from where it began.
+     */
+    private boolean waterHeld() {
+        if (waterHoldAt == null) return false;
+        int buckets = rescueBody == null ? -1 : ItemMoves.count(rescueBody.entity().getInventory(), Items.WATER_BUCKET);
+        boolean found = buckets > waterHoldBuckets && waterHoldBuckets >= 0 || knowledge.count(WorldKnowledge.Kind.WATER) > waterHoldSeen;
+        if (!found && waterHoldAt.getSquaredDistance(lastFeet) <= WATER_HOLD_OFF * WATER_HOLD_OFF) return true;
+        waterHoldAt = null;
+        waterHoldSeen = -1;
+        waterHoldBuckets = -1;
+        // Moved off, the dig it made is still remembered: its way back is not walked into it again ({@link #waterUp}).
+        if (found) waterDug.clear();
+        return false;
+    }
+
     private Optional<Task> search(NativePlayerBody body, String what) {
         var player = body.entity();
         if (!groundBelow(player)) return explore(player, what);
@@ -4383,8 +4636,13 @@ final class PortalRunCampaign {
                 treesGivenUp.add(BlockPos.asLong(treeSeen.getX() >> 2, 0, treeSeen.getZ() >> 2));
                 treeSeen = null;
             }
+            // Not a tree on land it may not work (M-06i1): in a faction world a spawn in the hub's safe zone saw the hub's trees,
+            // walked to each and gave each up, then walked on to trees far out over the skyline; on Factions seeds-10 every
+            // one of the 71 Wood-stage waits came 222 to 559 blocks out. The territory guard's rule only, as the gather's
+            // own (#220): outside a faction world it allows everything, so nothing changes there.
             BlockPos seen = knowledge.treeInView(player, TREE_SIGHT, p -> !blocked(p) && !unreachable(p)
-                    && !treesGivenUp.contains(BlockPos.asLong(p.getX() >> 2, 0, p.getZ() >> 2))).orElse(null);
+                    && !treesGivenUp.contains(BlockPos.asLong(p.getX() >> 2, 0, p.getZ() >> 2))
+                    && TerritoryGuard.mayChange(player, p)).orElse(null);
             if (seen != null && (treeSeen == null || !seen.isWithinDistance(treeSeen, 8))) treeSince = lastTick;
             treeSeen = seen;
         }
@@ -4435,6 +4693,55 @@ final class PortalRunCampaign {
     }
 
     /**
+     * Where exploring is reckoned from, {@link #EXPLORE_RADIUS} round: home, unless home is land it may not work, a faction
+     * world's safe zone or another faction's claim, as the territory guard says of it; then the first ground it stood on
+     * that it may work ({@link #workableGround}, kept as it walks), or where it stands until it has stood on any (M-06i1).
+     * A spawn in the hub is no home to explore round: there it may cut no tree, and out past the radius every heading was
+     * refused, so with no tree in view the goal waited ("No executable local task"). {@code home} itself, saved with the
+     * campaign, is left as it is. The territory guard's rule only: outside a faction world it allows everything, so the
+     * anchor is home, and {@link #workableGround} is never set.
+     */
+    private BlockPos exploreAnchor(ServerPlayerEntity player, BlockPos feet) {
+        if (home == null) return feet;
+        if (TerritoryGuard.mayChange(player, home)) return home;
+        return workableGround != null ? workableGround : feet;
+    }
+
+    /** The first ground it stood on that it may work while its home is land it may not (M-06i1); null until then. Not saved. */
+    private BlockPos workableGround;
+
+    /** Kept as it walks: the first workable ground stood on, while home is land it may not work. */
+    private void noteWorkableGround(ServerPlayerEntity player, BlockPos feet) {
+        if (workableGround != null || home == null || TerritoryGuard.mayChange(player, home)) return;
+        if (TerritoryGuard.mayChange(player, feet)) workableGround = feet.toImmutable();
+    }
+
+    /** For fixtures: where exploring is reckoned from now, for {@code player} where it stands. */
+    BlockPos exploreAnchorForTest(ServerPlayerEntity player) {
+        return exploreAnchor(player, player.getBlockPos());
+    }
+
+    /** For fixtures: its home, as its first plan set it. */
+    BlockPos homeForTest() { return home; }
+
+    /** For fixtures: the explore step for logs from where {@code player} stands, with {@code at} as its home. */
+    Optional<Task> exploreForTest(ServerPlayerEntity player, BlockPos at) {
+        home = at;
+        workableGround = null;
+        exploreHeading = null;
+        return explore(player, "logs");
+    }
+
+    /** For fixtures: the tree its look would walk toward now, if any. */
+    Optional<BlockPos> treeInViewForTest(NativePlayerBody body) {
+        lastFeet = body.entity().getBlockPos().toImmutable();
+        treeLookTick = lastTick - 100;
+        treeSeen = null;
+        treesInView(body);
+        return Optional.ofNullable(treeSeen);
+    }
+
+    /**
      * Head toward unexplored ground along a steady heading, turning when a heading keeps failing, would leave
      * the area around home, or ends on open water.
      */
@@ -4444,7 +4751,7 @@ final class PortalRunCampaign {
             Direction[] headings = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
             exploreHeading = headings[Math.floorMod(exploreFailures + (int) (player.getUuid().getLeastSignificantBits() & 3), 4)];
         }
-        BlockPos anchor = home == null ? player.getBlockPos() : home;
+        BlockPos anchor = exploreAnchor(player, player.getBlockPos());
         // The ground ahead as it sees it from where it stands (F-35m): a top out of its sight gives the walk its own height,
         // for the route to find the way, as under the ground; the heightmap of a column it cannot see is never used.
         var looks = WorldKnowledge.looks(player, 8);
@@ -4616,6 +4923,7 @@ final class PortalRunCampaign {
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
      */
     private Optional<Task> retrace(NativePlayerBody body, String label) {
+        if (retraceBarred) return Optional.empty();
         var world = body.entity().getServerWorld();
         // A walk back that cannot start completes at once without moving; asked for again it only loops (the
         // staircase fixture, its foot open, stood in a pit for three minutes). Another way out gets half a minute.
@@ -5356,6 +5664,13 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         // At night below ground, only water down there too: water under the sky waits for daylight (see daylightBelow).
         boolean below = underground(player) && night(world);
+        // Water in reach is filled from where it stands, whatever became of a walk to it: a walk refused before its tunnel's
+        // floor was dug had set a cave's pool aside, and its tunnel went on past the pool beside it (F-35o).
+        var inReach = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !generatorCell(p) && mayWork(player, p)
+                && eyeDistance(player, p) <= 4.0 && !(below && world.isSkyVisible(p.up())));
+        if (inReach.isPresent()) {
+            return Optional.of(new Task("native_bucket", coords(inReach.get(), Map.of("mode", "fill")), "Fill a bucket at " + inReach.get().toShortString()));
+        }
         var source = knowledge.nearest(world, WorldKnowledge.Kind.WATER, feet, p -> !blocked(p) && !unreachable(p) && !generatorCell(p) && mayWork(player, p)
                 && p.getSquaredDistance(feet) < 64 * 64 && !(below && world.isSkyVisible(p.up())));
         if (source.isEmpty()) return Optional.empty();
@@ -5569,6 +5884,18 @@ final class PortalRunCampaign {
         Optional<BlockPos> top = WorldKnowledge.looks(player, 1).ground(to.getX(), to.getZ());
         if (top.isPresent()) return to.getY() >= top.get().getY();
         return to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ()) - 1;
+    }
+
+    /** The words of a goal step that shelters for the night: a dig in, a seal (F-35h2b reads them). */
+    static final String SHELTER_FOR_THE_NIGHT = ": shelter for the night - ";
+
+    /**
+     * Whether its plan may still shelter for the night now (F-35h2b): night, and not yet dug in for it. A shelter part dug,
+     * sheltered but not sealed, still counts: the walk that would take it out of it waits as before. Asks the plan's own
+     * tests and changes nothing.
+     */
+    boolean wouldShelterForTheNight(ServerPlayerEntity player) {
+        return night(player.getServerWorld()) && !dugInForTheNight(player);
     }
 
     /** Night where there is a sky: a player that learned to shelter early counts the last of the afternoon as night already. */

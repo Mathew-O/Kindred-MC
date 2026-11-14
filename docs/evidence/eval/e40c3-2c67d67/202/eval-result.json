@@ -1,0 +1,53 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 14.224,
+  "server": {"tickMsMean": 12.90, "tickMsWorst": 1884.15, "tickMsWorstAt": 42246, "ticksOver50ms": 401, "ticksOver200ms": 6, "heapMbMax": 920, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1520, "stone_tools": 2620, "iron_ingot": 24780, "iron_pickaxe": 52000, "diamond": 66260},
+      "deaths": [
+        {"tick": 121418, "cause": "Kindred was slain by Zombie", "x": -44, "y": -50, "z": -143, "light": 0, "timeOfDay": 6955, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Back off from skeleton (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 140509, "cause": "Kindred was slain by Zombie", "x": -28, "y": -30, "z": -154, "light": 0, "timeOfDay": 2046, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Wood: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 66200, "x": -141, "y": -16, "z": -116, "attempt": 1}, {"tick": 108540, "x": -62, "y": -54, "z": -124, "attempt": 1}, {"tick": 117360, "x": -43, "y": -54, "z": -143, "attempt": 1}, {"tick": 148960, "x": -142, "y": -34, "z": -101, "attempt": 1}, {"tick": 171000, "x": -140, "y": -49, "z": -114, "attempt": 2}, {"tick": 265020, "x": -131, "y": -15, "z": -122, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 9750,
+      "chunkMinutes": 69350.4
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 10000, "stone_tools": 11500, "iron_ingot": 18000, "iron_pickaxe": 25140, "diamond": 37340, "obsidian": 41127, "portal_lit": 42245},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3478,
+      "chunkMinutes": 69360.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 5620, "stone_tools": 6540, "iron_ingot": 10140},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2242,
+      "chunkMinutes": 69360.0
+    }
+  }
+}

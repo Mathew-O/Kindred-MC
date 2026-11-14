@@ -155,6 +155,17 @@ def environment(scenario):
     return env
 
 
+def run_player_ids(folder):
+    """The save ids of the players the run's result names, from the server's usercache.json; None if either file is
+    missing or unreadable."""
+    try:
+        names = set(json.loads((folder / "eval-result.json").read_text(encoding="utf-8"))["players"])
+        cache = json.loads((folder / "usercache.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return {entry["uuid"] for entry in cache if isinstance(entry, dict) and entry.get("name") in names and "uuid" in entry}
+
+
 def finish(folder, process, started, keep_world=False):
     """Keeps the log and the result beside the run, and removes the world and the server's own files."""
     logs = folder / "logs"
@@ -181,6 +192,15 @@ def finish(folder, process, started, keep_world=False):
         for db in sorted((folder / "world" / "kindred").glob("companions.sqlite*")) if (folder / "world" / "kindred").is_dir() else []:
             (folder / "world-kept" / "kindred").mkdir(parents=True, exist_ok=True)
             shutil.copy2(db, folder / "world-kept" / "kindred" / db.name)
+        # And the run's players' own saves (F-26d): inventory, health and place as the run left them, so a stuck place
+        # can be staged with what its player really carried. Only the players the result names, by the ids the
+        # server's usercache.json gives their names; every save there is, if either file is missing.
+        saves = folder / "world" / "playerdata"
+        ids = run_player_ids(folder)
+        for save in sorted(saves.glob("*.dat")) if saves.is_dir() else []:
+            if ids is None or save.stem in ids:
+                (folder / "world-kept" / "playerdata").mkdir(parents=True, exist_ok=True)
+                shutil.copy2(save, folder / "world-kept" / "playerdata" / save.name)
     for name in ("world", "libraries", ".fabric", "mods", "logs", "versions", "config", "kindred"):
         path = folder / name
         if path.is_dir():
@@ -219,7 +239,7 @@ def main():
     parser.add_argument("--out", default=str(ROOT / "run/eval"), help="where the runs go")
     parser.add_argument("--recipes", help="F-29d: a rescue-recipes.json each world starts with, or a run folder whose seeds' kept files "
                         "each world of the same seed starts with")
-    parser.add_argument("--keep-world", action="store_true", help="keep each run's region files and companion database (world-kept/) for diagnosis")
+    parser.add_argument("--keep-world", action="store_true", help="keep each run's region files, companion database and its players' saves (world-kept/) for diagnosis")
     parser.add_argument("--policy", action="append", default=[], metavar="KEY=VALUE",
                         help="a line of the server's own policy (world/kindred/edits.properties), e.g. maxNativePlayers=8; repeatable")
     args = parser.parse_args()

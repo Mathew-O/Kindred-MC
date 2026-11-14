@@ -80,6 +80,8 @@ final class AuctionHouse {
     void list(ServerPlayerEntity seller, long start, long buyNow, int hours, String world, Consumer<String> done) {
         var hand = seller.getMainHandStack();
         if (hand.isEmpty()) { done.accept("Nothing in hand"); return; }
+        // A hunt's tracking compass is the hunt's, handed by its rule (M-06k2, D6): never anyone's to sell.
+        if (HuntCompass.handed(hand)) { done.accept("A hunt's tracking compass is not yours to sell"); return; }
         var facts = MarketDesk.facts(hand);
         var key = Canonical.of(new dev.kindred.core.market.ItemFacts(facts.id(), facts.count(), facts.damage(), facts.maxDamage(), facts.enchantments(),
                 facts.potion(), false, Set.of()), pricing.get().table());
@@ -99,7 +101,9 @@ final class AuctionHouse {
         desk.whenSaved(seller, () -> recorder.record(events, () -> finish.accept(decision.reason() + " (" + id + ")"), failure -> {
             var back = server.getPlayerManager().getPlayer(who);
             if (back != null) {
+                EvalItemSources.enter(back);
                 back.getInventory().offerOrDrop(taken);
+                EvalItemSources.exit(back, "auction.return");
                 MarketDesk.save(back);
             } else KindredMod.LOGGER.error("Listing {} not written and its seller left: {} to return by an operator", id, taken);
             finish.accept("The listing could not be written; the item is back");
@@ -191,7 +195,9 @@ final class AuctionHouse {
             return;
         }
         var handed = stack.get().copy();
+        EvalItemSources.enter(player);
         player.getInventory().offerOrDrop(stack.get());
+        EvalItemSources.exit(player, "auction.delivery");
         desk.whenSaved(player, () -> {
             var at = at("");
             recorder.record(List.of(WorldEvent.recorded(at.tick(), at.realTimeMs(), "", Auctions.DELIVERED, delivery.to(), delivery.id(), "", Map.of("why", delivery.why()))),

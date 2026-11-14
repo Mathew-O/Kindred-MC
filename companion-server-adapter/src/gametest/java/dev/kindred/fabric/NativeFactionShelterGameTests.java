@@ -115,4 +115,83 @@ public final class NativeFactionShelterGameTests implements FabricGameTest {
                 })
                 .completeIfSuccessful();
     }
+
+    /**
+     * At nightfall, not dug in, its faction walk already chosen (staged: a scout of Blue's border chunk east, the walk that
+     * took it there first in CI GREEN's failing runs): it digs in for the night on its own land, Red's, not out on Blue's
+     * where it may dig nothing. The walk waits while its goal digs in (F-35h2b); it is not cancelled.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionShelterNightYield", tickLimit = 3200)
+    public void atNightfallItsScoutWaitsAndItDigsInOnItsOwnLand(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3100);
+        var server = context.getWorld().getServer();
+        ServerPlayerEntity[] ben = new ServerPlayerEntity[1];
+        Territory.Chunk[] home = new Territory.Chunk[1];
+        FixtureGround.whenDone(context, () -> { if (ben[0] != null && server.getPlayerManager().getPlayer(ben[0].getUuid()) != null) server.getPlayerManager().remove(ben[0]); });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var player = f.player();
+                    BlockPos spawn = player.getBlockPos();
+                    // The middle of its chunk both ways: its shelter's stair, dug a few blocks, stays on its own land.
+                    BlockPos feet = new BlockPos((spawn.getX() & ~15) + 8, spawn.getY(), (spawn.getZ() & ~15) + 8);
+                    var here = Territory.Chunk.at(W, feet.getX(), feet.getZ());
+                    home[0] = here;
+                    int east = (here.x() + 2) * 16 + 4;
+                    BlockPos low = new BlockPos(feet.getX() - 8, feet.getY() - 6, feet.getZ() - 6), high = new BlockPos(east, feet.getY() + 4, feet.getZ() + 6);
+                    FixtureGround.keep(context, low, high);
+                    for (int x = low.getX(); x <= high.getX(); x++) for (int z = low.getZ(); z <= high.getZ(); z++) {
+                        for (int y = feet.getY() - 6; y < feet.getY(); y++) world.setBlockState(new BlockPos(x, y, z), (y == feet.getY() - 1 ? Blocks.DIRT : Blocks.STONE).getDefaultState());
+                        for (int y = feet.getY(); y <= feet.getY() + 4; y++) world.setBlockState(new BlockPos(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    player.refreshPositionAndAngles(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5, 0, 0);
+                    player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                    player.getInventory().clear();
+                    player.getInventory().setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    player.getInventory().setStack(1, new ItemStack(Items.BREAD, 8));
+                    player.getInventory().setStack(2, new ItemStack(Items.COBBLESTONE, 32));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    world.setTimeOfDay(13_000);
+                    context.assertTrue(f.runtime.socialSetting(f.source, f.id, null, false, Personality.Trait.COMBATIVENESS, 70) == 1, "Ada made fierce");
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.factionsWorldForTest(WIDE);
+                    ben[0] = MockPlayers.survival(context, "Ben", new BlockPos(2, 2, 2));
+                    f.runtime.factionsTickForTest();
+                    f.runtime.factions().clockForTest(-50 * 3_600_000L);
+                    context.assertTrue(f.runtime.faction(f.source, player.getUuid(), "create", List.of("Red", "RED")).accepted(), "Ada founds Red");
+                    context.assertTrue(f.runtime.faction(f.source, ben[0].getUuid(), "create", List.of("Blue", "BLU")).accepted(), "Ben founds Blue");
+                    f.runtime.factions().clockForTest(0);
+                    var ledgers = f.runtime.projected();
+                    String red = ledgers.factions().named("Red").orElseThrow().id().toString();
+                    String blue = ledgers.factions().named("Blue").orElseThrow().id().toString();
+                    f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, player.getUuid(), red, here.key(), Map.of()));
+                    f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, here.offset(1, 0).key(), Map.of()));
+                    f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, blue, here.offset(2, 0).key(), Map.of()));
+                    f.runtime.record(PowerRules.set(ben[0].getUuid(), 1, null, FactionSettings.DEFAULTS, server.getTicks(), System.currentTimeMillis()));
+                    f.runtime.record(PowerRules.set(player.getUuid(), 1, null, FactionSettings.DEFAULTS, server.getTicks(), System.currentTimeMillis()));
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.recordWritten(), "Its land and Blue's written"))
+                .createAndAdd(() -> {
+                    // Its scout of Blue's exposed border chunk east, chosen before its goal is asked anything: staged, so that
+                    // the walk comes first every run, as it did in the failing ones.
+                    var east = home[0].offset(1, 0).key();
+                    f.runtime.factionMoveSetForTest(f.id, new dev.kindred.core.factions.FactionPlay.Choice(
+                            dev.kindred.core.factions.FactionPlay.Kind.SCOUT, east, 0, "staged: the border chunk east"));
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.assertTrue(f.runtime.dugInForTheNightForTest(f.id), "Dug in for the night: at " + player.getBlockPos().toShortString()
+                            + ", " + f.runtime.nativeLastResult(f.id) + ", move " + f.runtime.factionMoveForTest(f.id) + ", step " + f.runtime.goalStepForTest(f.id)
+                            + ", time " + context.getWorld().getTimeOfDay() % 24_000);
+                    var at = Territory.Chunk.at(W, player.getBlockX(), player.getBlockZ());
+                    context.assertTrue(at.equals(home[0]), "Dug in on its own land, Red's " + home[0].key() + ", not " + at.key());
+                })
+                .completeIfSuccessful();
+    }
 }

@@ -28,7 +28,22 @@
     "DoorInteractGoalAccessor",
     "SmithingTransformAccessor",
     "PlayerSaveHandlerMixin",
-    "SleepCountMixin"
+    "SleepCountMixin",
+    "ArenaBreakMixin",
+    "ArenaThrowMixin",
+    "ArenaSavedMixin",
+    "ItemSourceSpawnMixin",
+    "ItemSourceRemoveMixin",
+    "ItemSourcePickupMixin",
+    "ItemSourceProjectilePickupMixin",
+    "ItemSourceScreenMixin",
+    "ItemSourceUseMixin",
+    "ItemSourceInteractMixin",
+    "ItemSourceConsumeMixin",
+    "HuntCompassVanishMixin",
+    "HuntCompassDropMixin",
+    "HuntCompassVoidMixin",
+    "HuntCompassCraftMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin",

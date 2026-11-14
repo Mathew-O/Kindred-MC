@@ -91,10 +91,13 @@ final class EvalBootstrap implements RunObserver {
         seed = server.getOverworld().getSeed();
         // Free travel or free items allowed at any point makes the run not earned (mod-support decision 6).
         record.policy(runtime.teleportAllowed(), runtime.freeItemsAllowed());
+        EvalItemSources.tick(server);
         switch (phase) {
             case 0 -> { // The runtime's records loaded: set the world up as an operator would, then the starters one by one.
                 if (!runtime.isReady()) return;
                 runtime.observeRun(this);
+                // Every item a player comes to hold checked for its source, from before the first player is made (M-06k).
+                EvalItemSources.start();
                 KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}, atlas {}, rescue {}, advice {}", scenario.edits() ? "on" : "off",
                         scenario.lessons() ? "on" : "off", scenario.atlas() ? "on" : "off", scenario.rescue() ? "on" : "off", scenario.advice() ? "on" : "off");
                 runtime.setWorldEdits(server.getCommandSource(), scenario.edits());
@@ -432,6 +435,15 @@ final class EvalBootstrap implements RunObserver {
         finished = true;
         if (startDayTime >= 0) record.days((server.getOverworld().getTimeOfDay() - startDayTime) / 24_000.0);
         if (measured > 0) record.server(tickNanosSum / measured / 1e6, worstTickNanos / 1e6, worstTickAt, over50, over200, heapMax / (1024 * 1024), measured);
+        if (EvalItemSources.on) {
+            EvalItemSources.snapshot(server);
+            EvalItemSources.stop();
+            var items = EvalItemSources.result();
+            record.items(items.report(), items.origins(), items.untaggedPickups(), items.forgottenDrops(), items.snapshotMicrosMean(), items.snapshotMicrosMax(),
+                    items.tagMicrosMean(), items.tagMicrosMax());
+            KindredMod.LOGGER.info("Evaluation run: item sources: {} gained, {} paid by a source, {} with none{}", items.report().gained(), items.report().paid(),
+                    items.report().violationCount(), items.report().clean() ? "" : ": " + items.report().violations());
+        }
         long run = startTick < 0 ? 0 : lastTick - startTick;
         String build = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("kindred")
                 .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown");
