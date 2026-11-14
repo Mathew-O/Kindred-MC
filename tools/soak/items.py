@@ -142,6 +142,13 @@ def main():
             if got:
                 looted[name]["minecraft:" + got.group(2).replace(" ", "_")] += int(got.group(1))
     report = {"players": {}, "flags": []}
+    # F-31b1: settled actions past the bound are pruned with a day's tally, which keeps no kind: their smelts are not counted.
+    try:
+        pruned = db.execute("SELECT COUNT(*) FROM world_events WHERE kind = 'action.pruned'").fetchone()[0]
+    except sqlite3.Error:
+        pruned = 0
+    if pruned:
+        report["actionsPrunedNote"] = "%d action.pruned tallies: settled actions older than 30 game days were pruned, and smelts among them are not counted here" % pruned
     for save_path in sorted((world / "playerdata").glob("*.dat")):
         uid = save_path.stem
         stats_path = world / "stats" / (uid + ".json")

@@ -289,7 +289,7 @@ class SqliteCompanionStoreTest {
         assertEquals(new ActivityLimit(id, 3_600_000, false, "UTC", 3), migrated, "a schema 8 limit upgrades to all day, nothing else changed");
         upgraded.closeAsync().join();
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + path()); var statement = connection.createStatement()) {
-            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(13, row.getInt(1)); } // The latest schema (F-31, the action fold).
+            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(14, row.getInt(1)); } // The latest schema (F-31b1, the action bound).
             statement.execute("UPDATE activity_limits SET window_start = '09:00'");
         }
         assertCause(IllegalStateException.class, open(10).limit(id));

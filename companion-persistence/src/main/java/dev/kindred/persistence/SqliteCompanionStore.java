@@ -1542,7 +1542,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 13) {
+            if (schemaVersion < 0 || schemaVersion > 14) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1558,6 +1558,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 11) migrate(11, "V11__rough_talk.sql");
             if (schemaVersion < 12) migrate(12, "V12__world_record.sql");
             if (schemaVersion < 13) migrate(13, "V13__action_fold.sql");
+            if (schemaVersion < 14) migrate(14, "V14__action_bound.sql");
         }
         recover();
         try (Statement query = database.createStatement(); ResultSet row = query.executeQuery("SELECT COALESCE(MAX(id), 0) FROM world_events")) {
@@ -1643,6 +1644,15 @@ public final class SqliteCompanionStore {
                     statement.execute("DROP TRIGGER IF EXISTS world_events_append_only_delete");
                     statement.execute("CREATE TRIGGER world_events_append_only_delete BEFORE DELETE ON world_events WHEN OLD.kind <> '"
                             + ActionLedgerView.ACTION + "' BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
+                }
+                if (version == 14) {
+                    // The action bound (F-31b1): a folded summary may be deleted only once its ledger row is gone, as the
+                    // bound's prune deletes them (the row first, in one transaction); every other kind stays append-only.
+                    statement.execute("DROP TRIGGER IF EXISTS world_events_append_only_delete");
+                    statement.execute("CREATE TRIGGER world_events_append_only_delete BEFORE DELETE ON world_events WHEN OLD.kind <> '"
+                            + ActionLedgerView.ACTION + "' AND NOT (OLD.kind = '" + ActionLedgerView.FOLDED
+                            + "' AND NOT EXISTS (SELECT 1 FROM action_ledger WHERE action_id = OLD.subject))"
+                            + " BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
                 }
                 statement.execute("PRAGMA user_version = " + version);
             }
@@ -1998,6 +2008,101 @@ public final class SqliteCompanionStore {
             });
             return new ActionFold(counts[0], counts[1], (System.nanoTime() - start) / 1_000_000);
         });
+    }
+
+    /** What one pass of the action bound pruned: actions, the game days tallied, and how long it held the writer. */
+    public record ActionPrune(int actions, int days, long millis) { }
+
+    /** A game day on the fold's clock, in real milliseconds at 20 ticks a second (action events carry no game tick). */
+    public static final long GAME_DAY_MS = 24_000L / 20 * 1_000;
+
+    /**
+     * The action bound (F-31b1, Session A's decision): on the ordered writer, up to {@code max} settled actions whose
+     * {@link ActionLedgerView#FOLDED} summary is older than {@code olderThanMs} removed, the row in {@code action_ledger}
+     * and the summary together, in one transaction with one {@link ActionLedgerView#PRUNED} tally for each game day of the
+     * fold's clock they began on: how many by state, and the first and last of them. Only after an agreement check that
+     * agreed: {@code check} is that pass's, and one that did not agree prunes nothing, so a disagreement is never deleted
+     * before it is seen. An action that is not settled or was ever uncertain is never folded and so never pruned; a row
+     * that no longer matches its summary (state or revision) is left. Nothing else is deleted. A pass that takes its full
+     * {@code max} leaves the rest to the next, so one game day can have several tallies: its figures are their sum.
+     */
+    public CompletableFuture<ActionPrune> pruneSettledActions(LedgerCheck check, long olderThanMs, int max) {
+        if (max < 1) throw new IllegalArgumentException("A prune takes at least one action");
+        if (check == null || !check.agrees()) return CompletableFuture.completedFuture(new ActionPrune(0, 0, 0));
+        return submit(() -> {
+            long start = System.nanoTime();
+            var summaries = new ArrayList<WorldEvent>();
+            try (PreparedStatement query = database.prepareStatement("SELECT * FROM world_events WHERE kind = ? AND real_time_ms < ? ORDER BY real_time_ms, id LIMIT ?")) {
+                query.setString(1, ActionLedgerView.FOLDED);
+                query.setLong(2, olderThanMs);
+                query.setInt(3, max);
+                try (ResultSet rows = query.executeQuery()) { while (rows.next()) summaries.add(readWorldEvent(rows)); }
+            }
+            int[] pruned = new int[2];
+            transaction(() -> {
+                // Per game day of the first event: counts by state, and the first and last action by when they began.
+                var days = new java.util.TreeMap<Long, java.util.LinkedHashMap<String, String>>();
+                var edges = new HashMap<Long, long[]>();
+                for (WorldEvent summary : summaries) {
+                    String state = summary.get("state", "");
+                    if (!ActionLedgerView.settled(state)) continue;
+                    String subject = summary.subject();
+                    String rowState;
+                    long rowRevision;
+                    try (PreparedStatement row = database.prepareStatement("SELECT state, revision FROM action_ledger WHERE action_id = ?")) {
+                        row.setString(1, subject);
+                        try (ResultSet found = row.executeQuery()) {
+                            if (!found.next()) continue;
+                            rowState = found.getString(1);
+                            rowRevision = found.getLong(2);
+                        }
+                    }
+                    if (!rowState.equals(state) || !String.valueOf(rowRevision).equals(summary.get("revision", ""))) continue;
+                    try (PreparedStatement live = database.prepareStatement("SELECT 1 FROM world_events WHERE kind = ? AND subject = ? LIMIT 1")) {
+                        live.setString(1, ActionLedgerView.ACTION);
+                        live.setString(2, subject);
+                        try (ResultSet found = live.executeQuery()) { if (found.next()) continue; }
+                    }
+                    try (PreparedStatement delete = database.prepareStatement("DELETE FROM action_ledger WHERE action_id = ?")) {
+                        delete.setString(1, subject);
+                        delete.executeUpdate();
+                    }
+                    try (PreparedStatement delete = database.prepareStatement("DELETE FROM world_events WHERE id = ? AND kind = ?")) {
+                        delete.setLong(1, summary.id());
+                        delete.setString(2, ActionLedgerView.FOLDED);
+                        delete.executeUpdate();
+                    }
+                    long began = parseLong(summary.get("first_ms", ""), summary.realTimeMs());
+                    long day = Math.floorDiv(began, GAME_DAY_MS);
+                    var tally = days.computeIfAbsent(day, d -> new java.util.LinkedHashMap<>());
+                    tally.merge(state.toLowerCase(java.util.Locale.ROOT), "1", (x, y) -> String.valueOf(Long.parseLong(x) + 1));
+                    tally.merge("total", "1", (x, y) -> String.valueOf(Long.parseLong(x) + 1));
+                    long[] edge = edges.computeIfAbsent(day, d -> new long[] {Long.MAX_VALUE, Long.MIN_VALUE});
+                    if (began < edge[0]) { edge[0] = began; tally.put("first", subject); }
+                    if (began >= edge[1]) { edge[1] = began; tally.put("last", subject); }
+                    pruned[0]++;
+                }
+                long now = System.currentTimeMillis();
+                for (var day : days.entrySet()) {
+                    var data = new java.util.LinkedHashMap<String, String>();
+                    data.put("day_start_ms", String.valueOf(day.getKey() * GAME_DAY_MS));
+                    data.put("older_than_ms", String.valueOf(olderThanMs));
+                    data.putAll(day.getValue());
+                    insertWorldEvent(WorldEvent.recorded(-1, now, "", ActionLedgerView.PRUNED, null, String.valueOf(day.getKey()), "", data));
+                }
+                pruned[1] = days.size();
+                return null;
+            });
+            return new ActionPrune(pruned[0], pruned[1], (System.nanoTime() - start) / 1_000_000);
+        });
+    }
+
+    private static long parseLong(String text, long otherwise) {
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException notANumber) {
+            return otherwise;
+        }
     }
 
     /**

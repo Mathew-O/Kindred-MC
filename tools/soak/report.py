@@ -18,6 +18,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 # Folded by F-31b (settled actions replaced by one event each): the only kind the Record ever deletes.
 FOLDED_KIND = "action"
+# F-31b1: a settled action past the bound is pruned, its row and its action.folded summary, with an action.pruned tally.
+SUMMARY_KIND = "action.folded"
+PRUNED_KIND = "action.pruned"
+TALLIED = ("total", "verified", "failed", "cancelled")
 # Console lines about outcomes that could not be settled, or things set aside, after a start.
 RECONCILE = re.compile(r"(?i)(reconcil|uncertain|ambiguous|unreadable|set aside|could not be read|not replayed|blocked for|storage inspection)")
 
@@ -52,6 +56,19 @@ def connect(snapshot):
 def events(db):
     rows = db.execute("SELECT id, kind, actor, subject, place, data, tick, real_time_ms FROM world_events ORDER BY id").fetchall()
     return {r[0]: r for r in rows}
+
+
+def tallied(rows, after=0):
+    """The action bound's tallies after event id {after}, summed (F-31b1): a day pruned over several passes has several."""
+    from urllib.parse import parse_qs
+    total = collections.Counter()
+    for eid, row in rows.items():
+        if eid > after and row[1] == PRUNED_KIND:
+            fields = {k: v[0] for k, v in parse_qs(row[5] or "").items()}
+            for key in TALLIED:
+                if int(fields.get(key) or 0):
+                    total[key] += int(fields[key])
+    return total
 
 
 def tables(db):
@@ -126,7 +143,7 @@ def compare(before, after):
     """What the later snapshot lost or wrote again of the earlier one's Record."""
     lost, changed = [], []
     for eid, row in before.items():
-        if row[1] == FOLDED_KIND:
+        if row[1] in (FOLDED_KIND, SUMMARY_KIND):
             continue
         if eid not in after:
             lost.append(row)
@@ -178,6 +195,7 @@ def main():
         entry["eventsByKind"] = dict(collections.Counter(r[1] for r in current["events"].values()).most_common())
         open_actions = db.execute("SELECT state, COUNT(*) FROM action_ledger GROUP BY state").fetchall() if "action_ledger" in current["tables"] else []
         entry["actionStates"] = dict(open_actions)
+        entry["actionsPrunedByState"] = dict(tallied(current["events"]))
         entry["audit"] = audit(snapshot)
         if previous:
             lost, changed, again = compare(previous["events"], current["events"])
@@ -186,6 +204,13 @@ def main():
             entry["eventsChanged"] = len(changed)
             entry["writtenAgainByKind"] = dict(again)
             entry["rowsLost"] = {t: len(previous["keyed"][t] - current["keyed"].get(t, set())) for t in previous["keyed"]}
+            # Rows and summaries the bound pruned since (its tallies say how many) are not lost; any beyond them are.
+            pruned = tallied(current["events"], max(previous["events"]) if previous["events"] else 0)["total"]
+            summaries = sum(1 for eid, row in previous["events"].items() if row[1] == SUMMARY_KIND and eid not in current["events"])
+            entry["actionsPrunedSince"] = pruned
+            if "action_ledger" in entry["rowsLost"]:
+                entry["rowsLost"]["action_ledger"] = max(0, entry["rowsLost"]["action_ledger"] - pruned)
+            entry["summariesLostBeyondPruned"] = max(0, summaries - pruned)
             mem = {}
             for name, was in previous["memory"].items():
                 now = current["memory"].get(name)
