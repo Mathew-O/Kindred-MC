@@ -122,7 +122,12 @@ class AttentionWorkSchedulerTest {
     /** Work handed out on an earlier tick, or for a body that has since been replaced, is refused. */
     @Test
     void expiredAndStaleGenerationTokenRejected() {
-        var scheduler = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());
+        // The default caps with a soft time limit a loaded host cannot trip, as its neighbours have: selection reads the
+        // real clock, and on a busy runner the default two milliseconds ran out before the first selection (#309, 91a4a09).
+        // With room in the budget, each refusal below can come only from the tick having moved on or the body replaced.
+        var policy = new AttentionSchedulePolicy(AttentionSchedulePolicy.DEFAULT_MAX_SLICES_PER_TICK,
+                AttentionSchedulePolicy.DEFAULT_MAX_DETAILED_SCANS_PER_TICK, 60_000_000L, false);
+        var scheduler = new AttentionWorkScheduler(session, policy);
         long tick = 50;
         scheduler.synchronizeEntries(List.of(
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player1, tick, 1, 1, AttentionState.ROUTINE, true)
@@ -136,7 +141,7 @@ class AttentionWorkSchedulerTest {
         assertFalse(scheduler.tryStart(token, System.nanoTime()), "Expired token must be rejected");
 
         // Body generation change invalidates token
-        var scheduler2 = new AttentionWorkScheduler(session, AttentionSchedulePolicy.defaultPolicy());
+        var scheduler2 = new AttentionWorkScheduler(session, policy);
         scheduler2.synchronizeEntries(List.of(
                 new AttentionWorkScheduler.PlayerEntrySnapshot(player1, tick, 1, 1, AttentionState.ROUTINE, true)
         ));
