@@ -31,7 +31,19 @@
     "SleepCountMixin",
     "ArenaBreakMixin",
     "ArenaThrowMixin",
-    "ArenaSavedMixin"
+    "ArenaSavedMixin",
+    "ItemSourceSpawnMixin",
+    "ItemSourceRemoveMixin",
+    "ItemSourcePickupMixin",
+    "ItemSourceProjectilePickupMixin",
+    "ItemSourceScreenMixin",
+    "ItemSourceUseMixin",
+    "ItemSourceInteractMixin",
+    "ItemSourceConsumeMixin",
+    "HuntCompassVanishMixin",
+    "HuntCompassDropMixin",
+    "HuntCompassVoidMixin",
+    "HuntCompassCraftMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin",

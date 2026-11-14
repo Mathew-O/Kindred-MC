@@ -387,6 +387,10 @@ final class PlayerRuntime {
     private final Map<UUID, List<dev.kindred.core.construction.Blueprint>> libraryDesigns = new HashMap<>();
     /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
     private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
+    /** Each running hunt's one issued tracking compass per hunter (M-06k2): replaced only when provably gone. */
+    private final Map<UUID, Map<UUID, UUID>> huntIssued = new HashMap<>();
+    /** The hunts that have ended here: a compass of one is taken back wherever it next turns up (M-06k2). */
+    private final java.util.Set<UUID> huntsOver = new java.util.HashSet<>();
     /** Each builder's own things set aside for its build battle (M-06k3), kept on disk until they are back. */
     private final BuilderHolds builderHolds;
     /** The holds of builders in a battle now, as written: what each gets back at the end. */
@@ -1126,9 +1130,9 @@ final class PlayerRuntime {
                         reject(source, "The ledger or the native save could not be read; nothing was settled.");
                         return;
                     }
-                    String observed;
+                    InventoryEvidence observed;
                     try {
-                        observed = read.getValue().map(bytes -> InventoryEvidence.describeSave(bytes.decode(server), server.getRegistryManager())).orElse(null);
+                        observed = read.getValue().map(bytes -> InventoryEvidence.fromSave(bytes.decode(server), server.getRegistryManager())).orElse(null);
                     } catch (RuntimeException unreadable) {
                         observed = null;
                     }
@@ -1139,7 +1143,7 @@ final class PlayerRuntime {
 
     /** Settles the actions left, one at a time, each written before the next is looked at. */
     private void settleEach(ServerCommandSource source, Entry entry, long generation, String by, Boolean chosen,
-                            java.util.List<dev.kindred.core.ActionRecord> left, String observed, int settled, int waiting, int waited) {
+                            java.util.List<dev.kindred.core.ActionRecord> left, InventoryEvidence observed, int settled, int waiting, int waited) {
         if (!running || entries.get(entry.data.id()) != entry || entry.generation != generation) { entry.settling = false; return; }
         if (left.isEmpty()) { finishSettling(source, entry, settled, waiting); return; }
         var action = left.get(0);
@@ -1148,12 +1152,16 @@ final class PlayerRuntime {
             reject(source, "An action of " + entry.data.displayName() + "'s is " + action.state() + ", not yet marked uncertain by a start; nothing more was settled.");
             return;
         }
-        var target = dev.kindred.core.ActionSettlement.target(action.kind(), action.preconditions());
+        // The block a break meant to break, or the cell a pillar step meant to fill (F-25c6c), read once its ground is loaded.
+        var target = dev.kindred.core.ActionSettlement.target(action.kind(), action.preconditions())
+                .or(() -> dev.kindred.core.ActionSettlement.pillarCell(action.kind(), action.preconditions()));
         String block = null;
+        net.minecraft.server.world.ServerWorld world = null;
+        BlockPos pos = null;
         if (target.isPresent()) {
-            var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(entry.data.dimension())));
+            world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(entry.data.dimension())));
             if (world != null) {
-                var pos = new BlockPos(target.get().x(), target.get().y(), target.get().z());
+                pos = new BlockPos(target.get().x(), target.get().y(), target.get().z());
                 if (!world.isChunkLoaded(pos) && waited < SETTLE_LOAD_TICKS) {
                     var chunk = new net.minecraft.util.math.ChunkPos(pos);
                     world.getChunkManager().addTicket(NATIVE_CONNECT, chunk, 1, chunk);
@@ -1163,7 +1171,7 @@ final class PlayerRuntime {
                 if (world.isChunkLoaded(pos)) block = Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString();
             }
         }
-        var decision = dev.kindred.core.ActionSettlement.decide(action, block, observed);
+        var decision = settleDecision(action, target.orElse(null), world, pos, block, observed);
         Boolean done = switch (decision.verdict()) {
             case DONE -> true;
             case NOT_DONE -> false;
@@ -1204,6 +1212,45 @@ final class PlayerRuntime {
             feedback(source, "Settled " + entry.data.displayName() + "'s " + action.kind() + " as " + (done ? "done" : "not done") + " (" + who + "): " + decision.evidence());
             settleEach(source, entry, generation, by, chosen, left, observed, settled + 1, waiting, 0);
         }));
+    }
+
+    /**
+     * One uncertain action decided by its own type's rule from what can be seen (F-25c6c, F-31g1), each reading only the
+     * fingerprint its record kept ({@code Before.recorded}): a break by {@code NativeBreakAction.settleFromEvidence}, a
+     * pillar step by {@code NativePillarAction.settleFromEvidence}. Anything else, or a block or save that could not be
+     * read, is left for an operator, in {@code ActionSettlement.decide}'s words.
+     */
+    private dev.kindred.core.ActionSettlement.Decision settleDecision(dev.kindred.core.ActionRecord action, dev.kindred.core.ActionSettlement.Target target,
+                                                                    net.minecraft.server.world.ServerWorld world, BlockPos pos, String block, InventoryEvidence observed) {
+        var words = dev.kindred.core.ActionSettlement.decide(action, block, observed == null ? null : observed.description());
+        if (target != null && dev.kindred.core.ActionSettlement.PILLAR.equals(action.kind()) && (block == null || observed == null)) {
+            return new dev.kindred.core.ActionSettlement.Decision(dev.kindred.core.ActionSettlement.Verdict.AMBIGUOUS, target.describe() + ": "
+                    + (block == null ? "the cell could not be read" : "now " + block) + "; saved inventory " + (observed == null ? "unreadable" : observed.description()));
+        }
+        if (target == null || block == null || observed == null) return words;
+        var before = Before.recorded(action.beforeEvidence());
+        if (dev.kindred.core.ActionSettlement.BREAK.equals(action.kind())) {
+            return new dev.kindred.core.ActionSettlement.Decision(verdict(NativeBreakAction.settleFromEvidence(before, observed, world, pos, target.block())), words.evidence());
+        }
+        if (dev.kindred.core.ActionSettlement.PILLAR.equals(action.kind())) {
+            var id = Identifier.tryParse(target.block());
+            if (id == null || !Registries.BLOCK.containsId(id)) return words;
+            var settled = NativePillarAction.settleFromEvidence(before, observed, world, pos, Registries.BLOCK.get(id));
+            boolean same = observed.description().equals(action.beforeEvidence());
+            String seen = target.describe() + ": " + (world.getBlockState(pos).isReplaceable() ? "the cell open (" + block + ")" : "now " + block) + "; "
+                    + (same ? "the saved inventory exactly as before the step (" + observed.description() + ")"
+                    : "the saved inventory differs from before the step (before: " + action.beforeEvidence() + "; now: " + observed.description() + ")");
+            return new dev.kindred.core.ActionSettlement.Decision(verdict(settled), seen);
+        }
+        return words;
+    }
+
+    private static dev.kindred.core.ActionSettlement.Verdict verdict(Settled settled) {
+        return switch (settled) {
+            case DONE -> dev.kindred.core.ActionSettlement.Verdict.DONE;
+            case NOT_DONE -> dev.kindred.core.ActionSettlement.Verdict.NOT_DONE;
+            case HELD -> dev.kindred.core.ActionSettlement.Verdict.AMBIGUOUS;
+        };
     }
 
     /** Once the actions looked at are written: the player freed when the store holds none unresolved, as at a clear start. */
@@ -1570,6 +1617,27 @@ final class PlayerRuntime {
     /** A native task with its arguments, as the commands start one, for fixtures. */
     int nativeTaskForFixtures(ServerCommandSource source, UUID id, String skill, Map<String, String> arguments) {
         return nativeTask(source, id, skill, arguments);
+    }
+
+    /**
+     * For fixtures: the running native task interrupted as a goal's stop interrupts it (a hoglin on it, a mob to fight):
+     * its lease cancelled, the runner aborted with {@code reason}, the inputs let go. False if nothing is running.
+     */
+    boolean interruptForFixtures(UUID id, String reason) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.runner == null || entry.nativeBody == null || !runnerBusy(entry)) return false;
+        entry.runner.lease().ifPresent(entry.arbiter::cancel);
+        entry.runner.abort(reason);
+        entry.nativeBody.stopInputs();
+        observeRunner(entry);
+        return true;
+    }
+
+    /** For fixtures: whether the player is held for reconciliation, its native state not to be acted on. */
+    boolean reconciliationBlockedForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null && entry.reconciliationBlocked;
     }
 
     int nativeSkill(ServerCommandSource source, UUID id, String skill, int value) {
@@ -8362,7 +8430,11 @@ final class PlayerRuntime {
             var factionMove = entry.factionPlay.move;
             boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
                     && entry.dispatchSource.startsWith("factionCandidates");
-            if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
+            if (factionWalk && state == SkillRunner.State.BLOCKED) {
+                entry.factionPlay.blockedWalks++;
+                if (entry.currentTaskId != null && entry.currentTaskId.equals(entry.factionPlay.settledWalk)) entry.factionPlay.blockedSettled++;
+            }
+            if (factionWalk) entry.factionPlay.settledWalk = null;
             if (factionWalk) entry.factionPlay.walksEnded++;
             if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
@@ -9871,6 +9943,15 @@ final class PlayerRuntime {
      * dispatched, under its lease, through the same calls a person's commands use, the rules checked again there; or a
      * walk to a claim elsewhere, a border it saw, or its faction's home. Null when it has nothing to do there.
      */
+    /**
+     * For the back-off's fixture: {@code move} settled now, while its own walk may still run (there in its chunk, the
+     * place set aside, its end open water). That walk's end is no refusal of a move still to be made.
+     */
+    private static void settledInFlight(Entry entry, FactionsPlayer play, ServerPlayerEntity player, dev.kindred.core.factions.FactionPlay.Choice move) {
+        UUID walk = FactionsPlayer.taskId(player.getUuid(), move);
+        if (walk.equals(entry.currentTaskId)) play.settledWalk = walk;
+    }
+
     private List<NativeTaskCandidate> factionCandidates(Entry entry, NativePlayerBody body) {
         if (!factionsWorld() || !ready || !running) return null;
         var player = body.entity();
@@ -9900,8 +9981,13 @@ final class PlayerRuntime {
         }
         var move = play.move;
         if (move == null) return null;
+        // Its goal still at its Wood stage (no wooden tool yet): no faction walk but DEFEND, the walk kept for later
+        // (M-06i1a). On seeds-10 (3286df0) the walks took players hundreds of blocks from the trees by their spawn before a
+        // wooden tool: on 101 Echo and Sol 250 blocks west into water, 21 to 114 walks each, Echo never earning one.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && woodFirst(entry)) return null;
         // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
         if (play.setAside(tick).contains(move.target())) {
+            settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
@@ -9920,6 +10006,7 @@ final class PlayerRuntime {
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
+            settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
@@ -9933,6 +10020,7 @@ final class PlayerRuntime {
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && !play.waiting(move.target(), tick)
                 && seenOpenWater(entry, play, player, to, tick)) {
             play.openWater(move.target(), tick, player.getBlockPos(), FactionsPlayer.atSurface(player));
+            settledInFlight(entry, play, player, move);
             play.move = null;
             // The next choice at the decision interval, not on the same tick: chosen at once, a coast of water it saw was
             // set aside place by place, a search for each (F-35j1).
@@ -9953,6 +10041,17 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /**
+     * Whether its goal is still at its Wood stage, no wooden tool earned, with a step it can take (M-06i1a): faction walks
+     * other than DEFEND wait. Where its last step was having nothing it could do where it is (boxed in, no tree it can
+     * reach, water it cannot leave: {@link PortalRunCampaign#stalled}) the walk goes on, and with it the way a refused
+     * faction walk makes out.
+     */
+    private boolean woodFirst(Entry entry) {
+        return goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null
+                && entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.WOOD && !entry.campaign.stalled();
     }
 
     /**
@@ -10267,7 +10366,7 @@ final class PlayerRuntime {
     int[] factionBlockedForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
-        return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+        return entry == null ? new int[3] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted, entry.factionPlay.blockedSettled};
     }
 
     /** How many times the fixture's AI player has looked all round it (its perception's sweeps); -1 before it looks at all. */
@@ -15508,6 +15607,13 @@ final class PlayerRuntime {
         return entry == null || entry.campaign == null ? 0 : entry.campaign.lastGain();
     }
 
+    /** Its native body, for a fixture to ask its campaign's steps as they would be asked; null without one. */
+    NativePlayerBody nativeBodyForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.nativeBody;
+    }
+
     /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
     PortalRunCampaign campaignForTest(UUID id) {
         requireThread();
@@ -16500,10 +16606,12 @@ final class PlayerRuntime {
         counts.merge("minecraft:dirt", 64, Integer::sum);
         var inventory = player.getInventory();
         int slot = 0;
+        EvalItemSources.enter(player);
         for (var e : counts.entrySet()) {
             var item = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(e.getKey()));
             for (int left = e.getValue(); left > 0 && slot < 36; left -= 64) inventory.setStack(slot++, new ItemStack(item, Math.min(64, left)));
         }
+        EvalItemSources.exit(player, "rule:builder-stock");
     }
 
     /** The blocks standing on a plot, over its floor, by kind: what a voter sees of a build. */
@@ -16848,6 +16956,9 @@ final class PlayerRuntime {
             }
         }
         if (over) {
+            huntsOver.add(match.id());
+            var issued = huntIssued.remove(match.id());
+            if (issued != null) issued.values().forEach(HuntCompass::forget);
             hunts.remove(match.id());
             for (UUID runner : match.runners()) trails.remove(runner);
         }
@@ -16859,6 +16970,13 @@ final class PlayerRuntime {
      * with none (a new one, or one on its feet after a death took it) is handed one.
      */
     private void pollHunts() {
+        // A hunt's compass outlives its hunt only where no player holds it (a chest, the ground): taken back wherever it
+        // next turns up in a player's inventory, cursor or ender chest (M-06k2). Only the hunts this runtime saw end.
+        if (!huntsOver.isEmpty()) {
+            for (var player : server.getPlayerManager().getPlayerList()) {
+                if (HuntCompass.sweep(player, huntsOver) > 0) KindredMod.LOGGER.info("Manhunt: a tracking compass of a hunt now over taken back from {}", player.getName().getString());
+            }
+        }
         for (var match : matches.list()) {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING) continue;
             var runners = new ArrayList<ServerPlayerEntity>();
@@ -16879,8 +16997,17 @@ final class PlayerRuntime {
                                 .map(trail -> trail.get(world)).filter(java.util.Objects::nonNull)
                                 .min(java.util.Comparator.comparingDouble(pos -> pos.getSquaredDistance(hunter.getPos()))).orElse(null));
                 var target = at == null ? java.util.Optional.<net.minecraft.util.math.GlobalPos>empty() : java.util.Optional.of(net.minecraft.util.math.GlobalPos.create(world, at));
-                if (HuntCompass.point(hunter, match.id(), target) > 0) {
-                    KindredMod.LOGGER.info("Manhunt {}: a tracking compass handed to {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(hunterId));
+                HuntCompass.aim(hunter, match.id(), target);
+                // Issued once (M-06k2): the first at the start, another only when the hunter's own is provably gone.
+                var issued = huntIssued.computeIfAbsent(match.id(), id -> new HashMap<>());
+                UUID own = issued.get(hunterId);
+                if (own != null && (HuntCompass.holds(hunter, own) || !HuntCompass.gone(own))) continue;
+                UUID next = UUID.randomUUID();
+                if (HuntCompass.issue(hunter, match.id(), next, target)) {
+                    if (own != null) HuntCompass.forget(own);
+                    issued.put(hunterId, next);
+                    KindredMod.LOGGER.info("Manhunt {}: a tracking compass {} {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                            own == null ? "issued to" : "issued again, its own destroyed, to", playerName(hunterId));
                 }
             }
         }

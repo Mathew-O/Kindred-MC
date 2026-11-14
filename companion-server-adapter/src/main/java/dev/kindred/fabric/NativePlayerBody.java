@@ -5,6 +5,7 @@ import dev.kindred.core.ActionArbiter;
 import dev.kindred.core.ActionLease;
 import dev.kindred.core.BodyAdapter;
 import dev.kindred.core.Companion;
+import dev.kindred.core.guide.Makings;
 import dev.kindred.core.logistics.ChestOrganizationPolicy;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.vehicle.BoatEntity;
@@ -770,22 +771,8 @@ final class NativePlayerBody implements BodyAdapter {
         int gridSize() { return requiresWorkstation ? 9 : 4; }
     }
 
-    Optional<CraftPlan> planCraft2x2(String recipeName) {
-        return planCraft(recipeName).filter(p -> !p.requiresWorkstation());
-    }
-
-    Optional<CraftPlan> planCraft(String recipeName) {
-        return planCraft(recipeName, null);
-    }
-
-    Optional<CraftPlan> planCraft(String recipeName, BlockPos knownWorkstation) {
-        requireThread();
-        if (recipeName == null || recipeName.isBlank()
-                || player.currentScreenHandler != player.playerScreenHandler
-                || !player.playerScreenHandler.getCursorStack().isEmpty()
-                || !player.playerScreenHandler.getCraftingInput().isEmpty()) {
-            return Optional.empty();
-        }
+    /** The vanilla crafting recipe of {@code recipeName}, by its id or its result's, that fits a 2x2 or a 3x3 grid. */
+    private Optional<RecipeEntry<CraftingRecipe>> craftingRecipe(String recipeName) {
         var server = player.getServerWorld().getServer();
         var recipeManager = server.getRecipeManager();
         var registryManager = player.getServerWorld().getRegistryManager();
@@ -809,6 +796,63 @@ final class NativePlayerBody implements BodyAdapter {
                 }
             }
         }
+        return matchedEntry;
+    }
+
+    /**
+     * Whether what it holds makes {@code recipeName} at a crafting table, or would once its logs were planks (F-25c7a): the
+     * recipe's slots and its inventory as item ids, for {@link Makings}. No table is looked for: this is asked before one
+     * is set down. A recipe it does not know is {@link Makings.Choice#NONE}.
+     */
+    Makings.Choice makings(String recipeName) {
+        requireThread();
+        if (recipeName == null || recipeName.isBlank()) return Makings.Choice.NONE;
+        var entry = craftingRecipe(recipeName);
+        if (entry.isEmpty()) return Makings.Choice.NONE;
+        var slots = new java.util.ArrayList<java.util.Set<String>>();
+        for (Ingredient ingredient : entry.get().value().getIngredients()) {
+            var ids = new java.util.HashSet<String>();
+            for (ItemStack stack : ingredient.getMatchingStacks()) ids.add(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString());
+            slots.add(ids);
+        }
+        var held = new java.util.HashMap<String, Integer>();
+        var planksOf = new java.util.HashMap<String, String>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            var id = net.minecraft.registry.Registries.ITEM.getId(stack.getItem());
+            held.merge(id.toString(), stack.getCount(), Integer::sum);
+            // The planks a log makes, by its name, as the 2x2 craft makes them (PortalRunCampaign.planksRecipe).
+            if (!stack.isIn(net.minecraft.registry.tag.ItemTags.LOGS)) continue;
+            String path = id.getPath().replace("stripped_", "");
+            for (String suffix : java.util.List.of("_log", "_wood", "_stem", "_hyphae")) {
+                if (!path.endsWith(suffix)) continue;
+                var planks = Identifier.of(id.getNamespace(), path.substring(0, path.length() - suffix.length()) + "_planks");
+                if (net.minecraft.registry.Registries.ITEM.containsId(planks)) planksOf.put(id.toString(), planks.toString());
+            }
+        }
+        return Makings.of(slots, held, planksOf);
+    }
+
+    Optional<CraftPlan> planCraft2x2(String recipeName) {
+        return planCraft(recipeName).filter(p -> !p.requiresWorkstation());
+    }
+
+    Optional<CraftPlan> planCraft(String recipeName) {
+        return planCraft(recipeName, null);
+    }
+
+    Optional<CraftPlan> planCraft(String recipeName, BlockPos knownWorkstation) {
+        requireThread();
+        if (recipeName == null || recipeName.isBlank()
+                || player.currentScreenHandler != player.playerScreenHandler
+                || !player.playerScreenHandler.getCursorStack().isEmpty()
+                || !player.playerScreenHandler.getCraftingInput().isEmpty()) {
+            return Optional.empty();
+        }
+        var registryManager = player.getServerWorld().getRegistryManager();
+        Optional<RecipeEntry<CraftingRecipe>> matchedEntry = craftingRecipe(recipeName);
         if (matchedEntry.isEmpty()) return Optional.empty();
 
         var recipeEntry = matchedEntry.get();
@@ -1386,7 +1430,9 @@ final class NativePlayerBody implements BodyAdapter {
                 ItemStack output = furnace.getStack(2);
                 if (!output.isEmpty() && canReceiveStack(output)) {
                     ItemStack taken = furnace.removeStack(2);
+                    EvalItemSources.enter(player);
                     player.getInventory().offerOrDrop(taken);
+                    EvalItemSources.exit(player, "container.take:furnace");
                     furnace.dropExperienceForRecipesUsed(player);
                 }
             }
@@ -1794,7 +1840,9 @@ final class NativePlayerBody implements BodyAdapter {
                 if (!stack.isOf(item)) continue;
                 ItemStack part = stack.copyWithCount(Math.min(count - moved[0], stack.getCount()));
                 int offered = part.getCount();
+                EvalItemSources.enter(player);
                 player.getInventory().insertStack(part);
+                EvalItemSources.exit(player, "container.take");
                 int took = offered - part.getCount();
                 if (took <= 0) break;
                 stack.decrement(took);
@@ -1864,6 +1912,8 @@ final class NativePlayerBody implements BodyAdapter {
             for (int slot = 0; slot < 36; slot++) held.add(player.getInventory().getStack(slot).copy());
             for (int slot : in.apply(List.copyOf(held))) {
                 if (slot < 0 || slot >= 36) continue;
+                // A hunt's tracking compass is never put away (M-06k2): stored, it is not replaced.
+                if (HuntCompass.handed(player.getInventory().getStack(slot))) continue;
                 int index = slot < 9 ? size + 27 + slot : size + slot - 9;
                 if (index < handler.slots.size()) handler.onSlotClick(index, 0, net.minecraft.screen.slot.SlotActionType.QUICK_MOVE, player);
             }
@@ -2534,6 +2584,8 @@ final class NativePlayerBody implements BodyAdapter {
         if (player.squaredDistanceTo(recipient) > 16.0) return false;
         var stack = player.getInventory().getStack(inventorySlot);
         if (stack.isEmpty() || stack.getCount() < count) return false;
+        // A hunt's tracking compass is kept: set down, it is not replaced (M-06k2), and a person would know to keep it.
+        if (HuntCompass.handed(stack)) return false;
         return execute(lease, Intent.TOSS, null, () -> {
             ItemStack live = player.getInventory().getStack(inventorySlot);
             if (live.isEmpty() || live.getCount() < count) return;
@@ -2576,6 +2628,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (inventorySlot < 0 || inventorySlot >= 36 || count <= 0) return false;
         var stack = player.getInventory().getStack(inventorySlot);
         if (stack.isEmpty() || stack.getCount() < count) return false;
+        if (HuntCompass.handed(stack)) return false; // Kept (M-06k2), as above.
         return execute(lease, Intent.TOSS, null, () -> {
             ItemStack live = player.getInventory().getStack(inventorySlot);
             if (live.isEmpty() || live.getCount() < count) return;

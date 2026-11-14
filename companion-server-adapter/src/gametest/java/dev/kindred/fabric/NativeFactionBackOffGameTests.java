@@ -65,10 +65,13 @@ public final class NativeFactionBackOffGameTests implements FabricGameTest {
                     // Six thousand ticks of its goal's work on the island, its faction walk refused between.
                     context.assertTrue(server.getTicks() - start[0] >= 6000, "Six thousand ticks on");
                     int[] counts = f.runtime.factionBlockedForTest(f.id);
-                    KindredMod.LOGGER.info("Back-off fixture: {} faction walks refused, {} counted, in 6,000 ticks", counts[0], counts[1]);
+                    KindredMod.LOGGER.info("Back-off fixture: {} faction walks refused, {} counted, {} with their move settled as they ran, in 6,000 ticks",
+                            counts[0], counts[1], counts[2]);
                     context.assertTrue(counts[0] >= 1, "Its faction walk asked and refused at least once: " + counts[0]);
-                    context.assertTrue(counts[0] == counts[1], "Every refused faction walk counted by the back-off: " + counts[0]
-                            + " refused, " + counts[1] + " counted; move " + f.runtime.factionMoveForTest(f.id));
+                    // A walk whose move was settled while it still ran (there in its chunk: a capture asked from where it stood,
+                    // B's M-06k5 run) is no refusal of a move still to be made; every other one is counted (F-35i1).
+                    context.assertTrue(counts[0] == counts[1] + counts[2], "Every refused faction walk counted by the back-off: " + counts[0]
+                            + " refused, " + counts[1] + " counted, " + counts[2] + " settled as they ran; move " + f.runtime.factionMoveForTest(f.id));
                     context.assertTrue(counts[0] <= BOUND, "Backed off, not asked again and again: " + counts[0] + " refused in 6,000 ticks");
                 })
                 .completeIfSuccessful();

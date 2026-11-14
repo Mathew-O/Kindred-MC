@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "dev.kindred.fabric.audit",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "GameTestStateMixin",
+    "WorldWriteMixin",
+    "StructureTestListenerMixin",
+    "PlayerInteractionMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

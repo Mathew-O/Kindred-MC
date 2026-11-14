@@ -39,6 +39,11 @@ record InventoryEvidence(ItemStack[] stacks, String description) {
      * {@code ItemStack.fromNbt}, and fingerprinted slot by slot as a live inventory is.
      */
     static String describeSave(net.minecraft.nbt.NbtCompound save, net.minecraft.registry.RegistryWrapper.WrapperLookup registries) {
+        return fromSave(save, registries).description();
+    }
+
+    /** As {@link #describeSave}, the stacks kept: the "after" a restart's settle hands to each action's own rule. */
+    static InventoryEvidence fromSave(net.minecraft.nbt.NbtCompound save, net.minecraft.registry.RegistryWrapper.WrapperLookup registries) {
         var stacks = new ItemStack[SLOTS];
         java.util.Arrays.fill(stacks, ItemStack.EMPTY);
         var list = save.getList("Inventory", net.minecraft.nbt.NbtElement.COMPOUND_TYPE);
@@ -48,7 +53,7 @@ record InventoryEvidence(ItemStack[] stacks, String description) {
             int index = slot < 36 ? slot : slot >= 100 && slot < 104 ? 36 + slot - 100 : slot == 150 ? 40 : -1;
             if (index >= 0) stacks[index] = ItemStack.fromNbt(registries, tag).orElse(ItemStack.EMPTY);
         }
-        return describe(stacks);
+        return new InventoryEvidence(stacks, describe(stacks));
     }
 
     private static String describe(ItemStack[] stacks) {
