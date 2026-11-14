@@ -2615,7 +2615,7 @@ final class PortalRunCampaign {
             Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
             if (dig.isPresent()) {
                 nightShelterAt = player.getBlockPos();
-                progress = stageLabel(stage) + ": shelter for the night - " + dig.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + dig.get().label();
                 return dig;
             }
         }
@@ -2625,7 +2625,7 @@ final class PortalRunCampaign {
         if (night && !groundBelow(player) && sheltered(player)) {
             Optional<Task> seal = player.isOnGround() ? seal(body) : Optional.empty();
             if (seal.isPresent()) {
-                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + seal.get().label();
                 return seal;
             }
             progress = stageLabel(stage) + ": wait for daylight in the shelter";
@@ -2659,7 +2659,7 @@ final class PortalRunCampaign {
             // Waiting out the night: close the way in first, so nothing walks or shoots down the staircase.
             Optional<Task> seal = underground(player) && player.isOnGround() ? seal(body) : Optional.empty();
             if (seal.isPresent()) {
-                progress = stageLabel(stage) + ": shelter for the night - " + seal.get().label();
+                progress = stageLabel(stage) + SHELTER_FOR_THE_NIGHT + seal.get().label();
                 return seal;
             }
             progress = stageLabel(stage) + ": wait for daylight before going up for logs - " + steps.getLast().why();
@@ -5569,6 +5569,18 @@ final class PortalRunCampaign {
         Optional<BlockPos> top = WorldKnowledge.looks(player, 1).ground(to.getX(), to.getZ());
         if (top.isPresent()) return to.getY() >= top.get().getY();
         return to.getY() >= world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, player.getBlockX(), player.getBlockZ()) - 1;
+    }
+
+    /** The words of a goal step that shelters for the night: a dig in, a seal (F-35h2b reads them). */
+    static final String SHELTER_FOR_THE_NIGHT = ": shelter for the night - ";
+
+    /**
+     * Whether its plan may still shelter for the night now (F-35h2b): night, and not yet dug in for it. A shelter part dug,
+     * sheltered but not sealed, still counts: the walk that would take it out of it waits as before. Asks the plan's own
+     * tests and changes nothing.
+     */
+    boolean wouldShelterForTheNight(ServerPlayerEntity player) {
+        return night(player.getServerWorld()) && !dugInForTheNight(player);
     }
 
     /** Night where there is a sky: a player that learned to shelter early counts the last of the afternoon as night already. */
