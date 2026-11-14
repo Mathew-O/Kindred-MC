@@ -158,6 +158,11 @@ public final class Navigator {
                 }
             }
         }
+        // A goal no move ends in (F-22c74): a drop under a pocket one high, in a cell two high with stone over the pocket,
+        // that no step, drop or jump gets into. Searched in full, the 6,000 positions over the open ground above went
+        // before it said so, for 18 of 26 refused pickups. Asked by the same moves the search makes; when no cell near it
+        // has one that ends in it, only a short search is made, for the nearest it can come.
+        if (!origin.equals(target) && !goal.test(origin) && !enterable(target, goal)) maxNodes = Math.min(maxNodes, UNENTERABLE_NODES);
         record Node(Cell pos, double g, double f) { }
         var open = new PriorityQueue<Node>((a, b) -> Double.compare(a.f(), b.f()));
         Map<Cell, Double> best = new HashMap<>();
@@ -197,6 +202,38 @@ public final class Navigator {
             }
         }
         return new Path(trace(parent, closest), false, expanded);
+    }
+
+    /** The search's positions for a goal no move ends in: enough for the nearest it can come, no more (F-22c74). */
+    static final int UNENTERABLE_NODES = 512;
+    /** How far round its target a goal must lie, all of it, for {@link #enterable} to judge it. */
+    private static final int GOAL_BOX = 3;
+
+    /**
+     * Whether some move the search makes ends in the goal round {@code target}: a stand or water within a step, a jump or
+     * a drop of it whose own moves reach a cell the goal takes. Only a goal that lies wholly within {@value #GOAL_BOX}
+     * of its target, no cell of the box's edge in it, is judged; any wider goal is enterable to it. A necessary condition
+     * only: a goal it says is enterable may still be out of the search's reach.
+     */
+    public boolean enterable(Cell target, Predicate<Cell> goal) {
+        var cells = new java.util.HashSet<Cell>();
+        for (int dx = -GOAL_BOX; dx <= GOAL_BOX; dx++) for (int dy = -GOAL_BOX; dy <= GOAL_BOX; dy++) for (int dz = -GOAL_BOX; dz <= GOAL_BOX; dz++) {
+            Cell c = target.add(dx, dy, dz);
+            if (!goal.test(c)) continue;
+            if (Math.abs(dx) == GOAL_BOX || Math.abs(dy) == GOAL_BOX || Math.abs(dz) == GOAL_BOX || !loaded(c)) return true;
+            if (standable(c) || swimmable(c)) cells.add(c);
+        }
+        if (cells.isEmpty()) return true;
+        int reach = Math.max(1, gapJump + 1);
+        int drop = Math.min(fallCap, Math.max(MAX_WATER_DROP, maxDrop));
+        for (int dx = -GOAL_BOX - reach; dx <= GOAL_BOX + reach; dx++) for (int dz = -GOAL_BOX - reach; dz <= GOAL_BOX + reach; dz++) {
+            for (int dy = -GOAL_BOX - 1; dy <= GOAL_BOX + drop; dy++) {
+                Cell from = target.add(dx, dy, dz);
+                if (cells.contains(from) || !loaded(from) || !standable(from) && !swimmable(from)) continue;
+                for (Move move : moves(from)) if (cells.contains(move.to())) return true;
+            }
+        }
+        return false;
     }
 
     /**
