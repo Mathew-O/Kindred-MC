@@ -6,3 +6,4 @@ confirm-branch-1.2 (3c67e621, only flagged): 0 min, peak 1124 MB, All 2 required
 confirm-branch-2.1 (3c67e621, only flagged): 0 min, peak 1102 MB, 1 required tests failed, fence-top 0, disk 6.1G
 confirm-branch-2.2 (3c67e621, only flagged): 0 min, peak 1079 MB, All 2 required tests passed, fence-top 0, disk 6.1G
 confirm-branch-3.1 (3c67e621, only flagged): 0 min, peak 1229 MB, 1 required tests failed, fence-top 0, disk 6.1G
+confirm-branch-3.2 (3c67e621, only flagged): 0 min, peak 1018 MB, All 2 required tests passed, fence-top 0, disk 6.1G
