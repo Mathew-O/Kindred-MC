@@ -374,6 +374,14 @@ public final class NativeBuildGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> {
+                    // Its ground cleared as it found it (F-22c75): the kiosk and the copy it built stand past this test's own
+                    // plot, oak logs among them, and a later batch's plot beside them saw them. The pit fixture's player
+                    // walked to the copy's posts, seven blocks off, for a log, and missed the climb it is tested on.
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    var world = context.getWorld();
+                    for (BlockPos pos : BlockPos.iterate(o.add(-6, 2, -6), o.add(18, 12, 14))) world.setBlockState(pos, Blocks.AIR.getDefaultState());
+                })
                 .completeIfSuccessful();
     }
 
