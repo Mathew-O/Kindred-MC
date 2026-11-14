@@ -395,6 +395,14 @@ final class PlayerRuntime {
     private final java.util.Set<UUID> holdsRestoring = new java.util.HashSet<>();
     /** The world each battle's plots and arena were laid out in, to reclaim what creative left there (M-06k3). */
     private final Map<UUID, net.minecraft.registry.RegistryKey<net.minecraft.world.World>> arenaWorlds = new HashMap<>();
+    /** Each battle's arena as it was before it was laid out (M-06k3a), until it is put back. */
+    private final ArenaSnapshots arenaSnapshots;
+    private final Map<UUID, net.minecraft.nbt.NbtCompound> arenaSnapshot = new HashMap<>();
+    /** When each finished battle's arena is put back: the server tick, the podium shown till then. */
+    private final Map<UUID, Long> arenaRestoreAt = new HashMap<>();
+    /** How long the podium stands before the arena is put back: thirty seconds, announced at the end. */
+    static final int ARENA_SHOWN_TICKS = 600;
+    private int arenaShownTicks = ARENA_SHOWN_TICKS;
     /** Build battles whose building has begun, by match. */
     private final Set<UUID> buildsBegun = new HashSet<>();
     /** Manhunts begun, by match (M-02a). */
@@ -538,6 +546,7 @@ final class PlayerRuntime {
         this.memories = new PlayerMemoryStore(metadataDirectory);
         this.recipeStore = new RescueRecipeStore(metadataDirectory);
         this.builderHolds = new BuilderHolds(metadataDirectory);
+        this.arenaSnapshots = new ArenaSnapshots(metadataDirectory);
         this.rescueBook = recipeStore.load();
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
@@ -862,6 +871,7 @@ final class PlayerRuntime {
                     }));
                     entries.putAll(pendingEntries);
                     ready = true;
+                    restoreLeftoverArenas();
                     edits = loaded.edits();
                     dragonFight = loaded.dragonFight();
                     bases = loaded.bases();
@@ -2922,6 +2932,7 @@ final class PlayerRuntime {
         recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
+        if (!arenaRestoreAt.isEmpty()) restoreArenasDue();
         if (tick % 20 == 17) pollBuildBattles();
         if (tick % 100 == 41) pollGroupPace();
         races.keySet().removeIf(id -> matches.get(id).isEmpty());
@@ -15359,6 +15370,14 @@ final class PlayerRuntime {
         builderHold.clear();
         modeBefore.clear();
         builderHolds.close();
+        // Every arena not yet put back, put back now where its ground is loaded; the rest at the next start (M-06k3a).
+        for (UUID match : new ArrayList<>(arenaSnapshot.keySet())) {
+            if (!restoreArena(match, true)) KindredMod.LOGGER.info("Build battle {}: the arena is put back at the next start", dev.kindred.core.match.MatchRegistry.shortId(match));
+            ArenaSnapshots.open(match);
+        }
+        arenaSnapshot.clear();
+        arenaRestoreAt.clear();
+        arenaSnapshots.close();
         // A hunt's compasses go with the hunt (D6).
         for (var match : matches.list()) {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT) continue;
@@ -16177,6 +16196,10 @@ final class PlayerRuntime {
         }
         var result = matches.proposeBuild(builders, buildTicks);
         if (!result.accepted()) return reject(source, result.reason());
+        // M-06k3a: everything the battle will change, noted before anything is: the plots to build height, the arena and
+        // the podium's places. Put back once the podium has been shown, at a stop, or at the next start after a crash.
+        var arenaBox = arenaBox(plots, dev.kindred.core.match.BuildArena.around(plots));
+        var before = ArenaSnapshots.capture(world, arenaBox);
         // The plots, marked out: white concrete, a grey edge, plants cleared off them.
         for (var plot : plots) {
             var o = plot.origin();
@@ -16197,6 +16220,13 @@ final class PlayerRuntime {
         var match = enter(result.match().orElseThrow());
         arenas.put(match.id(), arena);
         arenaWorlds.put(match.id(), world.getRegistryKey());
+        arenaSnapshot.put(match.id(), before);
+        ArenaSnapshots.close(match.id(), world.getRegistryKey(), arenaBox);
+        UUID snapshotOf = match.id();
+        arenaSnapshots.write(snapshotOf, before).whenComplete((done, failure) -> {
+            if (failure != null) KindredMod.LOGGER.error("Build battle {}: the arena's snapshot could not be written; a crash before its restore leaves it standing",
+                    dev.kindred.core.match.MatchRegistry.shortId(snapshotOf), failure);
+        });
         var round = new dev.kindred.core.match.BuildBattle(theme != null ? theme : dev.kindred.core.match.BuildBattle.pick(new java.util.Random()), plots);
         battles.put(match.id(), round);
         // Reference designs for the theme: schematics the operator put in the library whose names name it and that fit a
@@ -16266,6 +16296,7 @@ final class PlayerRuntime {
         Entry builderEntry = entryForPlayer(builder);
         if (builderEntry != null && builderEntry.nativeBody != null) builderEntry.nativeBody.allowCreative(true);
         player.changeGameMode(net.minecraft.world.GameMode.CREATIVE);
+        ArenaSnapshots.building(builder, true);
         presenter.show(builder, new dev.kindred.core.match.MatchPresentation.Title(battle.theme().title(), "Build it on your plot in "
                 + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60), dev.kindred.core.match.MatchPresentation.Cue.START));
         Entry entry = entryForPlayer(builder);
@@ -16298,6 +16329,7 @@ final class PlayerRuntime {
      */
     private void restoreBuilder(ServerPlayerEntity player, net.minecraft.nbt.NbtCompound hold, boolean waitForDelete) {
         UUID id = player.getUuid();
+        ArenaSnapshots.building(id, false);
         Entry entry = entryForPlayer(id);
         if (entry != null && entry.build != null) startBuild(server.getCommandSource(), entry.data.id(), null, null, 0);
         var mode = BuilderHolds.restore(player, hold);
@@ -16361,6 +16393,89 @@ final class PlayerRuntime {
                     emptied, discarded);
         }
     }
+
+    /** The box a battle changes: its plots to 32 over their floors, the arena, and the podium's places and signs. */
+    private static net.minecraft.util.math.BlockBox arenaBox(List<dev.kindred.core.match.BuildBattle.Plot> plots, dev.kindred.core.match.BuildArena arena) {
+        var points = new ArrayList<dev.kindred.core.construction.Pos>();
+        for (var plot : plots) {
+            var o = plot.origin();
+            points.add(o);
+            points.add(new dev.kindred.core.construction.Pos(o.x() + dev.kindred.core.match.BuildBattle.PLOT - 1, o.y() + 32, o.z() + dev.kindred.core.match.BuildBattle.PLOT - 1));
+        }
+        points.addAll(arena.blocks().keySet());
+        points.addAll(arena.podiumBlocks(3).keySet());
+        points.addAll(arena.podium());
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (var p : points) {
+            minX = Math.min(minX, p.x()); minY = Math.min(minY, p.y()); minZ = Math.min(minZ, p.z());
+            maxX = Math.max(maxX, p.x()); maxY = Math.max(maxY, p.y() + 2); maxZ = Math.max(maxZ, p.z());
+        }
+        return new net.minecraft.util.math.BlockBox(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    /** Each finished battle whose podium has been shown long enough: its arena put back (M-06k3a). */
+    private void restoreArenasDue() {
+        long now = server.getTicks();
+        for (var due : new ArrayList<>(arenaRestoreAt.entrySet())) {
+            if (due.getValue() > now) continue;
+            if (restoreArena(due.getKey(), false)) arenaRestoreAt.remove(due.getKey());
+        }
+    }
+
+    /**
+     * A battle's arena put back as it was, dropping nothing, its containers emptied and items cleared first (M-06k3a).
+     * False when its chunks are not all loaded yet: they are asked for, and it is tried again next time.
+     */
+    private boolean restoreArena(UUID match, boolean atStop) {
+        var snapshot = arenaSnapshot.get(match);
+        if (snapshot == null) { ArenaSnapshots.open(match); return true; }
+        var world = server.getWorld(ArenaSnapshots.world(snapshot));
+        if (world == null) return true;
+        if (!ArenaSnapshots.loaded(world, snapshot)) {
+            if (atStop) return false;
+            var box = ArenaSnapshots.box(snapshot);
+            for (int cx = box.getMinX() >> 4; cx <= box.getMaxX() >> 4; cx++) for (int cz = box.getMinZ() >> 4; cz <= box.getMaxZ() >> 4; cz++) {
+                var chunk = new net.minecraft.util.math.ChunkPos(cx, cz);
+                world.getChunkManager().addTicket(NATIVE_CONNECT, chunk, 1, chunk);
+            }
+            return false;
+        }
+        int changed = ArenaSnapshots.restore(world, snapshot);
+        arenaSnapshot.remove(match);
+        ArenaSnapshots.open(match);
+        arenaSnapshots.markRestored(match);
+        KindredMod.LOGGER.info("Build battle {}: the arena put back as it was ({} blocks)", dev.kindred.core.match.MatchRegistry.shortId(match), changed);
+        for (var player : world.getPlayers()) {
+            if (ArenaSnapshots.box(snapshot).contains(player.getBlockPos())) player.sendMessage(Text.literal("The arena is cleared.").formatted(net.minecraft.util.Formatting.GOLD), false);
+        }
+        return true;
+    }
+
+    /** At the start: an arena a crash left standing, put back as soon as its ground is loaded (M-06k3a). */
+    private void restoreLeftoverArenas() {
+        arenaSnapshots.readAll().whenComplete((left, failure) -> handBack(() -> {
+            if (!running || failure != null || left == null) {
+                if (failure != null) KindredMod.LOGGER.error("Arena snapshots could not be read at the start", failure);
+                return;
+            }
+            for (var each : left.entrySet()) {
+                if (arenaSnapshot.containsKey(each.getKey())) continue;
+                arenaSnapshot.put(each.getKey(), each.getValue());
+                ArenaSnapshots.close(each.getKey(), ArenaSnapshots.world(each.getValue()), ArenaSnapshots.box(each.getValue()));
+                arenaRestoreAt.put(each.getKey(), (long) server.getTicks());
+                KindredMod.LOGGER.info("Build battle {}: a crash left its arena standing; it is put back now", dev.kindred.core.match.MatchRegistry.shortId(each.getKey()));
+            }
+        }));
+    }
+
+    /** For fixtures: the podium's time before the arena is put back, in ticks. */
+    void arenaShownTicksForTest(int ticks) { requireThread(); arenaShownTicks = ticks; }
+
+    /** For fixtures: whether a battle's arena is still waiting to be put back. */
+    boolean arenaPendingForTest(UUID match) { requireThread(); return arenaSnapshot.containsKey(match); }
+
+    /** For fixtures: whether a battle's restored arena's snapshot still waits for a whole save. */
+    boolean arenaAwaitingSaveForTest(UUID match) { requireThread(); return arenaSnapshots.awaitingSave(match); }
 
     /** A player joining with a hold left from a battle it was away for at the end, or one a crash cut short (M-06k3). */
     private void restoreHoldOnJoin(ServerPlayerEntity player) {
@@ -16471,6 +16586,7 @@ final class PlayerRuntime {
         for (UUID builder : match.invited()) {
             if (!over && match.playing(builder)) continue;
             modeBefore.remove(builder);
+            ArenaSnapshots.building(builder, false);
             var hold = builderHold.remove(builder);
             if (hold == null) continue;
             // Away at the end: its hold stays on disk, and it gets its own things back when it next joins (M-06k3).
@@ -16521,6 +16637,16 @@ final class PlayerRuntime {
             }
             podiums.put(match.id(), List.copyOf(names));
             KindredMod.LOGGER.info("Build battle {}: the podium {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), names);
+        }
+        // The podium shown, then the arena put back at an announced moment (M-06k3a); closed to breaking till then.
+        if (arenaSnapshot.containsKey(match.id())) {
+            arenaRestoreAt.put(match.id(), (long) server.getTicks() + arenaShownTicks);
+            String when = "The arena is cleared after the podium, in " + Math.max(1, arenaShownTicks / 20) + " seconds.";
+            for (UUID invited : match.invited()) {
+                var other = server.getPlayerManager().getPlayer(invited);
+                if (other != null) other.sendMessage(Text.literal(when).formatted(net.minecraft.util.Formatting.GOLD), false);
+            }
+            KindredMod.LOGGER.info("Build battle {}: {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), when);
         }
         battles.remove(match.id());
         libraryDesigns.remove(match.id());
@@ -17238,6 +17364,7 @@ final class PlayerRuntime {
             entry.nativeBody.allowAdventure(true);
             player.getInventory().clear();
             player.changeGameMode(net.minecraft.world.GameMode.ADVENTURE);
+            ArenaSnapshots.building(player.getUuid(), false);
             entry.cachedRoutineCandidates = List.of();
             entry.routineRefreshPending = true;
         }
