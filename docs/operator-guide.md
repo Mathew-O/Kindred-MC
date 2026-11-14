@@ -922,6 +922,111 @@ In a faction world:
   ordinary client the same essentials are in a sidebar, and crossing into other land is said once on the action bar.
   Nobody is sent another faction's private numbers.
 
+## The month run: a runbook (M-06k4)
+
+For the owner's Factions server, with the world made and the mode chosen as "Setting up a Factions server" says. Every
+console command here was run on a real server start on 2026-11-14 (main `9d33596`, seed 101, 8 AI players), the
+way F-31g's restart soak ran: a world made, a plain start, play, a kill (SIGKILL), and the start after it. The
+answers quoted are that run's. Players' names, ids and places are that run's; yours differ.
+
+### Every start
+
+1. **Start the server.** Kindred loads its records first and says how many:
+   `Kindred AI-player foundation ready: 8 durable records; ...`. No AI player is in the world yet; none comes back by
+   itself (F-31g, finding 1).
+2. **See where each stands:** `aiplayer native list`. One line a player:
+   - `Kindred (<id>): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required.` Ready to
+     connect.
+   - `Bram (<id>): ESTABLISHED, offline. Unresolved action ledger rows detected (1); operator reconciliation required.
+     ...` A crash caught it mid-action: settle it first (below). Connect is refused until then.
+3. **Settle any player the list shows blocked** (after a crash only; below).
+4. **Connect each:** `aiplayer native connect <name>`. It answers `Native body connected; stopped. Resume explicitly.`
+   (or, after a crash, `... automatic progression remains disabled.`), and the player joins the game where its save
+   left it: `<name> joined the game`, then `<name> recalls N sighting(s) its atlas kept from before this start`.
+5. **Resume each:** `aiplayer native resume <name>`. It answers
+   `Resumed; autonomous progression active (OPTIMAL_SURVIVAL).` and the player plays on from its saves.
+6. **Check the mode:** `aiplayer mode world` prints `Factions (this world's mode):` and its rules. The mode is kept
+   across restarts.
+7. **Check the tick:** `tick query` (vanilla). On the walk, 8 players at play: `P50: 24.6ms P95: 43.8ms P99: 60.7ms`.
+   The 50 ms budget is the line; F-31g measured 23.6 ms mean at 20 tps with 8 players.
+
+There is no form for all at once: 16 commands for 8 players (a bulk form is proposed, waiting on the owner's decision
+on auto-resume).
+
+### After a crash: settling a blocked player
+
+A crash (a kill, an out-of-memory, the host going down) can catch a player in the middle of an action whose outcome was
+never written. The next start blocks that player; nothing is done again and no item is made. For each blocked player:
+
+1. `aiplayer native status <name>` shows the block: `... Unresolved action ledger rows detected (1); operator
+   reconciliation required. ...`
+2. `aiplayer native settle <name>` settles every such action the evidence makes plain, and shows the rest:
+   ```
+   Bram's native_break 72cbb812-... is not plain from the evidence: minecraft:andesite at -390, 51, -194: now
+   minecraft:andesite, still there; the saved inventory differs from before the action (before sha256=1b8d6e...,
+   now sha256=a4b9a6...). Choose: aiplayer native settle Bram done|notdone
+   Bram: 0 settled; 1 left to settle. It stays blocked.
+   ```
+3. **Choose from what it shows.**
+   - The block named is **still there**: `aiplayer native settle <name> notdone`.
+   - It is **gone**: `aiplayer native settle <name> done`.
+   - The inventory almost always "differs" after a crash: the save is the last autosave's, older than the action. That
+     is why it asks you. Either choice writes only the action's outcome; neither makes or removes an item.
+   - It answers `Settled Bram's native_break as not done (the console, the operator's choice): <what it saw>`, then
+     `Bram: every action settled (1). Connect it, then resume it.`
+4. `aiplayer native list` now shows `Settled; native body is offline; explicit connect is required.` Connect and
+   resume it as at every start.
+
+On the walk, the kill caught 2 of the 8 (both digging andesite); both were settled `notdone`, and all 8 played on.
+
+### Checking the World Record after a crash
+
+With the server **stopped**, on a copy of `world/kindred/companions.sqlite` (with its `-wal` beside it, if one is
+there). Python 3's standard library is enough:
+
+```
+mkdir check && cp world/kindred/companions.sqlite* check/
+python3 -c "import sqlite3; db = sqlite3.connect('file:check/companions.sqlite?mode=ro', uri=True); \
+print(db.execute('PRAGMA integrity_check').fetchone()[0]); \
+print(db.execute(\"SELECT COUNT(*) FROM action_ledger WHERE state IN ('PREPARED','DISPATCHED','UNCERTAIN')\").fetchone()[0]); \
+[print(r) for r in db.execute(\"SELECT subject, data FROM world_events WHERE kind = 'action.settled'\")]"
+```
+
+Walked in bash on Linux. On Windows (not walked): `copy` for `cp`, `gradlew.bat` for `./gradlew`, and the
+`python3 -c` command on one line without the trailing backslashes.
+
+- **`ok`:** the database is whole.
+- **The count:** actions still waiting to be settled. After step 3 above, `0`.
+- **One line per settlement:** who settled which action, how it was decided, and what was seen:
+  `kind=native_break&outcome=not done&by=the console&decided=operator&evidence=...`.
+
+The faction world's rules over the whole Record, every restart in it, from a checkout of this repository (F-31g):
+
+```
+./gradlew :companion-testkit:runRecordAudit --args=<path>/check/companions.sqlite
+```
+
+On the walk:
+`{"audited": 116, "counts": {"events": 116, "factions": 3, "claims": 4, ... "purchases": 24, ...}, "violations": []}`.
+Any violation is a rule broken. Stop and report it with the file; do not play on.
+
+The factions themselves, from the console (an operator acts as a player):
+- `faction as Kindred list`: each faction, its members, power and claims;
+- `faction as Kindred info`;
+- `faction as Kindred power`;
+- `faction as Kindred coins`.
+
+`faction list` alone is refused from the console ("Only a player makes faction requests").
+
+### Stopping
+
+`stop` at the console. Kindred writes its records and the players' memory first, then vanilla saves the world: two
+seconds on the walk. Wait for `All dimensions are saved` before you take a backup.
+
+Once on the walk, the evaluation run's own stop (not a console `stop`) spun for 20 minutes in vanilla's chunk saving
+after Kindred had written everything, and was killed. That is reported (M-06k4's evidence) and not seen at a console
+stop. If a stop ever hangs past `Saving worlds`, kill it and treat the next start as after a crash.
+
 ## A month-long run: what grows on disk
 
 Each figure names the run it was measured on. Sizes scale with the number of players and with what they do.
