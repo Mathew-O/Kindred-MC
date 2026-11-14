@@ -11,3 +11,4 @@ confirm-main-1.1 (fec0ec40, only flagged): 1 min, peak 1010 MB, All 2 required t
 confirm-main-1.2 (fec0ec40, only flagged): 0 min, peak 1621 MB, All 2 required tests passed, fence-top 0, disk 6.1G
 confirm-main-2.1 (fec0ec40, only flagged): 0 min, peak 1184 MB, All 2 required tests passed, fence-top 0, disk 6.1G
 confirm-main-2.2 (fec0ec40, only flagged): 0 min, peak 1225 MB, All 2 required tests passed, fence-top 0, disk 6.1G
+confirm-main-3.1 (fec0ec40, only flagged): 0 min, peak 1127 MB, All 2 required tests passed, fence-top 0, disk 6.1G
