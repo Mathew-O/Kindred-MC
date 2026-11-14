@@ -80,6 +80,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
                     cows[0] = context.spawnEntity(EntityType.COW, rel).getUuid();
                     cows[1] = context.spawnEntity(EntityType.COW, rel.add(1, 0, 2)).getUuid();
+                })
+                .createAndAdd(lookRound(context))
+                .createAndAdd(() -> {
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
@@ -192,6 +195,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
                     context.spawnEntity(EntityType.CHICKEN, rel);
                     context.spawnEntity(EntityType.CHICKEN, rel.add(1, 0, 2));
+                })
+                .createAndAdd(lookRound(context))
+                .createAndAdd(() -> {
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
@@ -284,6 +290,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
                     context.spawnEntity(EntityType.COW, rel);
                     context.spawnEntity(EntityType.COW, rel.add(1, 0, 2));
+                })
+                .createAndAdd(lookRound(context))
+                .createAndAdd(() -> {
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
@@ -408,6 +417,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
                     context.spawnEntity(EntityType.PIG, rel);
                     context.spawnEntity(EntityType.PIG, rel.add(1, 0, 2));
+                })
+                .createAndAdd(lookRound(context))
+                .createAndAdd(() -> {
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
@@ -524,6 +536,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
                     sheep[0] = context.spawnEntity(EntityType.SHEEP, rel).getUuid();
                     sheep[1] = context.spawnEntity(EntityType.SHEEP, rel.add(1, 0, 2)).getUuid();
+                })
+                .createAndAdd(lookRound(context))
+                .createAndAdd(() -> {
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
@@ -631,6 +646,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(20);
                     BlockPos stand = home.add(8, 0, 0);
                     player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                })
+                .createAndAdd(lookRound(context))
+                .createAndAdd(() -> {
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
                 })
@@ -678,6 +696,16 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
      * that wander off it can no longer be fetched back (no walk the player or they can climb back up), and in suite runs
      * a chicken or a cow wandered off one run in four or so.
      */
+    /**
+     * Staged (F-35m1): {@value NativeTradingHallGameTests#LOOK_ROUND} ticks stood by its cabin before it plays, its sweep
+     * looking round there, as a player that built the cabin has seen the ground round it. Sited only on ground it has
+     * seen, its pen waited on that look; the routine work it did meanwhile used the wood its fences take.
+     */
+    static Runnable lookRound(TestContext context) {
+        int[] looked = {0};
+        return () -> context.assertTrue(++looked[0] >= NativeTradingHallGameTests.LOOK_ROUND, "Looking round its cabin");
+    }
+
     static void walled(TestContext context) {
         var world = context.getWorld();
         BlockPos o = NativeBaseGameTests.origin(context);
