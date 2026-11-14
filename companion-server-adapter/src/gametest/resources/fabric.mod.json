@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "name": "Kindred native contract tests",
   "environment": "server",
+  "mixins": ["kindred_gametest.mixins.json"],
   "entrypoints": {
     "main": [
       "dev.kindred.fabric.GameTestPacing"
@@ -181,6 +182,8 @@
       "dev.kindred.fabric.NativeKnowledgeCapGameTests",
       "dev.kindred.fabric.NativeKnownLogsKeptOutGameTests",
       "dev.kindred.fabric.NativeLavaProbeGameTests",
+      "dev.kindred.fabric.NativeTableLoopGameTests",
+      "dev.kindred.fabric.NativeRecipeGuardGameTests",
       "dev.kindred.fabric.ReplayWorldStateGameTests",
       "dev.kindred.fabric.NativeStuckSpellReplayGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",
