@@ -190,6 +190,9 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
         builtByItsBase(context, false);
     }
 
+    /** Ticks its staged look round its cabin lasts (F-35m1): its sweep's spiral out some twenty blocks from there. */
+    static final int LOOK_ROUND = 100;
+
     private static void builtByItsBase(TestContext context, boolean beds) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, beds ? 23500 : 27500);
         String[] first = {null};
@@ -210,6 +213,7 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
         var woolSeen = new java.util.HashMap<java.util.UUID, Long>();
         long[] leftLying = {-1};
         int[] woolDropped = {0};
+        int[] looked = {0};
         Runnable watchWool = () -> {
             var player = f.player();
             if (beds || leftLying[0] >= 0 || flock.isEmpty() || player == null) return;
@@ -299,6 +303,14 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                     inventory.setStack(slot, new ItemStack(Items.DIRT, 64));
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
+                    // Staged (F-35m1): it looks round its cabin first. From its home south of the cabin the cabin hides the ground
+                    // north of it, where this test's hall goes; a player that lives there has seen that ground, so its body is
+                    // set north of the cabin for its sweep to look over it, then back home.
+                    player.refreshPositionAndAngles(cabinAt.getX() + 3.5, cabinAt.getY(), cabinAt.getZ() - 4.5, 180, 0);
+                })
+                .createAndAdd(() -> context.assertTrue(++looked[0] >= LOOK_ROUND, "Looking round its cabin"))
+                .createAndAdd(() -> {
+                    var player = f.player();
                     player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, -90, 0);
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
