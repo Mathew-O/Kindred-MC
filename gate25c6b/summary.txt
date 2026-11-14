@@ -6,3 +6,4 @@ confirm-branch-2 (00864c73, only flagged): 0 min, peak 1252 MB, 1 required tests
 confirm-branch-3 (00864c73, only flagged): 0 min, peak 1122 MB, All 6 required tests passed, fence-top 0, disk 6.0G
 confirm-main-1 (27052456, only flagged): 0 min, peak 1147 MB, All 6 required tests passed, fence-top 0, disk 6.0G
 confirm-main-2 (27052456, only flagged): 0 min, peak 1321 MB, All 6 required tests passed, fence-top 0, disk 6.0G
+confirm-main-3 (27052456, only flagged): 0 min, peak 1182 MB, 1 required tests failed, fence-top 0, disk 6.0G
