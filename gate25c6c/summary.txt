@@ -1,1 +1,2 @@
 branch-1 (52fbcc60): 43 min, peak 2940 MB, 113 required tests failed, fence-top 43, disk 6.0G
+branch-2 (52fbcc60): 44 min, peak 3043 MB, 116 required tests failed, fence-top 25, disk 6.0G
