@@ -1653,6 +1653,20 @@ final class PlayerRuntime {
         return nativeTask(source, id, "native_throw_eye", Map.of("slot", String.valueOf(hotbarSlot), "yaw", String.valueOf(yaw)));
     }
 
+    /** The native player's running or last skill, by identity, and its runner's state, for fixtures: {@code [identity, state]}. */
+    String[] nativeTaskForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.runner == null) return new String[] {"", "IDLE"};
+        return new String[] {entry.nativeTask == null ? "" : Integer.toHexString(System.identityHashCode(entry.nativeTask)), entry.runner.state().name()};
+    }
+
+    /** The world identity a native player's claims are keyed by, for fixtures. */
+    UUID nativeWorldIdForTest(UUID id) {
+        requireThread();
+        return entries.get(id).data.worldId();
+    }
+
     /** What the native player's last skill reported (an eye's flight, a block's position), for fixtures. */
     Map<String, String> nativeLastResult(UUID id) {
         requireThread();
@@ -1770,6 +1784,14 @@ final class PlayerRuntime {
                         claims, nativeActionWriter(), this::handBack,
                         new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
                         directions, Integer.parseInt(arguments.get("slot")));
+            } else if (skill.equals("native_bridge")) {
+                var direction = net.minecraft.util.math.Direction.byName(arguments.get("dir").trim());
+                if (direction == null) throw new IllegalArgumentException("Unknown bridge direction " + arguments.get("dir"));
+                task = new NativeBridgeAction(entry.nativeBody, () -> entry.lease, entry.data.worldId(), () -> entry.setup, () -> edits,
+                        claims, nativeActionWriter(), this::handBack,
+                        new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")), Integer.parseInt(arguments.get("z"))),
+                        direction, Integer.parseInt(arguments.get("n")), Integer.parseInt(arguments.get("slot")),
+                        NativeBridgeAction.Crouch.of(arguments.get("crouch")));
             } else if (skill.equals("native_clutch")) {
                 task = new NativeClutchAction(entry.nativeBody, () -> entry.lease, () -> entry.setup, () -> edits, nativeActionWriter(), this::handBack,
                         Integer.parseInt(arguments.get("slot")));
@@ -2322,7 +2344,8 @@ final class PlayerRuntime {
                     || ("native_place".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_bed".equals(entry.skillId) && (intent == NativePlayerBody.Intent.PLACE || intent == NativePlayerBody.Intent.SLEEP
                         || intent == NativePlayerBody.Intent.SELECT_SLOT))
-                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId)) && (intent == NativePlayerBody.Intent.PLACE
+                    || (("native_pillar".equals(entry.skillId) || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId))
+                        && (intent == NativePlayerBody.Intent.PLACE
                         || intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.MOVE))
                     || ("native_throw_eye".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || ("native_pearl".equals(entry.skillId) && (intent == NativePlayerBody.Intent.THROW || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -2491,13 +2514,43 @@ final class PlayerRuntime {
     private void primeWorkstationCaches(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         var world = player.getServerWorld();
-        BlockPos center = BlockPos.ofFloored(player.getEyePos());
+        Vec3d eye = player.getEyePos();
         if (entry.cachedCraftingTablePos == null) {
-            entry.cachedCraftingTablePos = locateWorkstationBlock(world, center, Blocks.CRAFTING_TABLE, 4.5);
+            entry.cachedCraftingTablePos = workstationInReach(world, eye, Blocks.CRAFTING_TABLE, 4.5);
         }
         if (entry.cachedFurnacePos == null) {
-            entry.cachedFurnacePos = locateWorkstationBlock(world, center, Blocks.FURNACE, 4.5);
+            entry.cachedFurnacePos = workstationInReach(world, eye, Blocks.FURNACE, 4.5);
         }
+    }
+
+    /**
+     * The nearest block of {@code block} whose middle is within {@code reach} of the eye: reach as the player's own use of
+     * it is measured ({@link NativePlayerBody#planCraft}, the campaign's walk to a table). Measured instead from the block
+     * the eye is in, a table at a diagonal 4.0 from the eye was out of reach here and in reach to the goal: the goal asked
+     * for the craft, the dispatch dropped it as no longer executable, and the goal, with the table in reach, never walked
+     * nearer (CI on #261: a golden helmet never made from five ingots).
+     */
+    static BlockPos workstationInReach(ServerWorld world, Vec3d eye, net.minecraft.block.Block block, double reach) {
+        BlockPos center = BlockPos.ofFloored(eye);
+        int radius = (int) Math.ceil(reach);
+        int vertical = Math.min(radius, 3) + 1;
+        BlockPos best = null;
+        double bestDistSq = reach * reach;
+        for (int dy = -vertical; dy <= vertical; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = center.add(dx, dy, dz);
+                    double distSq = eye.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                    if (distSq > bestDistSq) continue;
+                    if (!world.isChunkLoaded(pos)) continue;
+                    if (world.getBlockState(pos).isOf(block)) {
+                        bestDistSq = distSq;
+                        best = pos.toImmutable();
+                    }
+                }
+            }
+        }
+        return best;
     }
 
     private static BlockPos locateWorkstationBlock(ServerWorld world, BlockPos center, net.minecraft.block.Block block, double reach) {
@@ -4653,6 +4706,7 @@ final class PlayerRuntime {
                     entry.campaign.knowledge().remember(block.isOf(Blocks.FURNACE) ? WorldKnowledge.Kind.FURNACE : WorldKnowledge.Kind.CRAFTING_TABLE, placed);
                 }
             }
+            if ("native_bridge".equals(task.skill())) entry.campaign.bridgeEnded(completed ? Map.of() : entry.runner.lastProgress());
             entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
@@ -6646,6 +6700,16 @@ final class PlayerRuntime {
         return 1;
     }
 
+    /**
+     * Tasks it has started of its own choosing, since the player came into play; -1 for no such player. Counted as each
+     * starts, so a fixture sees a start even of one that ended before it looked (F-25c4ap1).
+     */
+    long ownStartsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null ? -1 : entry.ownStarts;
+    }
+
     /** Walks of its own that found no way, since the player came into play; -1 for no such player. */
     int walksFailed(UUID id) {
         requireThread();
@@ -6661,6 +6725,13 @@ final class PlayerRuntime {
     }
 
     /** The build a player is on, if any, as a line of progress. */
+    /** For fixtures: how many trips out for what it lacks the current build has made; -1 with no build. */
+    int buildTripsForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry == null || entry.build == null ? -1 : entry.build.trips();
+    }
+
     Optional<String> buildStatus(UUID id) {
         requireThread();
         Entry entry = id != null ? entries.get(id) : null;
@@ -6928,6 +6999,8 @@ final class PlayerRuntime {
             applyDimensionTransit(entry, body);
             reconcileExpeditionArrival(entry);
             if (server.getTicks() % 10 == 0) {
+                keepStores(entry);
+                keepVillagers(entry);
                 noteChestUse(entry, body.entity());
                 storageAskLapsed(entry);
             }
@@ -8073,6 +8146,7 @@ final class PlayerRuntime {
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.tradeTaskId) && entry.tradeVillager != null) {
             entry.villagerVisitAt.put(entry.tradeVillager, (long) server.getTicks() + 1200);
+            entry.villagersDirty = true;
             entry.routineRefreshPending = true;
         }
         // Tidied, or nothing to tidy: its chest is let be a while, not looked over again at once.
@@ -8106,6 +8180,7 @@ final class PlayerRuntime {
                     && entry.dispatchSource.startsWith("factionCandidates");
             if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
             if (factionWalk) entry.factionPlay.walksEnded++;
+            if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
                 if (state == SkillRunner.State.BLOCKED) {
@@ -8125,6 +8200,15 @@ final class PlayerRuntime {
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
                     + (label.isEmpty() ? "" : " [" + label + "]"));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
+            if ("native_bridge".equals(entry.skillId) && (state == SkillRunner.State.COMPLETED || state == SkillRunner.State.BLOCKED)) {
+                var report = entry.runner.lastProgress();
+                try {
+                    runObserver.bridged(entry.data.displayName(), Long.parseLong(report.getOrDefault("blocks", "0")),
+                            Long.parseLong(report.getOrDefault("ticks", "0")));
+                } catch (NumberFormatException unreported) {
+                    // A run that ended before it reported (a refusal at its start) bridged nothing.
+                }
+            }
             campaignTaskFinished(entry, state);
             buildTaskFinished(entry, state);
             // Arrived where someone asked it to come (E-49): harm in the next ten seconds is theirs to answer for.
@@ -8166,7 +8250,7 @@ final class PlayerRuntime {
                             + (finishedLease != null ? " (action " + finishedLease.actionId() + ")" : ""), observed);
                 }
                 if (entry.nativeBody != null && ("native_place".equals(entry.skillId) || "native_pillar".equals(entry.skillId)
-                        || "native_stair".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
+                        || "native_stair".equals(entry.skillId) || "native_bridge".equals(entry.skillId) || "native_craft".equals(entry.skillId))) {
                     entry.cachedCraftingTablePos = null;
                     entry.cachedFurnacePos = null;
                     primeWorkstationCaches(entry, entry.nativeBody);
@@ -9515,6 +9599,8 @@ final class PlayerRuntime {
                 if (stores.stream().anyMatch(store -> store.pos().equals(pos))) {
                     boolean mate = teammateOf(entry, self, other);
                     var before = entry.seenAtStores.put(pos.asLong(), new SeenAtStore(other.getName().getString(), mate, server.getTicks(), other.getUuid()));
+                    entry.seenAtStoresDirty = true;
+                    if (before == null) saveStores(entry);
                     // Someone not on its side at its chest: it gives up a walk to go and look.
                     if (before == null && !mate) entry.sightingInterrupt = true;
                     entry.routineRefreshPending = true;
@@ -9608,6 +9694,7 @@ final class PlayerRuntime {
         long tick = server.getTicks();
         if (play.move == null && tick - play.decidedAt >= FactionsPlayer.DECIDE_TICKS) {
             play.decidedAt = tick;
+            play.decidedForTest(tick);
             play.chosen = factionChoose(entry, player);
             if (play.chosen != null && FactionsPlayer.moves(play.chosen, player)) {
                 play.move = play.chosen;
@@ -9638,6 +9725,10 @@ final class PlayerRuntime {
         // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
         // way is made toward any of them meanwhile (F-35i).
         if (play.paused(tick, player.getBlockPos(), FactionsPlayer.atSurface(player))) return null;
+        // Dug in for the night in its sealed shelter (the campaign's own knowing, as its portal walk has it, F-35c1): no
+        // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
+        // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
+        if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9648,10 +9739,15 @@ final class PlayerRuntime {
         // Its walk would end in open water it saw (F-35j): the place set aside at once, with no walk asked and no way made.
         // On Factions seed 303 the players' land is an island, and the places its faction play chose east of it were open
         // sea, refused leg after leg. Only what it saw counts; out of its sight the walk is asked as before.
-        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && seenOpenWater(entry, play, player, to, tick)) {
-            play.openWater(move.target(), tick);
+        // A place refused and waiting is not looked at as water until its wait is out (F-35j1): looked at a second later and
+        // seen as water, it was set aside and another chosen at once, each refusal's wait never served. Its way made out of
+        // a hollow (F-35h) goes on during the wait, below, as before.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && !play.waiting(move.target(), tick)
+                && seenOpenWater(entry, play, player, to, tick)) {
+            play.openWater(move.target(), tick, player.getBlockPos(), FactionsPlayer.atSurface(player));
             play.move = null;
-            play.decidedAt = Long.MIN_VALUE / 2;
+            // The next choice at the decision interval, not on the same tick: chosen at once, a coast of water it saw was
+            // set aside place by place, a search for each (F-35j1).
             return null;
         }
         // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
@@ -9972,6 +10068,27 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null || entry.campaign == null ? -1 : entry.campaign.knowledge().sweeps();
+    }
+
+    /** For the fixtures (F-35j1): the AI player's last faction walks ended (target, tick) and its last choices' ticks. */
+    List<Map.Entry<String, Long>> factionWalksEndedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of() : List.copyOf(entry.factionPlay.endedForTest);
+    }
+
+    List<Long> factionDecisionsForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of() : List.copyOf(entry.factionPlay.decidedForTest);
+    }
+
+    /** For the fixtures (F-35h2): whether the AI player's campaign has it dug in for the night where it stands now. */
+    boolean dugInForTheNightForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry != null && entry.campaign != null && entry.nativeBody != null && entry.nativeBody.connected()
+                && entry.campaign.dugInForTheNight(entry.nativeBody.entity());
     }
 
     /** The fixture's AI player's places set aside as open water it saw, and its faction walks that ended at all. */
@@ -10358,6 +10475,111 @@ final class PlayerRuntime {
     private record Villager(dev.kindred.core.guide.Trades.Profession profession, int level, List<dev.kindred.core.guide.Trades.Offer> offers,
                             long seenAt) { }
 
+    /**
+     * F-30d3: what it knows of the villagers, kept across a restart as it holds it in memory: each it has looked at, its
+     * offers as seen; each it lets be, with what is left of the wait; each it has told of once. Read back once a start off
+     * the thread, ages and waits set against the server's ticks then, so each wait ends when it would have (down time does
+     * not count, as the server's ticks do not); what it has seen or decided since the start is newer and is kept over it.
+     * Written after a look or a trade, otherwise at most every ten seconds after a change, once a minute while it knows
+     * any, and at the stop; before its file has been read back, merged with it on the store's thread, so that neither is lost. With no file nothing is added: a fresh start is as
+     * before. A villager whose offers do not make sense is left out.
+     */
+    private void keepVillagers(Entry entry) {
+        if (!entry.villagersRead) {
+            if (entry.villagersReading) return;
+            entry.villagersReading = true;
+            UUID id = entry.data.id();
+            memories.loadVillagers(id, entry.data.displayName()).whenComplete((read, failure) -> handBack(() -> {
+                entry.villagersReading = false;
+                if (!running || entries.get(id) != entry || entry.villagersRead) return;
+                entry.villagersRead = true;
+                if (failure != null || read == null) return;
+                long now = server.getTicks();
+                int seen = 0;
+                for (var each : read.seen) {
+                    Villager back;
+                    try {
+                        var offers = new ArrayList<dev.kindred.core.guide.Trades.Offer>();
+                        for (var offer : each.offers()) offers.add(offerOf(offer));
+                        back = new Villager(dev.kindred.core.guide.Trades.Profession.valueOf(each.profession()), each.level(), List.copyOf(offers), now - each.age());
+                    } catch (RuntimeException nonsense) {
+                        KindredMod.LOGGER.warn("{}: a villager it looked at before the restart is left out: {}", entry.data.displayName(), nonsense.toString());
+                        continue;
+                    }
+                    if (entry.villagers.putIfAbsent(UUID.fromString(each.villager()), back) == null) seen++;
+                }
+                int waits = 0, told = 0;
+                for (var each : read.waits) if (entry.villagerVisitAt.putIfAbsent(UUID.fromString(each.villager()), now + each.left()) == null) waits++;
+                for (var each : read.told) if (entry.villagersTold.add(UUID.fromString(each))) told++;
+                // Only what it did not know already: a file it wrote itself before this read (merged) adds nothing.
+                if (seen + waits + told > 0) {
+                    entry.routineRefreshPending = true;
+                    KindredMod.LOGGER.info("{} remembers {} villager(s) it looked at, {} it lets be and {} it told of, from before the restart",
+                            entry.data.displayName(), seen, waits, told);
+                }
+            }));
+            return;
+        }
+        long since = server.getTicks() - entry.villagersSavedAt;
+        boolean known = !entry.villagers.isEmpty() || !entry.villagerVisitAt.isEmpty() || !entry.villagersTold.isEmpty();
+        if (entry.villagersDirty && since >= 200 || known && since >= 1200) saveVillagers(entry);
+    }
+
+    /** What it knows of the villagers, written as it is now; before its file has been read back, merged with it. */
+    private void saveVillagers(Entry entry) {
+        entry.villagersDirty = false;
+        long now = server.getTicks();
+        entry.villagersSavedAt = now;
+        var out = new PlayerMemoryStore.VillagerMemory();
+        out.player = entry.data.displayName();
+        for (var each : entry.villagers.entrySet()) {
+            var villager = each.getValue();
+            var offers = new ArrayList<PlayerMemoryStore.OfferSeen>();
+            for (var offer : villager.offers()) offers.add(seenOf(offer));
+            out.seen.add(new PlayerMemoryStore.VillagerSeen(each.getKey().toString(), villager.profession().name(), villager.level(), offers,
+                    Math.max(0, now - villager.seenAt())));
+        }
+        for (var each : entry.villagerVisitAt.entrySet()) {
+            if (each.getValue() > now) out.waits.add(new PlayerMemoryStore.VillagerWait(each.getKey().toString(), each.getValue() - now));
+        }
+        for (UUID each : entry.villagersTold) out.told.add(each.toString());
+        // Before the file is read back, written merged with it, after that read on the store's thread: nothing lost either way.
+        if (entry.villagersRead) memories.saveVillagers(entry.data.id(), out);
+        else memories.saveVillagersMerging(entry.data.id(), out);
+    }
+
+    private static PlayerMemoryStore.OfferSeen seenOf(dev.kindred.core.guide.Trades.Offer offer) {
+        var enchants = new ArrayList<PlayerMemoryStore.EnchantSeen>();
+        for (var each : offer.enchants()) enchants.add(new PlayerMemoryStore.EnchantSeen(each.id(), each.level()));
+        return new PlayerMemoryStore.OfferSeen(goodsSeen(offer.first()), offer.second() == null ? null : goodsSeen(offer.second()),
+                goodsSeen(offer.result()), enchants, offer.uses(), offer.maxUses());
+    }
+
+    private static PlayerMemoryStore.GoodsSeen goodsSeen(dev.kindred.core.guide.Trades.Goods goods) {
+        return new PlayerMemoryStore.GoodsSeen(goods.item(), goods.count());
+    }
+
+    /** An offer kept back as Trades' own, which checks it; one that does not make sense throws. */
+    private static dev.kindred.core.guide.Trades.Offer offerOf(PlayerMemoryStore.OfferSeen seen) {
+        var enchants = new ArrayList<dev.kindred.core.guide.Trades.Enchant>();
+        for (var each : seen.enchants() == null ? List.<PlayerMemoryStore.EnchantSeen>of() : seen.enchants()) {
+            enchants.add(new dev.kindred.core.guide.Trades.Enchant(each.id(), each.level()));
+        }
+        return new dev.kindred.core.guide.Trades.Offer(goodsOf(seen.first()), seen.second() == null ? null : goodsOf(seen.second()),
+                goodsOf(seen.result()), enchants, seen.uses(), seen.maxUses());
+    }
+
+    private static dev.kindred.core.guide.Trades.Goods goodsOf(PlayerMemoryStore.GoodsSeen seen) {
+        return new dev.kindred.core.guide.Trades.Goods(seen.item(), seen.count());
+    }
+
+    /** Fixtures: whether what it knows of the villagers has been read back from its file this start. */
+    boolean villagersReadForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry != null && entry.villagersRead;
+    }
+
     /** How near a villager it has not looked at must be to be looked at in passing; and one worth trading with, to go to. */
     static final int LOOK_RANGE = 16, TRADE_RANGE = 48;
     /** A villager with nothing worth trading is let be until it has restocked: half a day. */
@@ -10396,6 +10618,7 @@ final class PlayerRuntime {
             if (unseen && (distance > LOOK_RANGE * LOOK_RANGE || !player.canSee(villager))) continue;
             if (!unseen && dev.kindred.core.guide.Trades.plan(known.offers(), holding, emeralds).empty()) {
                 entry.villagerVisitAt.put(villager.getUuid(), now + RESTOCK);
+                entry.villagersDirty = true;
                 continue;
             }
             if (distance < nearest) {
@@ -10429,6 +10652,15 @@ final class PlayerRuntime {
      * cannot yet pay for told of once; each villager let be a while after.
      */
     private void tradeEnded(Entry entry, NativeTradeAction trade, SkillRunner.State state) {
+        try {
+            tradeEndedNow(entry, trade, state);
+        } finally {
+            entry.villagersDirty = true;
+            saveVillagers(entry); // F-30d3: a look or a trade is kept at once.
+        }
+    }
+
+    private void tradeEndedNow(Entry entry, NativeTradeAction trade, SkillRunner.State state) {
         long now = server.getTicks();
         UUID id = trade.villager();
         entry.routineRefreshPending = true;
@@ -11743,7 +11975,7 @@ final class PlayerRuntime {
         var task = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         // Sticks take no table.
-        if (!recipe.equals("stick") && locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (!recipe.equals("stick") && workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 16);
             if (table == null) {
                 noteBring(entry, "No crafting table near to make " + recipe.replace('_', ' ') + " at");
@@ -12375,6 +12607,95 @@ final class PlayerRuntime {
     /** Someone it saw open a store of its own: who, whether on its side, and when. */
     private record SeenAtStore(String name, boolean teammate, long tick, UUID who) { }
 
+    /**
+     * F-30d2 and F-30d2a: what it knows of its stores, kept across a restart as it holds it in memory: who it saw at
+     * them and has not yet gone to look, and what it counted in each. Read back once a start off the thread, each with
+     * its age then, so it fades as it would have (down time does not count, as the server's ticks do not); what it has
+     * seen, looked into or changed since the start is newer and is kept over it. Written when it sees someone new or
+     * looks, and otherwise at most every ten seconds while something changed, once a minute while it knows anything, and
+     * at the stop; before its file has been read back, merged with it on the store's thread, so that neither is lost. With no file nothing is added: a fresh start is as before.
+     */
+    private void keepStores(Entry entry) {
+        if (!entry.storesRead) {
+            if (entry.storesReading) return;
+            entry.storesReading = true;
+            UUID id = entry.data.id();
+            memories.loadStores(id, entry.data.displayName()).whenComplete((read, failure) -> handBack(() -> {
+                entry.storesReading = false;
+                if (!running || entries.get(id) != entry || entry.storesRead) return;
+                entry.storesRead = true;
+                if (failure != null || read == null) return;
+                long now = server.getTicks();
+                int seen = 0, counted = 0;
+                for (var each : read.seen) {
+                    var back = new SeenAtStore(each.name(), each.teammate(), now - each.age(), UUID.fromString(each.who()));
+                    if (entry.seenAtStores.putIfAbsent(BlockPos.asLong(each.x(), each.y(), each.z()), back) == null) seen++;
+                }
+                for (var each : read.stores) {
+                    var place = new dev.kindred.core.team.Storage.Place(each.world(), each.x(), each.y(), each.z());
+                    if (entry.storage.restore(new dev.kindred.core.team.Storage.Store(place, dev.kindred.core.team.Storage.Whose.valueOf(each.whose()),
+                            each.counts(), now - each.age()))) counted++;
+                }
+                if (seen + counted > 0) {
+                    entry.routineRefreshPending = true;
+                    KindredMod.LOGGER.info("{} remembers {} seen at its stores and what is in {} of them, from before the restart",
+                            entry.data.displayName(), seen, counted);
+                }
+            }));
+            return;
+        }
+        long since = server.getTicks() - entry.storesSavedAt;
+        boolean changed = entry.seenAtStoresDirty || entry.storage.revision() != entry.storesSavedRevision;
+        boolean known = !entry.seenAtStores.isEmpty() || !entry.storage.stores().isEmpty();
+        if (changed && since >= 200 || known && since >= 1200) saveStores(entry);
+    }
+
+    /** What it knows of its stores, written as it is now with its ages; before its file has been read back, merged with it. */
+    private void saveStores(Entry entry) {
+        entry.seenAtStoresDirty = false;
+        long now = server.getTicks();
+        entry.storesSavedAt = now;
+        entry.storesSavedRevision = entry.storage.revision();
+        var out = new PlayerMemoryStore.StoreMemory();
+        out.player = entry.data.displayName();
+        for (var each : entry.seenAtStores.entrySet()) {
+            BlockPos pos = BlockPos.fromLong(each.getKey());
+            var seen = each.getValue();
+            out.seen.add(new PlayerMemoryStore.StoreSighting(pos.getX(), pos.getY(), pos.getZ(), seen.name(), seen.teammate(),
+                    seen.who().toString(), Math.max(0, now - seen.tick())));
+        }
+        for (var store : entry.storage.stores()) {
+            var place = store.place();
+            out.stores.add(new PlayerMemoryStore.StoreCount(place.world(), place.x(), place.y(), place.z(), store.whose().name(),
+                    new java.util.TreeMap<>(store.counts()), Math.max(0, now - store.seenAt())));
+        }
+        // Before the file is read back, written merged with it, after that read on the store's thread: nothing lost either way.
+        if (entry.storesRead) memories.saveStores(entry.data.id(), out);
+        else memories.saveStoresMerging(entry.data.id(), out);
+    }
+
+    /** Fixtures: who it saw at its stores, as "name at x, y, z, teammate or not, ticks ago"; empty for no such player. */
+    List<String> seenAtStoresForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        if (entry == null) return List.of();
+        long now = server.getTicks();
+        var out = new ArrayList<String>();
+        for (var each : entry.seenAtStores.entrySet()) {
+            var seen = each.getValue();
+            out.add(seen.name() + " at " + BlockPos.fromLong(each.getKey()).toShortString() + ", " + (seen.teammate() ? "teammate" : "not on its side")
+                    + ", " + (now - seen.tick()) + " ticks ago");
+        }
+        return out;
+    }
+
+    /** Fixtures: whether what it knows of its stores has been read back from its file this start. */
+    boolean storesReadForTest(UUID id) {
+        requireThread();
+        Entry entry = id != null ? entries.get(id) : null;
+        return entry != null && entry.storesRead;
+    }
+
     /** What it asked its team of what is gone from a store, and until when it waits for a word. */
     private record StorageAsk(dev.kindred.core.team.Storage.Look look, long until) { }
 
@@ -12465,7 +12786,7 @@ final class PlayerRuntime {
         long now = server.getTicks();
         if (!worldEditsEnabled()) return null;
         // Going to look, or moving the rest out, keeps its own short wait; putting away and fetching the longer one.
-        entry.seenAtStores.values().removeIf(seen -> now - seen.tick() > 6000);
+        if (entry.seenAtStores.values().removeIf(seen -> now - seen.tick() > 6000)) entry.seenAtStoresDirty = true;
         boolean looking = entry.emptying != null || !entry.seenAtStores.isEmpty();
         if (looking ? now < entry.lookAt : now < entry.storeAt) return null;
         var world = player.getServerWorld();
@@ -12564,6 +12885,10 @@ final class PlayerRuntime {
         var place = storePlace(player, own.pos());
         var look = entry.storage.looked(place, own.whose(), seen, now);
         var since = entry.seenAtStores.remove(own.pos().asLong());
+        if (since != null) {
+            entry.seenAtStoresDirty = true;
+            saveStores(entry);
+        }
         if (!look.isShort()) return;
         // Gone while someone not on its side was seen at it (E-49): theirs to answer for, in its wariness of them.
         if (since != null && !since.teammate()) noteWariness(entry, since.who(), since.name(), dev.kindred.core.Trust.Event.TOOK_FROM_CHEST);
@@ -12862,7 +13187,7 @@ final class PlayerRuntime {
             entry.kitNamesAt = now + 2400;
             return null;
         }
-        if (locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 12);
             if (table == null) {
                 entry.kitNamesAt = now + 2400;
@@ -14797,6 +15122,7 @@ final class PlayerRuntime {
     }
 
     void stop() {
+        if (store != null) store.stopChecks(); // F-31f: a check under way is stopped at once and reports nothing.
         requireThread();
         ready = false;
         // The stop barrier first: whatever stop() itself waits on (the store's last writes) may hand callbacks back on
@@ -14857,13 +15183,22 @@ final class PlayerRuntime {
         peerRadio.saveAll(); // What each knows of the others (E-50).
         for (Entry entry : entries.values()) {
             if (entry.atlas != null) memories.saveAtlas(entry.data.id(), entry.data.displayName(), entry.atlas.snapshot());
+            // F-30d2 and F-30d2a: with the ages as at the stop; nothing if it knows nothing, or its file was never read back.
+            if (entry.seenAtStoresDirty || entry.storage.revision() != entry.storesSavedRevision
+                    || !entry.seenAtStores.isEmpty() || !entry.storage.stores().isEmpty()) saveStores(entry);
+            // F-30d3: with the waits as at the stop; nothing if it knows of none, or its file was never read back.
+            if (entry.villagersDirty || !entry.villagers.isEmpty() || !entry.villagerVisitAt.isEmpty() || !entry.villagersTold.isEmpty()) saveVillagers(entry);
         }
-        memories.close();
+        // F-31e: the memory files' last writes, waited for after the Record's, under the same bound; the time logged.
+        long memoryClosing = System.nanoTime();
+        CompletableFuture<Void> memoryWrites = memories.closeAsync().whenComplete((ignored, failure) -> KindredMod.LOGGER.info(
+                "Kindred memory files written at the stop in {} ms", (System.nanoTime() - memoryClosing) / 1_000_000));
         recipeStore.saveIfChanged(rescueBook);
         recipeStore.close();
         CompletableFuture<Void> writes = CompletableFuture.allOf(entries.values().stream()
                 .flatMap(e -> java.util.stream.Stream.of(e.writes, e.profileWrite, e.mannerismWrite, e.setupWrite, e.activityFlush, e.nativeActionFlush))
-                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).handle((ignored, failure) -> null);
+                .toArray(CompletableFuture[]::new)).thenCompose(ignored -> recordFlush).thenCompose(ignored -> memoryWrites)
+                .handle((ignored, failure) -> null);
         shutdown = writes.thenCompose(ignored -> startup.handle((loaded, failure) ->
                 loaded == null ? CompletableFuture.<Void>completedFuture(null) : loaded.store().closeAsync())
                 .thenCompose(future -> future));
@@ -16777,23 +17112,32 @@ final class PlayerRuntime {
         dev.kindred.core.record.Ledgers kept = ledgers;
         long through = ledgersThrough;
         var result = new CompletableFuture<Boolean>();
+        // F-31f: the action ledger read off the writer, from one snapshot, streamed; the writer goes on writing meanwhile.
         database.allWorldEvents(dev.kindred.core.record.Ledgers.kinds())
-                .thenCombine(database.checkActionLedger(), (events, actions) -> {
+                .thenCombine(database.checkActionLedgerFromSnapshot(), (events, actions) -> {
                     var upTo = events.stream().filter(event -> event.id() <= through).toList();
-                    var checks = new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo));
-                    checks.add(actions);
-                    return checks;
-                }).whenComplete((checks, failure) -> handBack(() -> {
+                    return java.util.Map.entry(new ArrayList<dev.kindred.core.record.Ledger.Agreement<?>>(kept.check(upTo)), actions);
+                }).whenComplete((both, failure) -> handBack(() -> {
                     if (failure != null) {
-                        KindredMod.LOGGER.error("World Record check could not run", failure);
+                        Throwable cause = failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+                        // Stopped with the server: no verdict, and none recorded; the next check reads it all again.
+                        if (cause instanceof java.util.concurrent.CancellationException) KindredMod.LOGGER.info("World Record check stopped before it was done; nothing reported");
+                        else KindredMod.LOGGER.error("World Record check could not run", failure);
                         result.complete(false);
                         return;
                     }
-                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees);
+                    var checks = both.getKey();
+                    var actions = both.getValue();
+                    boolean agree = checks.stream().allMatch(dev.kindred.core.record.Ledger.Agreement::agrees) && actions.agrees();
                     var data = new java.util.LinkedHashMap<String, String>();
                     for (var check : checks) data.put(check.ledger(), check.agrees() ? "agrees" : "differs");
+                    data.put(dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.agrees() ? "agrees" : actions.differing() > 0 ? "differs" : "not checked");
                     for (var check : checks) if (!check.agrees()) KindredMod.LOGGER.error("Ledger {} differs from the World Record: kept {} but the Record gives {}",
                             check.ledger(), check.kept(), check.fromRecord());
+                    if (actions.differing() > 0) KindredMod.LOGGER.error("Ledger {} differs from the World Record in {} of {} actions: {}",
+                            dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.differing(), actions.rows(), actions.differences());
+                    if (actions.unchecked() > 0) KindredMod.LOGGER.error("Ledger {} not checked against the World Record: {} actions named other than as an id is written: {}",
+                            dev.kindred.core.record.ActionLedgerView.INSTANCE.name(), actions.unchecked(), actions.notChecked());
                     if (running) record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", dev.kindred.core.record.Ledgers.CHECK, null,
                             agree ? "agrees" : "differs", "", data));
                     // The action fold (F-31): once the Record and the ledgers agree, settled action history older than
@@ -17729,6 +18073,13 @@ final class PlayerRuntime {
         private List<OwnStore> ownStores;
         private long ownStoresAt, storeAt;
         private final Map<Long, SeenAtStore> seenAtStores = new HashMap<>();
+        /**
+         * F-30d2 and F-30d2a: whether what it knows of its stores (who it saw at them, what it counted in them) has been
+         * read back from its file this start, the read under way, and a write due for those it saw; when it last wrote,
+         * and its storage's revision then.
+         */
+        private boolean storesRead, storesReading, seenAtStoresDirty;
+        private long storesSavedAt, storesSavedRevision;
         private StorageAsk storageAsk;
         private final Set<Long> untrustedStores = new HashSet<>();
         /** How wary it is of each person, from what the game saw them do to it (E-49); kept for this session. */
@@ -17750,6 +18101,9 @@ final class PlayerRuntime {
         private final Map<UUID, Villager> villagers = new HashMap<>();
         private final Map<UUID, Long> villagerVisitAt = new HashMap<>();
         private final Set<UUID> villagersTold = new HashSet<>();
+        /** F-30d3: whether what it knows of the villagers has been read back this start, the read under way, a write due; its last write. */
+        private boolean villagersRead, villagersReading, villagersDirty;
+        private long villagersSavedAt;
         private UUID tradeTaskId, tradeVillager;
         private long tradeAt;
         /** The lectern reroll under way (E-45c), the villagers kept and given up on, and when it next looks for one. */

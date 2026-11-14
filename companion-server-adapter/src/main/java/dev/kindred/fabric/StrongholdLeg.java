@@ -888,13 +888,16 @@ final class StrongholdLeg {
         Optional<PortalRunCampaign.Task> byBoat = byBoat(body, x, z, label);
         if (byBoat.isPresent()) return byBoat;
         double ux = dx / distance, uz = dz / distance;
+        // A leg's end on ground it can see from where it stands; one out of its sight at its own height, for the route to
+        // find the way (F-35m). One sight line a candidate, fifteen at most.
+        var looks = WorldKnowledge.looks(player, 15);
         for (double leg : new double[] {LEG, 48, 24}) {
             double step = Math.min(distance, leg);
             for (double side : new double[] {0, 20, -20, 40, -40}) {
                 int tx = (int) Math.floor(player.getX() + ux * step - uz * side), tz = (int) Math.floor(player.getZ() + uz * step + ux * side);
                 BlockPos column = new BlockPos(tx, player.getBlockY(), tz);
                 if (!world.isChunkLoaded(column)) continue;
-                BlockPos end = new BlockPos(tx, world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, tx, tz), tz);
+                BlockPos end = looks.ground(tx, tz).map(BlockPos::up).orElse(column);
                 if (campaign.blocked(end) || campaign.unreachable(end)) continue;
                 return Optional.of(PortalRunCampaign.goWary(end, 4, true, label, wanted()));
             }
@@ -958,7 +961,7 @@ final class StrongholdLeg {
         if (there && !ashore) {
             // Where it was going, but at sea (staged run 10 got out over the ocean stronghold and swam): on to the
             // nearest dry land it can reach by water, and out there.
-            var dry = nearestLand(player.getServerWorld(), player.getBlockPos(), LAND_SIGHT)
+            var dry = nearestLand(player, player.getBlockPos(), LAND_SIGHT)
                     .or(() -> Optional.ofNullable(lastDryLand)); // Else back to the last dry ground it stood on.
             KindredMod.LOGGER.info("{} is where it was rowing to, at sea at {}; land to make for: {}", player.getName().getString(),
                     player.getBlockPos().toShortString(), dry.map(BlockPos::toShortString).orElse("none in sight"));
@@ -1010,7 +1013,9 @@ final class StrongholdLeg {
             }
             return Optional.of(PortalRunCampaign.go(empty.get().getBlockPos(), 1.5, true, "Swim to the boat"));
         }
-        if (!waterAhead(world, player, ux, uz)) return Optional.empty();
+        // The water along the way as it sees it from where it stands (F-35m): one look for the boat's whole decision.
+        var looks = WorldKnowledge.looks(player, WATER_LOOKS);
+        if (!waterAhead(world, looks, player, ux, uz)) return Optional.empty();
         int slot = -1;
         var inventory = player.getInventory();
         for (int s = 0; s < 36 && slot < 0; s++) if (inventory.getStack(s).getItem() instanceof net.minecraft.item.BoatItem) slot = s;
@@ -1023,14 +1028,14 @@ final class StrongholdLeg {
             while (up.getY() < player.getBlockY() + 16 && world.getFluidState(up.up()).isIn(net.minecraft.registry.tag.FluidTags.WATER)) up = up.up();
             return Optional.of(PortalRunCampaign.go(up, 0.5, true, "Get out of the water: up to the surface to put the boat in"));
         }
-        BlockPos spot = launchSpot(world, player, ux, uz);
+        BlockPos spot = launchSpot(world, looks, player, ux, uz);
         if (spot == null) {
-            BlockPos edge = firstWater(world, player, ux, uz);
+            BlockPos edge = firstWater(world, looks, player, ux, uz);
             if (edge == null) return Optional.empty();
             // At the edge already, with no room for a boat within reach (staged run 10 walked to the edge over and over):
             // a few blocks out into the water, where it is open all round, as a player wades out to put a boat in.
             if (edge.getSquaredDistance(player.getBlockPos()) <= 3 * 3) {
-                BlockPos out = surfaceWater(world, (int) Math.floor(edge.getX() + 0.5 + ux * 3), (int) Math.floor(edge.getZ() + 0.5 + uz * 3));
+                BlockPos out = surfaceWater(world, looks, (int) Math.floor(edge.getX() + 0.5 + ux * 3), (int) Math.floor(edge.getZ() + 0.5 + uz * 3));
                 if (out != null) return Optional.of(PortalRunCampaign.go(out, 0.8, true, "Wade out to put the boat in"));
             }
             return Optional.of(PortalRunCampaign.go(edge, 2.5, true, "To the water's edge for the boat"));
@@ -1042,6 +1047,9 @@ final class StrongholdLeg {
                 "x", String.valueOf(spot.getX()), "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ())), "Into the boat to cross the water"));
     }
 
+    /** Sight lines the boat's decision may cast at the water along the way: ten ahead, ten in reach, thirty to the edge, one out (F-35m). */
+    private static final int WATER_LOOKS = 51;
+
     /** How far out over water it looks round for land. */
     private static final int LAND_SIGHT = 160;
 
@@ -1049,50 +1057,55 @@ final class StrongholdLeg {
      * The nearest land in sight from the water to dig down from, as a player looks round for a shore: the nearest
      * column, out to {@code radius} blocks over loaded ground, whose top is solid ground with no water or lava within
      * two blocks of it or under it (a rock or a ruin poking out of the sea will not do: staged run 13 got out onto
-     * one and could dig nowhere). Read from the heightmap, ring by ring.
+     * one and could dig nowhere). Ring by ring, each ring's tops from the heightmap only to aim its sight lines at
+     * (F-35m): a top it cannot see is not land in sight.
      */
-    static Optional<BlockPos> nearestLand(ServerWorld world, BlockPos from, int radius) {
-        for (int r = 3; r <= radius; r += 3) {
-            BlockPos best = null;
-            double bestDistance = Double.MAX_VALUE;
+    static Optional<BlockPos> nearestLand(ServerPlayerEntity player, BlockPos from, int radius) {
+        var world = player.getServerWorld();
+        // Land it can see from where it is (F-35m): the ring's dry tops, nearest first, each kept only if a sight line from
+        // its eyes reaches it; a top out of its sight is no shore to it. The sight lines are capped for the whole look round.
+        var looks = WorldKnowledge.looks(player, LAND_LOOKS);
+        for (int r = 3; r <= radius && looks.rays() < LAND_LOOKS; r += 3) {
+            var ring = new java.util.ArrayList<BlockPos>();
             for (int dx = -r; dx <= r; dx += 3) for (int dz = -r; dz <= r; dz += 3) {
                 if (Math.abs(dx) != r && Math.abs(dz) != r) continue; // The ring only.
                 int x = from.getX() + dx, z = from.getZ() + dz;
                 if (!world.isChunkLoaded(new BlockPos(x, 0, z))) continue;
-                BlockPos top = new BlockPos(x, world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1, z);
-                if (!world.getFluidState(top).isEmpty() || world.getBlockState(top).getCollisionShape(world, top).isEmpty()) continue;
-                if (wetAround(world, top.up())) continue;
-                double distance = top.getSquaredDistance(from);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = top.up();
-                }
+                ring.add(new BlockPos(x, world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z) - 1, z));
             }
-            if (best != null) return Optional.of(best);
+            ring.sort(java.util.Comparator.comparingDouble(top -> top.getSquaredDistance(from)));
+            // Dry land is asked before the sight line only to spare it: water, or ground with water about it, is no shore.
+            Optional<BlockPos> seen = looks.firstSeen(ring, top -> world.getFluidState(top).isEmpty()
+                    && !world.getBlockState(top).getCollisionShape(world, top).isEmpty() && !wetAround(world, top.up()));
+            if (seen.isPresent()) return Optional.of(seen.get().up());
         }
         return Optional.empty();
     }
 
+    /** Sight lines a look round for land from the water may cast (F-35m). */
+    static final int LAND_LOOKS = 48;
+
     /** The top of the column at {@code x}, {@code z} is water: the surface of a lake or the sea. */
-    private static BlockPos surfaceWater(ServerWorld world, int x, int z) {
-        if (!world.isChunkLoaded(new BlockPos(x, 0, z))) return null;
-        BlockPos top = new BlockPos(x, world.getTopY(Heightmap.Type.MOTION_BLOCKING, x, z) - 1, z);
+    private static BlockPos surfaceWater(ServerWorld world, WorldKnowledge.Looks looks, int x, int z) {
+        // Water it can see from where it stands (F-35m): a top out of its sight is not water to it.
+        BlockPos top = looks.top(x, z).orElse(null);
+        if (top == null) return null;
         return world.getFluidState(top).isIn(net.minecraft.registry.tag.FluidTags.WATER) && world.getBlockState(top.up()).isAir() ? top : null;
     }
 
     /** Most of the next thirty blocks along the way are open water. */
-    private static boolean waterAhead(ServerWorld world, ServerPlayerEntity player, double ux, double uz) {
+    private static boolean waterAhead(ServerWorld world, WorldKnowledge.Looks looks, ServerPlayerEntity player, double ux, double uz) {
         int wet = 0;
         for (int d = 3; d <= 30; d += 3) {
-            if (surfaceWater(world, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d)) != null) wet++;
+            if (surfaceWater(world, looks, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d)) != null) wet++;
         }
         return wet >= 7;
     }
 
     /** The first open water along the way, within thirty blocks. */
-    private static BlockPos firstWater(ServerWorld world, ServerPlayerEntity player, double ux, double uz) {
+    private static BlockPos firstWater(ServerWorld world, WorldKnowledge.Looks looks, ServerPlayerEntity player, double ux, double uz) {
         for (int d = 1; d <= 30; d++) {
-            BlockPos water = surfaceWater(world, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d));
+            BlockPos water = surfaceWater(world, looks, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d));
             if (water != null) return water;
         }
         return null;
@@ -1102,10 +1115,10 @@ final class StrongholdLeg {
      * Water within reach along the way with room for a boat: open water all round it at the surface, so the boat
      * fits (vanilla refuses a boat that would touch the shore), and the surface close enough to the eyes.
      */
-    private static BlockPos launchSpot(ServerWorld world, ServerPlayerEntity player, double ux, double uz) {
+    private static BlockPos launchSpot(ServerWorld world, WorldKnowledge.Looks looks, ServerPlayerEntity player, double ux, double uz) {
         var eye = player.getEyePos();
         for (double d = 1.5; d <= 3.75; d += 0.25) {
-            BlockPos water = surfaceWater(world, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d));
+            BlockPos water = surfaceWater(world, looks, (int) Math.floor(player.getX() + ux * d), (int) Math.floor(player.getZ() + uz * d));
             if (water == null || eye.distanceTo(net.minecraft.util.math.Vec3d.ofCenter(water).add(0, 0.4, 0)) > 4.0) continue;
             boolean room = true;
             for (int dx = -1; dx <= 1 && room; dx++) for (int dz = -1; dz <= 1 && room; dz++) {
@@ -1141,7 +1154,7 @@ final class StrongholdLeg {
             if (PlayerRuntime.inDeepWater(player) || !world.getFluidState(feet).isEmpty()) {
                 // Out at sea: the nearest dry land it can swim to, else the nearest it can see, else the last it stood
                 // on on the way out (staged run 12 found none to swim to and rowed 1,100 blocks back to that).
-                var shore = nearestLand(world, feet, LAND_SIGHT)
+                var shore = nearestLand(player, feet, LAND_SIGHT)
                         .or(() -> new NativeNavigator(world).nearestReachableDryStand(feet, 20_000, 96))
                         .or(() -> Optional.ofNullable(lastDryLand));
                 if (shore.isEmpty()) return Optional.empty();

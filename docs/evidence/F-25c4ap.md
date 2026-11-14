@@ -46,6 +46,33 @@ The change: a log more than three above its trunk's foot, the trunk below still 
 from the bottom. The new fixture hides the trunk from the west behind a bank, so that the sighting's log is all it
 knows when the log step chooses its walk; without the change it failed (0 of 1).
 
+## The fixture's staging in a larger run (12 November, F-25c4ap1)
+
+`withNoWoodItWalksToATreeItSeesFarOffOverOpenGround` passed alone and failed 2 of 2 on `ec581d5` in a run of the stair,
+navigation, portal-campaign, rescue, rescue-rounds, bring, boat and fall classes (144 tests), with "No wood: at -172, -2,
+137" both times. The logs show the cause is the fixture's staging, not the player. The goal's first decision, made at
+home, was a walk to look 28 blocks north of home. The fixture set the player down 170 blocks east as soon as that plan
+was made, before the walk had ended or even begun. In this run the ground between was open, so the walk went on: the
+next lines have the player 24 blocks west of where it was set down, two blocks lower, off the raised ground it could
+not climb back onto, and `native_goto BLOCKED: Route to` that point 28 north of home. Alone, the ground between had no
+route, so the same walk was refused the moment the player was set down and the test passed.
+
+Waiting only for a tick with no walk under way was not enough (3 of 3 still failed): on the tick it was checked, the plan
+was made but its walk not yet dispatched. The staging now waits for the first walk to start, then for it to end, and
+sets the player down on a tick when no walk is under way. The start is read from `PlayerRuntime.ownStartsForTest`, a
+read-only count of the tasks it starts of its own choosing, taken as each starts: a walk can start and end within one
+server tick (its first step may complete or be refused), so a look at `busy()` alone could miss it. In the six runs
+before that change the first walk was seen under way each time; the six after it are those in the table. The first decision after it is then made where it was set
+down: "Walk toward the trees seen at …". The assertion and the tick limit are unchanged.
+
+| Run | Before (`ec581d5`) | After |
+| --- | --- | --- |
+| The eight classes together | Failed 2 of 2 | Passed 3 of 3 (144 of 144 each) |
+| `NativePortalCampaignGameTests` alone | Passed | Passed 3 of 3 (97 of 97 each) |
+
+Environment as above; gametests narrowed in `fabric.mod.json` for these runs and restored after. This is a fixture
+change only; it says nothing of the live runs, which remain.
+
 ## Remaining limitations and handoff
 
 - Trees are seen only over loaded ground, about ten chunks round on a server with the default view distance.

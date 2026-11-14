@@ -153,8 +153,28 @@ public final class ConstructionPlanner {
      */
     public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
                             Set<Pos> shunned, int spare) {
+        return next(blocks, clear, world, feet, items, scaffold, shunned, spare, List.of());
+    }
+
+    /** Why a block waits on one the build set aside: the step's target is the set-aside block's cell (E-70a1). */
+    public static final String WAITS_ON_SET_ASIDE = "Waits on a block it set aside at ";
+
+    /**
+     * As {@link #next(List, List, BuildSite, Pos, Set, Set, Set, int)}, with {@code setAside} the blocks the build gave up
+     * on for now (refused again and again, as with an animal standing in the cell) and will try once more. They are not
+     * placed now, but their cells are still the build's: never stood in, never filled with a prop or a scaffold. A block
+     * with no other face to be set against than a set-aside block's waits on it: the step blocked at that cell, so its
+     * runner can try that block again first. A bed's foot over a floor plank set aside was propped in the plank's cell;
+     * the bed went on top, the prop was walled in by the floor and out of reach to take down, and the cabin was left one
+     * plank short (#239 and #240 in CI, E-70a1).
+     */
+    public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
+                            Set<Pos> shunned, int spare, List<Blueprint.Block> setAside) {
         BuildSite site = steps(blocks, clear, world);
-        Map<Pos, BlockSpec> wanted = Blueprint.byPosition(blocks);
+        Map<Pos, BlockSpec> wanted = new HashMap<>(Blueprint.byPosition(setAside));
+        wanted.putAll(Blueprint.byPosition(blocks));
+        Set<Pos> owed = new HashSet<>();
+        for (var b : setAside) if (site.cell(b.at()).map(c -> !c.state().sameAs(b.spec())).orElse(false)) owed.add(b.at());
         Set<Pos> keepClear = new HashSet<>(clear);
         Box box = Box.of(blocks);
         // In the way: something solid where a block or clear space is wanted, the build's to break if not protected.
@@ -316,6 +336,13 @@ public final class ConstructionPlanner {
         var clearing = takeDown(site, scaffoldTops(site, scaffold, feet), feet, wanted, box, walk,
                 "Its own scaffolding in the way to " + lowest.at());
         if (clearing.isPresent()) return clearing.get();
+        // Nothing to set it against but a block it set aside: that block first.
+        for (var b : todo) {
+            for (Face face : Placement.faces(b.spec())) {
+                Pos against = b.at().offset(face.opposite());
+                if (owed.contains(against)) return Step.blockedAt(against, WAITS_ON_SET_ASIDE + against + " for " + b.spec().block() + " at " + b.at());
+            }
+        }
         return Step.blockedAt(lowest.at(), "No way to reach " + lowest.spec().block() + " at " + lowest.at());
     }
 

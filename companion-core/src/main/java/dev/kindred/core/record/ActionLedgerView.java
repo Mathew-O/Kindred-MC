@@ -40,16 +40,33 @@ public final class ActionLedgerView implements Ledger<Map<UUID, ActionLedgerView
 
     @Override
     public Map<UUID, Row> apply(Map<UUID, Row> state, WorldEvent event) {
+        var next = new TreeMap<>(state);
+        put(next, event);
+        return Collections.unmodifiableMap(next);
+    }
+
+    /**
+     * The ledger rebuilt from {@code events}: the same as applying each in turn, folded into one map rather than a copy
+     * of the whole ledger for every event (F-31d). Copying made the agreement check grow with actions times events, the
+     * writer held for 15 seconds by the sixth check of an evaluation and the server's stop kept waiting behind it.
+     */
+    @Override
+    public Map<UUID, Row> replay(Iterable<WorldEvent> events) {
+        var state = new TreeMap<UUID, Row>();
+        for (WorldEvent event : events) if (kinds().contains(event.kind())) put(state, event);
+        return Collections.unmodifiableMap(state);
+    }
+
+    /** An event's row put in its action's place; a malformed one changes nothing. */
+    private static void put(TreeMap<UUID, Row> state, WorldEvent event) {
         UUID action;
         long revision;
         try {
             action = UUID.fromString(event.subject());
             revision = Long.parseLong(event.get("revision", ""));
         } catch (IllegalArgumentException malformed) {
-            return state;
+            return;
         }
-        var next = new TreeMap<>(state);
-        next.put(action, new Row(event.get("state", ""), revision));
-        return Collections.unmodifiableMap(next);
+        state.put(action, new Row(event.get("state", ""), revision));
     }
 }
