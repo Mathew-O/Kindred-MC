@@ -50,8 +50,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35l, stone not mined from a thin floor over a drop round its feet: [evidence](evidence/F-35l.md).
 - F-35l2, a cave-explore walk to a cliff's edge, then the fall: not reproduced on main, open: [evidence](evidence/F-35l2.md).
 - F-35m, no far column's height that the player cannot see: [evidence](evidence/F-35m.md).
+- F-35m1, a base, hall, pen or plot sited only on ground the player has seen: [evidence](evidence/F-35m1.md).
 - F-35n, a climb boxed in under water hands back: [evidence](evidence/F-35n.md).
 - F-35o, the water fetch's search and climb no longer undo each other: [evidence](evidence/F-35o.md).
+- M-01a1, a wheat plot's soil cleared of a plant, and the hoe's table kept off the plot: [evidence](evidence/M-01a1.md).
 - E-45e1, a boat held behind the villager's lectern rowed aside round it to the water: [evidence](evidence/E-45e1.md)
 - E-70a, nights in bed: in by dusk, the bed it carries, a person's night never held: [evidence](evidence/E-70a.md)
 - E-70a1, a bed never propped in a floor cell the build set aside, the cabin finished: [evidence](evidence/E-70a1.md)
