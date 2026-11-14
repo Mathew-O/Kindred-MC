@@ -29,7 +29,7 @@ A harness change (`CorpusGameTests`, `tools/corpus`). No player behaviour change
   - A scene joins the open batch only if `clockFits`: for every scene in it and every batch-mate's time, the ticks of its run that are night under that time and day under its own, or the reverse, are at most `CLOCK_TOLERANCE`.
   - Every pair is checked, because which scene sets the clock is whichever reaches its staging last.
   - A batch never runs round from 23999 to 0, since times only rise within a group.
-  - The constants are `NIGHT_CLEAR_FROM/TO`, `NIGHT_RAIN_FROM/TO` and `CLOCK_TOLERANCE` (0).
+  - The constants are `NIGHT_CLEAR_FROM/TO`, `NIGHT_RAIN_FROM/TO` and `CLOCK_TOLERANCE` (200).
 - **`tools/corpus/batches.py` (new):** replays the batching from the scene files with those constants, read from the Java source. `--log` checks a run's batches against it.
 - **`tools/corpus/layout.py`:** its `world_key` follows the new order.
 
@@ -43,6 +43,14 @@ A harness change (`CorpusGameTests`, `tools/corpus`). No player behaviour change
 | 400 | 55 | 1.15 | 4 |
 | 800 | 48 | 1.03 | 1 |
 
+**The tolerance: 200 ticks (the lead's choice, 2026-11-14).**
+- **What it allows:** at most 10 s of game time at the edge of dusk or dawn played under the other light.
+- **What it fixes:** under the old grouping, 92 scenes had a batch-mate whose time changed some of their ticks' day or night, 9 of them by more than 800 ticks.
+- **Cost:** about 1.34 times a full run, about 51 min against about 38. That makes about 5.1 h for a six-run baseline and about 2.6 h for a gate's three runs, against about 2.9 h at 100.
+- **Against 0:** 0 would cost about 77 min a run (2.02 times), because the 67 scenes that cross dusk or dawn within their own run could share a batch only with a scene crossing on the same tick.
+- **Against 100:** the fidelity gained is small.
+- **The minutes:** estimated from the old grouping's measured 36.5 to 39.4 min a run on dc5ad4d, scaled by the proxy. The re-baseline measures them.
+
 ## Validation
 - **New tests:** `tools/corpus/test_batches.py`, five of them:
   - CorpusGameTests sets the clock rule and the measured night intervals;
@@ -52,11 +60,13 @@ A harness change (`CorpusGameTests`, `tools/corpus`). No player behaviour change
   - `clock_difference` on worked cases.
 - **Before (main's CorpusGameTests and layout.py):** 2 failures ("CorpusGameTests does not check a batch's clock"; "e40c1-eed2dc5-101-echo-59004 batched with f29e-on-707-sol-11529") and 2 errors (the constants unset).
 - **After:** `python3 -m unittest discover -s tools/corpus`: 20 tests, OK, 3 of 3.
-- **The Java's batches match the mirror:** a `runCorpus` of the 30 scenes of today's corpus_21, 24 and 40 (`KINDRED_CORPUS_ONLY`) on this branch logged 23 batches. Each has the same members, in the same order, as `batches.py` gives for those 30.
+- **The Java's batches match the mirror:** `runCorpus` of the 30 scenes of today's corpus_21, 24 and 40 (`KINDRED_CORPUS_ONLY`) on this branch, at each tolerance. Each logged batch has the same members, in the same order, as `batches.py` gives for those 30.
+  - At 0: 23 batches.
+  - At 200: 12 batches. The dusk scenes 11004 to 11529 now run in three batches, 12851 and 12912 apart from the dawn scenes, and the rain scenes 3599 to 9027 apart from 11419.
 - **Still to come:** the six-run baseline on this harness, a full run's batches checked by `batches.py --log`, and CI.
 
 ## Remaining limitations and handoff
 - **Approximations:** rain and thunder are counted at full strength from the scene's start; vanilla ramps them over about 100 ticks. Which scene starts last still varies by a few ticks.
-- **Exact next action:** the lead picks `CLOCK_TOLERANCE`. Then the six-run re-baseline on this branch, alone on the cores, after iteration 22, and one PR with `baseline.json`.
+- **Exact next action:** the six-run re-baseline on this branch at 200, alone on the cores, after iteration 22. Then one PR with `baseline.json`, the measured run times, and the gate's time and confirm-alone estimates in `gate.sh` and the docs.
 - **Updated documentation:** `docs/validation.md` (the failure corpus).
 - **Manifest changes:** none.

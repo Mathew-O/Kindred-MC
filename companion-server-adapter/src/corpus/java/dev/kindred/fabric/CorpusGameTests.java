@@ -58,9 +58,11 @@ public final class CorpusGameTests implements FabricGameTest {
     /**
      * At most this many ticks of a scene's run may be night under a batch-mate's time and day under its own, or the
      * reverse. Batched by time alone, a scene of 11004 played into dusk at 11529, and two of 12851 and 12912 at dawn
-     * (#283's counts: 20 of 422 scenes under another day or night than their own).
+     * (#283's counts: 20 of 422 scenes under another day or night than their own). 200 ticks, at most 10 s of game time at
+     * the edge of dusk or dawn: 69 batches, about 1.34 times the run of the old 46; 0 made 118, about twice
+     * (docs/evidence/F-27a-clock-batches.md).
      */
-    static final int CLOCK_TOLERANCE = 0;
+    static final int CLOCK_TOLERANCE = 200;
     static final int SPACER_WIDTH = 90, SPACER_DEPTH = 130;
 
     @CustomTestProvider
