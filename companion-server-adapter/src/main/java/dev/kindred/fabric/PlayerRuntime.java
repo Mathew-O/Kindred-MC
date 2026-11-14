@@ -387,6 +387,10 @@ final class PlayerRuntime {
     private final Map<UUID, List<dev.kindred.core.construction.Blueprint>> libraryDesigns = new HashMap<>();
     /** The game mode each builder had before its build battle's creative mode, given back when it is out of it. */
     private final Map<UUID, net.minecraft.world.GameMode> modeBefore = new HashMap<>();
+    /** Each running hunt's one issued tracking compass per hunter (M-06k2): replaced only when provably gone. */
+    private final Map<UUID, Map<UUID, UUID>> huntIssued = new HashMap<>();
+    /** The hunts that have ended here: a compass of one is taken back wherever it next turns up (M-06k2). */
+    private final java.util.Set<UUID> huntsOver = new java.util.HashSet<>();
     /** Each builder's own things set aside for its build battle (M-06k3), kept on disk until they are back. */
     private final BuilderHolds builderHolds;
     /** The holds of builders in a battle now, as written: what each gets back at the end. */
@@ -8362,7 +8366,11 @@ final class PlayerRuntime {
             var factionMove = entry.factionPlay.move;
             boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
                     && entry.dispatchSource.startsWith("factionCandidates");
-            if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
+            if (factionWalk && state == SkillRunner.State.BLOCKED) {
+                entry.factionPlay.blockedWalks++;
+                if (entry.currentTaskId != null && entry.currentTaskId.equals(entry.factionPlay.settledWalk)) entry.factionPlay.blockedSettled++;
+            }
+            if (factionWalk) entry.factionPlay.settledWalk = null;
             if (factionWalk) entry.factionPlay.walksEnded++;
             if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
@@ -9871,6 +9879,15 @@ final class PlayerRuntime {
      * dispatched, under its lease, through the same calls a person's commands use, the rules checked again there; or a
      * walk to a claim elsewhere, a border it saw, or its faction's home. Null when it has nothing to do there.
      */
+    /**
+     * For the back-off's fixture: {@code move} settled now, while its own walk may still run (there in its chunk, the
+     * place set aside, its end open water). That walk's end is no refusal of a move still to be made.
+     */
+    private static void settledInFlight(Entry entry, FactionsPlayer play, ServerPlayerEntity player, dev.kindred.core.factions.FactionPlay.Choice move) {
+        UUID walk = FactionsPlayer.taskId(player.getUuid(), move);
+        if (walk.equals(entry.currentTaskId)) play.settledWalk = walk;
+    }
+
     private List<NativeTaskCandidate> factionCandidates(Entry entry, NativePlayerBody body) {
         if (!factionsWorld() || !ready || !running) return null;
         var player = body.entity();
@@ -9902,6 +9919,7 @@ final class PlayerRuntime {
         if (move == null) return null;
         // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
         if (play.setAside(tick).contains(move.target())) {
+            settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
@@ -9920,6 +9938,7 @@ final class PlayerRuntime {
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
+            settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
@@ -9933,6 +9952,7 @@ final class PlayerRuntime {
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && !play.waiting(move.target(), tick)
                 && seenOpenWater(entry, play, player, to, tick)) {
             play.openWater(move.target(), tick, player.getBlockPos(), FactionsPlayer.atSurface(player));
+            settledInFlight(entry, play, player, move);
             play.move = null;
             // The next choice at the decision interval, not on the same tick: chosen at once, a coast of water it saw was
             // set aside place by place, a search for each (F-35j1).
@@ -10267,7 +10287,7 @@ final class PlayerRuntime {
     int[] factionBlockedForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
-        return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+        return entry == null ? new int[3] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted, entry.factionPlay.blockedSettled};
     }
 
     /** How many times the fixture's AI player has looked all round it (its perception's sweeps); -1 before it looks at all. */
@@ -16500,10 +16520,12 @@ final class PlayerRuntime {
         counts.merge("minecraft:dirt", 64, Integer::sum);
         var inventory = player.getInventory();
         int slot = 0;
+        EvalItemSources.enter(player);
         for (var e : counts.entrySet()) {
             var item = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(e.getKey()));
             for (int left = e.getValue(); left > 0 && slot < 36; left -= 64) inventory.setStack(slot++, new ItemStack(item, Math.min(64, left)));
         }
+        EvalItemSources.exit(player, "rule:builder-stock");
     }
 
     /** The blocks standing on a plot, over its floor, by kind: what a voter sees of a build. */
@@ -16848,6 +16870,9 @@ final class PlayerRuntime {
             }
         }
         if (over) {
+            huntsOver.add(match.id());
+            var issued = huntIssued.remove(match.id());
+            if (issued != null) issued.values().forEach(HuntCompass::forget);
             hunts.remove(match.id());
             for (UUID runner : match.runners()) trails.remove(runner);
         }
@@ -16859,6 +16884,13 @@ final class PlayerRuntime {
      * with none (a new one, or one on its feet after a death took it) is handed one.
      */
     private void pollHunts() {
+        // A hunt's compass outlives its hunt only where no player holds it (a chest, the ground): taken back wherever it
+        // next turns up in a player's inventory, cursor or ender chest (M-06k2). Only the hunts this runtime saw end.
+        if (!huntsOver.isEmpty()) {
+            for (var player : server.getPlayerManager().getPlayerList()) {
+                if (HuntCompass.sweep(player, huntsOver) > 0) KindredMod.LOGGER.info("Manhunt: a tracking compass of a hunt now over taken back from {}", player.getName().getString());
+            }
+        }
         for (var match : matches.list()) {
             if (match.mode() != dev.kindred.core.match.MatchRegistry.Mode.MANHUNT || match.state() != dev.kindred.core.match.MatchRegistry.State.RUNNING) continue;
             var runners = new ArrayList<ServerPlayerEntity>();
@@ -16879,8 +16911,17 @@ final class PlayerRuntime {
                                 .map(trail -> trail.get(world)).filter(java.util.Objects::nonNull)
                                 .min(java.util.Comparator.comparingDouble(pos -> pos.getSquaredDistance(hunter.getPos()))).orElse(null));
                 var target = at == null ? java.util.Optional.<net.minecraft.util.math.GlobalPos>empty() : java.util.Optional.of(net.minecraft.util.math.GlobalPos.create(world, at));
-                if (HuntCompass.point(hunter, match.id(), target) > 0) {
-                    KindredMod.LOGGER.info("Manhunt {}: a tracking compass handed to {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()), playerName(hunterId));
+                HuntCompass.aim(hunter, match.id(), target);
+                // Issued once (M-06k2): the first at the start, another only when the hunter's own is provably gone.
+                var issued = huntIssued.computeIfAbsent(match.id(), id -> new HashMap<>());
+                UUID own = issued.get(hunterId);
+                if (own != null && (HuntCompass.holds(hunter, own) || !HuntCompass.gone(own))) continue;
+                UUID next = UUID.randomUUID();
+                if (HuntCompass.issue(hunter, match.id(), next, target)) {
+                    if (own != null) HuntCompass.forget(own);
+                    issued.put(hunterId, next);
+                    KindredMod.LOGGER.info("Manhunt {}: a tracking compass {} {}", dev.kindred.core.match.MatchRegistry.shortId(match.id()),
+                            own == null ? "issued to" : "issued again, its own destroyed, to", playerName(hunterId));
                 }
             }
         }

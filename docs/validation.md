@@ -13,8 +13,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   committed.
 - **The failure corpus (F-27a).** Every kept death and stuck spell is a scene under
   `companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus/`, imported with
-  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 25 minutes), each run from an empty corpus world
-  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). A change that
+  `tools/corpus/import.py` and run with `./gradlew :companion-server-adapter:runCorpus` (about 40 minutes on a 4-core container), each run from an empty corpus world
+  (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). Scenes run up to ten
+  to a batch, sharing difficulty and weather, and only with scenes whose nights fall on the same ticks of their runs
+  under any batch-mate's time, by vanilla's `isNight` (`CorpusGameTests.clockFits`; `tools/corpus/batches.py` lists them). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
   run alone, in a run of its own with no other scene to share its batch's clock, ×3 on the branch and ×3 on main as the
@@ -45,6 +47,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-35h, a faction walk out of a basin, a way made where the walk finds none (Factions 109): [evidence](evidence/F-35h.md).
 - F-35h2, no faction walk out through its own night shelter's seal (Factions 110): [evidence](evidence/F-35h2.md).
 - F-35i, faction walks back off as a whole after a run of refusals (Factions 109): [evidence](evidence/F-35i.md).
+- F-35i1, the back-off fixture counts apart a walk whose move was settled as it ran: [evidence](evidence/F-35i1.md).
 - F-35j, a faction walk into open sea it saw set aside unasked (Factions 303): [evidence](evidence/F-35j.md).
 - F-35j1, a refused faction walk's wait served and open water set aside counted toward the pause (Factions 110): [evidence](evidence/F-35j1.md).
 - F-35k, off a ledge over a cavern, a way made elsewhere and soon (e40a20's 8675309): [evidence](evidence/F-35k.md).
@@ -62,6 +65,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
+
+## Replay players acting after their own batch: not reproduced, closed (F-27a1) — 14 November 2026 (`claude/harness-bleed-1114`)
+
+- [F-27a1: 13 full corpus runs since #258 on five trees, all 0; the one sighting predates #258](evidence/F-27a1.md).
 
 ## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
 
@@ -143,7 +150,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c61](evidence/F-22c61.md) (2026-11-11, CI): every GameTest class is registered for the suite, checked in the support job; NativeAttentionGameTests registered, 4 of 4 on 3 runs; tools/run-apart.sh for the E-41b benchmarks.
 - [F-22c62](evidence/F-22c62.md) (2026-11-11, bring): a hall's door in reach but behind its wall is taken off from its front; the staged fixture 0 of 3 before, 3 of 3 after; NativeBringGameTests 12 of 12, 3 runs.
 - [F-22c63](evidence/F-22c63.md) (2026-11-11, tree farm): a patch's mine refused before it broke anything is tried again, the trunk cut down and replanted; the staged fixture 0 of 3 before, 3 of 3 after; eight patch-mining classes 31 of 31, 3 runs.
-- [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs; 2026-11-12, a break's collection that ends with its own drop uncollected says why (pure line test 2 of 2).
+- [F-22c64](evidence/F-22c64.md) (2026-11-11, diagnostics): a bring's rails by the cell, and any it ends without, say where they lie; NativeBringGameTests 11 of 11, 3 runs; 2026-11-12, a break's collection that ends with its own drop uncollected says why (pure line test 2 of 2). 2026-11-14, the arm named by a probe (one failure in 35 runs): the drop born inside the boat's box over the front, pushed out onto the cell's bed; two fixes taken back; open.
 - [F-22c65](evidence/F-22c65.md) (2026-11-11, cover climb): up its own stair out of a cut for food, a look for animals whose walk ends lower than where it last had the sky climbs on instead; the staged fixture 0 of 9 before, 9 of 9 after; F-25c4ag 9 of 9; the cover class 2 of 2, 3 runs; the build green on the merged tree; the corpus gate passes, its three flagged scenes cleared by the lead (reasons in the evidence).
 - [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
 - [F-22c68](evidence/F-22c68.md) (2026-11-12, test only): the late toss-cap staging moves the server's tick only forward; from a start in a day's last 30 ticks the old line stops the server ("Backward tick"), the new one passes 3 of 3; NativeTrustGameTests 9 of 9, 3 runs.
