@@ -373,6 +373,21 @@ final class NativeBreakAction extends NativeRecordedAction {
         }
     }
 
+    /**
+     * What a break came to, from what can be seen, for a restart's settle (F-31g1, F-25c6c's per-action rule): with the
+     * inventory's fingerprint exactly as before it, not done if {@code block} still stands at {@code target} and done if
+     * it is gone; else held for an operator. The rule is {@code ActionSettlement.breakRule}, unchanged from F-31g1. It reads
+     * only the fingerprint: a live break's close keeps its own receipt-based settle above.
+     */
+    static Settled settleFromEvidence(Before before, InventoryEvidence after, net.minecraft.server.world.ServerWorld world, BlockPos target, String block) {
+        boolean present = Registries.BLOCK.getId(world.getBlockState(target).getBlock()).toString().equals(block);
+        return switch (dev.kindred.core.ActionSettlement.breakRule(present, before.fingerprint(), after.description())) {
+            case DONE -> Settled.DONE;
+            case NOT_DONE -> Settled.NOT_DONE;
+            case AMBIGUOUS -> Settled.HELD;
+        };
+    }
+
     /** One of a break's own drops still lying as its collection ended, as the diagnostic line gives it (F-22c64). */
     record LeftDrop(double x, double y, double z, int age, int pickupDelay, double vx, double vy, double vz) {}
 
