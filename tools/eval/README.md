@@ -75,9 +75,11 @@ the goal's stage, the stance and habits in force, the task it was on), every stu
 gave a spot up), every rescue plan (F-29: when, and its line, `rescue: <steps> -> unstuck`, `-> failed: <why>` or
 `-> refused: <why>`), the model tokens it used, and its chunk-loads (chunks that came into its loaded area, the square
 the server's view distance keeps round it, counted once a game second) and chunk-minutes (those chunks times the
-minutes held; E-70a); and the scenario, earned or staged, the seed, the ticks run, whether the run ran all its ticks, and
+minutes held; E-70a), and its bridge blocks and the seconds its bridge runs took (`bridgeBlocks`, `bridgeSeconds`,
+over every `native_bridge` run, whether it reached its end or stopped short; E-71a); and the scenario, earned or staged, the seed, the ticks run, whether the run ran all its ticks, and
 `days`, the Overworld's days that passed over the run (a night slept through passes in moments). `score.py` reports
-the chunk counts per game hour of ticks, and deaths and stuck minutes per game day as well as per game hour. Stages are seen once a game second from the player's inventory and dimension, and from the
+the chunk counts per game hour of ticks, deaths and stuck minutes per game day as well as per game hour, and bridge
+blocks a second, per player and for the team, where it bridged at all. Stages are seen once a game second from the player's inventory and dimension, and from the
 cast and the portal's lighting as they complete; a frame's obsidian is cast where it stands and never held.
 
 ## A faction world (M-06i)
