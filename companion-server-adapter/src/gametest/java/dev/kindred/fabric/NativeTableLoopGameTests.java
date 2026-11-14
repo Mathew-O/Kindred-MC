@@ -28,6 +28,7 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         int[] placed = {0}, pickedUp = {0}, tables = {-1}, pickedBeforeBed = {-1};
         long[] since = {-1};
+        java.util.Set<BlockPos> before = new java.util.HashSet<>(), own = new java.util.HashSet<>();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Sol"))
@@ -62,6 +63,7 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                         if (!stack.isEmpty()) held.append(stack.getCount()).append(' ').append(net.minecraft.registry.Registries.ITEM.getId(stack.getItem())).append("; ");
                     }
                     KindredMod.LOGGER.info("Table loop: Sol holds {}", held);
+                    before.addAll(tablesIn(context));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                     since[0] = world.getTime();
                 })
@@ -70,7 +72,10 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     var player = f.player();
                     int now = player.getInventory().count(Items.CRAFTING_TABLE);
-                    if (tables[0] >= 0 && now < tables[0]) placed[0]++;
+                    if (tables[0] >= 0 && now < tables[0]) {
+                        placed[0]++;
+                        own.addAll(setDownBy(context, player, before));
+                    }
                     if (tables[0] >= 0 && now > tables[0]) pickedUp[0]++;
                     tables[0] = now;
                     String progress = f.runtime.panelBots(dev.kindred.core.Actor.console()).getFirst().goalProgress();
@@ -91,7 +96,7 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                     if (player.getInventory().count(Items.WHITE_BED) == 0) return;
                     context.assertTrue(pickedBeforeBed[0] == 0, "The table picked up " + pickedBeforeBed[0] + " times before its bed was made");
                     int carried = player.getInventory().count(Items.CRAFTING_TABLE);
-                    int standing = tablesStanding(context);
+                    int standing = standing(context, own);
                     context.assertTrue(carried == 1 && standing == 0, "The table taken along after the bed: " + carried + " carried, " + standing + " standing");
                 })
                 .createAndAdd(() -> {
@@ -108,13 +113,33 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    /** Crafting tables standing within the fixture's ground. */
-    static int tablesStanding(TestContext context) {
+    /**
+     * Crafting tables standing within the fixture's ground. The ground reaches past the test's own plot, and in a full
+     * run another batch's players work there at the same time: on 5872274 a house built in the plot next door
+     * ({@code house2}) left its crafting table inside this ground, and "1 standing" was that house's.
+     */
+    static java.util.Set<BlockPos> tablesIn(TestContext context) {
         var world = context.getWorld();
-        int n = 0;
+        var out = new java.util.HashSet<BlockPos>();
         for (BlockPos b : BlockPos.iterate(context.getAbsolutePos(new BlockPos(-16, -24, -16)), context.getAbsolutePos(new BlockPos(32, 12, 32)))) {
-            if (world.getBlockState(b).isOf(net.minecraft.block.Blocks.CRAFTING_TABLE)) n++;
+            if (world.getBlockState(b).isOf(net.minecraft.block.Blocks.CRAFTING_TABLE)) out.add(b.toImmutable());
         }
+        return out;
+    }
+
+    /** The tables its player has just set down: standing now, not when its goal began, and within its reach. */
+    static java.util.Set<BlockPos> setDownBy(TestContext context, net.minecraft.server.network.ServerPlayerEntity player, java.util.Set<BlockPos> before) {
+        var out = new java.util.HashSet<BlockPos>();
+        for (BlockPos b : tablesIn(context)) {
+            if (!before.contains(b) && b.toCenterPos().squaredDistanceTo(player.getEyePos()) <= 6 * 6) out.add(b);
+        }
+        return out;
+    }
+
+    /** How many of the tables its player set down still stand. */
+    static int standing(TestContext context, java.util.Set<BlockPos> own) {
+        int n = 0;
+        for (BlockPos b : own) if (context.getWorld().getBlockState(b).isOf(net.minecraft.block.Blocks.CRAFTING_TABLE)) n++;
         return n;
     }
 
@@ -130,6 +155,7 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
     public void stagedItsTableKeptDownForABedIsTakenAlongOnceTheBedCanNoLongerBeMade(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         long[] woolGone = {-1};
+        java.util.Set<BlockPos> before = new java.util.HashSet<>(), own = new java.util.HashSet<>();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Sol"))
@@ -153,6 +179,7 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                     inventory.setStack(6, new ItemStack(Items.CRAFTING_TABLE, 1));
                     inventory.setStack(7, new ItemStack(Items.BUCKET, 1));
                     inventory.setStack(8, new ItemStack(Items.STICK, 8));
+                    before.addAll(tablesIn(context));
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
@@ -161,6 +188,8 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                     // The table down: the wool taken, as though spent elsewhere.
                     context.assertTrue(inventory.count(Items.CRAFTING_TABLE) == 0 || inventory.count(Items.WHITE_BED) > 0, "Its table not down yet");
                     context.assertTrue(inventory.count(Items.WHITE_BED) == 0, "The bed made before the wool could be taken: the staging missed");
+                    own.addAll(setDownBy(context, f.player(), before));
+                    context.assertTrue(!own.isEmpty(), "Its table not seen down");
                     for (int s = 0; s < 36; s++) if (inventory.getStack(s).isOf(Items.WHITE_WOOL)) inventory.setStack(s, ItemStack.EMPTY);
                     woolGone[0] = context.getWorld().getTime();
                 })
@@ -168,7 +197,7 @@ public final class NativeTableLoopGameTests implements FabricGameTest {
                     context.getWorld().setTimeOfDay(1000);
                     var player = f.player();
                     long waited = context.getWorld().getTime() - woolGone[0];
-                    int carried = player.getInventory().count(Items.CRAFTING_TABLE), standing = tablesStanding(context);
+                    int carried = player.getInventory().count(Items.CRAFTING_TABLE), standing = standing(context, own);
                     if (waited > 200) {
                         throw new net.minecraft.test.GameTestException("Its table not taken along " + waited + " ticks after the wool went: "
                                 + carried + " carried, " + standing + " standing");
