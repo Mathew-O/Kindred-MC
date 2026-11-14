@@ -16504,10 +16504,12 @@ final class PlayerRuntime {
         counts.merge("minecraft:dirt", 64, Integer::sum);
         var inventory = player.getInventory();
         int slot = 0;
+        EvalItemSources.enter(player);
         for (var e : counts.entrySet()) {
             var item = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of(e.getKey()));
             for (int left = e.getValue(); left > 0 && slot < 36; left -= 64) inventory.setStack(slot++, new ItemStack(item, Math.min(64, left)));
         }
+        EvalItemSources.exit(player, "rule:builder-stock");
     }
 
     /** The blocks standing on a plot, over its floor, by kind: what a voter sees of a build. */

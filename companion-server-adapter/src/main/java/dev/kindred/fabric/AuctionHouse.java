@@ -101,7 +101,9 @@ final class AuctionHouse {
         desk.whenSaved(seller, () -> recorder.record(events, () -> finish.accept(decision.reason() + " (" + id + ")"), failure -> {
             var back = server.getPlayerManager().getPlayer(who);
             if (back != null) {
+                EvalItemSources.enter(back);
                 back.getInventory().offerOrDrop(taken);
+                EvalItemSources.exit(back, "auction.return");
                 MarketDesk.save(back);
             } else KindredMod.LOGGER.error("Listing {} not written and its seller left: {} to return by an operator", id, taken);
             finish.accept("The listing could not be written; the item is back");
@@ -193,7 +195,9 @@ final class AuctionHouse {
             return;
         }
         var handed = stack.get().copy();
+        EvalItemSources.enter(player);
         player.getInventory().offerOrDrop(stack.get());
+        EvalItemSources.exit(player, "auction.delivery");
         desk.whenSaved(player, () -> {
             var at = at("");
             recorder.record(List.of(WorldEvent.recorded(at.tick(), at.realTimeMs(), "", Auctions.DELIVERED, delivery.to(), delivery.id(), "", Map.of("why", delivery.why()))),

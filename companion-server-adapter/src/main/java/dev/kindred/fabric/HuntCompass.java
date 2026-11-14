@@ -118,7 +118,10 @@ public final class HuntCompass {
         if (!hunter.isAlive()) return false;
         var stack = make(hunter, match, issue);
         stack.set(DataComponentTypes.LODESTONE_TRACKER, new LodestoneTrackerComponent(target, false));
-        return hunter.getInventory().insertStack(stack);
+        EvalItemSources.enter(hunter);
+        boolean given = hunter.getInventory().insertStack(stack);
+        EvalItemSources.exit(hunter, "rule:manhunt-compass");
+        return given;
     }
 
     /** A tracking compass destroyed: deleted by the curse at a death, or a drop destroyed. Server thread. */
