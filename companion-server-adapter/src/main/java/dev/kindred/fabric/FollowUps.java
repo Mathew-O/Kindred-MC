@@ -332,10 +332,26 @@ final class FollowUps {
     }
 
     /** One craft of {@code need} can be made from the needs held now. */
-    private boolean craftable(Need need) {
+    private boolean craftable(Need need, ServerPlayerEntity player) {
         var recipe = MinecraftGuide.recipe(need).orElseThrow();
         for (var input : recipe.inputs().entrySet()) if (provisions.held().getOrDefault(input.getKey(), 0) < input.getValue()) return false;
+        // And what is no need, from what it carries (F-25c7a): the bed's three planks, a log counted as the four it makes.
+        for (var other : recipe.others().entrySet()) if (carried(player, other.getKey()) < other.getValue()) return false;
         return true;
+    }
+
+    /** How many of an item id or a tag ({@code #...}) it carries; planks count the four each log it carries makes. */
+    static int carried(ServerPlayerEntity player, String key) {
+        var inventory = player.getInventory();
+        int count = 0;
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+            if (key.equals(MinecraftGuide.PLANKS) && stack.isIn(net.minecraft.registry.tag.ItemTags.LOGS)) count += 4 * stack.getCount();
+            else if (key.startsWith("#") ? stack.isIn(net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.ITEM, net.minecraft.util.Identifier.of(key.substring(1))))
+                    : Registries.ITEM.getId(stack.getItem()).toString().equals(key)) count += stack.getCount();
+        }
+        return count;
     }
 
     /**
@@ -349,7 +365,7 @@ final class FollowUps {
         int wood = wood(player);
         return switch (need.name()) {
             // A table is set down or made only for a craft whose inputs are in hand.
-            case "BOW", "ARROWS" -> !craftable(need) ? Optional.empty() : craftAtTable(body, need == Need.BOW ? "bow" : "arrow");
+            case "BOW", "ARROWS" -> !craftable(need, player) ? Optional.empty() : craftAtTable(body, need == Need.BOW ? "bow" : "arrow");
             case "SHIELD" -> p.ironIngots() >= 1 && wood >= 6 ? craftAtTable(body, "shield") : Optional.empty();
             case "IRON_SWORD" -> p.ironIngots() >= 2 && player.getInventory().count(Items.STICK) >= 1 ? craftAtTable(body, "iron_sword") : Optional.empty();
             case "STICKS" -> p.planks() >= 2 ? campaign.craft(body, "stick") : p.logs() > 0 ? campaign.craft(body, "planks") : Optional.empty();
@@ -360,7 +376,7 @@ final class FollowUps {
                     .or(() -> swordTier >= 1 ? campaign.gather(body, WorldKnowledge.Kind.COBWEB, due ? 48 : 16, "cobweb") : Optional.empty());
             case "FLINT" -> ashore ? campaign.flint(body) : Optional.empty();
             // A bed of the colour it holds three wool of, and the planks it takes, at a table.
-            case "BED" -> !craftable(need) || wood < 3 ? Optional.empty() : bedColour(player).flatMap(colour -> craftAtTable(body, colour + "_bed"));
+            case "BED" -> !craftable(need, player) ? Optional.empty() : bedColour(player).flatMap(colour -> craftAtTable(body, colour + "_bed"));
             case "WOOL" -> !ashore ? Optional.empty() : campaign.huntFor(player, net.minecraft.entity.passive.SheepEntity.class, "sheep for wool",
                             campaign.bedUrgent() ? 40 : 24)
                     .or(() -> due ? shared(PortalRunPlanner.Action.SEEK_FOOD, count, why, p, body, policy) : Optional.empty());
