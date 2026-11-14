@@ -2514,13 +2514,43 @@ final class PlayerRuntime {
     private void primeWorkstationCaches(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         var world = player.getServerWorld();
-        BlockPos center = BlockPos.ofFloored(player.getEyePos());
+        Vec3d eye = player.getEyePos();
         if (entry.cachedCraftingTablePos == null) {
-            entry.cachedCraftingTablePos = locateWorkstationBlock(world, center, Blocks.CRAFTING_TABLE, 4.5);
+            entry.cachedCraftingTablePos = workstationInReach(world, eye, Blocks.CRAFTING_TABLE, 4.5);
         }
         if (entry.cachedFurnacePos == null) {
-            entry.cachedFurnacePos = locateWorkstationBlock(world, center, Blocks.FURNACE, 4.5);
+            entry.cachedFurnacePos = workstationInReach(world, eye, Blocks.FURNACE, 4.5);
         }
+    }
+
+    /**
+     * The nearest block of {@code block} whose middle is within {@code reach} of the eye: reach as the player's own use of
+     * it is measured ({@link NativePlayerBody#planCraft}, the campaign's walk to a table). Measured instead from the block
+     * the eye is in, a table at a diagonal 4.0 from the eye was out of reach here and in reach to the goal: the goal asked
+     * for the craft, the dispatch dropped it as no longer executable, and the goal, with the table in reach, never walked
+     * nearer (CI on #261: a golden helmet never made from five ingots).
+     */
+    static BlockPos workstationInReach(ServerWorld world, Vec3d eye, net.minecraft.block.Block block, double reach) {
+        BlockPos center = BlockPos.ofFloored(eye);
+        int radius = (int) Math.ceil(reach);
+        int vertical = Math.min(radius, 3) + 1;
+        BlockPos best = null;
+        double bestDistSq = reach * reach;
+        for (int dy = -vertical; dy <= vertical; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = center.add(dx, dy, dz);
+                    double distSq = eye.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                    if (distSq > bestDistSq) continue;
+                    if (!world.isChunkLoaded(pos)) continue;
+                    if (world.getBlockState(pos).isOf(block)) {
+                        bestDistSq = distSq;
+                        best = pos.toImmutable();
+                    }
+                }
+            }
+        }
+        return best;
     }
 
     private static BlockPos locateWorkstationBlock(ServerWorld world, BlockPos center, net.minecraft.block.Block block, double reach) {
@@ -9810,6 +9840,10 @@ final class PlayerRuntime {
         // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
         // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
         if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
+        // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
+        // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
+        // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && nightYield(entry, play, player, tick)) return null;
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
@@ -9846,6 +9880,25 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /**
+     * Whether a faction walk waits this decision for the goal's dig-in for the night (F-35h2b): only at night, with a goal
+     * running, while the campaign may still shelter (not yet dug in, a part-dug shelter included), and never for nothing. The night's first
+     * decision yields once, so that the campaign is asked; after that only while the campaign's step was a dig-in for the
+     * night. Where it could not dig, the walk goes on at the next decision: a yield costs at most one.
+     */
+    private boolean nightYield(Entry entry, FactionsPlayer play, ServerPlayerEntity player, long tick) {
+        var campaign = entry.campaign;
+        if (campaign == null || goalOf(entry) == dev.kindred.core.survival.SurvivalGoal.NONE || !campaign.wouldShelterForTheNight(player)) {
+            play.nightYieldAt = Long.MIN_VALUE;
+            return false;
+        }
+        if (play.nightYieldAt == Long.MIN_VALUE) {
+            play.nightYieldAt = tick;
+            return true;
+        }
+        return campaign.progress().contains(PortalRunCampaign.SHELTER_FOR_THE_NIGHT);
     }
 
     /** Whether the way toward a faction walk's end {@code to} is open water the player saw (F-35j); a dry answer kept a second for the same end. */
@@ -10186,6 +10239,15 @@ final class PlayerRuntime {
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
         var body = entry.nativeBody.entity();
         return entry.factionPlay.paused(server.getTicks(), body.getBlockPos(), FactionsPlayer.atSurface(body));
+    }
+
+    /** For fixtures: its faction walk staged as already chosen, {@code move}, and not weighed again till its interval is out. */
+    void factionMoveSetForTest(UUID player, dev.kindred.core.factions.FactionPlay.Choice move) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return;
+        entry.factionPlay.move = move;
+        entry.factionPlay.decidedAt = server.getTicks();
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
@@ -12056,7 +12118,7 @@ final class PlayerRuntime {
         var task = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         // Sticks take no table.
-        if (!recipe.equals("stick") && locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (!recipe.equals("stick") && workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 16);
             if (table == null) {
                 noteBring(entry, "No crafting table near to make " + recipe.replace('_', ' ') + " at");
@@ -13268,7 +13330,7 @@ final class PlayerRuntime {
             entry.kitNamesAt = now + 2400;
             return null;
         }
-        if (locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 12);
             if (table == null) {
                 entry.kitNamesAt = now + 2400;
