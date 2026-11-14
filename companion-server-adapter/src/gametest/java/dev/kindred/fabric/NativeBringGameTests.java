@@ -505,14 +505,15 @@ public final class NativeBringGameTests implements FabricGameTest {
                             if (hal != null && hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))) heldWhenUp.add(front);
                         }
                         Long up = railUp.get(front);
-                        // Staged (F-22c64): the front rail's fresh drop set down at the front's north edge, a quarter of a block
-                        // short of its middle and still within where vanilla sets a block's drop: where the boat over the
-                        // front, if there is one, has it inside its box. Its own sideways throw taken off.
+                        // Staged (F-22c64): the front rail's fresh drop set where and as the caught failure's was born: at the
+                        // front's north edge, inside the box of the boat over the front if there is one, thrown north.
                         if (bornInBoat && up != null && world.getTime() - up <= 2) {
                             for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(front).expand(0.5, 1, 0.5),
                                     i -> i.isAlive() && i.getStack().isOf(Items.RAIL) && i.age <= 2 && movedDrops.add(i.getUuid()))) {
-                                item.setPosition(front.getX() + 0.5, item.getY(), front.getZ() + 0.29);
-                                item.setVelocity(0, item.getVelocity().y, 0);
+                                // The caught failure's own drop at age 0 (probe, main 3196401, 1 in 20): from its front's corner
+                                // 0.418, 0.556, 0.292, thrown 0.080, 0.200, -0.084.
+                                item.setPosition(front.getX() + 0.418, front.getY() + 0.556, front.getZ() + 0.292);
+                                item.setVelocity(0.080, 0.200, -0.084);
                                 var boats = world.getEntitiesByClass(net.minecraft.entity.vehicle.BoatEntity.class, item.getBoundingBox(), net.minecraft.entity.Entity::isAlive);
                                 stagedDrop[0] = "at " + item.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()) + (boats.isEmpty() ? ", no boat's box about it" : ", inside the boat's box");
                                 KindredMod.LOGGER.info("Bring: the front rail's drop set down at the front's north edge {}", stagedDrop[0]);

@@ -10790,11 +10790,6 @@ final class PlayerRuntime {
         int pushes, failed, doorTries, pickups;
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
-        /**
-         * The cell's front held with its own body (F-22c64): stood in the front to break the boat over it and then the
-         * front rail under its feet, the villager kept in by the body until the job block goes in behind it.
-         */
-        boolean frontHeld;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
         long fetchFrom;
         /**
@@ -11479,28 +11474,6 @@ final class PlayerRuntime {
                 // broken over it, which sets the villager down where it sat, inside the cart's box on the floor. The boat's
                 // wood falls in the cell, out of reach: left there, and said.
                 var state = world.getBlockState(b.slot);
-                // Its boat over the front: broken from the corridor, the front rail's drop was born inside the boat's box
-                // about one time in ten (a block's drop is set down within a quarter of a block of its middle; the boat
-                // overhangs the front by about a fifth). Vanilla pushes an item out of a box it is born in, and here out
-                // north, over the cart and the villager onto the cell's bed, out of reach: the bring ended a rail short
-                // (F-22c64; in CI on #236 and #261). So the front is held with its own body: it stands in the front, breaks
-                // the boat there, which sets the villager down in the cell, then the front rail under its feet, whose drop
-                // is born in its own reach with no boat's box about it. It steps out (CLOSE) to put the job block in.
-                var over = heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat
-                        && boat.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) ? boat : null;
-                if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS) && (over != null || b.frontHeld)) {
-                    if (!player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
-                        return List.of(standAt(bringTask(entry, "into the front"), b.slot));
-                    }
-                    b.frontHeld = true;
-                    if (over != null) {
-                        if (!player.canInteractWithEntity(over, 0)) return List.of(standAt(bringTask(entry, "into the front"), b.slot));
-                        return List.of(new NativeTaskCandidate(bringTask(entry, "break boat from the front"), "native_boat",
-                                Map.of("mode", "break", "target", over.getUuid().toString())));
-                    }
-                    if (!body.miningEligible(b.slot)) return List.of(standAt(bringTask(entry, "into the front"), b.slot));
-                    return List.of(breakAt(bringTask(entry, "front rail underfoot"), b.slot));
-                }
                 if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
                     if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !body.miningEligible(b.slot)) {
                         return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
