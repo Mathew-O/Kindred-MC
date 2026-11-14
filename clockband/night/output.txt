@@ -1,0 +1,3 @@
+clear: night from 12542 day from 23460 (night ticks 10918)
+rain: night from 12010 day from 23992 (night ticks 11982)
+thunder: (night ticks 24000)
