@@ -50,6 +50,12 @@ final class NativePlaceAction extends NativeRecordedAction {
     private ClaimRegistry.Grant claim;
     private String claimKey;
     private BlockPos placedPos;
+
+    /** The reason a placement that left the cell as it was is refused with. */
+    static final String NO_EFFECT = "Block placement produced no effect or was obstructed";
+
+    /** The cell the block goes into, once the placement has worked it out; null before. */
+    BlockPos placedCell() { return placedPos; }
     private BlockItem blockItem;
     private boolean targetWasReplaceable;
     private String dimensionKey;
@@ -196,7 +202,7 @@ final class NativePlaceAction extends NativeRecordedAction {
                     admission.uncertain(result.reason());
                 }
             } else if (before.matches(body) && world.getBlockState(placedPos).isReplaceable()) {
-                result = Step.blocked("Block placement produced no effect or was obstructed", true);
+                result = Step.blocked(NO_EFFECT, true);
                 admission.noEffect(before.description() + "; all owned slots unchanged", result.reason());
             } else {
                 unknown = true;

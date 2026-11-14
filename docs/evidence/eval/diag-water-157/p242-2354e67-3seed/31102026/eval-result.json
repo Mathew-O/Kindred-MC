@@ -1,0 +1,55 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "server": {"tickMsMean": 13.05, "tickMsWorst": 6582.17, "tickMsWorstAt": 1, "ticksOver50ms": 904, "ticksOver200ms": 13, "heapMbMax": 1182, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 4820, "stone_tools": 6220, "iron_ingot": 79720, "iron_pickaxe": 79720},
+      "deaths": [
+        {"tick": 120580, "cause": "Kindred drowned", "x": -74, "y": 51, "z": 262, "light": 3, "timeOfDay": 742, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: Get out of the water: up for air (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 101800, "x": -22, "y": 64, "z": 300, "attempt": 1}, {"tick": 105560, "x": -44, "y": 64, "z": 299, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7293,
+      "chunkMinutes": 34675.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2640, "stone_tools": 3120, "iron_ingot": 6680, "iron_pickaxe": 13680},
+      "deaths": [
+        {"tick": 27949, "cause": "Sol was blown up by Creeper", "x": 7, "y": 17, "z": 148, "light": 2, "timeOfDay": 4111, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: outmatched - Hole up: back into the passage", "stance": "PRESS_ON", "habits": "[]", "task": "Hole up: back into the passage"},
+        {"tick": 106396, "cause": "Sol suffocated in a wall", "x": 212, "y": 65, "z": 381, "light": 0, "timeOfDay": 10558, "dimension": "minecraft:overworld", "hunger": 7, "underSky": false, "stage": "Wood: no progress here for a while - make a way elsewhere: bridge 213, 64, 381", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "make a way elsewhere: bridge 213, 64, 381"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 76600, "x": 251, "y": 36, "z": 363, "attempt": 1}, {"tick": 83140, "x": 249, "y": 36, "z": 384, "attempt": 1}, {"tick": 106280, "x": 213, "y": 63, "z": 381, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7819,
+      "chunkMinutes": 34670.4
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 5900, "stone_tools": 9380, "iron_ingot": 18940, "iron_pickaxe": 76780},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7908,
+      "chunkMinutes": 34680.0
+    }
+  }
+}
