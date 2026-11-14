@@ -1,0 +1,346 @@
+{
+  "kind": "spell",
+  "player": "Kindred",
+  "tick": 27080,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    199,
+    55,
+    296
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5307091595823,
+    8.001335979112149,
+    16.10731732333994
+  ],
+  "yaw": -182.6096,
+  "pitch": 16.544558,
+  "health": 20.0,
+  "food": 11,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 53
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 6
+      }
+    }
+  ],
+  "selected": 3,
+  "timeOfDay": 3079,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - make a way elsewhere: stairs up 2",
+  "task": "make a way elsewhere: stairs up 2",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          15,
+          8,
+          16
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          16,
+          8,
+          17
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          17,
+          9,
+          15
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          16,
+          9,
+          14
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          9,
+          15,
+          1
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        14,
+        12,
+        11
+      ],
+      [
+        16,
+        12,
+        17
+      ],
+      [
+        16,
+        12,
+        16
+      ],
+      [
+        16,
+        12,
+        15
+      ],
+      [
+        16,
+        11,
+        16
+      ],
+      [
+        16,
+        11,
+        15
+      ],
+      [
+        16,
+        11,
+        14
+      ],
+      [
+        16,
+        10,
+        15
+      ],
+      [
+        16,
+        10,
+        14
+      ],
+      [
+        16,
+        10,
+        16
+      ],
+      [
+        16,
+        10,
+        17
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        16,
+        9,
+        17
+      ],
+      [
+        16,
+        9,
+        15
+      ],
+      [
+        12,
+        13,
+        4
+      ],
+      [
+        17,
+        11,
+        15
+      ],
+      [
+        17,
+        10,
+        15
+      ],
+      [
+        15,
+        10,
+        16
+      ],
+      [
+        15,
+        9,
+        16
+      ],
+      [
+        16,
+        8,
+        15
+      ],
+      [
+        16,
+        8,
+        16
+      ],
+      [
+        16,
+        7,
+        16
+      ],
+      [
+        16,
+        7,
+        15
+      ],
+      [
+        16,
+        7,
+        14
+      ],
+      [
+        16,
+        6,
+        15
+      ],
+      [
+        16,
+        6,
+        14
+      ],
+      [
+        16,
+        5,
+        14
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        13,
+        5,
+        12
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "WATER": [
+        [
+          0,
+          7,
+          25
+        ],
+        [
+          0,
+          7,
+          26
+        ],
+        [
+          0,
+          7,
+          27
+        ],
+        [
+          0,
+          7,
+          28
+        ],
+        [
+          0,
+          7,
+          29
+        ],
+        [
+          0,
+          7,
+          24
+        ],
+        [
+          1,
+          7,
+          24
+        ],
+        [
+          1,
+          7,
+          25
+        ]
+      ]
+    },
+    "strandedAt": [
+      16,
+      7,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 8,
+    "exploreStalls": 0,
+    "exploreFailures": 2,
+    "stuckSpells": 1,
+    "stuckLevel": 1,
+    "leftOut": 5076
+  },
+  "log": [
+    "[17:16:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:16:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:16:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[17:16:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:16:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:16:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[17:16:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:16:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:16:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[17:16:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:16:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:16:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[17:16:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:16:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:16:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[17:16:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:16:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:16:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step aside]",
+    "[17:16:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:16:34] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 191, 62, 312 [try elsewhere, toward 191, 62, 312]"
+  ]
+}

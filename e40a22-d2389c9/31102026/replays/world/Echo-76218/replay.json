@@ -1,0 +1,141 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 76218,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    68,
+    60,
+    349
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.339135513564926,
+    8.001335979112142,
+    16.469845572021427
+  ],
+  "yaw": 88.22982,
+  "pitch": 1.3116353,
+  "health": 20.0,
+  "food": 19,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 4
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:bone",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:arrow",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:sandstone",
+        "count": 16
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 4218,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: fight back - Back off from enderman the way it came (tried elsewhere 2 times)",
+  "task": "Back off from enderman the way it came",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was slain by Enderman",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "east",
+    "exploreStalls": 0,
+    "exploreFailures": 0,
+    "stuckSpells": 2,
+    "stuckLevel": 2,
+    "leftOut": 6232
+  },
+  "log": [
+    "[17:27:44] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:45] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:45] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:46] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:46] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:46] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:47] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:47] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:47] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt rabbit]",
+    "[17:27:47] [Server thread/INFO]: Echo native_attack BLOCKED: Target entity out of reach (more than 3 blocks from the eyes to its hitbox); no attack issued [Hunt rabbit]",
+    "[17:27:47] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:48] [Server thread/INFO]: Echo native_attack COMPLETED [Hunt rabbit]",
+    "[17:27:48] [Server thread/INFO]: Echo native_attack BLOCKED: Target entity out of reach (more than 3 blocks from the eyes to its hitbox); no attack issued [Hunt rabbit]",
+    "[17:27:48] [Server thread/INFO]: Echo native_goto COMPLETED [Approach rabbit]",
+    "[17:27:48] [Server thread/INFO]: Echo native_attack BLOCKED: Target entity out of reach (more than 3 blocks from the eyes to its hitbox); no attack issued [Hunt rabbit]",
+    "[17:27:52] [Server thread/INFO]: Echo native_goto COMPLETED [To where it last saw game at 101, 65, 350: walk on]",
+    "[17:27:53] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from enderman the way it came]",
+    "[17:27:54] [Server thread/INFO]: Echo native_goto COMPLETED [Back off from enderman the way it came]",
+    "[17:27:54] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Back off from enderman the way it came]",
+    "[17:27:54] [Server thread/INFO]: Echo died at 84, 68, 365: Echo was slain by Enderman (tick 76218, day, under the sky, hunger 17, armour 0, holding nothing, no shield; doing \"Back off from enderman the way it came\" in \"Wood: fight back - Back off from enderman the way it came (tried elsewhere 2 times)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

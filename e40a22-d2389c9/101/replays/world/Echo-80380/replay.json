@@ -1,0 +1,617 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 80380,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -512,
+    57,
+    -254
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.269050754066484,
+    8.166109260938214,
+    16.535931678554476
+  ],
+  "yaw": 90.51302,
+  "pitch": 12.010012,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.20000005,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:porkchop",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 2
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:beef",
+        "count": 1
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:oak_sapling",
+        "count": 2
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 37
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:white_bed",
+        "count": 1
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:mutton",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 1
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 39
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 55
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 8
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 20
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 16
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 17
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 4
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 6,
+  "timeOfDay": 3860,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward -518, 63, -238",
+  "task": "try elsewhere, toward -518, 63, -238",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        15,
+        0,
+        11
+      ],
+      [
+        15,
+        0,
+        12
+      ],
+      [
+        15,
+        1,
+        11
+      ],
+      [
+        15,
+        1,
+        12
+      ],
+      [
+        15,
+        1,
+        13
+      ],
+      [
+        15,
+        2,
+        14
+      ],
+      [
+        15,
+        2,
+        12
+      ],
+      [
+        15,
+        2,
+        13
+      ],
+      [
+        15,
+        3,
+        13
+      ],
+      [
+        16,
+        0,
+        11
+      ],
+      [
+        16,
+        2,
+        14
+      ],
+      [
+        16,
+        3,
+        13
+      ],
+      [
+        16,
+        4,
+        14
+      ],
+      [
+        16,
+        3,
+        14
+      ],
+      [
+        17,
+        4,
+        14
+      ],
+      [
+        17,
+        3,
+        14
+      ],
+      [
+        17,
+        5,
+        14
+      ],
+      [
+        18,
+        4,
+        14
+      ],
+      [
+        18,
+        6,
+        14
+      ],
+      [
+        18,
+        6,
+        15
+      ],
+      [
+        18,
+        6,
+        16
+      ],
+      [
+        18,
+        5,
+        14
+      ],
+      [
+        18,
+        5,
+        15
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        16,
+        3,
+        14
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "STONE": [
+        [
+          14,
+          0,
+          11
+        ],
+        [
+          14,
+          0,
+          12
+        ],
+        [
+          14,
+          1,
+          11
+        ],
+        [
+          14,
+          1,
+          12
+        ],
+        [
+          14,
+          1,
+          13
+        ],
+        [
+          14,
+          2,
+          12
+        ],
+        [
+          14,
+          2,
+          13
+        ],
+        [
+          15,
+          0,
+          10
+        ],
+        [
+          15,
+          0,
+          13
+        ],
+        [
+          15,
+          1,
+          10
+        ],
+        [
+          15,
+          2,
+          11
+        ],
+        [
+          15,
+          1,
+          14
+        ],
+        [
+          16,
+          0,
+          10
+        ],
+        [
+          16,
+          0,
+          12
+        ],
+        [
+          16,
+          0,
+          13
+        ],
+        [
+          16,
+          1,
+          11
+        ],
+        [
+          16,
+          1,
+          12
+        ],
+        [
+          16,
+          2,
+          15
+        ],
+        [
+          16,
+          2,
+          12
+        ],
+        [
+          16,
+          1,
+          14
+        ],
+        [
+          17,
+          0,
+          11
+        ],
+        [
+          17,
+          0,
+          13
+        ],
+        [
+          17,
+          1,
+          12
+        ],
+        [
+          17,
+          2,
+          14
+        ],
+        [
+          17,
+          1,
+          14
+        ],
+        [
+          17,
+          2,
+          12
+        ],
+        [
+          18,
+          1,
+          13
+        ],
+        [
+          18,
+          2,
+          13
+        ]
+      ],
+      "WATER": [
+        [
+          24,
+          5,
+          1
+        ],
+        [
+          24,
+          5,
+          2
+        ],
+        [
+          24,
+          5,
+          3
+        ],
+        [
+          25,
+          5,
+          3
+        ],
+        [
+          25,
+          5,
+          4
+        ],
+        [
+          25,
+          5,
+          5
+        ],
+        [
+          26,
+          5,
+          5
+        ],
+        [
+          26,
+          5,
+          6
+        ]
+      ]
+    },
+    "exploreHeading": "west",
+    "exploreStalls": 0,
+    "exploreFailures": 2,
+    "stuckSpells": 3,
+    "stuckLevel": 1,
+    "leftOut": 8731
+  },
+  "log": [
+    "[16:53:27] [Server thread/INFO]: Echo native_wait COMPLETED [Asleep in its bed]",
+    "[16:53:28] [Server thread/INFO]: Echo native_break COMPLETED [Take its bed back up in the morning]",
+    "[16:53:28] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -496, 60, -241]",
+    "[16:53:30] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -496, 59, -240 by hand]",
+    "[16:53:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -496, 60, -240]",
+    "[16:53:31] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[16:53:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -496, 61, -240]",
+    "[16:53:32] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -495, 60, -240]",
+    "[16:53:32] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -495, 61, -240]",
+    "[16:53:32] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[16:53:32] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -495, 62, -240]",
+    "[16:53:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -494, 61, -240]",
+    "[16:53:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -494, 62, -240]",
+    "[16:53:33] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[16:53:33] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -494, 63, -240]",
+    "[16:53:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -494, 62, -239]",
+    "[16:53:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -494, 63, -239]",
+    "[16:53:34] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[16:53:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -494, 63, -238]",
+    "[16:53:34] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]"
+  ]
+}

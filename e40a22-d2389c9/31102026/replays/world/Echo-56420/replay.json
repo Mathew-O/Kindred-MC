@@ -1,0 +1,1543 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 56420,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    199,
+    63,
+    220
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.06844163083025,
+    8.0,
+    16.53758402744222
+  ],
+  "yaw": 349.83765,
+  "pitch": 16.517942,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 3
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 32
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 8419,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 214, 71, 258",
+  "task": "try elsewhere, toward 214, 71, 258",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          14,
+          9,
+          32
+        ],
+        "n": 3
+      },
+      {
+        "at": [
+          14,
+          7,
+          31
+        ],
+        "n": 2
+      },
+      {
+        "at": [
+          7,
+          5,
+          32
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          5,
+          4,
+          31
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          4,
+          4,
+          32
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [
+      {
+        "at": [
+          14,
+          15,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          15,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          14,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          14,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          13,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          13,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          13,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          12,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          12,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          12,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          11,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          11,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          11,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          10,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          10,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          10,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          9,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          9,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          9,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          8,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          8,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          8,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          7,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          7,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          7,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          6,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          6,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          6,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          5,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          5,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          5,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          4,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          4,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          4,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          3,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          3,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          3,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          2,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          2,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          2,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          1,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          1,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          14,
+          1,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          15,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          15,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          14,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          14,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          13,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          13,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          13,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          12,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          12,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          12,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          11,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          11,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          11,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          10,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          10,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          10,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          9,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          9,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          9,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          8,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          8,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          8,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          7,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          7,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          7,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          6,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          6,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          6,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          5,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          5,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          5,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          4,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          4,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          4,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          3,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          3,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          3,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          2,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          2,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          2,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          1,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          1,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          13,
+          1,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          15,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          15,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          14,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          14,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          13,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          13,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          13,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          12,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          12,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          12,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          11,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          11,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          11,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          10,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          10,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          10,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          9,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          9,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          9,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          8,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          8,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          8,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          7,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          7,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          7,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          6,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          6,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          6,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          5,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          5,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          5,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          4,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          4,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          4,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          3,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          3,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          3,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          2,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          2,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          2,
+          30
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          1,
+          32
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          1,
+          31
+        ],
+        "left": 0
+      },
+      {
+        "at": [
+          15,
+          1,
+          30
+        ],
+        "left": 0
+      }
+    ],
+    "coverHeld": [],
+    "treesGivenUp": [
+      [
+        13,
+        0,
+        32
+      ]
+    ],
+    "dug": [
+      [
+        2,
+        10,
+        32
+      ],
+      [
+        6,
+        8,
+        32
+      ],
+      [
+        6,
+        7,
+        32
+      ],
+      [
+        6,
+        6,
+        32
+      ],
+      [
+        6,
+        5,
+        32
+      ],
+      [
+        6,
+        4,
+        32
+      ],
+      [
+        6,
+        3,
+        32
+      ],
+      [
+        6,
+        2,
+        32
+      ],
+      [
+        1,
+        10,
+        32
+      ],
+      [
+        5,
+        9,
+        32
+      ],
+      [
+        5,
+        8,
+        32
+      ],
+      [
+        5,
+        7,
+        32
+      ],
+      [
+        5,
+        6,
+        32
+      ],
+      [
+        5,
+        6,
+        31
+      ],
+      [
+        5,
+        5,
+        32
+      ],
+      [
+        5,
+        5,
+        31
+      ],
+      [
+        5,
+        4,
+        32
+      ],
+      [
+        5,
+        3,
+        32
+      ],
+      [
+        0,
+        10,
+        32
+      ],
+      [
+        4,
+        9,
+        32
+      ],
+      [
+        4,
+        9,
+        29
+      ],
+      [
+        4,
+        8,
+        32
+      ],
+      [
+        4,
+        8,
+        30
+      ],
+      [
+        4,
+        6,
+        32
+      ],
+      [
+        4,
+        6,
+        31
+      ],
+      [
+        4,
+        5,
+        32
+      ],
+      [
+        4,
+        5,
+        31
+      ],
+      [
+        4,
+        4,
+        32
+      ],
+      [
+        3,
+        9,
+        32
+      ],
+      [
+        7,
+        7,
+        32
+      ],
+      [
+        3,
+        7,
+        30
+      ],
+      [
+        7,
+        6,
+        32
+      ],
+      [
+        3,
+        6,
+        31
+      ],
+      [
+        7,
+        3,
+        32
+      ],
+      [
+        7,
+        2,
+        32
+      ],
+      [
+        7,
+        1,
+        32
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        5,
+        1,
+        32
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "STONE": [
+        [
+          1,
+          0,
+          32
+        ],
+        [
+          2,
+          0,
+          32
+        ],
+        [
+          3,
+          0,
+          32
+        ],
+        [
+          4,
+          0,
+          32
+        ],
+        [
+          5,
+          0,
+          32
+        ]
+      ],
+      "LEAVES": [
+        [
+          12,
+          11,
+          31
+        ],
+        [
+          12,
+          11,
+          32
+        ],
+        [
+          12,
+          10,
+          31
+        ],
+        [
+          12,
+          10,
+          32
+        ],
+        [
+          12,
+          9,
+          31
+        ],
+        [
+          14,
+          12,
+          31
+        ],
+        [
+          14,
+          11,
+          31
+        ],
+        [
+          14,
+          11,
+          32
+        ],
+        [
+          14,
+          10,
+          31
+        ],
+        [
+          14,
+          10,
+          32
+        ],
+        [
+          14,
+          9,
+          31
+        ],
+        [
+          13,
+          12,
+          32
+        ],
+        [
+          13,
+          11,
+          32
+        ],
+        [
+          13,
+          10,
+          32
+        ],
+        [
+          16,
+          10,
+          31
+        ],
+        [
+          16,
+          10,
+          32
+        ],
+        [
+          16,
+          9,
+          32
+        ],
+        [
+          15,
+          12,
+          31
+        ],
+        [
+          15,
+          12,
+          32
+        ],
+        [
+          15,
+          11,
+          31
+        ],
+        [
+          15,
+          11,
+          32
+        ],
+        [
+          15,
+          10,
+          31
+        ],
+        [
+          15,
+          10,
+          32
+        ],
+        [
+          15,
+          9,
+          31
+        ],
+        [
+          15,
+          9,
+          32
+        ]
+      ]
+    },
+    "strandedAt": [
+      3,
+      7,
+      30
+    ],
+    "strandedWalks": 2,
+    "strandedAgo": 7383,
+    "exploreHeading": "east",
+    "exploreStalls": 0,
+    "exploreFailures": 0,
+    "stuckSpells": 2,
+    "stuckLevel": 2,
+    "leftOut": 5765
+  },
+  "log": [
+    "[17:21:25] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 202, 70, 250 by hand]",
+    "[17:21:25] [Server thread/INFO]: Echo native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Climb toward the surface for logs: clear 202, 72, 250]",
+    "[17:21:25] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[17:21:26] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 202, 70, 250]",
+    "[17:21:26] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[17:21:26] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 202, 70, 250]",
+    "[17:21:27] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[17:21:27] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 202, 70, 250]",
+    "[17:21:27] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:21:27] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 192, 73, 233 [Climb toward the surface for logs: back the way it came]",
+    "[17:21:27] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 203, 71, 250]",
+    "[17:21:28] [Server thread/INFO]: Echo native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[17:21:28] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 203, 71, 250]",
+    "[17:21:28] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:21:28] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 192, 73, 234 [Climb toward the surface for logs: back the way it came]",
+    "[17:21:28] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear 203, 72, 249]",
+    "[17:21:28] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[17:21:29] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3532]",
+    "[17:21:30] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[17:22:13] [Server thread/INFO]: Echo native_goto COMPLETED [try elsewhere, toward 216, 72, 235]"
+  ]
+}
