@@ -52,6 +52,9 @@ public final class NativeHearingGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
                     chunks(world, o.add(-24, 0, -24), o.add(24, 0, 24), true);
+                    // Its yard, twenty over the plot and wider than it, its lava among it, put back as the test ends, passed
+                    // or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-14, -3, -14), o.add(14, 5, 14));
                     for (int x = -14; x <= 14; x++) for (int z = -14; z <= 14; z++) {
                         for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
                         boolean edge = Math.abs(x) == 14 || Math.abs(z) == 14;
@@ -154,6 +157,9 @@ public final class NativeHearingGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
                     chunks(world, o.add(-24, 0, -24), o.add(24, 0, 24), true);
+                    // Its yard, twenty over the plot and wider than it, its lava among it, put back as the test ends, passed
+                    // or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-14, -3, -14), o.add(14, 5, 14));
                     for (int x = -14; x <= 14; x++) for (int z = -14; z <= 14; z++) {
                         for (int y = -3; y <= -1; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
                         boolean edge = Math.abs(x) == 14 || Math.abs(z) == 14;
