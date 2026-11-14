@@ -273,11 +273,13 @@ final class MarketDesk {
             recorder.record(events, () -> done.accept("Sold for " + Coins.show(cents) + " coins"), failure -> {
                 // Nothing was paid: the stacks go back where they were, and the file is written again with them.
                 var back = server.getPlayerManager().getPlayer(seller);
+                EvalItemSources.enter(back);
                 for (var e : taken.entrySet()) {
                     if (back != null && back.getInventory().getStack(e.getKey()).isEmpty()) back.getInventory().setStack(e.getKey(), e.getValue());
                     else if (back != null) back.getInventory().offerOrDrop(e.getValue());
                     else KindredMod.LOGGER.error("Sale {} failed and its seller left: {} x{} to return by an operator", intent, e.getValue().getItem(), e.getValue().getCount());
                 }
+                EvalItemSources.exit(back, "market.return");
                 if (back != null) save(back);
                 cancel(seller, intent, "the sale could not be written", new Factions.At(server.getTicks(), System.currentTimeMillis(), world));
                 done.accept("The sale could not be written; the items are back");
@@ -362,12 +364,14 @@ final class MarketDesk {
             }
             var handed = new ArrayList<ItemStack>();
             int left = count;
+            EvalItemSources.enter(now);
             while (left > 0) {
                 int n = Math.min(left, itemType.getMaxCount());
                 handed.add(new ItemStack(itemType, n));
                 now.getInventory().offerOrDrop(new ItemStack(itemType, n));
                 left -= n;
             }
+            EvalItemSources.exit(now, "market.purchase");
             whenSaved(now, () -> {
                 var at2 = new Factions.At(server.getTicks(), System.currentTimeMillis(), world);
                 recorder.record(List.of(WorldEvent.recorded(at2.tick(), at2.realTimeMs(), world, RECEIVED, buyer, purchase, "", Map.of())),

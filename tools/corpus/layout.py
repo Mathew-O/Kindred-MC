@@ -33,13 +33,12 @@ def spacer_size(source=SOURCE):
 
 
 def world_key(scene):
-    """CorpusGameTests.worldKey: difficulty, thunder, rain, night, time of day."""
+    """CorpusGameTests.worldKey: difficulty, thunder, rain, time of day (day or night is batches.py's clock rule)."""
     if "timeOfDay" not in scene:
         return "~"
     time = scene["timeOfDay"] % 24000
     flag = lambda b: "true" if b else "false"
-    return "%s/%s/%s/%s/%05d" % (scene.get("difficulty", ""), flag(scene.get("thundering")), flag(scene.get("raining")),
-                                 flag(13000 <= time < 23000), time)
+    return "%s/%s/%s/%05d" % (scene.get("difficulty", ""), flag(scene.get("thundering")), flag(scene.get("raining")), time)
 
 
 def load(scenes=SCENES):
