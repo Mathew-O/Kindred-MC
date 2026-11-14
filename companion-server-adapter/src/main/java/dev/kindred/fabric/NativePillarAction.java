@@ -7,8 +7,10 @@ import dev.kindred.core.Checkpoint;
 import dev.kindred.core.ClaimRegistry;
 import dev.kindred.core.EditPolicy;
 import dev.kindred.core.WorkSetup;
+import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.math.BlockPos;
@@ -249,11 +251,33 @@ final class NativePillarAction extends NativeRecordedAction {
      * lying where the player jumps (the block it just cleared overhead) is picked up on the way, as for any player.
      */
     private boolean conserved(InventoryEvidence after, int placed) {
+        return conserved(before, after, blockItem, placed);
+    }
+
+    /** At most {@code placed} of {@code block} gone between {@code before} and {@code after}, and nothing else lost. */
+    static boolean conserved(InventoryEvidence before, InventoryEvidence after, Item block, int placed) {
         Map<Item, Integer> lost = new HashMap<>();
         for (ItemStack stack : before.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), stack.getCount(), Integer::sum);
         for (ItemStack stack : after.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
-        for (var entry : lost.entrySet()) if (entry.getValue() > (entry.getKey() == blockItem ? placed : 0)) return false;
+        for (var entry : lost.entrySet()) if (entry.getValue() > (entry.getKey() == block ? placed : 0)) return false;
         return true;
+    }
+
+    /**
+     * What a pillar step came to, from what can be seen (F-25c6c), for its own close and for a restart's settle (F-31g1).
+     * With the stacks from before: done when its block is in its cell and at most one of it is gone, nothing else lost;
+     * not done when nothing is lost and the cell is still open; else held. With only the fingerprint: not done when the
+     * cell is open and the inventory's fingerprint is unchanged; else held, since a block gone cannot be shown from a hash.
+     */
+    static Settled settleFromEvidence(Before before, InventoryEvidence after, ServerWorld world, BlockPos cell, Block block) {
+        boolean open = world.getBlockState(cell).isReplaceable();
+        if (before.stacks().isPresent()) {
+            var stacks = before.stacks().get();
+            if (world.getBlockState(cell).isOf(block) && conserved(stacks, after, block.asItem(), 1)) return Settled.DONE;
+            if (open && conserved(stacks, after, block.asItem(), 0)) return Settled.NOT_DONE;
+            return Settled.HELD;
+        }
+        return open && after.description().equals(before.fingerprint()) ? Settled.NOT_DONE : Settled.HELD;
     }
 
     @Override
@@ -281,18 +305,22 @@ final class NativePillarAction extends NativeRecordedAction {
         }
         if (flush != null) return flush;
         if (admission != null && admission.phase() == ActionAdmission.Phase.ISSUED) {
-            InventoryEvidence after;
             if (result != null && result.status() == Status.COMPLETED && !unknown) {
                 admission.verify(InventoryEvidence.capture(body).description() + "; " + result.progress(), "Native pillar step verified");
-            } else if (placed && !unknown && cell != null && body.entity().getServerWorld().getBlockState(cell).isOf(blockItem.getBlock())
-                    && conserved(after = InventoryEvidence.capture(body), 1)) {
+                flush = admission.close();
+                return flush;
+            }
+            var after = InventoryEvidence.capture(body);
+            Settled settled = before != null && cell != null && blockItem != null
+                    ? settleFromEvidence(Before.live(before), after, body.entity().getServerWorld(), cell, blockItem.getBlock()) : Settled.HELD;
+            // Done only for a step that placed its block and never lost track of itself: a step that went unknown says so.
+            if (settled == Settled.DONE && placed && !unknown) {
                 // Cut short once its block was down (F-25c6c): what it did is there to be seen, its own block in its cell and
                 // one of it gone, nothing else lost. Held as uncertain instead, a player with no operator to recover it stood
                 // still for the rest of the run (E-40c3's seed 8675309 Echo, some 194,000 ticks).
                 admission.verify(after.description() + "; block=" + Registries.BLOCK.getId(blockItem.getBlock()) + "; pos=" + cell.toShortString()
                         + "; cut short after placing", "Native pillar step verified: its block placed before it was cut short");
-            } else if (before != null && conserved(InventoryEvidence.capture(body), 0) && cell != null
-                    && body.entity().getServerWorld().getBlockState(cell).isReplaceable()) {
+            } else if (settled == Settled.NOT_DONE) {
                 admission.noEffect(before.description() + "; nothing owned lost", "Pillar step cancelled with intact inventory");
             } else {
                 unknown = true;

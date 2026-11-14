@@ -60,6 +60,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## A pillar step cut short once its block is down is recorded for what it did (F-25c6c) — 14 November 2026 (`claude/pillar-reconcile-1114`)
+
+- [F-25c6c: the staged fixture (3 of 3 failing before, 3 of 3 passing after), the 14 pillar fixture classes and the corpus gate (0 confirmed)](evidence/F-25c6c.md).
+
 ## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
 
 - [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
