@@ -240,9 +240,9 @@ final class ModelContextStore implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> {
             PlayerContext context = null;
             try {
-                if (Files.isRegularFile(file(id))) context = gson.fromJson(Files.readString(file(id), StandardCharsets.UTF_8), PlayerContext.class);
+                if (Files.isRegularFile(file(id))) context = DurableFiles.parse(file(id), gson, PlayerContext.class);
             } catch (IOException | RuntimeException unreadable) {
-                KindredMod.LOGGER.warn("Model context for {} could not be read; starting afresh: {}", name, unreadable.toString());
+                KindredMod.LOGGER.warn("Model context for {} could not be read; it starts with none of it, and the file is kept: {}", name, unreadable.toString());
             }
             if (context == null) context = new PlayerContext();
             if (context.notes == null) context.notes = new ArrayList<>();
@@ -263,14 +263,7 @@ final class ModelContextStore implements AutoCloseable {
         String json = gson.toJson(context);
         io.execute(() -> {
             try {
-                Files.createDirectories(folder);
-                Path temp = folder.resolve(id + ".json.tmp");
-                Files.writeString(temp, json, StandardCharsets.UTF_8);
-                try {
-                    Files.move(temp, file(id), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException plain) {
-                    Files.move(temp, file(id), StandardCopyOption.REPLACE_EXISTING);
-                }
+                DurableFiles.write(file(id), json); // F-31h: forced to disk, folder and all.
             } catch (IOException failed) {
                 KindredMod.LOGGER.warn("Model context for {} could not be written: {}", context.player, failed.toString());
             }
