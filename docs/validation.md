@@ -17,8 +17,9 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
-  run alone ×3 on the branch and ×3 on main as the branch has it, its merge-base with origin/main, so merges that land
-  while the gate runs are not counted against it (`KINDRED_CORPUS_ONLY`; `--main-ref REF` picks another, and the report
+  run alone, in a run of its own with no other scene to share its batch's clock, ×3 on the branch and ×3 on main as the
+  branch has it, its merge-base with origin/main, so merges that land while the gate runs are not counted against it
+  (`KINDRED_CORPUS_ONLY`, one id a run: N flags × 3 × 2 server starts; `--main-ref REF` picks another, and the report
   names the one used). It blocks only if the branch fails it 2 of 3
   or more and main passes it 2 of 3 or more; otherwise it is cleared, and the report lists both. The baseline is six
   runs on main's tip, recorded with its sha: pass is 6 of 6, fail is 0 of 6, anything else intermittent. It is renewed
@@ -150,6 +151,8 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c68](evidence/F-22c68.md) (2026-11-12, test only): the late toss-cap staging moves the server's tick only forward; from a start in a day's last 30 ticks the old line stops the server ("Backward tick"), the new one passes 3 of 3; NativeTrustGameTests 9 of 9, 3 runs.
 - [F-22c69](evidence/F-22c69.md) (2026-11-12, CI): the build job's limit from 90 to 120 minutes, the suite having outgrown 90; the GameTests' split across jobs to follow.
 - [F-22c70](evidence/F-22c70.md) (2026-11-12, night shelter): no torch in a cell of the way it is making; the staged fixture 0 of 3 before, 9 of 9 after.
+- [F-22c72](evidence/F-22c72.md) (2026-11-14, night shelter): dug in for the night, no mining step meanwhile from the shelter it dug; the staged fixture 0 of 3 before, 3 of 3 after; 15 night and campaign classes 151 of 151, 3 runs.
+- [F-22c73](evidence/F-22c73.md) (2026-11-14, stranding): refused walks to pick up a drop do not strand it; the staged fixture 0 of 3 before, 18 of 18 with its control after.
 - [F-35h2b](evidence/F-35h2b.md) (2026-11-12, factions at night): at nightfall, not dug in, a faction walk other than DEFEND yields to the goal's dig-in, never for nothing; the staged fixture 0 of 3 before, 3 of 3 after, on its own land; the corpus gate passes; CI on the PR remaining.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)

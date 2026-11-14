@@ -152,6 +152,30 @@ def players_state(server):
     return state
 
 
+def settle(server):
+    """F-31g1: each player a crash left blocked, settled as an operator would: from the evidence where it is plain, else
+    the operator's choice from what it was shown (the block still there: not done; gone: done). Each line kept."""
+    out = {}
+    for name in PLAYERS:
+        status = server.ask("aiplayer native status %s" % name, r"%s \(.*" % name, 15) or ""
+        if "Unresolved action ledger rows" not in status:
+            continue
+        since = len(server.text())
+        server.command("aiplayer native settle %s" % name)
+        ended = server.wait_for(r"%s: (every action settled|\d+ settled;).*|Settlement stopped.*|.*was refused.*" % name, 60, since)
+        lines = [l for l in server.text()[since:].splitlines() if "ettle" in l or "not plain" in l]
+        choice = None
+        if any("not plain from the evidence" in l for l in lines):
+            open_line = next(l for l in lines if "not plain from the evidence" in l)
+            choice = "notdone" if ", still there;" in open_line else "done"
+            since = len(server.text())
+            server.command("aiplayer native settle %s %s" % (name, choice))
+            ended = server.wait_for(r"%s: (every action settled|\d+ settled;).*" % name, 60, since)
+            lines += [l for l in server.text()[since:].splitlines() if "ettle" in l]
+        out[name] = {"choice": choice, "freed": bool(ended and "every action settled" in ended.group(0)), "lines": [l[:400] for l in lines]}
+    return out
+
+
 def segment(args, folder, label, env, kill_after=None, eval_run=False):
     """One start: waits for the players, a game day, then a stop at the console or a kill part way."""
     server = Server(folder, args.memory, env, label)
@@ -173,6 +197,8 @@ def segment(args, folder, label, env, kill_after=None, eval_run=False):
         # The players come back from their saves as the operator guide says (the Factions pack, step 5): a restart
         # leaves each offline, and the operator connects each. Then a few seconds, and what each holds is read.
         record["list"] = server.ask("aiplayer native list", r"Ada \(.*", 20)
+        if args.settle:
+            record["settled"] = settle(server)
         since = len(server.text())
         for name in PLAYERS:
             server.command("aiplayer native connect %s" % name)
@@ -240,6 +266,7 @@ def main():
     parser.add_argument("--segments", type=int, default=4, help="plain starts after the first (evaluation) one")
     parser.add_argument("--kill", type=int, default=2, help="the plain start (1-based) killed part way; 0 for none")
     parser.add_argument("--kill-after", type=int, default=600, help="seconds into the killed start")
+    parser.add_argument("--settle", action="store_true", help="F-31g1: settle each player a kill left blocked before connecting it")
     parser.add_argument("--memory", default="6G")
     parser.add_argument("--timeout", type=int, default=3 * 3600)
     args = parser.parse_args()
@@ -255,7 +282,7 @@ def main():
     scenario = "starters=Kindred,Sol,Echo; players=%s; founders=3; goal=none; mode=factions; ticks=%d" % (",".join(PLAYERS[3:]), args.ticks)
     plain = {k: v for k, v in evalrun.environment(scenario).items() if k != "KINDRED_EVAL"}
     plan = {"seed": args.seed, "jar": jar.name, "scenario": scenario, "ticks": args.ticks, "segments": args.segments,
-            "kill": args.kill, "killAfter": args.kill_after, "memory": args.memory, "minecraft": minecraft, "loader": loader, "fabricApi": fabric}
+            "kill": args.kill, "killAfter": args.kill_after, "settle": args.settle, "memory": args.memory, "minecraft": minecraft, "loader": loader, "fabricApi": fabric}
     (folder.parent / "plan.json").write_text(json.dumps(plan, indent=1) + "\n", encoding="utf-8")
     records = []
     def keep(record):
