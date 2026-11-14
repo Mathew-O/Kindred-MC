@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "name": "Kindred native contract tests",
   "environment": "server",
+  "mixins": ["kindred_gametest.mixins.json"],
   "entrypoints": {
     "main": [
       "dev.kindred.fabric.GameTestPacing"
