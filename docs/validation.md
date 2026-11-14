@@ -67,6 +67,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [F-25c6c: the staged fixture (3 of 3 failing before, 3 of 3 passing after), the 14 pillar fixture classes and the corpus gate (0 confirmed)](evidence/F-25c6c.md).
 
+## Replay players acting after their own batch: not reproduced, closed (F-27a1) — 14 November 2026 (`claude/harness-bleed-1114`)
+
+- [F-27a1: 13 full corpus runs since #258 on five trees, all 0; the one sighting predates #258](evidence/F-27a1.md).
+
 ## The pack's admin checklist closed (M-06j1) — 12 November 2026 (`claude/m06j1-close-1112`)
 
 - [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
