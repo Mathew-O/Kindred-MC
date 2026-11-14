@@ -9917,6 +9917,10 @@ final class PlayerRuntime {
         }
         var move = play.move;
         if (move == null) return null;
+        // Its goal still at its Wood stage (no wooden tool yet): no faction walk but DEFEND, the walk kept for later
+        // (M-06i1a). On seeds-10 (3286df0) the walks took players hundreds of blocks from the trees by their spawn before a
+        // wooden tool: on 101 Echo and Sol 250 blocks west into water, 21 to 114 walks each, Echo never earning one.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && woodFirst(entry)) return null;
         // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
         if (play.setAside(tick).contains(move.target())) {
             settledInFlight(entry, play, player, move);
@@ -9973,6 +9977,17 @@ final class PlayerRuntime {
         return List.of(new NativeTaskCandidate(candidate, "native_goto", Map.of("x", String.valueOf(to.getX()), "y", String.valueOf(to.getY()),
                 "z", String.valueOf(to.getZ()), "range", move.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
+    }
+
+    /**
+     * Whether its goal is still at its Wood stage, no wooden tool earned, with a step it can take (M-06i1a): faction walks
+     * other than DEFEND wait. Where its last step was having nothing it could do where it is (boxed in, no tree it can
+     * reach, water it cannot leave: {@link PortalRunCampaign#stalled}) the walk goes on, and with it the way a refused
+     * faction walk makes out.
+     */
+    private boolean woodFirst(Entry entry) {
+        return goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null
+                && entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.WOOD && !entry.campaign.stalled();
     }
 
     /**
@@ -15526,6 +15541,13 @@ final class PlayerRuntime {
         requireThread();
         Entry entry = entries.get(id);
         return entry == null || entry.campaign == null ? 0 : entry.campaign.lastGain();
+    }
+
+    /** Its native body, for a fixture to ask its campaign's steps as they would be asked; null without one. */
+    NativePlayerBody nativeBodyForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.nativeBody;
     }
 
     /** Its goal's campaign, made as its first plan would make it, for a fixture to stage what the player saw before. */
