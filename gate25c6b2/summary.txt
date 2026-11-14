@@ -1,2 +1,3 @@
 branch-1 (571dc626): 44 min, peak 3061 MB, 115 required tests failed, fence-top 24, disk 3.9G
 branch-2 (571dc626): 48 min, peak 3053 MB, 115 required tests failed, fence-top 26, disk 3.7G
+branch-3 (571dc626): 44 min, peak 3715 MB, 113 required tests failed, fence-top 30, disk 6.2G
