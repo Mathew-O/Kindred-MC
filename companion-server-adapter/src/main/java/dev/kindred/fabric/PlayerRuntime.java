@@ -2514,13 +2514,43 @@ final class PlayerRuntime {
     private void primeWorkstationCaches(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         var world = player.getServerWorld();
-        BlockPos center = BlockPos.ofFloored(player.getEyePos());
+        Vec3d eye = player.getEyePos();
         if (entry.cachedCraftingTablePos == null) {
-            entry.cachedCraftingTablePos = locateWorkstationBlock(world, center, Blocks.CRAFTING_TABLE, 4.5);
+            entry.cachedCraftingTablePos = workstationInReach(world, eye, Blocks.CRAFTING_TABLE, 4.5);
         }
         if (entry.cachedFurnacePos == null) {
-            entry.cachedFurnacePos = locateWorkstationBlock(world, center, Blocks.FURNACE, 4.5);
+            entry.cachedFurnacePos = workstationInReach(world, eye, Blocks.FURNACE, 4.5);
         }
+    }
+
+    /**
+     * The nearest block of {@code block} whose middle is within {@code reach} of the eye: reach as the player's own use of
+     * it is measured ({@link NativePlayerBody#planCraft}, the campaign's walk to a table). Measured instead from the block
+     * the eye is in, a table at a diagonal 4.0 from the eye was out of reach here and in reach to the goal: the goal asked
+     * for the craft, the dispatch dropped it as no longer executable, and the goal, with the table in reach, never walked
+     * nearer (CI on #261: a golden helmet never made from five ingots).
+     */
+    static BlockPos workstationInReach(ServerWorld world, Vec3d eye, net.minecraft.block.Block block, double reach) {
+        BlockPos center = BlockPos.ofFloored(eye);
+        int radius = (int) Math.ceil(reach);
+        int vertical = Math.min(radius, 3) + 1;
+        BlockPos best = null;
+        double bestDistSq = reach * reach;
+        for (int dy = -vertical; dy <= vertical; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = center.add(dx, dy, dz);
+                    double distSq = eye.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                    if (distSq > bestDistSq) continue;
+                    if (!world.isChunkLoaded(pos)) continue;
+                    if (world.getBlockState(pos).isOf(block)) {
+                        bestDistSq = distSq;
+                        best = pos.toImmutable();
+                    }
+                }
+            }
+        }
+        return best;
     }
 
     private static BlockPos locateWorkstationBlock(ServerWorld world, BlockPos center, net.minecraft.block.Block block, double reach) {
@@ -11977,7 +12007,7 @@ final class PlayerRuntime {
         var task = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
                 dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
         // Sticks take no table.
-        if (!recipe.equals("stick") && locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (!recipe.equals("stick") && workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 16);
             if (table == null) {
                 noteBring(entry, "No crafting table near to make " + recipe.replace('_', ' ') + " at");
@@ -13189,7 +13219,7 @@ final class PlayerRuntime {
             entry.kitNamesAt = now + 2400;
             return null;
         }
-        if (locateWorkstationBlock(world, BlockPos.ofFloored(player.getEyePos()), Blocks.CRAFTING_TABLE, 4.5) == null) {
+        if (workstationInReach(world, player.getEyePos(), Blocks.CRAFTING_TABLE, 4.5) == null) {
             BlockPos table = locateWorkstationBlock(world, player.getBlockPos(), Blocks.CRAFTING_TABLE, 12);
             if (table == null) {
                 entry.kitNamesAt = now + 2400;
