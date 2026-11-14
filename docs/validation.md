@@ -17,8 +17,9 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
   (`build/corpus/world` and `build/corpus/kindred` are deleted first; the gate reports what each held). A change that
   touches what a player decides runs `tools/corpus/gate.sh` in its own container. The gate makes three full runs and
   flags a scene that passed every run in `tools/corpus/baseline.json` and now fails 2 of 3. Each flagged scene is then
-  run alone ×3 on the branch and ×3 on main as the branch has it, its merge-base with origin/main, so merges that land
-  while the gate runs are not counted against it (`KINDRED_CORPUS_ONLY`; `--main-ref REF` picks another, and the report
+  run alone, in a run of its own with no other scene to share its batch's clock, ×3 on the branch and ×3 on main as the
+  branch has it, its merge-base with origin/main, so merges that land while the gate runs are not counted against it
+  (`KINDRED_CORPUS_ONLY`, one id a run: N flags × 3 × 2 server starts; `--main-ref REF` picks another, and the report
   names the one used). It blocks only if the branch fails it 2 of 3
   or more and main passes it 2 of 3 or more; otherwise it is cleared, and the report lists both. The baseline is six
   runs on main's tip, recorded with its sha: pass is 6 of 6, fail is 0 of 6, anything else intermittent. It is renewed
