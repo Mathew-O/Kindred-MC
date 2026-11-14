@@ -137,6 +137,29 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * As the last, the front rail's drop set down at the front's north edge as it is born, where the boat over the front
+     * from the cart has it inside its box (F-22c64). A block's drop is set down within a quarter of a block of its middle,
+     * and the boat overhangs the front by about a fifth, so about one time in ten. Broken from the corridor with the boat
+     * there, vanilla pushed it out north over the cart onto the cell's bed, out of reach, and the bring ended a rail short
+     * (in CI on #236 and #261, and 1 in 20 here with a probe). Held: the boat broken first from the front, and the rail
+     * under Hal's feet, its drop is picked up and all 63 come home.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringBornInBoat", tickLimit = 14000)
+    public void aFrontRailsDropBornInsideTheBoatsBoxIsStillPickedUp(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, true, false);
+    }
+
+    /**
+     * As the strolling bring, the front held with Hal's body as its rail comes up (F-22c64); then, from the moment Hal
+     * steps out of the front until the job block is in, the librarian set against the front's open side and pressing out
+     * at a walk. It is never out of its cell, and the job block goes in across the front.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringPressed", tickLimit = 14000)
+    public void aLibrarianPressingAtTheFrontAsHalStepsOutIsHeld(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, true);
+    }
+
+    /**
      * As the last, with a lake eight wide right across the field between the librarian and the hall, and only four dirt
      * in Hal's hand, too few for a bridge of eight: Hal holds the librarian in its boat on its own side, gets in with it,
      * rows it over the ground into the water and across, and gets out on the far bank, the librarian left in the boat on
@@ -232,7 +255,22 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside) {
+        scene(context, make, wander, river, mine, strolling, lake, slowed, derailed, seated, behind, doorAside, false, false);
+    }
+
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
+                              boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside, boolean bornInBoat, boolean pressed) {
         boolean[] asideOnce = {false};
+        // Each cell's front: a rail on it the tick before; the tick its rail came up; whether Hal stood in it then.
+        java.util.Map<BlockPos, Boolean> frontRail = new java.util.HashMap<>();
+        java.util.Map<BlockPos, Long> railUp = new java.util.HashMap<>();
+        java.util.Set<BlockPos> heldWhenUp = new java.util.HashSet<>();
+        java.util.Set<java.util.UUID> movedDrops = new java.util.HashSet<>();
+        String[] stagedDrop = {null};
+        long[] pressFrom = {-1};
+        BlockPos[] pressedFront = {null};
+        String[] escaped = {null};
+        boolean[] jobBlockIn = {false};
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         boolean[] damped = {false};
@@ -457,6 +495,49 @@ public final class NativeBringGameTests implements FabricGameTest {
                         seatLost[0] = "the boat it sat in broken " + (context.getWorld().getTime() - seatedAt[0]) + " ticks after, the librarian riding "
                                 + librarian[0].getVehicle();
                     }
+                    for (var c : TradingHall.cells(3)) {
+                        var world = context.getWorld();
+                        BlockPos front = origin[0].add(c.jobBlock().x(), c.jobBlock().y(), c.jobBlock().z());
+                        boolean rail = world.getBlockState(front).isIn(net.minecraft.registry.tag.BlockTags.RAILS);
+                        var hal = f.player();
+                        if (Boolean.TRUE.equals(frontRail.put(front, rail)) && !rail) {
+                            railUp.put(front, world.getTime());
+                            if (hal != null && hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))) heldWhenUp.add(front);
+                        }
+                        Long up = railUp.get(front);
+                        // Staged (F-22c64): the front rail's fresh drop set down at the front's north edge, a quarter of a block
+                        // short of its middle and still within where vanilla sets a block's drop: where the boat over the
+                        // front, if there is one, has it inside its box. Its own sideways throw taken off.
+                        if (bornInBoat && up != null && world.getTime() - up <= 2) {
+                            for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(front).expand(0.5, 1, 0.5),
+                                    i -> i.isAlive() && i.getStack().isOf(Items.RAIL) && i.age <= 2 && movedDrops.add(i.getUuid()))) {
+                                item.setPosition(front.getX() + 0.5, item.getY(), front.getZ() + 0.29);
+                                item.setVelocity(0, item.getVelocity().y, 0);
+                                var boats = world.getEntitiesByClass(net.minecraft.entity.vehicle.BoatEntity.class, item.getBoundingBox(), net.minecraft.entity.Entity::isAlive);
+                                stagedDrop[0] = "at " + item.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()) + (boats.isEmpty() ? ", no boat's box about it" : ", inside the boat's box");
+                                KindredMod.LOGGER.info("Bring: the front rail's drop set down at the front's north edge {}", stagedDrop[0]);
+                            }
+                        }
+                        // Staged: from the tick Hal, having held the front as its rail came up, steps out of it, until the job
+                        // block is in, the librarian is against the front's open side and pressing out at a walk.
+                        boolean jobIn = world.getBlockState(front).isOf(Blocks.LECTERN);
+                        if (jobIn && heldWhenUp.contains(front)) jobBlockIn[0] = true;
+                        if (pressed && heldWhenUp.contains(front) && !jobIn && hal != null && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))) {
+                            var v = librarian[0];
+                            if (pressFrom[0] < 0 && v.getVehicle() == null) {
+                                pressFrom[0] = world.getTime();
+                                pressedFront[0] = front;
+                                v.refreshPositionAndAngles(front.getX() + 0.5, front.getY(), front.getZ() - 0.31, 0, 0);
+                                KindredMod.LOGGER.info("Bring: the librarian against the front's open side as Hal steps out, at {}",
+                                        v.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                            }
+                            if (pressFrom[0] >= 0) v.setVelocity(0, v.getVelocity().y, 0.1);
+                        }
+                        if (pressedFront[0] != null && escaped[0] == null && librarian[0].getBoundingBox().minZ >= pressedFront[0].getZ()) {
+                            escaped[0] = "the librarian out of its cell into the front at " + librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())
+                                    + ", " + (world.getTime() - pressFrom[0]) + " ticks after Hal stepped out";
+                        }
+                    }
                     if (context.getWorld().getTime() % 100 == 0) {
                         KindredMod.LOGGER.info("Bring: the librarian at {}, riding {}, health {}{}", librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()),
                                 librarian[0].getVehicle(), librarian[0].getHealth(),
@@ -468,6 +549,12 @@ public final class NativeBringGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                   try {
                     context.assertTrue(offLine[0] == null, "Kept on the rails, never rolled off the line's start: " + offLine[0]);
+                    if (bornInBoat) context.assertTrue(stagedDrop[0] != null, "The front rail's drop staged at the front's north edge");
+                    if (pressed) {
+                        context.assertTrue(pressFrom[0] >= 0, "The librarian pressed at the front as Hal stepped out of it");
+                        context.assertTrue(escaped[0] == null, "The librarian held in its cell: " + escaped[0]);
+                        context.assertTrue(jobBlockIn[0], "The job block in across the front Hal held");
+                    }
                     context.assertTrue(seatLost[0] == null, "Held in the boat it stepped into, never broken out of it: " + seatLost[0]);
                     var world = context.getWorld();
                     var cell = TradingHall.cells(3).stream().filter(c -> librarian[0].getBlockX() == origin[0].getX() + c.stand().x()).findFirst();
