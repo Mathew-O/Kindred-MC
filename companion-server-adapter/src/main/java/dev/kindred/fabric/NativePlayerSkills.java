@@ -57,6 +57,9 @@ final class NativePlayerSkills {
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
             case "native_retreat" -> new SkillDescriptor(id, Set.of("direction", "blocks"), Set.of(), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(2), 0);
+            // Rising through lava is slow, a block in a second and a half or so; a lake's depth and width take a while.
+            case "native_lava_escape" -> new SkillDescriptor(id, Set.of("x", "y", "z"), Set.of(), Set.of(), Set.of(),
+                    Duration.ofSeconds(40), Duration.ofSeconds(4), 0);
             case "native_equip" -> new SkillDescriptor(id, Set.of("slot"), Set.of("swap"), Set.of(), Set.of(),
                     Duration.ofSeconds(5), Duration.ofSeconds(5), 0);
             case "native_mine" -> new SkillDescriptor(id, Set.of("x", "y", "z", "slot"), Set.of(), Set.of("break"), Set.of(dev.kindred.core.EditPolicy.Kind.BREAK),
@@ -260,6 +263,10 @@ final class NativePlayerSkills {
             return new Traverse(body, lease, habits, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
         }
         if (id.equals("native_retreat")) return new Retreat(body, lease, arguments.get("direction"), Integer.parseInt(arguments.get("blocks")));
+        if (id.equals("native_lava_escape")) {
+            return new LavaEscape(body, lease, new BlockPos(Integer.parseInt(arguments.get("x")), Integer.parseInt(arguments.get("y")),
+                    Integer.parseInt(arguments.get("z"))));
+        }
         if (id.equals("native_swap")) {
             int source = Integer.parseInt(arguments.get("source"));
             int target = Integer.parseInt(arguments.get("target"));
@@ -313,6 +320,7 @@ final class NativePlayerSkills {
                 || (task instanceof NativeStepInSkill && intent == NativePlayerBody.Intent.MOVE)
                 || (task instanceof NativeFishSkill && intent == NativePlayerBody.Intent.FISH)
                 || (task instanceof Retreat ret && intent == NativePlayerBody.Intent.MOVE && ret.safe())
+                || (task instanceof LavaEscape escape && intent == NativePlayerBody.Intent.MOVE && escape.dryStand())
                 || (task instanceof Equip equip && intent == NativePlayerBody.Intent.EQUIP && equip.permits())
                 || (task instanceof Swap swap && intent == NativePlayerBody.Intent.SWAP)
                 || (task instanceof Attack attack && (intent == NativePlayerBody.Intent.ATTACK || intent == NativePlayerBody.Intent.SELECT_SLOT))
@@ -832,6 +840,69 @@ final class NativePlayerSkills {
                 return Step.blocked("Movement authority denied", true);
             }
             return Step.running(Map.of("remainingMillimeters", String.valueOf(Math.round(distance * 1000))), true);
+        }
+
+        @Override public void halt() { body.stopInputs(); }
+        @Override public boolean settled() { return true; }
+    }
+
+    /**
+     * Out of lava to the dry ground the runtime found (F-25c6a): swimming up and across toward it, the jump held so the
+     * body rises and the fluid's edge lifts it out onto the bank. The navigator never routes into lava and the retreat
+     * goes one to three blocks on the level, so a body sunk in a lake of it, with lava on every side, had no way out at
+     * all: each task it began was cancelled as a hazard and nothing else began (E-40c3: seed 303 Kindred at the bottom of
+     * the Nether's lava sea for some 105,000 ticks). Done once out of the lava and standing; given up if the bank stops
+     * being dry, solid ground.
+     */
+    private static final class LavaEscape implements SkillBody {
+        final NativePlayerBody body;
+        final Supplier<ActionLease> lease;
+        final BlockPos goalFeet;
+        final Vec3d goal;
+        double best = Double.MAX_VALUE;
+
+        LavaEscape(NativePlayerBody body, Supplier<ActionLease> lease, BlockPos goalFeet) {
+            this.body = body;
+            this.lease = lease;
+            this.goalFeet = goalFeet;
+            goal = Vec3d.ofBottomCenter(goalFeet);
+            if (goal.squaredDistanceTo(body.entity().getPos()) > 24 * 24) throw new IllegalArgumentException("Lava escape is limited to 24 blocks");
+            if (!dryStand()) throw new IllegalArgumentException("Lava escape needs dry, solid, loaded ground to make for");
+        }
+
+        boolean dryStand() {
+            var world = body.entity().getServerWorld();
+            BlockPos ground = goalFeet.down();
+            if (!world.isChunkLoaded(goalFeet) || !world.isInBuildLimit(goalFeet.up()) || !world.getWorldBorder().contains(goalFeet)) return false;
+            var support = world.getBlockState(ground);
+            if (!support.isSideSolidFullSquare(world, ground, Direction.UP) || support.isOf(Blocks.MAGMA_BLOCK) || support.isOf(Blocks.CACTUS)) return false;
+            for (BlockPos cell : new BlockPos[]{goalFeet, goalFeet.up()}) {
+                if (!world.getFluidState(cell).isEmpty()) return false;
+                var state = world.getBlockState(cell);
+                if (state.isOf(Blocks.FIRE) || state.isOf(Blocks.SOUL_FIRE) || !state.getCollisionShape(world, cell).isEmpty()) return false;
+            }
+            return true;
+        }
+
+        @Override
+        public Step tick(Map<String, String> args, Optional<Checkpoint> checkpoint, boolean fresh) {
+            if (checkpoint.isPresent()) return Step.blocked("Lava escape cannot replay a saved route", true);
+            var player = body.entity();
+            Vec3d delta = goal.subtract(player.getPos());
+            if (!player.isInLava() && player.isOnGround()) {
+                body.stopInputs();
+                return Step.completed(Map.of("out", "true", "remainingMillimeters", String.valueOf(Math.round(delta.length() * 1000))));
+            }
+            if (!dryStand()) return Step.blocked("Lava escape: the bank it made for is no longer dry, solid ground", true);
+            double distance = delta.length();
+            boolean closer = distance < best - 0.05;
+            if (closer) best = distance;
+            float yaw = (float) Math.toDegrees(Math.atan2(-delta.x, delta.z));
+            // Across while rising: the jump swims it up, and at the bank's wall the fluid's own edge hop lifts it over.
+            if (!body.move(lease.get(), delta.horizontalLength() < 0.2 ? 0 : 1.0f, 0, true, true, yaw)) {
+                return Step.blocked("Movement authority denied", true);
+            }
+            return Step.running(Map.of("remainingMillimeters", String.valueOf(Math.round(distance * 1000))), closer);
         }
 
         @Override public void halt() { body.stopInputs(); }

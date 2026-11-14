@@ -31,13 +31,13 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
     private static final int EXPLORE_TOP = 6;
 
     /** The towers' tops behind the wall, out of its sight: the walks go at its own height. */
-    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "seenColumnsWalled", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seenColumnsWalled", tickLimit = 400)
     public void aTopBehindAWallItCannotSeeSetsNoWalksHeight(TestContext context) {
         run(context, true);
     }
 
     /** No wall: it sees the towers' tops, and its walks go to them as before. */
-    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "seenColumnsOpen", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "seenColumnsOpen", tickLimit = 400)
     public void aTopInItsSightIsWhereItsWalksGo(TestContext context) {
         run(context, false);
     }
@@ -113,8 +113,14 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var player = f.player();
+                    // The yard inside its own wide structure (F-22c75b): its kept box runs 32 out each way and 52 east of
+                    // its middle, 30 over the ground, and its looks go 28 out. On an empty structure's plot that lay over
+                    // the tests beside it: a cave-rim test's barrier roof, 9 over the yard's floor, was a far top its
+                    // explore look took (#261, #280 and #297's CI). The wide structure's sides keep every neighbour clear
+                    // of it; its middle is put in 35 to 50 from the structure's west side and 53 to 68 from its north.
+                    BlockPos in = context.getAbsolutePos(new BlockPos(42, 0, 60));
                     BlockPos up = player.getBlockPos().up(30);
-                    o[0] = new BlockPos((up.getX() & ~15) + 8, up.getY(), (up.getZ() & ~15) + 8);
+                    o[0] = new BlockPos((in.getX() & ~15) + 8, up.getY(), (in.getZ() & ~15) + 8);
                     leg[0] = yard(context, o[0], walled);
                     player.refreshPositionAndAngles(o[0].getX() + 0.5, o[0].getY(), o[0].getZ() + 0.5, 0, 0);
                     player.setVelocity(Vec3d.ZERO);

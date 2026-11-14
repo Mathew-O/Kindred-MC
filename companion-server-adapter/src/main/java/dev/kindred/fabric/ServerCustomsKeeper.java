@@ -56,10 +56,10 @@ final class ServerCustomsKeeper implements AutoCloseable {
         ServerCustoms customs = new ServerCustoms();
         try {
             if (Files.isRegularFile(file)) {
-                customs = ServerCustoms.of(new Gson().fromJson(Files.readString(file, StandardCharsets.UTF_8), ServerCustoms.Snapshot.class));
+                customs = ServerCustoms.of(DurableFiles.parse(file, new Gson(), ServerCustoms.Snapshot.class));
             }
         } catch (IOException | RuntimeException unreadable) {
-            KindredMod.LOGGER.warn("The server's customs could not be read; starting afresh: {}", unreadable.toString());
+            KindredMod.LOGGER.warn("The server's customs could not be read; it starts with none of it, and the file is kept: {}", unreadable.toString());
         }
         return new ServerCustomsKeeper(file, customs);
     }
@@ -121,10 +121,7 @@ final class ServerCustomsKeeper implements AutoCloseable {
         var snapshot = customs.snapshot();
         io.execute(() -> {
             try {
-                Files.createDirectories(file.getParent());
-                Path written = file.resolveSibling(file.getFileName() + ".tmp");
-                Files.writeString(written, gson.toJson(snapshot), StandardCharsets.UTF_8);
-                Files.move(written, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                DurableFiles.write(file, gson.toJson(snapshot)); // F-31h: forced to disk, folder and all.
             } catch (IOException | RuntimeException failed) {
                 KindredMod.LOGGER.warn("The server's customs could not be written: {}", failed.toString());
             }
