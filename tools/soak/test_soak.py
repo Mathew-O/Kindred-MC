@@ -64,6 +64,18 @@ class RecordCompareTest(unittest.TestCase):
         self.assertEqual([2], [r[0][0] for r in changed])
         self.assertEqual({"coins": 1}, dict(again))  # a claim of another chunk is not the same claim
 
+    def test_a_days_tallies_are_summed_and_only_those_after_the_last_snapshot_counted_since(self):
+        # F-31b1: one game day pruned over two passes has two tallies, and its figures are their sum.
+        rows = {1: self.row(1, "action.pruned", "day_start_ms=0&total=1&verified=1&first=a&last=a", subject="0"),
+                2: self.row(2, "action.pruned", "day_start_ms=0&total=2&failed=1&cancelled=1&first=b&last=c", subject="0"),
+                3: self.row(3, "claim", "", place="1,2"),
+                4: self.row(4, "action.pruned", "day_start_ms=1200000&total=4&verified=4", subject="1")}
+        self.assertEqual({"total": 7, "verified": 5, "failed": 1, "cancelled": 1}, dict(report.tallied(rows)))
+        self.assertEqual({"total": 4, "verified": 4}, dict(report.tallied(rows, after=3)))
+        before = {5: self.row(5, "action.folded", "state=VERIFIED"), 6: self.row(6, "claim", "", place="1,2")}
+        lost, _, _ = report.compare(before, {6: before[6]})
+        self.assertEqual([], lost)  # a pruned summary is counted against the tallies, not as lost
+
     def test_a_memory_entry_seen_again_since_is_the_same_entry(self):
         earlier = report.entries({"peers": [{"id": "p1", "lastSeen": 10}, {"id": "p2", "lastSeen": 11}]})
         later = report.entries({"peers": [{"id": "p1", "lastSeen": 99}]})
