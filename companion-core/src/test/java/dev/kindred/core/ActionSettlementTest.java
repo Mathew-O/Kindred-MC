@@ -91,4 +91,29 @@ class ActionSettlementTest {
         assertEquals(new ActionSettlement.Target("minecraft:deepslate", -449, -54, -296), target);
         assertTrue(ActionSettlement.target("native_place", "minecraft:deepslate at 1, 2, 3").isEmpty());
     }
+
+    @Test
+    void theBreaksRuleIsTheOneDecideApplies() {
+        assertEquals(ActionSettlement.Verdict.NOT_DONE, ActionSettlement.breakRule(true, inventory(BEFORE), inventory(BEFORE)));
+        assertEquals(ActionSettlement.Verdict.DONE, ActionSettlement.breakRule(false, inventory(BEFORE), inventory(BEFORE)));
+        assertEquals(ActionSettlement.Verdict.AMBIGUOUS, ActionSettlement.breakRule(true, inventory(BEFORE), inventory(OTHER)));
+        assertEquals(ActionSettlement.Verdict.AMBIGUOUS, ActionSettlement.breakRule(false, inventory(BEFORE), inventory(OTHER)));
+        assertEquals(ActionSettlement.Verdict.AMBIGUOUS, ActionSettlement.breakRule(false, "no fingerprint", inventory(BEFORE)));
+        assertEquals(ActionSettlement.Verdict.AMBIGUOUS, ActionSettlement.breakRule(false, inventory(BEFORE), null));
+        for (boolean present : new boolean[] {true, false}) for (String now : new String[] {BEFORE, OTHER}) {
+            assertEquals(ActionSettlement.breakRule(present, inventory(BEFORE), inventory(now)),
+                    ActionSettlement.decide(dig(inventory(BEFORE)), present ? "minecraft:stone" : "minecraft:air", inventory(now)).verdict());
+        }
+    }
+
+    @Test
+    void thePillarsCellIsReadFromItsOwnPreconditionsAndDecideLeavesItToThePillarsRule() {
+        String preconditions = "block=minecraft:cobblestone; pos=-12, 64, 7; setupRevision=3";
+        assertEquals(new ActionSettlement.Target("minecraft:cobblestone", -12, 64, 7), ActionSettlement.pillarCell("native_pillar", preconditions).orElseThrow());
+        assertTrue(ActionSettlement.pillarCell("native_break", preconditions).isEmpty());
+        assertTrue(ActionSettlement.pillarCell("native_pillar", "minecraft:cobblestone at -12, 64, 7").isEmpty());
+        assertTrue(ActionSettlement.target("native_pillar", preconditions).isEmpty());
+        var step = uncertain("native_pillar", preconditions, inventory(BEFORE));
+        assertEquals(ActionSettlement.Verdict.AMBIGUOUS, ActionSettlement.decide(step, "minecraft:air", inventory(BEFORE)).verdict());
+    }
 }

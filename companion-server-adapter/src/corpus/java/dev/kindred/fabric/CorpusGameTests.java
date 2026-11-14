@@ -27,8 +27,10 @@ import net.minecraft.test.GameTest;
  *   structure is {@code kindred_corpus:corpus/<id>}, and {@link ReplayGameTests#play} plays it;</li>
  *   <li>a staged fixture: {@code {"fixture": "<GameTest class>.<method>", "corpus": {...}}}, a GameTest of the contract
  *   suite run as it stands, with its own template, ticks and staging (its javadoc says how it is staged).</li>
- * </ul> Scenes go at most ten to a batch, side by side, a batch's scenes sharing difficulty, weather and day or night
- * ({@link #worldKey}), since they share one world. With {@code KINDRED_CORPUS_ONLY} set to scene ids
+ * </ul> Scenes go at most ten to a batch, side by side, a batch's scenes sharing difficulty and weather ({@link #worldKey}),
+ * since they share one world, and day and night: every replay sets the world clock to its own record as it starts, so the
+ * last of a batch to start sets it for all, and a batch holds only scenes that are night at the same ticks of their runs
+ * under any of its scenes' times ({@link #clockFits}). With {@code KINDRED_CORPUS_ONLY} set to scene ids
  * (comma-separated) only those run, together in one batch: the gate's confirming runs of a flagged scene. The suite
  * is its own mod and run ({@code runCorpus}), so the contract tests and the corpus never run together.
  */
@@ -46,6 +48,21 @@ public final class CorpusGameTests implements FabricGameTest {
      * {@code tools/corpus/layout.py} works the places out.
      */
     static final String SPACER = "kindred_corpus:spacer";
+    /**
+     * Night in the overworld as vanilla's {@code World.isNight} has it (ambient darkness 4 or more, from
+     * {@code calculateAmbientDarkness}), as [from, to) of the day's 24000 ticks: worked out over every tick with 1.21.1's own
+     * {@code MathHelper}, rain and thunder at full strength. A player shelters for the night by it (PortalRunCampaign's
+     * {@code mayShelterNow}). In thunder it is night all day.
+     */
+    static final int NIGHT_CLEAR_FROM = 12542, NIGHT_CLEAR_TO = 23460, NIGHT_RAIN_FROM = 12010, NIGHT_RAIN_TO = 23992;
+    /**
+     * At most this many ticks of a scene's run may be night under a batch-mate's time and day under its own, or the
+     * reverse. Batched by time alone, a scene of 11004 played into dusk at 11529, and two of 12851 and 12912 at dawn
+     * (#283's counts: 20 of 422 scenes under another day or night than their own). 200 ticks, at most 10 s of game time at
+     * the edge of dusk or dawn: 69 batches, about 1.34 times the run of the old 46; 0 made 118, about twice
+     * (docs/evidence/F-27a-clock-batches.md).
+     */
+    static final int CLOCK_TOLERANCE = 200;
     static final int SPACER_WIDTH = 90, SPACER_DEPTH = 130;
 
     @CustomTestProvider
@@ -65,19 +82,24 @@ public final class CorpusGameTests implements FabricGameTest {
             }
             // Batched by what a batch's scenes share, fixtures last: one world clock, weather and difficulty for ten side by
             // side, each replay setting them to its own record as it starts, so the last of ten to start set them for all
-            // ten. Scenes go together by difficulty, weather, day or night, then the time itself.
+            // ten. Scenes go together by difficulty and weather, then by the time itself, from 0 to 23999.
             var order = new ArrayList<>(scenes.keySet());
             order.sort(java.util.Comparator.comparing((String id) -> worldKey(scenes.get(id))).thenComparing(java.util.Comparator.naturalOrder()));
-            // A batch is at most ten scenes, all of one group: a new group starts a new batch.
+            // A batch is at most ten scenes, all of one group, and only scenes whose day and night its clock keeps
+            // (clockFits): a new group, or a scene that does not fit, starts a new batch.
             int batchNumber = -1, inBatch = BATCH;
             String group = null;
+            var members = new ArrayList<JsonObject>();
             for (String id : order) {
                 JsonObject scene = scenes.get(id);
                 String key = worldKey(scene), its = key.substring(0, Math.max(0, key.lastIndexOf('/')));
-                if (inBatch >= BATCH || !its.equals(group)) {
+                members.add(scene);
+                if (inBatch >= BATCH || !its.equals(group) || !clockFits(members)) {
                     batchNumber++;
                     inBatch = 0;
                     group = its;
+                    members.clear();
+                    members.add(scene);
                 }
                 inBatch++;
                 String batch = "corpus_" + batchNumber;
@@ -99,13 +121,51 @@ public final class CorpusGameTests implements FabricGameTest {
         return tests;
     }
 
-    /** What a scene sets for the whole world, as a sort key: difficulty, thunder, rain, night, time of day. */
+    /**
+     * What a scene sets for the whole world, as a sort key: difficulty, thunder, rain, time of day. Day or night is not in
+     * it: {@link #clockFits} decides that, so a batch never runs from 23999 round to 0 or holds a dawn scene with a dusk one.
+     */
     static String worldKey(JsonObject scene) {
         if (!scene.has("timeOfDay")) return "~";
         long time = Math.floorMod(scene.get("timeOfDay").getAsLong(), 24000L);
-        boolean night = time >= 13000 && time < 23000;
-        return String.format("%s/%b/%b/%b/%05d", scene.has("difficulty") ? scene.get("difficulty").getAsString() : "",
-                scene.has("thundering") && scene.get("thundering").getAsBoolean(), scene.has("raining") && scene.get("raining").getAsBoolean(), night, time);
+        return String.format("%s/%b/%b/%05d", scene.has("difficulty") ? scene.get("difficulty").getAsString() : "",
+                scene.has("thundering") && scene.get("thundering").getAsBoolean(), scene.has("raining") && scene.get("raining").getAsBoolean(), time);
+    }
+
+    /**
+     * Whether these scenes, side by side, each keep their own day and night whichever of them sets the clock: for every
+     * scene and every other's time, the ticks of its run that are night under that time and day under its own, or the
+     * reverse, are at most {@link #CLOCK_TOLERANCE}. Which of a batch sets the clock is whichever reaches its staging last,
+     * so every pair is checked, not only the latest time.
+     */
+    static boolean clockFits(java.util.List<JsonObject> scenes) {
+        for (JsonObject scene : scenes) {
+            if (!scene.has("timeOfDay")) continue;
+            for (JsonObject other : scenes) {
+                if (other != scene && other.has("timeOfDay")
+                        && clockDifference(scene, other.get("timeOfDay").getAsLong()) > CLOCK_TOLERANCE) return false;
+            }
+        }
+        return true;
+    }
+
+    /** The ticks of the scene's run that are night under {@code clock} and day under its own time, or the reverse. */
+    static int clockDifference(JsonObject scene, long clock) {
+        long own = scene.get("timeOfDay").getAsLong();
+        int ticks = scene.has("ticks") ? scene.get("ticks").getAsInt() : 1200;
+        boolean rain = scene.has("raining") && scene.get("raining").getAsBoolean(), thunder = rain && scene.has("thundering") && scene.get("thundering").getAsBoolean();
+        int differ = 0;
+        for (int t = 0; t < ticks; t++) {
+            if (night(own + t, rain, thunder) != night(clock + t, rain, thunder)) differ++;
+        }
+        return differ;
+    }
+
+    /** Vanilla's {@code isNight} in the overworld at this time, rain and thunder at full strength ({@link #NIGHT_CLEAR_FROM}). */
+    static boolean night(long time, boolean rain, boolean thunder) {
+        if (thunder) return true;
+        long t = Math.floorMod(time, 24000L);
+        return rain ? t >= NIGHT_RAIN_FROM && t < NIGHT_RAIN_TO : t >= NIGHT_CLEAR_FROM && t < NIGHT_CLEAR_TO;
     }
 
     /** The empty test after scene {@code id}: not required, done at once; only the room it takes counts. */

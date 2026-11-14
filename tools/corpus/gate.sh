@@ -17,9 +17,10 @@
 # start, so a scene confirmed beside another could pass or fail by that one's clock: e40a20-79a9aad-31102026-echo-102580
 # passed 3 of 3 beside a dusk scene (12119) and 0 of 3 alone on the same build (claude/corpus-data-dc5ad4d-1114).
 # Exit 0 when the gate passes, 1 when a confirmed scene blocks, 2 when a run could not be made.
-# About 25 minutes a full run on a 4-core container (ten scenes to a batch), so about 75 minutes for three. The confirm
-# is N flagged scenes x 3 x 2 (here and main) server starts, each well under a minute for one scene. Run it with nothing
-# else on the cores: the scenes are timing-sensitive.
+# About 40 minutes a full run on a 4-core container (measured 40 to 41 over six runs on 16cb7a2, at most ten scenes to a
+# batch, each batch kept to its scenes' own day and night), so about 2 hours for three. The confirm is N flagged scenes
+# x 3 x 2 (here and main) server starts of one scene each, 34 to 40 seconds apiece, so about 4 minutes a flagged scene.
+# Run it with nothing else on the cores: the scenes are timing-sensitive.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 here=$(pwd)

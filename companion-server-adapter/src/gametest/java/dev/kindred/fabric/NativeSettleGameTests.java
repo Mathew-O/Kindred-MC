@@ -26,11 +26,17 @@ import net.minecraft.util.math.BlockPos;
  * </ul>
  * In each, the settlement is in the Record with who made it and what was seen, the block is as it was staged (nothing dug
  * again), and the player comes back holding exactly what it saved.
+ *
+ * A pillar step a crash cut short is settled by the pillar's own rule (F-25c6c), from its recorded fingerprint only:
+ * <ul>
+ *   <li>its cell still open and its things as they were: settled not done from the evidence;</li>
+ *   <li>its block in its cell: a block gone cannot be shown from a hash, so left blocked until the operator chooses.</li>
+ * </ul>
  */
 public final class NativeSettleGameTests implements FabricGameTest {
     private static final BlockPos TARGET = new BlockPos(6, 2, 6);
 
-    private enum Case { NOT_DONE, DONE, AMBIGUOUS }
+    private enum Case { NOT_DONE, DONE, AMBIGUOUS, PILLAR_OPEN, PILLAR_FILLED }
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "settleNotDone", tickLimit = 2400)
     public void aDigACrashCutShortWithTheBlockStillThereIsSettledNotDoneFromTheEvidence(TestContext context) {
@@ -47,6 +53,16 @@ public final class NativeSettleGameTests implements FabricGameTest {
         run(context, Case.AMBIGUOUS);
     }
 
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "settlePillarOpen", tickLimit = 2400)
+    public void aPillarStepACrashCutShortWithItsCellOpenIsSettledNotDoneByThePillarsRule(TestContext context) {
+        run(context, Case.PILLAR_OPEN);
+    }
+
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "settlePillarFilled", tickLimit = 2400)
+    public void aPillarStepWithItsBlockInItsCellIsHeldForTheOperatorSinceAHashCannotShowABlockGone(TestContext context) {
+        run(context, Case.PILLAR_FILLED);
+    }
+
     private void run(TestContext context, Case staged) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         var server = context.getWorld().getServer();
@@ -55,6 +71,8 @@ public final class NativeSettleGameTests implements FabricGameTest {
         @SuppressWarnings("unchecked") CompletableFuture<Void>[] seeded = new CompletableFuture[1];
         @SuppressWarnings("unchecked") CompletableFuture<String[]>[] checked = new CompletableFuture[1];
         BlockPos target = context.getAbsolutePos(TARGET);
+        boolean pillar = staged == Case.PILLAR_OPEN || staged == Case.PILLAR_FILLED;
+        boolean operator = staged == Case.AMBIGUOUS || staged == Case.PILLAR_FILLED;
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
@@ -67,7 +85,7 @@ public final class NativeSettleGameTests implements FabricGameTest {
                     inventory.setStack(0, pick);
                     inventory.setStack(1, new ItemStack(Items.BREAD, 3));
                     inventory.setStack(9, new ItemStack(Items.COBBLESTONE, 20));
-                    context.getWorld().setBlockState(target, Blocks.STONE.getDefaultState());
+                    context.getWorld().setBlockState(target, (pillar ? Blocks.AIR : Blocks.STONE).getDefaultState());
                     before[0] = InventoryEvidence.capture(inventory).description();
                 })
                 .createAndAdd(() -> {
@@ -79,18 +97,22 @@ public final class NativeSettleGameTests implements FabricGameTest {
                     // The crash: the dig recorded as dispatched, the outcome never written. What it held, as the evidence
                     // before the dig: the real fingerprint, or another inventory's where the evidence must not agree.
                     String evidence = staged == Case.AMBIGUOUS ? "native owned inventory slots=41; sha256=" + "0".repeat(64) : before[0];
-                    String preconditions = "minecraft:stone at " + target.toShortString();
+                    String preconditions = pillar ? "block=minecraft:cobblestone; pos=" + target.toShortString() + "; setupRevision=1"
+                            : "minecraft:stone at " + target.toShortString();
+                    String kind = pillar ? "native_pillar" : "native_break";
                     seeded[0] = CompletableFuture.runAsync(() -> {
                         var store = SqliteCompanionStore.open(f.directory.resolve("companions.sqlite"), 128).join();
                         try {
                             var lease = new ActionLease(f.id, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, 1, 1);
-                            var prepared = store.prepareAction(ActionRecord.prepare(UUID.randomUUID(), lease, "native_break", preconditions)).join();
+                            var prepared = store.prepareAction(ActionRecord.prepare(UUID.randomUUID(), lease, kind, preconditions)).join();
                             action[0] = store.transitionAction(prepared.dispatched(evidence), 0).join().actionId();
                         } finally {
                             store.closeAsync().join();
                         }
                     });
                     if (staged == Case.DONE) context.getWorld().setBlockState(target, Blocks.AIR.getDefaultState());
+                    // Its block in its cell, as if the step placed it before the crash (or anyone did): the hash cannot tell.
+                    if (staged == Case.PILLAR_FILLED) context.getWorld().setBlockState(target, Blocks.COBBLESTONE.getDefaultState());
                 })
                 .createAndAdd(() -> context.assertTrue(seeded[0].isDone() && !seeded[0].isCompletedExceptionally(), "The crash staged"))
                 .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
@@ -102,11 +124,12 @@ public final class NativeSettleGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> context.assertTrue(!f.runtime.settlingForTest(f.id), "Settlement over"))
                 .createAndAdd(() -> {
-                    if (staged == Case.AMBIGUOUS) {
+                    if (operator) {
                         // Not plain from the evidence: still blocked; then the operator's choice.
                         context.assertTrue(!f.runtime.ledgerClearForTest(f.id), "Left blocked for the operator");
                         context.assertTrue(f.runtime.nativeLifecycle(f.source, "connect", f.id) == 0, "Still refused");
-                        context.assertTrue(f.runtime.settleNative(f.source, f.id, "notdone") == 1, "The operator chooses not done");
+                        String choice = staged == Case.PILLAR_FILLED ? "done" : "notdone";
+                        context.assertTrue(f.runtime.settleNative(f.source, f.id, choice) == 1, "The operator chooses " + choice);
                     }
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.ledgerClearForTest(f.id), "Ada free once settled"))
@@ -116,8 +139,13 @@ public final class NativeSettleGameTests implements FabricGameTest {
                     // Nothing made, nothing dug again: what it holds is what it saved, the block as staged.
                     context.assertTrue(InventoryEvidence.capture(f.player().getInventory()).description().equals(before[0]),
                             "Ada holds exactly what it saved");
-                    boolean stone = context.getWorld().getBlockState(target).isOf(Blocks.STONE);
-                    context.assertTrue(staged == Case.DONE ? !stone : stone, "The block as it was staged");
+                    var now = context.getWorld().getBlockState(target);
+                    boolean asStaged = switch (staged) {
+                        case DONE, PILLAR_OPEN -> now.isAir();
+                        case NOT_DONE, AMBIGUOUS -> now.isOf(Blocks.STONE);
+                        case PILLAR_FILLED -> now.isOf(Blocks.COBBLESTONE);
+                    };
+                    context.assertTrue(asStaged, "The block as it was staged: " + now);
                     context.assertTrue(f.runtime.nativeLifecycle(f.source, "stop", f.id) == 1, "Ada stopped");
                     f.runtime.stop();
                 })
@@ -138,10 +166,10 @@ public final class NativeSettleGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.assertTrue(checked[0].isDone() && !checked[0].isCompletedExceptionally(), "The Record read");
                     var r = checked[0].join();
-                    String state = staged == Case.DONE ? "VERIFIED" : "FAILED";
+                    String state = staged == Case.DONE || staged == Case.PILLAR_FILLED ? "VERIFIED" : "FAILED";
                     context.assertTrue(r[0].equals(state), "Settled " + state + ": " + r[0] + " / " + r[5]);
                     context.assertTrue(r[1].equals("1"), "One settlement in the Record: " + r[1]);
-                    context.assertTrue(r[2].equals(staged == Case.AMBIGUOUS ? "operator" : "evidence"), "Decided by " + r[2]);
+                    context.assertTrue(r[2].equals(operator ? "operator" : "evidence"), "Decided by " + r[2]);
                     context.assertTrue(r[3].equals("the console") && r[4].equals(action[0].toString()), "Who and which: " + r[3] + " " + r[4]);
                     context.assertTrue(r[6].equals("true"), "The ledger agrees with the Record");
                 })
