@@ -12,9 +12,14 @@
 #   --empty-world-only   empty this checkout's corpus world as before every run, say what it held, and stop (for the test)
 # Every run starts from an empty corpus world (build/corpus/world and build/corpus/kindred): one grown over many runs
 # played timing-sensitive scenes differently, and the branch's confirm ran in its grown world while main's ran fresh.
+# Each flagged scene is confirmed alone: a run of its own (KINDRED_CORPUS_ONLY set to its id only), never in a batch with
+# the other flagged scenes. Scenes in one batch share one world clock, weather and difficulty, set by the last of them to
+# start, so a scene confirmed beside another could pass or fail by that one's clock: e40a20-79a9aad-31102026-echo-102580
+# passed 3 of 3 beside a dusk scene (12119) and 0 of 3 alone on the same build (claude/corpus-data-dc5ad4d-1114).
 # Exit 0 when the gate passes, 1 when a confirmed scene blocks, 2 when a run could not be made.
-# About 25 minutes a full run on a 4-core container (ten scenes to a batch), so about 75 minutes for three, and a few
-# minutes more for each confirming run. Run it with nothing else on the cores: the scenes are timing-sensitive.
+# About 25 minutes a full run on a 4-core container (ten scenes to a batch), so about 75 minutes for three. The confirm
+# is N flagged scenes x 3 x 2 (here and main) server starts, each well under a minute for one scene. Run it with nothing
+# else on the cores: the scenes are timing-sensitive.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 here=$(pwd)
@@ -82,16 +87,38 @@ if [ ! -s "$out/flagged.txt" ]; then
   cat "$out/report.md"; exit 0
 fi
 
-# Confirm: the flagged scenes alone, three times here and three times on main as this branch has it (confirm_ref).
-export KINDRED_CORPUS_ONLY=$(paste -sd, "$out/flagged.txt")
+# Confirm: each flagged scene alone, in a run of its own, three times here and three times on main as this branch has it
+# (confirm_ref). Round i's runs of every flagged scene are put together in confirm-<side>-i.xml for the report; a scene's
+# own run is confirm-<side>-i.<n>.xml, n its line in flagged.txt.
+mapfile -t flagged < "$out/flagged.txt"
+confirm() {
+  local tree=$1 side=$2 i n parts
+  for i in 1 2 3; do
+    parts=()
+    for n in "${!flagged[@]}"; do
+      KINDRED_CORPUS_ONLY=${flagged[$n]} corpus "$tree" "$out/confirm-$side-$i.$((n + 1)).xml" || return 1
+      parts+=("$out/confirm-$side-$i.$((n + 1)).xml")
+    done
+    python3 - "$out/confirm-$side-$i.xml" "${parts[@]}" <<'PY' || return 1
+import sys
+import xml.etree.ElementTree as ET
+suite = ET.Element("testsuite")
+for part in sys.argv[2:]:
+    suite.extend(ET.parse(part).getroot().iter("testcase"))
+ET.ElementTree(suite).write(sys.argv[1], encoding="utf-8")
+PY
+  done
+}
 branch=() main=()
-for i in 1 2 3; do corpus "$here" "$out/confirm-branch-$i.xml" || exit 2; branch+=("$out/confirm-branch-$i.xml"); done
+confirm "$here" branch || exit 2
+for i in 1 2 3; do branch+=("$out/confirm-branch-$i.xml"); done
 git fetch -q origin main || exit 2
 tree="$here/build/corpus-gate-main"
 rm -rf "$tree"; git worktree prune
 ref=$(confirm_ref) || { echo "No commit to confirm on (${main_ref:-merge-base with origin/main})" >&2; exit 2; }
 git worktree add -q --detach "$tree" "$ref" || exit 2
-for i in 1 2 3; do corpus "$tree" "$out/confirm-main-$i.xml" || exit 2; main+=("$out/confirm-main-$i.xml"); done
+confirm "$tree" main || exit 2
+for i in 1 2 3; do main+=("$out/confirm-main-$i.xml"); done
 mainsha=$(git -C "$tree" rev-parse --short HEAD)
 git worktree remove --force "$tree"
 python3 tools/corpus/report.py "${results[@]}" --sha "$sha (main $mainsha, the $(confirm_label))" --logs "${logs[@]}" --confirm-branch "${branch[@]}" --confirm-main "${main[@]}" --out "$out/report.md"
