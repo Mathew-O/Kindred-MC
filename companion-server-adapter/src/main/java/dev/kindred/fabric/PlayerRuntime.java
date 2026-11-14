@@ -2522,7 +2522,7 @@ final class PlayerRuntime {
                 && java.util.Objects.equals(entry.lease, lease) && entry.arbiter.isCurrent(lease)
                 && (("native_eat".equals(entry.skillId) && (intent == NativePlayerBody.Intent.EAT || intent == NativePlayerBody.Intent.SELECT_SLOT))
                     || (("native_walk".equals(entry.skillId) || "native_traverse".equals(entry.skillId) || "native_retreat".equals(entry.skillId)
-                        || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
+                        || "native_lava_escape".equals(entry.skillId) || "native_goto".equals(entry.skillId) || "native_step_in".equals(entry.skillId)) && intent == NativePlayerBody.Intent.MOVE)
                     || ("native_goto".equals(entry.skillId) && (intent == NativePlayerBody.Intent.SELECT_SLOT || intent == NativePlayerBody.Intent.DOOR))
                     // A far walk ridden on its own horse (M-01a): getting on and off it, the trip's own step permits checked too.
                     || ("native_goto".equals(entry.skillId) && intent == NativePlayerBody.Intent.RIDE && entry.skillArgs.containsKey("horse"))
@@ -2595,6 +2595,39 @@ final class PlayerRuntime {
             case MOVE, LOOK, SELECT_SLOT, EAT, EQUIP, ATTACK, BLOCK, SHOOT, THROW, TOSS, SWAP, FISH, BOAT, FEED, SHEAR, TRADE, RENAME -> true;
             default -> TerritoryGuard.mayChange(entry.nativeBody.entity(), target);
         };
+    }
+
+    /**
+     * The nearest dry ground a player in lava can see and make for (F-25c6a): level with its feet or above, never below
+     * (it cannot go down through the lake's floor), within 16 blocks across and 8 up, and in plain sight from its eyes, so
+     * a pocket of air behind stone or under the floor is never chosen: the first try took one under the pool's floor.
+     */
+    static java.util.Optional<BlockPos> lavaBank(ServerPlayerEntity player, BlockPos feetPos) {
+        var world = player.getServerWorld();
+        var navigator = new NativeNavigator(world);
+        Vec3d eye = player.getEyePos();
+        for (int ring = 1; ring <= 16; ring++) {
+            BlockPos best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (int dx = -ring; dx <= ring; dx++) {
+                for (int dz = -ring; dz <= ring; dz++) {
+                    if (Math.abs(dx) != ring && Math.abs(dz) != ring) continue;
+                    for (int dy = 0; dy <= 8; dy++) {
+                        BlockPos feet = feetPos.add(dx, dy, dz);
+                        double distance = feet.getSquaredDistance(feetPos);
+                        if (distance >= bestDistance || !world.isChunkLoaded(feet) || !navigator.standable(feet)
+                                || !world.getFluidState(feet).isEmpty() || !world.getFluidState(feet.down()).isEmpty()) continue;
+                        var hit = world.raycast(new net.minecraft.world.RaycastContext(eye, Vec3d.ofCenter(feet),
+                                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+                        if (hit.getType() != net.minecraft.util.hit.HitResult.Type.MISS) continue;
+                        best = feet;
+                        bestDistance = distance;
+                    }
+                }
+            }
+            if (best != null) return java.util.Optional.of(best);
+        }
+        return java.util.Optional.empty();
     }
 
     static boolean isHazardousSituation(ServerPlayerEntity player) {
@@ -3340,6 +3373,23 @@ final class PlayerRuntime {
                         dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
                 candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", dirs[d], "blocks", "1")));
                 break;
+            }
+            // In lava with lava on every side (F-25c6a): no cell beside it to step to, so it makes for the nearest dry
+            // ground it can see, up and across, rather than giving up every task it begins as a hazard with nothing in
+            // their place (E-40c3: seed 303 Kindred at the bottom of the Nether's lava sea for some 105,000 ticks).
+            if (candidates.isEmpty() && (player.isInLava() || world.getFluidState(feetPos).isIn(FluidTags.LAVA))) {
+                var bank = lavaBank(player, feetPos);
+                if (bank.isPresent()) {
+                    BlockPos dry = bank.get();
+                    UUID taskId = UUID.nameUUIDFromBytes(("lava_escape:" + entry.data.id() + ":" + dry.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
+                            dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                    candidates.add(new NativeTaskCandidate(candidate, "native_lava_escape", Map.of("x", String.valueOf(dry.getX()),
+                            "y", String.valueOf(dry.getY()), "z", String.valueOf(dry.getZ()))));
+                } else if (server.getTicks() - entry.lavaEscapeLoggedTick >= 1200) {
+                    entry.lavaEscapeLoggedTick = server.getTicks();
+                    KindredMod.LOGGER.info("{}: in lava with no dry ground in sight to make for, at {}", entry.data.displayName(), feetPos.toShortString());
+                }
             }
         }
 
@@ -7335,7 +7385,8 @@ final class PlayerRuntime {
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
         if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight || creeperThreat && !handlingCreeper || breakFall)
-                && !"native_retreat".equals(entry.skillId) && !"native_clutch".equals(entry.skillId) && !escapingWater) {
+                && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
+                && !escapingWater) {
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort(breakFall && !isHazardousSituation(body.entity()) ? "Falling: the fall to be broken with water"
@@ -14817,7 +14868,7 @@ final class PlayerRuntime {
         @Override public int friendship(UUID id, UUID other) { return friendshipOf(id, other); }
         /** A fight, a flight, a bed and the like: no talk. */
         private static final java.util.Set<String> BUSY = java.util.Set.of("native_attack", "native_fight", "native_block", "native_shoot",
-                "native_retreat", "native_clutch", "native_dragon", "native_pearl", "native_sleep");
+                "native_retreat", "native_lava_escape", "native_clutch", "native_dragon", "native_pearl", "native_sleep");
 
         @Override public List<CompanionSocials.Participant> players() { return new InitiativeSource().players(); }
         @Override public Optional<dev.kindred.core.social.PeerLedger> ledger(UUID id) { return peerRadio.ledger(id); }
@@ -18474,6 +18525,8 @@ final class PlayerRuntime {
         private UUID currentTaskId;
         private UUID waterEscapeTaskId;
         private long waterEscapeRetryTick;
+        /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
+        private long lavaEscapeLoggedTick = -1200;
         /** Walks of its own that found no way, since it came into play: a measure of how often it sets out in vain. */
         private int walksFailed;
         /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */

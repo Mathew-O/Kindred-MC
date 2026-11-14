@@ -266,6 +266,7 @@ final class PlayerVoice implements CompanionSocials.Voice {
             case "native_attack" -> "fighting";
             case "native_block" -> "blocking with a shield";
             case "native_retreat" -> "backing off";
+            case "native_lava_escape" -> "getting out of the lava";
             case "native_goto" -> "walking somewhere";
             case "native_plant" -> "planting";
             case "native_till" -> "tilling the ground";

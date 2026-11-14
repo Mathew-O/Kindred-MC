@@ -66,6 +66,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## Out of the lava with no cell beside it out of the lava (F-25c6a) — 14 November 2026 (`claude/lava-escape-1112`)
+
+- [F-25c6a: the probe, the two staged escape fixtures (3 of 3 failing before, 3 of 3 passing after) and the corpus gate (0 confirmed)](evidence/F-25c6a.md).
+
 ## A pillar step cut short once its block is down is recorded for what it did (F-25c6c) — 14 November 2026 (`claude/pillar-reconcile-1114`)
 
 - [F-25c6c: the staged fixture (3 of 3 failing before, 3 of 3 passing after), the 14 pillar fixture classes and the corpus gate (0 confirmed)](evidence/F-25c6c.md).
