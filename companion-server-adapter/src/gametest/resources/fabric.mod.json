@@ -147,6 +147,8 @@
       "dev.kindred.fabric.NativeFactionPlayGameTests",
       "dev.kindred.fabric.NativeFactionBaseSiteGameTests",
       "dev.kindred.fabric.NativeFactionRefusedLogsGameTests",
+      "dev.kindred.fabric.NativeFactionHubWalkOutGameTests",
+      "dev.kindred.fabric.NativeFactionWoodFirstGameTests",
       "dev.kindred.fabric.NativeFactionTellGameTests",
       "dev.kindred.fabric.NativeFactionTradeGameTests",
       "dev.kindred.fabric.NativeFactionWantsGameTests",
