@@ -235,4 +235,117 @@ class DiggerTest {
         assertEquals(Optional.empty(), digger.climb(new Told(new Cell(9, 0, 0)), "Up"), "nearby, not again");
         assertEquals(1, events.size());
     }
+
+    /** A body whose clock can be set, as the game's runs on. */
+    static class Timed extends Body {
+        final java.util.List<String> events;
+        final long tick;
+        Timed(Scene world, Cell feet, long tick, java.util.List<String> events) {
+            super(world, feet);
+            this.tick = tick;
+            this.events = events;
+        }
+        @Override public long now() { return tick; }
+        @Override public void event(String line) { events.add(line); }
+    }
+
+    /**
+     * Its own tunnel three long under a layer of water, water past every wall and under its floor: no way up, along or
+     * down gets it out from under (the tunnel one wide, as its own are, so that every side is a wall it could climb).
+     */
+    private static Scene box() {
+        var scene = new Scene();
+        for (int x = -10; x <= 10; x++) for (int z = -10; z <= 10; z++) {
+            scene.set(x, 3, z, Block.WATER).set(x, -2, z, Block.WATER);
+            if (Math.max(Math.abs(x), Math.abs(z)) == 3) scene.set(x, 0, z, Block.WATER).set(x, 1, z, Block.WATER);
+        }
+        for (int x = -1; x <= 1; x++) scene.set(x, 0, 0, Block.AIR).set(x, 1, 0, Block.AIR);
+        return scene;
+    }
+
+    /**
+     * Boxed in under water (F-35n): no way up, along or down gets it out from under, and it gets no farther from where it
+     * began. Before, the climb went round in the room for good, the reach never met; now it hands back once
+     * {@value Digger#UNDER_WATER_STALLS} steps have got it no farther, said once.
+     */
+    @Test
+    void aClimbBoxedInUnderWaterHandsBackOnceItGetsNoFarther() {
+        var scene = box();
+        var digger = new Digger();
+        var events = new java.util.ArrayList<String>();
+        int handedBack = -1;
+        for (int step = 1; step <= 100 && handedBack < 0; step++) {
+            // To and fro in its tunnel, a cell each step, never farther than one from where it began.
+            var next = digger.climb(new Timed(scene, new Cell(step % 2, 0, 0), 100 + step, events), "Up");
+            if (next.isEmpty()) handedBack = step;
+            else assertTrue(events.isEmpty(), "not handed back yet at step " + step + ": " + next.get());
+        }
+        // Its first step sets where it began, its second is its farthest (one along); then its steps to and fro get no farther.
+        assertEquals(Digger.UNDER_WATER_STALLS + 2, handedBack, "handed back once it had got no farther for its steps");
+        assertEquals(1, events.size(), "said once: " + events);
+        assertTrue(events.getFirst().contains("1 blocks along under it, no farther in " + Digger.UNDER_WATER_STALLS + " steps"), events.getFirst());
+    }
+
+    /**
+     * Blocks dug where it stands under the water are not steps that got it no farther (F-35n): by hand a block takes many
+     * goes, and a climb out by hand from under a lake was handed back before it had moved at all (CI on #269,
+     * NativeUnderLakeKeptGameTests). Standing in one cell, it never hands back for want of getting farther.
+     */
+    @Test
+    void diggingWhereItStandsUnderWaterIsNotCountedAsGettingNoFarther() {
+        var scene = box();
+        var digger = new Digger();
+        var events = new java.util.ArrayList<String>();
+        for (int step = 1; step <= 4 * Digger.UNDER_WATER_STALLS; step++) {
+            digger.climb(new Timed(scene, new Cell(0, 0, 0), 100 + step, events), "Up");
+        }
+        assertTrue(events.stream().noneMatch(e -> e.contains("no farther in")), "not handed back for standing still: " + events);
+    }
+
+    /**
+     * A way under the water that goes to and fro but keeps getting farther from where it began is not given up short of
+     * the reach (F-35n): back and forth in its tunnel, a block farther along every eight steps, it goes on to twenty along,
+     * where it hands back as before.
+     */
+    @Test
+    void aWayUnderWaterToAndFroThatKeepsGettingFartherIsNotGivenUpShortOfTheReach() {
+        var scene = new Scene();
+        for (int x = -10; x <= 10; x++) {
+            for (int z = -2; z <= 2; z++) scene.set(x, 3, z, Block.WATER);
+            scene.set(x, 0, 0, Block.AIR).set(x, 1, 0, Block.AIR);
+        }
+        var digger = new Digger();
+        var events = new java.util.ArrayList<String>();
+        for (int step = 0; ; step++) {
+            int x = -10 + step / 8 + step % 2, z = 0;
+            var next = digger.climb(new Timed(scene, new Cell(x, 0, z), 100 + step, events), "Up");
+            if (Math.abs(x + 10) < Digger.UNDER_WATER_REACH) {
+                assertTrue(next.isPresent() && events.isEmpty(), "still along under it at step " + step + ", " + (x + 10) + " along: " + next + " " + events);
+            } else {
+                assertEquals(Optional.empty(), next, "twenty along: handed back");
+                assertTrue(events.getFirst().contains("20 blocks along under it with no dry ground"), events.getFirst());
+                break;
+            }
+        }
+    }
+
+    /**
+     * Where it gave up under the water it does not come back into the same box at once (F-35n): not while the wait is
+     * on, nor after it while it has not moved off; moved off and come back after the wait, it tries again.
+     */
+    @Test
+    void aBoxItGaveUpUnderWaterIsNotEnteredAgainTillItHasMovedOff() {
+        var scene = box();
+        var digger = new Digger();
+        var events = new java.util.ArrayList<String>();
+        long tick = 100;
+        for (int step = 1; step <= Digger.UNDER_WATER_STALLS + 2; step++) digger.climb(new Timed(scene, new Cell(step % 2, 0, 0), ++tick, events), "Up");
+        assertEquals(1, events.size(), "it gave up: " + events);
+        assertEquals(Optional.empty(), digger.climb(new Timed(scene, new Cell(0, 0, 0), tick + 10, events), "Up"), "at once: not again");
+        assertEquals(Optional.empty(), digger.climb(new Timed(scene, new Cell(0, 0, 0), tick + 3000, events), "Up"), "the wait out, but not moved off");
+        assertEquals(1, events.size(), "said once");
+        // Moved off: ten along from where it gave up, out of the box, under the same water, the wait out.
+        for (int x = -10; x <= 10; x++) scene.set(x, 0, 9, Block.AIR).set(x, 1, 9, Block.AIR);
+        assertTrue(digger.climb(new Timed(scene, new Cell(0, 0, 9), tick + 3000, events), "Up").isPresent(), "moved off: under the water again it tries");
+    }
 }
