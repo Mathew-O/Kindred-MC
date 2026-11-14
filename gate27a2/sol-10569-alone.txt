@@ -1,0 +1,21 @@
+# e40a15-dbf4e5c-707-sol-10569 alone, after the confirm
+A/B on the branch's tree (7d5968c), main's ReplayGameTests vs the branch's, interleaved:
+main-1 FAIL
+mine-1 pass
+main-2 FAIL
+mine-2 FAIL
+main-3 FAIL
+mine-3 FAIL
+main-4 pass
+mine-4 FAIL
+main-5 pass
+mine-5 pass
+main-6 FAIL
+mine-6 FAIL
+Main's own tree (17f2053):
+main17f-1 FAIL
+main17f-2 FAIL
+main17f-3 FAIL
+main17f-4 FAIL
+main17f-5 FAIL
+main17f-6 FAIL
