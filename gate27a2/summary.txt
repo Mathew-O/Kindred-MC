@@ -13,3 +13,4 @@ confirm-branch-3.3 (7d5968c4, only flagged): 0 min, peak 1185 MB, All 2 required
 confirm-main-1.1 (17f2053c, only flagged): 1 min, peak 985 MB, All 2 required tests passed, fence-top 0, disk 3.9G
 confirm-main-1.2 (17f2053c, only flagged): 0 min, peak 1132 MB, All 2 required tests passed, fence-top 0, disk 3.9G
 confirm-main-1.3 (17f2053c, only flagged): 0 min, peak 1271 MB, All 2 required tests passed, fence-top 0, disk 3.9G
+confirm-main-2.1 (17f2053c, only flagged): 0 min, peak 1378 MB, 1 required tests failed, fence-top 0, disk 3.9G
