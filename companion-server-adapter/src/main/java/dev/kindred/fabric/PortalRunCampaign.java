@@ -708,7 +708,10 @@ final class PortalRunCampaign {
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
         // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
         // has failed for a minute, it is stranded no longer.
-        if (task != null && "native_goto".equals(task.skill()) && !completed) {
+        // A walk to pick up a drop is not a way out: refused, it says the drop is out of reach, not the player shut in. In
+        // NativeBaseGameTests' stone-tools cabin, three refused walks to its own cobblestone in the pit it mined stranded
+        // the builder, and its trip for logs then found none, a tree twenty off usable (F-22c73).
+        if (task != null && "native_goto".equals(task.skill()) && !completed && !task.label().startsWith("Pick up ")) {
             if (strandedAt != null && strandedAt.getSquaredDistance(lastFeet) <= 3 * 3 && tick - strandedTick <= STRANDED_FOR) {
                 strandedWalks++;
             } else {
@@ -4103,6 +4106,8 @@ final class PortalRunCampaign {
         if (!harvestable(body, log)) return new KeptOut("not harvestable", "");
         if (log.getY() > feet.getY() + TRUNK_REACH) return new KeptOut("above its trunk reach", "");
         if (trunkFoot(world, log).isEmpty()) return new KeptOut(WorldKnowledge.builtIn(world, log) ? "built in" : "no trunk foot", "");
+        // Stranded, its gather offers no walk at all, whichever log (F-22c73): said, so a usable log is not reported usable.
+        if (stranded()) return new KeptOut("stranded", "from " + strandedAt.toShortString() + " after " + strandedWalks + " refused walks");
         return new KeptOut("usable", approaches.getOrDefault(at, 0) + " approaches");
     }
 
