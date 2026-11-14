@@ -847,8 +847,15 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    for each. Connected, each is still stopped ("Resume explicitly"): `aiplayer native resume <name or UUID>` for each,
    and it plays on from its saves. There is no form for all at once: two commands a player (found in F-31g's restart
    soak, 2026-11-12). A player blocked for reconciliation after a crash ("Unresolved action ledger rows detected")
-   cannot be connected, and `aiplayer recover` does not apply to a native body: it waits until native reconciliation
-   is built (F-31g's finding 2).
+   cannot be connected (`aiplayer recover` is the legacy companion's, not a native body's). Settle it first (F-31g1):
+   - `aiplayer native settle <name>` settles each action the crash left without an outcome where the evidence is
+     plain: the block it was digging still there and what it holds exactly as when it began (not done), or the block
+     gone and what it holds exactly as when it began (done).
+   - Otherwise it shows what it saw and the player stays blocked: choose with `aiplayer native settle <name> done` or
+     `... notdone`. After a crash the save is usually from the last autosave, so what it holds often differs, and the
+     choice is yours: the block still there, `notdone`; gone, `done`.
+   - Nothing is done again and no item is made: only the action's outcome is written, with who settled it and what was
+     seen (`action.settled` in the World Record). Then connect and resume it as above.
 6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
    read from the console. The overworld's size, centre and warning distance are in `world/level.dat` once the server
    has stopped (BorderSize, BorderCenterX/Z, BorderWarningBlocks).
@@ -975,7 +982,7 @@ Mine executes a single scoped log break using owned hotbar contents, native surv
 
 A block is placed only against one still there to click: if that block was dug out meanwhile, the placement is refused and the player goes on, where before it was stopped for reconciliation (F-25c4u). A placement that still cannot be verified records which slots changed and what is at the target.
 
-Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
+Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. An action a crash left without an outcome blocks too, until settled with `aiplayer native settle <name> [done|notdone]` (F-31g1; the Factions setup, step 5). Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
 
 Legacy owner/mode/scope fields preserve access and saves; they are not the new product interface. Native creation has its development cap; team management and legacy migration remain unfinished. Combat/duels reject until qualified native skills use the arbiter. Timezone changes reject until safe accounting transitions exist; spent activity is not reset.
 
