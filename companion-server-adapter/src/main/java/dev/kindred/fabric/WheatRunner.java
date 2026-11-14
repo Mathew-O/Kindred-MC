@@ -126,6 +126,14 @@ final class WheatRunner {
             case WheatPlot.Step.Till till -> {
                 progress = till.why();
                 if (far(player, pos(till.at()))) yield Optional.of(PortalRunCampaign.go(pos(till.at()).up(), 2.0, true, "To the plot"));
+                // A plant on the soil first, as a player clears it: a hoe tills nothing under grass or a flower (in a meadow
+                // its plot sited on ground in sight, F-35m1, "Soil tilling produced no effect" every try).
+                BlockPos over = pos(till.at()).up();
+                var cover = player.getServerWorld().getBlockState(over);
+                if (!cover.isAir() && cover.isReplaceable() && cover.getFluidState().isEmpty()) {
+                    yield Optional.of(new PortalRunCampaign.Task("native_break", coords(new Pos(over.getX(), over.getY(), over.getZ()), Map.of()),
+                            "Clear the plot for tilling"));
+                }
                 int slot = hotbar(player, stack -> stack.getItem() instanceof HoeItem);
                 if (slot < 0) yield bring(player, stack -> stack.getItem() instanceof HoeItem, "Take the hoe in hand");
                 yield Optional.of(new PortalRunCampaign.Task("native_till", coords(till.at(), Map.of("slot", str(slot), "roam", "true")), till.why()));
@@ -188,12 +196,21 @@ final class WheatRunner {
         } else recipe = "wooden_hoe";
         var made = campaign.craft(body, recipe);
         if (made.isPresent() || campaign.tableNear(body)) return made;
-        if (inventory.count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body);
+        // Never on its own plot: a table on a cell left that cell untilled, its soil under the table (M-01a1).
+        if (inventory.count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body, this::onPlot);
         if (planks < 4) {
             if (inventory.count(log) == 0) return stop(false, "Short of " + wood + " wood for a crafting table");
             return campaign.craft(body, wood + "_planks");
         }
         return campaign.craft(body, "crafting_table");
+    }
+
+    /** Whether {@code spot} is one of the plot's cells or the cell over one: no place for anything but its crop. */
+    boolean onPlot(BlockPos spot) {
+        for (Pos cell : plot.cells()) {
+            if (spot.getX() == cell.x() && spot.getZ() == cell.z() && (spot.getY() == cell.y() || spot.getY() == cell.y() + 1)) return true;
+        }
+        return false;
     }
 
     private WheatPlot.Observation observe(ServerPlayerEntity player) {
