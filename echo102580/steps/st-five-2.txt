@@ -1,0 +1,583 @@
+goal at (16 9 16): Iron: inventory full - Drop surplus sand (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus sand]
+goal at (16 9 16): Iron: Fill a bucket with water - Explore west for water (tried elsewhere 2 times)
+native_goto COMPLETED [Explore west for water]
+goal at (0 9 16): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 15) (tried elsewhere 2 times)
+goal at (0 9 16): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 9 15)]
+native_goto COMPLETED [Cut through west for water: advance]
+goal at (0 9 15): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 14) (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 9 14)]
+goal at (0 9 15): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Cut through west for water: advance]
+goal at (0 9 14): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 13) (tried elsewhere 2 times)
+goal at (0 9 14): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 9 13)]
+native_goto COMPLETED [Cut through west for water: advance]
+goal at (0 9 13): Iron: Fill a bucket with water - Cut through west for water: clear (0 10 12) (tried elsewhere 2 times)
+goal at (0 9 13): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 12) (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 10 12)]
+goal at (0 9 13): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 9 12)]
+goal at (0 9 12): Iron: Fill a bucket with water - Cut through west for water: clear (0 10 11) (tried elsewhere 2 times)
+native_goto COMPLETED [Cut through west for water: advance]
+goal at (0 9 12): Iron: Fill a bucket with water - Explore west for water (tried elsewhere 2 times)
+native_goto BLOCKED: No walkable route toward (-28 9 12) [Explore west for water]
+goal at (0 9 12): Iron: Fill a bucket with water - Explore north for water (tried elsewhere 2 times)
+goal at (6 11 4): Iron: Fill a bucket with water while it is close - Walk to water at (2 5 1) (tried elsewhere 2 times)
+goal at (8 9 0): Iron: Fill a bucket with water while it is close - Walk to water at (2 5 0) (tried elsewhere 2 times)
+native_goto COMPLETED [Explore north for water]
+goal at (4 7 0): Iron: Fill a bucket with water while it is close - Fill a bucket at (2 5 0) (tried elsewhere 2 times)
+native_goto COMPLETED [Walk to water at (2 5 0)]
+goal at (4 6 0): Iron: inventory full - Drop surplus sand (tried elsewhere 2 times)
+native_bucket COMPLETED [Fill a bucket at (2 5 0)]
+goal at (4 6 0): Iron: inventory full - Drop surplus cobblestone (tried elsewhere 2 times)
+goal at (4 6 0): Iron: inventory full - Drop surplus dirt (tried elsewhere 2 times)
+goal at (4 6 0): Iron: inventory full - Drop surplus gravel (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus dirt]
+goal at (4 6 0): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 6 0) (tried elsewhere 2 times)
+goal at (4 6 0): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 6 0)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 6 0): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (6 6 0) (tried elsewhere 2 times)
+goal at (5 6 0): Iron: inventory full - Drop surplus sandstone (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (6 6 0)]
+goal at (5 6 0): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (6 6 0): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (7 7 0) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (6 6 0): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (7 6 0) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (7 7 0)]
+goal at (6 6 0): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (7 6 0)]
+goal at (6 6 0): Iron: shelter for the night - Dig in for the night: clear (7 5 0) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (8 7 0) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (8 7 0)]
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (8 6 0) (tried elsewhere 2 times)
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (8 7 0) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (8 6 0)]
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (8 5 0) (tried elsewhere 2 times)
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (8 6 0) (tried elsewhere 2 times)
+native_break CANCELLED: authority lost [Dig in for the night: clear (8 5 0)]
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (7 7 1) (tried elsewhere 2 times)
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (7 6 1) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (7 7 1)]
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (7 5 1) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (7 6 1)]
+native_break CANCELLED: authority lost [Dig in for the night: clear (7 5 1)]
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: clear (6 5 0) (tried elsewhere 2 times)
+goal at (7 6 0): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (6 5 0)]
+goal at (6 5 0): Iron: shelter for the night - Dig in for the night: clear (5 5 0) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (6 5 0): Iron: shelter for the night - Dig in for the night: clear (5 4 0) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (5 5 0)]
+goal at (6 5 0): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (5 4 0)]
+goal at (5 5 0): Iron: shelter for the night - Dig in for the night: clear (4 5 0) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+native_break COMPLETED [Dig in for the night: clear (4 5 0)]
+goal at (5 4 0): Iron: shelter for the night - Dig in for the night: clear (4 4 0) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (4 4 0)]
+goal at (5 4 0): Iron: shelter for the night - Dig in for the night: clear (4 3 0) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (4 3 0)]
+goal at (5 4 0): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+goal at (4 3 0): Iron: inventory full - Drop surplus sandstone (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (4 3 0): Iron: shelter for the night - Dig in for the night: clear (5 3 0) (tried elsewhere 2 times)
+goal at (4 3 0): Iron: shelter for the night - Dig in for the night: clear (5 2 0) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (5 3 0)]
+native_break COMPLETED [Dig in for the night: clear (5 2 0)]
+goal at (4 3 0): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+goal at (5 2 0): Iron: inventory full - Drop surplus sand (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (5 2 0): Iron: inventory full - Drop surplus cobblestone (tried elsewhere 2 times)
+goal at (5 2 0): Iron: inventory full - Drop surplus dirt (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus cobblestone]
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: clear (6 3 0) (tried elsewhere 2 times)
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: clear (6 2 0) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (6 3 0)]
+native_break COMPLETED [Dig in for the night: clear (6 2 0)]
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: clear (6 1 0) (tried elsewhere 2 times)
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: clear (6 2 0) (tried elsewhere 2 times)
+native_break CANCELLED: authority lost [Dig in for the night: clear (6 1 0)]
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: clear (5 3 1) (tried elsewhere 2 times)
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: clear (5 2 1) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (5 3 1)]
+native_break COMPLETED [Dig in for the night: clear (5 2 1)]
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: clear (5 1 1) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (5 1 1)]
+goal at (5 2 0): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+goal at (5 2 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 3 2) (tried elsewhere 2 times)
+goal at (5 1 1): Iron: inventory full - Drop surplus gravel (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (5 0 1): Iron: inventory full - Drop surplus sandstone (tried elsewhere 2 times)
+goal at (5 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 2) (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus sandstone]
+goal at (5 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 2)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 2): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 3) (tried elsewhere 2 times)
+goal at (5 0 2): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 3)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 3): Iron: inventory full - Drop surplus cobblestone (tried elsewhere 2 times)
+goal at (5 0 3): Iron: inventory full - Drop surplus sand (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus cobblestone]
+goal at (5 0 3): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 4) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 4)]
+goal at (5 0 3): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (5 0 4): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 5) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (5 1 5)]
+goal at (5 0 4): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 5): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 6) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 6)]
+goal at (5 0 5): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (5 0 5): Iron: Cast the portal frame from lava and water - Explore the cave toward lava (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto BLOCKED: No walkable route toward (5 0 -3) [Explore the cave toward lava]
+goal at (5 0 6): Iron: Cast the portal frame from lava and water - Climb to the cave toward lava: walk on (tried elsewhere 2 times)
+native_goto COMPLETED [Climb to the cave toward lava: walk on]
+goal at (5 0 1): Iron: Cast the portal frame from lava and water - Climb to the cave toward lava: dig (5 1 0) (tried elsewhere 2 times)
+native_break COMPLETED [Climb to the cave toward lava: dig (5 1 0)]
+goal at (5 0 1): Iron: nothing to do before daylight - Wait for daylight (tried elsewhere 2 times)
+native_wait COMPLETED [Wait for daylight]
+goal at (5 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_wait COMPLETED [Wait for daylight]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 3): Iron: inventory full - Drop surplus dirt (tried elsewhere 2 times)
+goal at (5 0 3): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus dirt]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 6): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 7) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 7)]
+goal at (5 0 6): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 7): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 8) (tried elsewhere 2 times)
+goal at (5 0 7): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 8)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 8): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 9) (tried elsewhere 2 times)
+goal at (5 0 8): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 9)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 9): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 10) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 10)]
+goal at (5 0 9): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 10): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 11) (tried elsewhere 2 times)
+goal at (5 0 10): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 11)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 11): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 12) (tried elsewhere 2 times)
+goal at (5 0 11): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 12)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 12): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 13) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 13)]
+goal at (5 0 12): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 13): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 14) (tried elsewhere 2 times)
+goal at (5 0 13): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 14)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 14): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 15) (tried elsewhere 2 times)
+goal at (5 0 14): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 15)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 15): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 16) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 16)]
+goal at (5 0 15): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 16): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 17) (tried elsewhere 2 times)
+goal at (5 0 16): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 17)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 17): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 18) (tried elsewhere 2 times)
+goal at (5 0 17): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 18)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 18): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 19) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 19)]
+goal at (5 0 18): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 19): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 20) (tried elsewhere 2 times)
+goal at (5 0 19): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 20)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 20): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 21) (tried elsewhere 2 times)
+goal at (5 0 20): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 21)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 21): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 22) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 22)]
+goal at (5 0 21): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 22): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 23) (tried elsewhere 2 times)
+goal at (5 0 22): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 23)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 23): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 24) (tried elsewhere 2 times)
+goal at (5 0 23): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 24)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 24): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 25) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 25)]
+goal at (5 0 24): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 25): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 26) (tried elsewhere 2 times)
+goal at (5 0 25): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 26)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 26): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 27) (tried elsewhere 2 times)
+goal at (5 0 26): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 27)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 27): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 28) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 28)]
+goal at (5 0 27): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 29) (tried elsewhere 2 times)
+goal at (5 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 29)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 29): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 30) (tried elsewhere 2 times)
+goal at (5 0 29): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 30)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 30): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 31) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 31)]
+goal at (5 0 30): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 31): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (5 1 32) (tried elsewhere 2 times)
+goal at (5 0 31): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (5 1 32)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (4 1 32) (tried elsewhere 2 times)
+goal at (5 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (4 1 32)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (4 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (3 1 32) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (3 1 32)]
+goal at (4 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (3 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (2 1 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (2 1 32)]
+goal at (3 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (2 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (1 1 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (2 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (1 1 32)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (1 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 32) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 32)]
+goal at (1 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 31) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 31)]
+goal at (0 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 31): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 30) (tried elsewhere 2 times)
+goal at (0 0 31): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 30)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 30): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 29) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 29)]
+goal at (0 0 30): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 29): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 28) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 28)]
+goal at (0 0 29): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 27) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (1 1 28) (tried elsewhere 2 times)
+goal at (0 0 28): Iron: Cast the portal frame from lava and water - Explore the cave toward lava (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (1 1 28)]
+native_goto BLOCKED: No walkable route toward (1 0 35) [Explore the cave toward lava]
+goal at (0 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (1 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (2 1 28) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (2 1 28)]
+goal at (1 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (2 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (3 1 28) (tried elsewhere 2 times)
+goal at (2 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (3 1 28)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (3 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (4 1 28) (tried elsewhere 2 times)
+goal at (3 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (4 1 28)]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (6 1 28) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (6 1 28)]
+goal at (5 0 28): Iron: Cast the portal frame from lava and water - Explore the cave toward lava (tried elsewhere 2 times)
+native_goto BLOCKED: No walkable route toward (5 0 35) [Explore the cave toward lava]
+goal at (5 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (6 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (7 1 28) (tried elsewhere 2 times)
+goal at (6 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (7 1 28)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (7 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (8 1 28) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (8 1 28)]
+goal at (7 0 28): Iron: Cast the portal frame from lava and water - Explore the cave toward lava (tried elsewhere 2 times)
+native_goto BLOCKED: No walkable route toward (-6 0 28) [Explore the cave toward lava]
+goal at (7 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (8 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (9 1 28) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (9 1 28)]
+goal at (8 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (9 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (10 1 28) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (10 1 28)]
+goal at (9 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (10 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (11 1 28) (tried elsewhere 2 times)
+goal at (10 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (11 1 28)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (11 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (12 1 28) (tried elsewhere 2 times)
+goal at (11 0 28): Iron: inventory full - Drop surplus sandstone (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (12 1 28)]
+goal at (11 0 28): Iron: inventory full - Drop surplus cobblestone (tried elsewhere 2 times)
+goal at (11 0 28): Iron: inventory full - Drop surplus sand (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus cobblestone]
+goal at (11 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (12 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (13 1 28) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (13 1 28)]
+goal at (12 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (13 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (14 1 28) (tried elsewhere 2 times)
+goal at (13 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (14 1 28)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (14 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (15 1 28) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (15 1 28)]
+goal at (14 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (15 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (16 1 28) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (15 0 28): Iron: Cast the portal frame from lava and water - Explore the cave toward lava (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (16 1 28)]
+native_goto BLOCKED: No walkable route toward (-12 0 28) [Explore the cave toward lava]
+goal at (15 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (16 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (16 1 29) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (16 1 29)]
+goal at (16 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (16 0 29): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (16 1 30) (tried elsewhere 2 times)
+goal at (16 0 29): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (16 1 30)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (16 0 30): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (16 1 31) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (16 1 31)]
+goal at (16 0 30): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (16 0 31): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (16 1 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (16 1 32)]
+goal at (16 0 31): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (16 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (15 1 32) (tried elsewhere 2 times)
+goal at (16 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (15 1 32)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (15 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (14 1 32) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (14 1 32)]
+goal at (15 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (14 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (13 1 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (13 1 32)]
+goal at (14 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (13 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (12 1 32) (tried elsewhere 2 times)
+goal at (13 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (12 1 32)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (12 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (11 1 32) (tried elsewhere 2 times)
+goal at (12 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (11 1 32)]
+goal at (11 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (10 1 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (10 1 32)]
+goal at (11 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (10 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (9 1 32) (tried elsewhere 2 times)
+goal at (10 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (9 1 32)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (9 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (8 1 32) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (8 1 32)]
+goal at (9 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (8 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (7 1 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (7 1 32)]
+goal at (8 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (7 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (6 1 32) (tried elsewhere 2 times)
+goal at (7 0 32): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (6 1 32)]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 27) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 27)]
+goal at (0 0 28): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 27): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 26) (tried elsewhere 2 times)
+goal at (0 0 27): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 26)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 26): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 25) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 25)]
+goal at (0 0 26): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 25): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 24) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 24)]
+goal at (0 0 25): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 24): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 23) (tried elsewhere 2 times)
+goal at (0 0 24): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 23)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 23): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 22) (tried elsewhere 2 times)
+goal at (0 0 23): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 22)]
+goal at (0 0 22): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 21) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 21)]
+goal at (0 0 22): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 21): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 20) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 20)]
+goal at (0 0 21): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 20): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 19) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 20): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 19)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 19): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 18) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 18)]
+goal at (0 0 19): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 18): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 17) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 17)]
+goal at (0 0 18): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 17): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 16) (tried elsewhere 2 times)
+goal at (0 0 17): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 16)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 16): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 15) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 15)]
+goal at (0 0 16): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 15): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 14) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 14)]
+goal at (0 0 15): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 14): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 13) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 14): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 13)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 13): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 12) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 12)]
+goal at (0 0 13): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 12): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 11) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 11)]
+goal at (0 0 12): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 11): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 10) (tried elsewhere 2 times)
+goal at (0 0 11): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 10)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 10): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 9) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 9)]
+goal at (0 0 10): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 9): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 8) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 8)]
+goal at (0 0 9): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 8): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 7) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 8): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 7)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 7): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 6) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 6)]
+goal at (0 0 7): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 6): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 5) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 5)]
+goal at (0 0 6): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 5): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 4) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 4)]
+goal at (0 0 5): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 4): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 3) (tried elsewhere 2 times)
+goal at (0 0 4): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 3)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 3): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 2) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 2)]
+goal at (0 0 3): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (0 0 2): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 1) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (0 1 1)]
+goal at (0 0 2): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (0 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (0 1 0) (tried elsewhere 2 times)
+goal at (0 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (1 1 1) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (0 1 0)]
+goal at (0 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (1 1 1)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (1 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (2 1 1) (tried elsewhere 2 times)
+goal at (1 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (2 1 1)]
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (2 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (3 1 1) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (3 1 1)]
+goal at (2 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+goal at (3 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (4 1 1) (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+native_break COMPLETED [Branch mine for lava: clear (4 1 1)]
+goal at (3 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (4 0 1): Iron: inventory full - Drop surplus sandstone (tried elsewhere 2 times)
+goal at (4 0 1): Iron: inventory full - Drop surplus sand (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus sandstone]
+goal at (4 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (5 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (6 1 1) (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (6 1 1)]
+goal at (5 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Branch mine for lava: advance]
+goal at (6 0 1): Iron: Cast the portal frame from lava and water - Branch mine for lava: clear (7 1 1) (tried elsewhere 2 times)
+goal at (6 0 1): Iron: nothing to do before daylight - Wait for daylight (tried elsewhere 2 times)
+native_break COMPLETED [Branch mine for lava: clear (7 1 1)]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]

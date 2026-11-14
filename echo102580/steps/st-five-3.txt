@@ -1,0 +1,142 @@
+goal at (16 9 16): Iron: inventory full - Drop surplus sand (tried elsewhere 2 times)
+native_discard COMPLETED [Drop surplus sand]
+goal at (16 9 16): Iron: Fill a bucket with water - Explore west for water (tried elsewhere 2 times)
+native_goto COMPLETED [Explore west for water]
+goal at (0 9 16): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 15) (tried elsewhere 2 times)
+goal at (0 9 16): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 9 15)]
+goal at (0 9 15): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 14) (tried elsewhere 2 times)
+native_goto COMPLETED [Cut through west for water: advance]
+native_break COMPLETED [Cut through west for water: clear (0 9 14)]
+goal at (0 9 15): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Cut through west for water: advance]
+goal at (0 9 14): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 13) (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 9 13)]
+goal at (0 9 14): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_goto COMPLETED [Cut through west for water: advance]
+goal at (0 9 13): Iron: Fill a bucket with water - Cut through west for water: clear (0 10 12) (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 10 12)]
+goal at (0 9 13): Iron: Fill a bucket with water - Cut through west for water: clear (0 9 12) (tried elsewhere 2 times)
+goal at (0 9 13): Iron: Fill a bucket with water - Cut through west for water: advance (tried elsewhere 2 times)
+native_break COMPLETED [Cut through west for water: clear (0 9 12)]
+native_goto COMPLETED [Cut through west for water: advance]
+goal at (0 9 12): Iron: Fill a bucket with water - Explore west for water (tried elsewhere 2 times)
+native_goto BLOCKED: No walkable route toward (-28 9 12) [Explore west for water]
+goal at (0 9 12): Iron: Fill a bucket with water - Explore east for water (tried elsewhere 2 times)
+goal at (5 12 15): Iron: Fill a bucket with water - Explore south for water (tried elsewhere 2 times)
+native_goto COMPLETED [Explore east for water]
+native_goto COMPLETED [Explore south for water]
+goal at (25 13 32): Iron: Fill a bucket with water - Cut through south for water: advance (tried elsewhere 2 times)
+goal at (25 13 32): Iron: shelter for the night - Dig in for the night: clear (24 12 32) (tried elsewhere 2 times)
+native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3280]
+native_break COMPLETED [Dig in for the night: clear (24 12 32)]
+goal at (25 13 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+goal at (24 13 32): Iron: shelter for the night - Dig in for the night: clear (23 12 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+native_break COMPLETED [Dig in for the night: clear (23 12 32)]
+goal at (24 12 32): Iron: shelter for the night - Dig in for the night: clear (23 11 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (23 11 32)]
+goal at (24 12 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+goal at (23 12 32): Iron: shelter for the night - Dig in for the night: clear (22 12 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+native_break COMPLETED [Dig in for the night: clear (22 12 32)]
+goal at (23 11 32): Iron: shelter for the night - Dig in for the night: clear (22 11 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (22 11 32)]
+goal at (23 11 32): Iron: shelter for the night - Dig in for the night: clear (22 10 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (22 10 32)]
+goal at (23 11 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (21 11 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (21 10 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (21 11 32)]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (21 11 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (21 10 32)]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (21 9 32) (tried elsewhere 2 times)
+native_break CANCELLED: authority lost [Dig in for the night: clear (21 9 32)]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (22 11 31) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (22 11 31)]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (22 10 31) (tried elsewhere 2 times)
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (22 11 31) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (22 10 31)]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (22 9 31) (tried elsewhere 2 times)
+native_break CANCELLED: authority lost [Dig in for the night: clear (22 9 31)]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (23 10 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (23 10 32)]
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: clear (23 9 32) (tried elsewhere 2 times)
+goal at (22 10 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (23 9 32)]
+goal at (23 10 32): Iron: shelter for the night - Dig in for the night: clear (24 11 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (23 9 32): Iron: shelter for the night - Dig in for the night: clear (24 10 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (24 10 32)]
+goal at (23 9 32): Iron: shelter for the night - Dig in for the night: clear (24 9 32) (tried elsewhere 2 times)
+goal at (23 9 32): Iron: shelter for the night - Dig in for the night: clear (24 8 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (24 9 32)]
+native_break CANCELLED: authority lost [Dig in for the night: clear (24 8 32)]
+goal at (23 9 32): Iron: shelter for the night - Dig in for the night: clear (22 9 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (22 9 32)]
+goal at (23 9 32): Iron: shelter for the night - Dig in for the night: clear (22 8 32) (tried elsewhere 2 times)
+goal at (23 9 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (22 8 32)]
+goal at (22 9 32): Iron: shelter for the night - Dig in for the night: clear (21 10 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (22 8 32): Iron: shelter for the night - Dig in for the night: clear (23 8 32) (tried elsewhere 2 times)
+goal at (22 8 32): Iron: shelter for the night - Dig in for the night: clear (23 7 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (23 8 32)]
+goal at (22 8 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (23 7 32)]
+goal at (23 7 32): Iron: shelter for the night - Dig in for the night: clear (22 7 32) (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+native_break COMPLETED [Dig in for the night: clear (22 7 32)]
+goal at (23 7 32): Iron: shelter for the night - Dig in for the night: clear (22 6 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (22 6 32)]
+goal at (23 7 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (22 6 32): Iron: shelter for the night - Dig in for the night: clear (21 7 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (21 7 32)]
+goal at (22 6 32): Iron: shelter for the night - Dig in for the night: clear (21 6 32) (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (21 6 32)]
+goal at (22 6 32): Iron: shelter for the night - Dig in for the night: clear (21 5 32) (tried elsewhere 2 times)
+goal at (22 6 32): Iron: shelter for the night - Dig in for the night: step down (tried elsewhere 2 times)
+native_break COMPLETED [Dig in for the night: clear (21 5 32)]
+goal at (21 5 32): Iron: Fill a bucket with water - Wait for daylight (tried elsewhere 2 times)
+native_goto COMPLETED [Dig in for the night: step down]
+goal at (21 5 32): Iron: Fill a bucket with water - Seal the shelter at (22 6 32): ready a block (tried elsewhere 2 times)
+native_wait COMPLETED [Wait for daylight]
+native_swap COMPLETED [Seal the shelter at (22 6 32): ready a block]
+goal at (21 5 32): Iron: Fill a bucket with water - Seal the shelter at (22 6 32) (tried elsewhere 2 times)
+native_place COMPLETED [Seal the shelter at (22 6 32)]
+goal at (21 5 32): Iron: Fill a bucket with water - Seal the shelter at (21 7 32) (tried elsewhere 2 times)
+goal at (21 5 32): Iron: Fill a bucket with water - Wait for daylight (tried elsewhere 2 times)
+native_place COMPLETED [Seal the shelter at (21 7 32)]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
+native_wait COMPLETED [Wait for daylight]
