@@ -18513,6 +18513,13 @@ final class PlayerRuntime {
         TerritoryGuard.activate(factions);
     }
 
+    /** The reverse of {@link #factionsWorldForTest}: a fixture on the server's own runtime leaves it as it found it. */
+    void factionsWorldOffForTest() {
+        requireThread();
+        factionsForTest = false;
+        TerritoryGuard.deactivate(factions);
+    }
+
     /** The faction world's once-a-second step, for a fixture whose runtime has no AI body to tick it. */
     void factionsTickForTest() {
         requireThread();

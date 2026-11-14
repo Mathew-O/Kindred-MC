@@ -21,7 +21,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * In plain terms: when a faction's member dies, its faction is told, and no one else: an AI player by its name and how
  * it died, a person only as "A member", never the killer or the place (F-34c1). The message rests on the death the World
- * Record holds, written first and told after.
+ * Record holds, written first and told after. An AI player's death comes through its runtime's own body hook
+ * (onNativeDeath), as in play; a person's through the mod's death hook to the server's own runtime, the third fixture.
  */
 public final class NativeFactionDeathGameTests implements FabricGameTest {
     /** The border at its widest: the test structures stand far out (as in NativeFactionTellGameTests). */
@@ -168,6 +169,55 @@ public final class NativeFactionDeathGameTests implements FabricGameTest {
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * The production path for a person: a person's real death reaches the server's own runtime through the mod's death
+     * hook (KindredMod, AFTER_DEATH), which writes it and tells the faction, here a faction-mate who is a person too.
+     * Nothing is handed in. The server's runtime is left as found: the faction disbanded, its world no longer factions.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "factionDeathHook", tickLimit = 600)
+    public void aPersonsDeathReachesTheServersRuntimeThroughTheDeathHookAndIsToldUnnamed(TestContext context) {
+        var server = context.getWorld().getServer();
+        var runtime = KindredMod.runtime();
+        var source = server.getCommandSource();
+        String name = "Hk" + Integer.toHexString(context.getWorld().getRandom().nextInt(0xffff));
+        ServerPlayerEntity[] people = new ServerPlayerEntity[2];
+        boolean[] dead = {false};
+        List<String> heard = new ArrayList<>();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(runtime != null && runtime.isReady(), "The server's runtime ready"))
+                .createAndAdd(() -> {
+                    runtime.factionsWorldForTest(WIDE);
+                    people[0] = MockPlayers.survival(context, "Cleo", new BlockPos(1, 2, 1));
+                    people[1] = MockPlayers.survival(context, "Dan", new BlockPos(3, 2, 1));
+                    runtime.heardForFixtures((who, text) -> { if (who == people[1]) heard.add(text.getString()); });
+                    context.assertTrue(runtime.faction(source, people[0].getUuid(), "create", List.of(name, "HK", "red")).accepted(), "Cleo founds " + name);
+                    context.assertTrue(runtime.faction(source, people[0].getUuid(), "invite", List.of("Dan")).accepted(), "Cleo invites Dan");
+                })
+                .createAndAdd(() -> context.assertTrue(runtime.faction(source, people[1].getUuid(), "join", List.of(name)).accepted(), "Dan joins"))
+                .createAndAdd(() -> context.assertTrue(runtime.factions().book().named(name).orElseThrow().members().size() == 2, "Cleo and Dan"))
+                .createAndAdd(() -> {
+                    if (!dead[0]) {
+                        people[0].damage(people[0].getDamageSources().generic(), 1000f);
+                        dead[0] = people[0].isDead();
+                    }
+                    context.assertTrue(dead[0], "Cleo died");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(heard.stream().anyMatch(l -> l.contains("A member died")), "Dan hears a member died: " + heard);
+                    context.assertTrue(heard.stream().noneMatch(l -> l.contains("Cleo")), "Cleo not named: " + heard);
+                })
+                .createAndAdd(() -> {
+                    runtime.heardForFixtures(null);
+                    runtime.faction(source, people[1].getUuid(), "leave", List.of());
+                    runtime.faction(source, people[0].getUuid(), "disband", List.of());
+                    runtime.factionsWorldOffForTest();
+                    server.getPlayerManager().remove(people[0]);
+                    server.getPlayerManager().remove(people[1]);
+                })
+                .createAndAdd(() -> context.assertTrue(runtime.factions().book().named(name).isEmpty(), "Its faction gone, the server's runtime as found"))
                 .completeIfSuccessful();
     }
 
