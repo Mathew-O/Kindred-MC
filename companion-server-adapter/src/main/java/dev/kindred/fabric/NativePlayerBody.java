@@ -1864,6 +1864,8 @@ final class NativePlayerBody implements BodyAdapter {
             for (int slot = 0; slot < 36; slot++) held.add(player.getInventory().getStack(slot).copy());
             for (int slot : in.apply(List.copyOf(held))) {
                 if (slot < 0 || slot >= 36) continue;
+                // A hunt's tracking compass is never put away (M-06k2): stored, it is not replaced.
+                if (HuntCompass.handed(player.getInventory().getStack(slot))) continue;
                 int index = slot < 9 ? size + 27 + slot : size + slot - 9;
                 if (index < handler.slots.size()) handler.onSlotClick(index, 0, net.minecraft.screen.slot.SlotActionType.QUICK_MOVE, player);
             }
@@ -2534,6 +2536,8 @@ final class NativePlayerBody implements BodyAdapter {
         if (player.squaredDistanceTo(recipient) > 16.0) return false;
         var stack = player.getInventory().getStack(inventorySlot);
         if (stack.isEmpty() || stack.getCount() < count) return false;
+        // A hunt's tracking compass is kept: set down, it is not replaced (M-06k2), and a person would know to keep it.
+        if (HuntCompass.handed(stack)) return false;
         return execute(lease, Intent.TOSS, null, () -> {
             ItemStack live = player.getInventory().getStack(inventorySlot);
             if (live.isEmpty() || live.getCount() < count) return;
@@ -2576,6 +2580,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (inventorySlot < 0 || inventorySlot >= 36 || count <= 0) return false;
         var stack = player.getInventory().getStack(inventorySlot);
         if (stack.isEmpty() || stack.getCount() < count) return false;
+        if (HuntCompass.handed(stack)) return false; // Kept (M-06k2), as above.
         return execute(lease, Intent.TOSS, null, () -> {
             ItemStack live = player.getInventory().getStack(inventorySlot);
             if (live.isEmpty() || live.getCount() < count) return;
