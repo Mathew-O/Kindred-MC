@@ -30,6 +30,8 @@ public final class NativeDynamicPathGameTests implements FabricGameTest {
     private static void hallway(TestContext context, BlockPos o) {
         var world = context.getWorld();
         var bricks = Blocks.NETHER_BRICKS.getDefaultState();
+        // Its hallway, past its plot, put back as the test ends, passed or failed (F-22c75b).
+        FixtureGround.keep(context, o.add(-2, -1, -4), o.add(HALL + 2, 5, 4));
         for (int x = -2; x <= HALL + 2; x++) for (int z = -4; z <= 4; z++) for (int y = -1; y <= 5; y++) {
             boolean shell = Math.abs(z) <= 2 && (y == -1 || y == 4 || Math.abs(z) == 2);
             world.setBlockState(o.add(x, y, z), shell ? bricks : Blocks.AIR.getDefaultState());
@@ -133,6 +135,9 @@ public final class NativeDynamicPathGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
                     forceChunks(world, o, true);
+                    // Its field and the fence round the wither skeleton, twenty over the plot and wider than it, put back as the
+                    // test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-4, -1, -26), o.add(36, 4, 12));
                     for (int x = -4; x <= 36; x++) for (int z = -26; z <= 12; z++) {
                         world.setBlockState(o.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 4; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
