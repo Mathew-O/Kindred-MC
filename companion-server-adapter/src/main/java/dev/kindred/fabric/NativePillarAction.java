@@ -281,8 +281,16 @@ final class NativePillarAction extends NativeRecordedAction {
         }
         if (flush != null) return flush;
         if (admission != null && admission.phase() == ActionAdmission.Phase.ISSUED) {
+            InventoryEvidence after;
             if (result != null && result.status() == Status.COMPLETED && !unknown) {
                 admission.verify(InventoryEvidence.capture(body).description() + "; " + result.progress(), "Native pillar step verified");
+            } else if (placed && !unknown && cell != null && body.entity().getServerWorld().getBlockState(cell).isOf(blockItem.getBlock())
+                    && conserved(after = InventoryEvidence.capture(body), 1)) {
+                // Cut short once its block was down (F-25c6c): what it did is there to be seen, its own block in its cell and
+                // one of it gone, nothing else lost. Held as uncertain instead, a player with no operator to recover it stood
+                // still for the rest of the run (E-40c3's seed 8675309 Echo, some 194,000 ticks).
+                admission.verify(after.description() + "; block=" + Registries.BLOCK.getId(blockItem.getBlock()) + "; pos=" + cell.toShortString()
+                        + "; cut short after placing", "Native pillar step verified: its block placed before it was cut short");
             } else if (before != null && conserved(InventoryEvidence.capture(body), 0) && cell != null
                     && body.entity().getServerWorld().getBlockState(cell).isReplaceable()) {
                 admission.noEffect(before.description() + "; nothing owned lost", "Pillar step cancelled with intact inventory");

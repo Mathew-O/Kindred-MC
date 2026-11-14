@@ -104,6 +104,7 @@
       "dev.kindred.fabric.NativeCastTableGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
       "dev.kindred.fabric.NativeRescueGameTests",
+      "dev.kindred.fabric.NativePillarInterruptGameTests",
       "dev.kindred.fabric.NativeRescueRoundsGameTests",
       "dev.kindred.fabric.NativeRescueRecipesGameTests",
       "dev.kindred.fabric.NativeWatchGameTests",

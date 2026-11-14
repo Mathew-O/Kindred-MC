@@ -1390,6 +1390,27 @@ final class PlayerRuntime {
         return nativeTask(source, id, skill, arguments);
     }
 
+    /**
+     * For fixtures: the running native task interrupted as a goal's stop interrupts it (a hoglin on it, a mob to fight):
+     * its lease cancelled, the runner aborted with {@code reason}, the inputs let go. False if nothing is running.
+     */
+    boolean interruptForFixtures(UUID id, String reason) {
+        requireThread();
+        Entry entry = entries.get(id);
+        if (entry == null || entry.runner == null || entry.nativeBody == null || !runnerBusy(entry)) return false;
+        entry.runner.lease().ifPresent(entry.arbiter::cancel);
+        entry.runner.abort(reason);
+        entry.nativeBody.stopInputs();
+        observeRunner(entry);
+        return true;
+    }
+
+    /** For fixtures: whether the player is held for reconciliation, its native state not to be acted on. */
+    boolean reconciliationBlockedForFixtures(UUID id) {
+        Entry entry = entries.get(id);
+        return entry != null && entry.reconciliationBlocked;
+    }
+
     int nativeSkill(ServerCommandSource source, UUID id, String skill, int value) {
         return nativeTask(source, id, skill, Map.of(skill.equals("native_wait") ? "seconds" : "slot", String.valueOf(value)));
     }
