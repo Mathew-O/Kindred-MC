@@ -163,15 +163,14 @@ public final class NativeFirstDayGameTests implements FabricGameTest {
     }
 
     /**
-     * Staged to four seconds short of the hour (online seconds written as a {@code power.online} event), then online in
-     * real time: Pia's ninth point comes as the hour completes; Max, at the maximum, gains nothing.
+     * Staged to four seconds short of the hour (online seconds written as a {@code power.online} event), then five seconds online
+     * on the factions clock: Pia's ninth point comes as the hour completes; Max, at the maximum, gains nothing.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "firstDayPower", tickLimit = 6000)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "firstDayPower", tickLimit = 600)
     public void anHourOnlineGivesAPointOfPowerAndNeverPastTheMaximum(TestContext context) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 5900);
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 580);
         var server = context.getWorld().getServer();
         ServerPlayerEntity[] p = new ServerPlayerEntity[2];
-        long[] since = new long[1];
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
@@ -193,14 +192,14 @@ public final class NativeFirstDayGameTests implements FabricGameTest {
                     var max = f.runtime.factions().powers().of(p[1].getUuid(), FactionSettings.DEFAULTS);
                     context.assertTrue(pia.power() == 8 && pia.progressSeconds() == 3_596, "Pia at 8, four seconds short of 9: " + pia);
                     context.assertTrue(max.power() == 10 && max.progressSeconds() == 0, "Max at the maximum, nothing kept toward more: " + max);
-                    f.runtime.factionsTickForTest(); // Both counted online from now, by the wall clock.
-                    since[0] = System.currentTimeMillis();
+                    f.runtime.factionsTickForTest(); // Both counted online from now.
                 })
                 .createAndAdd(() -> {
-                    // The faction world's once-a-second step, as the server runs it, until five seconds have passed (the
-                    // test server runs its ticks faster than real time, so this waits on the wall clock, not a tick count).
+                    // Staged: the factions clock moved on five seconds, and the faction world's once-a-second step run,
+                    // as the server runs it. Online time is measured on that clock, so no wall-clock wait.
+                    f.runtime.factions().clockForTest(5_000);
                     f.runtime.factionsTickForTest();
-                    context.assertTrue(System.currentTimeMillis() - since[0] >= 5_000 && f.runtime.factions().pendingSeconds(p[0].getUuid()) >= 5,
+                    context.assertTrue(f.runtime.factions().pendingSeconds(p[0].getUuid()) == 5,
                             "Five seconds online: " + f.runtime.factions().pendingSeconds(p[0].getUuid()));
                 })
                 .createAndAdd(() -> f.runtime.stop()) // The stop writes each player's online time, as at a real stop.
@@ -208,9 +207,10 @@ public final class NativeFirstDayGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.shutdownComplete(), "Stopped");
                     var pia = f.runtime.factions().powers().of(p[0].getUuid(), FactionSettings.DEFAULTS);
                     var max = f.runtime.factions().powers().of(p[1].getUuid(), FactionSettings.DEFAULTS);
-                    context.assertTrue(pia.power() == 9 && pia.progressSeconds() >= 1 && pia.progressSeconds() < 60,
+                    context.assertTrue(pia.power() == 9 && pia.progressSeconds() >= 1 && pia.progressSeconds() < 5,
                             "The hour completed: Pia 8 -> 9, the seconds past it kept toward 10: " + pia);
                     context.assertTrue(max.power() == 10 && max.progressSeconds() == 0, "Max still 10: " + max);
+                    f.runtime.factions().clockForTest(0);
                 })
                 .completeIfSuccessful();
     }
