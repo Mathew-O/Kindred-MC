@@ -259,7 +259,7 @@ See [M-01a](evidence/M-01a.md).
 **Build battles (M-04).** `/aiplayer match build <builder...> [for <seconds>] [theme <name>]` proposes a build battle for two to eight builders, AI players or humans online. Operators only, since it marks out the plots.
 - **The plots.** One per builder, fifteen blocks a side, in a row east of where you stand, three apart, marked in white concrete with a grey edge. They need open, level ground, clear sixteen blocks up.
 - **The theme.** Announced as a title at the start, by chance or as you name it: cottage, watchtower, pyramid or lighthouse. The build lasts five minutes unless you say otherwise (`for 120`; thirty seconds to half an hour).
-- **Free blocks in this mode only.** Every builder must arrive with nothing, builds in creative mode on its own plot, and leaves with nothing in its own game mode. Whatever creative gave is cleared when the build's time is up, and again at the end, a server stop included.
+- **Free blocks in this mode only.** Every builder must arrive with nothing, builds in creative mode on its own plot, and leaves in its own game mode. Whatever creative gave is cleared when the build's time is up, and again at the end, a server stop included. Each builder's own things are kept safe meanwhile (M-06k3): when the build starts, what it holds then (anything it picked up since it was asked to arrive empty), its ender chest and its game mode are written to `kindred/builder-holds/<uuid>.nbt`, and only then is it cleared and put in creative. However the battle ends, the match over, the server stopped, the builder away at the end, or a crash, it gets exactly those back and nothing creative made: an online builder at once, a person away at the end at its next join, an AI player when it is next connected. The file goes once it is back. At the end, every chest or other container on the plots and in the arena is emptied, and items lying there are cleared. The builds stand while the podium is shown; then, at a moment announced to the battle's players ("The arena is cleared after the podium, in 30 seconds."), the whole arena, plots, walkway and podium, is put back block for block as it was before the battle, dropping nothing (M-06k3a). Until then no block in it can be broken by anyone but a builder building, so nothing there drops, and a builder in creative cannot throw anything out. What it was is noted in `kindred/arena-snapshots/<match>.nbt` when the battle is proposed; a stop puts the arena back at once, and after a crash the next start does. The file goes after the server's next save.
 - **Each to its own plot.** While it builds, a human may break or place only on its own plot, and nobody may on another's.
 - **AI builders** turn the theme into a design of their own, with a size and materials by chance, and build it block by block with the same planner as a survival build. The theme alone decides the design.
 - **The vote.** When the time is up, everyone looks on in adventure mode and scores every other build one to five: AI players at once by what they see standing on each plot, humans by clicking a score in chat or `/aiplayer match vote <builder> <score>`. Once everyone has voted, or after thirty seconds, the best mean wins (ties together), with fireworks over the winner's plot. With no votes it is a draw.
@@ -843,8 +843,19 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    The auction house works the same way: `/faction as <player> ah sell <start> [buyNow] [hours]` lists what the player
    holds (25 coins a listing, five at a time, 48 hours unless given), `ah buy <id>` pays the buy-now price, and the seller
    is paid it less 3%.
-5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
-   `aiplayer native connect <UUID>` for each.
+5. After a restart every AI player waits offline: `aiplayer native list`, then `aiplayer native connect <name or UUID>`
+   for each. Connected, each is still stopped ("Resume explicitly"): `aiplayer native resume <name or UUID>` for each,
+   and it plays on from its saves. There is no form for all at once: two commands a player (found in F-31g's restart
+   soak, 2026-11-12). A player blocked for reconciliation after a crash ("Unresolved action ledger rows detected")
+   cannot be connected (`aiplayer recover` is the legacy companion's, not a native body's). Settle it first (F-31g1):
+   - `aiplayer native settle <name>` settles each action the crash left without an outcome where the evidence is
+     plain: the block it was digging still there and what it holds exactly as when it began (not done), or the block
+     gone and what it holds exactly as when it began (done).
+   - Otherwise it shows what it saw and the player stays blocked: choose with `aiplayer native settle <name> done` or
+     `... notdone`. After a crash the save is usually from the last autosave, so what it holds often differs, and the
+     choice is yours: the block still there, `notdone`; gone, `done`.
+   - Nothing is done again and no item is made: only the action's outcome is written, with who settled it and what was
+     seen (`action.settled` in the World Record). Then connect and resume it as above.
 6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
    read from the console. The overworld's size, centre and warning distance are in `world/level.dat` once the server
    has stopped (BorderSize, BorderCenterX/Z, BorderWarningBlocks).
@@ -971,7 +982,7 @@ Mine executes a single scoped log break using owned hotbar contents, native surv
 
 A block is placed only against one still there to click: if that block was dug out meanwhile, the placement is refused and the player goes on, where before it was stopped for reconciliation (F-25c4u). A placement that still cannot be verified records which slots changed and what is at the target.
 
-Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
+Missing, foreign, wrong-version or unverified state blocks for reconciliation; it is never replaced with an empty inventory. A saved dead body (a crash during the one-second respawn window) also blocks. An action a crash left without an outcome blocks too, until settled with `aiplayer native settle <name> [done|notdone]` (F-31g1; the Factions setup, step 5). Blocked/incomplete records keep their slot until recovery/removal is implemented. Autonomous work beyond the Nether-portal goal above remains disabled, and the goal itself is not qualified for unattended worlds. Default /aiplayer create still uses the legacy body; no saves are converted. Full client and restart recovery qualification remains open.
 
 Legacy owner/mode/scope fields preserve access and saves; they are not the new product interface. Native creation has its development cap; team management and legacy migration remain unfinished. Combat/duels reject until qualified native skills use the arbiter. Timezone changes reject until safe accounting transitions exist; spent activity is not reset.
 
