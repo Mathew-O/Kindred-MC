@@ -5297,6 +5297,8 @@ final class PlayerRuntime {
 
     /** How often a player with no goal looks to its base (M-01c), after finding nowhere to put one, after a stage ended short. */
     private static final int BASE_LOOK = 200, BASE_NO_SITE = 1200, BASE_RETRY = 6000;
+    /** A workstation cell let be after this many refused placements in a row, for this many ticks (F-22c77). */
+    static final int PLACE_REFUSALS = 3, PLACE_SET_ASIDE = 1200;
     /** How far from its anchor a player looks for ground for a base, and how often a stage that ends short is tried. */
     private static final int BASE_RADIUS = 24, BASE_TRIES = 3;
     /** How far a player looks round it for animals to keep (M-01a); its wheat plot's side. */
@@ -8171,6 +8173,23 @@ final class PlayerRuntime {
             if (entry.emptying != null || !entry.seenAtStores.isEmpty()) entry.lookAt = server.getTicks() + 200;
             else entry.storeAt = server.getTicks() + 1200;
             entry.routineRefreshPending = true;
+        }
+        // The same placement refused at a cell, the block not going down (F-22c77): counted; the third time running, the
+        // cell let be a minute, so that a workstation is put down somewhere else rather than at it tick after tick.
+        if (entry.nativeTask instanceof NativePlaceAction place && place.placedCell() != null) {
+            long cell = place.placedCell().asLong();
+            if (state == SkillRunner.State.BLOCKED && entry.runner.reason().filter(r -> r.startsWith(NativePlaceAction.NO_EFFECT)).isPresent()) {
+                if (entry.placeRefusals.size() > 64) entry.placeRefusals.clear();
+                int refused = entry.placeRefusals.merge(cell, 1, Integer::sum);
+                if (refused >= PLACE_REFUSALS) {
+                    entry.placeRefusals.remove(cell);
+                    entry.placeSetAside.put(cell, (long) server.getTicks() + PLACE_SET_ASIDE);
+                    KindredMod.LOGGER.info("{} lets {} be a while: its placement there refused {} times", entry.data.displayName(),
+                            place.placedCell().toShortString(), refused);
+                }
+            } else if (state == SkillRunner.State.COMPLETED) {
+                entry.placeRefusals.remove(cell);
+            }
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)) {
             entry.netheriteAt = server.getTicks() + 600;
@@ -13403,7 +13422,7 @@ final class PlayerRuntime {
             return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
         }
         if (held >= 0) {
-            BlockPos spot = anvilSpot(player, entry.setup);
+            BlockPos spot = anvilSpot(entry, player);
             if (spot == null) {
                 entry.kitNamesAt = now + 600;
                 return null;
@@ -13952,7 +13971,7 @@ final class PlayerRuntime {
             for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
             return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
         }
-        BlockPos spot = workstationSpot(player, entry.setup, "minecraft:enchanting_table");
+        BlockPos spot = workstationSpot(entry, player, "minecraft:enchanting_table");
         if (spot == null) {
             entry.enchantAt = now + 600;
             return null;
@@ -14030,7 +14049,7 @@ final class PlayerRuntime {
                 for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
                 return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tableSlot), "target", String.valueOf(free))));
             }
-            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:smithing_table");
+            BlockPos spot = workstationSpot(entry, player, "minecraft:smithing_table");
             if (spot == null) {
                 entry.netheriteAt = now + 600;
                 return null;
@@ -14175,7 +14194,7 @@ final class PlayerRuntime {
                 for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
                 return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(standSlot), "target", String.valueOf(free))));
             }
-            BlockPos spot = workstationSpot(player, entry.setup, "minecraft:brewing_stand");
+            BlockPos spot = workstationSpot(entry, player, "minecraft:brewing_stand");
             if (spot == null) {
                 entry.brewAt = now + 600;
                 return null;
@@ -14242,15 +14261,18 @@ final class PlayerRuntime {
      * Where to put its anvil down: on solid ground beside it, open, within reach, and allowed by its work area's rules,
      * or the server's roaming rules with none.
      */
-    private BlockPos anvilSpot(ServerPlayerEntity player, WorkSetup setup) {
-        return workstationSpot(player, setup, "minecraft:anvil");
+    private BlockPos anvilSpot(Entry entry, ServerPlayerEntity player) {
+        return workstationSpot(entry, player, "minecraft:anvil");
     }
 
     /** As {@link #anvilSpot}, for a workstation of {@code block}. */
-    private BlockPos workstationSpot(ServerPlayerEntity player, WorkSetup setup, String block) {
+    private BlockPos workstationSpot(Entry entry, ServerPlayerEntity player, String block) {
         var world = player.getServerWorld();
+        var setup = entry.setup;
         BlockPos feet = player.getBlockPos();
         var state = Registries.BLOCK.get(Identifier.of(block)).getDefaultState();
+        long now = server.getTicks();
+        entry.placeSetAside.values().removeIf(until -> until <= now);
         for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
             for (BlockPos pos : List.of(feet.offset(side), feet.offset(side).offset(side.rotateYClockwise()))) {
                 if (!world.isChunkLoaded(pos) || !world.isInBuildLimit(pos) || !world.getBlockState(pos).isReplaceable()
@@ -14258,11 +14280,36 @@ final class PlayerRuntime {
                 if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(pos)) > 16.0) continue;
                 // Not where something stands, as the server's own placement checks: its tamed wolf sat in the cell it
                 // chose, and it chose that cell again on every decision, refused each time (#74's CI, run 42556590202).
-                if (!world.canPlace(state, pos, net.minecraft.block.ShapeContext.of(player))) continue;
+                if (!placeableEveryWay(world, state, pos, player)) continue;
+                // A cell its placement was refused at again and again, the cell looking open each time it was chosen: let
+                // be a while, another chosen (F-22c77). The pet fixture on #281's CI put its anvil down 1,087 times at one
+                // cell and was refused each time, for some 6,800 ticks, till its runtime stopped.
+                if (entry.placeSetAside.containsKey(pos.asLong())) continue;
                 if (NativeEdits.decide(player, setup, EditPolicy.Kind.PLACE, pos, block, edits).allowed()) return pos.toImmutable();
             }
         }
         return null;
+    }
+
+    /**
+     * Whether {@code state} can go down at {@code pos} whichever way it would be turned as it is put down: a block that
+     * faces the way its placer faces (an anvil, turned a quarter from it) takes another shape each way, and its default
+     * state is only one of them. An anvil's top spans the cell one way and leaves its edges open the other: a tamed wolf
+     * sitting a tenth of a block into the cell's edge passed the default anvil's check and blocked the anvil it put down,
+     * facing the other way, every time (F-22c77).
+     */
+    static boolean placeableEveryWay(net.minecraft.world.World world, net.minecraft.block.BlockState state, BlockPos pos,
+                                     ServerPlayerEntity player) {
+        var context = net.minecraft.block.ShapeContext.of(player);
+        if (!world.canPlace(state, pos, context)) return false;
+        for (var property : List.of(net.minecraft.state.property.Properties.HORIZONTAL_FACING, net.minecraft.state.property.Properties.FACING)) {
+            if (!state.contains(property)) continue;
+            for (Direction facing : Direction.Type.HORIZONTAL) {
+                if (!property.getValues().contains(facing)) continue;
+                if (!world.canPlace(state.with(property, facing), pos, context)) return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -18476,6 +18523,9 @@ final class PlayerRuntime {
         private boolean kitNameAsking;
         private final Set<String> kitNamesGiven = new HashSet<>();
         private BlockPos anvil;
+        /** Workstation cells its placement was refused at, by the number of times, and those let be till a tick (F-22c77). */
+        private final Map<Long, Integer> placeRefusals = new HashMap<>();
+        private final Map<Long, Long> placeSetAside = new HashMap<>();
         private long kitNamesAt;
         /** Its enchanting table, once it put one down (E-16a), and when it next looks to enchant. */
         private BlockPos enchantTable;
@@ -19749,7 +19799,7 @@ final class PlayerRuntime {
                         return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(held), "target", String.valueOf(free))));
                     }
                     if (held >= 0) {
-                        BlockPos spot = anvilSpot(player, entry.setup);
+                        BlockPos spot = anvilSpot(entry, player);
                         if (spot != null) {
                             entry.anvil = spot.toImmutable();
                             return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(held), "x", String.valueOf(spot.getX()),
