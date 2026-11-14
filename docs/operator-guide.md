@@ -1033,6 +1033,14 @@ stop. If a stop ever hangs past `Saving worlds`, kill it and treat the next star
 
 ## A month-long run: what grows on disk
 
+**Schema 14 cannot be undone (F-31b1).** The first start of a build with the action bound moves the database
+(`companions.sqlite`) to schema 14. Older builds refuse a schema 14 database at start, and nothing moves it back. The
+only way back is a copy of `<world>/kindred/` taken, with the server stopped, before that first start. Settled action
+history older than 30 game days (10 real hours) is then pruned: each action's row and summary go, and an
+`action.pruned` tally a game day keeps how many by state and the first and last of them. A day pruned over several
+passes has several tallies, and its figures are their sum. Unresolved actions, and any action that was ever uncertain,
+are kept whatever their age.
+
 Each figure names the run it was measured on. Sizes scale with the number of players and with what they do.
 
 - **`keepdb8-4c92b41`:** 8 AI players in Factions mode on seed 101, 6 game days, on main of 2026-11-11, with F-31b's fold and the gauge that counts every insert (#210).
@@ -1040,7 +1048,7 @@ Each figure names the run it was measured on. Sizes scale with the number of pla
 
 | What | Where | What bounds it | Measured |
 | --- | --- | --- | --- |
-| The World Record and ledgers | `<world>/kindred/companions.sqlite` | Nothing but F-31b's fold of settled action history (see F-31c) | **8 players:** 20.9 MB after day 1, 66.5 MB after day 6 (with its write-ahead log); about 12 MB a game day on days 1 and 2, then 6.2 to 8.9 (7.7 a day over days 3 to 6). **3 players, before the fold:** 11.3 MB after day 1, 40.5 MB after day 12; 1.3 to 1.8 MB a game day on days 8 to 12 |
+| The World Record and ledgers | `<world>/kindred/companions.sqlite` | F-31b's fold of settled action history, and F-31b1's bound: settled actions older than 30 game days pruned with a day's tally. The journal is not bounded (see F-31c) | **8 players:** 20.9 MB after day 1, 66.5 MB after day 6 (with its write-ahead log); about 12 MB a game day on days 1 and 2, then 6.2 to 8.9 (7.7 a day over days 3 to 6). **3 players, before the fold:** 11.3 MB after day 1, 40.5 MB after day 12; 1.3 to 1.8 MB a game day on days 8 to 12 |
 | Its write-ahead log | `companions.sqlite-wal` | SQLite's checkpoint every 1,000 pages. The store has one connection and one writer thread, so nothing holds the checkpoint off. Folded in and removed at a clean stop | About 4.2 MB at most: 4,173,592 bytes over 52,001 events in a probe; 4,169,472 on keepdb-101; none left after keepdb8's clean stop |
 | Region files | `<world>/region`, `entities`, `poi`, and the same under `DIM-1`, `DIM1` | Grow as new chunks are walked, so the world border bounds them | **8 players, 6 days:** overworld 27.1 MB region, 1.5 MB entities, 0.1 MB poi; Nether 15.0 MB region, 0.6 MB entities; no End. **3 players, 12 days:** 22.6 MB, overworld only |
 | The server log | `logs/latest.log`, rotated daily to `.log.gz` | Rotated, never deleted by the server | **8 players:** 1.46 MB of `latest.log` and a 0.44 MB `.gz` over the 6 days. **3 players, 12 days:** 4.9 MB (0.28 MB gzipped) |

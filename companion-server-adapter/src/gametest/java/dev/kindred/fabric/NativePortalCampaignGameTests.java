@@ -2032,6 +2032,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     // up and in sight from the top straight down the cut.
                     // It stands on ground of its own: past the fixture's floor the plot is open below, and the foot of
                     // the staircase rested on whatever the neighbouring fixtures left there.
+                    // Its stone, shaft and the air over it, past the plot, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, b.add(-2, -1, -2), b.add(10, 24, 2));
                     for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = -1; y <= 7; y++) {
                         world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
@@ -2182,6 +2184,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos b = base[0] = f.player().getBlockPos().toImmutable();
+                    // Its stone, shaft and the air over it, past the plot, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, b.add(-2, -3, -2), b.add(10, 24, 2));
                     for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = -3; y <= 7; y++) {
                         world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
@@ -2264,6 +2268,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos b = base[0] = f.player().getBlockPos().up(12).toImmutable();
+                    // Its stone, shaft and the air over it, past the plot, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, b.add(-3, -11, -3), b.add(3, 6, 3));
                     for (int x = -3; x <= 3; x++) for (int z = -3; z <= 3; z++) for (int y = -11; y <= 4; y++) {
                         world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
@@ -5948,6 +5954,11 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
     private static BlockPos skyIsland(TestContext context, net.minecraft.server.network.ServerPlayerEntity player) {
         var world = context.getWorld();
         BlockPos p = player.getBlockPos().up(12).toImmutable();
+        // The island, what is staged and grown on it, and the world's floor cleared under it, put back as the test ends,
+        // passed or failed (F-22c75b): it reaches past the plot, and left standing its grass, leaves, logs, ore and
+        // workstations lay in or beside a later test's plot.
+        FixtureGround.keep(context, p.add(-6, -3, -6), p.add(6, 10, 6));
+        FixtureGround.keep(context, new BlockPos(p.getX() - 5, world.getBottomY(), p.getZ() - 5), new BlockPos(p.getX() + 5, world.getBottomY(), p.getZ() + 5));
         for (int dx = -5; dx <= 5; dx++) for (int dz = -5; dz <= 5; dz++) {
             for (int dy = -3; dy <= -1; dy++) world.setBlockState(p.add(dx, dy, dz), (dy == -1 ? Blocks.GRASS_BLOCK : Blocks.DIRT).getDefaultState());
             for (int dy = 0; dy <= 8; dy++) world.setBlockState(p.add(dx, dy, dz), Blocks.AIR.getDefaultState());
