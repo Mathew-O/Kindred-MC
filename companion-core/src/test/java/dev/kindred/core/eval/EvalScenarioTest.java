@@ -107,4 +107,19 @@ class EvalScenarioTest {
         assertFalse(EvalScenario.parse("goal=nether").asText().contains("sleep"), "the default is not written");
         assertThrows(IllegalArgumentException.class, () -> EvalScenario.parse("sleep=maybe"));
     }
+
+    @Test
+    void theVoiceAndTheStrategistAreSeparateSwitches() {
+        // RUNNER 2's keyed run (2026-11-14): strategist=off with voice=on consulted on the stance all the same.
+        var voiceAlone = EvalScenario.parse("goal=none; mode=factions; strategist=off; voice=on");
+        assertTrue(voiceAlone.voice());
+        assertFalse(voiceAlone.askAdvice(), "No stance or question asked with the strategist off");
+        assertFalse(voiceAlone.askRescue(), "No rescue asked with the strategist off");
+        var both = EvalScenario.parse("goal=none; strategist=on; voice=on");
+        assertTrue(both.askAdvice() && both.askRescue());
+        var strategistAlone = EvalScenario.parse("goal=none; strategist=on; voice=off; advice=off");
+        assertFalse(strategistAlone.askAdvice(), "advice=off still asks for rescues alone");
+        assertTrue(strategistAlone.askRescue());
+        assertFalse(EvalScenario.parse("goal=none").askAdvice(), "Neither, by default");
+    }
 }
