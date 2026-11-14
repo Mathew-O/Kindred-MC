@@ -163,6 +163,8 @@
       "dev.kindred.fabric.NativeMatchFrameworkGameTests",
       "dev.kindred.fabric.NativeManhuntGameTests",
       "dev.kindred.fabric.NativeBuildBattleGameTests",
+      "dev.kindred.fabric.NativeBuilderHoldGameTests",
+      "dev.kindred.fabric.NativeArenaRestoreGameTests",
       "dev.kindred.fabric.NativeRanchGameTests",
       "dev.kindred.fabric.NativeEvalGameTests",
       "dev.kindred.fabric.ReplayGameTests",
