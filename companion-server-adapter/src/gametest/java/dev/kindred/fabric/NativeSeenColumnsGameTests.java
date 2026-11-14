@@ -144,10 +144,52 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
                         context.assertTrue(explore.get().getY() == feet, "The explore walk at its own height, the tower's top out of sight: " + explore.get().toShortString());
                     } else {
                         context.assertTrue(to.getY() == feet + LEG_TOP, "The leg's end on the tower's top it sees: " + to.toShortString());
-                        context.assertTrue(explore.get().getY() == feet + EXPLORE_TOP, "The explore walk to the tower's top it sees: " + explore.get().toShortString());
+                        context.assertTrue(explore.get().getY() == feet + EXPLORE_TOP, "The explore walk to the tower's top it sees: " + explore.get().toShortString()
+                                + " / " + inTheWay(player, explore.get(), feet + EXPLORE_TOP - 1));
                     }
                 })
                 .completeIfSuccessful();
+    }
+
+    /**
+     * For a failure's message: what a sight line from its eyes to the top of the tower under {@code walk} meets first, and
+     * the column's top by the heightmap, both from the yard's floor.
+     */
+    private static String inTheWay(net.minecraft.server.network.ServerPlayerEntity player, BlockPos walk, int top) {
+        var world = player.getServerWorld();
+        var hit = world.raycast(new net.minecraft.world.RaycastContext(player.getEyePos(), new Vec3d(walk.getX() + 0.5, top + 0.999, walk.getZ() + 0.5),
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+        int column = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, walk.getX(), walk.getZ()) - 1;
+        BlockPos feet = player.getBlockPos();
+        return "its sight line to the tower's top meets " + (hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS ? "nothing"
+                : hit.getBlockPos().subtract(feet).toShortString() + " " + world.getBlockState(hit.getBlockPos())) + "; the column's top "
+                + (column - feet.getY()) + " over its feet, " + world.getBlockState(new BlockPos(walk.getX(), column, walk.getZ()));
+    }
+
+    /**
+     * The cells within a block of a sight line from its eyes on the yard's floor at {@code o} to the top of each tower,
+     * the towers' own cells and the floor's not counted, none below its feet.
+     */
+    static java.util.Set<BlockPos> sightLines(BlockPos o) {
+        var cells = new java.util.LinkedHashSet<BlockPos>();
+        double ex = o.getX() + 0.5, ey = o.getY() + 1.62, ez = o.getZ() + 0.5;
+        int[][] tops = {{28, EXPLORE_TOP - 1, 0}, {-28, EXPLORE_TOP - 1, 0}, {0, EXPLORE_TOP - 1, 28}, {0, EXPLORE_TOP - 1, -28},
+                {FactionsPlayer.LEG, LEG_TOP - 1, 0}};
+        for (int[] top : tops) {
+            double tx = o.getX() + top[0] + 0.5, ty = o.getY() + top[1] + 0.999, tz = o.getZ() + top[2] + 0.5;
+            int steps = (int) Math.ceil(Math.hypot(tx - ex, tz - ez) * 4);
+            for (int i = 0; i <= steps; i++) {
+                double t = (double) i / steps;
+                BlockPos at = BlockPos.ofFloored(ex + (tx - ex) * t, ey + (ty - ey) * t, ez + (tz - ez) * t);
+                for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++) {
+                    BlockPos cell = at.add(dx, dy, dz);
+                    int rx = cell.getX() - o.getX(), rz = cell.getZ() - o.getZ();
+                    boolean tower = rx == top[0] && rz == top[2];
+                    if (cell.getY() >= o.getY() && !tower) cells.add(cell.toImmutable());
+                }
+            }
+        }
+        return cells;
     }
 
     /** A scout of the chunk two hundred blocks east: its first leg ends forty-eight east, on the leg tower's column. */
@@ -159,12 +201,19 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
      * The yard: a floor thirteen across at {@code o}'s feet less one, walled {@value #WALL} out and {@value #WALL_HIGH} high
      * when {@code walled}; four explore towers twenty-eight out each way, their tops {@value #EXPLORE_TOP} over its feet; and
      * the leg's tower forty-eight east, from nine below its feet to {@value #LEG_TOP} over, so that nothing within eight of
-     * its height is ground to stand on. The leg tower's column, returned. Each tower is one column: its top block, over its
-     * eyes, is seen from below by the side it shows them (the top of a broad tower's middle is hidden by its own edge).
+     * its height is ground to stand on. The cells along its sight lines to the towers' tops are open air before these are
+     * laid ({@link #sightLines}). The leg tower's column, returned. Each tower is one column: its top block, over its eyes,
+     * is seen from below by the side it shows them (the top of a broad tower's middle is hidden by its own edge).
      */
     private static BlockPos yard(TestContext context, BlockPos o, boolean walled) {
         var world = context.getWorld();
         FixtureGround.keep(context, o.add(-32, -12, -32), o.add(52, LEG_TOP + 2, 32));
+        // Open air first along each sight line from its eyes to a tower's top, a block round it: those cells are the
+        // fixture's own, whatever another test on the same ground left there (#275's CI: an explore look's sight line
+        // north that reached no tower top, at a place where the test passed nowhere else). Nothing else is cleared, so
+        // that nothing a neighbour has in use beside the lines is touched; all of it is inside the kept box, put back
+        // as it was when the test ends.
+        for (BlockPos cell : sightLines(o)) world.setBlockState(cell, Blocks.AIR.getDefaultState());
         for (int x = -WALL; x <= WALL; x++) for (int z = -WALL; z <= WALL; z++) {
             world.setBlockState(o.add(x, -1, z), Blocks.STONE.getDefaultState());
             boolean edge = Math.abs(x) == WALL || Math.abs(z) == WALL;
