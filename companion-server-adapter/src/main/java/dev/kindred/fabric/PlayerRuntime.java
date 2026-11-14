@@ -8362,7 +8362,11 @@ final class PlayerRuntime {
             var factionMove = entry.factionPlay.move;
             boolean factionWalk = "native_goto".equals(entry.skillId) && entry.dispatchSource != null
                     && entry.dispatchSource.startsWith("factionCandidates");
-            if (factionWalk && state == SkillRunner.State.BLOCKED) entry.factionPlay.blockedWalks++;
+            if (factionWalk && state == SkillRunner.State.BLOCKED) {
+                entry.factionPlay.blockedWalks++;
+                if (entry.currentTaskId != null && entry.currentTaskId.equals(entry.factionPlay.settledWalk)) entry.factionPlay.blockedSettled++;
+            }
+            if (factionWalk) entry.factionPlay.settledWalk = null;
             if (factionWalk) entry.factionPlay.walksEnded++;
             if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
@@ -9871,6 +9875,15 @@ final class PlayerRuntime {
      * dispatched, under its lease, through the same calls a person's commands use, the rules checked again there; or a
      * walk to a claim elsewhere, a border it saw, or its faction's home. Null when it has nothing to do there.
      */
+    /**
+     * For the back-off's fixture: {@code move} settled now, while its own walk may still run (there in its chunk, the
+     * place set aside, its end open water). That walk's end is no refusal of a move still to be made.
+     */
+    private static void settledInFlight(Entry entry, FactionsPlayer play, ServerPlayerEntity player, dev.kindred.core.factions.FactionPlay.Choice move) {
+        UUID walk = FactionsPlayer.taskId(player.getUuid(), move);
+        if (walk.equals(entry.currentTaskId)) play.settledWalk = walk;
+    }
+
     private List<NativeTaskCandidate> factionCandidates(Entry entry, NativePlayerBody body) {
         if (!factionsWorld() || !ready || !running) return null;
         var player = body.entity();
@@ -9902,6 +9915,7 @@ final class PlayerRuntime {
         if (move == null) return null;
         // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
         if (play.setAside(tick).contains(move.target())) {
+            settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
@@ -9920,6 +9934,7 @@ final class PlayerRuntime {
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
+            settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
             return null;
@@ -9933,6 +9948,7 @@ final class PlayerRuntime {
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && !play.waiting(move.target(), tick)
                 && seenOpenWater(entry, play, player, to, tick)) {
             play.openWater(move.target(), tick, player.getBlockPos(), FactionsPlayer.atSurface(player));
+            settledInFlight(entry, play, player, move);
             play.move = null;
             // The next choice at the decision interval, not on the same tick: chosen at once, a coast of water it saw was
             // set aside place by place, a search for each (F-35j1).
@@ -10267,7 +10283,7 @@ final class PlayerRuntime {
     int[] factionBlockedForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
-        return entry == null ? new int[2] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted};
+        return entry == null ? new int[3] : new int[] {entry.factionPlay.blockedWalks, entry.factionPlay.refusalsCounted, entry.factionPlay.blockedSettled};
     }
 
     /** How many times the fixture's AI player has looked all round it (its perception's sweeps); -1 before it looks at all. */
