@@ -3294,7 +3294,12 @@ final class PortalRunCampaign {
 
     /** Set down a crafting table it carries. */
     Optional<Task> placeTable(NativePlayerBody body) {
-        return placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
+        return placeTable(body, spot -> false);
+    }
+
+    /** As {@link #placeTable(NativePlayerBody)}, never at a spot {@code keepOff} names (its own wheat plot, M-01a1). */
+    Optional<Task> placeTable(NativePlayerBody body, Predicate<BlockPos> keepOff) {
+        return placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table", keepOff);
     }
 
     private Optional<BlockPos> nearestWorkstation(ServerPlayerEntity player, net.minecraft.block.Block block, int radius) {
@@ -5064,6 +5069,10 @@ final class PortalRunCampaign {
 
     /** Puts an owned block item on solid ground beside the player, moving it to the hotbar first if needed. */
     private Optional<Task> placeItem(NativePlayerBody body, Item item, String label) {
+        return placeItem(body, item, label, spot -> false);
+    }
+
+    private Optional<Task> placeItem(NativePlayerBody body, Item item, String label, Predicate<BlockPos> keepOff) {
         var player = body.entity();
         var inventory = player.getInventory();
         int slot = -1;
@@ -5089,7 +5098,7 @@ final class PortalRunCampaign {
                 var floor = world.getBlockState(spot.down()).getCollisionShape(world, spot.down());
                 // Not on a wall or a fence: it stands taller than a block, into the spot (the sky island's edge wall).
                 if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0) continue;
-                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot) || !mayWork(player, spot)) continue;
+                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || keepOff.test(spot) || nearGeneratorLava(spot) || !mayWork(player, spot)) continue;
                 // Over the void, not at the island's edge: picked up again, the block's drop could slide off it.
                 if (!ground && besideTheVoid(world, spot)) continue;
                 // Not where the player (standing off the middle of its block) or anything living overlaps it: vanilla
@@ -5102,7 +5111,7 @@ final class PortalRunCampaign {
         List<Direction> sides = List.of(digDirection().rotateYClockwise(), digDirection().rotateYCounterclockwise(), digDirection().getOpposite(), digDirection());
         for (Direction direction : sides) {
             BlockPos wall = feet.offset(direction);
-            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall) || !mayWork(player, wall)) continue;
+            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall) || keepOff.test(wall) || !mayWork(player, wall)) continue;
             if (world.getBlockState(wall.down()).getCollisionShape(world, wall.down()).isEmpty()) continue;
             if (breakableNow(body, wall)) return Optional.of(clearAt(wall, "Clear space for a workstation"));
         }

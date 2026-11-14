@@ -302,7 +302,16 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                             if (world.getBlockState(at).isOf(Blocks.FARMLAND) && world.getBlockState(at.up()).isOf(Blocks.WHEAT)) sown++;
                         }
                     }
-                    context.assertTrue(sown == 4, "Its plot sown: " + plot + ", " + sown + " of 4 / " + f.runtime.ranchNote(f.id) + " / "
+                    StringBuilder cells = new StringBuilder();
+                    if (plot.isPresent()) {
+                        BlockPos corner = new BlockPos(plot.get().x(), plot.get().y(), plot.get().z());
+                        for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) {
+                            BlockPos at = corner.add(dx, 0, dz);
+                            cells.append(dx).append(',').append(dz).append(' ').append(world.getBlockState(at).getBlock().getTranslationKey().replace("block.minecraft.", ""))
+                                    .append(" under ").append(world.getBlockState(at.up()).getBlock().getTranslationKey().replace("block.minecraft.", "")).append("; ");
+                        }
+                    }
+                    context.assertTrue(sown == 4, "Its plot sown: " + plot + ", " + sown + " of 4 (" + cells + ") / " + f.runtime.ranchNote(f.id) + " / "
                             + (f.player() == null ? "-" : "hoe " + f.player().getInventory().count(Items.WOODEN_HOE) + ", seeds " + f.player().getInventory().count(Items.WHEAT_SEEDS)
                             + ", planks " + f.player().getInventory().count(Items.OAK_PLANKS) + ", sticks " + f.player().getInventory().count(Items.STICK)
                             + ", tables held " + f.player().getInventory().count(Items.CRAFTING_TABLE) + ", tables about " + tablesAbout(world, f.player().getBlockPos())

@@ -5392,8 +5392,11 @@ final class PlayerRuntime {
         for (int dx = 0; dx < PLOT && !bare; dx++) for (int dz = 0; dz < PLOT && !bare; dz++) {
             BlockPos cell = corner.add(dx, 0, dz);
             var soil = world.getBlockState(cell);
-            boolean ground = soil.isOf(Blocks.FARMLAND) || soil.isOf(Blocks.DIRT) || soil.isOf(Blocks.GRASS_BLOCK);
-            bare = ground && !world.getBlockState(cell.up()).isOf(Blocks.WHEAT);
+            // Bare as its plot's runner reads it (M-01a1): tilled soil open over it, or soil with nothing over it but a plant.
+            // Read otherwise (a table on the soil), a cell the runner had no work on sent it back to the plot every tick.
+            var over = world.getBlockState(cell.up());
+            bare = soil.isOf(Blocks.FARMLAND) ? over.isAir()
+                    : (soil.isOf(Blocks.DIRT) || soil.isOf(Blocks.GRASS_BLOCK)) && (over.isAir() || over.isReplaceable() && over.getFluidState().isEmpty());
         }
         if (!bare) return false;
         String wood = RanchRunner.woodOf(player);

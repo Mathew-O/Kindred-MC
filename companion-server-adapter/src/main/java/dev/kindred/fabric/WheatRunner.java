@@ -196,12 +196,21 @@ final class WheatRunner {
         } else recipe = "wooden_hoe";
         var made = campaign.craft(body, recipe);
         if (made.isPresent() || campaign.tableNear(body)) return made;
-        if (inventory.count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body);
+        // Never on its own plot: a table on a cell left that cell untilled, its soil under the table (M-01a1).
+        if (inventory.count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body, this::onPlot);
         if (planks < 4) {
             if (inventory.count(log) == 0) return stop(false, "Short of " + wood + " wood for a crafting table");
             return campaign.craft(body, wood + "_planks");
         }
         return campaign.craft(body, "crafting_table");
+    }
+
+    /** Whether {@code spot} is one of the plot's cells or the cell over one: no place for anything but its crop. */
+    boolean onPlot(BlockPos spot) {
+        for (Pos cell : plot.cells()) {
+            if (spot.getX() == cell.x() && spot.getZ() == cell.z() && (spot.getY() == cell.y() || spot.getY() == cell.y() + 1)) return true;
+        }
+        return false;
     }
 
     private WheatPlot.Observation observe(ServerPlayerEntity player) {
