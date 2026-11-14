@@ -1,0 +1,143 @@
+[17:14:25] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:25] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 110, 25, 210]
+[17:14:25] [Server thread/INFO]: Sol goal at 109 25 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 110, 24, 210
+[17:14:25] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:25] [Server thread/INFO]: Sol goal at 109 25 210: Iron: Mine iron ore (0/18) - Dig down toward iron: step down
+[17:14:25] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 110, 24, 210]
+[17:14:25] [Server thread/INFO]: Sol goal at 110 25 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 111, 26, 210
+[17:14:25] [Server thread/INFO]: Sol goal at 110 24 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 111, 25, 210
+[17:14:25] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[17:14:25] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:25] [Server thread/INFO]: Sol goal at 110 24 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 111, 24, 210
+[17:14:25] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 111, 25, 210]
+[17:14:25] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:25] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 111, 24, 210]
+[17:14:25] [Server thread/INFO]: Sol goal at 110 24 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 111, 23, 210
+[17:14:25] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:26] [Server thread/INFO]: Sol goal at 110 24 210: Iron: Mine iron ore (0/18) - Dig down toward iron: step down
+[17:14:26] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 111, 23, 210]
+[17:14:26] [Server thread/INFO]: Sol goal at 111 24 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 112, 25, 210
+[17:14:26] [Server thread/INFO]: Sol goal at 111 23 210: Iron: Mine iron ore (0/18) - Tunnel past liquid toward iron: clear 112, 24, 210
+[17:14:26] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[17:14:26] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:26] [Server thread/INFO]: Sol goal at 111 23 210: Iron: Mine iron ore (0/18) - Tunnel past liquid toward iron: clear 112, 23, 210
+[17:14:26] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 112, 24, 210]
+[17:14:26] [Server thread/INFO]: Sol goal at 111 23 210: Iron: Mine iron ore (0/18) - Tunnel past liquid toward iron: advance
+[17:14:26] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 112, 23, 210]
+[17:14:26] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:26] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[17:14:26] [Server thread/INFO]: Sol goal at 112 23 210: Iron: Mine iron ore (0/18) - Tunnel past liquid toward iron: clear 113, 24, 210
+[17:14:26] [Server thread/INFO]: Sol picked up 1 minecraft:moss_block
+[17:14:26] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 113, 24, 210]
+[17:14:26] [Server thread/INFO]: Sol goal at 112 23 210: Iron: Mine iron ore (0/18) - Tunnel past liquid toward iron: clear 113, 23, 210
+[17:14:26] [Server thread/INFO]: Sol goal at 112 23 210: Iron: Mine iron ore (0/18) - Tunnel past liquid toward iron: advance
+[17:14:26] [Server thread/INFO]: Sol native_break COMPLETED [Tunnel past liquid toward iron: clear 113, 23, 210]
+[17:14:26] [Server thread/INFO]: Sol picked up 1 minecraft:diorite
+[17:14:27] [Server thread/INFO]: Sol native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[17:14:27] [Server thread/INFO]: Sol goal at 113 23 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 114, 24, 210
+[17:14:27] [Server thread/INFO]: Sol picked up 1 minecraft:moss_block
+[17:14:27] [Server thread/INFO]: Sol goal at 113 23 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 114, 23, 210
+[17:14:27] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 114, 24, 210]
+[17:14:27] [Server thread/INFO]: Sol picked up 1 minecraft:diorite
+[17:14:27] [Server thread/INFO]: Sol goal at 113 23 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 114, 22, 210
+[17:14:27] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 114, 23, 210]
+[17:14:27] [Server thread/INFO]: Sol goal at 113 23 210: Iron: Mine iron ore (0/18) - Dig down toward iron: step down
+[17:14:27] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 114, 22, 210]
+[17:14:27] [Server thread/INFO]: Sol picked up 1 minecraft:granite
+[17:14:27] [Server thread/INFO]: Sol goal at 114 23 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 115, 24, 210
+[17:14:27] [Server thread/INFO]: Sol picked up 1 minecraft:moss_block
+[17:14:27] [Server thread/INFO]: Sol goal at 114 22 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 115, 23, 210
+[17:14:27] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[17:14:28] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 115, 23, 210]
+[17:14:28] [Server thread/INFO]: Sol goal at 114 22 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 115, 22, 210
+[17:14:28] [Server thread/INFO]: Sol picked up 1 minecraft:granite
+[17:14:28] [Server thread/INFO]: Sol goal at 114 22 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 115, 21, 210
+[17:14:28] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 115, 22, 210]
+[17:14:28] [Server thread/INFO]: Sol picked up 1 minecraft:granite
+[17:14:28] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 115, 21, 210]
+[17:14:28] [Server thread/INFO]: Sol goal at 114 22 210: Stone: Place a crafting table - Ready crafting table
+[17:14:28] [Server thread/INFO]: Sol native_swap COMPLETED [Ready crafting table]
+[17:14:28] [Server thread/INFO]: Sol goal at 114 22 210: Stone: Place a crafting table - Place a crafting table
+[17:14:28] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]
+[17:14:28] [Server thread/INFO]: Sol goal at 114 22 210: Stone: Craft stone pickaxe - Craft stone pickaxe
+[17:14:28] [Server thread/INFO]: Sol native_craft COMPLETED [Craft stone pickaxe]
+[17:14:28] [Server thread/INFO]: Sol goal at 114 22 210: Iron: take workstations along - Pick up the crafting table
+[17:14:29] [Server thread/INFO]: Sol goal at 114 22 210: Iron: Pick up crafting table
+[17:14:29] [Server thread/INFO]: Sol picked up 1 minecraft:crafting_table
+[17:14:29] [Server thread/INFO]: Sol goal at 113 23 210: Iron: Mine iron ore (0/18) - Dig down toward iron: step down
+[17:14:29] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]
+[17:14:30] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[17:14:30] [Server thread/INFO]: Sol goal at 115 22 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 116, 23, 210
+[17:14:30] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[17:14:30] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:30] [Server thread/INFO]: Sol goal at 115 21 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 116, 22, 210
+[17:14:30] [Server thread/INFO]: Sol goal at 115 21 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 116, 21, 210
+[17:14:30] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 116, 22, 210]
+[17:14:30] [Server thread/INFO]: Sol picked up 1 minecraft:granite
+[17:14:30] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 116, 21, 210]
+[17:14:30] [Server thread/INFO]: Sol goal at 115 21 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 116, 20, 210
+[17:14:30] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:30] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 116, 20, 210]
+[17:14:30] [Server thread/INFO]: Sol goal at 115 21 210: Iron: Mine iron ore (0/18) - Dig down toward iron: step down
+[17:14:31] [Server thread/INFO]: Sol goal at 116 21 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 117, 22, 210
+[17:14:31] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[17:14:31] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:31] [Server thread/INFO]: Sol goal at 116 20 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 117, 21, 210
+[17:14:31] [Server thread/INFO]: Sol goal at 116 20 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 117, 20, 210
+[17:14:31] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 117, 21, 210]
+[17:14:31] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:31] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 117, 20, 210]
+[17:14:31] [Server thread/INFO]: Sol goal at 116 20 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 117, 19, 210
+[17:14:31] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:31] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear 117, 19, 210]
+[17:14:31] [Server thread/INFO]: Sol goal at 116 20 210: Iron: Mine iron ore (0/18) - Dig down toward iron: step down
+[17:14:31] [Server thread/INFO]: Sol goal at 117 20 210: Iron: Mine iron ore (0/18) - Dig down toward iron: clear 118, 21, 210
+[17:14:31] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[17:14:31] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:31] [Server thread/INFO]: Sol goal at 117 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 118, 20, 210
+[17:14:32] [Server thread/INFO]: Sol goal at 117 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 118, 19, 210
+[17:14:32] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 118, 20, 210]
+[17:14:32] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:32] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 118, 19, 210]
+[17:14:32] [Server thread/INFO]: Sol goal at 117 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: advance
+[17:14:32] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:32] [Server thread/INFO]: Sol goal at 118 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 119, 20, 210
+[17:14:32] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:32] [Server thread/INFO]: Sol goal at 118 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 119, 19, 210
+[17:14:32] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 119, 20, 210]
+[17:14:32] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:32] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 119, 19, 210]
+[17:14:32] [Server thread/INFO]: Sol goal at 118 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: advance
+[17:14:32] [Server thread/INFO]: Sol goal at 119 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 120, 20, 210
+[17:14:32] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:32] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:33] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 120, 20, 210]
+[17:14:33] [Server thread/INFO]: Sol goal at 119 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 120, 19, 210
+[17:14:33] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:33] [Server thread/INFO]: Sol goal at 119 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: advance
+[17:14:33] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 120, 19, 210]
+[17:14:33] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:33] [Server thread/INFO]: Sol goal at 120 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 121, 20, 210
+[17:14:33] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:33] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 121, 20, 210]
+[17:14:33] [Server thread/INFO]: Sol goal at 120 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 121, 19, 210
+[17:14:33] [Server thread/INFO]: Sol goal at 120 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: advance
+[17:14:33] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 121, 19, 210]
+[17:14:33] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:33] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:33] [Server thread/INFO]: Sol goal at 121 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 122, 20, 210
+[17:14:33] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:34] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 122, 20, 210]
+[17:14:34] [Server thread/INFO]: Sol goal at 121 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 122, 19, 210
+[17:14:34] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:34] [Server thread/INFO]: Sol goal at 121 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: advance
+[17:14:34] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 122, 19, 210]
+[17:14:34] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:34] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[17:14:34] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:34] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:34] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:34] [Server thread/INFO]: Sol goal at 126 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 127, 20, 210
+[17:14:34] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[17:14:34] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear 127, 20, 210]
+[17:14:34] [Server thread/INFO]: Sol goal at 126 19 210: Iron: Mine iron ore (0/18) - Branch mine for iron: clear 127, 19, 210

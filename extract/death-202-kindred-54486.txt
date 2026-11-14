@@ -1,0 +1,32 @@
+[16:49:36] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie the way it came]
+[16:49:36] [Server thread/INFO]: Kindred goal at -83 20 130: Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe
+[16:49:36] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3428]
+[16:49:36] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:49:37] [Server thread/INFO]: Kindred goal at -83 20 129: Wood: fight back - Back off from drowned the way it came
+[16:49:37] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:49:37] [Server thread/INFO]: Kindred goal at -81 20 131: Wood: fight back - Back off from drowned
+[16:49:38] [Server thread/INFO]: Kindred goal at -81 19 133: Wood: Get out of the water: to dry ground
+[16:49:38] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from drowned the way it came]
+[16:49:38] [Server thread/INFO]: Kindred goal at -82 19 130: Wood: fight back - Back off from drowned
+[16:49:38] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]
+[16:49:38] [Server thread/INFO]: Kindred goal at -80 19 129: Wood: Get out of the water: to dry ground
+[16:49:39] [Server thread/INFO]: Kindred death replay captured in 2.3 ms on the server thread (2.2 ms of its time)
+[16:49:39] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from drowned]
+[16:49:39] [Server thread/INFO]: Kindred died at -80, 18, 130: Kindred was slain by Drowned (tick 54486, night, under cover, hunger 16, armour 0, holding pointed_dripstone, no shield; doing "Back off from drowned" in "Wood: Get out of the water: to dry ground"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])
+[16:49:39] [Server thread/INFO]: Kindred was slain by Drowned
+[16:49:39] [Server thread/INFO]: Kindred lesson: learned NO_CAVES - The caves took three lives today; dig for ore instead.
+[16:49:39] [kindred-replays/INFO]: Kindred death replay written to kindred/replays/world/Kindred-54486 (713 KB)
+[16:49:39] [Server thread/INFO]: Kindred respawned at -96, 20, 107
+[16:49:39] [Server thread/INFO]: Kindred goal at -96 20 107: Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe
+[16:49:40] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:49:41] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:49:41] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:49:42] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]
+[16:49:42] [Server thread/INFO]: Kindred goal at -96 20 107: Wood: fight back - Back off from creeper
+[16:49:42] [Server thread/INFO]: Kindred goal at -94 20 106: Wood: fight back - Run from creeper
+[16:49:43] [Server thread/INFO]: Kindred goal at -94 19 105: Wood: Get out of the water: to dry ground
+[16:49:43] [Server thread/INFO]: Kindred goal at -95 20 103: Wood: fight back - Run from creeper
+[16:49:43] [Server thread/INFO]: Kindred goal at -96 20 103: Wood: Get out of the water: to dry ground
+[16:49:43] [Server thread/INFO]: Kindred goal at -96 22 104: Wood: fight back - Run from creeper
+[16:49:44] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from creeper]
+[16:49:44] [Server thread/INFO]: Kindred goal at -99 26 101: Wood: outmatched - Hole up: recover behind the wall

@@ -1,0 +1,49 @@
+[18:24:28] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 63, 21, 24 is blocked [Get out of the water: to dry ground]
+[18:24:29] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]
+[18:24:29] [Server thread/INFO]: Kindred goal at 65 21 16: Iron: fight back - Fight zombie
+[18:24:29] [Server thread/INFO]: Kindred goal at 65 20 16: Iron: Get out of the water: to dry ground
+[18:24:29] [Server thread/INFO]: Kindred goal at 66 21 16: Iron: fight back - Fight zombie
+[18:24:30] [Server thread/INFO]: Kindred fight: 3 hits, 0 critical - The fight was interrupted
+[18:24:30] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]
+[18:24:30] [Server thread/INFO]: Kindred goal at 65 7 19: Iron: outmatched - Hole up: back into the passage
+[18:24:30] [Server thread/INFO]: Kindred goal at 65 7 19: Iron: fight back - Back off from zombie the way it came
+[18:24:30] [Server thread/INFO]: Kindred death replay captured in 14.7 ms on the server thread (3.9 ms of its time)
+[18:24:30] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Hole up: back into the passage]
+[18:24:30] [Server thread/INFO]: Kindred died at 66, 7, 20: Kindred was slain by Zombie (tick 42831, night, under cover, hunger 16, armour 0, holding stone_sword, a shield; doing "Hole up: back into the passage" in "Iron: fight back - Back off from zombie the way it came"; stance PRESS_ON, focus NONE, habits [])
+[18:24:30] [Server thread/INFO]: Kindred was slain by Zombie
+[18:24:30] [kindred-replays/INFO]: Kindred death replay written to kindred/replays/world/Kindred-42831 (592 KB)
+[18:24:30] [Server thread/INFO]: Kindred lesson: learned TORCH_AS_YOU_GO - Something spawned in my own tunnel; torches as I go.
+[18:24:30] [Server thread/INFO]: Kindred goal at 67 7 20: Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe
+[18:24:30] [Server thread/INFO]: Kindred respawned at 21, 68, 81
+[18:24:30] [Server thread/INFO]: Kindred goal at 21 68 81: Wood: shelter for the night - Dig in for the night: clear 20, 67, 81
+[18:24:31] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 20, 67, 81]
+[18:24:31] [Server thread/INFO]: Kindred goal at 21 68 81: Wood: shelter for the night - Dig in for the night: step down
+[18:24:31] [Server thread/INFO]: Kindred goal at 20 67 81: Wood: shelter for the night - Dig in for the night: clear 19, 68, 81
+[18:24:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]
+[18:24:31] [Server thread/INFO]: Kindred goal at 20 67 81: Wood: shelter for the night - Dig in for the night: clear 19, 67, 81
+[18:24:31] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 19, 68, 81]
+[18:24:31] [Server thread/INFO]: Kindred goal at 20 67 81: Wood: shelter for the night - Dig in for the night: clear 19, 66, 81
+[18:24:31] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 19, 67, 81]
+[18:24:31] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 19, 66, 81]
+[18:24:31] [Server thread/INFO]: Kindred goal at 20 67 81: Wood: shelter for the night - Dig in for the night: step down
+[18:24:31] [Server thread/INFO]: Kindred goal at 19 67 81: Wood: shelter for the night - Dig in for the night: clear 18, 67, 81
+[18:24:31] [Server thread/INFO]: Kindred goal at 19 65 81: Wood: shelter for the night - Dig in for the night: clear 18, 66, 81
+[18:24:31] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]
+[18:24:31] [Server thread/INFO]: Kindred goal at 19 64 81: Wood: shelter for the night - Dig in for the night: clear 18, 63, 81
+[18:24:31] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 18, 63, 81]
+[18:24:31] [Server thread/INFO]: Kindred goal at 19 64 81: Wood: shelter for the night - Dig in for the night: step down
+[18:24:32] [Server thread/INFO]: Kindred goal at 18 64 81: Wood: shelter for the night - Dig in for the night: clear 17, 63, 81
+[18:24:32] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[18:24:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]
+[18:24:32] [Server thread/INFO]: Kindred goal at 18 63 81: Wood: shelter for the night - Dig in for the night: clear 17, 62, 81
+[18:24:32] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 17, 63, 81]
+[18:24:32] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[18:24:32] [Server thread/INFO]: Kindred native_break COMPLETED [Dig in for the night: clear 17, 62, 81]
+[18:24:32] [Server thread/INFO]: Kindred goal at 18 63 81: Wood: shelter for the night - Dig in for the night: step down
+[18:24:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig in for the night: step down]
+[18:24:32] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[18:24:32] [Server thread/INFO]: Kindred goal at 17 62 81: Wood: fight back - Back off from zombie the way it came
+[18:24:33] [Server thread/INFO]: Kindred goal at 21 64 91: Wood: fight back - Back off from zombie
+[18:24:33] [Server thread/INFO]: Kindred goal at 20 66 94: Wood: fight back - Run from creeper
+[18:24:34] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie the way it came]
+[18:24:34] [Server thread/INFO]: Kindred goal at 15 69 96: Wood: shelter for the night - Dig in for the night: step down

@@ -1,0 +1,49 @@
+[17:58:54] [Server thread/INFO]: Echo native_craft COMPLETED [Craft spruce planks]
+[17:58:54] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Craft sticks - Craft stick
+[17:58:54] [Server thread/INFO]: Echo native_craft COMPLETED [Craft stick]
+[17:58:54] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Gather logs for a table and a wooden pickaxe - Mine logs at 9, 67, -131
+[17:58:55] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Pick up spruce log
+[17:58:55] [Server thread/INFO]: Echo picked up 1 minecraft:spruce_log
+[17:58:55] [Server thread/INFO]: Echo native_break COMPLETED [Mine logs at 9, 67, -131]
+[17:58:55] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Craft planks - Craft spruce planks
+[17:58:55] [Server thread/INFO]: Echo native_craft COMPLETED [Craft spruce planks]
+[17:58:55] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Craft a crafting table - Craft crafting table
+[17:58:55] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Craft planks - Craft spruce planks
+[17:58:55] [Server thread/INFO]: Echo native_craft COMPLETED [Craft crafting table]
+[17:58:55] [Server thread/INFO]: Echo native_craft COMPLETED [Craft spruce planks]
+[17:58:55] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Place a crafting table - Place a crafting table
+[17:58:55] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]
+[17:58:55] [Server thread/INFO]: Echo goal at 9 64 -131: Wood: Craft wooden pickaxe - Craft wooden pickaxe
+[17:58:56] [Server thread/INFO]: Echo goal at 9 64 -131: Stone: take workstations along - Pick up the crafting table
+[17:58:56] [Server thread/INFO]: Echo native_craft COMPLETED [Craft wooden pickaxe]
+[17:58:57] [Server thread/INFO]: Echo goal at 9 64 -131: Stone: Pick up crafting table
+[17:58:58] [Server thread/INFO]: Echo picked up 1 minecraft:crafting_table
+[17:58:58] [Server thread/INFO]: Echo goal at 9 64 -131: Stone: Gather logs for the trip below - Mine logs at 9, 68, -131
+[17:58:58] [Server thread/INFO]: Echo native_break COMPLETED [Pick up the crafting table]
+[17:58:59] [Server thread/INFO]: Echo goal at 9 64 -131: Stone: Gather logs for the trip below - Mine logs at 9, 69, -131
+[17:58:59] [Server thread/INFO]: Echo picked up 1 minecraft:spruce_log
+[17:58:59] [Server thread/INFO]: Echo native_break COMPLETED [Mine logs at 9, 68, -131]
+[17:59:00] [Server thread/INFO]: Echo goal at 9 64 -131: Stone: Gather logs for the trip below - Climb toward the surface for logs: back the way it came
+[17:59:00] [Server thread/INFO]: Echo goal at 9 64 -131: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+[17:59:00] [Server thread/INFO]: Echo goal at 9 65 -131: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 9, 66, -132
+[17:59:00] [Server thread/INFO]: Echo picked up 1 minecraft:spruce_log
+[17:59:01] [Server thread/INFO]: Echo native_break COMPLETED [Mine logs at 9, 69, -131]
+[17:59:01] [Server thread/INFO]: Echo goal at 9 64 -131: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+[17:59:01] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 9, 66, -132]
+[17:59:01] [Server thread/INFO]: Echo native_goto COMPLETED [Dig for stone: step down]
+[17:59:01] [Server thread/INFO]: Echo goal at 9 63 -132: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 9, 62, -133
+[17:59:01] [Server thread/INFO]: Echo goal at 9 63 -132: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+[17:59:01] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 9, 62, -133]
+[17:59:02] [Server thread/INFO]: Echo goal at 9 63 -133: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 9, 62, -134
+[17:59:02] [Server thread/INFO]: Echo native_goto COMPLETED [Dig for stone: step down]
+[17:59:02] [Server thread/INFO]: Echo picked up 1 minecraft:dirt
+[17:59:02] [Server thread/INFO]: Echo goal at 9 62 -133: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 9, 61, -134
+[17:59:02] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 9, 62, -134]
+[17:59:02] [Server thread/INFO]: Echo picked up 1 minecraft:sand
+[17:59:03] [Server thread/INFO]: Echo goal at 9 62 -133: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: step down
+[17:59:03] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 9, 61, -134]
+[17:59:03] [Server thread/INFO]: Echo native_goto COMPLETED [Dig for stone: step down]
+[17:59:03] [Server thread/INFO]: Echo picked up 1 minecraft:sand
+[17:59:03] [Server thread/INFO]: Echo goal at 9 61 -134: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 9, 62, -135
+[17:59:03] [Server thread/INFO]: Echo native_break COMPLETED [Dig for stone: clear 9, 62, -135]
+[17:59:03] [Server thread/INFO]: Echo goal at 9 61 -134: Stone: Mine cobblestone for a stone pickaxe - Dig for stone: clear 9, 61, -135

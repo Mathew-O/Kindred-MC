@@ -1,0 +1,26 @@
+[16:40:32] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]
+[16:40:33] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]
+[16:40:34] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]
+[16:40:35] [Server thread/INFO]: Echo goal at -366 34 -125: Iron: heal before going on (tried elsewhere 1 time)
+[16:40:35] [Server thread/INFO]: Echo native_wait COMPLETED [Hole up: recover behind the wall]
+[16:40:35] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3532]
+[16:40:36] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]
+[16:40:37] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]
+[16:40:38] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3532]
+[16:40:38] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]
+[16:40:39] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]
+[16:40:39] [Server thread/INFO]: Echo goal at -366 34 -125: Iron: Mine iron ore (0/19) - Back to where it saw iron ore at -378, 41, -113 (tried elsewhere 1 time)
+[16:40:39] [Server thread/INFO]: Echo native_wait COMPLETED [Rest to heal]
+[16:40:40] [Server thread/INFO]: Echo native_goto COMPLETED [Back to where it saw iron ore at -378, 41, -113]
+[16:40:40] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -378, 41, -113 [Back to where it saw iron ore at -378, 41, -113]
+[16:40:40] [Server thread/INFO]: Echo goal at -366 34 -124: Iron: Mine iron ore (0/19) - Tunnel past liquid toward iron: clear -367, 35, -124 (tried elsewhere 1 time)
+[16:40:40] [Server thread/INFO]: Echo goal at -366 34 -124: Iron: Mine iron ore (0/19) - Tunnel past liquid toward iron: clear -367, 34, -124 (tried elsewhere 1 time)
+[16:40:40] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -367, 35, -124]
+[16:40:40] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[16:40:40] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -367, 34, -124]
+[16:40:40] [Server thread/INFO]: Echo goal at -366 34 -124: Iron: Mine iron ore (0/19) - Tunnel past liquid toward iron: advance (tried elsewhere 1 time)
+[16:40:40] [Server thread/INFO]: Echo goal at -367 34 -124: Iron: Mine iron ore (0/19) - Tunnel past liquid toward iron: clear -368, 35, -124 (tried elsewhere 1 time)
+[16:40:40] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[16:40:40] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[16:40:40] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear -368, 35, -124]
+[16:40:40] [Server thread/INFO]: Echo goal at -367 34 -124: Iron: Mine iron ore (0/19) - Tunnel past liquid toward iron: clear -368, 34, -124 (tried elsewhere 1 time)

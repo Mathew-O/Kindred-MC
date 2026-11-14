@@ -1,0 +1,150 @@
+[18:18:15] [Server thread/INFO]: Echo goal at 22 45 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 22, 46, 60
+[18:18:15] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:15] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel past liquid toward iron: let what falls settle]
+[18:18:15] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 22, 46, 60]
+[18:18:15] [Server thread/INFO]: Echo goal at 22 45 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 22, 45, 60
+[18:18:15] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:15] [Server thread/INFO]: Echo goal at 22 45 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: advance
+[18:18:15] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 22, 45, 60]
+[18:18:15] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:15] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 21, 46, 60
+[18:18:15] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:15] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 21, 45, 60
+[18:18:15] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 21, 46, 60]
+[18:18:15] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 21, 46, 60
+[18:18:15] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:16] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 21, 45, 60]
+[18:18:16] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 21, 44, 60
+[18:18:16] [Server thread/INFO]: Echo native_break CANCELLED: authority lost [Dig down toward iron: clear 21, 44, 60]
+[18:18:16] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 23, 46, 60
+[18:18:16] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:16] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 23, 45, 60
+[18:18:16] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 23, 46, 60]
+[18:18:16] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 23, 46, 60
+[18:18:16] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:16] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 23, 45, 60]
+[18:18:16] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: let what falls settle
+[18:18:16] [Server thread/INFO]: Echo picked up 1 minecraft:coal
+[18:18:16] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 23, 45, 60
+[18:18:16] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel past liquid toward iron: let what falls settle]
+[18:18:17] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: advance
+[18:18:17] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 23, 45, 60]
+[18:18:17] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:17] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:17] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:17] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 21, 45, 60
+[18:18:17] [Server thread/INFO]: Echo goal at 22 45 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: advance
+[18:18:17] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 21, 45, 60]
+[18:18:17] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:17] [Server thread/INFO]: Echo goal at 21 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 46, 60
+[18:18:17] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:17] [Server thread/INFO]: Echo goal at 21 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 45, 60
+[18:18:17] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 46, 60]
+[18:18:18] [Server thread/INFO]: Echo goal at 21 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 44, 60
+[18:18:18] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 45, 60]
+[18:18:18] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:18] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 44, 60]
+[18:18:18] [Server thread/INFO]: Echo goal at 21 45 60: Iron: Mine iron ore (2/18) - Dig down toward iron: step down
+[18:18:18] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 19, 45, 60
+[18:18:18] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]
+[18:18:18] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:18] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:18] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 19, 45, 60]
+[18:18:18] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 19, 44, 60
+[18:18:18] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 19, 45, 60
+[18:18:18] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:18] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 19, 44, 60]
+[18:18:18] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 19, 43, 60
+[18:18:18] [Server thread/INFO]: Echo native_break CANCELLED: authority lost [Dig down toward iron: clear 19, 43, 60]
+[18:18:18] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 59
+[18:18:18] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:19] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 45, 59]
+[18:18:19] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 44, 59
+[18:18:19] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 59
+[18:18:19] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:19] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 44, 59]
+[18:18:19] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: let what falls settle
+[18:18:19] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 44, 59
+[18:18:19] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:19] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 59
+[18:18:19] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel past liquid toward iron: let what falls settle]
+[18:18:19] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 45, 59]
+[18:18:19] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 44, 59
+[18:18:19] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:19] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: advance
+[18:18:19] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 44, 59]
+[18:18:20] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:20] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 58
+[18:18:20] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:20] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 44, 58
+[18:18:20] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 45, 58]
+[18:18:20] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 58
+[18:18:20] [Server thread/INFO]: Echo picked up 1 minecraft:gravel
+[18:18:20] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 44, 58]
+[18:18:20] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: let what falls settle
+[18:18:20] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 44, 58
+[18:18:20] [Server thread/INFO]: Echo picked up 1 minecraft:andesite
+[18:18:20] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 58
+[18:18:20] [Server thread/INFO]: Echo native_wait COMPLETED [Tunnel past liquid toward iron: let what falls settle]
+[18:18:20] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 45, 58]
+[18:18:20] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 44, 58
+[18:18:21] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 44, 58]
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 59: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: advance
+[18:18:21] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:21] [Server thread/INFO]: Echo picked up 2 minecraft:gravel
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 58: Iron: light the way - Craft torch
+[18:18:21] [Server thread/INFO]: Echo native_craft COMPLETED [Craft torch]
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 58: Iron: light the way - Ready a torch
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 58: Iron: light the way - Place a torch at 20, 44, 59
+[18:18:21] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]
+[18:18:21] [Server thread/INFO]: Echo native_place COMPLETED [Place a torch at 20, 44, 59]
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 58: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 57
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 58: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: advance
+[18:18:21] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 45, 57]
+[18:18:21] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:21] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 45, 61
+[18:18:21] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: clear 20, 44, 61
+[18:18:21] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 45, 61]
+[18:18:22] [Server thread/INFO]: Echo native_break COMPLETED [Tunnel past liquid toward iron: clear 20, 44, 61]
+[18:18:22] [Server thread/INFO]: Echo goal at 20 44 60: Iron: Mine iron ore (2/18) - Tunnel past liquid toward iron: advance
+[18:18:22] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:22] [Server thread/INFO]: Echo goal at 20 44 61: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 45, 62
+[18:18:22] [Server thread/INFO]: Echo native_goto COMPLETED [Tunnel past liquid toward iron: advance]
+[18:18:22] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:22] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 45, 62]
+[18:18:22] [Server thread/INFO]: Echo goal at 20 44 61: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 44, 62
+[18:18:22] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 44, 62]
+[18:18:22] [Server thread/INFO]: Echo goal at 20 44 61: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 43, 62
+[18:18:22] [Server thread/INFO]: Echo goal at 20 44 61: Iron: Mine iron ore (2/18) - Dig down toward iron: step down
+[18:18:22] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 43, 62]
+[18:18:22] [Server thread/INFO]: Echo goal at 20 44 62: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 45, 63
+[18:18:22] [Server thread/INFO]: Echo goal at 20 43 62: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 44, 63
+[18:18:22] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]
+[18:18:22] [Server thread/INFO]: Echo picked up 2 minecraft:cobblestone
+[18:18:22] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:22] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 44, 63]
+[18:18:22] [Server thread/INFO]: Echo goal at 20 43 62: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 43, 63
+[18:18:23] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:23] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 43, 63]
+[18:18:23] [Server thread/INFO]: Echo goal at 20 43 62: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 20, 42, 63
+[18:18:23] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:23] [Server thread/INFO]: Echo goal at 20 43 62: Iron: Mine iron ore (2/18) - Dig down toward iron: step down
+[18:18:23] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 20, 42, 63]
+[18:18:23] [Server thread/INFO]: Echo goal at 20 43 63: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 19, 44, 63
+[18:18:23] [Server thread/INFO]: Echo native_goto COMPLETED [Dig down toward iron: step down]
+[18:18:23] [Server thread/INFO]: Echo goal at 20 42 63: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 19, 43, 63
+[18:18:23] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:23] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 19, 43, 63]
+[18:18:23] [Server thread/INFO]: Echo goal at 20 42 63: Iron: Mine iron ore (2/18) - Dig down toward iron: clear 19, 42, 63
+[18:18:23] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:23] [Server thread/INFO]: Echo goal at 20 42 63: Iron: Mine iron ore (2/18) - Explore the cave toward iron
+[18:18:23] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear 19, 42, 63]
+[18:18:23] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward 20, 36, 65 [Explore the cave toward iron]
+[18:18:23] [Server thread/INFO]: Echo goal at 20 42 63: Iron: Mine iron ore (2/18) - Climb to the cave toward iron: dig 21, 42, 63
+[18:18:23] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:23] [Server thread/INFO]: Echo native_break COMPLETED [Climb to the cave toward iron: dig 21, 42, 63]
+[18:18:23] [Server thread/INFO]: Echo goal at 20 42 63: Iron: Mine iron ore (2/18) - Climb to the cave toward iron: dig 21, 43, 63
+[18:18:23] [Server thread/INFO]: Echo picked up 1 minecraft:cobblestone
+[18:18:23] [Server thread/INFO]: Echo goal at 20 42 63: Iron: Mine iron ore (2/18) - Climb to the cave toward iron: walk on
+[18:18:23] [Server thread/INFO]: Echo native_break COMPLETED [Climb to the cave toward iron: dig 21, 43, 63]

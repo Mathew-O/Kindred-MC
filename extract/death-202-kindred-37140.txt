@@ -1,0 +1,109 @@
+[16:45:57] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: dig toward the lava at -94, -55, 45: clear -92, -53, 43]
+[16:45:57] [Server thread/INFO]: Kindred goal at -91 -54 43: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -94, -55, 45: clear -92, -54, 43
+[16:45:57] [Server thread/INFO]: Kindred picked up 1 minecraft:cobbled_deepslate
+[16:45:57] [Server thread/INFO]: Kindred picked up 2 minecraft:diorite
+[16:45:57] [Server thread/INFO]: Kindred goal at -91 -54 43: Iron: inventory full - Drop surplus spider eye
+[16:45:57] [Server thread/INFO]: Kindred goal at -91 -54 43: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -94, -55, 45: clear -92, -54, 43
+[16:45:57] [Server thread/INFO]: Kindred goal at -91 -54 43: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -94, -55, 45: advance
+[16:45:57] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: dig toward the lava at -94, -55, 45: clear -92, -54, 43]
+[16:45:57] [Server thread/INFO]: Kindred goal at -91 -54 43: Iron: Cast the portal frame from lava and water - Cast: walk up to the lava
+[16:45:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: dig toward the lava at -94, -55, 45: advance]
+[16:45:57] [Server thread/INFO]: Kindred goal at -92 -54 43: Iron: Cast the portal frame from lava and water - Cast: fill a bucket with lava
+[16:45:57] [Server thread/INFO]: Kindred picked up 1 minecraft:cobbled_deepslate
+[16:45:57] [Server thread/INFO]: Kindred native_bucket COMPLETED [Cast: fill a bucket with lava]
+[16:45:57] [Server thread/INFO]: Kindred goal at -92 -54 43: Iron: Cast the portal frame from lava and water - Cast: step closer
+[16:45:58] [Server thread/INFO]: Kindred goal at -89 -54 40: Iron: inventory full - Drop surplus cobbled deepslate
+[16:45:58] [Server thread/INFO]: Kindred goal at -89 -54 40: Iron: inventory full - Drop surplus cobblestone
+[16:45:58] [Server thread/INFO]: Kindred goal at -89 -54 39: Iron: inventory full - Drop surplus diorite
+[16:45:58] [Server thread/INFO]: Kindred goal at -90 -54 38: Iron: inventory full - Drop surplus raw copper
+[16:45:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: step closer]
+[16:45:58] [Server thread/INFO]: Kindred goal at -90 -54 38: Iron: inventory full - Drop surplus spider eye
+[16:45:58] [Server thread/INFO]: Kindred goal at -90 -54 38: Iron: Cast the portal frame from lava and water - Cast: clear -90, -50, 37
+[16:45:58] [Server thread/INFO]: Kindred goal at -90 -54 38: Iron: Cast the portal frame from lava and water - Cast obsidian at -90, -51, 37
+[16:45:58] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear -90, -50, 37]
+[16:45:58] [Server thread/INFO]: Kindred goal at -90 -54 38: Iron: Cast the portal frame from lava and water - Cast: walk to the lava
+[16:45:58] [Server thread/INFO]: Kindred native_cast COMPLETED [Cast obsidian at -90, -51, 37]
+[16:45:58] [Server thread/INFO]: Kindred goal at -89 -54 41: Iron: inventory full - Drop surplus raw copper
+[16:45:58] [Server thread/INFO]: Kindred goal at -89 -54 41: Iron: inventory full - Drop surplus spider eye
+[16:45:58] [Server thread/INFO]: Kindred goal at -90 -54 41: Iron: Cast the portal frame from lava and water - Cast: fill a bucket with lava
+[16:45:59] [Server thread/INFO]: Kindred goal at -90 -54 42: Iron: inventory full - Drop surplus diorite
+[16:45:59] [Server thread/INFO]: Kindred goal at -90 -54 42: Iron: Cast the portal frame from lava and water - Cast: fill a bucket with lava
+[16:45:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: walk to the lava]
+[16:45:59] [Server thread/INFO]: Kindred goal at -91 -54 42: Iron: Cast the portal frame from lava and water - Cast: step closer
+[16:45:59] [Server thread/INFO]: Kindred native_bucket COMPLETED [Cast: fill a bucket with lava]
+[16:45:59] [Server thread/INFO]: Kindred goal at -88 -54 39: Iron: inventory full - Drop surplus diorite
+[16:45:59] [Server thread/INFO]: Kindred goal at -88 -54 39: Iron: Cast the portal frame from lava and water - Cast: stand in front of the frame site
+[16:45:59] [Server thread/INFO]: Kindred goal at -88 -54 39: Iron: Cast the portal frame from lava and water - Cast: clear -87, -50, 37
+[16:45:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: step closer]
+[16:45:59] [Server thread/INFO]: Kindred goal at -87 -54 38: Iron: inventory full - Drop surplus raw copper
+[16:45:59] [Server thread/INFO]: Kindred goal at -87 -54 38: Iron: inventory full - Drop surplus spider eye
+[16:45:59] [Server thread/INFO]: Kindred goal at -87 -54 38: Iron: Cast the portal frame from lava and water - Cast: clear -87, -50, 37
+[16:45:59] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus raw copper]
+[16:46:00] [Server thread/INFO]: Kindred goal at -87 -54 38: Iron: Cast the portal frame from lava and water - Cast obsidian at -87, -51, 37
+[16:46:00] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: clear -87, -50, 37]
+[16:46:00] [Server thread/INFO]: Kindred goal at -87 -54 38: Iron: Cast the portal frame from lava and water - Cast: walk to the lava
+[16:46:00] [Server thread/INFO]: Kindred native_cast COMPLETED [Cast obsidian at -87, -51, 37]
+[16:46:00] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Cast: walk to the lava]
+[16:46:00] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Cast: walk to the lava]
+[16:46:00] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Cast: walk to the lava]
+[16:46:00] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at -96, -55, 45: advance
+[16:46:00] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Cast: dig toward the lava at -96, -55, 45: advance]
+[16:46:00] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:01] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:01] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:02] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:02] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:03] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:03] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:03] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:03] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:03] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:03] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:03] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:03] [Server thread/INFO]: Kindred goal at -97 -54 42: Iron: hurt and out of food - Climb toward the surface for food: step up
+[16:46:03] [Server thread/INFO]: Kindred goal at -97 -54 43: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[16:46:03] [Server thread/INFO]: Kindred native_retreat COMPLETED [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:03] [Server thread/INFO]: Kindred death replay captured in 4.8 ms on the server thread (4.5 ms of its time)
+[16:46:03] [Server thread/INFO]: Kindred native_retreat CANCELLED: The player died [from evaluateEssentialSurvivalCandidates:3384]
+[16:46:03] [Server thread/INFO]: Kindred died at -97, -54, 42: Kindred burned to death (tick 37140, day, under cover, hunger 14, armour 6, holding water_bucket, a shield; doing "native_retreat" in "Iron: hurt and out of food - Climb toward the surface for food: to the wall"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])
+[16:46:03] [Server thread/INFO]: Kindred burned to death
+[16:46:03] [Server thread/INFO]: Kindred goal at -97 -54 42: Wood: hurt and out of food - Climb toward the surface for food: step up
+[16:46:03] [kindred-replays/INFO]: Kindred death replay written to kindred/replays/world/Kindred-37140 (933 KB)
+[16:46:04] [Server thread/INFO]: Kindred respawned at -96, 20, 107
+[16:46:04] [Server thread/INFO]: Kindred goal at -96 20 107: Wood: pick up what was dropped at death - Recover dropped items near -97, -54, 42

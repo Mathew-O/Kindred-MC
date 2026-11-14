@@ -1,0 +1,24 @@
+[18:28:04] [Server thread/INFO]: Kindred fight: 6 hits, 6 critical - The fight was interrupted
+[18:28:04] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]
+[18:28:04] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]
+[18:28:04] [Server thread/INFO]: Kindred goal at -19 64 -7: Wood: fight back - Back off from zombie
+[18:28:04] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[18:28:05] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[18:28:05] [Server thread/INFO]: Kindred goal at -27 68 -24: Wood: outmatched - Hole up: recover behind the wall
+[18:28:05] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[18:28:06] [Server thread/INFO]: Kindred goal at -28 68 -24: Wood: fight back - Back off from zombie
+[18:28:06] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]
+[18:28:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[18:28:07] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[18:28:07] [Server thread/INFO]: Kindred goal at -32 66 -39: Wood: outmatched - Hole up: recover behind the wall
+[18:28:07] [Server thread/INFO]: Kindred goal at -32 66 -39: Wood: fight back - Back off from zombie
+[18:28:08] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]
+[18:28:08] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[18:28:10] [Server thread/INFO]: Kindred goal at -26 68 -22: Wood: outmatched - Hole up: recover behind the wall
+[18:28:11] [Server thread/INFO]: Kindred goal at -15 67 -13: Wood: fight back - Back off from zombie
+[18:28:11] [Server thread/INFO]: Kindred goal at -13 65 -15: Wood: outmatched - Hole up: recover behind the wall
+[18:28:11] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -28, 64, -54 is blocked [Back off from zombie]
+[18:28:11] [Server thread/INFO]: Kindred goal at -13 64 -15: Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe
+[18:28:12] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[18:28:13] [Server thread/INFO]: Kindred goal at -13 64 -15: Wood: fight back - Back off from zombie
+[18:28:13] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]

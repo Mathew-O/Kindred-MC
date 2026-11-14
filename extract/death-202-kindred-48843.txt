@@ -1,0 +1,60 @@
+[16:48:28] [Server thread/INFO]: Kindred goal at -93 19 110: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:30] [Server thread/INFO]: Kindred goal at -88 20 111: Wood: fight back - Back off from skeleton (tried elsewhere 1 time)
+[16:48:30] [Server thread/INFO]: Kindred goal at -87 19 110: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:31] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to -80, 18, 105 is blocked [Back off from creeper]
+[16:48:31] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]
+[16:48:31] [Server thread/INFO]: Kindred goal at -88 20 110: Wood: no progress here for a while - make a way elsewhere: land first
+[16:48:31] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [make a way elsewhere: land first]
+[16:48:31] [Server thread/INFO]: Kindred goal at -88 19 110: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:31] [Server thread/INFO]: Kindred goal at -89 20 110: Wood: fight back - Fight skeleton (tried elsewhere 1 time)
+[16:48:31] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]
+[16:48:31] [Server thread/INFO]: Kindred goal at -90 19 110: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:31] [Server thread/INFO]: Kindred goal at -91 19 110: Wood: fight back - Run from creeper (tried elsewhere 1 time)
+[16:48:32] [Server thread/INFO]: Kindred goal at -90 19 110: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:32] [Server thread/INFO]: Kindred goal at -90 20 112: Wood: fight back - Run from creeper (tried elsewhere 1 time)
+[16:48:32] [Server thread/INFO]: Kindred goal at -88 19 113: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred goal at -90 20 112: Wood: fight back - Back off from skeleton (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight skeleton]
+[16:48:33] [Server thread/INFO]: Kindred goal at -91 19 112: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred goal at -92 20 112: Wood: fight back - Back off from skeleton (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred goal at -92 19 111: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred goal at -93 19 110: Wood: fight back - Back off from skeleton (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred goal at -93 19 109: Wood: fight back - Back off from zombie (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Get out of the water: to dry ground]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]
+[16:48:33] [Server thread/INFO]: Kindred goal at -93 20 108: Wood: fight back - Back off from skeleton (tried elsewhere 1 time)
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:33] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred goal at -93 20 108: Wood: fight back - Back off from zombie (tried elsewhere 1 time)
+[16:48:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]
+[16:48:34] [Server thread/INFO]: Kindred goal at -93 19 104: Wood: Get out of the water: to dry ground (tried elsewhere 1 time)
+[16:48:34] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Get out of the water: to dry ground]
+[16:48:34] [Server thread/INFO]: Kindred goal at -93 20 104: Wood: fight back - Back off from zombie (tried elsewhere 1 time)
+[16:48:34] [Server thread/INFO]: Kindred death replay captured in 2.5 ms on the server thread (2.5 ms of its time)
+[16:48:34] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie]
+[16:48:34] [Server thread/INFO]: Kindred died at -93, 19, 104: Kindred was slain by Zombie (tick 48843, day, under cover, hunger 16, armour 0, holding nothing, no shield; doing "Back off from zombie" in "Wood: fight back - Back off from zombie (tried elsewhere 1 time)"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])
+[16:48:34] [Server thread/INFO]: Kindred was slain by Zombie
+[16:48:34] [Server thread/INFO]: Kindred goal at -92 18 104: Wood: Get out of the water: to dry ground
+[16:48:34] [kindred-replays/INFO]: Kindred death replay written to kindred/replays/world/Kindred-48843 (761 KB)
+[16:48:35] [Server thread/INFO]: Kindred respawned at -96, 20, 107
+[16:48:35] [Server thread/INFO]: Kindred goal at -96 20 107: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: clear -97, 21, 107 by hand
+[16:48:35] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Climb toward the surface for logs: clear -97, 21, 107 by hand]
+[16:48:35] [Server thread/INFO]: Kindred goal at -96 20 107: Wood: fight back - Fight zombie
+[16:48:36] [Server thread/INFO]: Kindred goal at -96 20 107: Wood: fight back - Back off from zombie

@@ -1,0 +1,34 @@
+[18:09:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Explore the cave toward lava]
+[18:09:09] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]
+[18:09:09] [Server thread/INFO]: Kindred goal at -57 -53 128: Iron: fight back - Fight zombie
+[18:09:12] [Server thread/INFO]: Kindred fight: 1 hits, 0 critical - The fight was interrupted
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:12] [Server thread/INFO]: Kindred goal at -60 -53 128: Iron: fight back - Back off from zombie the way it came
+[18:09:12] [Server thread/INFO]: Kindred native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie the way it came]
+[18:09:12] [Server thread/INFO]: Kindred goal at -60 -53 128: Iron: fight back - Fight zombie
+[18:09:13] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:13] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:13] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:13] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:13] [Server thread/INFO]: Kindred native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:09:13] [Server thread/INFO]: Kindred death replay captured in 3.6 ms on the server thread (3.5 ms of its time)
+[18:09:13] [Server thread/INFO]: Kindred native_fight dropped before it ran: paid=false/false generation=true stop=false cancelling=false hazard=false connected=true ledger=KNOWN_LEDGER_CLEAR blocker=
+[18:09:13] [Server thread/INFO]: Kindred died at -61, -53, 128: Kindred tried to swim in lava to escape Zombie (tick 51330, day, under cover, hunger 6, armour 6, holding stone_sword, a shield; doing "Fight zombie" in "Iron: fight back - Fight zombie"; stance PRESS_ON, focus NONE, habits [])
+[18:09:13] [Server thread/INFO]: Kindred tried to swim in lava to escape Zombie
+[18:09:13] [Server thread/INFO]: Kindred lesson: learned TORCH_AS_YOU_GO - Something spawned in my own tunnel; torches as I go.
+[18:09:13] [Server thread/INFO]: Kindred goal at -61 -53 128: Wood: hurt and out of food - Climb toward the surface for food: step up
+[18:09:13] [kindred-replays/INFO]: Kindred death replay written to kindred/replays/world/Kindred-51330 (897 KB)
+[18:09:13] [Server thread/INFO]: Kindred respawned at -8, 72, 0
+[18:09:13] [Server thread/INFO]: Kindred goal at -8 72 0: Wood: Gather logs for a table and a wooden pickaxe - Walk to the trees Sol found at 25, 93, 76
+[18:09:16] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to the trees Sol found at 25, 93, 76]
+[18:09:18] [Server thread/INFO]: Kindred goal at 19 75 62: Wood: Gather logs for a table and a wooden pickaxe - Explore east for logs
+[18:09:18] [Server thread/INFO]: Kindred goal at 19 75 62: Wood: Gather logs for a table and a wooden pickaxe - Cut through east for logs: advance
+[18:09:18] [Server thread/INFO]: Kindred goal at 20 75 63: Wood: Gather logs for a table and a wooden pickaxe - Cut through east for logs: clear 21, 75, 63
+[18:09:18] [Server thread/INFO]: Kindred goal at 20 76 63: Wood: Gather logs for a table and a wooden pickaxe - Cut through east for logs: advance

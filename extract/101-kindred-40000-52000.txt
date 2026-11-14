@@ -1,0 +1,151 @@
+[16:45:14] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -248, 44, -79 by hand]
+[16:45:14] [Server thread/INFO]: Kindred goal at -247 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:14] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:14] [Server thread/INFO]: Kindred goal at -248 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -249, 45, -79 by hand
+[16:45:16] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -249, 45, -79 by hand]
+[16:45:16] [Server thread/INFO]: Kindred goal at -248 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -249, 44, -79 by hand
+[16:45:19] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -249, 44, -79 by hand]
+[16:45:19] [Server thread/INFO]: Kindred goal at -248 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:19] [Server thread/INFO]: Kindred goal at -249 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -250, 45, -79 by hand
+[16:45:21] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -250, 45, -79 by hand]
+[16:45:21] [Server thread/INFO]: Kindred goal at -249 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -250, 44, -79 by hand
+[16:45:24] [Server thread/INFO]: Kindred goal at -249 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -250, 44, -79 by hand]
+[16:45:24] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:24] [Server thread/INFO]: Kindred goal at -250 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -251, 45, -79 by hand
+[16:45:26] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -251, 45, -79 by hand]
+[16:45:26] [Server thread/INFO]: Kindred goal at -250 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -251, 44, -79 by hand
+[16:45:28] [Server thread/INFO]: Kindred goal at -250 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:28] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -251, 44, -79 by hand]
+[16:45:29] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:29] [Server thread/INFO]: Kindred goal at -251 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -252, 45, -79 by hand
+[16:45:31] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -252, 45, -79 by hand]
+[16:45:31] [Server thread/INFO]: Kindred goal at -251 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -252, 44, -79 by hand
+[16:45:33] [Server thread/INFO]: Kindred goal at -251 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:33] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -252, 44, -79 by hand]
+[16:45:34] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:34] [Server thread/INFO]: Kindred goal at -252 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -253, 45, -79 by hand
+[16:45:36] [Server thread/INFO]: Kindred goal at -252 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -253, 44, -79 by hand
+[16:45:36] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -253, 45, -79 by hand]
+[16:45:38] [Server thread/INFO]: Kindred goal at -252 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:38] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -253, 44, -79 by hand]
+[16:45:38] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:38] [Server thread/INFO]: Kindred goal at -253 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -254, 45, -79 by hand
+[16:45:41] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -254, 45, -79 by hand]
+[16:45:41] [Server thread/INFO]: Kindred goal at -253 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -254, 44, -79 by hand
+[16:45:44] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -254, 44, -79 by hand]
+[16:45:44] [Server thread/INFO]: Kindred goal at -253 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:44] [Server thread/INFO]: Kindred goal at -254 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -255, 45, -79 by hand
+[16:45:46] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -255, 45, -79 by hand]
+[16:45:46] [Server thread/INFO]: Kindred goal at -254 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -255, 44, -79 by hand
+[16:45:49] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -255, 44, -79 by hand]
+[16:45:49] [Server thread/INFO]: Kindred goal at -254 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:49] [Server thread/INFO]: Kindred goal at -255 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -256, 45, -79 by hand
+[16:45:52] [Server thread/INFO]: Kindred goal at -255 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -256, 44, -79 by hand
+[16:45:52] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -256, 45, -79 by hand]
+[16:45:55] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -256, 44, -79 by hand]
+[16:45:55] [Server thread/INFO]: Kindred goal at -255 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:55] [Server thread/INFO]: Kindred goal at -256 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -257, 45, -79 by hand
+[16:45:57] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -257, 45, -79 by hand]
+[16:45:57] [Server thread/INFO]: Kindred goal at -256 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -257, 44, -79 by hand
+[16:45:59] [Server thread/INFO]: Kindred goal at -256 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:45:59] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -257, 44, -79 by hand]
+[16:45:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:45:59] [Server thread/INFO]: Kindred goal at -257 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -258, 45, -79 by hand
+[16:46:02] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -258, 45, -79 by hand]
+[16:46:02] [Server thread/INFO]: Kindred goal at -257 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -258, 44, -79 by hand
+[16:46:04] [Server thread/INFO]: Kindred goal at -257 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:46:04] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -258, 44, -79 by hand]
+[16:46:04] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:46:04] [Server thread/INFO]: Kindred goal at -258 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -259, 45, -79 by hand
+[16:46:07] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -259, 45, -79 by hand]
+[16:46:07] [Server thread/INFO]: Kindred goal at -258 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -259, 44, -79 by hand
+[16:46:09] [Server thread/INFO]: Kindred goal at -258 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance
+[16:46:09] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -259, 44, -79 by hand]
+[16:46:09] [Server thread/INFO]: Kindred goal at -259 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: back the way it came
+[16:46:09] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[16:46:09] [Server thread/INFO]: Kindred goal at -258 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -258, 45, -80 by hand
+[16:46:09] [Server thread/INFO]: Kindred goal at -257 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -257, 45, -80 by hand
+[16:46:09] [Server thread/INFO]: Kindred goal at -256 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -256, 45, -80 by hand
+[16:46:09] [Server thread/INFO]: Kindred goal at -254 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -254, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -253 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -253, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -252 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -252, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -250 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -250, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -249 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -249, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -247 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -247, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -246 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -246, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -245 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -245, 45, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred goal at -244 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -244, 44, -80 by hand
+[16:46:10] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[16:46:10] [Server thread/INFO]: Kindred goal at -243 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: under the hole beside it
+[16:46:10] [Server thread/INFO]: Kindred goal at -243 43 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: step up
+[16:46:11] [Server thread/INFO]: Kindred goal at -243 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: under the hole beside it
+[16:46:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for logs: under the hole beside it]
+[16:46:11] [Server thread/INFO]: Kindred goal at -244 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -244, 44, -80 by hand
+[16:46:13] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -244, 44, -80 by hand]
+[16:46:13] [Server thread/INFO]: Kindred goal at -244 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: pillar up into the hole over it
+[16:46:13] [Server thread/INFO]: Kindred goal at -244 44 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: to the wall
+[16:46:13] [Server thread/INFO]: Kindred goal at -244 45 -79: Wood: Gather logs for sticks - Head back up toward home
+[16:46:13] [Server thread/INFO]: Kindred goal at -244 45 -79: Wood: Gather logs for sticks - Climb toward the surface for logs: pillar up into the hole over it
+[16:46:13] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up into the hole over it]
+[16:46:14] [Server thread/INFO]: Kindred goal at -244 45 -79: Wood: Gather logs for sticks - Head back up toward home
+[16:46:14] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up into the hole over it]
+[16:46:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:14] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:14] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step
+[16:46:32] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: Gather logs for sticks - Head back up toward home
+[16:46:32] [Server thread/INFO]: Kindred has started nothing for 1201 ticks on its goal: mayDecide=false admitted=false candidates=0 decision=WAIT Autonomous progression awaits qualified body, skills and activity admission current=true [bodyTicks=45440 age=45440 removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=BLOCKED busy=false workPending=true setupPending=false actionPending=false activity=RESERVING flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=1/false build=none blocker=Blocked: No walkable route toward -271, 71, -112.]
+[16:46:32] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:32] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:32] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:32] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step
+[16:46:48] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: Gather logs for sticks - Head back up toward home
+[16:46:48] [Server thread/INFO]: Kindred has started nothing for 1201 ticks on its goal: mayDecide=false admitted=false candidates=0 decision=WAIT Autonomous progression awaits qualified body, skills and activity admission current=true [bodyTicks=46648 age=46648 removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=BLOCKED busy=false workPending=true setupPending=false actionPending=false activity=RESERVING flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=1/false build=none blocker=Blocked: No walkable route toward -271, 71, -112.]
+[16:46:48] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:48] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:48] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:46:48] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step
+[16:47:03] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: no progress here for a while - try elsewhere, toward -220, 46, -79
+[16:47:03] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -220, 46, -79 [try elsewhere, toward -220, 46, -79]
+[16:47:03] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step (tried elsewhere 1 time)
+[16:47:03] [Server thread/INFO]: Kindred spell replay captured in 2.3 ms on the server thread (2.3 ms of its time)
+[16:47:03] [kindred-replays/INFO]: Kindred spell replay written to kindred/replays/world/Kindred-47820 (899 KB)
+[16:47:04] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: Gather logs for sticks - Head back up toward home (tried elsewhere 1 time)
+[16:47:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:04] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:04] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step (tried elsewhere 1 time)
+[16:47:05] [ForkJoinPool.commonPool-worker-4/INFO]: Kindred cost: day 2: the Record through event 32519, 32519 written since start (2939923 characters of data); by kind events/characters {action=12196/1142612, chronicle.page=3/1593, death=1/33, journal=20318/1795516, ledger_check=1/169}; the database 18538288 bytes on disk; webs 3 holding 0 relations, the world's 0; Wire inboxes 0 messages; teammates' updates (team.state) 2870 told since start, kept only in the peer ledgers; Chronicle 3 pages kept; heap in use 922 MB; far looks 539 since start, 539 sight lines, 26 ms
+[16:47:05] [Server thread/INFO]: Kindred chronicle: day 2 page (the plain list, 476 characters, 3 events cited)
+[16:47:21] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: Gather logs for sticks - Head back up toward home (tried elsewhere 1 time)
+[16:47:21] [Server thread/INFO]: Kindred has started nothing for 1201 ticks on its goal: mayDecide=false admitted=false candidates=0 decision=WAIT Autonomous progression awaits qualified body, skills and activity admission current=true [bodyTicks=49064 age=49064 removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=BLOCKED busy=false workPending=true setupPending=false actionPending=false activity=RESERVING flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=1/false build=none blocker=Blocked: No walkable route toward -271, 71, -112.]
+[16:47:21] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:21] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:21] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:21] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step (tried elsewhere 1 time)
+[16:47:26] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: wait for daylight before going up for logs - Gather logs for sticks (tried elsewhere 1 time)
+[16:47:27] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:47:28] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:47:28] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step (tried elsewhere 1 time)
+[16:47:29] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[16:47:36] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: Gather logs for sticks - Head back up toward home (tried elsewhere 1 time)
+[16:47:36] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:36] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:36] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:36] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step (tried elsewhere 1 time)
+[16:47:52] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: Gather logs for sticks - Head back up toward home (tried elsewhere 1 time)
+[16:47:52] [Server thread/INFO]: Kindred has started nothing for 1201 ticks on its goal: mayDecide=false admitted=false candidates=0 decision=WAIT Autonomous progression awaits qualified body, skills and activity admission current=true [bodyTicks=51480 age=51480 removed=false listed=true connected=true world=overworld inWorld=true lookup=true simulated=true forced=false phase=ESTABLISHED stop=false runner=BLOCKED busy=false workPending=true setupPending=false actionPending=false activity=RESERVING flushes=true/true cancelling=false hold=none edits=true/true playstyle=OPTIMAL_SURVIVAL routine=1/false build=none blocker=Blocked: No walkable route toward -271, 71, -112.]
+[16:47:52] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:52] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:52] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -271, 71, -112 [Head back up toward home]
+[16:47:52] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step (tried elsewhere 1 time)
+[16:47:53] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: no progress here for a while - try elsewhere, toward -244, 46, -55
+[16:47:53] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -244, 46, -55 [try elsewhere, toward -244, 46, -55]
+[16:47:53] [Server thread/INFO]: Kindred goal at -244 46 -79: Wood: waiting for a feasible step (tried elsewhere 2 times)
+[16:47:53] [Server thread/INFO]: Kindred spell replay captured in 4.0 ms on the server thread (1.9 ms of its time)
+[16:47:53] [kindred-replays/INFO]: Kindred spell replay written to kindred/replays/world/Kindred-51620 (898 KB)

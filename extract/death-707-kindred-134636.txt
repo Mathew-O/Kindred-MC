@@ -1,0 +1,76 @@
+[18:27:46] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[18:27:46] [Server thread/INFO]: Kindred goal at 68 27 -106: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: advance
+[18:27:46] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: dig toward the lava at 60, 26, -115: clear 68, 27, -107]
+[18:27:46] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: dig toward the lava at 60, 26, -115: advance]
+[18:27:46] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: clear 67, 28, -107
+[18:27:46] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[18:27:46] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: dig toward the lava at 60, 26, -115: clear 67, 28, -107]
+[18:27:46] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: clear 67, 27, -107
+[18:27:46] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[18:27:46] [Server thread/INFO]: Kindred goal at 68 27 -107: Wood: Place a crafting table - Place a crafting table
+[18:27:46] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: dig toward the lava at 60, 26, -115: clear 67, 27, -107]
+[18:27:46] [Server thread/INFO]: Kindred native_place COMPLETED [Place a crafting table]
+[18:27:46] [Server thread/INFO]: Kindred goal at 68 27 -107: Wood: Craft stone pickaxe - Craft stone pickaxe
+[18:27:46] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[18:27:46] [Server thread/INFO]: Kindred native_craft BLOCKED: Owned inventory changed before craft dispatch; no craft issued [Craft stone pickaxe]
+[18:27:46] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stone pickaxe]
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Craft a spare stone pickaxe for the work below - Craft stone pickaxe
+[18:27:47] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stone pickaxe]
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Craft planks for spare sticks - Craft spruce planks
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: inventory full - Drop surplus cobblestone
+[18:27:47] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft spruce planks]
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: inventory full - Drop surplus raw copper
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: inventory full - Drop surplus granite
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Craft spare sticks for later pickaxes - Craft stick
+[18:27:47] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus raw copper]
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Craft a spare stone pickaxe for the work below - Craft stone pickaxe
+[18:27:47] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stick]
+[18:27:47] [Server thread/INFO]: Kindred native_craft COMPLETED [Craft stone pickaxe]
+[18:27:47] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: take workstations along - Pick up the crafting table
+[18:27:47] [Server thread/INFO]: Kindred picked up 5 minecraft:raw_copper
+[18:27:48] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Pick up crafting table
+[18:27:48] [Server thread/INFO]: Kindred picked up 1 minecraft:crafting_table
+[18:27:48] [Server thread/INFO]: Kindred goal at 68 27 -107: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: advance
+[18:27:48] [Server thread/INFO]: Kindred native_break COMPLETED [Pick up the crafting table]
+[18:27:48] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: dig toward the lava at 60, 26, -115: advance]
+[18:27:48] [Server thread/INFO]: Kindred goal at 67 27 -107: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: clear 67, 28, -108
+[18:27:49] [Server thread/INFO]: Kindred goal at 67 27 -107: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: clear 67, 27, -108
+[18:27:49] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: dig toward the lava at 60, 26, -115: clear 67, 28, -108]
+[18:27:49] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[18:27:49] [Server thread/INFO]: Kindred native_break COMPLETED [Cast: dig toward the lava at 60, 26, -115: clear 67, 27, -108]
+[18:27:49] [Server thread/INFO]: Kindred goal at 67 27 -107: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: advance
+[18:27:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: dig toward the lava at 60, 26, -115: advance]
+[18:27:49] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[18:27:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Cast: dig toward the lava at 60, 26, -115: advance]
+[18:27:49] [Server thread/INFO]: Kindred goal at 66 27 -108: Iron: Take the coal in view - Walk to coal ore at 63, 29, -117
+[18:27:49] [Server thread/INFO]: Kindred goal at 67 27 -108: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: clear 67, 28, -109
+[18:27:49] [Server thread/INFO]: Kindred goal at 67 27 -107: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: advance
+[18:27:49] [Server thread/INFO]: Kindred goal at 71 27 -106: Iron: inventory full - Drop surplus cobblestone
+[18:27:49] [Server thread/INFO]: Kindred goal at 72 27 -106: Iron: inventory full - Drop surplus raw copper
+[18:27:50] [Server thread/INFO]: Kindred goal at 73 27 -106: Iron: inventory full - Drop surplus granite
+[18:27:50] [Server thread/INFO]: Kindred goal at 73 27 -106: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: advance
+[18:27:50] [Server thread/INFO]: Kindred goal at 73 27 -105: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: clear 72, 28, -105
+[18:27:50] [Server thread/INFO]: Kindred goal at 73 27 -104: Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at 60, 26, -115: advance
+[18:27:50] [Server thread/INFO]: Kindred goal at 72 27 -103: Iron: inventory full - Drop surplus cobblestone
+[18:27:50] [Server thread/INFO]: Kindred goal at 72 27 -101: Iron: inventory full - Drop surplus raw copper
+[18:27:50] [Server thread/INFO]: Kindred goal at 72 28 -100: Iron: inventory full - Drop surplus cobblestone
+[18:27:50] [Server thread/INFO]: Kindred goal at 71 29 -100: Iron: inventory full - Drop surplus granite
+[18:27:50] [Server thread/INFO]: Kindred goal at 70 29 -101: Iron: outmatched - Hole up: back into the passage
+[18:27:50] [Server thread/INFO]: Kindred goal at 68 30 -101: Iron: inventory full - Drop surplus cobblestone
+[18:27:51] [Server thread/INFO]: Kindred goal at 62 30 -102: Iron: inventory full - Drop surplus raw copper
+[18:27:51] [Server thread/INFO]: Kindred goal at 62 31 -105: Iron: inventory full - Drop surplus cobblestone
+[18:27:51] [Server thread/INFO]: Kindred goal at 62 30 -111: Iron: inventory full - Drop surplus raw copper
+[18:27:51] [Server thread/INFO]: Kindred goal at 62 30 -114: Iron: inventory full - Drop surplus cobblestone
+[18:27:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Walk to coal ore at 63, 29, -117]
+[18:27:51] [Server thread/INFO]: Kindred goal at 62 30 -114: Iron: inventory full - Drop surplus granite
+[18:27:51] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus granite]
+[18:27:51] [Server thread/INFO]: Kindred goal at 62 30 -114: Iron: outmatched - Hole up: recover behind the wall
+[18:27:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]
+[18:27:53] [Server thread/INFO]: Kindred goal at 62 30 -114: Iron: outmatched - Hole up: back into the passage
+[18:27:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]
+[18:27:54] [Server thread/INFO]: Kindred picked up 4 minecraft:granite
+[18:27:54] [Server thread/INFO]: Kindred goal at 63 31 -112: Iron: fight back - Back off from skeleton
+[18:27:54] [Server thread/INFO]: Kindred goal at 64 31 -111: Iron: inventory full - Drop surplus cobblestone
+[18:27:54] [Server thread/INFO]: Kindred goal at 66 31 -109: Iron: inventory full - Drop surplus raw copper
+[18:27:54] [Server thread/INFO]: Kindred goal at 67 31 -108: Iron: inventory full - Drop surplus cobblestone
+[18:27:54] [Server thread/INFO]: Kindred goal at 69 31 -106: Iron: inventory full - Drop surplus raw copper

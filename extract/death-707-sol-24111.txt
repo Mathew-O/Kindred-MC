@@ -1,0 +1,40 @@
+[18:03:42] [Server thread/INFO]: Sol goal at 5 18 -125: Iron: fight back - Back off from zombie the way it came
+[18:03:42] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from spider]
+[18:03:43] [Server thread/INFO]: Sol goal at 4 18 -126: Iron: fight back - Back off from zombie
+[18:03:44] [Server thread/INFO]: Sol goal at 10 22 -130: Iron: hurt and out of food - Climb toward the surface for food: clear 10, 24, -129
+[18:03:44] [Server thread/INFO]: Sol goal at 10 23 -130: Iron: hurt and out of food - Climb toward the surface for food: clear 10, 25, -130
+[18:03:44] [Server thread/INFO]: Sol goal at 10 23 -131: Iron: hurt and out of food - Climb toward the surface for food: clear 11, 24, -131
+[18:03:44] [Server thread/INFO]: Sol goal at 9 23 -131: Iron: hurt and out of food - Climb toward the surface for food: clear 9, 24, -130
+[18:03:44] [Server thread/INFO]: Sol goal at 8 23 -131: Iron: hurt and out of food - Climb toward the surface for food: to the wall
+[18:03:45] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie the way it came]
+[18:03:45] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: to the wall]
+[18:03:45] [Server thread/INFO]: Sol goal at 8 23 -128: Iron: hurt and out of food - Climb toward the surface for food: clear 9, 24, -128
+[18:03:45] [Server thread/INFO]: Sol goal at 8 23 -128: Iron: hurt and out of food - Climb toward the surface for food: clear 9, 25, -128
+[18:03:45] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 9, 24, -128]
+[18:03:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[18:03:45] [Server thread/INFO]: Sol goal at 8 23 -128: Iron: hurt and out of food - Climb toward the surface for food: step up
+[18:03:45] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 9, 25, -128]
+[18:03:45] [Server thread/INFO]: Sol goal at 8 24 -128: Iron: hurt and out of food - Climb toward the surface for food: clear 8, 26, -128
+[18:03:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[18:03:45] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]
+[18:03:45] [Server thread/INFO]: Sol goal at 9 24 -128: Iron: hurt and out of food - Climb toward the surface for food: clear 9, 26, -128
+[18:03:46] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 9, 26, -128]
+[18:03:46] [Server thread/INFO]: Sol goal at 9 24 -128: Iron: hurt and out of food - Climb toward the surface for food: clear 9, 25, -129
+[18:03:46] [Server thread/INFO]: Sol goal at 9 24 -128: Iron: fight back - Back off from zombie
+[18:03:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[18:03:46] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 9, 25, -129]
+[18:03:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[18:03:47] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]
+[18:03:47] [Server thread/INFO]: Sol chronicle: day 1 page (the plain list, 365 characters, 4 events cited)
+[18:03:48] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]
+[18:03:48] [Server thread/INFO]: Sol goal at 13 24 -111: Iron: fight back - Back off from zombie the way it came
+[18:03:48] [Server thread/INFO]: Sol death replay captured in 6.5 ms on the server thread (3.7 ms of its time)
+[18:03:48] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie]
+[18:03:48] [Server thread/INFO]: Sol died at 13, 21, -116: Sol was slain by Zombie (tick 24111, day, under cover, hunger 10, armour 0, holding stone_pickaxe, a shield; doing "Back off from zombie" in "Iron: fight back - Back off from zombie the way it came"; stance PRESS_ON, focus NONE, habits [])
+[18:03:48] [Server thread/INFO]: Sol was slain by Zombie
+[18:03:48] [kindred-replays/INFO]: Sol death replay written to kindred/replays/world/Sol-24111 (683 KB)
+[18:03:49] [Server thread/INFO]: Sol goal at 14 21 -115: Wood: hurt and out of food - Climb toward the surface for food: to the wall
+[18:03:49] [Server thread/INFO]: Sol respawned at -5, 70, 1
+[18:03:49] [Server thread/INFO]: Sol goal at -5 70 1: Wood: Gather logs for a table and a wooden pickaxe - Walk to the trees Echo found at 9, 64, -131
+[18:03:50] [Server thread/INFO]: Sol goal at 0 69 -21: Wood: Gather logs for a table and a wooden pickaxe - Walk toward the trees seen at 68, 72, -60
+[18:03:51] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to the trees Echo found at 9, 64, -131]

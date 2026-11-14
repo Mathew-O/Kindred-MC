@@ -1,0 +1,37 @@
+[18:12:04] [Server thread/INFO]: Echo goal at -72 -49 5: Done: fight back - Run from creeper
+[18:12:04] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]
+[18:12:05] [Server thread/INFO]: Echo native_goto COMPLETED [Run from creeper]
+[18:12:05] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Run from creeper]
+[18:12:05] [Server thread/INFO]: Echo goal at -64 -54 10: Done: fight back - Take cover from creeper
+[18:12:05] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from creeper]
+[18:12:05] [Server thread/INFO]: Echo goal at -64 -54 10: Done: fight back - Back off from zombie
+[18:12:05] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from creeper]
+[18:12:06] [Server thread/INFO]: Echo goal at -63 -54 10: Done: fight back - Fight creeper
+[18:12:06] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]
+[18:12:06] [Server thread/INFO]: Echo goal at -61 -54 10: Done: fight back - Take cover from creeper
+[18:12:06] [Server thread/INFO]: Echo native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from creeper]
+[18:12:06] [Server thread/INFO]: Echo goal at -61 -54 9: Done: fight back - Fight creeper
+[18:12:06] [Server thread/INFO]: Echo goal at -62 -54 9: Done: fight back - Take cover from creeper
+[18:12:06] [Server thread/INFO]: Echo goal at -61 -54 9: Done: fight back - Fight creeper
+[18:12:06] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight creeper]
+[18:12:06] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight creeper]
+[18:12:06] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight creeper]
+[18:12:07] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight creeper]
+[18:12:07] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight creeper]
+[18:12:07] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight creeper]
+[18:12:07] [Server thread/INFO]: Echo goal at -60 -54 10: Done: fight back - Fight zombie
+[18:12:07] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight zombie]
+[18:12:07] [Server thread/INFO]: Echo goal at -57 -54 12: Done: The Nether portal is built and lit
+[18:12:07] [Server thread/INFO]: Echo goal at -57 -55 12: Done: hurt and out of food - Climb toward the surface for food: step up
+[18:12:07] [Server thread/INFO]: Echo goal at -57 -56 12: Done: The Nether portal is built and lit
+[18:12:07] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Climb toward the surface for food: step up]
+[18:12:07] [Server thread/INFO]: Echo goal at -57 -56 12: Done: hurt and out of food - Climb toward the surface for food: pillar up beside the water
+[18:12:07] [Server thread/INFO]: Echo native_pillar CANCELLED: Hazard/threat detected: urgent retreat required [Climb toward the surface for food: pillar up beside the water]
+[18:12:07] [Server thread/INFO]: Echo native_pillar CANCELLED: Hazard/threat detected: urgent retreat required [Climb toward the surface for food: pillar up beside the water]
+[18:12:07] [Server thread/INFO]: Echo death replay captured in 2.8 ms on the server thread (2.8 ms of its time)
+[18:12:07] [Server thread/INFO]: Echo died at -57, -56, 12: Echo tried to swim in lava (tick 129201, day, under cover, hunger 13, armour 6, holding stone_pickaxe, a shield; doing "native_pillar" in "Done: hurt and out of food - Climb toward the surface for food: pillar up beside the water"; stance PRESS_ON, focus NONE, habits [])
+[18:12:07] [Server thread/INFO]: Echo tried to swim in lava
+[18:12:07] [Server thread/INFO]: Echo goal at -57 -56 12: Done: Pick up lapis lazuli
+[18:12:07] [kindred-replays/INFO]: Echo death replay written to kindred/replays/world/Echo-129201 (717 KB)
+[18:12:07] [Server thread/INFO]: Echo goal at -57 -56 12: Done: The Nether portal is built and lit
+[18:12:07] [Server thread/INFO]: Echo respawned at 3, 73, -1

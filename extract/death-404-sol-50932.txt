@@ -1,0 +1,144 @@
+[17:23:53] [Server thread/INFO]: Sol goal at 90 17 -111: Iron: inventory full - Drop surplus granite
+[17:23:53] [Server thread/INFO]: Sol goal at 91 17 -111: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:53] [Server thread/INFO]: Sol goal at 91 17 -112: Iron: inventory full - Drop surplus cobblestone
+[17:23:53] [Server thread/INFO]: Sol goal at 92 17 -112: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:53] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to iron ore at 93, 16, -112]
+[17:23:53] [Server thread/INFO]: Sol goal at 93 17 -112: Iron: inventory full - Drop surplus granite
+[17:23:53] [Server thread/INFO]: Sol goal at 93 17 -112: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:53] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus granite]
+[17:23:53] [Server thread/INFO]: Sol goal at 90 17 -111: Iron: inventory full - Drop surplus granite
+[17:23:53] [Server thread/INFO]: Sol goal at 89 17 -111: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:53] [Server thread/INFO]: Sol goal at 87 17 -110: Iron: inventory full - Drop surplus granite
+[17:23:53] [Server thread/INFO]: Sol goal at 87 17 -110: Iron: inventory full - Drop surplus cobblestone
+[17:23:53] [Server thread/INFO]: Sol goal at 87 17 -109: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: land
+[17:23:53] [Server thread/INFO]: Sol goal at 87 17 -108: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:54] [Server thread/INFO]: Sol goal at 87 17 -106: Iron: inventory full - Drop surplus granite
+[17:23:54] [Server thread/INFO]: Sol goal at 86 17 -105: Iron: inventory full - Drop surplus cobblestone
+[17:23:54] [Server thread/INFO]: Sol goal at 86 17 -105: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:54] [Server thread/INFO]: Sol goal at 84 17 -105: Iron: inventory full - Drop surplus granite
+[17:23:54] [Server thread/INFO]: Sol goal at 84 17 -105: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:54] [Server thread/INFO]: Sol native_goto COMPLETED [Climb to the cave toward iron: walk on]
+[17:23:54] [Server thread/INFO]: Sol goal at 82 17 -105: Iron: inventory full - Drop surplus cobblestone
+[17:23:54] [Server thread/INFO]: Sol goal at 82 17 -105: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: stairs up 2
+[17:23:54] [Server thread/INFO]: Sol goal at 82 17 -105: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: land
+[17:23:54] [Server thread/INFO]: Sol goal at 81 18 -105: Iron: inventory full - Drop surplus granite
+[17:23:54] [Server thread/INFO]: Sol goal at 81 18 -105: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: land
+[17:23:54] [Server thread/INFO]: Sol native_stair COMPLETED [Climb to the cave toward iron: stairs up 2]
+[17:23:54] [Server thread/INFO]: Sol goal at 80 19 -105: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: dig 79, 19, -105
+[17:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Climb to the cave toward iron: dig 79, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol goal at 80 19 -105: Iron: Mine iron ore (4/7) - Climb to the cave toward iron: walk on
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Climb to the cave toward iron: walk on]
+[17:23:55] [Server thread/INFO]: Sol goal at 79 19 -105: Iron: inventory full - Drop surplus cobblestone
+[17:23:55] [Server thread/INFO]: Sol goal at 79 19 -105: Iron: light the way - Ready a torch
+[17:23:55] [Server thread/INFO]: Sol native_swap CANCELLED: Stuck in a wall; dig out first [Ready a torch]
+[17:23:55] [Server thread/INFO]: Sol picked up 1 minecraft:granite
+[17:23:55] [Server thread/INFO]: Sol goal at 79 19 -105: Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 80, 19, -105
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Dig out of the wall: out from under the falling gravel to 80, 19, -105]
+[17:23:58] [Server thread/INFO]: Sol death replay captured in 3.1 ms on the server thread (3.1 ms of its time)
+[17:23:58] [Server thread/INFO]: Sol native_goto dropped before it ran: paid=false/false generation=true stop=false cancelling=false hazard=false connected=true ledger=KNOWN_LEDGER_CLEAR blocker=
+[17:23:58] [Server thread/INFO]: Sol died at 80, 19, -105: Sol suffocated in a wall (tick 50932, day, under cover, hunger 10, armour 6, holding stone_pickaxe, a shield; doing "Dig out of the wall: out from under the falling gravel to 80, 19, -105" in "Iron: stuck in a wall - Dig out of the wall: out from under the falling gravel to 80, 19, -105"; stance PRESS_ON, focus NONE, habits [])
+[17:23:58] [Server thread/INFO]: Sol suffocated in a wall
+[17:23:58] [Server thread/INFO]: Sol goal at 80 19 -105: Wood: pick up what was dropped at death - Recover dropped items near 80, 19, -105
+[17:23:58] [kindred-replays/INFO]: Sol death replay written to kindred/replays/world/Sol-50932 (783 KB)
+[17:23:58] [Server thread/INFO]: Sol respawned at 41, 74, -55
+[17:23:59] [Server thread/INFO]: Sol native_goto COMPLETED [Recover dropped items near 80, 19, -105]
+[17:23:59] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 80, 19, -103 [Recover dropped items near 80, 19, -105]
+[17:23:59] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 80, 19, -104 [Recover dropped items near 80, 19, -105]
+[17:23:59] [Server thread/INFO]: Sol goal at 44 74 -57: Wood: Gather logs for a table and a wooden pickaxe - Walk to the foot of the trunk under the logs at 42, 68, -56
+[17:23:59] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 42, 63, -56 [Walk to the foot of the trunk under the logs at 42, 68, -56]
+[17:23:59] [Server thread/INFO]: Sol goal at 44 74 -57: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[17:24:00] [Server thread/INFO]: Sol goal at 42 75 -55: Wood: Gather logs for a table and a wooden pickaxe - Head back up toward home
+[17:24:00] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]
+[17:24:00] [Server thread/INFO]: Sol goal at 41 75 -55: Wood: Gather logs for a table and a wooden pickaxe - Walk to the foot of the trunk under the logs at 46, 68, -60
+[17:24:00] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 46, 64, -60 [Walk to the foot of the trunk under the logs at 46, 68, -60]
+[17:24:00] [Server thread/INFO]: Sol goal at 41 75 -55: Wood: Gather logs for a table and a wooden pickaxe - Walk to logs at 50, 70, -52
+[17:24:00] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 50, 70, -52 [Walk to logs at 50, 70, -52]
+[17:24:00] [Server thread/INFO]: Sol goal at 41 74 -55: Wood: Gather logs for a table and a wooden pickaxe - Walk under the logs at 47, 68, -48
+[17:24:00] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 47, 63, -48 [Walk under the logs at 47, 68, -48]
+[17:24:00] [Server thread/INFO]: Sol goal at 41 74 -55: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: step up
+[17:24:00] [Server thread/INFO]: Sol goal at 41 75 -55: Wood: Gather logs for a table and a wooden pickaxe - Head back up toward home
+[17:24:00] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]
+[17:24:01] [Server thread/INFO]: Sol goal at 41 74 -55: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: step up
+[17:24:01] [Server thread/INFO]: Sol goal at 40 74 -54: Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came
+[17:24:01] [Server thread/INFO]: Sol goal at 39 73 -53: Wood: Gather logs for a table and a wooden pickaxe - Walk under the logs at 39, 66, -45
+[17:24:01] [Server thread/INFO]: Sol goal at 38 73 -52: Wood: Gather logs for a table and a wooden pickaxe - Walk under the logs at 38, 66, -45
+[17:24:01] [Server thread/INFO]: Sol goal at 39 73 -52: Wood: Gather logs for a table and a wooden pickaxe - Walk under the logs at 39, 66, -45
+[17:24:02] [Server thread/INFO]: Sol goal at 38 73 -51: Wood: Gather logs for a table and a wooden pickaxe - Walk under the logs at 38, 66, -45
+[17:24:02] [Server thread/INFO]: Sol native_goto COMPLETED [Head back up toward home]
+[17:24:02] [Server thread/INFO]: Sol goal at 37 67 -51: Wood: Gather logs for a table and a wooden pickaxe - Walk under the logs at 40, 67, -55
+[17:24:02] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 38, 61, -45 [Walk under the logs at 38, 66, -45]
+[17:24:02] [Server thread/INFO]: Sol goal at 36 62 -51: Wood: Stock some food while animals are around - Approach cow
+[17:24:02] [Server thread/INFO]: Sol goal at 36 62 -50: Wood: Stock some food while animals are around - To where it last saw game at 54, 63, -47
+[17:24:02] [Server thread/INFO]: Sol goal at 36 61 -50: Wood: Stock some food while animals are around - Approach cow
+[17:24:03] [Server thread/INFO]: Sol goal at 41 63 -52: Wood: Stock some food while animals are around - Land, then back to where it saw game
+[17:24:03] [Server thread/INFO]: Sol goal at 41 64 -53: Wood: Stock some food while animals are around - Approach cow
+[17:24:03] [Server thread/INFO]: Sol goal at 41 64 -54: Wood: Stock some food while animals are around - To where it last saw game at 54, 63, -47
+[17:24:03] [Server thread/INFO]: Sol goal at 41 64 -55: Wood: Stock some food while animals are around - Approach cow
+[17:24:03] [Server thread/INFO]: Sol native_goto COMPLETED [Walk under the logs at 40, 67, -55]
+[17:24:03] [Server thread/INFO]: Sol goal at 44 63 -52: Wood: Stock some food while animals are around - To where it last saw game at 57, 63, -47
+[17:24:03] [Server thread/INFO]: Sol goal at 45 63 -51: Wood: Stock some food while animals are around - Approach cow
+[17:24:04] [Server thread/INFO]: Sol native_goto COMPLETED [Approach cow]
+[17:24:04] [Server thread/INFO]: Sol goal at 56 63 -46: Wood: Stock some food while animals are around - Hunt cow
+[17:24:04] [Server thread/INFO]: Sol native_goto COMPLETED [Approach cow]
+[17:24:04] [Server thread/INFO]: Sol native_attack COMPLETED [Hunt cow]
+[17:24:04] [Server thread/INFO]: Sol goal at 56 63 -46: Wood: Stock some food while animals are around - Approach cow
+[17:24:04] [Server thread/INFO]: Sol native_attack BLOCKED: Target entity out of reach (more than 3 blocks from the eyes to its hitbox); no attack issued [Hunt cow]
