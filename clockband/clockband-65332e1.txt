@@ -1,0 +1,45 @@
+scenes 422 batches 46
+A. own recorded time in [12000,13000): 19
+    diag-factions303-079bdc2-303-echo-36120 12119
+    diag-factions303-079bdc2-303-kindred-84180 12179
+    e40a13-fe2ba3b-20261030-echo-60192 12192
+    e40a13-fe2ba3b-606-echo-36448 12448
+    e40a14-80b7150-101-sol-84338 12338
+    e40a15-dbf4e5c-31102026-sol-108773 12773
+    e40a15-dbf4e5c-404-kindred-36022 12022
+    e40a17-7bc5b42-303-kindred-108090 12090
+    e40a17-7bc5b42-707-echo-36256 12256
+    e40a20-79a9aad-202-kindred-108666 12666
+    e40a20-79a9aad-404-kindred-108100 12099
+    e40a20-79a9aad-505-echo-36200 12199
+    e40a20-79a9aad-505-kindred-60851 12851
+    f29e-on-121616477-kindred-36049 12049
+    f29e-on-4h-8675309-echo-108154 12154
+    f29e-on-505-echo-60580 12580
+    f29e-on-606-echo-108001 12001
+    f29e-on-707-sol-12912 12912
+    f29e-on-891567637-kindred-36249 12249
+B. scenes whose batch clock-setter is in [12000,13000): 20 in 2 batches
+    corpus_22 setter e40a20-79a9aad-404-kindred-108100 (12099): diag-factions303-079bdc2-303-kindred-107560 (11559), factions-110-d5057a4-110-echo-227579 (11579), diag-holepit-079bdc2-31102026-echo-11660 (11659), f29e-on-4h-202-sol-203865 (11865), e40a13-fe2ba3b-707-sol-11919 (11919), diag-holepit-079bdc2-31102026-echo-108000 (11999), e40a15-dbf4e5c-404-kindred-36022 (12022), f29e-on-121616477-kindred-36049 (12049), e40a17-7bc5b42-303-kindred-108090 (12090), e40a20-79a9aad-404-kindred-108100 (12099)
+    corpus_23 setter e40a15-dbf4e5c-31102026-sol-108773 (12773): diag-factions303-079bdc2-303-echo-36120 (12119), f29e-on-4h-8675309-echo-108154 (12154), diag-factions303-079bdc2-303-kindred-84180 (12179), e40a13-fe2ba3b-20261030-echo-60192 (12192), f29e-on-891567637-kindred-36249 (12249), e40a17-7bc5b42-707-echo-36256 (12256), e40a14-80b7150-101-sol-84338 (12338), e40a13-fe2ba3b-606-echo-36448 (12448), f29e-on-505-echo-60580 (12580), e40a15-dbf4e5c-31102026-sol-108773 (12773)
+C. scenes whose night-or-not over their own ticks differs between their own time and their setter's: 20
+    corpus_21 e40c1-eed2dc5-101-echo-59004 own 11004 -> setter 11529 (f29e-on-707-sol-11529): day->night
+    corpus_21 f29e-on-202-echo-35084 own 11084 -> setter 11529 (f29e-on-707-sol-11529): day->night
+    corpus_21 f29e-on-1530142077-echo-83228 own 11228 -> setter 11529 (f29e-on-707-sol-11529): day->night
+    corpus_21 e40a15-dbf4e5c-101-echo-11286 own 11286 -> setter 11529 (f29e-on-707-sol-11529): day->night
+    corpus_24 e40a20-79a9aad-505-kindred-60851 own 12851 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 f29e-on-707-sol-12912 own 12912 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 e40a14-80b7150-606-echo-71006 own 23006 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 f29e-on-4h-202-sol-95132 own 23132 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 e40c1-eed2dc5-20261030-echo-239135 own 23135 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 f29e-on-779795571-kindred-47186 own 23186 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 e40a15-dbf4e5c-31102026-echo-95216 own 23216 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 e40a20-79a9aad-202-echo-143360 own 23359 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_24 f29e-on-891567637-kindred-23384 own 23384 -> setter 23470 (factions-e40a16seeds-b7b4bec-404-kindred-143470): night->day
+    corpus_40 e40a20-79a9aad-20261030-kindred-99600 own 3599 -> setter 11419 (e40a20-79a9aad-20261030-kindred-131420): day->night
+    corpus_40 e40a20-79a9aad-505-echo-29000 own 4999 -> setter 11419 (e40a20-79a9aad-20261030-kindred-131420): day->night
+    corpus_40 factions-110-d5057a4-110-echo-125906 own 5906 -> setter 11419 (e40a20-79a9aad-20261030-kindred-131420): day->night
+    corpus_40 factions-e40a16seeds-b7b4bec-606-kindred-127222 own 7222 -> setter 11419 (e40a20-79a9aad-20261030-kindred-131420): day->night
+    corpus_40 f29e-on-303-kindred-103976 own 7976 -> setter 11419 (e40a20-79a9aad-20261030-kindred-131420): day->night
+    corpus_40 e40c1-eed2dc5-505-echo-104879 own 8879 -> setter 11419 (e40a20-79a9aad-20261030-kindred-131420): day->night
+    corpus_40 f29e-on-4h-8675309-echo-81027 own 9027 -> setter 11419 (e40a20-79a9aad-20261030-kindred-131420): day->night
