@@ -5,3 +5,4 @@ confirm-branch-1 (52fbcc60, only flagged): 1 min, peak 1323 MB, 2 required tests
 confirm-branch-2 (52fbcc60, only flagged): 1 min, peak 1450 MB, 1 required tests failed, fence-top 0, disk 6.5G
 confirm-branch-3 (52fbcc60, only flagged): 1 min, peak 1646 MB, 1 required tests failed, fence-top 0, disk 6.5G
 confirm-main-1 (dc5ad4de, only flagged): 1 min, peak 1416 MB, 2 required tests failed, fence-top 0, disk 6.5G
+confirm-main-2 (dc5ad4de, only flagged): 1 min, peak 1427 MB, 2 required tests failed, fence-top 0, disk 6.5G
