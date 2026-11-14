@@ -3,3 +3,4 @@ branch-2 (42e2a2a2): 44 min, peak 3474 MB, 109 required tests failed, fence-top 
 branch-3 (42e2a2a2): 44 min, peak 3064 MB, 117 required tests failed, fence-top 34, disk 6.2G
 confirm-branch-1 (42e2a2a2, only flagged): 0 min, peak 1438 MB, 1 required tests failed, fence-top 0, disk 6.8G
 confirm-branch-2 (42e2a2a2, only flagged): 0 min, peak 1280 MB, All 10 required tests passed, fence-top 0, disk 6.8G
+confirm-branch-3 (42e2a2a2, only flagged): 0 min, peak 1182 MB, 1 required tests failed, fence-top 0, disk 6.8G
