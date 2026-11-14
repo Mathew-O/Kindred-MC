@@ -8,3 +8,4 @@ confirm-branch-2.1 (7d5968c4, only flagged): 0 min, peak 1229 MB, 1 required tes
 confirm-branch-2.2 (7d5968c4, only flagged): 0 min, peak 1259 MB, All 2 required tests passed, fence-top 0, disk 4.5G
 confirm-branch-2.3 (7d5968c4, only flagged): 0 min, peak 1393 MB, All 2 required tests passed, fence-top 0, disk 4.5G
 confirm-branch-3.1 (7d5968c4, only flagged): 0 min, peak 1149 MB, 1 required tests failed, fence-top 0, disk 4.5G
+confirm-branch-3.2 (7d5968c4, only flagged): 0 min, peak 1175 MB, All 2 required tests passed, fence-top 0, disk 4.5G
