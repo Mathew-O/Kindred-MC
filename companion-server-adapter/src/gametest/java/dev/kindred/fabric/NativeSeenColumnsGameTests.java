@@ -29,8 +29,6 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
     private static final int LEG_TOP = 12;
     /** The explore towers: their tops within eight of its height, so that before F-35m their tops were the walk's end. */
     private static final int EXPLORE_TOP = 6;
-    /** How far over its feet the fixture's ground is cleared: the towers' columns well over their tops. */
-    private static final int CLEAR_TOP = 32;
 
     /** The towers' tops behind the wall, out of its sight: the walks go at its own height. */
     @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "seenColumnsWalled", tickLimit = 400)
@@ -168,6 +166,32 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
                 + (column - feet.getY()) + " over its feet, " + world.getBlockState(new BlockPos(walk.getX(), column, walk.getZ()));
     }
 
+    /**
+     * The cells within a block of a sight line from its eyes on the yard's floor at {@code o} to the top of each tower,
+     * the towers' own cells and the floor's not counted, none below its feet.
+     */
+    static java.util.Set<BlockPos> sightLines(BlockPos o) {
+        var cells = new java.util.LinkedHashSet<BlockPos>();
+        double ex = o.getX() + 0.5, ey = o.getY() + 1.62, ez = o.getZ() + 0.5;
+        int[][] tops = {{28, EXPLORE_TOP - 1, 0}, {-28, EXPLORE_TOP - 1, 0}, {0, EXPLORE_TOP - 1, 28}, {0, EXPLORE_TOP - 1, -28},
+                {FactionsPlayer.LEG, LEG_TOP - 1, 0}};
+        for (int[] top : tops) {
+            double tx = o.getX() + top[0] + 0.5, ty = o.getY() + top[1] + 0.999, tz = o.getZ() + top[2] + 0.5;
+            int steps = (int) Math.ceil(Math.hypot(tx - ex, tz - ez) * 4);
+            for (int i = 0; i <= steps; i++) {
+                double t = (double) i / steps;
+                BlockPos at = BlockPos.ofFloored(ex + (tx - ex) * t, ey + (ty - ey) * t, ez + (tz - ez) * t);
+                for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++) {
+                    BlockPos cell = at.add(dx, dy, dz);
+                    int rx = cell.getX() - o.getX(), rz = cell.getZ() - o.getZ();
+                    boolean tower = rx == top[0] && rz == top[2];
+                    if (cell.getY() >= o.getY() && !tower) cells.add(cell.toImmutable());
+                }
+            }
+        }
+        return cells;
+    }
+
     /** A scout of the chunk two hundred blocks east: its first leg ends forty-eight east, on the leg tower's column. */
     private static FactionPlay.Choice scoutEast(BlockPos o) {
         return new FactionPlay.Choice(FactionPlay.Kind.SCOUT, Territory.Chunk.at(Territory.OVERWORLD, o.getX() + 200, o.getZ()).key(), 0, "A fixture's scout");
@@ -177,20 +201,19 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
      * The yard: a floor thirteen across at {@code o}'s feet less one, walled {@value #WALL} out and {@value #WALL_HIGH} high
      * when {@code walled}; four explore towers twenty-eight out each way, their tops {@value #EXPLORE_TOP} over its feet; and
      * the leg's tower forty-eight east, from nine below its feet to {@value #LEG_TOP} over, so that nothing within eight of
-     * its height is ground to stand on. All the ground it keeps, from its feet to {@value #CLEAR_TOP} over them, is open
-     * air before these are laid. The leg tower's column, returned. Each tower is one column: its top block, over its eyes,
+     * its height is ground to stand on. The cells along its sight lines to the towers' tops are open air before these are
+     * laid ({@link #sightLines}). The leg tower's column, returned. Each tower is one column: its top block, over its eyes,
      * is seen from below by the side it shows them (the top of a broad tower's middle is hidden by its own edge).
      */
     private static BlockPos yard(TestContext context, BlockPos o, boolean walled) {
         var world = context.getWorld();
-        FixtureGround.keep(context, o.add(-32, -12, -32), o.add(52, CLEAR_TOP, 32));
-        // Open air first from its feet up: the sight lines from the yard to the towers, and the towers' columns over
-        // them, are the fixture's own, whatever another test on the same ground left there (#275's CI: an explore look's
-        // sight line north that reached no tower top, at a place where the test passed nowhere else). Not below its
-        // feet, where a neighbour's own fixture may stand (a corridor twenty over the ground).
-        for (int x = -32; x <= 52; x++) for (int z = -32; z <= 32; z++) for (int y = 0; y <= CLEAR_TOP; y++) {
-            world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
-        }
+        FixtureGround.keep(context, o.add(-32, -12, -32), o.add(52, LEG_TOP + 2, 32));
+        // Open air first along each sight line from its eyes to a tower's top, a block round it: those cells are the
+        // fixture's own, whatever another test on the same ground left there (#275's CI: an explore look's sight line
+        // north that reached no tower top, at a place where the test passed nowhere else). Nothing else is cleared, so
+        // that nothing a neighbour has in use beside the lines is touched; all of it is inside the kept box, put back
+        // as it was when the test ends.
+        for (BlockPos cell : sightLines(o)) world.setBlockState(cell, Blocks.AIR.getDefaultState());
         for (int x = -WALL; x <= WALL; x++) for (int z = -WALL; z <= WALL; z++) {
             world.setBlockState(o.add(x, -1, z), Blocks.STONE.getDefaultState());
             boolean edge = Math.abs(x) == WALL || Math.abs(z) == WALL;
