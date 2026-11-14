@@ -6,3 +6,4 @@ confirm-branch-2 (42e2a2a2, only flagged): 0 min, peak 1280 MB, All 10 required 
 confirm-branch-3 (42e2a2a2, only flagged): 0 min, peak 1182 MB, 1 required tests failed, fence-top 0, disk 6.8G
 confirm-main-1 (31964016, only flagged): 1 min, peak 1270 MB, All 10 required tests passed, fence-top 1, disk 6.8G
 confirm-main-2 (31964016, only flagged): 1 min, peak 1252 MB, 3 required tests failed, fence-top 0, disk 6.8G
+confirm-main-3 (31964016, only flagged): 0 min, peak 1415 MB, 1 required tests failed, fence-top 0, disk 6.8G
