@@ -118,7 +118,7 @@ public final class GameModes {
                     "survival from scratch, runners against hunters",
                     "the server's edit policy for AI players",
                     "a runner and a hunter of a running manhunt both joined, never two on one side, never anyone outside it",
-                    "every hunter gets a tracking compass when the hunt starts, the same for people and AI players, taken back at the end",
+                    "every hunter gets a tracking compass when the hunt starts, the same for people and AI players: lost to a death or destroyed, replaced; set down or taken, not; taken back at the end",
                     "hunters respawn and hunt on; a runner who falls is out",
                     "a runner frees the End, or every runner falls");
             case BUILDER -> new Rules("Builder",
@@ -160,7 +160,7 @@ public final class GameModes {
                     "survival from scratch, runners against hunters",
                     "the world's own rules",
                     "a runner and a hunter may attack one another once both joined and it runs; never two on one side",
-                    "every hunter gets one tracking compass at the start, pointing at the nearest runner or its last portal; taken back at the end",
+                    "every hunter gets one tracking compass at the start, pointing at the nearest runner or its last portal: lost to a death or destroyed, replaced; set down or taken, not; taken back at the end",
                     "hunters respawn; a runner who falls is out",
                     "a runner frees the End, or every runner falls");
             case BUILDER -> new Rules("Build battle",
