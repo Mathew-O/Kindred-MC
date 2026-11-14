@@ -18,6 +18,7 @@ def load(name):
 
 score = load('score')
 compare = load('compare')
+run = load('run')
 
 
 def death(cause, light=15, hunger=20, stage='Iron: Mine iron ore'):
@@ -228,6 +229,58 @@ class NightsMeasureTest(unittest.TestCase):
             s = score.score(FreeSwitchTest().run_dir(root, {}), use_metrics=False)
         self.assertNotIn('days', s['team'])
         self.assertNotIn('Chunk-loads', score.markdown(s))
+
+
+class KeepWorldTest(unittest.TestCase):
+    """F-26d: --keep-world keeps the run's players' own saves beside its ground."""
+    IDS = {'Kindred': 'c3eed6dc-3bd3-4239-85eb-cfc75047f22d', 'Sol': 'ddc070f5-3cb9-4e18-a639-41eff507547a',
+           'Echo': 'df828ada-60b1-415f-8a3f-86a161d71c49', 'Stranger': '0b0c0ea5-0f1a-4783-b56e-b7f3e2107db5'}
+
+    class Done:
+        returncode = 0
+
+    def seed(self, root, usercache=True):
+        folder = Path(root) / '101'
+        (folder / 'logs').mkdir(parents=True)
+        (folder / 'world' / 'region').mkdir(parents=True)
+        (folder / 'world' / 'region' / 'r.0.0.mca').write_bytes(b'region')
+        (folder / 'world' / 'playerdata').mkdir()
+        for uuid in self.IDS.values():
+            (folder / 'world' / 'playerdata' / (uuid + '.dat')).write_bytes(b'save')
+            (folder / 'world' / 'playerdata' / (uuid + '.dat_old')).write_bytes(b'old')
+        players = {name: {} for name in ('Kindred', 'Sol', 'Echo')}
+        (folder / 'logs' / 'eval-result.json').write_text(json.dumps({'ticksRun': 100, 'players': players}), encoding='utf-8')
+        if usercache:
+            cache = [{'name': name, 'uuid': uuid, 'expiresOn': 'x'} for name, uuid in self.IDS.items()]
+            (folder / 'usercache.json').write_text(json.dumps(cache), encoding='utf-8')
+        return folder
+
+    def kept(self, folder):
+        saves = folder / 'world-kept' / 'playerdata'
+        return sorted(p.name for p in saves.iterdir()) if saves.is_dir() else []
+
+    def test_01_one_save_for_each_player_in_the_result(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = self.seed(root)
+            ok, ticks = run.finish(folder, self.Done(), 0, keep_world=True)
+            self.assertTrue(ok)
+            self.assertEqual(100, ticks)
+            self.assertEqual(sorted(self.IDS[n] + '.dat' for n in ('Kindred', 'Sol', 'Echo')), self.kept(folder))
+            self.assertTrue((folder / 'world-kept' / 'region' / 'r.0.0.mca').is_file())
+            self.assertFalse((folder / 'world').exists())
+
+    def test_02_without_the_usercache_every_save_is_kept(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = self.seed(root, usercache=False)
+            run.finish(folder, self.Done(), 0, keep_world=True)
+            self.assertEqual(sorted(uuid + '.dat' for uuid in self.IDS.values()), self.kept(folder))
+
+    def test_03_no_saves_kept_without_keep_world(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = self.seed(root)
+            run.finish(folder, self.Done(), 0)
+            self.assertFalse((folder / 'world-kept').exists())
+            self.assertFalse((folder / 'world').exists())
 
 
 class BridgeMeasureTest(unittest.TestCase):
