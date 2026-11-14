@@ -1130,9 +1130,9 @@ final class PlayerRuntime {
                         reject(source, "The ledger or the native save could not be read; nothing was settled.");
                         return;
                     }
-                    String observed;
+                    InventoryEvidence observed;
                     try {
-                        observed = read.getValue().map(bytes -> InventoryEvidence.describeSave(bytes.decode(server), server.getRegistryManager())).orElse(null);
+                        observed = read.getValue().map(bytes -> InventoryEvidence.fromSave(bytes.decode(server), server.getRegistryManager())).orElse(null);
                     } catch (RuntimeException unreadable) {
                         observed = null;
                     }
@@ -1143,7 +1143,7 @@ final class PlayerRuntime {
 
     /** Settles the actions left, one at a time, each written before the next is looked at. */
     private void settleEach(ServerCommandSource source, Entry entry, long generation, String by, Boolean chosen,
-                            java.util.List<dev.kindred.core.ActionRecord> left, String observed, int settled, int waiting, int waited) {
+                            java.util.List<dev.kindred.core.ActionRecord> left, InventoryEvidence observed, int settled, int waiting, int waited) {
         if (!running || entries.get(entry.data.id()) != entry || entry.generation != generation) { entry.settling = false; return; }
         if (left.isEmpty()) { finishSettling(source, entry, settled, waiting); return; }
         var action = left.get(0);
@@ -1152,12 +1152,16 @@ final class PlayerRuntime {
             reject(source, "An action of " + entry.data.displayName() + "'s is " + action.state() + ", not yet marked uncertain by a start; nothing more was settled.");
             return;
         }
-        var target = dev.kindred.core.ActionSettlement.target(action.kind(), action.preconditions());
+        // The block a break meant to break, or the cell a pillar step meant to fill (F-25c6c), read once its ground is loaded.
+        var target = dev.kindred.core.ActionSettlement.target(action.kind(), action.preconditions())
+                .or(() -> dev.kindred.core.ActionSettlement.pillarCell(action.kind(), action.preconditions()));
         String block = null;
+        net.minecraft.server.world.ServerWorld world = null;
+        BlockPos pos = null;
         if (target.isPresent()) {
-            var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(entry.data.dimension())));
+            world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(entry.data.dimension())));
             if (world != null) {
-                var pos = new BlockPos(target.get().x(), target.get().y(), target.get().z());
+                pos = new BlockPos(target.get().x(), target.get().y(), target.get().z());
                 if (!world.isChunkLoaded(pos) && waited < SETTLE_LOAD_TICKS) {
                     var chunk = new net.minecraft.util.math.ChunkPos(pos);
                     world.getChunkManager().addTicket(NATIVE_CONNECT, chunk, 1, chunk);
@@ -1167,7 +1171,7 @@ final class PlayerRuntime {
                 if (world.isChunkLoaded(pos)) block = Registries.BLOCK.getId(world.getBlockState(pos).getBlock()).toString();
             }
         }
-        var decision = dev.kindred.core.ActionSettlement.decide(action, block, observed);
+        var decision = settleDecision(action, target.orElse(null), world, pos, block, observed);
         Boolean done = switch (decision.verdict()) {
             case DONE -> true;
             case NOT_DONE -> false;
@@ -1208,6 +1212,45 @@ final class PlayerRuntime {
             feedback(source, "Settled " + entry.data.displayName() + "'s " + action.kind() + " as " + (done ? "done" : "not done") + " (" + who + "): " + decision.evidence());
             settleEach(source, entry, generation, by, chosen, left, observed, settled + 1, waiting, 0);
         }));
+    }
+
+    /**
+     * One uncertain action decided by its own type's rule from what can be seen (F-25c6c, F-31g1), each reading only the
+     * fingerprint its record kept ({@code Before.recorded}): a break by {@code NativeBreakAction.settleFromEvidence}, a
+     * pillar step by {@code NativePillarAction.settleFromEvidence}. Anything else, or a block or save that could not be
+     * read, is left for an operator, in {@code ActionSettlement.decide}'s words.
+     */
+    private dev.kindred.core.ActionSettlement.Decision settleDecision(dev.kindred.core.ActionRecord action, dev.kindred.core.ActionSettlement.Target target,
+                                                                    net.minecraft.server.world.ServerWorld world, BlockPos pos, String block, InventoryEvidence observed) {
+        var words = dev.kindred.core.ActionSettlement.decide(action, block, observed == null ? null : observed.description());
+        if (target != null && dev.kindred.core.ActionSettlement.PILLAR.equals(action.kind()) && (block == null || observed == null)) {
+            return new dev.kindred.core.ActionSettlement.Decision(dev.kindred.core.ActionSettlement.Verdict.AMBIGUOUS, target.describe() + ": "
+                    + (block == null ? "the cell could not be read" : "now " + block) + "; saved inventory " + (observed == null ? "unreadable" : observed.description()));
+        }
+        if (target == null || block == null || observed == null) return words;
+        var before = Before.recorded(action.beforeEvidence());
+        if (dev.kindred.core.ActionSettlement.BREAK.equals(action.kind())) {
+            return new dev.kindred.core.ActionSettlement.Decision(verdict(NativeBreakAction.settleFromEvidence(before, observed, world, pos, target.block())), words.evidence());
+        }
+        if (dev.kindred.core.ActionSettlement.PILLAR.equals(action.kind())) {
+            var id = Identifier.tryParse(target.block());
+            if (id == null || !Registries.BLOCK.containsId(id)) return words;
+            var settled = NativePillarAction.settleFromEvidence(before, observed, world, pos, Registries.BLOCK.get(id));
+            boolean same = observed.description().equals(action.beforeEvidence());
+            String seen = target.describe() + ": " + (world.getBlockState(pos).isReplaceable() ? "the cell open (" + block + ")" : "now " + block) + "; "
+                    + (same ? "the saved inventory exactly as before the step (" + observed.description() + ")"
+                    : "the saved inventory differs from before the step (before: " + action.beforeEvidence() + "; now: " + observed.description() + ")");
+            return new dev.kindred.core.ActionSettlement.Decision(verdict(settled), seen);
+        }
+        return words;
+    }
+
+    private static dev.kindred.core.ActionSettlement.Verdict verdict(Settled settled) {
+        return switch (settled) {
+            case DONE -> dev.kindred.core.ActionSettlement.Verdict.DONE;
+            case NOT_DONE -> dev.kindred.core.ActionSettlement.Verdict.NOT_DONE;
+            case HELD -> dev.kindred.core.ActionSettlement.Verdict.AMBIGUOUS;
+        };
     }
 
     /** Once the actions looked at are written: the player freed when the store holds none unresolved, as at a clear start. */
