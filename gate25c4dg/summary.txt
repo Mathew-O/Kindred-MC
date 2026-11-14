@@ -11,3 +11,4 @@ confirm-main-1.1 (fbc5f0f5, only flagged): 1 min, peak 1159 MB, 1 required tests
 confirm-main-1.2 (fbc5f0f5, only flagged): 0 min, peak 1357 MB, 1 required tests failed, fence-top 0, disk 5.5G
 confirm-main-2.1 (fbc5f0f5, only flagged): 0 min, peak 1081 MB, All 2 required tests passed, fence-top 0, disk 5.5G
 confirm-main-2.2 (fbc5f0f5, only flagged): 0 min, peak 999 MB, All 2 required tests passed, fence-top 0, disk 5.5G
+confirm-main-3.1 (fbc5f0f5, only flagged): 0 min, peak 1294 MB, All 2 required tests passed, fence-top 0, disk 5.5G
