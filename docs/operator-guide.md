@@ -843,8 +843,12 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    The auction house works the same way: `/faction as <player> ah sell <start> [buyNow] [hours]` lists what the player
    holds (25 coins a listing, five at a time, 48 hours unless given), `ah buy <id>` pays the buy-now price, and the seller
    is paid it less 3%.
-5. After a restart, an AI player whose autonomy is off waits offline: `aiplayer native list`, then
-   `aiplayer native connect <UUID>` for each.
+5. After a restart every AI player waits offline: `aiplayer native list`, then `aiplayer native connect <name or UUID>`
+   for each. Connected, each is still stopped ("Resume explicitly"): `aiplayer native resume <name or UUID>` for each,
+   and it plays on from its saves. There is no form for all at once: two commands a player (found in F-31g's restart
+   soak, 2026-11-12). A player blocked for reconciliation after a crash ("Unresolved action ledger rows detected")
+   cannot be connected, and `aiplayer recover` does not apply to a native body: it waits until native reconciliation
+   is built (F-31g's finding 2).
 6. Vanilla's `/worldborder get` reads the overworld's border in every dimension; the Nether's own (an eighth) cannot be
    read from the console. The overworld's size, centre and warning distance are in `world/level.dat` once the server
    has stopped (BorderSize, BorderCenterX/Z, BorderWarningBlocks).
