@@ -48,6 +48,11 @@ public final class KindredMod implements ModInitializer {
     private static boolean hearingAmbience;
     /** Whether a stuck player asks the strategist for a way out (F-29): {@code KINDRED_RESCUE=off} turns it off. */
     private static boolean rescue;
+    /**
+     * Whether the strategist is asked for advice (its stance and its questions): {@code KINDRED_ADVICE=off} turns it off, so
+     * a server can have the voice and no stance consultations, a separate switch with a separate budget.
+     */
+    private static boolean advice;
     /** The watch page (E-48), when {@code KINDRED_WATCH_PORT} and {@code KINDRED_WATCH_TOKEN} are set: off otherwise. */
     private static WatchServer watch;
     /** The server's customs (E-47), learned only from those who opted in for themselves: kept while the server runs. */
@@ -103,6 +108,7 @@ public final class KindredMod implements ModInitializer {
         lessons = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_LESSONS")).trim());
         atlas = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_ATLAS")).trim());
         rescue = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_RESCUE")).trim());
+        advice = !"off".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_ADVICE")).trim());
         hearingAmbience = "on".equalsIgnoreCase(String.valueOf(System.getenv("KINDRED_HEARING_AMBIENCE")).trim());
         if (eval != null) {
             net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> eval.tick(server, runtime));
@@ -131,6 +137,10 @@ public final class KindredMod implements ModInitializer {
             if (!rescue) {
                 runtime.rescue(false);
                 LOGGER.info("Rescue plans are off (KINDRED_RESCUE=off)");
+            }
+            if (!advice) {
+                runtime.advice(false);
+                LOGGER.info("The strategist's advice is off (KINDRED_ADVICE=off): no stance and no questions are asked of it; the voice, if on, still speaks");
             }
             if (hearingAmbience) {
                 runtime.hearingAmbience(true);

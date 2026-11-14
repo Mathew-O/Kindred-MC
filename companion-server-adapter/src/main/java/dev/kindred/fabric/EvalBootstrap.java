@@ -98,8 +98,12 @@ final class EvalBootstrap implements RunObserver {
                 runtime.observeRun(this);
                 // Every item a player comes to hold checked for its source, from before the first player is made (M-06k).
                 EvalItemSources.start();
-                KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}, atlas {}, rescue {}, advice {}", scenario.edits() ? "on" : "off",
-                        scenario.lessons() ? "on" : "off", scenario.atlas() ? "on" : "off", scenario.rescue() ? "on" : "off", scenario.advice() ? "on" : "off");
+                // The strategist and the voice are separate switches: strategist=off asks no stance, question or rescue of a
+                // model whatever the voice is set to; voice=on alone gives the voice its lines (and the key) and nothing more.
+                boolean rescueOn = scenario.askRescue(), adviceOn = scenario.askAdvice();
+                KindredMod.LOGGER.info("Evaluation run: edits {}, lessons {}, atlas {}, rescue {}, advice {} (strategist {}, voice {})", scenario.edits() ? "on" : "off",
+                        scenario.lessons() ? "on" : "off", scenario.atlas() ? "on" : "off", rescueOn ? "on" : "off", adviceOn ? "on" : "off",
+                        scenario.strategist() ? "on" : "off", scenario.voice() ? "on" : "off");
                 runtime.setWorldEdits(server.getCommandSource(), scenario.edits());
                 // The dragon goal is refused while the server's dragon fight is off: an operator who sets it turns the fight
                 // on first (/aiplayer dragonfight on), and so does a run with that goal. Off for any other goal, as a fresh
@@ -110,8 +114,8 @@ final class EvalBootstrap implements RunObserver {
                 }
                 runtime.lessons(scenario.lessons());
                 runtime.atlas(scenario.atlas());
-                runtime.rescue(scenario.rescue());
-                runtime.advice(scenario.advice());
+                runtime.rescue(rescueOn);
+                runtime.advice(adviceOn);
                 runtime.nights(scenario.sleep());
                 if (worldRules) {
                     command(server, "gamerule keepInventory " + (scenario.keep() == EvalScenario.Keep.INVENTORY));
