@@ -120,6 +120,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06k: the rules on the eval engine](evidence/M-06k.md#the-rules-on-the-eval-engine-2026-11-12-claudem06k-rules-1112).
 
+## The slow ticks of the 8-player faction world recorded with JFR (M-06k6) — 14 November 2026 (`claude/factions8b-jfr-1114`)
+
+- [factions8b on main 24c1aab with Java Flight Recorder](evidence/eval/factions8b-jfr-24c1aab.md): seeds 102 and 101, sprint off; the ticks over 50 ms by family (Kindred's routes 32.5% on 101, its sight scan 26.0% on 102, GC under 1%, the construction planner and SQLite none on the server thread); the worst tick (2.8 s) vanilla's portal-exit chunk generation on an AI player's Nether entry; the rise against 4ba244e not separated. Diagnostic, no code change.
+
 ## The hitches attributed by cause (M-06k) — 12 November 2026 (`claude/m06k-hitches-1112`)
 
 - [M-06k: the hitches attributed by cause](evidence/M-06k.md#the-hitches-attributed-by-cause-2026-11-12-claudem06k-hitches-1112).
