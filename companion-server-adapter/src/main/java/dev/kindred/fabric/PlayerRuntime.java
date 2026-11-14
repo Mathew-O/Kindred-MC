@@ -12613,7 +12613,7 @@ final class PlayerRuntime {
         var left = new java.util.ArrayList<String>();
         if (cart) left.add("the cart");
         if (boat) left.add("my boat");
-        else if (boatItem) left.add("my boat, broken");
+        else if (boatItem) left.add("my broken boat");
         String said = left.isEmpty() ? "" : " I've left " + String.join(" and ", left) + " in there with it.";
         return trapdoor ? said + " A trapdoor of mine shuts the top of its front." : said;
     }
