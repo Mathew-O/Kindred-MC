@@ -224,6 +224,15 @@ final class PortalRunCampaign {
     }
 
     String progress() { return progress; }
+
+    /** Its last step's words when it had nothing it could do where it is: no step, none here for a while, or water it cannot leave. */
+    static final String WAITING_FOR_A_STEP = ": waiting for a feasible step", NO_PROGRESS_HERE = ": no progress here for a while - ",
+            DEEP_WATER_NO_WAY = ": in deep water with no way out it can reach";
+
+    /** Whether its last step was one of having nothing it could do where it is (M-06i1a): a faction walk held for it goes on. */
+    boolean stalled() {
+        return progress != null && (progress.endsWith(WAITING_FOR_A_STEP) || progress.contains(NO_PROGRESS_HERE) || progress.endsWith(DEEP_WATER_NO_WAY));
+    }
     PortalRunPlanner.Stage stage() { return stage; }
 
     // ------------------------------------------------------------------ strategist (F-19b)
@@ -1129,7 +1138,7 @@ final class PortalRunCampaign {
         // thirteen times a second in a sealed pool. Held instead, the spell's watchdog counts the time as it would any
         // spell with nothing feasible.
         if (given.isPresent() && DEEP_WATER_STOP.equals(stopFor(body.entity(), given.get()))) {
-            progress = stageLabel(stage) + ": in deep water with no way out it can reach";
+            progress = stageLabel(stage) + DEEP_WATER_NO_WAY;
             given = Optional.empty();
         }
         lastGiven = given.orElse(null);
@@ -1309,7 +1318,7 @@ final class PortalRunCampaign {
                 away = Optional.empty();
             }
             if (away.isPresent()) {
-                progress = stageLabel(stage) + ": no progress here for a while - " + away.get().label();
+                progress = stageLabel(stage) + NO_PROGRESS_HERE + away.get().label();
                 lastActive = true;
                 return away;
             }
@@ -2746,7 +2755,7 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": no way on from here - " + drop.get().label();
             return drop;
         }
-        progress = stageLabel(stage) + ": waiting for a feasible step";
+        progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         return Optional.empty();
     }
 

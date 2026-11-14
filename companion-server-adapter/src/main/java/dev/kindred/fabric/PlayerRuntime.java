@@ -9706,10 +9706,15 @@ final class PlayerRuntime {
                         || Math.hypot(to.getX() - player.getX(), to.getZ() - player.getZ()) >= FactionsPlayer.LEG - 1 ? "3" : FactionsPlayer.RANGE)));
     }
 
-    /** Whether its goal is still at its Wood stage, no wooden tool earned (M-06i1a): faction walks other than DEFEND wait. */
+    /**
+     * Whether its goal is still at its Wood stage, no wooden tool earned, with a step it can take (M-06i1a): faction walks
+     * other than DEFEND wait. Where its last step was having nothing it could do where it is (boxed in, no tree it can
+     * reach, water it cannot leave: {@link PortalRunCampaign#stalled}) the walk goes on, and with it the way a refused
+     * faction walk makes out.
+     */
     private boolean woodFirst(Entry entry) {
         return goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE && entry.campaign != null
-                && entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.WOOD;
+                && entry.campaign.stage() == dev.kindred.core.survival.PortalRunPlanner.Stage.WOOD && !entry.campaign.stalled();
     }
 
     /** Whether the way toward a faction walk's end {@code to} is open water the player saw (F-35j); a dry answer kept a second for the same end. */
