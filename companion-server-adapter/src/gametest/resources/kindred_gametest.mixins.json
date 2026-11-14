@@ -5,7 +5,8 @@
   "mixins": [
     "GameTestStateMixin",
     "WorldWriteMixin",
-    "StructureTestListenerMixin"
+    "StructureTestListenerMixin",
+    "PlayerInteractionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

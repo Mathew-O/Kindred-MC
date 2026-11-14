@@ -66,6 +66,18 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
+## A crafting table set down only for a craft it can make there, and kept down for it (F-25c7a, F-25c7b) — 12 November 2026 (`claude/table-loop-1112`)
+
+- **[F-25c7a and F-25c7b](evidence/F-25c7a.md):** the take-and-place table loop of 18 of e40a21's 76 stuck spells.
+  - `craftAtTable` sets a table down only for what the player's holdings make there (core `Makings`), its logs made planks first. The guide's recipes name their planks and iron (`Recipe.others`).
+  - A table set down for a craft is kept down for it while the craft can be made there, at most 400 ticks.
+  - **`NativeTableLoopGameTests`** (staged, as it says): the table loop on main 32b304a, 3 of 3 failing (the table set down 14, 9 and 7 times, no bed); 3 of 3 passing after.
+    - The craft comes before the pickup, the table is conserved, and a staged expiry: 3 of 3.
+    - With `NativeRecipeGuardGameTests` and `NativeFollowUpGameTests`: 8 of 8, 3 runs; and once more after main 3196401 was merged in.
+  - **Core:** `MakingsTest` 7 of 7, `GuideRecipesTest` 4 of 4, `NeedsAssessmentTest` 5 of 5, `NeedRecordTest` 3 of 3.
+  - **Replays:** the 18 table-loop spells, 9 runs a side against main. Tables placed a run went from a mean of 78.6 to 3.6, and failed scene-runs from 36 to 23 of 162 (one-sided Fisher p = 0.042).
+  - **Corpus gate** on 70b8c31 (main 2281379): 3 runs, 4 flagged, 0 confirmed. It does not cover #263, merged since.
+
 ## A pillar step cut short once its block is down is recorded for what it did (F-25c6c) — 14 November 2026 (`claude/pillar-reconcile-1114`)
 
 - [F-25c6c: the staged fixture (3 of 3 failing before, 3 of 3 passing after), the 14 pillar fixture classes and the corpus gate (0 confirmed)](evidence/F-25c6c.md).
@@ -163,7 +175,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c72](evidence/F-22c72.md) (2026-11-14, night shelter): dug in for the night, no mining step meanwhile from the shelter it dug; the staged fixture 0 of 3 before, 3 of 3 after; 15 night and campaign classes 151 of 151, 3 runs.
 - [F-22c73](evidence/F-22c73.md) (2026-11-14, stranding): refused walks to pick up a drop do not strand it; the staged fixture 0 of 3 before, 18 of 18 with its control after.
 - [F-22c75a](evidence/F-22c75a.md) (2026-11-14, test-only): the kiosk fixture's ground put back as its test ends, passed or failed; the pit test in CI's 13-class layout 0 of 3 before, 3 of 3 after.
-- [F-22c75b](evidence/F-22c75b.md) (2026-11-14, test-only): an audit of the blocks each fixture sets outside its plot (345 of 818 tests in 102 classes); a restore never writes into another test's plot; a second kept box put back; the atlas fixtures keep their raised ground, whose night floor failed two bring tests placed after it 2 of 2 on main's code, 31 of 31 in 5 runs after; CI on the PR remaining.
+- [F-22c75b](evidence/F-22c75b.md) (2026-11-14, test-only): an audit of the blocks each fixture sets outside its plot (345 of 818 tests in 102 classes); a restore never writes into another test's plot; a second kept box put back; the atlas fixtures keep their raised ground, whose night floor failed two bring tests placed after it 2 of 2 on main's code, 31 of 31 in 5 runs after; #294 merged; batch 2, the players' own blocks counted and the house and build fields kept, CI on its PR remaining.
 - [F-22c75c](evidence/F-22c75c.md) (2026-11-14, test-only): the seen-columns yard inside its own wide structure; BranchMine + SeenColumns 1 of 3 failed on main with CI's message, 5 of 5 each of 3 runs after; CI on the PR remaining.
 - [F-35h2b](evidence/F-35h2b.md) (2026-11-12, factions at night): at nightfall, not dug in, a faction walk other than DEFEND yields to the goal's dig-in, never for nothing; the staged fixture 0 of 3 before, 3 of 3 after, on its own land; the corpus gate passes; CI on the PR remaining.
 - [M-06i1](evidence/M-06i.md#the-standing-goal-on-ten-seeds-and-out-of-the-hub-to-wood-2026-11-12-claudem06i1-hub-walk-out-1112) (2026-11-12, factions): out of the hub to wood, a tree it may not cut not walked toward and a home it may not work no explore anchor; the planning fixture 0 of 3 before, 3 of 3 after; the gate passed; the M-06i standing-goal run on ten seeds with it; its seeds-10 re-run mixed (4 → 2 without a wooden tool, 8 → 6 slow, four seeds worse from faction walks before the tool), M-06i1a next.
