@@ -29,6 +29,8 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
     private static final int LEG_TOP = 12;
     /** The explore towers: their tops within eight of its height, so that before F-35m their tops were the walk's end. */
     private static final int EXPLORE_TOP = 6;
+    /** How far over its feet the fixture's ground is cleared: the towers' columns well over their tops. */
+    private static final int CLEAR_TOP = 32;
 
     /** The towers' tops behind the wall, out of its sight: the walks go at its own height. */
     @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "seenColumnsWalled", tickLimit = 400)
@@ -144,10 +146,26 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
                         context.assertTrue(explore.get().getY() == feet, "The explore walk at its own height, the tower's top out of sight: " + explore.get().toShortString());
                     } else {
                         context.assertTrue(to.getY() == feet + LEG_TOP, "The leg's end on the tower's top it sees: " + to.toShortString());
-                        context.assertTrue(explore.get().getY() == feet + EXPLORE_TOP, "The explore walk to the tower's top it sees: " + explore.get().toShortString());
+                        context.assertTrue(explore.get().getY() == feet + EXPLORE_TOP, "The explore walk to the tower's top it sees: " + explore.get().toShortString()
+                                + " / " + inTheWay(player, explore.get(), feet + EXPLORE_TOP - 1));
                     }
                 })
                 .completeIfSuccessful();
+    }
+
+    /**
+     * For a failure's message: what a sight line from its eyes to the top of the tower under {@code walk} meets first, and
+     * the column's top by the heightmap, both from the yard's floor.
+     */
+    private static String inTheWay(net.minecraft.server.network.ServerPlayerEntity player, BlockPos walk, int top) {
+        var world = player.getServerWorld();
+        var hit = world.raycast(new net.minecraft.world.RaycastContext(player.getEyePos(), new Vec3d(walk.getX() + 0.5, top + 0.999, walk.getZ() + 0.5),
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+        int column = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, walk.getX(), walk.getZ()) - 1;
+        BlockPos feet = player.getBlockPos();
+        return "its sight line to the tower's top meets " + (hit.getType() == net.minecraft.util.hit.HitResult.Type.MISS ? "nothing"
+                : hit.getBlockPos().subtract(feet).toShortString() + " " + world.getBlockState(hit.getBlockPos())) + "; the column's top "
+                + (column - feet.getY()) + " over its feet, " + world.getBlockState(new BlockPos(walk.getX(), column, walk.getZ()));
     }
 
     /** A scout of the chunk two hundred blocks east: its first leg ends forty-eight east, on the leg tower's column. */
@@ -159,12 +177,20 @@ public final class NativeSeenColumnsGameTests implements FabricGameTest {
      * The yard: a floor thirteen across at {@code o}'s feet less one, walled {@value #WALL} out and {@value #WALL_HIGH} high
      * when {@code walled}; four explore towers twenty-eight out each way, their tops {@value #EXPLORE_TOP} over its feet; and
      * the leg's tower forty-eight east, from nine below its feet to {@value #LEG_TOP} over, so that nothing within eight of
-     * its height is ground to stand on. The leg tower's column, returned. Each tower is one column: its top block, over its
-     * eyes, is seen from below by the side it shows them (the top of a broad tower's middle is hidden by its own edge).
+     * its height is ground to stand on. All the ground it keeps, from its feet to {@value #CLEAR_TOP} over them, is open
+     * air before these are laid. The leg tower's column, returned. Each tower is one column: its top block, over its eyes,
+     * is seen from below by the side it shows them (the top of a broad tower's middle is hidden by its own edge).
      */
     private static BlockPos yard(TestContext context, BlockPos o, boolean walled) {
         var world = context.getWorld();
-        FixtureGround.keep(context, o.add(-32, -12, -32), o.add(52, LEG_TOP + 2, 32));
+        FixtureGround.keep(context, o.add(-32, -12, -32), o.add(52, CLEAR_TOP, 32));
+        // Open air first from its feet up: the sight lines from the yard to the towers, and the towers' columns over
+        // them, are the fixture's own, whatever another test on the same ground left there (#275's CI: an explore look's
+        // sight line north that reached no tower top, at a place where the test passed nowhere else). Not below its
+        // feet, where a neighbour's own fixture may stand (a corridor twenty over the ground).
+        for (int x = -32; x <= 52; x++) for (int z = -32; z <= 32; z++) for (int y = 0; y <= CLEAR_TOP; y++) {
+            world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+        }
         for (int x = -WALL; x <= WALL; x++) for (int z = -WALL; z <= WALL; z++) {
             world.setBlockState(o.add(x, -1, z), Blocks.STONE.getDefaultState());
             boolean edge = Math.abs(x) == WALL || Math.abs(z) == WALL;
