@@ -64,6 +64,47 @@ class ChroniclePromptTest {
         assertEquals(List.of(101L, 105L), built.cites());
     }
 
+    /**
+     * F-33d: the rule the check holds a page to is said in the instructions, and a sentence that orders events itself is
+     * left out of the page while the rest is kept; a page left with nothing falls back to the plain list; a citation that
+     * does not exist still refuses the whole page. "Between" two players is left out too, deliberately, until decided.
+     */
+    @Test
+    void aSentenceOrderingEventsItselfIsLeftOutAndTheRestOfThePageKept() {
+        assertTrue(ChroniclePrompt.SYSTEM.contains("Never put events in an order yourself") && ChroniclePrompt.SYSTEM.contains("\"before\""),
+                "the rule said");
+        var ids = Set.of(101L, 102L, 103L, 104L, 105L);
+        var plain = Chronicle.plain(Chronicle.Tier.PLAYER_DAY, WREN.toString(), 0, day());
+        // RUNNER 2's refusal ("'before' orders events itself"): one sentence of four ordering events; the rest kept.
+        var built = ChroniclePrompt.page(List.of(new long[] {101}, new long[] {102}, new long[] {103}, new long[] {105}),
+                List.of("Wren fell into lava", "Before nightfall Wren was killed by a Zombie", "Wren sold 16 iron ingots at the market for 14 coins each",
+                        "Mat said he would bring bread"), 1, 0, 1, 1);
+        assertEquals("Wren fell into lava. Wren sold 16 iron ingots at the market for 14 coins each. Mat said he would bring bread.", built.text().orElseThrow());
+        assertEquals(List.of(101L, 103L, 105L), built.cites(), "the left-out sentence's line no longer cited");
+        assertEquals(List.of("\"Before\": Before nightfall Wren was killed by a Zombie"), built.dropped());
+        var page = Chronicle.fromModel(Chronicle.Tier.PLAYER_DAY, WREN.toString(), 0, built.text(), built.cites());
+        assertTrue(Chronicle.check(page.orElseThrow(), ids, facts()).none(), "the rest passes the check: " + Chronicle.check(page.get(), ids, facts()));
+        assertTrue(Chronicle.keep(page, plain, ids, facts()).model(), "the model's page kept");
+
+        // Every sentence ordering events itself: no page, and the plain list kept.
+        var none = ChroniclePrompt.page(List.of(new long[] {101}, new long[] {102}), List.of("Earlier Wren fell into lava", "Meanwhile a Zombie killed Wren"), 1, 0, 1, 1);
+        assertTrue(none.text().isEmpty() && none.failure().orElse("").equals("every sentence ordered events itself"), String.valueOf(none));
+        assertEquals(2, none.dropped().size());
+        var nothing = Chronicle.fromModel(Chronicle.Tier.PLAYER_DAY, WREN.toString(), 0, none.text(), none.cites());
+        assertSame(plain, Chronicle.keep(nothing, plain, ids, facts()), "the plain list");
+
+        // A remaining sentence citing a line that does not exist: the whole page refused, as today.
+        var bad = ChroniclePrompt.page(List.of(new long[] {101}, new long[] {999}), List.of("Wren fell into lava", "Wren mined coal"), 1, 0, 1, 1);
+        var badPage = Chronicle.fromModel(Chronicle.Tier.PLAYER_DAY, WREN.toString(), 0, bad.text(), bad.cites());
+        assertSame(plain, Chronicle.keep(badPage, plain, ids, facts()), "a missing citation refuses the page");
+
+        // "Between" two players, not a time: left out too, deliberately, until the lead decides (F-33d (b)).
+        var between = ChroniclePrompt.page(List.of(new long[] {103}, new long[] {105}),
+                List.of("A trade between Wren and the market sold 16 iron ingots", "Mat said he would bring bread"), 1, 0, 1, 1);
+        assertEquals("Mat said he would bring bread.", between.text().orElseThrow());
+        assertEquals(List.of("\"between\": A trade between Wren and the market sold 16 iron ingots"), between.dropped());
+    }
+
     @Test
     void aRealPageCitesRealEventsAndContradictsNoLedger() throws Exception {
         Assumptions.assumeTrue(System.getenv("KINDRED_LIVE_MODEL_TEST") != null, "live model test not requested");

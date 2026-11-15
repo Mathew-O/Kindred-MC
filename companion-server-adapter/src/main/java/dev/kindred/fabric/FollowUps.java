@@ -374,7 +374,8 @@ final class FollowUps {
             case "STRING" -> !ashore ? Optional.empty()
                     : (swordTier >= 2 && player.getHealth() >= 14 ? fightSpider(player) : Optional.<PortalRunCampaign.Task>empty())
                     .or(() -> swordTier >= 1 ? campaign.gather(body, WorldKnowledge.Kind.COBWEB, due ? 48 : 16, "cobweb") : Optional.empty());
-            case "FLINT" -> ashore ? campaign.flint(body) : Optional.empty();
+            // Searched for only when due at its gate; on the way, only the gravel at hand (F-25c4di).
+            case "FLINT" -> !ashore ? Optional.empty() : due ? campaign.flint(body) : campaign.flintAtHand(body);
             // A bed of the colour it holds three wool of, and the planks it takes, at a table.
             case "BED" -> !craftable(need, player) ? Optional.empty() : bedColour(player).flatMap(colour -> craftAtTable(body, colour + "_bed"));
             case "WOOL" -> !ashore ? Optional.empty() : campaign.huntFor(player, net.minecraft.entity.passive.SheepEntity.class, "sheep for wool",
