@@ -683,9 +683,10 @@ public final class NativeBringGameTests implements FabricGameTest {
                             "Rails (but the cell floor's), the cart and dirt all taken back, the lectern spent" + (make ? ", 17 iron and 2 sticks made into rails and a cart (what iron is left its own to use)" : "") + ": "
                                     + count(inventory, Items.RAIL) + " rails, " + count(inventory, Items.MINECART) + " carts, " + count(inventory, Items.LECTERN)
                                     + " lecterns, " + count(inventory, Items.DIRT) + " dirt, " + count(inventory, Items.IRON_INGOT) + " iron, "
-                                    + count(inventory, Items.STICK) + " sticks" + (count(inventory, Items.MINECART) == 1 ? "" : "; carts about: "
-                                    + world.getEntitiesByClass(net.minecraft.entity.Entity.class, hal.getBoundingBox().expand(16), e -> e.isAlive()
-                                            && (e instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity || e instanceof net.minecraft.entity.ItemEntity item && item.getStack().isOf(Items.MINECART)))
+                                    + count(inventory, Items.STICK) + " sticks" + (count(inventory, Items.MINECART) == 1 && count(inventory, Items.DIRT) == (river ? 8 : 4) ? "" : "; carts and dirt about: "
+                                    + world.getEntitiesByClass(net.minecraft.entity.Entity.class, hal.getBoundingBox().expand(64), e -> e.isAlive()
+                                            && (e instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity || e instanceof net.minecraft.entity.ItemEntity item
+                                                    && (item.getStack().isOf(Items.MINECART) || item.getStack().isOf(Items.DIRT))))
                                             .stream().map(e -> e.getType().getUntranslatedName() + " at " + e.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList()));
                     if (mine) {
                         BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
