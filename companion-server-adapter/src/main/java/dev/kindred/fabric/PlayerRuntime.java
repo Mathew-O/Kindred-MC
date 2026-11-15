@@ -871,11 +871,21 @@ final class PlayerRuntime {
                     matches.restore(ledgers.matches().values());
                     flushMatches();
                     chronicle.start();
-                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
-                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
-                        if (unread == null && events != null) webs.rebuild(events);
-                        else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
-                    }));
+                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer. F-32c: how long the read
+                    // took (from asking, the writer's queue included) and the replay on this thread, for a month's starts.
+                    long webAsked = System.nanoTime();
+                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> {
+                        long readMs = (System.nanoTime() - webAsked) / 1_000_000;
+                        server.execute(() -> {
+                            if (unread == null && events != null) {
+                                long replayStarted = System.nanoTime();
+                                webs.rebuild(events);
+                                KindredMod.LOGGER.info("Knowledge web rebuilt from the Record: {} events, read in {} ms on the writer, replayed in {} ms; "
+                                        + "the world's web {} relations, {} AI players' webs holding {}", events.size(), readMs,
+                                        (System.nanoTime() - replayStarted) / 1_000_000, webs.world().size(), webs.count(), webs.relations());
+                            } else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
+                        });
+                    });
                     entries.putAll(pendingEntries);
                     ready = true;
                     restoreLeftoverArenas();
@@ -12275,14 +12285,28 @@ final class PlayerRuntime {
                     boolean inside = player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).stretch(0, 2, 0));
                     var cell = new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0.5, 1, 0.5);
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
-                            item -> item.isAlive() && (item.getStack().isOf(Items.RAIL) || item.getStack().isOf(Items.MINECART)));
+                            item -> item.isAlive() && (item.getStack().isOf(Items.RAIL) || item.getStack().isOf(Items.MINECART)
+                                    // Its own boat's item too, broken under the trapdoor (F-22c84a): counted only rails and carts,
+                                    // it was neither fetched nor said, and despawned in the cell.
+                                    || item.getStack().isIn(ItemTags.BOATS)));
                     // Within its pickup reach (a player picks up what its box, a block wider, touches).
                     var reach = player.getBoundingBox().expand(1, 0.5, 1);
                     boolean inReach = lying.stream().anyMatch(item -> item.getBoundingBox().intersects(reach));
                     if (!lying.isEmpty() && (b.underFrom < 0 || now - b.underFrom < UNDER_TRAPDOOR_TICKS) && (inReach || !inside)) {
                         if (!inside) {
                             var stand = b.slot.south(2);
-                            if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(stand)) > 0.0625) return List.of(standAt(bringTask(entry, "by the front"), stand));
+                            // The while given counts from the first walk to the stand too (F-22c84a): begun only once stood
+                            // there, a stand never reached held the hold with no bound, for some 6000 ticks, till its drops
+                            // despawned.
+                            if (b.underFrom < 0) b.underFrom = now;
+                            // Stood within a fifth of the stand, and walked there to within that fifth (F-22c84a): a plain
+                            // centred walk ends within 0.4, so between that and the quarter asked it ended where it began, over
+                            // and over; and the walk in to the front, one block wide, takes a body 0.6 wide only from within
+                            // 0.2 of its line (from 0.2 to 0.25 off it was refused, and the keep went wrong).
+                            if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(stand)) > 0.04) {
+                                return List.of(new NativeTaskCandidate(bringTask(entry, "by the front"), "native_goto", Map.of("x", String.valueOf(stand.getX()),
+                                        "y", String.valueOf(stand.getY()), "z", String.valueOf(stand.getZ()), "range", "0", "partial", "false", "centre_within", "0.2")));
+                            }
                             // Into the front, or on to the cell's floor where a drop lies beyond the front's reach: a player there
                             // picks up what lies within a block of it, and a drop's throw carries it as far as the bed's foot.
                             // Three only where the walk's end clears the bed's foot behind the floor (its stand is reached to within

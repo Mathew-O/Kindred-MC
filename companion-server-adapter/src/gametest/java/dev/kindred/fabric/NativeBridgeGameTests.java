@@ -333,9 +333,14 @@ public final class NativeBridgeGameTests implements FabricGameTest {
         void build(Floor floor, int blocks, boolean bucket) {
             var world = context.getWorld();
             var player = f.player();
-            if (origin == null) origin = player.getBlockPos().up(floor == Floor.DEEP ? 30 : 12).toImmutable();
+            boolean first = origin == null;
+            if (first) origin = player.getBlockPos().up(floor == Floor.DEEP ? 30 : 12).toImmutable();
             BlockPos o = origin;
             int depth = floor == Floor.DEEP ? 21 : 4;
+            // The course, over the plot and longer than it, and the bridge its player lays, put back as the test ends,
+            // passed or failed (F-22c75b): left standing, its pads, pit floor, lava and cobblestone lay beside a later
+            // test's plot. Kept once, as first laid: a rebuild of the same course is put back with it.
+            if (first) FixtureGround.keep(context, o.add(-5, -depth - 2, -5), o.add(GAP + 6, 5, 5));
             for (int x = -4; x <= GAP + 5; x++) for (int z = -4; z <= 4; z++) for (int y = -depth - 1; y <= 4; y++) {
                 world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
             }

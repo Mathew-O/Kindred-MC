@@ -185,6 +185,20 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * As the strolling bring, staged (F-22c84, cause #2): the tick the cart in the cell under the shut trapdoor is broken, its
+     * item lying on the cell's floor, Hal held until twenty ticks after the front's rail is up a third of a block
+     * east of the middle of its stand before the front, with the oak boat's item on the floor beside the cart's. In CI on
+     * #354 (`c3d0cc4`, run 43719957093) and #355 (run 43720019149), Hal stood there walking to its stand 1,990 times while
+     * both items lay, and they despawned at age 6000: the stand is asked for to within a quarter of a block, a walk to a
+     * block's middle ends within 0.4 of it, and the while given under the trapdoor counts only from the step in. Held: both
+     * items taken up within 600 ticks of Hal being let go, long before an item's lifetime.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOffStand", tickLimit = 14000)
+    public void aThirdOffItsStandHalStillTakesUpTheCartAndBoatFromTheCell(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 3);
+    }
+
+    /**
      * As the last, with a lake eight wide right across the field between the librarian and the hall, and only four dirt
      * in Hal's hand, too few for a bridge of eight: Hal holds the librarian in its boat on its own side, gets in with it,
      * rows it over the ground into the water and across, and gets out on the far bank, the librarian left in the boat on
@@ -288,7 +302,10 @@ public final class NativeBringGameTests implements FabricGameTest {
         scene(context, make, wander, river, mine, strolling, lake, slowed, derailed, seated, behind, doorAside, bornInBoat, pressed, 0);
     }
 
-    /** {@code onBed}: 0 not staged; 1 Hal on the edge of the bed's foot, as CI's #318 left it; 2 Hal wholly on the bed's foot. */
+    /**
+     * {@code onBed}: 0 not staged; 1 Hal on the edge of the bed's foot, as CI's #318 left it; 2 Hal wholly on the bed's foot;
+     * 3 Hal a third of a block off its stand before the front, the cart's and boat's items on the cell's floor (F-22c84).
+     */
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside, boolean bornInBoat, boolean pressed,
                               int onBed) {
@@ -304,6 +321,11 @@ public final class NativeBringGameTests implements FabricGameTest {
         long[] bedFrom = {-1};
         BlockPos[] bedFront = {null};
         String[] shutIn = {null};
+        // F-22c84 (cause #2): Hal held off its stand, the tick it was let go, and the cell's items still lying 600 ticks on.
+        long[] offFrom = {-1};
+        java.util.Set<BlockPos> cartInCell = new java.util.HashSet<>();
+        BlockPos[] offFront = {null};
+        String[] offLeft = {null};
         java.util.Set<BlockPos> jobSeen = new java.util.HashSet<>();
         BlockPos[] pressedFront = {null};
         String[] escaped = {null};
@@ -588,12 +610,57 @@ public final class NativeBringGameTests implements FabricGameTest {
                             }
                             if (pressFrom[0] >= 0) v.setVelocity(0, v.getVelocity().y, 0.1);
                         }
+                        // Staged (F-22c84, cause #2): the tick the cart in the cell under the shut trapdoor is broken, its item on the
+                        // cell's floor, Hal held for ten ticks a third of a block east of the middle of its stand, two south of the
+                        // front, out of reach of what lies; the boat's item, if Hal holds it and none lies, set on the floor beside
+                        // the cart's (a move, not a copy).
+                        var cellItems = new net.minecraft.util.math.Box(front).union(new net.minecraft.util.math.Box(front.north(3))).stretch(0, 2, 0).expand(0.5);
+                        boolean shut = world.getBlockState(front.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS);
+                        boolean cartThere = shut && !world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, cellItems,
+                                net.minecraft.entity.Entity::isAlive).isEmpty();
+                        boolean cartBroken = !cartThere && cartInCell.remove(front);
+                        if (cartThere) cartInCell.add(front);
+                        // Or, if the cart was broken before the trapdoor was shut, the first tick the trapdoor is shut with the cart's
+                        // item lying in the cell (so a bring that takes another order is still staged).
+                        if (onBed == 3 && offFront[0] == null && (cartBroken || shut) && !jobIn && hal != null
+                                && !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, i -> i.isAlive() && i.getStack().isOf(Items.MINECART)).isEmpty()) {
+                            offFront[0] = front;
+                            if (world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems,
+                                    i -> i.isAlive() && i.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)).isEmpty()) {
+                                var inventory = hal.getInventory();
+                                for (int slot = 0; slot < inventory.size(); slot++) {
+                                    if (!inventory.getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.BOATS)) continue;
+                                    var boatItem = new net.minecraft.entity.ItemEntity(world, front.getX() + 0.5, front.getY() + 0.1, front.north().getZ() + 0.3,
+                                            inventory.getStack(slot).split(1), 0, 0, 0);
+                                    world.spawnEntity(boatItem);
+                                    break;
+                                }
+                            }
+                            KindredMod.LOGGER.info("Bring: Hal held a third off its stand, the cell's items {}",
+                                    world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, net.minecraft.entity.Entity::isAlive).stream()
+                                            .map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList());
+                        }
+                        // Held there until twenty ticks after the front's rail is up (a break's own collection had walked it back
+                        // on to its stand), then let go.
+                        if (front.equals(offFront[0]) && up != null && offFrom[0] < 0) offFrom[0] = Math.max(up, world.getTime()) + 20;
+                        if (hal != null && front.equals(offFront[0]) && (offFrom[0] < 0 || world.getTime() < offFrom[0])) {
+                            BlockPos stand = front.south(2);
+                            hal.refreshPositionAndAngles(stand.getX() + 0.5 + 0.3, hal.getY(), stand.getZ() + 0.5, hal.getYaw(), hal.getPitch());
+                            hal.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        }
+                        if (hal != null && front.equals(offFront[0]) && offFrom[0] >= 0 && offLeft[0] == null && world.getTime() - offFrom[0] >= 600) {
+                            var left = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems,
+                                    i -> i.isAlive() && (i.getStack().isOf(Items.MINECART) || i.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)));
+                            if (!left.isEmpty()) offLeft[0] = left.stream().map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())
+                                    + " age " + i.getItemAge()).toList() + ", Hal at " + hal.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ());
+                            else offLeft[0] = "";
+                        }
                         // Staged (#318): the first tick, after its rail is up, that the cell holds no boat, cart, rail or cart
                         // item and Hal is out of the front (all of it broken and picked up, under the trapdoor), Hal set up on
                         // the bed's foot, and the librarian, out of any boat or cart, held on the bed's head for 60 ticks, the
                         // floor clear.
                         var cellBox = new net.minecraft.util.math.Box(front).union(new net.minecraft.util.math.Box(front.north(3))).stretch(0, 2, 0);
-                        if (onBed > 0 && up != null && !jobIn && hal != null && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))
+                        if ((onBed == 1 || onBed == 2) && up != null && !jobIn && hal != null && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))
                                 && world.getEntitiesByClass(net.minecraft.entity.vehicle.VehicleEntity.class, cellBox.expand(0.5), net.minecraft.entity.Entity::isAlive).isEmpty()
                                 && world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellBox.expand(0.5),
                                         i -> i.isAlive() && (i.getStack().isOf(Items.RAIL) || i.getStack().isOf(Items.MINECART))).isEmpty()
@@ -628,6 +695,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 librarian[0].getVehicle(), librarian[0].getHealth(),
                                 librarian[0].getRecentDamageSource() == null ? "" : ", hurt by " + librarian[0].getRecentDamageSource().getName());
                     }
+                    context.assertTrue(offLeft[0] == null || offLeft[0].isEmpty(),
+                            "The cart's and boat's items taken up from the cell within 600 ticks of Hal let go off its stand: still lying " + offLeft[0]);
                     context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
                     context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
@@ -638,7 +707,20 @@ public final class NativeBringGameTests implements FabricGameTest {
                     context.assertTrue(inFrontLoose[0] == null, "The librarian kept out of its front until the job block is in: " + inFrontLoose[0]);
                     context.assertTrue(boatOverFront[0] == null, "No boat over a cell's front as its rail comes up: " + boatOverFront[0]);
                     if (bornInBoat) context.assertTrue(stagedDrop[0] != null, "The front rail's drop staged at the front's north edge");
-                    if (onBed > 0) context.assertTrue(bedFrom[0] >= 0, "Hal staged up on the bed's foot with the front's rail up");
+                    if (onBed == 1 || onBed == 2) context.assertTrue(bedFrom[0] >= 0, "Hal staged up on the bed's foot with the front's rail up");
+                    if (onBed == 3) {
+                        context.assertTrue(offFront[0] != null && offFrom[0] >= 0, "Hal staged off its stand as the cart in the cell under the trapdoor was broken, and let go");
+                        // A bring that ended before 600 ticks after Hal was let go is judged as it ended: nothing of the cart's or
+                        // boat's left in the cell, and the cart in Hal's hand.
+                        if (offLeft[0] == null && offFront[0] != null && f.player() != null) {
+                            var cellEnd = new net.minecraft.util.math.Box(offFront[0]).union(new net.minecraft.util.math.Box(offFront[0].north(3))).stretch(0, 2, 0).expand(0.5);
+                            var lying = context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellEnd,
+                                    i -> i.isAlive() && (i.getStack().isOf(Items.MINECART) || i.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)));
+                            offLeft[0] = !lying.isEmpty() ? "as the bring ended: " + lying.stream().map(i -> i.getStack() + " at " + i.getPos()).toList()
+                                    : count(f.player().getInventory(), Items.MINECART) < 1 ? "as the bring ended, none in the cell, but Hal holds no minecart" : "";
+                        }
+                        context.assertTrue(offLeft[0] != null && offLeft[0].isEmpty(), "The cart's and boat's items taken up within 600 ticks: " + offLeft[0]);
+                    }
                     context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
                     if (pressed) {
                         context.assertTrue(pressFrom[0] >= 0, "The librarian pressed at the front with its rail up and Hal out of it");
