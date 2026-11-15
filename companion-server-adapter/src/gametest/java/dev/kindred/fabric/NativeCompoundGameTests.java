@@ -46,7 +46,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     FixtureGround.keep(context, o.add(-12, 0, -12), o.add(40, 24, 36));
@@ -134,7 +134,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     FixtureGround.keep(context, o.add(-12, 0, -12), o.add(60, 24, 36));
@@ -233,7 +233,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
         runner.createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     FixtureGround.keep(context, o.add(-12, 0, -12), o.add(60, 24, 36));
@@ -324,6 +324,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                         context.assertTrue(world.getBlockState(at.up()).isOf(Blocks.WHEAT), "Wheat sown at " + at.up().toShortString() + ": " + world.getBlockState(at.up()));
                         sown++;
                     }
+                    context.assertTrue(f.player() != null, "Its body in the world");
                     var inventory = f.player().getInventory();
                     int left = inventory.count(Items.WHEAT_SEEDS);
                     context.assertTrue(left == seeds[0] - sown, "One seed a cell: " + left + " left of " + seeds[0] + " for " + sown);
@@ -361,7 +362,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     FixtureGround.keep(context, o.add(-12, 0, -12), o.add(60, 24, 48));
@@ -467,7 +468,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Wren"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     FixtureGround.keep(context, o.add(-12, 0, -12), o.add(60, 24, 52));
@@ -516,6 +517,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     if (!dropLeft) return;
                     context.assertTrue(f.runtime.ranchStatus(f.id).orElse("").contains("leading"), "Leading begun: " + f.runtime.ranchStatus(f.id).orElse(""));
+                    context.assertTrue(f.player() != null, "Its body in the world");
                     var inventory = f.player().getInventory();
                     int slot = -1;
                     for (int s = 0; s < 36 && slot < 0; s++) if (inventory.getStack(s).isOf(Items.OAK_PLANKS)) slot = s;
@@ -562,6 +564,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                     var gatePlan = penAt.add(3, 0, 6);
                     NativeBaseGameTests.exact(context, new dev.kindred.core.construction.Blueprint(pasture.name(), pasture.source(), pasture.creator(), pasture.license(),
                             pasture.blocks().stream().filter(b -> !b.at().equals(gatePlan)).toList()), origin);
+                    context.assertTrue(f.player() != null, "Its body in the world");
                     var inventory = f.player().getInventory();
                     context.assertTrue(inventory.count(Items.WHEAT) == 6, "Two wheat fed: " + inventory.count(Items.WHEAT) + " left");
                     KindredMod.LOGGER.info("Compound: a pair brought into the pasture by its doorway and bred, {} cows and {} calf penned, the doorway shut behind them",
@@ -656,7 +659,7 @@ public final class NativeCompoundGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     FixtureGround.keep(context, o.add(-12, 0, -12), o.add(60, 24, 52));
