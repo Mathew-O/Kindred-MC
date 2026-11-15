@@ -60,6 +60,75 @@ final class FactionsService {
 
     FactionSettings settings() { return settings; }
 
+    /** How often refused attempts on a faction's land are written (F-34c2): once a minute a player and chunk, capped a faction a game day. */
+    private final dev.kindred.core.factions.RefusalLimit refusals = new dev.kindred.core.factions.RefusalLimit(dev.kindred.core.factions.RefusalLimit.DEFAULT_DAILY_CAP);
+
+    /**
+     * A refusal that stopped a real attempt by {@code actor} on {@code chunk} (F-34c2, Session A's conditions): written
+     * only where the land is a faction's own (never a safe zone or the wilderness), within {@link #refusals}' limits,
+     * through the ordered writer (only queued here, on the server thread). Called from the refusal sites alone, never
+     * from {@link #mayChange} or any planning query: a check that refuses nothing it was asked to do writes nothing.
+     */
+    void refused(ServerPlayerEntity actor, dev.kindred.core.factions.Territory.Chunk chunk, String what) {
+        String key = chunk.key();
+        long now = System.currentTimeMillis();
+        // A repeat within the minute is dropped before the ledgers are looked at: a griefer's hammering costs a map lookup.
+        if (refusals.sameMinute(actor.getUuid(), key, now)) return;
+        if (safe().contains(key)) return;
+        String owner = ledgers.get().claims().get(key);
+        if (owner == null) return;
+        long gameDay = Math.floorDiv(server.getOverworld() == null ? server.getTicks() : server.getOverworld().getTimeOfDay(), 24_000L);
+        if (refusals.admit(actor.getUuid(), key, owner, now, gameDay) != dev.kindred.core.factions.RefusalLimit.Verdict.WRITE) return;
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("what", what);
+        var event = WorldEvent.recorded(server.getTicks(), now, chunk.dimension(), dev.kindred.core.record.TerritoryRefusals.REFUSED,
+                actor.getUuid(), owner, key, data);
+        UUID faction = factionId(owner);
+        if (notifier == null || faction == null) { // A claim held by no faction the book knows: written, and told to no one.
+            record.accept(List.of(event));
+            return;
+        }
+        // Written, then told to the land's faction alone, citing it (F-34c2): an AI player by its name, a person only as
+        // "Someone", for the Wire names no person; never more than where and what was tried.
+        String name = refusalName.apply(actor);
+        String line = (name == null ? "Someone" : name) + " " + refusalPhrase(what) + " on our land at " + key;
+        var facts = new LinkedHashMap<String, String>();
+        facts.put("where", key);
+        facts.put("what", line);
+        notifier.notify(List.of(event), List.of(new Notice(REFUSED, faction, facts)));
+    }
+
+    private static UUID factionId(String owner) {
+        try {
+            return UUID.fromString(owner);
+        } catch (IllegalArgumentException notAnId) {
+            return null;
+        }
+    }
+
+    /** A refused attempt's notice to the land's faction on the Wire (F-34c2). */
+    static final String REFUSED = "faction.refused";
+
+    /** Who a refused attempt names: the runtime's AI players by name; anyone else, and with no runtime, no one. */
+    private java.util.function.Function<ServerPlayerEntity, String> refusalName = player -> null;
+
+    /** Sets who a refused attempt's notice may name (an AI player's name; null for a person). */
+    void refusalNames(java.util.function.Function<ServerPlayerEntity, String> names) { this.refusalName = java.util.Objects.requireNonNull(names); }
+
+    static String refusalPhrase(String what) {
+        return switch (what) {
+            case "break" -> "tried to break a block";
+            case "place" -> "tried to place a block";
+            case "use" -> "tried to open or use something";
+            case "explode" -> "set off a blast";
+            case "hit" -> "shot something";
+            default -> "tried something";
+        };
+    }
+
+    /** Refused attempts since start: written, left as the same minute's, and over a faction's daily cap (the cost line). */
+    long[] refusalCounts() { return refusals.counts(); }
+
     MinecraftServer server() { return server; }
 
     /** The chunks of the safe zones (M-06f), from the Record; none until the hub is set. */

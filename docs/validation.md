@@ -64,6 +64,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - E-07e1, a table in the goal's reach is in the dispatch's, the golden helmet made: [evidence](evidence/E-07e1.md)
 - E-71a, timed-crouch bridging: upright to the edge, crouched for the click, held where a fall could kill: [evidence](evidence/E-71a.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
+- F-34c's second keyed runs (2026-11-15, main 37adcdc): both join lines once with no DUPLICATE, the refusal tally in the cost line, and a person's own death told to the faction as "A member died"; the voice's 3 claim lines all refused by its check and said plain; Echo's death news not heard by a dead, unrespawned person; the voice's cache not measurable (no per-call token counts): [evidence](evidence/F-34.md#the-second-keyed-runs-on-main-37adcdc-f-34c-2026-11-15)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
@@ -207,6 +208,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [M-06i1a](evidence/M-06i.md#faction-walks-wait-for-the-first-wooden-tool-m-06i1a-2026-11-14-claudem06i1-hub-walk-out-1112) (2026-11-14, factions): faction walks other than DEFEND wait while the goal is at its Wood stage, the walk kept; held only while the goal has a step it can take; the staged fixture 0 of 3 before, 3 of 3 after; Factions 38 of 38 ×3; the gate passed; seeds-10 on `61469ca1`: no wooden tool 4 → 1, slow 8 → 4, faction walks before the tool 652 → 44; CI green on #268, done.
 - [M-06i1b](evidence/M-06i1b.md) (2026-11-14, factions): no scout of the chunk it stands in, so no per-tick re-decide; the unit test 12 of 13 before, 13 of 13 after; the staged fixture 0 of 3 before (64 decisions in 300 ticks), 3 of 3 after; Factions 39 of 39 ×3; the gate passed; CI green on #307, done.
 - [M-06i2](evidence/M-06i2.md) (2026-11-14, factions): in a faction world, its base's due stage begun on its own claims with its goal running, ahead of faction walks other than DEFEND; the staged fixture 0 of 3 before, 3 of 3 after, its two controls 3 of 3 both sides; Factions 42 of 42 ×3, co-op base and campaign 115 of 115 ×3; the gate passed with no scene flagged; the seed comparison built no cabin (founders without land, no seen site), so a live cabin remains.
+- [M-06i2a](evidence/M-06i2a.md) (2026-11-15, factions): a prospective base site inside the spawn exclusion is no first claim and no anchor; the staged fixture 0 of 3 before, 3 of 3 after; the gate passed; on seed 20261030 bases on is no slower than off, but two founders still hold no land either way (the walk out of the spawn exclusion, M-06i2c).
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

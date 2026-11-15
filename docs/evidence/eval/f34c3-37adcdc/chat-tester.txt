@@ -1,0 +1,39 @@
+[06:31:39] [Render thread/INFO]: [System] [CHAT] This world plays Factions.
+[06:31:39] [Render thread/INFO]: [System] [CHAT] Factions rules:
+[06:31:39] [Render thread/INFO]: [System] [CHAT]  Play: survival in factions: found or join one, claim land by its power, earn coins at the market
+[06:31:39] [Render thread/INFO]: [System] [CHAT]  Building: the server's edit policy; claimed land only by its faction, the same for people and AI players
+[06:31:39] [Render thread/INFO]: [System] [CHAT]  Fighting: only between members of different factions, never in safe zones; joining a faction is joining the match; leave it any time
+[06:31:39] [Render thread/INFO]: [System] [CHAT]  Items: none handed out
+[06:31:39] [Render thread/INFO]: [System] [CHAT]  Deaths: respawn as usual; a death to another faction costs two power
+[06:31:39] [Render thread/INFO]: [System] [CHAT]  Winning: no end: the factions' standing by land and power
+[06:31:43] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[06:32:06] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[06:32:29] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[06:32:33] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Stone Age]
+[06:32:35] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Getting an Upgrade]
+[06:32:47] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Stone Age]
+[06:32:52] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[06:32:56] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Getting an Upgrade]
+[06:33:15] [Render thread/INFO]: [System] [CHAT] Joined Kindred_Hold
+[06:33:35] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Stone Age]
+[06:33:39] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Getting an Upgrade]
+[06:33:46] [Render thread/INFO]: [System] [CHAT] Outsider joined the game
+[06:34:25] [Render thread/INFO]: [System] [CHAT] [faction] Kindred: claim: where minecraft:overworld:-30:-15, what Claimed minecraft:overworld:-30:-15 for Kindred_Hold (1 / 40).
+[06:35:13] [Render thread/INFO]: [System] [CHAT] [faction] Kindred: claim: where minecraft:overworld:-31:-15, what Claimed minecraft:overworld:-31:-15 for Kindred_Hold (2 / 40).
+[06:35:48] [Render thread/INFO]: [System] [CHAT] [faction] Kindred: claim: where minecraft:overworld:-30:-16, what Claimed minecraft:overworld:-30:-16 for Kindred_Hold (3 / 40).
+[06:36:08] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Monster Hunter]
+[06:36:12] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Acquire Hardware]
+[06:37:26] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Monster Hunter]
+[06:37:45] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Acquire Hardware]
+[06:37:48] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Not Today, Thank You]
+[06:40:11] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Acquire Hardware]
+[06:41:17] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Suit Up]
+[06:42:12] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Not Today, Thank You]
+[06:44:18] [Render thread/INFO]: [System] [CHAT] Tester was slain by Zombie
+[06:44:18] [Render thread/INFO]: [System] [CHAT] [faction] A member died: mob
+[06:45:39] [Render thread/INFO]: [System] [CHAT] Echo was slain by Zombie
+[06:48:00] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Suit Up]
+[06:48:20] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Isn't It Iron Pick]
+[06:56:13] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Isn't It Iron Pick]
+[07:01:48] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Sweet Dreams]
+[07:04:00] [Render thread/INFO]: [System] [CHAT] Outsider was shot by Skeleton
