@@ -163,7 +163,7 @@ class ActionBoundStoreTest {
                 reopened.unresolvedActions(staged.companion()).join().stream().map(ActionRecord::actionId).toList(),
                 "a restart finds the same unresolved actions");
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + directory.resolve("companions.sqlite")); var statement = connection.createStatement()) {
-            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(14, row.getInt(1)); }
+            try (var row = statement.executeQuery("PRAGMA user_version")) { assertEquals(15, row.getInt(1)); }
         }
     }
 

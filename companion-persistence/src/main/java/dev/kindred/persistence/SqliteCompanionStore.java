@@ -15,6 +15,7 @@ import dev.kindred.core.WorkSetup;
 import dev.kindred.core.record.ActionLedgerView;
 import dev.kindred.core.record.EventData;
 import dev.kindred.core.record.Ledger;
+import dev.kindred.core.record.TerritoryRefusals;
 import dev.kindred.core.record.WorldEvent;
 import dev.kindred.core.social.Expression;
 import dev.kindred.core.social.ListenerPreferences;
@@ -1542,7 +1543,7 @@ public final class SqliteCompanionStore {
             try (ResultSet version = statement.executeQuery("PRAGMA user_version")) {
                 schemaVersion = version.next() ? version.getInt(1) : -1;
             }
-            if (schemaVersion < 0 || schemaVersion > 14) {
+            if (schemaVersion < 0 || schemaVersion > 15) {
                 throw new IllegalStateException("Unsupported metadata schema version " + schemaVersion);
             }
             if (schemaVersion == 0) migrate(1, "V1__foundation.sql");
@@ -1559,6 +1560,7 @@ public final class SqliteCompanionStore {
             if (schemaVersion < 12) migrate(12, "V12__world_record.sql");
             if (schemaVersion < 13) migrate(13, "V13__action_fold.sql");
             if (schemaVersion < 14) migrate(14, "V14__action_bound.sql");
+            if (schemaVersion < 15) migrate(15, "V15__territory_refused.sql");
         }
         recover();
         try (Statement query = database.createStatement(); ResultSet row = query.executeQuery("SELECT COALESCE(MAX(id), 0) FROM world_events")) {
@@ -1652,6 +1654,18 @@ public final class SqliteCompanionStore {
                     statement.execute("CREATE TRIGGER world_events_append_only_delete BEFORE DELETE ON world_events WHEN OLD.kind <> '"
                             + ActionLedgerView.ACTION + "' AND NOT (OLD.kind = '" + ActionLedgerView.FOLDED
                             + "' AND NOT EXISTS (SELECT 1 FROM action_ledger WHERE action_id = OLD.subject))"
+                            + " BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
+                }
+                if (version == 15) {
+                    // The refusals' bound (F-34c2a): as at 14, and a territory.refused event may be deleted once it is past
+                    // the bound by its own time (thirty game days), as the bound's prune deletes them; every other kind
+                    // stays append-only. The database itself refuses a refusal's delete inside the bound.
+                    statement.execute("DROP TRIGGER IF EXISTS world_events_append_only_delete");
+                    statement.execute("CREATE TRIGGER world_events_append_only_delete BEFORE DELETE ON world_events WHEN OLD.kind <> '"
+                            + ActionLedgerView.ACTION + "' AND NOT (OLD.kind = '" + ActionLedgerView.FOLDED
+                            + "' AND NOT EXISTS (SELECT 1 FROM action_ledger WHERE action_id = OLD.subject))"
+                            + " AND NOT (OLD.kind = '" + TerritoryRefusals.REFUSED + "' AND OLD.real_time_ms < CAST(strftime('%s', 'now') AS INTEGER) * 1000 - "
+                            + REFUSAL_BOUND_MS + ")"
                             + " BEGIN SELECT RAISE(ABORT, 'The World Record is append-only'); END");
                 }
                 statement.execute("PRAGMA user_version = " + version);
@@ -2094,6 +2108,67 @@ public final class SqliteCompanionStore {
                 return null;
             });
             return new ActionPrune(pruned[0], pruned[1], (System.nanoTime() - start) / 1_000_000);
+        });
+    }
+
+    /** What one pass of the refusals' bound pruned: refusals, and the game days tallied. */
+    public record RefusalPrune(int refusals, int days, long millis) { }
+
+    /** Refused attempts on a faction's land are kept this long by their own time, then pruned with a day's tally (F-34c2a): 30 game days. */
+    public static final long REFUSAL_BOUND_MS = 30L * GAME_DAY_MS;
+
+    /**
+     * The refusals' bound (F-34c2a, Session A's agreement): on the ordered writer, up to {@code max}
+     * {@link TerritoryRefusals#REFUSED} events older than {@code olderThanMs} removed, in one transaction with one
+     * {@link TerritoryRefusals#PRUNED} tally for each game day they were written on: how many of each kind of attempt,
+     * the total, and the first and last event of them. Only after an agreement check that agreed, as the action bound:
+     * {@code check} is that pass's, and one that did not agree prunes nothing. The database refuses the delete of a
+     * refusal inside {@link #REFUSAL_BOUND_MS} whatever is asked, so a cut inside the bound fails the pass and keeps
+     * everything. Nothing else is deleted. A pass that takes its full {@code max} leaves the rest to the next, so one game
+     * day can have several tallies: its figures are their sum.
+     */
+    public CompletableFuture<RefusalPrune> pruneTerritoryRefusals(LedgerCheck check, long olderThanMs, int max) {
+        if (max < 1) throw new IllegalArgumentException("A prune takes at least one refusal");
+        if (check == null || !check.agrees()) return CompletableFuture.completedFuture(new RefusalPrune(0, 0, 0));
+        return submit(() -> {
+            long start = System.nanoTime();
+            var refusals = new ArrayList<WorldEvent>();
+            try (PreparedStatement query = database.prepareStatement("SELECT * FROM world_events WHERE kind = ? AND real_time_ms < ? ORDER BY real_time_ms, id LIMIT ?")) {
+                query.setString(1, TerritoryRefusals.REFUSED);
+                query.setLong(2, olderThanMs);
+                query.setInt(3, max);
+                try (ResultSet rows = query.executeQuery()) { while (rows.next()) refusals.add(readWorldEvent(rows)); }
+            }
+            int[] pruned = new int[2];
+            transaction(() -> {
+                var days = new java.util.TreeMap<Long, java.util.LinkedHashMap<String, String>>();
+                for (WorldEvent refusal : refusals) {
+                    try (PreparedStatement delete = database.prepareStatement("DELETE FROM world_events WHERE id = ? AND kind = ?")) {
+                        delete.setLong(1, refusal.id());
+                        delete.setString(2, TerritoryRefusals.REFUSED);
+                        delete.executeUpdate();
+                    }
+                    long day = Math.floorDiv(refusal.realTimeMs(), GAME_DAY_MS);
+                    var tally = days.computeIfAbsent(day, d -> new java.util.LinkedHashMap<>());
+                    String what = refusal.get("what", "");
+                    tally.merge(TerritoryRefusals.WHAT.contains(what) ? what : "other", "1", (x, y) -> String.valueOf(Long.parseLong(x) + 1));
+                    tally.merge("total", "1", (x, y) -> String.valueOf(Long.parseLong(x) + 1));
+                    tally.putIfAbsent("first", String.valueOf(refusal.id()));
+                    tally.put("last", String.valueOf(refusal.id()));
+                    pruned[0]++;
+                }
+                long now = System.currentTimeMillis();
+                for (var day : days.entrySet()) {
+                    var data = new java.util.LinkedHashMap<String, String>();
+                    data.put("day_start_ms", String.valueOf(day.getKey() * GAME_DAY_MS));
+                    data.put("older_than_ms", String.valueOf(olderThanMs));
+                    data.putAll(day.getValue());
+                    insertWorldEvent(WorldEvent.recorded(-1, now, "", TerritoryRefusals.PRUNED, null, String.valueOf(day.getKey()), "", data));
+                }
+                pruned[1] = days.size();
+                return null;
+            });
+            return new RefusalPrune(pruned[0], pruned[1], (System.nanoTime() - start) / 1_000_000);
         });
     }
 

@@ -1061,6 +1061,13 @@ history older than 30 game days (10 real hours) is then pruned: each action's ro
 passes has several tallies, and its figures are their sum. Unresolved actions, and any action that was ever uncertain,
 are kept whatever their age.
 
+**Schema 15 cannot be undone either (F-34c2a).** The first start of a build with the refusals' bound moves the
+database to schema 15. Older builds refuse it at start; the same copy of `<world>/kindred/`, taken before that first
+start, is the only way back. Refused attempts on a faction's land (`territory.refused`, F-34c2) are then kept 30 game
+days by their own time and pruned after the action bound, on the same agreeing check, with a `territory.pruned` tally
+a game day: how many of each kind of attempt, the total, and the first and last. The database itself refuses to delete
+a refusal younger than that. In the soak report, refusals pruned this way are counted as pruned, not lost.
+
 Each figure names the run it was measured on. Sizes scale with the number of players and with what they do.
 
 - **`keepdb8-4c92b41`:** 8 AI players in Factions mode on seed 101, 6 game days, on main of 2026-11-11, with F-31b's fold and the gauge that counts every insert (#210).
