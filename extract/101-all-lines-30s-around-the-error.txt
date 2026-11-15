@@ -1,0 +1,1317 @@
+[22:23:06] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:06] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 37, -429]
+[22:23:06] [Server thread/INFO]: Sol goal at -264 38 -430: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol goal at -264 38 -429: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 39, -428 (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:06] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:06] [Server thread/INFO]: Sol goal at -264 37 -429: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 38, -428 (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol goal at -264 37 -429: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 37, -428 (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 38, -428]
+[22:23:06] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:06] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 37, -428]
+[22:23:06] [Server thread/INFO]: Sol goal at -264 37 -429: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 36, -428 (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 52, -223 by hand]
+[22:23:06] [Server thread/INFO]: Kindred goal at -268 50 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:06] [Server thread/INFO]: Kindred goal at -268 50 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 51, -223 by hand (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Kindred goal at -268 51 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 53, -223 by hand (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 36, -428]
+[22:23:06] [Server thread/INFO]: Sol goal at -264 37 -429: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:06] [Server thread/INFO]: Sol goal at -264 37 -428: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 38, -427 (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:06] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:06] [Server thread/INFO]: Sol goal at -264 36 -428: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 37, -427 (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Echo goal at -235 46 6: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 48, 6 by hand (tried elsewhere 3 times)
+[22:23:06] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 47, 6 by hand]
+[22:23:06] [Server thread/INFO]: Sol goal at -264 36 -428: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 36, -427 (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 37, -427]
+[22:23:07] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:07] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 36, -427]
+[22:23:07] [Server thread/INFO]: Sol goal at -264 36 -428: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 35, -427 (tried elsewhere 2 times)
+[22:23:07] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:07] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 35, -427]
+[22:23:07] [Server thread/INFO]: Sol goal at -264 36 -428: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:07] [Server thread/INFO]: Sol goal at -264 36 -427: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 37, -426 (tried elsewhere 2 times)
+[22:23:07] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:07] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:07] [Server thread/INFO]: Sol goal at -264 35 -427: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 36, -426 (tried elsewhere 2 times)
+[22:23:07] [Server thread/INFO]: Sol goal at -264 35 -427: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 35, -426 (tried elsewhere 2 times)
+[22:23:07] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 36, -426]
+[22:23:07] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:07] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 35, -426]
+[22:23:07] [Server thread/INFO]: Sol goal at -264 35 -427: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 34, -426 (tried elsewhere 2 times)
+[22:23:07] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:07] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 34, -426]
+[22:23:07] [Server thread/INFO]: Sol goal at -264 35 -427: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:07] [Server thread/INFO]: Sol goal at -264 35 -426: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 36, -425 (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:08] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:08] [Server thread/INFO]: Sol goal at -264 34 -426: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 35, -425 (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Sol goal at -264 34 -426: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 34, -425 (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 35, -425]
+[22:23:08] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:08] [Server thread/INFO]: Kindred goal at -268 51 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 53, -223 by hand]
+[22:23:08] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 34, -425]
+[22:23:08] [Server thread/INFO]: Sol goal at -264 34 -426: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 33, -425 (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Kindred goal at -268 51 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 52, -223 by hand (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Kindred goal at -268 52 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 54, -223 by hand (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:08] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:08] [Server thread/INFO]: Echo goal at -235 46 6: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 47, 6 by hand (tried elsewhere 3 times)
+[22:23:08] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 48, 6 by hand]
+[22:23:08] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 33, -425]
+[22:23:08] [Server thread/INFO]: Sol goal at -264 34 -426: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Sol goal at -264 34 -425: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 35, -424 (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:08] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:08] [Server thread/INFO]: Sol goal at -264 33 -425: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 34, -424 (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Sol goal at -264 33 -425: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 33, -424 (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 34, -424]
+[22:23:08] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:08] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 33, -424]
+[22:23:09] [Server thread/INFO]: Sol goal at -264 33 -425: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 32, -424 (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:09] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 32, -424]
+[22:23:09] [Server thread/INFO]: Sol goal at -264 33 -425: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol goal at -264 33 -424: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 34, -423 (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:09] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:09] [Server thread/INFO]: Sol goal at -264 32 -424: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 33, -423 (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol goal at -264 32 -424: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 32, -423 (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 33, -423]
+[22:23:09] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:09] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 32, -423]
+[22:23:09] [Server thread/INFO]: Sol goal at -264 32 -424: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 31, -423 (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:09] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 31, -423]
+[22:23:09] [Server thread/INFO]: Sol goal at -264 32 -424: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol goal at -264 32 -423: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 33, -422 (tried elsewhere 2 times)
+[22:23:09] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:09] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:09] [Server thread/INFO]: Sol goal at -264 31 -423: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 32, -422 (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol goal at -264 31 -423: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 31, -422 (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 32, -422]
+[22:23:10] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 54, -223 by hand]
+[22:23:10] [Server thread/INFO]: Kindred goal at -268 52 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:10] [Server thread/INFO]: Kindred goal at -268 53 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 55, -223 by hand (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:10] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 31, -422]
+[22:23:10] [Server thread/INFO]: Sol goal at -264 31 -423: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 30, -422 (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:10] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 30, -422]
+[22:23:10] [Server thread/INFO]: Sol goal at -264 31 -423: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol goal at -264 31 -422: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 32, -421 (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:10] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:10] [Server thread/INFO]: Sol goal at -264 30 -422: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 31, -421 (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol goal at -264 30 -422: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 30, -421 (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 31, -421]
+[22:23:10] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:10] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 30, -421]
+[22:23:10] [Server thread/INFO]: Sol goal at -264 30 -422: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 29, -421 (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:11] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 29, -421]
+[22:23:11] [Server thread/INFO]: Sol goal at -264 30 -422: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Sol goal at -264 30 -421: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 31, -420 (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:11] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:11] [Server thread/INFO]: Sol goal at -264 29 -421: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 30, -420 (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Sol goal at -264 29 -421: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 29, -420 (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 30, -420]
+[22:23:11] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:11] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 29, -420]
+[22:23:11] [Server thread/INFO]: Sol goal at -264 29 -421: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 28, -420 (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:11] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 28, -420]
+[22:23:11] [Server thread/INFO]: Sol goal at -264 29 -421: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 47, 6 by hand]
+[22:23:11] [Server thread/INFO]: Sol goal at -264 29 -420: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 30, -419 (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Echo goal at -235 46 6: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 48, 6 by hand (tried elsewhere 3 times)
+[22:23:11] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:11] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:11] [Server thread/INFO]: Sol goal at -264 28 -420: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 29, -419 (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Kindred goal at -268 53 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 55, -223 by hand]
+[22:23:11] [Server thread/INFO]: Kindred goal at -268 54 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 56, -223 by hand (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Sol goal at -264 28 -420: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 28, -419 (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 29, -419]
+[22:23:11] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:12] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 28, -419]
+[22:23:12] [Server thread/INFO]: Sol goal at -264 28 -420: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 27, -419 (tried elsewhere 2 times)
+[22:23:12] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 27, -419]
+[22:23:12] [Server thread/INFO]: Sol goal at -264 28 -420: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:12] [Server thread/INFO]: Sol goal at -264 28 -419: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 29, -418 (tried elsewhere 2 times)
+[22:23:12] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:12] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:12] [Server thread/INFO]: Sol goal at -264 27 -419: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 28, -418 (tried elsewhere 2 times)
+[22:23:12] [Server thread/INFO]: Sol goal at -264 27 -419: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 27, -418 (tried elsewhere 2 times)
+[22:23:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 28, -418]
+[22:23:12] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 27, -418]
+[22:23:12] [Server thread/INFO]: Sol goal at -264 27 -419: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 26, -418 (tried elsewhere 2 times)
+[22:23:12] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:12] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 26, -418]
+[22:23:12] [Server thread/INFO]: Sol goal at -264 27 -419: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Sol goal at -264 27 -418: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 28, -417 (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:13] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:13] [Server thread/INFO]: Sol goal at -264 26 -418: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 27, -417 (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 27, -417]
+[22:23:13] [Server thread/INFO]: Sol goal at -264 26 -418: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 26, -417 (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:13] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 48, 6 by hand]
+[22:23:13] [Server thread/INFO]: Sol goal at -264 26 -418: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 25, -417 (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Echo goal at -235 46 6: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 7 by hand (tried elsewhere 3 times)
+[22:23:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 26, -417]
+[22:23:13] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 25, -417]
+[22:23:13] [Server thread/INFO]: Sol goal at -264 26 -418: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Kindred goal at -268 54 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 56, -223 by hand]
+[22:23:13] [Server thread/INFO]: Sol goal at -264 26 -417: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 27, -416 (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:13] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:13] [Server thread/INFO]: Sol goal at -264 25 -417: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 26, -416 (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Kindred goal at -268 55 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 57, -223 by hand (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:13] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 26, -416]
+[22:23:13] [Server thread/INFO]: Sol goal at -264 25 -417: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 25, -416 (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:14] [Server thread/INFO]: Sol goal at -264 25 -417: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 24, -416 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 25, -416]
+[22:23:14] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 24, -416]
+[22:23:14] [Server thread/INFO]: Sol goal at -264 25 -417: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol goal at -264 25 -416: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 26, -415 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:14] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:14] [Server thread/INFO]: Sol goal at -264 24 -416: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 25, -415 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol goal at -264 24 -416: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 24, -415 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 25, -415]
+[22:23:14] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 24, -415]
+[22:23:14] [Server thread/INFO]: Sol goal at -264 24 -416: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 23, -415 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 23, -415]
+[22:23:14] [Server thread/INFO]: Sol goal at -264 24 -416: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol goal at -264 24 -415: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 25, -414 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:14] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:14] [Server thread/INFO]: Sol goal at -264 23 -415: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 24, -414 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 7 by hand]
+[22:23:14] [Server thread/INFO]: Echo goal at -235 46 6: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:14] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:14] [Server thread/INFO]: Echo goal at -235 46 7: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 47, 8 by hand (tried elsewhere 3 times)
+[22:23:14] [Server thread/INFO]: Sol goal at -264 23 -415: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 23, -414 (tried elsewhere 2 times)
+[22:23:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 24, -414]
+[22:23:15] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:15] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 23, -414]
+[22:23:15] [Server thread/INFO]: Sol goal at -264 23 -415: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 22, -414 (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:15] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 57, -223 by hand]
+[22:23:15] [Server thread/INFO]: Kindred goal at -268 55 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Kindred goal at -268 55 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 56, -223 by hand (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 22, -414]
+[22:23:15] [Server thread/INFO]: Sol goal at -264 23 -415: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Kindred goal at -268 56 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 58, -223 by hand (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol goal at -264 23 -414: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 24, -413 (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:15] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:15] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:15] [Server thread/INFO]: Sol goal at -264 22 -414: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 23, -413 (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol goal at -264 22 -414: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 22, -413 (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 23, -413]
+[22:23:15] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:15] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 22, -413]
+[22:23:15] [Server thread/INFO]: Sol goal at -264 22 -414: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 21, -413 (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:15] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 21, -413]
+[22:23:15] [Server thread/INFO]: Sol goal at -264 22 -414: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol goal at -264 22 -413: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 23, -412 (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:15] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:15] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 22, -412 (tried elsewhere 2 times)
+[22:23:16] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 21, -412 (tried elsewhere 2 times)
+[22:23:16] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 22, -412]
+[22:23:16] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:16] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 21, -412]
+[22:23:16] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 20, -412 (tried elsewhere 2 times)
+[22:23:16] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:16] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 47, 8 by hand]
+[22:23:16] [Server thread/INFO]: Echo goal at -235 46 7: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 47, 7 by hand (tried elsewhere 3 times)
+[22:23:16] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:16] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 20, -412]
+[22:23:16] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Mine iron ore (1/15) - Back to where it saw iron ore at -238, 21, -415 (tried elsewhere 2 times)
+[22:23:16] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:16] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:16] [Server thread/INFO]: No route from -264, 21, -413 (-263.51, 21.00, -412.13, on the ground true) toward -238, 21, -415 (expanded 43, standing true; the goal standable false, on Block{minecraft:iron_ore}, at Block{minecraft:iron_ore}; its middle in -264, 21, -413 at Block{minecraft:air})
+[22:23:16] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at -238, 21, -415]
+[22:23:16] [Server thread/INFO]: No route from -264, 21, -413 (-263.49, 21.00, -412.30, on the ground true) toward -238, 21, -415 (expanded 43, standing true; the goal standable false, on Block{minecraft:iron_ore}, at Block{minecraft:iron_ore}; its middle in -264, 21, -413 at Block{minecraft:air})
+[22:23:16] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -238, 21, -415 [Back to where it saw iron ore at -238, 21, -415]
+[22:23:16] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:16] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 58, -223 by hand]
+[22:23:16] [Server thread/INFO]: Kindred goal at -268 56 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:16] [Server thread/INFO]: Sol goal at -264 21 -412: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 22, -411 (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:17] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 21, -411 (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Kindred goal at -268 56 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 57, -223 by hand (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Kindred goal at -268 57 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 59, -223 by hand (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:17] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 21, -411]
+[22:23:17] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 20, -411 (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:17] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 19, -411 (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 20, -411]
+[22:23:17] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:17] [Server thread/INFO]: Sol native_break COMPLETED [Dig down toward iron: clear -264, 19, -411]
+[22:23:17] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Mine iron ore (1/15) - Dig down toward iron: step down (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Sol goal at -264 20 -411: Iron: Mine iron ore (1/15) - Dig down toward iron: clear -264, 21, -410 (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:17] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:17] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Mine iron ore (1/15) - Branch mine for iron: clear -264, 20, -410 (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Mine iron ore (1/15) - Mine iron ore at -263, 20, -411 (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -264, 20, -410]
+[22:23:17] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:18] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 47, 7 by hand]
+[22:23:18] [Server thread/INFO]: Sol goal at -264 20 -411: Iron: Wait for the drop to settle (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Echo goal at -235 46 7: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 48, 7 by hand (tried elsewhere 3 times)
+[22:23:18] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Pick up raw iron (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[22:23:18] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -263, 20, -411]
+[22:23:18] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Mine iron ore (2/15) - Branch mine for iron: clear -264, 19, -410 (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Mine iron ore (2/15) - Mine iron ore at -263, 19, -411 (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -264, 19, -410]
+[22:23:18] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:18] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Pick up raw iron (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 59, -223 by hand]
+[22:23:18] [Server thread/INFO]: Kindred goal at -268 57 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Kindred goal at -268 57 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 58, -223 by hand (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[22:23:18] [Server thread/INFO]: Kindred goal at -268 58 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 60, -223 by hand (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Place a crafting table - Ready crafting table (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -263, 19, -411]
+[22:23:18] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:18] [Server thread/INFO]: Sol native_swap COMPLETED [Ready crafting table]
+[22:23:18] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Place a crafting table - Place a crafting table (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]
+[22:23:18] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Craft furnace - Craft furnace (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Sol native_craft COMPLETED [Craft furnace]
+[22:23:19] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Smelt raw iron - Place a furnace (tried elsewhere 2 times)
+[22:23:19] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Craft furnace - Craft furnace (tried elsewhere 2 times)
+[22:23:19] [Server thread/INFO]: Sol native_place COMPLETED [Place a furnace]
+[22:23:19] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Smelt raw iron - Load raw iron and fuel (coal) (tried elsewhere 2 times)
+[22:23:19] [Server thread/INFO]: Sol native_smelt COMPLETED [Load raw iron and fuel (coal)]
+[22:23:19] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Wait for the furnace to smelt iron - Wait by the furnace (tried elsewhere 2 times)
+[22:23:19] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 48, 7 by hand]
+[22:23:19] [Server thread/INFO]: Echo goal at -235 46 7: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 47, 7 by hand (tried elsewhere 3 times)
+[22:23:19] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:20] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:20] [Server thread/INFO]: Kindred goal at -268 58 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:20] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 60, -223 by hand]
+[22:23:20] [Server thread/INFO]: Kindred goal at -268 59 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 61, -223 by hand (tried elsewhere 2 times)
+[22:23:20] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:21] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:21] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Collect smelted items from the furnace - Take smelted iron (tried elsewhere 2 times)
+[22:23:21] [Server thread/INFO]: Echo goal at -235 46 7: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 48, 7 by hand (tried elsewhere 3 times)
+[22:23:21] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 47, 7 by hand]
+[22:23:21] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:21] [Server thread/INFO]: Sol found minecraft:iron_ingot: holds 2, 2 unpromised; 0 teammates by; share-out []
+[22:23:21] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Wait for the furnace to smelt iron - Wait by the furnace (tried elsewhere 2 times)
+[22:23:21] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[22:23:21] [Server thread/INFO]: Sol native_craft COMPLETED [from handOverStep:9955]
+[22:23:21] [Server thread/INFO]: Sol cannot go on with an iron sword for Kindred for now, its teammate 192 blocks off: it waits a minute
+[22:23:21] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[22:23:22] [Server thread/INFO]: Kindred goal at -268 59 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:22] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 61, -223 by hand]
+[22:23:22] [Server thread/INFO]: Kindred goal at -268 60 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 62, -223 by hand (tried elsewhere 2 times)
+[22:23:22] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:22] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:23] [Server thread/INFO]: Echo goal at -235 46 7: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 8 by hand (tried elsewhere 3 times)
+[22:23:23] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 48, 7 by hand]
+[22:23:23] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:23] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: take workstations along - Pick up the crafting table
+[22:23:23] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:24] [Server thread/INFO]: Kindred goal at -268 60 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 62, -223 by hand]
+[22:23:24] [Server thread/INFO]: Kindred goal at -268 60 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 61, -223 by hand (tried elsewhere 2 times)
+[22:23:24] [Server thread/INFO]: Kindred goal at -268 61 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 63, -223 by hand (tried elsewhere 2 times)
+[22:23:24] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:24] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 8 by hand]
+[22:23:24] [Server thread/INFO]: Echo goal at -235 46 7: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:24] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Wait for the drop to settle
+[22:23:24] [Server thread/INFO]: Echo goal at -235 46 8: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 47, 9 by hand (tried elsewhere 3 times)
+[22:23:24] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:24] [Server thread/INFO]: Sol picked up 1 minecraft:crafting_table
+[22:23:24] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]
+[22:23:24] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Collect smelted items from the furnace - Take smelted iron
+[22:23:24] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: take workstations along - Pick up the furnace
+[22:23:24] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[22:23:25] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Pick up furnace
+[22:23:25] [Server thread/INFO]: Sol picked up 1 minecraft:furnace
+[22:23:25] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the furnace]
+[22:23:25] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Mine iron ore (1/15) - Mine iron ore at -263, 19, -412
+[22:23:25] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Wait for the drop to settle
+[22:23:25] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Pick up raw iron
+[22:23:25] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[22:23:25] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -263, 19, -412]
+[22:23:25] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Mine iron ore (2/15) - Mine iron ore at -263, 19, -410
+[22:23:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 63, -223 by hand]
+[22:23:25] [Server thread/INFO]: Kindred goal at -268 61 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:25] [Server thread/INFO]: Kindred goal at -268 61 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 62, -223 by hand (tried elsewhere 2 times)
+[22:23:25] [Server thread/INFO]: Kindred goal at -268 62 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 64, -223 by hand (tried elsewhere 2 times)
+[22:23:25] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:25] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Wait for the drop to settle
+[22:23:26] [Server thread/INFO]: Sol goal at -263 19 -411: Iron: Pick up raw iron
+[22:23:26] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[22:23:26] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -263, 19, -410]
+[22:23:26] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Smelt raw iron - Ready furnace
+[22:23:26] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]
+[22:23:26] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Smelt raw iron - Place a furnace
+[22:23:26] [Server thread/INFO]: Sol native_place COMPLETED [Place a furnace]
+[22:23:26] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Smelt raw iron - Load raw iron and fuel (coal)
+[22:23:26] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[22:23:26] [Server thread/INFO]: Sol native_smelt COMPLETED [Load raw iron and fuel (coal)]
+[22:23:26] [Server thread/INFO]: Echo goal at -235 46 8: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 9 by hand (tried elsewhere 3 times)
+[22:23:26] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 47, 9 by hand]
+[22:23:26] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:27] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 64, -223 by hand]
+[22:23:27] [Server thread/INFO]: Kindred goal at -268 62 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:27] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:27] [Server thread/INFO]: Kindred goal at -268 63 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 65, -223 by hand (tried elsewhere 2 times)
+[22:23:27] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:27] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 9 by hand]
+[22:23:27] [Server thread/INFO]: Echo goal at -235 46 8: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:27] [Server thread/INFO]: Echo goal at -235 46 9: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 47, 10 by hand (tried elsewhere 3 times)
+[22:23:27] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:28] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:28] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Collect smelted items from the furnace - Take smelted iron
+[22:23:28] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:28] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[22:23:28] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[22:23:29] [Server thread/INFO]: Kindred goal at -268 63 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:29] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 65, -223 by hand]
+[22:23:29] [Server thread/INFO]: Kindred goal at -268 64 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 66, -223 by hand (tried elsewhere 2 times)
+[22:23:29] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:29] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:29] [Server thread/INFO]: Echo goal at -235 46 9: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 10 by hand (tried elsewhere 3 times)
+[22:23:29] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 47, 10 by hand]
+[22:23:29] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:30] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Collect smelted items from the furnace - Take smelted iron
+[22:23:30] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[22:23:30] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[22:23:30] [Server thread/INFO]: Sol found minecraft:iron_ingot: holds 3, 1 unpromised; 0 teammates by; share-out []
+[22:23:30] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Place a crafting table - Place a crafting table
+[22:23:30] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]
+[22:23:30] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Craft iron pickaxe - Craft iron pickaxe
+[22:23:30] [Server thread/INFO]: Kindred goal at -268 64 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:30] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 66, -223 by hand]
+[22:23:30] [Server thread/INFO]: Sol native_craft COMPLETED [Craft iron pickaxe]
+[22:23:30] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: take workstations along - Pick up the crafting table
+[22:23:30] [Server thread/INFO]: Kindred goal at -268 65 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 67, -223 by hand (tried elsewhere 2 times)
+[22:23:30] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:31] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 10 by hand]
+[22:23:31] [Server thread/INFO]: Echo goal at -235 46 9: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:31] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:31] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 48, 10 by hand (tried elsewhere 3 times)
+[22:23:31] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: take workstations along - Pick up the furnace
+[22:23:31] [Server thread/INFO]: Sol picked up 1 minecraft:crafting_table
+[22:23:31] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]
+[22:23:32] [Server thread/INFO]: Sol goal at -264 19 -411: Iron: Pick up furnace
+[22:23:32] [Server thread/INFO]: Sol picked up 1 minecraft:furnace
+[22:23:32] [Server thread/INFO]: Sol goal at -264 20 -411: Iron: Mine iron ore (0/12) - Mine iron ore at -262, 19, -411
+[22:23:32] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the furnace]
+[22:23:32] [Server thread/INFO]: Sol goal at -264 20 -411: Iron: Wait for the drop to settle
+[22:23:32] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 67, -223 by hand]
+[22:23:32] [Server thread/INFO]: Kindred goal at -268 65 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:32] [Server thread/INFO]: Kindred goal at -268 65 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 66, -223 by hand (tried elsewhere 2 times)
+[22:23:32] [Server thread/INFO]: Kindred goal at -268 66 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 68, -223 by hand (tried elsewhere 2 times)
+[22:23:32] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:32] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 47, 11 by hand (tried elsewhere 3 times)
+[22:23:32] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 48, 10 by hand]
+[22:23:33] [Server thread/INFO]: Sol break at -262, 19, -411: its collection ended (the bound) after 71 ticks, its own drops uncollected: [-261.26, 19.00, -410.88 age 71 delay 0 moving 0.000, -0.000, 0.000]; the body at -263.30, 20.00, -410.85 facing -91
+[22:23:33] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -262, 19, -411]
+[22:23:33] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for the drop to settle]
+[22:23:33] [Server thread/INFO]: Sol leaves 1 minecraft:raw_iron lying at -262, 19, -411 (-261.26, 19.00, -410.88): in sight false, blocked false, watched false, in water false, settle wait 100 ticks, within the wait's reach true; the obsidian site none; the player at -263.30, 20.00, -410.85
+[22:23:33] [Server thread/INFO]: Sol goal at -264 20 -411: Iron: Mine iron ore (0/12) - Clear the way to iron ore at -262, 19, -412
+[22:23:33] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for the drop to settle]
+[22:23:33] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:33] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to iron ore at -262, 19, -412]
+[22:23:33] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:33] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to iron ore at -262, 19, -412]
+[22:23:33] [Server thread/INFO]: Sol cannot go on with an iron sword for Kindred for now, its teammate 194 blocks off: it waits a minute
+[22:23:34] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 68, -223 by hand]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 66 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 48, 11 by hand (tried elsewhere 3 times)
+[22:23:34] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 47, 11 by hand]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 66 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 67, -223 by hand (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:34] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to iron ore at -262, 19, -412]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 67 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 69, -223 (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:34] [Server thread/INFO]: Sol goal at -263 20 -412: Iron: Mine iron ore (0/12) - Mine iron ore at -262, 19, -412
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 67 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 69, -223]
+[22:23:34] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:34] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to iron ore at -262, 19, -412]
+[22:23:34] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 68 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 70, -223 (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[22:23:34] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Mine iron ore (1/12) - Mine iron ore at -262, 19, -412
+[22:23:34] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:34] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Wait for the drop to settle
+[22:23:34] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 70, -223]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 68 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[22:23:34] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Mine iron ore (2/12) - Branch mine for iron: advance
+[22:23:34] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -262, 19, -412]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 69 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 71, -223 (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[22:23:34] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Mine iron ore (2/12) - Back to where it saw iron ore at -236, 31, -419
+[22:23:34] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:34] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:34] [Server thread/INFO]: Sol goal at -263 20 -411: Iron: Mine iron ore (2/12) - Mine iron ore at -262, 18, -412
+[22:23:35] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 71, -223]
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 69 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 69 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 70, -223 (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 70 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 71, -223 (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Sol goal at -264 21 -412: Iron: Mine iron ore (2/12) - Walk to iron ore at -262, 18, -412
+[22:23:35] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 70 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 70 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 71, -223 (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 71 -223: Wood: on the way, for what comes later - Approach sheep for wool (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:35] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 47, 10 by hand (tried elsewhere 3 times)
+[22:23:35] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 48, 11 by hand]
+[22:23:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: No route from -264, 31, -423 (-263.50, 31.00, -422.13, on the ground true) toward -236, 31, -419 (expanded 47, standing true; the goal standable false, on Block{minecraft:iron_ore}, at Block{minecraft:iron_ore}; its middle in -264, 31, -423 at Block{minecraft:air})
+[22:23:36] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at -236, 31, -419]
+[22:23:36] [Server thread/INFO]: Kindred goal at -276 77 -232: Wood: on the way, for what comes later - Hunt sheep for wool (tried elsewhere 2 times)
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_attack COMPLETED [Hunt sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred goal at -277 77 -233: Wood: on the way, for what comes later - Approach sheep for wool (tried elsewhere 2 times)
+[22:23:36] [Server thread/INFO]: Kindred native_attack COMPLETED [Hunt sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred goal at -280 78 -235: Wood: on the way, for what comes later - Hunt sheep for wool (tried elsewhere 2 times)
+[22:23:36] [Server thread/INFO]: Kindred goal at -280 78 -235: Wood: Pick up white wool (tried elsewhere 2 times)
+[22:23:36] [Server thread/ERROR]: Native player 8e1df81a-0281-4f7d-a68c-78462a662842 blocked: Native action outcome requires reconciliation
+java.lang.IllegalStateException: Attack item conservation check failed; reconcile
+	at knot/dev.kindred.fabric.PlayerRuntime.observeRunner(PlayerRuntime.java:8370) ~[kindred-mc-0.1.0-SNAPSHOT.jar:?]
+	at knot/dev.kindred.fabric.PlayerRuntime.beforeNativeTick(PlayerRuntime.java:7657) ~[kindred-mc-0.1.0-SNAPSHOT.jar:?]
+	at knot/dev.kindred.fabric.PlayerRuntime.lambda$completeNativeConnection$77(PlayerRuntime.java:1391) ~[kindred-mc-0.1.0-SNAPSHOT.jar:?]
+	at knot/dev.kindred.fabric.NativePlayerBody.beforeTick(NativePlayerBody.java:2756) ~[kindred-mc-0.1.0-SNAPSHOT.jar:?]
+	at knot/dev.kindred.fabric.NativePlayerBody$NativePlayer.method_5773(NativePlayerBody.java:2939) ~[kindred-mc-0.1.0-SNAPSHOT.jar:?]
+	at knot/net.minecraft.class_3218.method_18762(class_3218.java:770) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.class_1937.method_18472(class_1937.java:498) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.class_3218.method_31420(class_3218.java:408) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.class_5574.method_31791(class_5574.java:54) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.class_3218.method_18765(class_3218.java:372) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.method_3813(MinecraftServer.java:1021) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.class_3176.method_3813(class_3176.java:299) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.method_3748(MinecraftServer.java:912) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.method_29741(MinecraftServer.java:697) ~[server-intermediary.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.method_29739(MinecraftServer.java:281) ~[server-intermediary.jar:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+[22:23:36] [Server thread/INFO]: Native action outcome requires reconciliation; no replacement inventory will be created.
+[22:23:36] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 48, 10 by hand (tried elsewhere 3 times)
+[22:23:36] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 47, 10 by hand]
+[22:23:36] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to iron ore at -262, 18, -412]
+[22:23:36] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Mine iron ore (2/12) - Mine iron ore at -262, 18, -412
+[22:23:37] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Open the head room over the drop: pick up raw iron
+[22:23:37] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Wait for the drop to settle
+[22:23:37] [Server thread/INFO]: Sol break at -262, 18, -412: its collection ended (the bound) after 71 ticks, its own drops uncollected: [-261.13, 18.00, -411.20 age 71 delay 0 moving 0.000, -0.000, 0.000]; the body at -262.30, 20.17, -411.22 facing -89
+[22:23:37] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at -262, 18, -412]
+[22:23:37] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for the drop to settle]
+[22:23:37] [Server thread/INFO]: Sol leaves 1 minecraft:raw_iron lying at -262, 18, -412 (-261.13, 18.00, -411.20): in sight false, blocked false, watched false, in water false, settle wait 100 ticks, within the wait's reach true; the obsidian site none; the player at -262.30, 19.00, -411.22
+[22:23:37] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Mine iron ore (2/12) - Branch mine for iron: advance
+[22:23:37] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Mine iron ore (2/12) - Back to where it saw iron ore at -236, 31, -419
+[22:23:37] [Server thread/INFO]: Sol native_wait COMPLETED [Wait for the drop to settle]
+[22:23:37] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 48, 10 by hand]
+[22:23:37] [Server thread/INFO]: Sol goal at -263 19 -412: Iron: Open the head room over the drop: pick up raw iron
+[22:23:37] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 47, 10 by hand (tried elsewhere 3 times)
+[22:23:37] [Server thread/INFO]: Sol goal at -263 20 -412: Iron: Mine iron ore (2/12) - Back to where it saw iron ore at -236, 31, -419
+[22:23:37] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Open the head room over the drop: pick up raw iron
+[22:23:37] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Mine iron ore (2/12) - Back to where it saw iron ore at -236, 31, -419
+[22:23:38] [Server thread/INFO]: Sol goal at -264 28 -419: Iron: Mine iron ore (2/12) - Walk to iron ore at -243, 38, -423
+[22:23:38] [Server thread/INFO]: No route from -264, 31, -423 (-263.50, 31.00, -422.13, on the ground true) toward -236, 31, -419 (expanded 47, standing true; the goal standable false, on Block{minecraft:iron_ore}, at Block{minecraft:iron_ore}; its middle in -264, 31, -423 at Block{minecraft:air})
+[22:23:38] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at -236, 31, -419]
+[22:23:38] [Server thread/INFO]: No route from -264, 31, -423 (-263.50, 31.00, -422.31, on the ground true) toward -243, 38, -423 (expanded 47, standing true; the goal standable false, on Block{minecraft:air}, at Block{minecraft:iron_ore}; its middle in -264, 31, -423 at Block{minecraft:air})
+[22:23:38] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -243, 38, -423 [Walk to iron ore at -243, 38, -423]
+[22:23:38] [Server thread/INFO]: Sol goal at -264 31 -423: Iron: Mine iron ore (2/12) - Back to where it saw iron ore at -236, 31, -419
+[22:23:38] [Server thread/INFO]: No route from -264, 31, -423 (-263.50, 31.00, -422.34, on the ground true) toward -236, 31, -419 (expanded 47, standing true; the goal standable false, on Block{minecraft:iron_ore}, at Block{minecraft:iron_ore}; its middle in -264, 31, -423 at Block{minecraft:air})
+[22:23:38] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -236, 31, -419 [Back to where it saw iron ore at -236, 31, -419]
+[22:23:38] [Server thread/INFO]: Sol goal at -264 31 -423: Iron: Mine iron ore (2/12) - Dig down toward iron: step down
+[22:23:38] [Server thread/INFO]: Sol goal at -264 31 -422: Iron: Mine iron ore (2/12) - Dig down toward iron: clear -264, 32, -421
+[22:23:38] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:38] [Server thread/INFO]: Sol goal at -264 30 -422: Iron: Mine iron ore (2/12) - Dig down toward iron: step down
+[22:23:38] [Server thread/INFO]: Sol goal at -264 30 -421: Iron: Mine iron ore (2/12) - Dig down toward iron: clear -264, 31, -420
+[22:23:38] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 47, 10 by hand]
+[22:23:38] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 11 by hand (tried elsewhere 3 times)
+[22:23:38] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:38] [Server thread/INFO]: Sol goal at -264 29 -421: Iron: Mine iron ore (2/12) - Dig down toward iron: step down
+[22:23:38] [Server thread/INFO]: Sol goal at -264 29 -420: Iron: Mine iron ore (2/12) - Dig down toward iron: clear -264, 30, -419
+[22:23:38] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:38] [Server thread/INFO]: Sol goal at -264 28 -420: Iron: Mine iron ore (2/12) - Dig down toward iron: step down
+[22:23:38] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:38] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:39] [Server thread/INFO]: Sol goal at -264 26 -417: Iron: Mine iron ore (2/12) - Dig down toward iron: clear -264, 27, -416
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:39] [Server thread/INFO]: Sol goal at -264 25 -417: Iron: Mine iron ore (2/12) - Dig down toward iron: step down
+[22:23:39] [Server thread/INFO]: Sol goal at -264 25 -416: Iron: Mine iron ore (2/12) - Dig down toward iron: clear -264, 26, -415
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:39] [Server thread/INFO]: Sol goal at -264 24 -416: Iron: Mine iron ore (2/12) - Dig down toward iron: step down
+[22:23:39] [Server thread/INFO]: Sol goal at -264 24 -415: Iron: Mine iron ore (2/12) - Dig down toward iron: clear -264, 25, -414
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:39] [Server thread/INFO]: Sol goal at -264 23 -415: Iron: Mine iron ore (2/12) - Dig down toward iron: step down
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:39] [Server thread/INFO]: Sol goal at -264 21 -413: Iron: Open the head room over the drop: pick up raw iron
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Dig down toward iron: step down]
+[22:23:39] [Server thread/INFO]: Sol goal at -264 20 -412: Iron: Pick up raw iron
+[22:23:39] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:39] [Server thread/INFO]: Sol native_break COMPLETED [Open the head room over the drop: pick up raw iron]
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up raw iron]
+[22:23:39] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[22:23:39] [Server thread/INFO]: Sol goal at -262 18 -412: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -411
+[22:23:39] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -411]
+[22:23:39] [Server thread/INFO]: Sol goal at -262 18 -412: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:39] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:39] [Server thread/INFO]: Sol goal at -262 18 -411: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -410
+[22:23:39] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:39] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 11 by hand]
+[22:23:39] [Server thread/INFO]: Echo goal at -235 46 10: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:40] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -410]
+[22:23:40] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -411: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -410
+[22:23:40] [Server thread/INFO]: Echo goal at -235 46 11: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 47, 12 by hand (tried elsewhere 3 times)
+[22:23:40] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -411: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:40] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -410]
+[22:23:40] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -409
+[22:23:40] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -409
+[22:23:40] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -409]
+[22:23:40] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:40] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -409]
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -408
+[22:23:40] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:40] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:40] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -408]
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -408
+[22:23:40] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:40] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -408]
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:40] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:40] [Server thread/INFO]: Sol goal at -262 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -407
+[22:23:40] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:40] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -407]
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -407
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:41] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -407]
+[22:23:41] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:41] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -406
+[22:23:41] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:41] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 47, 12 by hand]
+[22:23:41] [Server thread/INFO]: Echo goal at -235 46 11: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 48, 12 by hand (tried elsewhere 3 times)
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -406
+[22:23:41] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -406]
+[22:23:41] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:41] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -406]
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -405
+[22:23:41] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:41] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:41] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -405]
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -405
+[22:23:41] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:41] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -405]
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:41] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -404
+[22:23:41] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:41] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -404]
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -404
+[22:23:41] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:41] [Server thread/INFO]: Sol goal at -262 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:41] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -404]
+[22:23:42] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -403
+[22:23:42] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -403
+[22:23:42] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -403]
+[22:23:42] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -403]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:42] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:42] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 48, 12 by hand]
+[22:23:42] [Server thread/INFO]: Echo goal at -235 46 11: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 47, 11 by hand (tried elsewhere 3 times)
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -402
+[22:23:42] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:42] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:42] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -402]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -402
+[22:23:42] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -402]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:42] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -401
+[22:23:42] [Server thread/INFO]: Sol picked up 2 minecraft:cobblestone
+[22:23:42] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -401]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -401
+[22:23:42] [Server thread/INFO]: Sol cannot go on with an iron sword for Kindred for now, its teammate not in its world: it waits a minute
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:42] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -401]
+[22:23:42] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:42] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -400
+[22:23:42] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:42] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -400]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -401: Iron: Pick up lapis lazuli
+[22:23:42] [Server thread/INFO]: No route from -262, 18, -401 (-261.50, 18.00, -400.64, on the ground true) toward -262, 19, -400 (expanded 59, standing true; the goal standable false, on Block{minecraft:lapis_ore}, at Block{minecraft:air}; its middle in -262, 18, -401 at Block{minecraft:air})
+[22:23:42] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -262, 19, -400 [Pick up lapis lazuli]
+[22:23:42] [Server thread/INFO]: Sol goal at -262 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -400
+[22:23:42] [Server thread/INFO]: Sol picked up 4 minecraft:lapis_lazuli
+[22:23:43] [Server thread/INFO]: Sol lesson: dropped SPARE_PICKAXE - Three days without a broken last pickaxe; dropping the habit of a spare pickaxe.
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -401: Iron: Pick up lapis lazuli
+[22:23:43] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -400]
+[22:23:43] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up lapis lazuli]
+[22:23:43] [Server thread/INFO]: Sol picked up 5 minecraft:lapis_lazuli
+[22:23:43] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up lapis lazuli]
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -399
+[22:23:43] [Server thread/INFO]: Echo goal at -235 46 11: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 48, 11 by hand (tried elsewhere 3 times)
+[22:23:43] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 47, 11 by hand]
+[22:23:43] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -399]
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -399
+[22:23:43] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:43] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -399]
+[22:23:43] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -398
+[22:23:43] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -398
+[22:23:43] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -398]
+[22:23:43] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:43] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -398]
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 19, -397
+[22:23:43] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:43] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:43] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 19, -397]
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -262, 18, -397
+[22:23:43] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -262, 18, -397]
+[22:23:43] [Server thread/INFO]: Sol goal at -262 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:43] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:44] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:44] [Server thread/INFO]: Sol goal at -262 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -263, 19, -397
+[22:23:44] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:44] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -263, 19, -397]
+[22:23:44] [Server thread/INFO]: Sol goal at -262 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -263, 18, -397
+[22:23:44] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:44] [Server thread/INFO]: Sol goal at -262 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:44] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -263, 18, -397]
+[22:23:44] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:44] [Server thread/INFO]: Sol goal at -263 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -264, 19, -397
+[22:23:44] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:44] [Server thread/INFO]: Echo goal at -235 46 11: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 47, 11 by hand (tried elsewhere 3 times)
+[22:23:44] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 48, 11 by hand]
+[22:23:44] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -264, 19, -397]
+[22:23:44] [Server thread/INFO]: Sol goal at -263 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -264, 18, -397
+[22:23:44] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:44] [Server thread/INFO]: Sol goal at -263 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:44] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -264, 18, -397]
+[22:23:44] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:44] [Server thread/INFO]: Sol goal at -264 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -397
+[22:23:44] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:44] [Server thread/INFO]: Sol goal at -264 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -397
+[22:23:44] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -397]
+[22:23:44] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:44] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -397]
+[22:23:44] [Server thread/INFO]: Sol goal at -264 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:45] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -398
+[22:23:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -398
+[22:23:45] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -398]
+[22:23:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:45] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -398]
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -399
+[22:23:45] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:45] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -399]
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -399
+[22:23:45] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -399]
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:45] [Server thread/INFO]: Echo goal at -235 46 11: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 12 by hand (tried elsewhere 3 times)
+[22:23:45] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 47, 11 by hand]
+[22:23:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:45] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -400
+[22:23:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:45] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -400]
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -400
+[22:23:45] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:45] [Server thread/INFO]: Sol goal at -265 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:45] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -400]
+[22:23:46] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -401
+[22:23:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -401
+[22:23:46] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -401]
+[22:23:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:46] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -401]
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -402
+[22:23:46] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:46] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -402]
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -402
+[22:23:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:46] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -402]
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:46] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -403
+[22:23:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:46] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -403]
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -403
+[22:23:46] [Server thread/INFO]: Echo goal at -235 46 11: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:46] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 12 by hand]
+[22:23:46] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:46] [Server thread/INFO]: Sol goal at -265 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:46] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:46] [Server thread/INFO]: Echo goal at -235 46 12: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 47, 13 by hand (tried elsewhere 3 times)
+[22:23:47] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -403]
+[22:23:47] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:47] [Server thread/INFO]: Sol goal at -265 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -404
+[22:23:47] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:47] [Server thread/INFO]: Sol goal at -265 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -404
+[22:23:47] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -404]
+[22:23:47] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:47] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -404]
+[22:23:47] [Server thread/INFO]: Sol goal at -265 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:47] [Server thread/INFO]: Sol goal at -265 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -405
+[22:23:47] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:47] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:47] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -405]
+[22:23:47] [Server thread/INFO]: Sol goal at -265 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -405
+[22:23:47] [Server thread/INFO]: Sol goal at -265 18 -404: Iron: Mine iron ore (3/12) - Back to where it saw iron ore at -418, -55, -279
+[22:23:47] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:47] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -405]
+[22:23:47] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:47] [Server thread/INFO]: No route from -265, 18, -397 (-264.51, 18.00, -396.89, on the ground true) toward -335, -16, -347 (expanded 74, standing true; the goal standable false, on Block{minecraft:deepslate}[axis=y], at Block{minecraft:deepslate}[axis=y]; its middle in -265, 18, -397 at Block{minecraft:air})
+[22:23:47] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at -418, -55, -279]
+[22:23:48] [Server thread/INFO]: No route from -265, 18, -397 (-264.51, 18.00, -396.67, on the ground true) toward -336, -16, -342 (expanded 74, standing true; the goal standable false, on Block{minecraft:deepslate}[axis=y], at Block{minecraft:deepslate}[axis=y]; its middle in -265, 18, -397 at Block{minecraft:air})
+[22:23:48] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -336, -16, -342 [Back to where it saw iron ore at -418, -55, -279]
+[22:23:48] [Server thread/INFO]: Sol goal at -265 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Echo goal at -235 46 12: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 48, 13 by hand (tried elsewhere 3 times)
+[22:23:48] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 47, 13 by hand]
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol goal at -265 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -406
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -406]
+[22:23:48] [Server thread/INFO]: Sol goal at -265 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -406
+[22:23:48] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:48] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -406]
+[22:23:48] [Server thread/INFO]: Sol goal at -265 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:48] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:48] [Server thread/INFO]: Sol goal at -265 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -407
+[22:23:48] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:48] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -407]
+[22:23:48] [Server thread/INFO]: Sol goal at -265 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -407
+[22:23:49] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:49] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -407]
+[22:23:49] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -408
+[22:23:49] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -408
+[22:23:49] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -408]
+[22:23:49] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:49] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -408]
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:49] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:49] [Server thread/INFO]: Echo goal at -235 46 12: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 47, 12 by hand (tried elsewhere 3 times)
+[22:23:49] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 48, 13 by hand]
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -409
+[22:23:49] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:49] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -409]
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -409
+[22:23:49] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:49] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -409]
+[22:23:49] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -410
+[22:23:49] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:49] [Server thread/INFO]: Sol goal at -265 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 18, -410
+[22:23:49] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 19, -410]
+[22:23:49] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:50] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -265, 18, -410]
+[22:23:50] [Server thread/INFO]: Sol goal at -265 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:50] [Server thread/INFO]: Sol goal at -265 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -265, 19, -411
+[22:23:50] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:50] [Server thread/INFO]: Sol goal at -265 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -266, 19, -410
+[22:23:50] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:50] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -266, 19, -410]
+[22:23:50] [Server thread/INFO]: Sol goal at -265 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -266, 18, -410
+[22:23:50] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:50] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -266, 18, -410]
+[22:23:50] [Server thread/INFO]: Sol goal at -265 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:50] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:50] [Server thread/INFO]: Sol goal at -266 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -267, 19, -410
+[22:23:50] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:50] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -267, 19, -410]
+[22:23:50] [Server thread/INFO]: Sol goal at -266 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -267, 18, -410
+[22:23:50] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:50] [Server thread/INFO]: Echo goal at -235 46 12: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 48, 12 by hand (tried elsewhere 3 times)
+[22:23:50] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 47, 12 by hand]
+[22:23:50] [Server thread/INFO]: Sol goal at -266 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:50] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -267, 18, -410]
+[22:23:50] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:50] [Server thread/INFO]: Sol goal at -267 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -410
+[22:23:50] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:50] [Server thread/INFO]: Sol goal at -267 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -410
+[22:23:50] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -410]
+[22:23:50] [Server thread/INFO]: Sol goal at -267 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:51] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -410]
+[22:23:51] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -409
+[22:23:51] [Server thread/INFO]: Sol picked up 2 minecraft:cobblestone
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -409
+[22:23:51] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -409]
+[22:23:51] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:51] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -409]
+[22:23:51] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -408
+[22:23:51] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -408
+[22:23:51] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -408]
+[22:23:51] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -408]
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:51] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -407
+[22:23:51] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:51] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:51] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -407]
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -407
+[22:23:51] [Server thread/INFO]: Echo goal at -235 46 12: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 47, 12 by hand (tried elsewhere 3 times)
+[22:23:51] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 48, 12 by hand]
+[22:23:51] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:51] [Server thread/INFO]: Sol goal at -268 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:51] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -407]
+[22:23:52] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -406
+[22:23:52] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:52] [Server thread/INFO]: Sol cannot go on with an iron sword for Kindred for now, its teammate not in its world: it waits a minute
+[22:23:52] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -406]
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -406
+[22:23:52] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:52] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -406]
+[22:23:52] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:52] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -405
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -405
+[22:23:52] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -405]
+[22:23:52] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:52] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -405]
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -404
+[22:23:52] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:52] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:52] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -404]
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -404
+[22:23:52] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:52] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -404]
+[22:23:52] [Server thread/INFO]: Sol goal at -268 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:53] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -403
+[22:23:53] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:53] [Server thread/INFO]: Echo goal at -235 46 12: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 13 by hand (tried elsewhere 3 times)
+[22:23:53] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 47, 12 by hand]
+[22:23:53] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -403]
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -403
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:53] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -403]
+[22:23:53] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -402
+[22:23:53] [Server thread/INFO]: Sol picked up 2 minecraft:andesite
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -402
+[22:23:53] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -402]
+[22:23:53] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:53] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -402]
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -401
+[22:23:53] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:53] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:53] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -401]
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -401
+[22:23:53] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:53] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -401]
+[22:23:53] [Server thread/INFO]: Sol goal at -268 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:54] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -400
+[22:23:54] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -400]
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -400
+[22:23:54] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -400]
+[22:23:54] [Server thread/INFO]: Echo goal at -235 46 12: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:54] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 13 by hand]
+[22:23:54] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -399
+[22:23:54] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:54] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:54] [Server thread/INFO]: Echo goal at -235 46 13: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 47, 13 by hand (tried elsewhere 3 times)
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -399
+[22:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -399]
+[22:23:54] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -399]
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -398
+[22:23:54] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:54] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -398
+[22:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -398]
+[22:23:54] [Server thread/INFO]: Sol picked up 5 minecraft:raw_copper
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -398]
+[22:23:54] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:54] [Server thread/INFO]: Sol goal at -268 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -397
+[22:23:54] [Server thread/INFO]: Sol picked up 4 minecraft:raw_copper
+[22:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -397]
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -397
+[22:23:55] [Server thread/INFO]: Sol picked up 2 minecraft:raw_copper
+[22:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -397]
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -396
+[22:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:55] [Server thread/INFO]: Sol picked up 3 minecraft:raw_copper
+[22:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -396]
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -396
+[22:23:55] [Server thread/INFO]: Echo goal at -235 46 13: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 48, 13 by hand (tried elsewhere 3 times)
+[22:23:55] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 47, 13 by hand]
+[22:23:55] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -396]
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -396: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -395
+[22:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:55] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -395]
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -396: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -395
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -396: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -395]
+[22:23:55] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:55] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -395: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -394
+[22:23:55] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:55] [Server thread/INFO]: Sol goal at -268 18 -395: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -394
+[22:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -394]
+[22:23:56] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:56] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -394]
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -395: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -394: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -393
+[22:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:56] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -394: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -393
+[22:23:56] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -393]
+[22:23:56] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -393]
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -394: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:56] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -393: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -392
+[22:23:56] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:56] [Server thread/INFO]: Echo goal at -235 46 13: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -234, 47, 13 by hand (tried elsewhere 3 times)
+[22:23:56] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 48, 13 by hand]
+[22:23:56] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -392]
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -393: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -392
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -393: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:56] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -392]
+[22:23:56] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:56] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -392: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -391
+[22:23:56] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -392: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -391
+[22:23:56] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -391]
+[22:23:56] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:56] [Server thread/INFO]: Sol goal at -268 18 -392: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:56] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -391]
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -391: Iron: Mine iron ore (3/12) - Back to where it saw iron ore at -418, -55, -279
+[22:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:57] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:57] [Server thread/INFO]: No route from -268, 18, -391 (-267.50, 18.00, -390.68, on the ground true) toward -340, -17, -337 (expanded 101, standing true; the goal standable false, on Block{minecraft:deepslate}[axis=y], at Block{minecraft:deepslate}[axis=y]; its middle in -268, 18, -391 at Block{minecraft:air})
+[22:23:57] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -340, -17, -337 [Back to where it saw iron ore at -418, -55, -279]
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -391: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -390
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -391: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 18, -390
+[22:23:57] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 19, -390]
+[22:23:57] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:57] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -268, 18, -390]
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -391: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -268, 19, -389
+[22:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -269, 19, -390
+[22:23:57] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:57] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -269, 19, -390]
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -269, 18, -390
+[22:23:57] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:57] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -269, 18, -390]
+[22:23:57] [Server thread/INFO]: Sol goal at -268 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:57] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:57] [Server thread/INFO]: Sol goal at -269 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -270, 19, -390
+[22:23:57] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -234, 47, 13 by hand]
+[22:23:57] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:57] [Server thread/INFO]: Echo goal at -235 46 13: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance (tried elsewhere 3 times)
+[22:23:57] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: out from under the water: advance]
+[22:23:57] [Server thread/INFO]: Echo goal at -235 46 14: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 48, 14 by hand (tried elsewhere 3 times)
+[22:23:57] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -270, 19, -390]
+[22:23:57] [Server thread/INFO]: Sol goal at -269 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -270, 18, -390
+[22:23:57] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:57] [Server thread/INFO]: Sol goal at -269 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:57] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -270, 18, -390]
+[22:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:58] [Server thread/INFO]: Sol goal at -270 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -390
+[22:23:58] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:58] [Server thread/INFO]: Sol goal at -270 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -390
+[22:23:58] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -390]
+[22:23:58] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -390]
+[22:23:58] [Server thread/INFO]: Sol goal at -270 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:58] [Server thread/INFO]: Sol goal at -271 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -391
+[22:23:58] [Server thread/INFO]: Sol picked up 2 minecraft:cobblestone
+[22:23:58] [Server thread/INFO]: Sol goal at -271 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -391
+[22:23:58] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -391]
+[22:23:58] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:58] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -391]
+[22:23:58] [Server thread/INFO]: Sol goal at -271 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:58] [Server thread/INFO]: Sol goal at -271 18 -391: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -392
+[22:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:58] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:58] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -392]
+[22:23:58] [Server thread/INFO]: Sol goal at -271 18 -391: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -392
+[22:23:58] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:58] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -392]
+[22:23:58] [Server thread/INFO]: Sol goal at -271 18 -391: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:58] [Server thread/INFO]: Sol goal at -271 18 -392: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -393
+[22:23:58] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:58] [Server thread/INFO]: Echo goal at -235 46 14: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 47, 15 by hand (tried elsewhere 3 times)
+[22:23:58] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 48, 14 by hand]
+[22:23:58] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:59] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -393]
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -392: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -393
+[22:23:59] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -392: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:59] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -393]
+[22:23:59] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -393: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -394
+[22:23:59] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -393: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -394
+[22:23:59] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -394]
+[22:23:59] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -394]
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -393: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:59] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:59] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -394: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -395
+[22:23:59] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -394: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -395
+[22:23:59] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -395]
+[22:23:59] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:23:59] [Server thread/INFO]: Sol goal at -271 18 -394: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:23:59] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -395]
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -395: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -396
+[22:24:00] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:00] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -396]
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -395: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -396
+[22:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:00] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 47, 15 by hand]
+[22:24:00] [Server thread/INFO]: Echo goal at -235 46 14: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 48, 15 by hand (tried elsewhere 3 times)
+[22:24:00] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -396]
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -395: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:00] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -396: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -397
+[22:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:00] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -397]
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -396: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -397
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -396: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:00] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -397]
+[22:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:00] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -398
+[22:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -398
+[22:24:00] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -398]
+[22:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:00] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -398]
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -397: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:00] [Server thread/INFO]: Sol goal at -271 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -399
+[22:24:00] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:01] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -399]
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -399
+[22:24:01] [Server thread/INFO]: Sol cannot go on with an iron sword for Kindred for now, its teammate not in its world: it waits a minute
+[22:24:01] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:01] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -399]
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -398: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:01] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -400
+[22:24:01] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:01] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -400]
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -400
+[22:24:01] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 48, 15 by hand]
+[22:24:01] [Server thread/INFO]: Echo goal at -235 46 14: Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: clear -235, 46, 15 by hand (tried elsewhere 3 times)
+[22:24:01] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -399: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:01] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -400]
+[22:24:01] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -401
+[22:24:01] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -401
+[22:24:01] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -401]
+[22:24:01] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -401]
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -400: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:01] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:01] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:01] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -402
+[22:24:01] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -402]
+[22:24:01] [Server thread/INFO]: Sol goal at -271 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -402
+[22:24:02] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -401: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:02] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -402]
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -403
+[22:24:02] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:02] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:02] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -403]
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -403
+[22:24:02] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -402: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:02] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -403]
+[22:24:02] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -404
+[22:24:02] [Server thread/INFO]: Sol picked up 1 minecraft:andesite
+[22:24:02] [Server thread/INFO]: Echo goal at -235 46 14: Wood: Gather logs for sticks - Climb toward the surface for logs: to the wall (tried elsewhere 3 times)
+[22:24:02] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: out from under the water: clear -235, 46, 15 by hand]
+[22:24:02] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: to the wall]
+[22:24:02] [Server thread/INFO]: Echo goal at -235 46 15: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 47, 16 by hand (tried elsewhere 3 times)
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -404
+[22:24:02] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -404]
+[22:24:02] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -404]
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -403: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:02] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:02] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -405
+[22:24:02] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:02] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -405]
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -405
+[22:24:02] [Server thread/INFO]: Sol goal at -271 18 -404: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:02] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -405]
+[22:24:03] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:03] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -406
+[22:24:03] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -406
+[22:24:03] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -406]
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -405: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:03] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -406]
+[22:24:03] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -407
+[22:24:03] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:03] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:03] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -407]
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -407
+[22:24:03] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:03] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -407]
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -406: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:03] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -408
+[22:24:03] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:03] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 47, 16 by hand]
+[22:24:03] [Server thread/INFO]: Echo goal at -235 46 15: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -235, 48, 16 by hand (tried elsewhere 3 times)
+[22:24:03] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -408]
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -408
+[22:24:03] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:03] [Server thread/INFO]: Sol goal at -271 18 -407: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:03] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -408]
+[22:24:04] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -409
+[22:24:04] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -409
+[22:24:04] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -409]
+[22:24:04] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:04] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -409]
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -408: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -410
+[22:24:04] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:04] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:04] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -410]
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -410
+[22:24:04] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:04] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 18, -410]
+[22:24:04] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:04] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -272, 19, -410
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -272, 18, -410
+[22:24:04] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -272, 19, -410]
+[22:24:04] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:04] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -235, 48, 16 by hand]
+[22:24:04] [Server thread/INFO]: Echo goal at -235 46 15: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 47, 15 by hand (tried elsewhere 3 times)
+[22:24:04] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -272, 18, -410]
+[22:24:04] [Server thread/INFO]: Sol goal at -271 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:04] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:04] [Server thread/INFO]: Sol goal at -272 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -273, 19, -410
+[22:24:04] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:05] [Server thread/INFO]: Sol goal at -272 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -273, 18, -410
+[22:24:05] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -273, 19, -410]
+[22:24:05] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -273, 18, -410]
+[22:24:05] [Server thread/INFO]: Sol goal at -272 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:05] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:05] [Server thread/INFO]: Sol goal at -273 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -274, 19, -410
+[22:24:05] [Server thread/INFO]: Sol picked up 2 minecraft:cobblestone
+[22:24:05] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -274, 19, -410]
+[22:24:05] [Server thread/INFO]: Sol goal at -273 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -274, 18, -410
+[22:24:05] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:05] [Server thread/INFO]: Sol goal at -273 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:05] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -274, 18, -410]
+[22:24:05] [Server thread/INFO]: Sol goal at -274 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -275, 19, -410
+[22:24:05] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:05] [Server thread/INFO]: Sol goal at -274 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -274, 19, -409
+[22:24:05] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:05] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -274, 19, -409]
+[22:24:05] [Server thread/INFO]: Sol goal at -274 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -274, 18, -409
+[22:24:05] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:05] [Server thread/INFO]: Sol goal at -274 18 -410: Iron: Mine iron ore (3/12) - Branch mine for iron: advance
+[22:24:05] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -274, 18, -409]
+[22:24:05] [Server thread/INFO]: Sol native_goto COMPLETED [Branch mine for iron: advance]
+[22:24:05] [Server thread/INFO]: Sol goal at -274 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -274, 19, -408
+[22:24:05] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:05] [Server thread/INFO]: Sol goal at -274 18 -409: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -274, 18, -408
+[22:24:05] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -274, 19, -408]
+[22:24:06] [Server thread/INFO]: Echo goal at -235 46 15: Wood: Gather logs for sticks - Climb toward the surface for logs: clear -236, 48, 15 by hand (tried elsewhere 3 times)
+[22:24:06] [Server thread/INFO]: Echo native_break COMPLETED [Climb toward the surface for logs: clear -236, 47, 15 by hand]
+[22:24:06] [Server thread/INFO]: Sol picked up 1 minecraft:cobblestone
+[22:24:06] [Server thread/INFO]: Sol goal at -274 18 -409: Iron: Mine iron ore (3/12) - Back to where it saw iron ore at -418, -55, -279
+[22:24:06] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -274, 18, -408]
+[22:24:06] [Server thread/INFO]: No route from -271, 18, -390 (-270.50, 18.00, -389.74, on the ground true) toward -341, -16, -349 (expanded 130, standing true; the goal standable false, on Block{minecraft:deepslate}[axis=y], at Block{minecraft:deepslate}[axis=y]; its middle in -271, 18, -390 at Block{minecraft:air})
+[22:24:06] [Server thread/INFO]: Sol native_goto COMPLETED [Back to where it saw iron ore at -418, -55, -279]
+[22:24:06] [Server thread/INFO]: No route from -271, 18, -390 (-270.50, 18.00, -389.52, on the ground true) toward -342, -18, -336 (expanded 130, standing true; the goal standable false, on Block{minecraft:deepslate}[axis=y], at Block{minecraft:deepslate}[axis=y]; its middle in -271, 18, -390 at Block{minecraft:air})
+[22:24:06] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -342, -18, -336 [Back to where it saw iron ore at -418, -55, -279]
+[22:24:06] [Server thread/INFO]: Sol goal at -271 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 19, -389
+[22:24:06] [Server thread/INFO]: Sol native_break COMPLETED [Branch mine for iron: clear -271, 19, -389]
+[22:24:06] [Server thread/INFO]: Sol goal at -271 18 -390: Iron: Mine iron ore (3/12) - Branch mine for iron: clear -271, 18, -389

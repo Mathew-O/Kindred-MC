@@ -1,0 +1,1013 @@
+[00:23:50] [Server thread/INFO]: Sol goal at 65 17 110: Iron: on the way, for what comes later - Walk to cobweb at 58, 16, 97
+[00:23:50] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:23:50] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 311, 52, 174]
+[00:23:50] [Server thread/INFO]: Kindred goal at 311 53 175: Iron: Cast the portal frame from lava and water - Dig down toward lava: step down (tried elsewhere 4 times)
+[00:23:50] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:23:50] [Server thread/INFO]: Kindred goal at 311 53 174: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 311, 54, 173 (tried elsewhere 4 times)
+[00:23:51] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]
+[00:23:51] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[00:23:51] [Server thread/INFO]: Kindred goal at 311 52 174: Iron: inventory full - Drop surplus dirt (tried elsewhere 4 times)
+[00:23:51] [Server thread/INFO]: Kindred goal at 311 52 174: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 311, 53, 173 (tried elsewhere 4 times)
+[00:23:51] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:23:51] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus dirt]
+[00:23:51] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:23:51] [Server thread/INFO]: Kindred goal at 311 52 174: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 311, 52, 173 (tried elsewhere 4 times)
+[00:23:51] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 311, 53, 173]
+[00:23:52] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:23:52] [Server thread/INFO]: Sol goal at 63 14 100: Iron: on the way, for what comes later - Walk to cobweb at 63, 14, 94
+[00:23:52] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 311, 52, 173]
+[00:23:52] [Server thread/INFO]: Kindred goal at 311 52 174: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 311, 51, 173 (tried elsewhere 4 times)
+[00:23:52] [Server thread/INFO]: Sol goal at 63 14 98: Iron: on the way, for what comes later - Mine cobweb at 63, 14, 94
+[00:23:52] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to cobweb at 63, 14, 94]
+[00:23:53] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:23:53] [Server thread/INFO]: Sol goal at 63 14 97: Iron: Pick up string
+[00:23:53] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 311, 51, 173]
+[00:23:53] [Server thread/INFO]: Kindred goal at 311 52 174: Iron: Cast the portal frame from lava and water - Dig down toward lava: step down (tried elsewhere 4 times)
+[00:23:53] [Server thread/INFO]: Kindred goal at 311 52 173: Iron: inventory full - Drop surplus cobblestone (tried elsewhere 4 times)
+[00:23:53] [Server thread/INFO]: Kindred goal at 311 51 173: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 311, 52, 172 (tried elsewhere 4 times)
+[00:23:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]
+[00:23:53] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[00:23:53] [Server thread/INFO]: Sol picked up 1 minecraft:string
+[00:23:54] [Server thread/INFO]: Sol goal at 63 14 96: Iron: on the way, for what comes later - Mine cobweb at 62, 14, 94
+[00:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Mine cobweb at 63, 14, 94]
+[00:23:54] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:23:54] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 311, 52, 172]
+[00:23:54] [Server thread/INFO]: Kindred goal at 311 51 173: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 311, 51, 172 (tried elsewhere 4 times)
+[00:23:54] [Server thread/INFO]: Sol goal at 63 14 96: Iron: Pick up string
+[00:23:54] [Server thread/INFO]: Sol break at 62, 14, 94: its collection ended (a heading it would not follow) after 4 ticks, its own drops uncollected: [62.60, 14.53, 94.09 age 4 delay 6 moving 0.000, 0.000, 0.000]; the body at 63.27, 14.00, 95.88 facing 160; the heading refused: 62, 14, 94 (1.1 ahead): Block{minecraft:air}, Block{minecraft:cobweb} over it, Block{minecraft:oak_planks} under it
+[00:23:54] [Server thread/INFO]: Sol native_break COMPLETED [Mine cobweb at 62, 14, 94]
+[00:23:54] [Server thread/INFO]: No route from 63, 14, 95 (63.20, 14.00, 95.72, on the ground true) toward 62, 14, 94 (expanded 6000, standing true; the goal standable false, on Block{minecraft:oak_planks}, at Block{minecraft:air}; its middle in 63, 14, 95 at Block{minecraft:cave_air})
+[00:23:54] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 62, 14, 94 [Pick up string]
+[00:23:54] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:23:54] [Server thread/INFO]: Sol leaves 1 minecraft:string lying at 62, 14, 94 (62.60, 14.52, 94.09): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at 63.20, 14.00, 95.71
+[00:23:54] [Server thread/INFO]: Sol goal at 63 14 95: Iron: on the way, for what comes later - Mine cobweb at 64, 14, 94
+[00:23:54] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:23:54] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:23:55] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 311, 51, 172]
+[00:23:55] [Server thread/INFO]: Kindred goal at 311 51 173: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:23:55] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:23:55] [Server thread/INFO]: Sol goal at 63 14 95: Iron: Pick up string
+[00:23:55] [Server thread/INFO]: Sol break at 64, 14, 94: its collection ended (a heading it would not follow) after 3 ticks, its own drops uncollected: [64.88, 14.56, 94.60 age 3 delay 7 moving 0.000, 0.073, 0.032]; the body at 63.39, 14.00, 95.57 facing -125; the heading refused: 64, 14, 94 (1.1 ahead): Block{minecraft:air}, Block{minecraft:cobweb} over it, Block{minecraft:stone} under it
+[00:23:55] [Server thread/INFO]: Sol native_break COMPLETED [Mine cobweb at 64, 14, 94]
+[00:23:55] [Server thread/INFO]: Sol picked up 1 minecraft:string
+[00:23:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:23:55] [Server thread/INFO]: Kindred goal at 311 51 172: Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere 4 times)
+[00:23:55] [Server thread/INFO]: Kindred goal at 311 51 172: Iron: inventory full - Drop surplus granite (tried elsewhere 4 times)
+[00:23:55] [Server thread/INFO]: No route from 63, 14, 95 (63.51, 14.00, 95.49, on the ground true) toward 64, 14, 94 (expanded 6000, standing true; the goal standable false, on Block{minecraft:stone}, at Block{minecraft:air}; its middle in 63, 14, 95 at Block{minecraft:cave_air})
+[00:23:55] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 64, 14, 94 [Pick up string]
+[00:23:55] [Server thread/INFO]: Sol leaves 1 minecraft:string lying at 64, 14, 94 (64.88, 14.33, 94.75): in sight true, blocked true, watched false, in water false, settle wait none, within the wait's reach true; the obsidian site none; the player at 63.51, 14.00, 95.48
+[00:23:55] [Server thread/INFO]: Sol goal at 63 14 95: Iron: on the way, for what comes later - Ready crafting table
+[00:23:55] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[00:23:55] [Server thread/INFO]: Sol picked up 1 minecraft:string
+[00:23:55] [Server thread/INFO]: Kindred goal at 311 51 172: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 311, 52, 171 (tried elsewhere 4 times)
+[00:23:55] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:23:55] [Server thread/INFO]: Kindred native_discard BLOCKED: Owned inventory changed before toss dispatch; no transfer issued [Drop surplus granite]
+[00:23:56] [Server thread/INFO]: Sol native_swap BLOCKED: Owned inventory changed before swap dispatch; no transfer issued [Ready crafting table]
+[00:23:56] [Server thread/INFO]: Sol native_swap COMPLETED [Ready crafting table]
+[00:23:56] [Server thread/INFO]: Sol goal at 63 14 95: Iron: on the way, for what comes later - Place a crafting table
+[00:23:56] [Server thread/INFO]: Sol native_place COMPLETED [Place a crafting table]
+[00:23:56] [Server thread/INFO]: Sol goal at 63 14 95: Iron: on the way, for what comes later - Craft bow
+[00:23:56] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 311, 52, 171]
+[00:23:56] [Server thread/INFO]: Kindred goal at 311 51 172: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 311, 51, 171 (tried elsewhere 4 times)
+[00:23:56] [Server thread/INFO]: Sol native_craft COMPLETED [Craft bow]
+[00:23:56] [Server thread/INFO]: Sol goal at 63 14 95: Iron: take workstations along - Pick up the crafting table
+[00:23:57] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:23:57] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 311, 51, 171]
+[00:23:57] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: fight back - Fight piglin
+[00:23:57] [Server thread/INFO]: Kindred goal at 311 51 172: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:23:57] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight piglin]
+[00:23:57] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: waiting for a feasible step
+[00:23:57] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:23:57] [Server thread/INFO]: Kindred goal at 311 51 171: Iron: inventory full - Drop surplus dirt (tried elsewhere 4 times)
+[00:23:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:23:57] [Server thread/INFO]: Kindred goal at 311 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 312, 52, 171 (tried elsewhere 4 times)
+[00:23:57] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[00:23:58] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 312, 52, 171]
+[00:23:58] [Server thread/INFO]: Kindred goal at 311 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 312, 51, 171 (tried elsewhere 4 times)
+[00:23:58] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:23:58] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:23:59] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 312, 51, 171]
+[00:23:59] [Server thread/INFO]: Kindred goal at 311 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:23:59] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 27 ms (2500 positions, partial)
+[00:23:59] [Server thread/INFO]: Kindred goal at 312 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 313, 52, 171 (tried elsewhere 4 times)
+[00:23:59] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:23:59] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[00:23:59] [Server thread/INFO]: Sol goal at 63 14 95: Iron: Pick up crafting table
+[00:24:00] [Server thread/INFO]: Kindred goal at 312 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 313, 51, 171 (tried elsewhere 4 times)
+[00:24:00] [Server thread/INFO]: Sol break at 63, 14, 94: its collection ended (a heading it would not follow) after 6 ticks, its own drops uncollected: [63.39, 14.89, 94.03 age 6 delay 4 moving 0.000, 0.000, 0.000]; the body at 63.54, 14.12, 94.99 facing 173; the heading refused: 63, 14, 93 (1.1 ahead): Block{minecraft:cave_air}, Block{minecraft:cobweb} over it, Block{minecraft:stone} under it
+[00:24:00] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 313, 52, 171]
+[00:24:00] [Server thread/INFO]: Sol native_break COMPLETED [Pick up the crafting table]
+[00:24:00] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:00] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up crafting table]
+[00:24:00] [Server thread/INFO]: Sol picked up 1 minecraft:crafting_table
+[00:24:00] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 28 ms (2500 positions, partial)
+[00:24:00] [Server thread/INFO]: Sol goal at 63 14 94: Iron: inventory full - Drop surplus cobblestone
+[00:24:00] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 27 ms (2500 positions, partial)
+[00:24:00] [Server thread/INFO]: Sol goal at 63 14 94: Iron: inventory full - Drop surplus wheat seeds
+[00:24:00] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:00] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus cobblestone]
+[00:24:00] [Server thread/INFO]: Sol goal at 63 14 94: Iron: Mine iron ore (6/7) - Walk to iron ore at 62, 19, 108
+[00:24:00] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:00] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 313, 51, 171]
+[00:24:00] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:00] [Server thread/INFO]: Kindred goal at 312 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:24:01] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:01] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:24:01] [Server thread/INFO]: Kindred goal at 313 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 52, 171 (tried elsewhere 4 times)
+[00:24:01] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:01] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:01] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 52, 171]
+[00:24:02] [Server thread/INFO]: Kindred goal at 313 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 51, 171 (tried elsewhere 4 times)
+[00:24:02] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:02] [Server thread/INFO]: Kindred goal at 313 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:24:02] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 51, 171]
+[00:24:02] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:02] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:24:02] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere 4 times)
+[00:24:03] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:03] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: inventory full - Drop surplus cobblestone (tried elsewhere 4 times)
+[00:24:03] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:03] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus cobbled deepslate]
+[00:24:03] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: inventory full - Drop surplus granite (tried elsewhere 4 times)
+[00:24:03] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 315, 52, 171 (tried elsewhere 4 times)
+[00:24:03] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:03] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus granite]
+[00:24:03] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:04] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:04] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:04] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 315, 51, 171 (tried elsewhere 4 times)
+[00:24:04] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 315, 52, 171]
+[00:24:04] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:04] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:04] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Seal the shelter at 312, 51, 171: ready a block (tried elsewhere 4 times)
+[00:24:04] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 315, 51, 171]
+[00:24:05] [Server thread/INFO]: Sol goal at 73 15 115: Iron: Mine iron ore (6/7) - Walk to iron ore at 82, 24, 118
+[00:24:05] [Server thread/INFO]: Kindred native_swap COMPLETED [Seal the shelter at 312, 51, 171: ready a block]
+[00:24:05] [Server thread/INFO]: Kindred picked up 1 minecraft:granite
+[00:24:05] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Seal the shelter at 312, 51, 171 (tried elsewhere 4 times)
+[00:24:05] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 32 ms (2500 positions, partial)
+[00:24:05] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:05] [Server thread/INFO]: Kindred native_place BLOCKED: Placement preconditions, claim, or policy no longer valid; no block placed [Seal the shelter at 312, 51, 171]
+[00:24:05] [Server thread/INFO]: Sol goal at 72 15 115: Iron: Mine iron ore (6/7) - Walk to iron ore at 62, 19, 108
+[00:24:05] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Seal the shelter at 312, 52, 171 (tried elsewhere 4 times)
+[00:24:05] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 27 ms (2500 positions, partial)
+[00:24:05] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:05] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:05] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 28 ms (2500 positions, partial)
+[00:24:05] [Server thread/INFO]: Sol goal at 73 15 115: Iron: Mine iron ore (6/7) - Walk to iron ore at 82, 24, 118
+[00:24:05] [Server thread/INFO]: Kindred native_place COMPLETED [Seal the shelter at 312, 52, 171]
+[00:24:05] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:05] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Room for its bed at 316, 51, 171 (tried elsewhere 4 times)
+[00:24:05] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:06] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:06] [Server thread/INFO]: Kindred native_break COMPLETED [Room for its bed at 316, 51, 171]
+[00:24:06] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Room for its bed at 316, 52, 171 (tried elsewhere 4 times)
+[00:24:06] [Server thread/INFO]: Sol goal at 73 15 114: Iron: Mine iron ore (6/7) - Walk to iron ore at 62, 19, 108
+[00:24:07] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Set its bed down in its pocket for the night (tried elsewhere 4 times)
+[00:24:07] [Server thread/INFO]: Kindred native_break COMPLETED [Room for its bed at 316, 52, 171]
+[00:24:07] [Server thread/INFO]: Sol goal at 73 14 115: Iron: Mine iron ore (6/7) - Walk to iron ore at 82, 24, 118
+[00:24:07] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere 4 times)
+[00:24:07] [Server thread/INFO]: Kindred native_bed COMPLETED [Set its bed down in its pocket for the night]
+[00:24:07] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:07] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Sleep in the bed it carries (tried elsewhere 4 times)
+[00:24:07] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:07] [Server thread/INFO]: Sol goal at 72 15 115: Iron: Mine iron ore (6/7) - Walk to iron ore at 62, 19, 108
+[00:24:07] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:07] [Server thread/INFO]: Kindred native_sleep COMPLETED [Sleep in the bed it carries]
+[00:24:07] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:08] [Server thread/INFO]: Kindred native_wait COMPLETED [Asleep in its bed]
+[00:24:09] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:09] [Server thread/INFO]: Kindred native_wait COMPLETED [Asleep in its bed]
+[00:24:09] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 28 ms (2500 positions, partial)
+[00:24:09] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 31 ms (2500 positions, partial)
+[00:24:09] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:09] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: Look for blazes about the fortress - Make a way to the fortress: walk on
+[00:24:10] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Make a way to the fortress: walk on]
+[00:24:10] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Make a way to the fortress: walk on]
+[00:24:10] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Make a way to the fortress: walk on]
+[00:24:10] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: waiting for a feasible step
+[00:24:10] [Server thread/INFO]: Kindred native_wait COMPLETED [Asleep in its bed]
+[00:24:10] [Server thread/INFO]: Sol goal at 65 20 112: Iron: Set its bed down in its pocket for the night
+[00:24:10] [Server thread/INFO]: Sol goal at 65 19 112: Iron: Mine iron ore (6/7) - Walk to iron ore at 62, 19, 108
+[00:24:11] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:11] [Server thread/INFO]: Kindred native_wait COMPLETED [Asleep in its bed]
+[00:24:11] [Server thread/INFO]: Sol goal at 64 20 110: Iron: Set its bed down in its pocket for the night
+[00:24:11] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to iron ore at 62, 19, 108]
+[00:24:11] [Server thread/INFO]: Sol goal at 64 19 110: Iron: Mine iron ore (6/7) - Mine iron ore at 62, 19, 108
+[00:24:11] [Server thread/INFO]: Sol native_bed COMPLETED [Set its bed down in its pocket for the night]
+[00:24:11] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 52, 172 (tried elsewhere 4 times)
+[00:24:11] [Server thread/INFO]: Sol goal at 64 18 110: Iron: Mine iron ore (6/7) - Clear the way to iron ore at 62, 19, 108
+[00:24:11] [Server thread/INFO]: Sol native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Mine iron ore at 62, 19, 108]
+[00:24:12] [Server thread/INFO]: Kindred native_wait COMPLETED [Asleep in its bed]
+[00:24:12] [Server thread/INFO]: Sol goal at 64 18 110: Iron: Mine iron ore (6/7) - Mine iron ore at 62, 19, 108
+[00:24:12] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:12] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 51, 172 (tried elsewhere 4 times)
+[00:24:12] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 52, 172]
+[00:24:12] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:12] [Server thread/INFO]: Sol picked up 1 minecraft:diorite
+[00:24:13] [Server thread/INFO]: Sol native_break COMPLETED [Clear the way to iron ore at 62, 19, 108]
+[00:24:13] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:13] [Server thread/INFO]: Kindred goal at 314 51 171: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:24:13] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 51, 172]
+[00:24:13] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:24:13] [Server thread/INFO]: Kindred goal at 314 51 172: Iron: inventory full - Drop surplus dirt (tried elsewhere 4 times)
+[00:24:13] [Server thread/INFO]: Kindred goal at 314 51 172: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 52, 173 (tried elsewhere 4 times)
+[00:24:13] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:13] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus dirt]
+[00:24:14] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:14] [Server thread/INFO]: Sol goal at 63 19 110: Iron: Pick up raw iron
+[00:24:14] [Server thread/INFO]: Sol picked up 1 minecraft:raw_iron
+[00:24:14] [Server thread/INFO]: Kindred goal at 314 51 172: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 51, 173 (tried elsewhere 4 times)
+[00:24:14] [Server thread/INFO]: Sol native_break COMPLETED [Mine iron ore at 62, 19, 108]
+[00:24:14] [Server thread/INFO]: Sol goal at 63 19 109: Iron: Find fuel to smelt iron - Walk to the foot of the trunk under the logs for fuel at 66, 11, 102
+[00:24:14] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 52, 173]
+[00:24:15] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:15] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 51, 173]
+[00:24:15] [Server thread/INFO]: Kindred goal at 314 51 172: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 50, 173 (tried elsewhere 4 times)
+[00:24:15] [Server thread/INFO]: Kindred picked up 4 minecraft:dirt
+[00:24:15] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:16] [Server thread/INFO]: Kindred goal at 314 51 172: Iron: Cast the portal frame from lava and water - Dig down toward lava: step down (tried elsewhere 4 times)
+[00:24:16] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 50, 173]
+[00:24:16] [Server thread/INFO]: Kindred goal at 314 50 173: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 51, 174 (tried elsewhere 4 times)
+[00:24:16] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]
+[00:24:16] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:16] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:17] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 51, 174]
+[00:24:17] [Server thread/INFO]: Kindred goal at 314 50 173: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 50, 174 (tried elsewhere 4 times)
+[00:24:17] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:17] [Server thread/INFO]: Kindred goal at 314 50 173: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:24:17] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 50, 174]
+[00:24:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:24:18] [Server thread/INFO]: Kindred goal at 314 50 174: Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere 4 times)
+[00:24:18] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:18] [Server thread/INFO]: Kindred goal at 314 50 174: Iron: inventory full - Drop surplus cobblestone (tried elsewhere 4 times)
+[00:24:18] [Server thread/INFO]: Sol goal at 70 9 105: Iron: Find fuel to smelt iron - Walk to logs for fuel at 66, 9, 102
+[00:24:18] [Server thread/INFO]: Kindred native_discard BLOCKED: Owned inventory changed before toss dispatch; no transfer issued [Drop surplus cobbled deepslate]
+[00:24:18] [Server thread/INFO]: Kindred goal at 314 50 174: Iron: inventory full - Drop surplus granite (tried elsewhere 4 times)
+[00:24:18] [Server thread/INFO]: Kindred goal at 314 50 174: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 51, 175 (tried elsewhere 4 times)
+[00:24:18] [Server thread/INFO]: Sol goal at 70 7 105: Iron: Find fuel to smelt iron - Walk to logs for fuel at 66, 7, 102
+[00:24:18] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus granite]
+[00:24:18] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:18] [Server thread/INFO]: Sol goal at 70 8 105: Iron: Find fuel to smelt iron - Walk to logs for fuel at 66, 8, 102
+[00:24:18] [Server thread/INFO]: Sol goal at 69 7 104: Iron: Find fuel to smelt iron - Mine logs for fuel at 66, 7, 102
+[00:24:19] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to the foot of the trunk under the logs for fuel at 66, 11, 102]
+[00:24:19] [Server thread/INFO]: Kindred goal at 314 50 174: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: clear 314, 50, 175 (tried elsewhere 4 times)
+[00:24:19] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 51, 175]
+[00:24:19] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:19] [Server thread/INFO]: Kindred native_break COMPLETED [Tunnel past liquid toward lava: clear 314, 50, 175]
+[00:24:19] [Server thread/INFO]: Kindred goal at 314 50 174: Iron: Cast the portal frame from lava and water - Tunnel past liquid toward lava: advance (tried elsewhere 4 times)
+[00:24:20] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:20] [Server thread/INFO]: Kindred goal at 314 50 175: Iron: inventory full - Drop surplus dirt (tried elsewhere 4 times)
+[00:24:20] [Server thread/INFO]: Kindred native_goto COMPLETED [Tunnel past liquid toward lava: advance]
+[00:24:20] [Server thread/INFO]: Kindred goal at 314 50 175: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 51, 176 (tried elsewhere 4 times)
+[00:24:20] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:20] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 51, 176]
+[00:24:21] [Server thread/INFO]: Kindred goal at 314 50 175: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 50, 176 (tried elsewhere 4 times)
+[00:24:21] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:21] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:21] [Server thread/INFO]: Kindred goal at 314 50 175: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 49, 176 (tried elsewhere 4 times)
+[00:24:21] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 50, 176]
+[00:24:21] [Server thread/INFO]: Sol goal at 67 7 103: Iron: Find fuel to smelt iron - Mine logs for fuel at 66, 8, 102
+[00:24:22] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:22] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus cobblestone
+[00:24:22] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: fight back - Fight piglin
+[00:24:22] [Server thread/INFO]: Echo native_discard CANCELLED: A hostile mob is attacking; fight back first [Drop surplus cobblestone]
+[00:24:22] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight piglin]
+[00:24:22] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus cobbled deepslate
+[00:24:22] [Server thread/INFO]: Kindred goal at 314 50 175: Iron: Cast the portal frame from lava and water - Dig down toward lava: step down (tried elsewhere 4 times)
+[00:24:22] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 49, 176]
+[00:24:22] [Server thread/INFO]: Echo native_discard CANCELLED: Hazard/threat detected: urgent retreat required [Drop surplus cobbled deepslate]
+[00:24:22] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus dirt
+[00:24:22] [Server thread/INFO]: Echo native_discard CANCELLED: Hazard/threat detected: urgent retreat required [Drop surplus dirt]
+[00:24:22] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus gravel
+[00:24:22] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: waiting for a feasible step
+[00:24:22] [Server thread/INFO]: Kindred goal at 314 50 176: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 51, 177 (tried elsewhere 4 times)
+[00:24:22] [Server thread/INFO]: Sol goal at 67 8 103: Iron: fight back - Fight spider
+[00:24:22] [Server thread/INFO]: Sol break at 66, 7, 102: its collection ended (authority ended) after 23 ticks, its own drops uncollected: [67.24, 7.00, 102.88 age 24 delay 0 moving 0.001, -0.080, 0.000]; the body at 67.03, 8.00, 103.30 facing 166
+[00:24:22] [Server thread/INFO]: Sol native_break CANCELLED: A hostile mob is attacking; fight back first [Mine logs for fuel at 66, 7, 102]
+[00:24:22] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Dig down toward lava: step down]
+[00:24:22] [Server thread/INFO]: Kindred goal at 314 49 176: Iron: fight back - Fight zombie (tried elsewhere 4 times)
+[00:24:22] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:23] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:24] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 21 ms (2500 positions, partial)
+[00:24:24] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:25] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:25] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:25] [Server thread/INFO]: Sol picked up 1 minecraft:oak_log
+[00:24:26] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:26] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:26] [Server thread/INFO]: Sol fight: 3 hits, 2 critical - The target was defeated or is gone
+[00:24:26] [Server thread/INFO]: Sol native_fight COMPLETED [Fight spider]
+[00:24:26] [Server thread/INFO]: Sol goal at 67 6 101: Iron: Find fuel to smelt iron - Mine logs for fuel at 66, 8, 102
+[00:24:27] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:27] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:27] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 27 ms (2500 positions, partial)
+[00:24:27] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:27] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:27] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:28] [Server thread/INFO]: Sol goal at 67 6 101: Iron: Find fuel to smelt iron - Mine logs for fuel at 66, 9, 102
+[00:24:29] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:29] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:29] [Server thread/INFO]: Sol picked up 1 minecraft:oak_log
+[00:24:29] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:29] [Server thread/INFO]: Sol native_break COMPLETED [Mine logs for fuel at 66, 8, 102]
+[00:24:29] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:30] [Server thread/INFO]: Kindred goal at 314 48 176: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 49, 177 (tried elsewhere 4 times)
+[00:24:30] [Server thread/INFO]: Kindred native_fight BLOCKED: Lost sight of the target [Fight zombie]
+[00:24:30] [Server thread/INFO]: Kindred goal at 314 49 176: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 50, 177 (tried elsewhere 4 times)
+[00:24:30] [Server thread/INFO]: Kindred goal at 314 48 176: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 49, 177 (tried elsewhere 4 times)
+[00:24:30] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:30] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 50, 177]
+[00:24:31] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 49, 177]
+[00:24:31] [Server thread/INFO]: Kindred goal at 314 48 176: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 47, 177 (tried elsewhere 4 times)
+[00:24:31] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:31] [Server thread/INFO]: Sol goal at 67 7 102: Iron: Find fuel to smelt iron - Mine logs for fuel at 66, 10, 102
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Kindred goal at 314 48 176: Iron: Cast the portal frame from lava and water - Dig down toward lava: step down (tried elsewhere 4 times)
+[00:24:32] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 47, 177]
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:32] [Server thread/INFO]: Sol picked up 1 minecraft:oak_log
+[00:24:32] [Server thread/INFO]: Sol native_break COMPLETED [Mine logs for fuel at 66, 9, 102]
+[00:24:32] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Craft planks to smelt with - Craft oak planks
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Kindred native_goto COMPLETED [Dig down toward lava: step down]
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 21 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Sol goal at 66 7 102: Iron: inventory full - Drop surplus cobblestone
+[00:24:32] [Server thread/INFO]: Kindred goal at 314 47 177: Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere 4 times)
+[00:24:32] [Server thread/INFO]: Sol native_craft COMPLETED [Craft oak planks]
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Sol goal at 66 7 102: Iron: inventory full - Drop surplus diorite
+[00:24:32] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:32] [Server thread/INFO]: Sol goal at 66 7 102: Iron: inventory full - Drop surplus wheat seeds
+[00:24:32] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Craft planks to smelt with - Craft oak planks
+[00:24:32] [Server thread/INFO]: Kindred native_discard COMPLETED [Drop surplus cobbled deepslate]
+[00:24:32] [Server thread/INFO]: Kindred goal at 314 47 177: Iron: Cast the portal frame from lava and water - Dig down toward lava: clear 314, 48, 178 (tried elsewhere 4 times)
+[00:24:32] [Server thread/INFO]: Sol native_discard COMPLETED [Drop surplus diorite]
+[00:24:33] [Server thread/INFO]: Sol native_craft COMPLETED [Craft oak planks]
+[00:24:33] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Smelt raw iron - Ready furnace
+[00:24:33] [Server thread/INFO]: Sol native_swap COMPLETED [Ready furnace]
+[00:24:33] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Smelt raw iron - Place a furnace
+[00:24:33] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:33] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 21 ms (2500 positions, partial)
+[00:24:33] [Server thread/INFO]: Kindred native_break COMPLETED [Dig down toward lava: clear 314, 48, 178]
+[00:24:33] [Server thread/INFO]: Kindred goal at 314 47 177: Iron: fight back - Fight creeper (tried elsewhere 4 times)
+[00:24:33] [Server thread/INFO]: Sol native_place COMPLETED [Place a furnace]
+[00:24:33] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Smelt raw iron - Load raw iron and fuel (oak planks)
+[00:24:33] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[00:24:33] [Server thread/INFO]: Sol native_smelt COMPLETED [Load raw iron and fuel (oak planks)]
+[00:24:34] [Server thread/INFO]: Kindred picked up 1 minecraft:cobblestone
+[00:24:34] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:34] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:34] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 27 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:35] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]
+[00:24:36] [Server thread/INFO]: Kindred goal at 312 47 177: Iron: fight back - Fight zombie (tried elsewhere 4 times)
+[00:24:36] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:36] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:36] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 21 ms (2500 positions, partial)
+[00:24:36] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:37] [Server thread/INFO]: Kindred goal at 308 43 179: Iron: fight back - Fight spider (tried elsewhere 4 times)
+[00:24:38] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:38] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:38] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:38] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:38] [Server thread/INFO]: Kindred goal at 307 41 178: Iron: fight back - Fight skeleton (tried elsewhere 4 times)
+[00:24:38] [Server thread/INFO]: Kindred has made the advancement [Monster Hunter]
+[00:24:38] [Server thread/INFO]: Kindred fight: 2 hits, 0 critical - The target was defeated or is gone
+[00:24:38] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]
+[00:24:39] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:39] [Server thread/INFO]: Kindred goal at 307 41 178: Iron: fight back - Fight spider (tried elsewhere 4 times)
+[00:24:39] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:40] [Server thread/INFO]: Kindred goal at 307 42 178: Iron: fight back - Fight zombie (tried elsewhere 4 times)
+[00:24:40] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 33 ms (2500 positions, partial)
+[00:24:40] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 28 ms (2500 positions, partial)
+[00:24:40] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 27 ms (2500 positions, partial)
+[00:24:40] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 28 ms (2500 positions, partial)
+[00:24:40] [Server thread/INFO]: Kindred goal at 306 41 179: Iron: fight back - Back off from skeleton the way it came (tried elsewhere 4 times)
+[00:24:41] [Server thread/INFO]: Kindred goal at 306 41 179: Iron: fight back - Back off from skeleton (tried elsewhere 4 times)
+[00:24:41] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:41] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:42] [Server thread/INFO]: Kindred goal at 304 40 179: Iron: fight back - Back off from spider (tried elsewhere 4 times)
+[00:24:42] [Server thread/INFO]: Kindred fight: 4 hits, 1 critical - The target was defeated or is gone
+[00:24:42] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight skeleton]
+[00:24:42] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Collect smelted items from the furnace - Take smelted iron
+[00:24:42] [Server thread/INFO]: Kindred goal at 302 40 180: Iron: fight back - Back off from spider the way it came (tried elsewhere 4 times)
+[00:24:42] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:42] [Server thread/INFO]: Kindred goal at 300 39 181: Iron: fight back - Back off from spider (tried elsewhere 4 times)
+[00:24:42] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]
+[00:24:44] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:44] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[00:24:44] [Server thread/INFO]: Sol found minecraft:iron_ingot: holds 1, 1 unpromised; 0 teammates by; share-out []
+[00:24:44] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[00:24:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]
+[00:24:45] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:45] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:46] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: fight back - Fight piglin
+[00:24:46] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight piglin]
+[00:24:46] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: waiting for a feasible step
+[00:24:46] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:47] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 32 ms (2500 positions, partial)
+[00:24:47] [Server thread/INFO]: Kindred goal at 280 40 185: Iron: outmatched - Hole up: recover behind the wall (tried elsewhere 4 times)
+[00:24:47] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]
+[00:24:48] [Server thread/INFO]: Kindred goal at 280 40 186: Iron: fight back - Back off from spider (tried elsewhere 4 times)
+[00:24:48] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:49] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:50] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Collect smelted items from the furnace - Take smelted iron
+[00:24:50] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:50] [Server thread/INFO]: Kindred death replay captured in 2.5 ms on the server thread (2.5 ms of its time)
+[00:24:50] [Server thread/INFO]: Kindred native_wait CANCELLED: The player died [Hole up: recover behind the wall]
+[00:24:50] [Server thread/INFO]: Kindred died at 281, 40, 188: Kindred was slain by Spider (tick 194201, day, under cover, hunger 16, armour 6, holding stone_sword, a shield; doing "Hole up: recover behind the wall" in "Iron: fight back - Back off from spider (tried elsewhere 4 times)"; stance PRESS_ON, focus NONE, habits [])
+[00:24:50] [Server thread/INFO]: Kindred was slain by Spider
+[00:24:50] [kindred-replays/INFO]: Kindred death replay written to kindred/replays/world/Kindred-194201 (567 KB)
+[00:24:50] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:50] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:50] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:50] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 21 ms (2500 positions, partial)
+[00:24:51] [Server thread/INFO]: Kindred goal at 281 40 188: Wood: hurt and out of food - Climb toward the surface for food: to the wall
+[00:24:51] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 28 ms (2500 positions, partial)
+[00:24:51] [Server thread/INFO]: Kindred respawned at 314, 51, 172
+[00:24:51] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:51] [Server thread/INFO]: Kindred goal at 314 51 172: Wood: Take its bed back up in the morning
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred picked up 1 minecraft:granite
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:51] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[00:24:51] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Sol found minecraft:iron_ingot: holds 2, 2 unpromised; 0 teammates by; share-out []
+[00:24:52] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:52] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 26 ms (2500 positions, partial)
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:53] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 25 ms (2500 positions, partial)
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:54] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:55] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 36 ms (2500 positions, partial)
+[00:24:56] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 20 ms (2500 positions, partial)
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:56] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:57] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: Look for blazes about the fortress - Make a way to the fortress: walk on
+[00:24:58] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Collect smelted items from the furnace - Take smelted iron
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Make a way to the fortress: walk on]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Make a way to the fortress: walk on]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Echo native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Make a way to the fortress: walk on]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: waiting for a feasible step
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:58] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 29 ms (2500 positions, partial)
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Sol found minecraft:iron_ingot: holds 3, 3 unpromised; 0 teammates by; share-out []
+[00:24:59] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:24:59] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 21 ms (2500 positions, partial)
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:00] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:01] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:02] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 21 ms (2500 positions, partial)
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:03] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 29 ms (2500 positions, partial)
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 27 ms (2500 positions, partial)
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:04] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Collect smelted items from the furnace - Take smelted iron
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:05] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Sol found minecraft:iron_ingot: holds 4, 4 unpromised; 0 teammates by; share-out []
+[00:25:06] [Server thread/INFO]: Sol goal at 66 7 102: Iron: Wait for the furnace to smelt iron - Wait by the furnace
+[00:25:06] [Server thread/INFO]: Sol native_smelt COMPLETED [Take smelted iron]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:06] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 51 ms (2500 positions, partial)
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:07] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 23 ms (2500 positions, partial)
+[00:25:07] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 22 ms (2500 positions, partial)
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:08] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Sol native_wait COMPLETED [Wait by the furnace]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 24 ms (2500 positions, partial)
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus cobblestone
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: waiting for a feasible step
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo native_discard CANCELLED: Hazard/threat detected: urgent retreat required [Drop surplus cobblestone]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus cobbled deepslate
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo native_discard CANCELLED: Hazard/threat detected: urgent retreat required [Drop surplus cobbled deepslate]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: fight back - Fight piglin
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo native_fight CANCELLED: Hazard/threat detected: urgent retreat required [Fight piglin]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus dirt
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo native_discard CANCELLED: Hazard/threat detected: urgent retreat required [Drop surplus dirt]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: inventory full - Drop surplus gravel
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo native_discard CANCELLED: Hazard/threat detected: urgent retreat required [Drop surplus gravel]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: fight back - Take cover from piglin
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo native_place CANCELLED: Hazard/threat detected: urgent retreat required [Take cover from piglin]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Echo goal at 40 32 -22: End: Blaze rods: waiting for a feasible step
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:09] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Echo planned a way toward 26, 29, -92 in 32 ms (2500 positions, partial)
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
+[00:25:10] [Server thread/INFO]: Kindred native_break refused: Break target is out of reach or not visible: out of sight from 314, 51, 172: the line to its middle meets Block{minecraft:stone} at 315, 52, 172 [Take its bed back up in the morning]
