@@ -578,7 +578,8 @@ final class PlayerRuntime {
         webs = new KnowledgeWebs(server::getTicks);
         // M-06e's notices in today's words after the channel's prefix (their line is the "what" fact).
         var wording = new dev.kindred.core.wire.Wording().with(dev.kindred.core.factions.Capture.VULNERABLE, "{what}")
-                .with(dev.kindred.core.factions.Capture.SECURE, "{what}").with(FactionsService.CAPTURED, "{what}");
+                .with(dev.kindred.core.factions.Capture.SECURE, "{what}").with(FactionsService.CAPTURED, "{what}")
+                .with(MEMBER_DIED, "{who} died: {cause}");
         wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), wording, new WireMemberships(), webs,
                 (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
                     var said = Text.literal(words);
@@ -18029,13 +18030,37 @@ final class PlayerRuntime {
         data.put("cause", source == null ? "unknown" : source.getName());
         data.put("killer", killer == null ? "" : killer.toString());
         BlockPos at = player.getBlockPos();
-        record(dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), player.getServerWorld().getRegistryKey().getValue().toString(),
-                dev.kindred.core.record.DeathLedger.DEATH, player.getUuid(), player.getGameProfile().getName(), at.getX() + "," + at.getY() + "," + at.getZ(), data));
+        var death = dev.kindred.core.record.WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), player.getServerWorld().getRegistryKey().getValue().toString(),
+                dev.kindred.core.record.DeathLedger.DEATH, player.getUuid(), player.getGameProfile().getName(), at.getX() + "," + at.getY() + "," + at.getZ(), data);
+        // A faction member's death told to its faction once the Record holds it, citing it (F-34c1); anyone else's only written.
+        var faction = factionsWorld() ? projected().factions().of(player.getUuid()).orElse(null) : null;
+        if (faction == null) {
+            record(death);
+        } else {
+            String who = entryForPlayer(player.getUuid()) != null ? player.getGameProfile().getName() : null;
+            String cause = data.get("cause");
+            recordAndTell(List.of(death), eventIds -> memberDiedMessage(faction.id(), who, cause, eventIds), null);
+        }
         // In a faction world, the power it costs when it qualifies (M-06c), the same for people and AI players.
         if (factionsWorld()) {
             String why = factions.died(player, killer);
             KindredMod.LOGGER.info("{} died in a faction world: {}", player.getGameProfile().getName(), why);
         }
+    }
+
+    /** A faction member's death, told to its faction (F-34c1). */
+    static final String MEMBER_DIED = "faction.member_died";
+
+    /**
+     * A member's death as the server's message to its faction alone, resting on the death's event: who (an AI player by
+     * its name; a person only as "A member", for no person is named without their consent) and the cause as the game
+     * gives it. Never the killer, nor where it fell.
+     */
+    static dev.kindred.core.wire.Message memberDiedMessage(UUID faction, String aiName, String cause, List<Long> eventIds) {
+        var facts = new java.util.LinkedHashMap<String, dev.kindred.core.wire.Fact>();
+        facts.put("who", dev.kindred.core.wire.Fact.of(aiName == null ? "A member" : aiName, dev.kindred.core.wire.Visibility.FACTION));
+        facts.put("cause", dev.kindred.core.wire.Fact.of(cause == null || cause.isBlank() ? "unknown" : cause, dev.kindred.core.wire.Visibility.FACTION));
+        return dev.kindred.core.wire.Message.of(MEMBER_DIED, null, dev.kindred.core.wire.Scope.faction(faction.toString()), facts, eventIds);
     }
 
     /** Once a game day, at night: the ledgers checked against the Record (F-31). */
@@ -18651,6 +18676,13 @@ final class PlayerRuntime {
         factionsForTest = true;
         factions.settings(settings);
         TerritoryGuard.activate(factions);
+    }
+
+    /** The reverse of {@link #factionsWorldForTest}: a fixture on the server's own runtime leaves it as it found it. */
+    void factionsWorldOffForTest() {
+        requireThread();
+        factionsForTest = false;
+        TerritoryGuard.deactivate(factions);
     }
 
     /** The faction world's once-a-second step, for a fixture whose runtime has no AI body to tick it. */
