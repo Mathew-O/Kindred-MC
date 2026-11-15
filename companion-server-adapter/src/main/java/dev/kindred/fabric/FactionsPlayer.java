@@ -131,6 +131,13 @@ final class FactionsPlayer {
     final java.util.ArrayDeque<Long> decidedForTest = new java.util.ArrayDeque<>();
     void endedForTest(String target, long tick) { endedForTest.addLast(Map.entry(target, tick)); if (endedForTest.size() > 64) endedForTest.removeFirst(); }
     void decidedForTest(long tick) { decidedForTest.addLast(tick); if (decidedForTest.size() > 64) decidedForTest.removeFirst(); }
+    /**
+     * For the fixtures (F-22c83): the tick of each faction walk that completed (got where it went, its move settled or
+     * not), and of each place set aside as open water it saw; the last 64 of each.
+     */
+    final java.util.ArrayDeque<Long> completedForTest = new java.util.ArrayDeque<>();
+    final java.util.ArrayDeque<Long> overWaterForTest = new java.util.ArrayDeque<>();
+    void completedForTest(long tick) { completedForTest.addLast(tick); if (completedForTest.size() > 64) completedForTest.removeFirst(); }
 
     /** A walk toward {@code target} got somewhere: its refusals and ways forgotten, and the run of refusals with them. */
     void walked(String target) {
@@ -176,6 +183,8 @@ final class FactionsPlayer {
         int times = Math.max(SET_ASIDE, before == null ? 0 : before.times() + 1);
         refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
         overWater++;
+        overWaterForTest.addLast(tick);
+        if (overWaterForTest.size() > 64) overWaterForTest.removeFirst();
         if (streakFrom == null && at != null) {
             streakFrom = at.toImmutable();
             streakAtSurface = atSurface;
