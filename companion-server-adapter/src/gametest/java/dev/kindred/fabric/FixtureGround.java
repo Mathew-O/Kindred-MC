@@ -38,7 +38,26 @@ final class FixtureGround {
     /** Every box each test keeps, in the order kept: a test that keeps two (a pad and a floor) gets both back. */
     private static final Map<TestContext, java.util.List<Kept>> KEPT = Collections.synchronizedMap(new IdentityHashMap<>());
 
+    /**
+     * The chunks of a kept box held loaded, but not ticked, until it is put back (F-22c75b): a fixture that let go of
+     * the chunks it forced as it ended had its chunks unloaded before its ground was put back, and the drops left on it
+     * went unseen, then came back as a later test nearby loaded them (a raw chicken by the arena of the crash test,
+     * "Nothing dropped"). At this level a chunk's entities are loaded, so the restore finds them, and none of them tick.
+     */
+    private static final net.minecraft.server.world.ChunkTicketType<net.minecraft.util.math.ChunkPos> HELD =
+            net.minecraft.server.world.ChunkTicketType.create("kindred_fixture_ground", java.util.Comparator.comparingLong(net.minecraft.util.math.ChunkPos::toLong));
+
     private FixtureGround() { }
+
+    private static void held(net.minecraft.server.world.ServerWorld world, BlockPos min, BlockPos max, boolean held) {
+        for (int cx = min.getX() >> 4; cx <= max.getX() >> 4; cx++) {
+            for (int cz = min.getZ() >> 4; cz <= max.getZ() >> 4; cz++) {
+                var chunk = new net.minecraft.util.math.ChunkPos(cx, cz);
+                if (held) world.getChunkManager().addTicket(HELD, chunk, 0, chunk);
+                else world.getChunkManager().removeTicket(HELD, chunk, 0, chunk);
+            }
+        }
+    }
 
     /**
      * The chunks from {@code min} to {@code max} kept simulated while the test runs. The test server sets no simulation
@@ -68,6 +87,7 @@ final class FixtureGround {
         // A second box kept by the same test once replaced the first, which was then never put back (F-22c75b).
         var boxes = KEPT.computeIfAbsent(context, c -> Collections.synchronizedList(new java.util.ArrayList<>()));
         boxes.add(new Kept(min.toImmutable(), max.toImmutable(), states));
+        held(world, min, max, true);
         FixtureBounds.kept(stateOf(context), min, max);
         if (boxes.size() == 1) whenDone(context, () -> restore(context));
     }
@@ -130,6 +150,7 @@ final class FixtureGround {
                 if (within(others, entity.getX(), entity.getY(), entity.getZ())) spared++;
                 else entity.discard();
             }
+            held(world, min, max, false);
         }
         if (left > 0 || spared > 0) {
             KindredMod.LOGGER.info("{}: its ground put back but {} blocks and {} entities within another test's plot left as they are",

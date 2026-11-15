@@ -1634,6 +1634,9 @@ final class PortalRunCampaign {
 
     java.util.List<String> completedForTest() { return java.util.List.copyOf(completedForTest); }
 
+    /** The pickup's next step for a fixture (F-22c74): what {@code pickUpLoose} would do now. */
+    Optional<Task> pickUpLooseForTest(NativePlayerBody body) { return pickUpLoose(body); }
+
     boolean relocatingForTest() { return relocate != null; }
 
     /** Where its next explore walk would go from where it stands (F-35m's fixtures), its heading kept as it turns. */
@@ -2687,7 +2690,7 @@ final class PortalRunCampaign {
         }
         // On an island the saplings its tree's leaves drop are picked up at night too: a night outlasts a drop.
         if (night && !groundBelow(player)) {
-            Optional<Task> loose = pickUpLoose(player);
+            Optional<Task> loose = pickUpLoose(body);
             if (loose.isPresent()) {
                 progress = stageLabel(stage) + ": " + loose.get().label();
                 return loose;
@@ -2719,7 +2722,7 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": pick up what was dropped at death - " + recover.get().label();
             return recover;
         }
-        Optional<Task> loose = pickUpLoose(player);
+        Optional<Task> loose = pickUpLoose(body);
         if (loose.isPresent()) {
             progress = stageLabel(stage) + ": " + loose.get().label();
             return loose;
@@ -2824,7 +2827,8 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         BlockPos above = null;
-        for (int dy = 1; dy <= 16; dy++) {
+        // As far up as one breath swims (F-25c4dg: out of a shaft under the sea, the air was 17 over its feet).
+        for (int dy = 1; dy <= SWIM_UP; dy++) {
             BlockPos cell = feet.up(dy);
             var state = world.getBlockState(cell);
             if (state.getFluidState().isIn(net.minecraft.registry.tag.FluidTags.WATER)) continue;
@@ -3390,7 +3394,12 @@ final class PortalRunCampaign {
 
     /** Set down a crafting table it carries. */
     Optional<Task> placeTable(NativePlayerBody body) {
-        return placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
+        return placeTable(body, spot -> false);
+    }
+
+    /** As {@link #placeTable(NativePlayerBody)}, never at a spot {@code keepOff} names (its own wheat plot, M-01a1). */
+    Optional<Task> placeTable(NativePlayerBody body, Predicate<BlockPos> keepOff) {
+        return placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table", keepOff);
     }
 
     private Optional<BlockPos> nearestWorkstation(ServerPlayerEntity player, net.minecraft.block.Block block, int radius) {
@@ -4857,13 +4866,18 @@ final class PortalRunCampaign {
         // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
         // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
         // along under the pool by hand and never opened its seal (that fixture, 3 of 3 on `d585600`).
-        if (!pickaxe && underWater) return openShelter(body, label).or(() -> climb(body, label)).or(() -> retrace(body, label));
+        // With none of those, out through the roof and up through the sea, as below (F-25c4dg): the climb had just been out from
+        // under the water when it pillared into its shaft, and this way was the one it was on.
+        if (!pickaxe && underWater) return openShelter(body, label).or(() -> climb(body, label)).or(() -> retrace(body, label)).or(() -> swimOut(body, label));
         // With no pickaxe: a pillar if boxed in, then the way it came, then a stair by hand, stranded or not. The walks
         // that stranded it may have gone toward places it could not reach, not out of where it stands: the top of a
         // fixture's wall read as a cave floor, three walks there were refused, and stranded by them it punched a stair up
         // by hand beside the staircase it had walked down (PR #35's build on CI; F-25c4ce). A walk back that is refused
         // is not asked for again from there for half a minute (F-25c4at), so a player shut in still comes to its stair.
-        if (!pickaxe) return pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
+        // And with none of those, shut in under a roof with the sea over it: the roof opened by hand and the swim up, as a
+        // player gets out. In E-40's iteration 22 on 101 Kindred, with no pickaxe, pillared up a shaft under a sunken ship's
+        // plank with the sea over it, every way up led into water and nothing was offered for the rest of the run (F-25c4dg).
+        if (!pickaxe) return pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label)).or(() -> swimOut(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
         // Under water, out from under it first: the way it came went under the same water (F-25c4ah).
         if (underWater) return climb(body, label).or(() -> retrace(body, label));
@@ -4873,6 +4887,41 @@ final class PortalRunCampaign {
         boolean walkBack = stepsBackToDaylight(player.getServerWorld()) <= 3 * depth;
         return walkBack ? retrace(body, label).or(() -> climb(body, label)) : climb(body, label).or(() -> retrace(body, label));
     }
+
+    /**
+     * Sealed in a dry shaft with the sea over its roof and no other way up: the block over its head opened by hand, so that
+     * the water comes in and it swims up ({@link #surface}). Only on its feet with its head's cell open; only a block it may
+     * break, by hand, not set aside, nor sand or gravel, which would come down on it, nor beside lava; only with water
+     * straight over that block reaching air within {@value #SWIM_UP} of its feet, as one breath swims; only with its breath
+     * full and half its health or more (F-25c4dg).
+     */
+    private Optional<Task> swimOut(NativePlayerBody body, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (!player.isOnGround() || player.isTouchingWater() || player.getAir() < player.getMaxAir() || player.getHealth() < player.getMaxHealth() / 2) return Optional.empty();
+        if (!passable(world, feet.up())) return Optional.empty();
+        BlockPos roof = feet.up(2);
+        var state = world.getBlockState(roof);
+        if (passable(world, roof) || blocked(roof) || state.getBlock() instanceof net.minecraft.block.FallingBlock
+                || !world.getFluidState(roof.up()).isIn(FluidTags.WATER)) return Optional.empty();
+        for (Direction direction : Direction.values()) if (world.getFluidState(roof.offset(direction)).isIn(FluidTags.LAVA)) return Optional.empty();
+        BlockPos air = null;
+        for (int dy = 3; dy <= SWIM_UP; dy++) {
+            BlockPos cell = feet.up(dy);
+            if (world.getFluidState(cell).isIn(FluidTags.WATER)) continue;
+            if (world.getFluidState(cell).isEmpty() && world.getBlockState(cell).getCollisionShape(world, cell).isEmpty()) air = cell;
+            break;
+        }
+        if (air == null) return Optional.empty();
+        String what = label + ": open the roof at " + roof.toShortString() + " and swim up";
+        if (breakableNow(body, roof)) return Optional.of(clearAt(roof, what));
+        if (handClearable(body, roof)) return Optional.of(clearAt(roof, what + " by hand"));
+        return Optional.empty();
+    }
+
+    /** How far over its feet the air may be for a swim up out of a shaft or a sunk place: one breath's swim (F-25c4dg). */
+    private static final int SWIM_UP = 20;
 
     /**
      * A cell on the way it came, four to twelve steps back along its trail and within sixteen blocks, that leaves
@@ -5415,6 +5464,10 @@ final class PortalRunCampaign {
 
     /** Puts an owned block item on solid ground beside the player, moving it to the hotbar first if needed. */
     private Optional<Task> placeItem(NativePlayerBody body, Item item, String label) {
+        return placeItem(body, item, label, spot -> false);
+    }
+
+    private Optional<Task> placeItem(NativePlayerBody body, Item item, String label, Predicate<BlockPos> keepOff) {
         var player = body.entity();
         var inventory = player.getInventory();
         int slot = -1;
@@ -5440,7 +5493,7 @@ final class PortalRunCampaign {
                 var floor = world.getBlockState(spot.down()).getCollisionShape(world, spot.down());
                 // Not on a wall or a fence: it stands taller than a block, into the spot (the sky island's edge wall).
                 if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0) continue;
-                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || nearGeneratorLava(spot) || !mayWork(player, spot)) continue;
+                if (eyeDistance(player, spot) > 4.4 || blocked(spot) || keepOff.test(spot) || nearGeneratorLava(spot) || !mayWork(player, spot)) continue;
                 // Over the void, not at the island's edge: picked up again, the block's drop could slide off it.
                 if (!ground && besideTheVoid(world, spot)) continue;
                 // Not where the player (standing off the middle of its block) or anything living overlaps it: vanilla
@@ -5453,7 +5506,7 @@ final class PortalRunCampaign {
         List<Direction> sides = List.of(digDirection().rotateYClockwise(), digDirection().rotateYCounterclockwise(), digDirection().getOpposite(), digDirection());
         for (Direction direction : sides) {
             BlockPos wall = feet.offset(direction);
-            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall) || !mayWork(player, wall)) continue;
+            if (passable(world, wall) || liquidNear(world, wall) || blocked(wall) || keepOff.test(wall) || !mayWork(player, wall)) continue;
             if (world.getBlockState(wall.down()).getCollisionShape(world, wall.down()).isEmpty()) continue;
             if (breakableNow(body, wall)) return Optional.of(clearAt(wall, "Clear space for a workstation"));
         }
@@ -8010,7 +8063,8 @@ final class PortalRunCampaign {
                 .map(drop -> go(drop.getBlockPos(), 0.6, true, "Pick up the log afloat"));
     }
 
-    private Optional<Task> pickUpLoose(ServerPlayerEntity player) {
+    private Optional<Task> pickUpLoose(NativePlayerBody body) {
+        var player = body.entity();
         // A drop in flowing water, such as the water poured for obsidian, waits until the water is taken back.
         var world = player.getServerWorld();
         boolean saplings = !groundBelow(player);
@@ -8041,7 +8095,34 @@ final class PortalRunCampaign {
         // the tunnel waits before it steps in (F-25c4bv). The walk to flint from gravel it broke two cells off went
         // through the cell the next block was coming down into, and was buried there (F-25c4cl).
         if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
-        return Optional.of(go(nearest.getBlockPos(), 0.6, false, label));
+        BlockPos at = nearest.getBlockPos();
+        Optional<Task> intoIt = intoTheDropsCell(body, at, label);
+        if (intoIt != null) return intoIt;
+        return Optional.of(go(at, 0.6, false, label));
+    }
+
+    /** How long a drop with no way into its cell is set aside, in ticks: a minute (F-22c74). */
+    private static final long DROP_NO_WAY = 1200;
+
+    /**
+     * A drop lying in a cell no walk gets into (F-22c74): under a pocket one high in its own pit, the cell under the pocket
+     * mined and the stone over the pocket left. Its head room is opened, as a player digs it out, when the block over the
+     * pocket is one it may break now; else the drop is set aside for a minute and the walk not asked, since every walk
+     * there was refused after the whole search. Null when a walk can get into the drop's cell.
+     */
+    private Optional<Task> intoTheDropsCell(NativePlayerBody body, BlockPos at, String label) {
+        var world = body.entity().getServerWorld();
+        var navigator = new NativeNavigator(world).throughDoors();
+        if (navigator.enterable(at, feet -> Math.sqrt(feet.getSquaredDistance(at)) <= 0.61)) return null;
+        BlockPos pocket = at.up(), head = at.up(2);
+        if (navigator.passable(pocket) && !navigator.passable(head) && breakableNow(body, head)
+                && world.getFluidState(head.up()).isEmpty() && !(world.getBlockState(head.up()).getBlock() instanceof net.minecraft.block.FallingBlock)) {
+            return Optional.of(breakAt(head, "Open the head room over the drop: " + label.toLowerCase(java.util.Locale.ROOT)));
+        }
+        setAside(at, lastTick + DROP_NO_WAY);
+        KindredMod.LOGGER.info("{} sets aside the drop at {}: no way into its cell, and its head room not to be opened ({})",
+                body.entity().getName().getString(), at.toShortString(), label);
+        return Optional.empty();
     }
 
     /** The drops it was told of leaving behind, by their id, each told once (F-22c60's diagnostics). */

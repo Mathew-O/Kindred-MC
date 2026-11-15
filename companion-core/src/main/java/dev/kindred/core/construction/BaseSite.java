@@ -99,6 +99,16 @@ public final class BaseSite {
         return Optional.empty();
     }
 
+    /**
+     * The floor's height for a site of {@code width} by {@code depth} at x, z, by the same rule {@link #choose} sites by:
+     * a site chosen is checked again so when its ground may have changed since (F-35m1, the check at the stand).
+     */
+    public static Optional<Integer> floorAt(Ground ground, int x, int z, int width, int depth, int height) {
+        Objects.requireNonNull(ground);
+        if (width < 1 || depth < 1 || height < 1) throw new IllegalArgumentException("Not a site");
+        return level(ground, x, z, width, depth, height);
+    }
+
     /** The floor's height for a site at x, z, if its ground is firm, level within one, and open enough over it. */
     private static Optional<Integer> level(Ground ground, int x, int z, int width, int depth, int height) {
         int high = Integer.MIN_VALUE, low = Integer.MAX_VALUE;

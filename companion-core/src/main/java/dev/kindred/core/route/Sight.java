@@ -547,4 +547,114 @@ public final class Sight {
         stale.forEach(key -> known.get(kind).remove(key));
         return Optional.ofNullable(best);
     }
+
+    /**
+     * In plain terms: the tops of the columns a player has seen, kept as it saw them, so that it chooses where to build
+     * only on ground it has looked at. A top is kept only when a sight line from its eyes reached it; seen again changed,
+     * the new one replaces the old; when full, the columns farthest from where it last looked go first.
+     *
+     * Technical: F-35m1. Bounded per player ({@link #capacity}), immutable {@link Top} values, a version that grows with
+     * every top added or changed (for a caller's cache), and a sweep that casts at most a given number of sight lines a call,
+     * spiralling out from where the player stands so that the ground nearest it is seen first. Not persisted.
+     */
+    public static final class SeenColumns {
+        /** A seen column's top: its block's height, and what the caller made of it when it was seen. */
+        public record Top(int x, int y, int z, boolean firm, int open, boolean water) { }
+
+        /** What a caller makes of a seen top block: its column as the caller's rules read it. */
+        public interface Describe {
+            Top at(Cell top);
+        }
+
+        private final int capacity;
+        private final HashMap<Long, Top> tops = new HashMap<>();
+        private int centerX, centerZ;
+        private long version;
+        /** Where the sweep's spiral is, from the cell it last started from. */
+        private int cursor, fromX = Integer.MIN_VALUE, fromZ = Integer.MIN_VALUE;
+
+        public SeenColumns(int capacity) {
+            if (capacity < 1) throw new IllegalArgumentException("capacity");
+            this.capacity = capacity;
+        }
+
+        public int capacity() { return capacity; }
+
+        public int size() { return tops.size(); }
+
+        /** Grows with every top added or changed: a caller's cache of what it chose from these tops is stale once it has. */
+        public long version() { return version; }
+
+        public Optional<Top> get(int x, int z) {
+            return Optional.ofNullable(tops.get(key(x, z)));
+        }
+
+        /** Forgets every top: another dimension, another world. */
+        public void reset() {
+            tops.clear();
+            cursor = 0;
+            fromX = fromZ = Integer.MIN_VALUE;
+            version++;
+        }
+
+        /** Keeps {@code top}, replacing what it held for that column if that differs; the farthest from the last look go when full. */
+        public void put(Top top) {
+            long k = key(top.x(), top.z());
+            Top was = tops.put(k, top);
+            if (top.equals(was)) return;
+            version++;
+            if (tops.size() > capacity) evict();
+        }
+
+        /**
+         * Casts at most {@code rays} sight lines from {@code eye} to the columns round ({@code x}, {@code z}) within
+         * {@code radius}, in a square spiral out from there, taken up where the last call left off; each column whose top it
+         * sees is described and kept. Returns the sight lines cast.
+         */
+        public int sweep(SightWorld world, double[] eye, int x, int z, int radius, int rays, java.util.function.IntBinaryOperator aim, Describe describe) {
+            if (x != fromX || z != fromZ) {
+                // Moved: the spiral starts again from its new place, the nearest ground first.
+                fromX = x;
+                fromZ = z;
+                cursor = 0;
+            }
+            centerX = x;
+            centerZ = z;
+            int side = 2 * radius + 1, cells = side * side, cast = 0;
+            for (int n = 0; n < cells && cast < rays; n++) {
+                int[] at = spiral(cursor);
+                cursor = (cursor + 1) % cells;
+                int cx = x + at[0], cz = z + at[1];
+                if (!world.columnLoaded(cx >> 4, cz >> 4)) continue;
+                cast++;
+                seenTop(world, eye, cx, cz, aim).ifPresent(top -> put(describe.at(top)));
+            }
+            return cast;
+        }
+
+        private void evict() {
+            int drop = Math.max(1, capacity / 10);
+            var far = new ArrayList<>(tops.values());
+            far.sort(Comparator.comparingLong((Top t) -> -((long) (t.x() - centerX) * (t.x() - centerX) + (long) (t.z() - centerZ) * (t.z() - centerZ))));
+            for (int i = 0; i < drop && i < far.size(); i++) tops.remove(key(far.get(i).x(), far.get(i).z()));
+        }
+
+        private static long key(int x, int z) {
+            return ((long) x << 32) ^ (z & 0xffffffffL);
+        }
+
+        /** The {@code n}th cell of a square spiral out from (0, 0): 0 is the centre, then ring after ring. */
+        static int[] spiral(int n) {
+            if (n == 0) return new int[] {0, 0};
+            int ring = (int) Math.ceil((Math.sqrt(n + 1) - 1) / 2);
+            int side = 2 * ring, start = (2 * ring - 1) * (2 * ring - 1);
+            int k = n - start, leg = k / side, along = k % side;
+            return switch (leg) {
+                case 0 -> new int[] {ring, -ring + 1 + along};
+                case 1 -> new int[] {ring - 1 - along, ring};
+                case 2 -> new int[] {-ring, ring - 1 - along};
+                default -> new int[] {-ring + 1 + along, -ring};
+            };
+        }
+    }
 }

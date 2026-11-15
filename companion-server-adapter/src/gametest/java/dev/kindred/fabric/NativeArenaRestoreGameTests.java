@@ -160,6 +160,9 @@ public final class NativeArenaRestoreGameTests implements FabricGameTest {
                     .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                     .createAndAdd(() -> {
                         var world = context.getWorld();
+                        // Its arena's field, wider than its plot, put back as the test ends, passed or failed
+                        // (F-22c75b): left standing, its fences and blocks lay in or beside a later test's plot.
+                        FixtureGround.keep(context, o.add(-10, 1, -10), o.add(50, 24, 30));
                         for (int x = -10; x <= 50; x++) for (int z = -10; z <= 30; z++) {
                             world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                             for (int y = 2; y <= 24; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());

@@ -144,7 +144,9 @@ def prepare(folder, seed, jar, api, vanilla, recipes=None, policy=()):
 
 def environment(scenario):
     """The server's environment: yours less every KINDRED_ setting and model key, then the scenario; the strategist's
-    key and settings only when the scenario says strategist=on or voice=on (the voice speaks through the strategist)."""
+    key and settings only when the scenario says strategist=on or voice=on (the voice speaks through the strategist's
+    connection). With voice=on and strategist=off the server asks no stance, question or rescue of the model (E-20d):
+    the key is passed for the voice's lines alone."""
     env = {k: v for k, v in os.environ.items() if k not in MODEL_NAMES and not k.startswith("KINDRED_")}
     wants_model = any(part.replace(" ", "").lower() in ("strategist=on", "voice=on") for part in scenario.split(";"))
     if wants_model:

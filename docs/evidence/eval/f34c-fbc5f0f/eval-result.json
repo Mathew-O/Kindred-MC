@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=24000; sprint=off; strategist=off; voice=on; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions; founders=1",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 24000,
+  "ticksRun": 24000,
+  "complete": true,
+  "days": 1.000,
+  "factions": {"audited": true, "note": "", "counts": {"events": 69, "factions": 1, "claims": 3, "captures": 0, "sales": 7, "purchases": 2, "listings": 0, "deliveries": 0, "deaths": 3, "kills": 0}, "violations": []},
+  "items": {"windows": 1209, "gained": 1801, "paid": 1801, "lapsed": 98, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 168.1, "snapshotMicrosMax": 6640.0, "tagMicrosMean": 164.6, "tagMicrosMax": 15478.1, "bySource": {"container.take:furnace": 32, "market.purchase": 8, "pickup:class_2248.method_36993": 1555, "pickup:class_52.method_331": 44, "screen:class_1714": 31, "screen:class_1723": 229}, "dropsByOrigin": {"class_1428.method_6007": 20, "class_2248.method_36993": 1542, "class_3222.method_7329": 31, "class_52.method_331": 40}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 24.30, "tickMsWorst": 323.40, "tickMsWorstAt": 2890, "ticksOver50ms": 474, "ticksOver200ms": 2, "heapMbMax": 1184, "samples": 1200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1720, "stone_tools": 2100, "iron_ingot": 16460},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 12060, "line": "rescue asked: spell 1 round 1, 1212 ticks after its last progress"}, {"tick": 12200, "line": "rescue: dig up 2, walk north 5 -> unstuck"}, {"tick": 12660, "line": "rescue spell 1: out after 1 round"}, {"tick": 12660, "line": "rescue recipe kept: dig up 2, walk north 5 (weight 1)"}],
+      "rescuesNotListed": 0,
+      "tokens": 27928,
+      "chunkLoads": 1965,
+      "chunkMinutes": 5780.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1400, "stone_tools": 2240},
+      "deaths": [
+        {"tick": 5329, "cause": "Sol was slain by Zombie", "x": -369, "y": 35, "z": -147, "light": 0, "timeOfDay": 5491, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: outmatched - Hole up: back into the passage", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 12359, "cause": "Sol was slain by Spider", "x": -355, "y": 31, "z": -164, "light": 0, "timeOfDay": 12521, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PLAY_SAFE", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 43201,
+      "chunkLoads": 2394,
+      "chunkMinutes": 5770.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2940, "stone_tools": 3520, "iron_ingot": 6480},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [{"tick": 7640, "line": "rescue asked: spell 1 round 1, 1203 ticks after its last progress"}, {"tick": 7680, "line": "rescue: dig up 1, walk north 1, dig north 1 -> failed: 'walk north 1' went 0, then a two-high wall of stone"}, {"tick": 7680, "line": "rescue asked: spell 1 round 2, 1246 ticks after its last progress"}, {"tick": 7980, "line": "rescue: dig north 1, walk north 2, dig down 1, walk south 1 -> failed: 'walk north 2' went 0, then it made no headway"}, {"tick": 7980, "line": "rescue asked: spell 1 round 3, 1539 ticks after its last progress"}, {"tick": 8020, "line": "rescue: dig south 1, walk south 2, dig up 1 -> failed: 'walk south 2' went 0, then the move did not take it there"}, {"tick": 8020, "line": "rescue spell 1: not out after 3 rounds"}, {"tick": 21660, "line": "rescue recipe: spell 3, dig up 2, walk north 5 (weight 1)"}, {"tick": 21700, "line": "rescue: dig up 2, walk north 5 -> failed: 'walk north 5' went 0, then a two-high wall of stone"}],
+      "rescuesNotListed": 0,
+      "tokens": 28901,
+      "chunkLoads": 1222,
+      "chunkMinutes": 5780.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

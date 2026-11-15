@@ -37,6 +37,8 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
     /** The yard south of the portal: x -4..11, z 6..14 inside walls, fenced off from the portal along z = 5. */
     private static void yard(TestContext context) {
         var world = context.getWorld();
+        // Its yard, past its plot, its fence among it, put back as the test ends, passed or failed (F-22c75b).
+        FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(-4, 1, 5)), context.getAbsolutePos(new BlockPos(11, 6, 15)));
         for (int x = -4; x <= 11; x++) for (int z = 5; z <= 15; z++) {
             world.setBlockState(context.getAbsolutePos(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());
             for (int y = 2; y <= 6; y++) world.setBlockState(context.getAbsolutePos(new BlockPos(x, y, z)), Blocks.AIR.getDefaultState());
@@ -167,6 +169,10 @@ public final class NativeFollowUpGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // The ground it digs its blocks from, just past its plot, and the blocks it leaves lying there, put
+                    // back and taken away as the test ends (F-22c75b): a cobblestone left in its hole lay by the
+                    // arena of the crash test after it ("Nothing dropped").
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(-2, -4, -2)), context.getAbsolutePos(new BlockPos(10, 6, 12)));
                     NativeStrongholdGameTests.litPortal(context);
                     world.setTimeOfDay(1000);
                     var player = f.player();
