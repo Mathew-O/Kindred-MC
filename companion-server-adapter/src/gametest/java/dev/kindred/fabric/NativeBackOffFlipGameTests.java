@@ -1,0 +1,254 @@
+package dev.kindred.fabric;
+
+import dev.kindred.core.Actor;
+import dev.kindred.core.ActionRecord;
+import dev.kindred.core.survival.SurvivalGoal;
+import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
+import net.minecraft.block.Blocks;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.test.GameTest;
+import net.minecraft.test.TestContext;
+
+/**
+ * e40a22's A1 (five of its deaths): badly hurt, a zombie after it, the goal switched between "Back off" and "Hole up"
+ * every second or two until the zombie killed it. A zombie walks as fast as a player, so each back-off ended with it
+ * still in reach, and the hole-up's wait was cut short by its hits; nothing in between struck it, and in 505-kindred-33951
+ * it died with a shield, armour 6 and cooked porkchop in hand, its sword never drawn. Staged after that scene: hurt, food
+ * in hand, a sword on the hotbar, a shield in the off hand, no block to wall itself in with, one zombie after it on open
+ * ground under a roof: in 505-kindred-33951 its "Hole up: recover behind the wall" was a rest in the open cave, with no wall.
+ */
+public class NativeBackOffFlipGameTests implements FabricGameTest {
+    /** The middle of the arena, in the plot's own coordinates. */
+    private static final int MID = 60;
+
+    /**
+     * Level stone ground sixty across in the middle of the test's own wide plot, open to a roof four blocks up: room for a
+     * back-off to end as walked, as in the scenes, and shade so the zombies keep after it. All of it inside the plot.
+     */
+    private static void arena(TestContext context) {
+        for (int x = MID - 30; x <= MID + 30; x++) for (int z = MID - 30; z <= MID + 30; z++) {
+            context.setBlockState(x, 0, z, Blocks.STONE);
+            context.setBlockState(x, 1, z, Blocks.STONE);
+            for (int y = 2; y <= 5; y++) context.setBlockState(x, y, z, Blocks.AIR);
+            context.setBlockState(x, 6, z, Blocks.STONE);
+        }
+    }
+
+    /**
+     * Once a back-off has left the zombie in reach, the player fights it with its sword in hand, and holds one choice:
+     * at most two switches between backing off and holing up, the zombie killed and the player alive.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlip", tickLimit = 1400)
+    public void hurtWithAZombieThatKeepsPaceItFightsItWithItsSwordRatherThanFlipBetweenBackingOffAndHolingUp(TestContext context) {
+        run(context, "Pacekept", false);
+    }
+
+    /**
+     * The same, with a second zombie coming up behind it from eight blocks off three seconds in (the lead's variant): the
+     * fight it falls through to does not turn its back on the new one. Alive a minute on, or with both killed, its sword
+     * drawn and its choice held.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipSecond", tickLimit = 2000)
+    public void hurtWithAZombieThatKeepsPaceAndASecondComingUpBehindItFightsBothAndLives(TestContext context) {
+        run(context, "Pacebehind", true);
+    }
+
+    /**
+     * As in 505-kindred-33951 itself: a zombie and a spider after it together, so a hit keeps landing while it eats and
+     * rests, and its health stays low.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipPair", tickLimit = 1400)
+    public void hurtWithAZombieAndASpiderAfterItItFightsWithItsSwordRatherThanFlipBetweenBackingOffAndHolingUp(TestContext context) {
+        run(context, "Pacepair", false, true);
+    }
+
+    /**
+     * The eating rule's bound (the lead's guard): walled in its night pocket, the bar at six, a zombie after it just outside
+     * the wall. The zombie cannot get at it, so it eats, within twenty seconds, as before.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipSealedEat", tickLimit = 800)
+    public void walledInWithAZombieOutsideAndHungryItStillEats(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        var difficulty = server.getSaveProperties().getDifficulty();
+        FixtureGround.whenDone(context, () -> server.setDifficulty(difficulty, true));
+        server.setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        long[] started = {-1};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    arena(context);
+                    // A pocket one cell across and two high, stone all round it and over it.
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int y = 2; y <= 4; y++) {
+                        boolean inside = dx == 0 && dz == 0 && y <= 3;
+                        context.setBlockState(MID + dx, y, MID + dz, inside ? Blocks.AIR : Blocks.STONE);
+                    }
+                    f.runtime.createNative(f.source, "Walledin");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var at = context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID));
+                    f.player().refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+                    f.player().setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround()
+                        && f.player().getBlockPos().equals(context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID))), "In the pocket"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.COOKED_PORKCHOP, 3));
+                    player.getInventory().setStack(1, new ItemStack(Items.IRON_SWORD));
+                    player.setHealth(14);
+                    player.getHungerManager().setFoodLevel(6);
+                    player.getHungerManager().setSaturationLevel(0);
+                    context.getWorld().setTimeOfDay(14000);
+                    zombie[0] = zombie(context, player, context.getRelative(new net.minecraft.util.math.Vec3d(player.getX() + 2, player.getY(), player.getZ())));
+                    started[0] = context.getTick();
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.getWorld().setTimeOfDay(14000);
+                    context.assertTrue(player.getHungerManager().getFoodLevel() > 6, "It ate behind its wall within "
+                            + (context.getTick() - started[0]) + " ticks; the zombie " + String.format("%.1f", Math.sqrt(player.squaredDistanceTo(zombie[0])))
+                            + " off; doing " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.player().isAlive(), "Alive");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    private static void run(TestContext context, String name, boolean second) {
+        run(context, name, second, false);
+    }
+
+    private static void run(TestContext context, String name, boolean second, boolean spider) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        // Mobs that strike, as in the scenes (the test world's own difficulty leaves them harmless): normal difficulty while
+        // it runs, put back as it ends, as NativeMobGriefGameTests does.
+        var server = context.getWorld().getServer();
+        var difficulty = server.getSaveProperties().getDifficulty();
+        FixtureGround.whenDone(context, () -> server.setDifficulty(difficulty, true));
+        server.setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombies = new net.minecraft.entity.mob.ZombieEntity[2];
+        net.minecraft.entity.mob.SpiderEntity[] spiders = new net.minecraft.entity.mob.SpiderEntity[1];
+        String[] last = {""};
+        int[] switches = {0}, gainless = {0};
+        String[] wasBackingOff = {null};
+        long[] started = {-1};
+        boolean[] swordFight = {false}, died = {false};
+        // The body it started the fight in: a native player respawns within the tick it dies, as another entity.
+        net.minecraft.server.network.ServerPlayerEntity[] body = new net.minecraft.server.network.ServerPlayerEntity[1];
+        StringBuilder trail = new StringBuilder();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    arena(context);
+                    f.runtime.createNative(f.source, name);
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var at = context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID));
+                    f.player().refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+                    f.player().setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround()
+                        && f.player().getBlockPos().equals(context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID))), "Standing in the arena"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.COOKED_PORKCHOP, 3));
+                    player.getInventory().setStack(1, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().selectedSlot = 0; // Food in hand, as after eating.
+                    player.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+                    player.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.LEATHER_CHESTPLATE));
+                    player.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.LEATHER_LEGGINGS));
+                    player.setHealth(5);
+                    player.getHungerManager().setFoodLevel(16);
+                    player.getHungerManager().setSaturationLevel(0);
+                    zombies[0] = zombie(context, player, context.getRelative(new net.minecraft.util.math.Vec3d(player.getX(), player.getY(), player.getZ() + 2.3)));
+                    if (spider) {
+                        var s = context.spawnEntity(net.minecraft.entity.EntityType.SPIDER, context.getRelative(new net.minecraft.util.math.Vec3d(player.getX() + 2.5, player.getY(), player.getZ())));
+                        s.setPersistent();
+                        s.setTarget(player);
+                        spiders[0] = s;
+                    }
+                    started[0] = context.getTick();
+                    context.getWorld().setTimeOfDay(14000);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.getWorld().setTimeOfDay(14000);
+                    if (body[0] == null) body[0] = player;
+                    died[0] |= player != body[0] || !player.isAlive() || player.getHealth() <= 0;
+                    if (second && zombies[1] == null && context.getTick() - started[0] >= 60) {
+                        // Eight blocks behind it, from the zombie it faces.
+                        var away = player.getPos().subtract(zombies[0].getPos()).normalize().multiply(8);
+                        var at = player.getPos().add(away.x, 0, away.z);
+                        zombies[1] = zombie(context, player, context.getRelative(at).add(0, 0.5, 0));
+                        trail.append("second @").append(context.getTick()).append(", ");
+                    }
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    String progress = bot.goalProgress();
+                    String kind = progress.contains("Back off") ? "back off" : progress.contains("Hole up") ? "hole up" : "";
+                    if (!kind.isEmpty() && !kind.equals(last[0])) {
+                        if (!last[0].isEmpty()) switches[0]++;
+                        last[0] = kind;
+                        trail.append(kind).append(" @").append(context.getTick()).append(", ");
+                    }
+                    swordFight[0] |= "native_fight".equals(bot.task()) && player.getMainHandStack().isOf(Items.IRON_SWORD);
+                    // A back-off that has just ended as walked, with a mob on foot still within 2.5 blocks: gainless, the A1
+                    // signature. Counted at the tick its goal step is no longer that back-off.
+                    String backingOff = "native_goto".equals(bot.task()) && progress.contains("Back off") ? progress : null;
+                    if (wasBackingOff[0] != null && !wasBackingOff[0].equals(backingOff)) {
+                        var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                        boolean walked = record == null || record.state() != ActionRecord.State.FAILED && record.state() != ActionRecord.State.CANCELLED;
+                        boolean close = java.util.stream.Stream.concat(java.util.Arrays.stream(zombies), java.util.Arrays.stream(spiders))
+                                .anyMatch(m -> m != null && m.isAlive() && m.squaredDistanceTo(player) <= 2.5 * 2.5);
+                        if (walked && close) {
+                            gainless[0]++;
+                            trail.append("gainless @").append(context.getTick()).append(", ");
+                        }
+                    }
+                    wasBackingOff[0] = backingOff;
+                    boolean allDead = !zombies[0].isAlive() && (!second || zombies[1] != null && !zombies[1].isAlive())
+                            && (!spider || !spiders[0].isAlive());
+                    // Holding out alive for a minute is as good as the fight won: holed up and staying holed up is a choice
+                    // held, as the lead set it; a death, or the loop, fails it.
+                    boolean heldOut = context.getTick() - started[0] >= 1200;
+                    context.assertTrue(died[0] || allDead || heldOut, "The fight decided (health " + player.getHealth() + ", the zombie " + (zombies[0].isAlive() ? String.format("%.1f off, after %s, at %s; the player at %s", Math.sqrt(player.squaredDistanceTo(zombies[0])), zombies[0].getTarget() == null ? "nobody" : zombies[0].getTarget().getName().getString(), zombies[0].getBlockPos().toShortString(), player.getBlockPos().toShortString()) + " ai off " + zombies[0].isAiDisabled() + " idle " + zombies[0].getNavigation().isIdle() + " persistent " + zombies[0].isPersistent() + " difficulty " + context.getWorld().getDifficulty() : "dead") + ", switches " + switches[0] + ": " + trail + ")");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    KindredMod.LOGGER.info("Back-off flip ({}): gainless back-offs {}, switches {}, killed {}, a sword fight {}; {}", name,
+                            gainless[0], switches[0], died[0], swordFight[0], trail);
+                    context.assertTrue(gainless[0] <= 2, "At most two back-offs that left a mob in reach: " + gainless[0] + " (" + trail + ")");
+                    context.assertTrue(!died[0] && player.isAlive(), "Alive, never killed (switches " + switches[0] + ": " + trail + ")");
+                    // With a zombie and a spider, holing up and staying holed up passes as well (the lead's guard): no sword
+                    // fight is asked of it, only that it lives and holds its choice.
+                    context.assertTrue(spider || swordFight[0], "It fought with its sword in hand (" + trail + ")");
+                    context.assertTrue(switches[0] <= 2, "It held one choice: " + switches[0] + " switches between backing off and holing up: " + trail);
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record == null || record.state() != ActionRecord.State.UNCERTAIN, "No uncertain action: " + record);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /** A zombie after the player, in a helmet so the sun does not burn it, kept from despawning. */
+    private static net.minecraft.entity.mob.ZombieEntity zombie(TestContext context, net.minecraft.server.network.ServerPlayerEntity player,
+                                                                 net.minecraft.util.math.Vec3d at) {
+        // Spawned with its goals: TestContext.spawnMob clears them, and a mob so spawned neither pursues nor strikes (F-22c80).
+        var zombie = context.spawnEntity(net.minecraft.entity.EntityType.ZOMBIE, at);
+        zombie.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+        zombie.setPersistent();
+        zombie.setTarget(player);
+        return zombie;
+    }
+}

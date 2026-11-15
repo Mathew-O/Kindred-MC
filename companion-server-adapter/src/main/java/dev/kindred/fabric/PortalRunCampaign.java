@@ -193,6 +193,15 @@ final class PortalRunCampaign {
     /** A run from a creeper found no way out: until then, wall it off or fight it instead. */
     private long runFailedUntil;
     private long backOffFailedUntil;
+    /** When a back-off last ended as walked; and until when one that ended with a mob on foot still in reach holds (e40a22's A1). */
+    private long backOffEndedAt = Long.MIN_VALUE, backOffGainlessUntil = Long.MIN_VALUE;
+    /** How long a back-off that opened no distance keeps the player from backing off or holing up again, in ticks. */
+    static final int GAINLESS_HOLD = 200;
+    /**
+     * How long after a back-off ends a mob on foot coming into reach still counts it as gainless, in ticks: a zombie a few
+     * blocks behind when the walk ended is on the player again while it eats or rests (the fixture's second zombie).
+     */
+    static final int GAINLESS_CATCH = 100;
     /** Knowledge sweeps to wait for before digging: the first look at goal start, then one after each cave stride. */
     private int lookUntilSweep = 1;
     private long dropSiteUntil;
@@ -885,6 +894,7 @@ final class PortalRunCampaign {
             cellsAside.until(position(task.args()).asLong(), tick + CAVE_DANGER_TICKS); // Leave the wall standing.
         }
         if (task != null && completed) repeatFailures.remove(task);
+        if (task != null && completed && task.label().startsWith("Back off")) backOffEndedAt = tick;
         if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) {
             castFailedFrom = null;
             castFailedStands.clear();
@@ -2513,7 +2523,18 @@ final class PortalRunCampaign {
         // fall below six health ends a fight early; a retreat turns to fight only when there is nowhere to back off to.
         boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
         boolean retreating = lastTick < retreatHeldUntil;
-        Optional<Task> hole = fighting ? Optional.empty() : holeUp(body, snapshot);
+        // A back-off that ended with a mob on foot still in reach gained nothing: a zombie walks as fast as a player. Then
+        // it neither backs off again nor holes up for a while, but fights it, as below; in e40a22 five players switched
+        // between backing off and holing up every second or two while a zombie kept pace and struck, and died with food
+        // or a pickaxe in hand, the sword never drawn (A1).
+        if (onFootInReach(player) != null && backOffEndedAt > Long.MIN_VALUE && lastTick - backOffEndedAt <= GAINLESS_CATCH) {
+            backOffGainlessUntil = Math.max(backOffGainlessUntil, lastTick + GAINLESS_HOLD);
+            retreatHeldUntil = Math.min(retreatHeldUntil, lastTick);
+        }
+        // Only while a mob on foot after it is still close: a passage sealed behind it (F-25c4dc) and a hole-up once it is
+        // gone are as before.
+        boolean gainless = lastTick < backOffGainlessUntil && huntedOnFootWithin(player, 8);
+        Optional<Task> hole = fighting || gainless ? Optional.empty() : holeUp(body, snapshot);
         if (hole.isPresent()) {
             retreatHeldUntil = Math.max(retreatHeldUntil, lastTick + RETREAT_HOLD);
             progress = stageLabel(stage) + ": outmatched - " + hole.get().label();
@@ -6722,7 +6743,11 @@ final class PortalRunCampaign {
         if (seal.isPresent()) return seal;
         // Too hurt, or outnumbered and already hurt: get some distance first, rather than take them on one by one in the
         // dark. Cover only from none in reach; with no way off from one that is, it is fought.
-        if (player.getHealth() < 6 || player.getHealth() < 14 && hunters(player) >= 3) {
+        // Not from a mob on foot in reach once backing off from it has gained nothing: that one is fought (A1).
+        // One close behind it counts as well as one in reach: it strikes again at the end of each walk (the staged second
+        // zombie's player backed off four times so, two of them already gainless, and was killed backing off).
+        boolean gainless = lastTick < backOffGainlessUntil && (close != null || huntedOnFootWithin(player, 4));
+        if (!gainless && (player.getHealth() < 6 || player.getHealth() < 14 && hunters(player) >= 3)) {
             Optional<Task> away = backOff(player).or(() -> close == null ? coverFromHunters(body) : Optional.empty());
             if (away.isPresent() || close == null) return away;
         }
@@ -6738,6 +6763,8 @@ final class PortalRunCampaign {
         var threats = threats(player);
         HostileEntity nearest = close != null ? close : threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         if (nearest == null) nearest = rememberedFoe(player);
+        // Below six health threats() is empty by design; held from backing off, the one close behind it is still the fight.
+        if (nearest == null && gainless) nearest = nearestHunterOnFoot(player, 4);
         if (nearest == null) return Optional.empty();
         // A skeleton that steps behind cover is still out there: keep after it for a few seconds.
         foe = nearest.getUuid();
@@ -6760,7 +6787,24 @@ final class PortalRunCampaign {
 
     /** A mob on foot in reach and no way off from it: what {@link #defend} fights however hurt the player is. */
     private boolean cornered(ServerPlayerEntity player) {
-        return onFootInReach(player) != null && backOff(player).isEmpty();
+        // Backing off from it has already gained nothing (A1): as good as no way off.
+        return onFootInReach(player) != null && (lastTick < backOffGainlessUntil || backOffEndedAt > Long.MIN_VALUE
+                && lastTick - backOffEndedAt <= GAINLESS_CATCH || backOff(player).isEmpty());
+    }
+
+    /** The nearest mob on foot, not a creeper or a shooter, after the player within {@code range} blocks (A1). */
+    private static HostileEntity nearestHunterOnFoot(ServerPlayerEntity player, double range) {
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(range, 3, range),
+                        mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
+                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** A mob on foot, not a creeper, after the player within {@code range} blocks (A1). */
+    private static boolean huntedOnFootWithin(ServerPlayerEntity player, double range) {
+        return !player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(range, 3, range),
+                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
+                        && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob)).isEmpty();
     }
 
     private static int hunters(ServerPlayerEntity player) {
@@ -7682,6 +7726,10 @@ final class PortalRunCampaign {
         if (player.isOnGround() && open.size() <= 3 && world.getFluidState(feet).isEmpty()) snug = feet.toImmutable();
         if (holedUpSince >= 0) {
             if (pressed) return Optional.empty(); // Something got in: fight back rather than wait.
+            // No wall round it (more than four ways open) with a mob on foot after it within sixteen: a rest there is no
+            // hole-up, only a pause for the mob to close in. In e40a22's A1 and the staged second zombie the goal rested so
+            // between back-offs in the open, eight times in a run (F-25c4dh); the back-off or the fight goes on instead.
+            if (open.size() > 4 && huntedOnFootWithin(player, 16)) return Optional.empty();
             if (player.getHealth() >= 18 || lastTick - holedUpSince > 2400) {
                 holedUpSince = -1;
                 return Optional.empty();

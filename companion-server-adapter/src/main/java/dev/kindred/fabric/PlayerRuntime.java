@@ -579,7 +579,7 @@ final class PlayerRuntime {
         // M-06e's notices in today's words after the channel's prefix (their line is the "what" fact).
         var wording = new dev.kindred.core.wire.Wording().with(dev.kindred.core.factions.Capture.VULNERABLE, "{what}")
                 .with(dev.kindred.core.factions.Capture.SECURE, "{what}").with(FactionsService.CAPTURED, "{what}")
-                .with(MEMBER_DIED, "{who} died: {cause}");
+                .with(MEMBER_DIED, "{who} died: {cause}").with(FactionsService.REFUSED, "{what}");
         wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), wording, new WireMemberships(), webs,
                 (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
                     var said = Text.literal(words);
@@ -590,6 +590,8 @@ final class PlayerRuntime {
         setFactionOf(this::factionKey);
         // M-06e on the Wire: the notices' events written, then told, citing them; the notifier their one writer.
         factions.onNotice((events, notices) -> recordAndTellAll(events, ids -> notices.stream().map(n -> noticeMessage(n, ids)).toList(), null));
+        // F-34c2: a refused attempt on a faction's land names an AI player; a person only as "Someone".
+        factions.refusalNames(player -> entryForPlayer(player.getUuid()) != null ? player.getGameProfile().getName() : null);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         wire.onState(peerRadio::teamState); // F-34c: a teammate's update into the receiver's ledger, and nowhere else.
         // F-34c: a match's titles to an AI player in it as the server's word to it alone; a person has them on screen.
@@ -3449,6 +3451,25 @@ final class PlayerRuntime {
      * defending itself from a mob that is on it. A fall is broken with water only where it may edit ({@code mayEdit});
      * a barricade, the Nether's blazes and an expedition's return are its work, and need {@code admitted}.
      */
+    /**
+     * A hostile on foot after the player within {@code range} that can get at it now (F-25c4dh): within two blocks, or in
+     * sight with a walk to it. Not a shooter or a creeper, which eating does not decide; not one outside a wall, across water
+     * or a drop it cannot take, where its path ends short of the player.
+     */
+    static boolean mobCanReachToEat(ServerPlayerEntity player, double range) {
+        for (var mob : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class,
+                player.getBoundingBox().expand(range, 2, range), m -> m.isAlive() && m.getTarget() == player
+                        && !(m instanceof net.minecraft.entity.ai.RangedAttackMob) && !(m instanceof net.minecraft.entity.mob.CreeperEntity))) {
+            double d2 = player.squaredDistanceTo(mob);
+            if (d2 > range * range) continue;
+            if (d2 <= 2.0 * 2.0) return true;
+            if (!mob.canSee(player)) continue;
+            var path = mob.getNavigation().findPathTo(player, 1);
+            if (path != null && path.reachesTarget()) return true;
+        }
+        return false;
+    }
+
     private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body, boolean admitted, boolean mayEdit) {
         var candidates = new java.util.ArrayList<NativeTaskCandidate>();
         var player = body.entity();
@@ -3586,6 +3607,12 @@ final class PlayerRuntime {
         // Y=8 with a mob on it, began to eat a dozen times in its last two seconds, each cancelled for the threat, and never
         // swam up (F-25c4af).
         boolean outOfBreath = inDeepWater(player) && player.getAir() < player.getMaxAir() / 2;
+        // Not with a mob on foot after it within six blocks that can get at it: eating takes over a second and a half, a
+        // zombie closes six blocks in that time, each hit lands meanwhile, and the fight or the way off waits. In e40a22's A1
+        // players died eating (505-kindred-33951 with cooked porkchop in hand) and the staged second zombie killed its player
+        // mid-meal (F-25c4dh). Only one that can reach it: walled in for the night with a zombie outside, it eats as before.
+        // And with the bar at six or below, where hunger is about to cost health, only one already in reach holds it back.
+        boolean pressedToEat = mobCanReachToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
         // With nothing better held, rotten flesh or raw chicken is eaten when hurt with too little in the bar to heal (under
         // 18) or too hungry to sprint, as a player does: their hunger costs less than going on unhealed. In E-40's iteration
         // 8 (`e40a8-aed3e82`) 20 of the 23 deaths came with the bar under 18, and Echo on 101 died at two health and two
@@ -3593,7 +3620,7 @@ final class PlayerRuntime {
         boolean lastResort = (needsHealth && foodLevel < 18 || foodLevel <= 6) && !holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
         java.util.function.Predicate<ItemStack> eligible = stack -> isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)
                 || lastResort && canEatVanilla && (stack.isOf(Items.ROTTEN_FLESH) || stack.isOf(Items.CHICKEN));
-        if ((canEatVanilla || needsHealth) && !outOfBreath) {
+        if ((canEatVanilla || needsHealth) && !outOfBreath && !pressedToEat) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
             for (int slot = 0; slot < 9; slot++) {
@@ -6761,6 +6788,13 @@ final class PlayerRuntime {
         if (site.isEmpty()) site = siteFor(seen, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
                 f -> chunks.apply(f).size() == 2 && free.test(f));
         Prospect prospect = null;
+        // A site within the spawn exclusion is no first claim (M-06i2a): its claim would be pushed some 500 blocks out on its
+        // bearing from spawn, and moved again with every look (on seed 20261030, 64 of Kindred's 65 walks toward it refused,
+        // and no land). With none, its first land is taken as without bases, from where it stands, and its base follows there.
+        if (site.isPresent() && dev.kindred.core.factions.Territory.Chunk.at(dimension, site.get().x() + FIRST_BASE_SPAN / 2,
+                site.get().z() + FIRST_BASE_SPAN / 2).nearestToSpawn() < factions.settings().spawnExclusion()) {
+            site = Optional.empty();
+        }
         if (site.isPresent()) {
             var at = site.get();
             var ground = new dev.kindred.core.construction.BaseSite.Footprint(at.x(), at.z(), at.x() + FIRST_BASE_SPAN - 1, at.z() + FIRST_BASE_SPAN - 1);
@@ -10773,6 +10807,20 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? null : goalOf(entry);
+    }
+
+    /** For fixtures: its bases' record read, as its play reads it (by the time its base or a villager it brings home asks); whether it is now. */
+    boolean basesLoadedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry != null && basesLoaded(entry);
+    }
+
+    /** For fixtures: its bases' anchor, where its first base is reckoned from (M-06i2a); null before it is set. */
+    PlayerMemoryStore.Place baseAnchorForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null || entry.bases == null ? null : entry.bases.anchor;
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
@@ -18568,7 +18616,7 @@ final class PlayerRuntime {
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
         var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
-                chronicle.kept(), wire.stateTold(), wire.refusals(), tickWindow.describe(), heapHighWater / (1024 * 1024));
+                chronicle.kept(), wire.stateTold(), wire.refusals(), factions.refusalCounts(), tickWindow.describe(), heapHighWater / (1024 * 1024));
         tickWindow.reset();
         heapHighWater = 0;
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
