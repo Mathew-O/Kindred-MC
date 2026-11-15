@@ -896,6 +896,11 @@ In a faction world:
   `Wire 3 refused since start (BUDGET on team 1, DUPLICATE on faction 2)` (F-34e). It never says what a refused message
   said, who sent it or to whom. A refusal now and then is routine (a channel's minute spent, the same news twice), but a
   count that keeps climbing on one channel means news players should have had is not going out.
+  It also gives `native.disconnects N since start`: AI players taken off the server from outside, either a connection the
+  server closed (a kick, a duplicate login) or a removal from the player list by anything but the player itself. Each one
+  is also logged at WARN as it happens, with the player's name, the reason where there is one, and where it came from
+  (`<name>: its native connection was closed under its body (...)` or `<name>: taken off the player list from outside its
+  body, ...`). A count above 0 that you did not cause is worth reporting.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);

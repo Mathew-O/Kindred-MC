@@ -445,6 +445,29 @@ class ConstructionPlannerTest {
     }
 
     /**
+     * The ring's last gap with no ground round the ring (E-08a1): every spot it can stand on is inside, so 3 more for a spot
+     * inside the build decides nothing. Walls two high, and nothing outside to walk onto: once the gap is filled there is no
+     * way out a player can walk. The way out the plan once reckoned went up, through the open air over the wall.
+     */
+    @Test
+    void theRingsLastGapIsNotFilledFromInsideWhenNoSpotOutsideIsLeft() {
+        var cells = BuildTestSites.flat();
+        for (int x = -20; x <= 20; x++) for (int z = -20; z <= 20; z++) {
+            if (Math.abs(x) >= 3 || Math.abs(z) >= 3) cells.put(new Pos(x, 0, z), Cell.AIR);
+        }
+        var blocks = new ArrayList<Blueprint.Block>();
+        for (int x = -2; x <= 2; x++) for (int z = -2; z <= 2; z++) {
+            if (Math.abs(x) != 2 && Math.abs(z) != 2) continue;
+            for (int y = 1; y <= 2; y++) {
+                blocks.add(block(x, y, z, "minecraft:cobblestone"));
+                if (!(x == 0 && z == -2)) cells.put(new Pos(x, y, z), BuildTestSites.solid("minecraft:cobblestone"));
+            }
+        }
+        var step = next(blocks, cells, new Pos(0, 1, 0));
+        assertNotEquals(ConstructionPlanner.Kind.PLACE, step.kind(), "the gap filled from inside, shut in: " + step.target() + " from " + step.stance());
+    }
+
+    /**
      * Counts how much is built and which materials are still needed, and lists the blocks it cannot place
      * yet.
      */

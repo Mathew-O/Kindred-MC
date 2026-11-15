@@ -31,6 +31,8 @@ final class RecordGauge {
         long w = growth.rows(), c = growth.characters();
         // Far columns asked since start (F-35m), read here on the server thread that counts them.
         long looks = WorldKnowledge.Looks.calls, rays = WorldKnowledge.Looks.raysCast, lookNanos = WorldKnowledge.Looks.nanos;
+        // Native connections closed from outside their bodies (E-70a's diagnostic), each logged as it happened.
+        long disconnects = NativePlayerBody.DISCONNECTS.get();
         return CompletableFuture.supplyAsync(() -> {
             long bytes = size(database) + size(database.resolveSibling(database.getFileName() + "-wal"));
             Runtime rt = Runtime.getRuntime();
@@ -42,7 +44,8 @@ final class RecordGauge {
                     + held.territoryRefused()[1] + " the same minute's and " + held.territoryRefused()[2] + " over a faction's daily cap, only counted"
                     + "; teammates' updates (team.state) " + held.teamStateTold() + " told since start, kept only in the peer ledgers"
                     + "; Chronicle " + held.chroniclePages() + " pages kept; heap in use " + heap + " MB"
-                    + "; far looks " + looks + " since start, " + rays + " sight lines, " + lookNanos / 1_000_000 + " ms";
+                    + "; far looks " + looks + " since start, " + rays + " sight lines, " + lookNanos / 1_000_000 + " ms"
+                    + "; native.disconnects " + disconnects + " since start";
         });
     }
 
