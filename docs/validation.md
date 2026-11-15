@@ -185,6 +185,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c66](evidence/F-22c66.md) (2026-11-12, barriers): a barrier is neither ground to walk on nor a height to aim a look at; the staged fixture 0 of 3 before, 3 of 3 after.
 - [F-22c68](evidence/F-22c68.md) (2026-11-12, test only): the late toss-cap staging moves the server's tick only forward; from a start in a day's last 30 ticks the old line stops the server ("Backward tick"), the new one passes 3 of 3; NativeTrustGameTests 9 of 9, 3 runs.
 - [F-22c69](evidence/F-22c69.md) (2026-11-12, CI): the build job's limit from 90 to 120 minutes, the suite having outgrown 90; the GameTests' split across jobs to follow.
+- [E-08a1](evidence/E-08a1.md) (2026-11-14, construction): no way out of a build up over its wall; the ring's last gap with no spot outside, placed from inside before and refused after; the construction package 104 of 104; `next` per call cheaper than main's with a cache within one plan.
 - [F-22c70](evidence/F-22c70.md) (2026-11-12, night shelter): no torch in a cell of the way it is making; the staged fixture 0 of 3 before, 9 of 9 after.
 - [F-22c72](evidence/F-22c72.md) (2026-11-14, night shelter): dug in for the night, no mining step meanwhile from the shelter it dug; the staged fixture 0 of 3 before, 3 of 3 after; 15 night and campaign classes 151 of 151, 3 runs.
 - [F-22c73](evidence/F-22c73.md) (2026-11-14, stranding): refused walks to pick up a drop do not strand it; the staged fixture 0 of 3 before, 18 of 18 with its control after.
