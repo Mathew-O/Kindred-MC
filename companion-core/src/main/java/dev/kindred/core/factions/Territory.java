@@ -35,7 +35,7 @@ public final class Territory {
         public Chunk offset(int dx, int dz) { return new Chunk(dimension, x + dx, z + dz); }
 
         /** The nearest any of its blocks comes to (0, 0) on the ground, in blocks. */
-        double nearestToSpawn() {
+        public double nearestToSpawn() {
             int minX = x * 16, maxX = minX + 15, minZ = z * 16, maxZ = minZ + 15;
             int nx = minX > 0 ? minX : maxX < 0 ? maxX : 0, nz = minZ > 0 ? minZ : maxZ < 0 ? maxZ : 0;
             return Math.sqrt((double) nx * nx + (double) nz * nz);

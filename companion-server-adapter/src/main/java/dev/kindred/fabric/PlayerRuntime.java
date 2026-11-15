@@ -6616,6 +6616,13 @@ final class PlayerRuntime {
         if (site.isEmpty()) site = siteFor(seen, record, dimension, anchorX, anchorZ, FIRST_BASE_SPAN, FIRST_BASE_SPAN, height,
                 f -> chunks.apply(f).size() == 2 && free.test(f));
         Prospect prospect = null;
+        // A site within the spawn exclusion is no first claim (M-06i2a): its claim would be pushed some 500 blocks out on its
+        // bearing from spawn, and moved again with every look (on seed 20261030, 64 of Kindred's 65 walks toward it refused,
+        // and no land). With none, its first land is taken as without bases, from where it stands, and its base follows there.
+        if (site.isPresent() && dev.kindred.core.factions.Territory.Chunk.at(dimension, site.get().x() + FIRST_BASE_SPAN / 2,
+                site.get().z() + FIRST_BASE_SPAN / 2).nearestToSpawn() < factions.settings().spawnExclusion()) {
+            site = Optional.empty();
+        }
         if (site.isPresent()) {
             var at = site.get();
             var ground = new dev.kindred.core.construction.BaseSite.Footprint(at.x(), at.z(), at.x() + FIRST_BASE_SPAN - 1, at.z() + FIRST_BASE_SPAN - 1);
@@ -10601,6 +10608,20 @@ final class PlayerRuntime {
         if (entry == null) return;
         entry.factionPlay.move = move;
         entry.factionPlay.decidedAt = server.getTicks();
+    }
+
+    /** For fixtures: its bases' record read, as its play reads it (by the time its base or a villager it brings home asks); whether it is now. */
+    boolean basesLoadedForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry != null && basesLoaded(entry);
+    }
+
+    /** For fixtures: its bases' anchor, where its first base is reckoned from (M-06i2a); null before it is set. */
+    PlayerMemoryStore.Place baseAnchorForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null || entry.bases == null ? null : entry.bases.anchor;
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
