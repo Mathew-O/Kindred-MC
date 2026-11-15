@@ -6727,7 +6727,9 @@ final class PortalRunCampaign {
         // Too hurt, or outnumbered and already hurt: get some distance first, rather than take them on one by one in the
         // dark. Cover only from none in reach; with no way off from one that is, it is fought.
         // Not from a mob on foot in reach once backing off from it has gained nothing: that one is fought (A1).
-        boolean gainless = close != null && lastTick < backOffGainlessUntil;
+        // One close behind it counts as well as one in reach: it strikes again at the end of each walk (the staged second
+        // zombie's player backed off four times so, two of them already gainless, and was killed backing off).
+        boolean gainless = lastTick < backOffGainlessUntil && (close != null || huntedOnFootWithin(player, 4));
         if (!gainless && (player.getHealth() < 6 || player.getHealth() < 14 && hunters(player) >= 3)) {
             Optional<Task> away = backOff(player).or(() -> close == null ? coverFromHunters(body) : Optional.empty());
             if (away.isPresent() || close == null) return away;
@@ -6744,6 +6746,8 @@ final class PortalRunCampaign {
         var threats = threats(player);
         HostileEntity nearest = close != null ? close : threats.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
         if (nearest == null) nearest = rememberedFoe(player);
+        // Below six health threats() is empty by design; held from backing off, the one close behind it is still the fight.
+        if (nearest == null && gainless) nearest = nearestHunterOnFoot(player, 4);
         if (nearest == null) return Optional.empty();
         // A skeleton that steps behind cover is still out there: keep after it for a few seconds.
         foe = nearest.getUuid();
@@ -6769,6 +6773,14 @@ final class PortalRunCampaign {
         // Backing off from it has already gained nothing (A1): as good as no way off.
         return onFootInReach(player) != null && (lastTick < backOffGainlessUntil || backOffEndedAt > Long.MIN_VALUE
                 && lastTick - backOffEndedAt <= GAINLESS_CATCH || backOff(player).isEmpty());
+    }
+
+    /** The nearest mob on foot, not a creeper or a shooter, after the player within {@code range} blocks (A1). */
+    private static HostileEntity nearestHunterOnFoot(ServerPlayerEntity player, double range) {
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(range, 3, range),
+                        mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
+                                && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob))
+                .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
     /** A mob on foot, not a creeper, after the player within {@code range} blocks (A1). */
