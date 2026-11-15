@@ -138,20 +138,24 @@ public interface Strategist extends AutoCloseable {
      * {@code Chronicle.check} decides whether it is kept.
      */
     record Page(Optional<String> text, List<Long> cites, long inputTokens, long cachedTokens, long outputTokens, long millis,
-                Optional<String> failure, long cacheWriteTokens) {
+                Optional<String> failure, long cacheWriteTokens, List<String> dropped) {
         public Page {
             cites = cites == null ? List.of() : cites.stream().filter(java.util.Objects::nonNull).toList();
+            dropped = dropped == null ? List.of() : List.copyOf(dropped);
             Objects.requireNonNull(text);
             Objects.requireNonNull(failure);
         }
 
-        /** With no cache write reported: {@link #NOT_REPORTED}. */
+        /** With no cache write reported: {@link #NOT_REPORTED}, and no sentence dropped. */
         public Page(Optional<String> text, List<Long> cites, long inputTokens, long cachedTokens, long outputTokens, long millis, Optional<String> failure) {
-            this(text, cites, inputTokens, cachedTokens, outputTokens, millis, failure, NOT_REPORTED);
+            this(text, cites, inputTokens, cachedTokens, outputTokens, millis, failure, NOT_REPORTED, List.of());
         }
 
         /** The same, with the tokens written to the prompt cache as the provider reported them (F-19g). */
-        public Page withCacheWrite(long tokens) { return new Page(text, cites, inputTokens, cachedTokens, outputTokens, millis, failure, tokens); }
+        public Page withCacheWrite(long tokens) { return new Page(text, cites, inputTokens, cachedTokens, outputTokens, millis, failure, tokens, dropped); }
+
+        /** The same, with the model's sentences left out of it and why, each "\"word\": sentence" (F-33d). */
+        public Page withDropped(List<String> sentences) { return new Page(text, cites, inputTokens, cachedTokens, outputTokens, millis, failure, cacheWriteTokens, sentences); }
 
         static Page failed(String why, long millis) { return new Page(Optional.empty(), List.of(), 0, 0, 0, millis, Optional.of(why)); }
 
