@@ -7656,6 +7656,10 @@ final class PortalRunCampaign {
         if (player.isOnGround() && open.size() <= 3 && world.getFluidState(feet).isEmpty()) snug = feet.toImmutable();
         if (holedUpSince >= 0) {
             if (pressed) return Optional.empty(); // Something got in: fight back rather than wait.
+            // No wall round it (more than four ways open) with a mob on foot after it within sixteen: a rest there is no
+            // hole-up, only a pause for the mob to close in. In e40a22's A1 and the staged second zombie the goal rested so
+            // between back-offs in the open, eight times in a run (F-25c4dh); the back-off or the fight goes on instead.
+            if (open.size() > 4 && huntedOnFootWithin(player, 16)) return Optional.empty();
             if (player.getHealth() >= 18 || lastTick - holedUpSince > 2400) {
                 holedUpSince = -1;
                 return Optional.empty();
