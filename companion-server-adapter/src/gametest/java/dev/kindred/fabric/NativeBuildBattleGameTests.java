@@ -44,6 +44,9 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     // Level ground for two plots east of where the operator stands.
                     var world = context.getWorld();
+                    // Its arena's field, wider than its plot, put back as the test ends, passed or failed (F-22c75b):
+                    // left standing, its fences and blocks lay in or beside a later test's plot.
+                    FixtureGround.keep(context, o.add(-6, 1, -4), o.add(40, 20, 22));
                     for (int x = -4; x <= 40; x++) for (int z = -4; z <= 22; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -193,6 +196,9 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // Its arena's field, wider than its plot, put back as the test ends, passed or failed (F-22c75b):
+                    // left standing, its fences and blocks lay in or beside a later test's plot.
+                    FixtureGround.keep(context, o.add(-10, 1, -4), o.add(40, 20, 26));
                     for (int x = -10; x <= 40; x++) for (int z = -4; z <= 26; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -293,6 +299,9 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // Its arena's field, wider than its plot, put back as the test ends, passed or failed (F-22c75b):
+                    // left standing, its fences and blocks lay in or beside a later test's plot.
+                    FixtureGround.keep(context, o.add(-10, 1, -4), o.add(40, 20, 26));
                     for (int x = -10; x <= 40; x++) for (int z = -4; z <= 26; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
