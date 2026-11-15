@@ -39,3 +39,4 @@ confirm-main-2.7 (7d28647c, only flagged): 0 min, peak 1290 MB, 1 required tests
 confirm-main-3.1 (7d28647c, only flagged): 0 min, peak 1331 MB, All 2 required tests passed, fence-top 0, disk 5.4G
 confirm-main-3.2 (7d28647c, only flagged): 0 min, peak 1015 MB, 1 required tests failed, fence-top 0, disk 5.4G
 confirm-main-3.3 (7d28647c, only flagged): 0 min, peak 1342 MB, 1 required tests failed, fence-top 0, disk 5.4G
+confirm-main-3.4 (7d28647c, only flagged): 0 min, peak 1176 MB, All 2 required tests passed, fence-top 0, disk 5.4G
