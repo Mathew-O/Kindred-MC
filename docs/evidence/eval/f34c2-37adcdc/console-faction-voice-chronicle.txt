@@ -1,0 +1,97 @@
+[05:29:29] [main/INFO]: Evaluation run: starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=72000; sprint=off; strategist=off; voice=on; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions; founders=1 (earned)
+[05:29:30] [Server thread/INFO]: Kindred strategist on: OpenAI-compatible model <not recorded> (JSON schema), pace steady, daily token budgets a player and in all: advice 50000 and 100000, voice 50000 and 100000, pages 50000 and 100000
+[05:29:30] [Server thread/INFO]: Kindred voice on: replies in chat are phrased by the strategist's model
+[05:29:36] [Server thread/INFO]: Evaluation run: edits on, lessons on, atlas on, rescue off, advice off (strategist off, voice on)
+[05:29:45] [Server thread/INFO]: Kindred faction: Founded Kindred_Hold [KIN]
+[05:30:16] [Server thread/INFO]: Kindred faction: Invited
+[05:30:48] [Server thread/INFO]: Kindred faction: Invited
+[05:30:53] [Server thread/INFO]: Echo faction: Joined Kindred_Hold
+[05:31:15] [Server thread/INFO]: Kindred faction: Invited
+[05:31:22] [Server thread/INFO]: Sol faction: Joined Kindred_Hold
+[05:32:51] [Server thread/INFO]: Kindred faction: Claimed minecraft:overworld:-30:-15 for Kindred_Hold (1 / 30)
+[05:33:28] [Server thread/INFO]: Kindred faction: Claimed minecraft:overworld:-31:-15 for Kindred_Hold (2 / 30)
+[05:34:40] [Server thread/INFO]: Kindred faction: Claimed minecraft:overworld:-30:-16 for Kindred_Hold (3 / 30)
+[05:39:41] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:39:41] [Server thread/INFO]: Kindred faction: Sold for 1.27 coins
+[05:42:11] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:42:11] [Server thread/INFO]: Kindred faction: Sold for 1.33 coins
+[05:42:47] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[05:42:47] [Server thread/INFO]: Sol faction: Sold for 1.24 coins
+[05:43:41] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:43:41] [Server thread/INFO]: Kindred faction: Sold for 1.02 coins
+[05:44:20] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[05:44:20] [Server thread/INFO]: Sol faction: Sold for 1.12 coins
+[05:45:42] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:45:42] [Server thread/INFO]: Kindred faction: Sold for 1.07 coins
+[05:47:42] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:47:42] [Server thread/INFO]: Kindred faction: Sold for 1.24 coins
+[05:49:36] [ForkJoinPool.commonPool-worker-3/INFO]: Kindred cost: day 1: the Record through event 13843, 13843 written since start (1253362 characters of data); by kind events/characters {account.seen=5/0, action=5143/482432, claim=3/189, coins=15/862, death=2/73, faction.create=1/74, faction.invite=3/255, faction.join=2/72, journal=8631/763396, market.intent=7/651, market.sale=7/1046, message=6/2230, power.online=17/525, safe.zone=1/1557}; the database 10411776 bytes on disk; webs 3 holding 0 relations, the world's 3; Wire inboxes 12 messages; Wire none refused since start; teammates' updates (team.state) 1350 told since start, kept only in the peer ledgers; Chronicle 0 pages kept; heap in use 534 MB; far looks 806 since start, 746 sight lines, 33 ms; native.disconnects 0 since start
+[05:49:40] [Server thread/INFO]: Sol chronicle: day 1 page (the model's, 541 characters, 4 events cited)
+[05:49:42] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:49:42] [Server thread/INFO]: Kindred faction: Sold for 1.08 coins
+[05:49:42] [Server thread/INFO]: Echo chronicle: day 1 page (the model's, 610 characters, 5 events cited)
+[05:49:45] [Server thread/INFO]: Kindred chronicle: day 1 page (the model's, 614 characters, 7 events cited)
+[05:53:13] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:53:13] [Server thread/INFO]: Kindred faction: Sold for 1.22 coins
+[05:53:49] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[05:53:49] [Server thread/INFO]: Sol faction: Sold for 1.34 coins
+[05:54:43] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:54:43] [Server thread/INFO]: Kindred faction: Sold for 1.04 coins
+[05:56:50] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[05:56:50] [Server thread/INFO]: Sol faction: Sold for 1.33 coins
+[05:57:22] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[05:57:22] [Server thread/INFO]: Echo faction: Sold for 1.22 coins
+[05:58:44] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[05:58:44] [Server thread/INFO]: Kindred faction: Sold for 1.01 coins
+[05:58:51] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[05:58:51] [Server thread/INFO]: Echo faction: Sold for 1.01 coins
+[06:01:44] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[06:01:44] [Server thread/INFO]: Kindred faction: Sold for 2.16 coins
+[06:03:14] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[06:03:14] [Server thread/INFO]: Kindred faction: Sold for 1.08 coins
+[06:04:23] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[06:04:23] [Server thread/INFO]: Echo faction: Sold for 1.31 coins
+[06:06:15] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[06:06:15] [Server thread/INFO]: Kindred faction: Sold for 2.02 coins
+[06:06:23] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[06:06:23] [Server thread/INFO]: Echo faction: Sold for 1.07 coins
+[06:08:23] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[06:08:23] [Server thread/INFO]: Echo faction: Sold for 1.07 coins
+[06:09:36] [Server thread/INFO]: Kindred cost: day 2: the Record through event 32058, 32058 written since start (2910138 characters of data); by kind events/characters {account.seen=5/0, action=12188/1142146, chronicle.page=3/2131, claim=3/189, coins=30/1732, death=3/108, faction.create=1/74, faction.invite=3/255, faction.join=2/72, journal=19731/1752942, ledger_check=1/169, market.intent=21/1996, market.sale=22/3361, message=6/2230, power.online=38/1176, safe.zone=1/1557}; the database 18415408 bytes on disk; webs 3 holding 0 relations, the world's 3; Wire inboxes 12 messages; Wire none refused since start; teammates' updates (team.state) 2790 told since start, kept only in the peer ledgers; Chronicle 3 pages kept; heap in use 836 MB; far looks 981 since start, 921 sight lines, 38 ms; native.disconnects 0 since start
+[06:09:39] [Server thread/INFO]: Sol chronicle: the model's page refused (Problems[missing=[], contradictions=["before" orders events itself]]); the plain list kept
+[06:09:39] [Server thread/INFO]: Sol chronicle: day 2 page (the plain list, 476 characters, 3 events cited)
+[06:09:41] [Server thread/INFO]: Echo chronicle: day 2 page (the model's, 496 characters, 3 events cited)
+[06:09:42] [Server thread/INFO]: Kindred chronicle: day 2 page (the model's, 453 characters, 3 events cited)
+[06:10:23] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[06:10:23] [Server thread/INFO]: Echo faction: Sold for 1.23 coins
+[06:11:15] [Server thread/INFO]: Kindred faction: Offered its spare blocks to the market
+[06:11:15] [Server thread/INFO]: Kindred faction: Sold for 1.06 coins
+[06:12:23] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[06:12:23] [Server thread/INFO]: Echo faction: Sold for 1.04 coins
+[06:14:21] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:14:21] [Server thread/INFO]: Sol faction: Sold for 1.11 coins
+[06:16:54] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[06:16:54] [Server thread/INFO]: Echo faction: Sold for 1.18 coins
+[06:17:23] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:17:23] [Server thread/INFO]: Sol faction: Sold for 1.29 coins
+[06:19:24] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:19:24] [Server thread/INFO]: Sol faction: Sold for 1.25 coins
+[06:21:24] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:21:24] [Server thread/INFO]: Sol faction: Sold for 1.17 coins
+[06:21:54] [Server thread/INFO]: Echo faction: Offered its spare blocks to the market
+[06:21:54] [Server thread/INFO]: Echo faction: Sold for 1.91 coins
+[06:23:24] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:23:24] [Server thread/INFO]: Sol faction: Sold for 1.04 coins
+[06:25:55] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:25:55] [Server thread/INFO]: Sol faction: Sold for 1.06 coins
+[06:27:54] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:27:54] [Server thread/INFO]: Sol faction: Sale cancelled (the stacks changed); nothing moved
+[06:28:25] [Server thread/INFO]: Sol faction: Offered its spare blocks to the market
+[06:28:25] [Server thread/INFO]: Sol faction: Sold for 1.21 coins
+[06:29:36] [ForkJoinPool.commonPool-worker-5/INFO]: Kindred cost: day 3: the Record through event 47747, 47747 written since start (4324459 characters of data); by kind events/characters {account.seen=5/0, action=17702/1658626, chronicle.page=6/3954, claim=3/189, coins=42/2465, death=4/141, faction.create=1/74, faction.invite=3/255, faction.join=2/72, journal=29841/2643763, ledger_check=2/338, market.cancel=1/47, market.intent=34/3273, market.sale=34/5263, message=7/2615, power.online=59/1827, safe.zone=1/1557}; the database 25337696 bytes on disk; webs 3 holding 0 relations, the world's 3; Wire inboxes 15 messages; Wire none refused since start; teammates' updates (team.state) 4230 told since start, kept only in the peer ledgers; Chronicle 6 pages kept; heap in use 775 MB; far looks 1197 since start, 1137 sight lines, 43 ms; native.disconnects 0 since start
+[06:29:39] [Server thread/INFO]: Sol chronicle: day 3 page (the model's, 411 characters, 3 events cited)
+[06:29:42] [Server thread/INFO]: Echo chronicle: the model's page refused (Problems[missing=[], contradictions=["before" orders events itself]]); the plain list kept
+[06:29:42] [Server thread/INFO]: Echo chronicle: day 3 page (the plain list, 518 characters, 4 events cited)
+[06:29:43] [Server thread/INFO]: Kindred chronicle: the model's page refused (Problems[missing=[], contradictions=["before" orders events itself]]); the plain list kept
+[06:29:43] [Server thread/INFO]: Kindred chronicle: day 3 page (the plain list, 466 characters, 3 events cited)
+[06:29:45] [ForkJoinPool.commonPool-worker-5/INFO]: Kindred cost: day 4: the Record through event 47890, 47890 written since start (4338910 characters of data); by kind events/characters {account.seen=5/0, action=17754/1663502, chronicle.page=9/5757, claim=3/189, coins=42/2465, death=4/141, faction.create=1/74, faction.invite=3/255, faction.join=2/72, journal=29928/2651366, ledger_check=3/507, market.cancel=1/47, market.intent=34/3273, market.sale=34/5263, message=7/2615, power.online=59/1827, safe.zone=1/1557}; the database 25431904 bytes on disk; webs 3 holding 0 relations, the world's 3; Wire inboxes 15 messages; Wire none refused since start; teammates' updates (team.state) 4242 told since start, kept only in the peer ledgers; Chronicle 9 pages kept; heap in use 546 MB; far looks 1197 since start, 1137 sight lines, 43 ms; native.disconnects 0 since start
