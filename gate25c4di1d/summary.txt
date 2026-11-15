@@ -15,3 +15,4 @@ confirm-branch-3.1 (2f48ce05, only flagged): 0 min, peak 1309 MB, All 2 required
 confirm-branch-3.2 (2f48ce05, only flagged): 0 min, peak 1286 MB, 1 required tests failed, fence-top 0, disk 7.2G
 confirm-branch-3.3 (2f48ce05, only flagged): 0 min, peak 1323 MB, All 2 required tests passed, fence-top 1, disk 7.2G
 confirm-branch-3.4 (2f48ce05, only flagged): 0 min, peak 1377 MB, 1 required tests failed, fence-top 0, disk 7.2G
+confirm-branch-3.5 (2f48ce05, only flagged): 0 min, peak 1084 MB, 1 required tests failed, fence-top 0, disk 7.2G
