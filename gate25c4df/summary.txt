@@ -2,3 +2,4 @@ branch-1 (39a06fad): 45 min, peak 3209 MB, 116 required tests failed, fence-top 
 branch-2 (39a06fad): 48 min, peak 2945 MB, 108 required tests failed, fence-top 27, disk 4.9G
 branch-3 (39a06fad): 47 min, peak 3288 MB, 108 required tests failed, fence-top 24, disk 5.7G
 confirm-branch-1.1 (39a06fad, only flagged): 0 min, peak 1295 MB, All 2 required tests passed, fence-top 0, disk 6.2G
+confirm-branch-1.2 (39a06fad, only flagged): 0 min, peak 1168 MB, All 2 required tests passed, fence-top 0, disk 6.2G
