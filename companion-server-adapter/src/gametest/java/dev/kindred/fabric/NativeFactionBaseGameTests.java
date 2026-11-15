@@ -24,10 +24,13 @@ import net.minecraft.util.math.BlockPos;
  * waited for no goal (RUNNER 2's finding).
  *
  * Technical: staged, not a live run. Its faction, Red, holds the nine chunks round where it stands (recorded, as a
- * founder's claims would be). Its staged inventory, item by item, as {@link NativeBaseGameTests}' cabin fixture has it:
- * a stone pickaxe and a stone axe (what makes the cabin due); from the cabin's bill, 98 oak planks, 6 of its 12 oak logs,
- * 42 oak stairs, 7 oak slabs, an oak door, a red bed, 2 chests and a torch; and, not from the bill, 2 crafting tables,
- * 64 dirt to scaffold with and 16 bread. None of the cabin's 62 cobblestone is given. Its goal is a Nether portal. Stood a
+ * founder's claims would be). Its staged inventory, item by item: a stone pickaxe and a stone axe (what makes the cabin
+ * due); the cabin's whole bill, 98 oak planks, its 12 oak logs, 42 oak stairs, 7 oak slabs, an oak door, a red bed, 2
+ * chests, a torch, its 54 cobblestone and its furnace (the other 8); and, not from the bill, 2 crafting tables, 64 dirt to
+ * scaffold with and 16 bread. The whole bill, so that its first blocks go down as soon as it begins: with half its logs
+ * and none of its stone, the build's one trip for them first (as {@link NativeBaseGameTests} has it) took the first
+ * placement past 2,400 ticks under CI's load (#323's run 43666381367), though the cabin was begun at once. Its goal is
+ * a Nether portal. Stood a
  * moment before it plays, so that it has looked at the ground round it. The controls: the same founder with no land
  * begins no base; a co-op player with a goal begins none, as before.
  */
@@ -200,9 +203,10 @@ public final class NativeFactionBaseGameTests implements FabricGameTest {
         inventory.clear();
         ItemStack[] held = {
                 new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_AXE), new ItemStack(Items.OAK_PLANKS, 64),
-                new ItemStack(Items.OAK_PLANKS, 34), new ItemStack(Items.OAK_LOG, 6), new ItemStack(Items.OAK_STAIRS, 42),
+                new ItemStack(Items.OAK_PLANKS, 34), new ItemStack(Items.OAK_LOG, 12), new ItemStack(Items.OAK_STAIRS, 42),
                 new ItemStack(Items.OAK_SLAB, 7), new ItemStack(Items.OAK_DOOR, 1), new ItemStack(Items.RED_BED, 1),
                 new ItemStack(Items.CRAFTING_TABLE, 2), new ItemStack(Items.CHEST, 2), new ItemStack(Items.TORCH, 1),
+                new ItemStack(Items.COBBLESTONE, 54), new ItemStack(Items.FURNACE, 1),
                 new ItemStack(Items.DIRT, 64), new ItemStack(Items.BREAD, 16)};
         for (int slot = 0; slot < held.length; slot++) inventory.setStack(slot, held[slot]);
         player.setHealth(20);
