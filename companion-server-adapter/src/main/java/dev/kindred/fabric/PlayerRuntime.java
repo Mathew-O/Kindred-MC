@@ -18445,7 +18445,7 @@ final class PlayerRuntime {
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
         var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
-                chronicle.kept(), wire.stateTold(), wire.refusals());
+                chronicle.kept(), wire.stateTold(), wire.refusals(), factions.refusalCounts());
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;

@@ -16,7 +16,7 @@ public final class TerritoryRefusals {
     public static final String REFUSED = "territory.refused";
     public static final String PRUNED = "territory.pruned";
     /** What was tried and refused. */
-    public static final List<String> WHAT = List.of("break", "place", "explode", "mob_change", "hit");
+    public static final List<String> WHAT = List.of("break", "place", "use", "explode", "mob_change", "hit");
 
     private TerritoryRefusals() { }
 }

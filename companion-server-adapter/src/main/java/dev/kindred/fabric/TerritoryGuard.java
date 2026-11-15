@@ -54,6 +54,16 @@ public final class TerritoryGuard {
         return true;
     }
 
+    /**
+     * A refusal that stopped {@code actor}'s real attempt at {@code pos} (F-34c2): {@code what} it tried, one of
+     * {@link dev.kindred.core.record.TerritoryRefusals#WHAT}. Called only by the sites that refuse an act (the event
+     * callbacks and the explosion and projectile mixins), never by {@link #mayChange} or any query a plan asks; each
+     * world's service writes it if the land is a faction's own, within its limits, queued off the tick.
+     */
+    public static void refused(ServerPlayerEntity actor, World world, BlockPos pos, String what) {
+        for (var service : of(world)) service.refused(actor, chunk(world, pos), what);
+    }
+
     /** Why {@code player} may not change {@code pos}, or null. */
     public static String denial(ServerPlayerEntity player, BlockPos pos) {
         return mayChange(player, pos) ? null : "Another faction's land, or a safe zone";
