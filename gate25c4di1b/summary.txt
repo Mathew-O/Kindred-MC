@@ -10,3 +10,4 @@ confirm-branch-2.3 (cc67d1d1, only flagged): 0 min, peak 1068 MB, 1 required tes
 confirm-branch-3.1 (cc67d1d1, only flagged): 0 min, peak 1363 MB, All 2 required tests passed, fence-top 0, disk 9.6G
 confirm-branch-3.2 (cc67d1d1, only flagged): 0 min, peak 995 MB, All 2 required tests passed, fence-top 0, disk 9.6G
 confirm-branch-3.3 (cc67d1d1, only flagged): 0 min, peak 1125 MB, All 2 required tests passed, fence-top 0, disk 9.6G
+confirm-main-1.1 (f80148fe, only flagged): 0 min, peak 1102 MB, 1 required tests failed, fence-top 0, disk 9.6G
