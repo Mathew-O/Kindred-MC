@@ -4158,6 +4158,15 @@ final class PlayerRuntime {
         var faction = factionCandidates(entry, body);
         if (faction != null) return faction;
 
+        // In a faction world, its base's due stage (M-06i2), after what keeps it alive and its land's defence, ahead of
+        // other faction walks and of its goal: there the standing goal is the End or the dragon, and a base waits for no
+        // goal, so no faction player's base was ever built. On its own claims only; with no site there, it is looked at
+        // again after BASE_NO_SITE and the goal goes on meanwhile. Once begun it is a build, carried on below.
+        if (factionBaseDue(entry, body) && baseDecision(entry, body, onOwnClaims(player))) {
+            candidates.addAll(buildCandidates(entry, body));
+            return candidates;
+        }
+
         // Supplies it was asked to bring someone, fetched from its storage and handed over (E-01), before its own work.
         var delivering = deliveryCandidates(entry, body);
         if (delivering != null) return delivering;
@@ -5501,8 +5510,62 @@ final class PlayerRuntime {
      * build like any other, its blocks fetched through its needs (E-08c). Whether it started a build.
      */
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
+        return baseDecision(entry, body, null);
+    }
+
+    /**
+     * In a faction world, whether its base's stage is due now and not yet begun (M-06i2): bases on, edits allowed, the
+     * overworld, its other work done, its look-again time past, in a faction holding land, and a stage it took up again
+     * or the next one {@link dev.kindred.core.construction.BaseProgression} names. Never outside a faction world: there
+     * the base waits for no goal, as before.
+     */
+    private boolean factionBaseDue(Entry entry, NativePlayerBody body) {
+        if (!factionsWorld() || !bases || !worldEditsEnabled() || body == null) return false;
+        if (entry.build != null || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null
+                || entry.stable != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
+        var player = body.entity();
+        if (player.getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
+        if (server.getTicks() < entry.baseCheckAt || !basesLoaded(entry)) return false;
+        var ledgers = projected();
+        String own = ledgers.factions().of(player.getUuid()).map(f -> f.id().toString()).orElse("");
+        if (own.isEmpty() || !ledgers.claims().containsValue(own)) return false;
+        var record = entry.bases;
+        var last = record.built.isEmpty() ? null : record.built.get(record.built.size() - 1);
+        if (last != null && !last.complete()) return true;
+        return dev.kindred.core.construction.BaseProgression.next(baseProgress(body, last)).next().isPresent();
+    }
+
+    /** Whether its base's stage is being built now (M-06i2): its build is its base's. */
+    private static boolean factionBaseBegun(Entry entry) {
+        return entry.build != null && entry.build == entry.baseBuild;
+    }
+
+    /** Every chunk of a footprint its own faction's claim (M-06i2): a faction base is built on its own land only. */
+    private java.util.function.Predicate<dev.kindred.core.construction.BaseSite.Footprint> onOwnClaims(ServerPlayerEntity player) {
+        var ledgers = projected();
+        String own = ledgers.factions().of(player.getUuid()).map(f -> f.id().toString()).orElse("");
+        var claims = ledgers.claims();
+        String world = player.getServerWorld().getRegistryKey().getValue().toString();
+        return footprint -> {
+            if (own.isEmpty()) return false;
+            for (int cx = Math.floorDiv(footprint.minX(), 16); cx <= Math.floorDiv(footprint.maxX(), 16); cx++) {
+                for (int cz = Math.floorDiv(footprint.minZ(), 16); cz <= Math.floorDiv(footprint.maxZ(), 16); cz++) {
+                    if (!own.equals(claims.get(new dev.kindred.core.factions.Territory.Chunk(world, cx, cz).key()))) return false;
+                }
+            }
+            return true;
+        };
+    }
+
+    /**
+     * Its base's next step, as {@link #baseDecision(Entry, NativePlayerBody)}; with {@code onOwnClaims}, a faction base's turn
+     * (M-06i2): taken with its goal running (a faction world's standing goal is the End or the dragon, never none), sited
+     * only where the test holds (every chunk of the footprint its faction's), and no trading hall begun in that turn.
+     */
+    private boolean baseDecision(Entry entry, NativePlayerBody body,
+                                 java.util.function.Predicate<dev.kindred.core.construction.BaseSite.Footprint> onOwnClaims) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
-        if (!bases || !worldEditsEnabled() || goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
+        if (!bases || !worldEditsEnabled() || onOwnClaims == null && goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
                 || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.stable != null
                 || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
@@ -5554,7 +5617,7 @@ final class PlayerRuntime {
         }
         // A trading hall by its base once it keeps a villager worth a cell (E-45d), ahead of its next stage: one it
         // began taken up again, else sited on the nearest flat open ground to its base.
-        if (last != null && last.complete()) {
+        if (last != null && last.complete() && onOwnClaims == null) {
             var hall = record.hall;
             if (hall != null && !hall.complete() && hall.dimension().equals(dimension)) return startHall(entry, hall, "Back to its trading hall");
             if (hall == null && keepsAVillager(entry, body)) {
@@ -5608,7 +5671,7 @@ final class PlayerRuntime {
         var shape = dev.kindred.core.construction.Houses.shape(stage, style.variant());
         int[] span = dev.kindred.core.construction.Houses.span(shape, style.turns());
         var plan = dev.kindred.core.construction.Houses.of(stage, style);
-        var site = siteFor(entry.seenGround.ground(world), record, dimension, anchorX, anchorZ, span[0], span[1], height(plan), footprint -> true);
+        var site = siteFor(entry.seenGround.ground(world), record, dimension, anchorX, anchorZ, span[0], span[1], height(plan), onOwnClaims == null ? footprint -> true : onOwnClaims);
         if (site.isEmpty()) {
             // While it is still seeing ground it had not, it looks again soon: the site may be there once seen (F-35m1).
             long seen = entry.seenGround.version();
@@ -10219,6 +10282,12 @@ final class PlayerRuntime {
             play.decidedAt = tick;
             play.decidedForTest(tick);
             play.chosen = factionChoose(entry, player);
+            // Its base's stage due (M-06i2): a walk other than to defend its land is not set out on now, and is weighed
+            // again at the next decision; an act where it stands (a claim, a sale) still goes ahead.
+            if (play.chosen != null && FactionsPlayer.moves(play.chosen, player) && play.chosen.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND
+                    && factionBaseDue(entry, body)) {
+                play.chosen = null;
+            }
             if (play.chosen != null && FactionsPlayer.moves(play.chosen, player)) {
                 play.move = play.chosen;
                 play.chosen = null;
@@ -10243,6 +10312,9 @@ final class PlayerRuntime {
         // (M-06i1a). On seeds-10 (3286df0) the walks took players hundreds of blocks from the trees by their spawn before a
         // wooden tool: on 101 Echo and Sol 250 blocks west into water, 21 to 114 walks each, Echo never earning one.
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && woodFirst(entry)) return null;
+        // Its base's stage being built (M-06i2): a walk other than to defend its land waits till the stage is done, and
+        // is kept. A walk under way when a stage falls due goes on to its end first; the stage begins after it.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && factionBaseBegun(entry)) return null;
         // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
         if (play.setAside(tick).contains(move.target())) {
             settledInFlight(entry, play, player, move);
@@ -10678,6 +10750,13 @@ final class PlayerRuntime {
         if (entry == null) return;
         entry.factionPlay.move = move;
         entry.factionPlay.decidedAt = server.getTicks();
+    }
+
+    /** For fixtures: the goal its player is set to now (M-06i2). */
+    dev.kindred.core.survival.SurvivalGoal goalForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? null : goalOf(entry);
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
