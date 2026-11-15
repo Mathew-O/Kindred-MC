@@ -160,6 +160,31 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * As the strolling bring, staged (F-22c64): once its front's rail is up and the cell's boat, cart and drops are
+     * taken back, Hal set where CI's run left it, up on the edge of the bed's foot behind the cell's floor (its box a fifth of a block over the
+     * bed, a fifth west of the cell's middle), and the librarian held on the bed's head for three seconds, the floor clear.
+     * In CI on #318 (`e924161a`, run 43641110830) Hal, shoved there by the librarian it walked in against, was refused its walk
+     * out three times ("a clear, supported, loaded flat corridor": none starts up on a bed) and gave the bring up. CI's log
+     * does not show how it came to be there, and the librarian staged in its way alone did not put it there (3 of 3 passed on
+     * `e924161a`), so the state it gave up from is staged. Held: down on to the floor, out, and the librarian brought home.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOnBedEdge", tickLimit = 14000)
+    public void upOnTheEdgeOfTheBedsFootHalStepsDownAndOut(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 1);
+    }
+
+    /**
+     * As the last, Hal set wholly on the bed's foot, out of the cell's front and floor (#318). With the cell's "inside" taken
+     * as its front and floor alone, one block high, Hal there (or its feet a jump above the floor's block) was taken to be
+     * out, and the job block went in across the front with Hal shut in behind it. Held: the job block never goes in with any
+     * part of Hal's box in the cell.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOnBed", tickLimit = 14000)
+    public void whollyOnTheBedsFootHalIsNotShutInByTheJobBlock(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 2);
+    }
+
+    /**
      * As the last, with a lake eight wide right across the field between the librarian and the hall, and only four dirt
      * in Hal's hand, too few for a bridge of eight: Hal holds the librarian in its boat on its own side, gets in with it,
      * rows it over the ground into the water and across, and gets out on the far bank, the librarian left in the boat on
@@ -260,6 +285,13 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside, boolean bornInBoat, boolean pressed) {
+        scene(context, make, wander, river, mine, strolling, lake, slowed, derailed, seated, behind, doorAside, bornInBoat, pressed, 0);
+    }
+
+    /** {@code onBed}: 0 not staged; 1 Hal on the edge of the bed's foot, as CI's #318 left it; 2 Hal wholly on the bed's foot. */
+    private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
+                              boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside, boolean bornInBoat, boolean pressed,
+                              int onBed) {
         boolean[] asideOnce = {false};
         // Each cell's front: a rail on it the tick before; the tick its rail came up; whether Hal stood in it then.
         java.util.Map<BlockPos, Boolean> frontRail = new java.util.HashMap<>();
@@ -268,6 +300,11 @@ public final class NativeBringGameTests implements FabricGameTest {
         java.util.Set<java.util.UUID> movedDrops = new java.util.HashSet<>();
         String[] stagedDrop = {null};
         long[] pressFrom = {-1};
+        // #318: Hal staged up on the cell's bed, the tick and front; Hal shut in its cell by the job block, in any bring.
+        long[] bedFrom = {-1};
+        BlockPos[] bedFront = {null};
+        String[] shutIn = {null};
+        java.util.Set<BlockPos> jobSeen = new java.util.HashSet<>();
         BlockPos[] pressedFront = {null};
         String[] escaped = {null};
         boolean[] jobBlockIn = {false};
@@ -551,6 +588,36 @@ public final class NativeBringGameTests implements FabricGameTest {
                             }
                             if (pressFrom[0] >= 0) v.setVelocity(0, v.getVelocity().y, 0.1);
                         }
+                        // Staged (#318): the first tick, after its rail is up, that the cell holds no boat, cart, rail or cart
+                        // item and Hal is out of the front (all of it broken and picked up, under the trapdoor), Hal set up on
+                        // the bed's foot, and the librarian, out of any boat or cart, held on the bed's head for 60 ticks, the
+                        // floor clear.
+                        var cellBox = new net.minecraft.util.math.Box(front).union(new net.minecraft.util.math.Box(front.north(3))).stretch(0, 2, 0);
+                        if (onBed > 0 && up != null && !jobIn && hal != null && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))
+                                && world.getEntitiesByClass(net.minecraft.entity.vehicle.VehicleEntity.class, cellBox.expand(0.5), net.minecraft.entity.Entity::isAlive).isEmpty()
+                                && world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellBox.expand(0.5),
+                                        i -> i.isAlive() && (i.getStack().isOf(Items.RAIL) || i.getStack().isOf(Items.MINECART))).isEmpty()
+                                && bedFrom[0] < 0 && librarian[0].getVehicle() == null
+                                && world.getBlockState(front.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS)) {
+                            bedFrom[0] = world.getTime();
+                            bedFront[0] = front;
+                            // The edge: CI's (0.3 east of the cell's west face, 0.9 north of the front's). Wholly: the foot's middle.
+                            hal.refreshPositionAndAngles(front.getX() + (onBed == 1 ? 0.3 : 0.5), front.getY() + 0.5625, front.getZ() - (onBed == 1 ? 0.9 : 1.5), 0, 0);
+                            hal.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            KindredMod.LOGGER.info("Bring: Hal up on the bed's foot, at {}", hal.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                        }
+                        if (front.equals(bedFront[0]) && world.getTime() - bedFrom[0] < 60) {
+                            var v = librarian[0];
+                            v.refreshPositionAndAngles(front.getX() + 0.5, front.getY() + 0.5625, front.getZ() - 2.4, 0, 0);
+                            v.setVelocity(0, v.getVelocity().y, 0);
+                        }
+                        // Never shut in: the tick the job block goes in, no part of Hal's box in the cell (its front to its
+                        // bed's head, to its full height).
+                        if (jobIn && up != null && jobSeen.add(front) && shutIn[0] == null && hal != null
+                                && hal.getBoundingBox().intersects(cellBox)) {
+                            shutIn[0] = "Hal at " + hal.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()) + " as the job block went in across the front at "
+                                    + front.subtract(origin[0]).toShortString();
+                        }
                         if (pressedFront[0] != null && escaped[0] == null && librarian[0].getBoundingBox().minZ >= pressedFront[0].getZ()) {
                             escaped[0] = "the librarian out of its cell into the front at " + librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())
                                     + ", " + (world.getTime() - pressFrom[0]) + " ticks after Hal stepped out";
@@ -561,6 +628,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 librarian[0].getVehicle(), librarian[0].getHealth(),
                                 librarian[0].getRecentDamageSource() == null ? "" : ", hurt by " + librarian[0].getRecentDamageSource().getName());
                     }
+                    context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
                     context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
                 })
@@ -570,6 +638,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                     context.assertTrue(inFrontLoose[0] == null, "The librarian kept out of its front until the job block is in: " + inFrontLoose[0]);
                     context.assertTrue(boatOverFront[0] == null, "No boat over a cell's front as its rail comes up: " + boatOverFront[0]);
                     if (bornInBoat) context.assertTrue(stagedDrop[0] != null, "The front rail's drop staged at the front's north edge");
+                    if (onBed > 0) context.assertTrue(bedFrom[0] >= 0, "Hal staged up on the bed's foot with the front's rail up");
+                    context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
                     if (pressed) {
                         context.assertTrue(pressFrom[0] >= 0, "The librarian pressed at the front with its rail up and Hal out of it");
                         context.assertTrue(escaped[0] == null, "The librarian held in its cell: " + escaped[0]);

@@ -11938,8 +11938,10 @@ final class PlayerRuntime {
                     // Under the trapdoor, the front rail's drop picked up from the front: stepped into from the corridor by
                     // its own box (a walk the navigator would not plan, under a top trapdoor), a while given to it there,
                     // and stepped out again. What is still lying after that is let be and said, as before.
-                    // In the front or on the cell's floor behind it, under the trapdoor's hold.
-                    boolean inside = player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor)));
+                    // Anywhere in the cell, under the trapdoor's hold: its front, its floor, or up on its bed behind, to the cell's
+                    // full height (#318: up on the bed, or its feet a jump off the floor's block, it was taken to be out, and the
+                    // job block went in with it inside).
+                    boolean inside = player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).stretch(0, 2, 0));
                     var cell = new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0.5, 1, 0.5);
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
                             item -> item.isAlive() && (item.getStack().isOf(Items.RAIL) || item.getStack().isOf(Items.MINECART)));
@@ -11972,6 +11974,19 @@ final class PlayerRuntime {
                     }
                     // Out: done, or the while given is up, or inside with nothing lying in its reach (left there by the break's own
                     // pickup, only just in the front): out to the stand, and in again from there, where it reaches what lies.
+                    if (inside && player.getY() > b.floor.getY() + 0.1) {
+                        // Up on the bed's foot behind the floor (shoved there by the villager it walked in against, in CI on
+                        // #318): no flat walk starts there, so down on to the middle of the floor first, and out from there.
+                        // The way down is planned only with the floor clear: while the villager stands on it, the route there
+                        // is blocked, so it is waited for, under the while given (counted from now if not yet begun).
+                        if (b.underFrom < 0) b.underFrom = now;
+                        if (villager != null && !villager.hasVehicle() && now - b.underFrom < UNDER_TRAPDOOR_TICKS
+                                && villager.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.floor))) {
+                            return List.of(waitTask(task, "For the " + b.noun + " to step off its cell's floor"));
+                        }
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "down on to the floor"), "native_goto", Map.of("x", String.valueOf(b.floor.getX()),
+                                "y", String.valueOf(b.floor.getY()), "z", String.valueOf(b.floor.getZ()), "range", "0", "partial", "false", "centre_within", "0.2")));
+                    }
                     if (inside) {
                         // Back to the stand across the corridor, by as far as it is from it, never past its middle by more than a
                         // fifth of a block: the corridor's far wall is just beyond it (the break's own pickup can leave it only just
