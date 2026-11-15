@@ -16,11 +16,13 @@ import java.util.concurrent.CompletableFuture;
  * ledger's included, which the store writes in their own rows' transactions and never pass the runtime. The database's
  * size on disk is read off the server thread; the in-memory sizes are given by the runtime; the far looks (F-35m's sight
  * lines to far columns' tops) are counted where they are cast, on the server thread. One log line a game day:
- * {@code Kindred cost: ...}. Nothing here changes what is kept.
+ * {@code Kindred cost: ...}. The Wire's refusals are counts by reason and channel, never what was refused (F-34e). Nothing
+ * here changes what is kept.
  */
 final class RecordGauge {
     /** What the runtime holds in memory now. */
-    record Held(long recordThrough, int webs, long webRelations, int worldRelations, long inboxed, int chroniclePages, long teamStateTold) { }
+    record Held(long recordThrough, int webs, long webRelations, int worldRelations, long inboxed, int chroniclePages, long teamStateTold,
+                String wireRefused) { }
 
     /** The day's line from the store's {@code growth}, the database's files measured off the thread first. */
     static CompletableFuture<String> line(long day, Path database, Held held, SqliteCompanionStore.Growth growth) {
@@ -36,7 +38,7 @@ final class RecordGauge {
             return "Kindred cost: day " + day + ": the Record through event " + held.recordThrough() + ", " + w + " written since start (" + c
                     + " characters of data); by kind events/characters " + counts + "; the database " + bytes + " bytes on disk; webs " + held.webs()
                     + " holding " + held.webRelations() + " relations, the world's " + held.worldRelations() + "; Wire inboxes " + held.inboxed()
-                    + " messages; teammates' updates (team.state) " + held.teamStateTold() + " told since start, kept only in the peer ledgers"
+                    + " messages; Wire " + held.wireRefused() + "; teammates' updates (team.state) " + held.teamStateTold() + " told since start, kept only in the peer ledgers"
                     + "; Chronicle " + held.chroniclePages() + " pages kept; heap in use " + heap + " MB"
                     + "; far looks " + looks + " since start, " + rays + " sight lines, " + lookNanos / 1_000_000 + " ms";
         });
