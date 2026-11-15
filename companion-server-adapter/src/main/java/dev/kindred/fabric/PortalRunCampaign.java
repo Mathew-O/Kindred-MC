@@ -2848,7 +2848,8 @@ final class PortalRunCampaign {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
         BlockPos above = null;
-        for (int dy = 1; dy <= 16; dy++) {
+        // As far up as one breath swims (F-25c4dg: out of a shaft under the sea, the air was 17 over its feet).
+        for (int dy = 1; dy <= SWIM_UP; dy++) {
             BlockPos cell = feet.up(dy);
             var state = world.getBlockState(cell);
             if (state.getFluidState().isIn(net.minecraft.registry.tag.FluidTags.WATER)) continue;
@@ -4886,13 +4887,18 @@ final class PortalRunCampaign {
         // back under the lake each time its climb had dug a step out from under it (F-25c4bu). Its own night seal first,
         // though, the way it came in, punched out as before (F-25c4at): with the climb first, sealed in under a pool it dug
         // along under the pool by hand and never opened its seal (that fixture, 3 of 3 on `d585600`).
-        if (!pickaxe && underWater) return openShelter(body, label).or(() -> climb(body, label)).or(() -> retrace(body, label));
+        // With none of those, out through the roof and up through the sea, as below (F-25c4dg): the climb had just been out from
+        // under the water when it pillared into its shaft, and this way was the one it was on.
+        if (!pickaxe && underWater) return openShelter(body, label).or(() -> climb(body, label)).or(() -> retrace(body, label)).or(() -> swimOut(body, label));
         // With no pickaxe: a pillar if boxed in, then the way it came, then a stair by hand, stranded or not. The walks
         // that stranded it may have gone toward places it could not reach, not out of where it stands: the top of a
         // fixture's wall read as a cave floor, three walks there were refused, and stranded by them it punched a stair up
         // by hand beside the staircase it had walked down (PR #35's build on CI; F-25c4ce). A walk back that is refused
         // is not asked for again from there for half a minute (F-25c4at), so a player shut in still comes to its stair.
-        if (!pickaxe) return pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label));
+        // And with none of those, shut in under a roof with the sea over it: the roof opened by hand and the swim up, as a
+        // player gets out. In E-40's iteration 22 on 101 Kindred, with no pickaxe, pillared up a shaft under a sunken ship's
+        // plank with the sea over it, every way up led into water and nothing was offered for the rest of the run (F-25c4dg).
+        if (!pickaxe) return pillarOut(body, label).or(() -> retrace(body, label)).or(() -> climb(body, label)).or(() -> swimOut(body, label));
         if (boxedIn(player.getServerWorld(), player.getBlockPos()) || stranded()) return climb(body, label).or(() -> pillarOut(body, label));
         // Under water, out from under it first: the way it came went under the same water (F-25c4ah).
         if (underWater) return climb(body, label).or(() -> retrace(body, label));
@@ -4902,6 +4908,41 @@ final class PortalRunCampaign {
         boolean walkBack = stepsBackToDaylight(player.getServerWorld()) <= 3 * depth;
         return walkBack ? retrace(body, label).or(() -> climb(body, label)) : climb(body, label).or(() -> retrace(body, label));
     }
+
+    /**
+     * Sealed in a dry shaft with the sea over its roof and no other way up: the block over its head opened by hand, so that
+     * the water comes in and it swims up ({@link #surface}). Only on its feet with its head's cell open; only a block it may
+     * break, by hand, not set aside, nor sand or gravel, which would come down on it, nor beside lava; only with water
+     * straight over that block reaching air within {@value #SWIM_UP} of its feet, as one breath swims; only with its breath
+     * full and half its health or more (F-25c4dg).
+     */
+    private Optional<Task> swimOut(NativePlayerBody body, String label) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        if (!player.isOnGround() || player.isTouchingWater() || player.getAir() < player.getMaxAir() || player.getHealth() < player.getMaxHealth() / 2) return Optional.empty();
+        if (!passable(world, feet.up())) return Optional.empty();
+        BlockPos roof = feet.up(2);
+        var state = world.getBlockState(roof);
+        if (passable(world, roof) || blocked(roof) || state.getBlock() instanceof net.minecraft.block.FallingBlock
+                || !world.getFluidState(roof.up()).isIn(FluidTags.WATER)) return Optional.empty();
+        for (Direction direction : Direction.values()) if (world.getFluidState(roof.offset(direction)).isIn(FluidTags.LAVA)) return Optional.empty();
+        BlockPos air = null;
+        for (int dy = 3; dy <= SWIM_UP; dy++) {
+            BlockPos cell = feet.up(dy);
+            if (world.getFluidState(cell).isIn(FluidTags.WATER)) continue;
+            if (world.getFluidState(cell).isEmpty() && world.getBlockState(cell).getCollisionShape(world, cell).isEmpty()) air = cell;
+            break;
+        }
+        if (air == null) return Optional.empty();
+        String what = label + ": open the roof at " + roof.toShortString() + " and swim up";
+        if (breakableNow(body, roof)) return Optional.of(clearAt(roof, what));
+        if (handClearable(body, roof)) return Optional.of(clearAt(roof, what + " by hand"));
+        return Optional.empty();
+    }
+
+    /** How far over its feet the air may be for a swim up out of a shaft or a sunk place: one breath's swim (F-25c4dg). */
+    private static final int SWIM_UP = 20;
 
     /**
      * A cell on the way it came, four to twelve steps back along its trail and within sixteen blocks, that leaves

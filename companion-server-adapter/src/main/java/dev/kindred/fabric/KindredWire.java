@@ -96,6 +96,8 @@ final class KindredWire {
     private final Map<UUID, ArrayDeque<Delivery.Told>> inboxes = new HashMap<>();
     private final Map<UUID, String> names = new HashMap<>();
     private long sent, refused, toldCount, spoken, stateTold;
+    /** Refusals by reason and channel since start, for the cost line: counts only, nothing of what was refused (F-34e). */
+    private final dev.kindred.core.wire.RefusalTally refusals = new dev.kindred.core.wire.RefusalTally();
     /** Where teammates' updates go (F-34c): each receiver's peer ledger. Never the inbox, the web or the World Record. */
     private java.util.function.BiConsumer<UUID, dev.kindred.core.social.PeerUpdate> stateSink = (r, u) -> { };
     /** Where a delivery to AI players is kept in the World Record (F-32b), or nowhere. */
@@ -147,6 +149,7 @@ final class KindredWire {
         Delivery d = wire.send(message, memberships.mode(), roster, now.getAsLong());
         if (!d.sent()) {
             refused++;
+            refusals.count(d.refused().orElseThrow(), message.scope().channel());
             KindredMod.LOGGER.debug("Wire refused {} on {}: {}", message.kind(), message.scope().channel().id(), d.refused().orElseThrow());
             return d;
         }
@@ -218,6 +221,9 @@ final class KindredWire {
         for (var q : inboxes.values()) n += q.size();
         return n;
     }
+
+    /** The refusals since start by reason and channel, as the cost line gives them. */
+    String refusals() { return refusals.describe(); }
 
     /** Sent, refused, told and spoken counts since start. */
     long[] counts() { return new long[] {sent, refused, toldCount, spoken}; }

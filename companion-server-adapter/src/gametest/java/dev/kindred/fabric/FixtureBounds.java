@@ -138,12 +138,36 @@ public final class FixtureBounds {
         CURRENT.set(outer);
         if (!test.isCompleted()) return;
         LIVE.remove(test);
+        placement(test);
         var byPlayers = BY_PLAYERS.remove(test);
         if (byPlayers != null) report(test, byPlayers, "its players");
         KEPT.remove(test);
         var outside = OUTSIDE.remove(test);
         if (outside == null) return;
         report(test, outside, "it");
+    }
+
+    /**
+     * Where the test stood and what ground it kept, as it ends: with the warnings, which tests' leftovers lay in another's
+     * plot or kept ground, the same run's layout read off the log (F-22c75b).
+     */
+    private static void placement(GameTestState test) {
+        String plot;
+        try {
+            var box = test.getBoundingBox();
+            plot = (int) box.minX + ", " + (int) box.minY + ", " + (int) box.minZ + " to " + ((int) box.maxX - 1) + ", " + ((int) box.maxY - 1) + ", " + ((int) box.maxZ - 1);
+        } catch (RuntimeException unplaced) {
+            return;
+        }
+        var boxes = KEPT.get(test);
+        String kept = "none";
+        if (boxes != null) {
+            synchronized (boxes) {
+                kept = boxes.stream().map(b -> (int) b.minX + ", " + (int) b.minY + ", " + (int) b.minZ + " to " + ((int) b.maxX - 1) + ", "
+                        + ((int) b.maxY - 1) + ", " + ((int) b.maxZ - 1)).collect(Collectors.joining("; "));
+            }
+        }
+        KindredMod.LOGGER.info("Fixture placement: {}: plot {}; kept {}", test.getTemplatePath(), plot, kept);
     }
 
     private static void report(GameTestState test, Outside outside, String who) {
