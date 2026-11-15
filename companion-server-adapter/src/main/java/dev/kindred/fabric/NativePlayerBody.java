@@ -377,6 +377,7 @@ final class NativePlayerBody implements BodyAdapter {
         saved.ifPresent(this::validateSave);
         player.preparedState = saved.map(NbtCompound::copy);
         connection = new NativeConnection();
+        connection.who = identity.displayName();
         connection.tap = this::heardPacket; // E-71f: what it hears, into its earshot; nothing acts on it yet.
         try {
             player.server.getPlayerManager().onPlayerConnect(connection, player,
@@ -394,7 +395,7 @@ final class NativePlayerBody implements BodyAdapter {
         } catch (RuntimeException failure) {
             // Only our validated physical state may have reached registration; save/remove it once.
             if (player.server.getPlayerManager().getPlayer(player.getUuid()) == player) {
-                player.server.getPlayerManager().remove(player);
+                removeOwn();
             } else if (player.getServerWorld().getEntity(player.getUuid()) == player) {
                 player.getServerWorld().removePlayer(player, net.minecraft.entity.Entity.RemovalReason.DISCARDED);
             }
@@ -412,7 +413,7 @@ final class NativePlayerBody implements BodyAdapter {
         controls = null;
         if (connected && player.server.getPlayerManager().getPlayer(player.getUuid()) == player) {
             writeNativePlayerFile();
-            player.server.getPlayerManager().remove(player); // Physical state is already in the native player file.
+            removeOwn(); // Physical state is already in the native player file.
         }
         connected = false;
         if (connection != null) connection.open = false;
@@ -2915,6 +2916,7 @@ final class NativePlayerBody implements BodyAdapter {
     private final class NativePlayer extends ServerPlayerEntity implements PreparedNativePlayer {
         private Optional<NbtCompound> preparedState;
         NativePlayerBody body() { return NativePlayerBody.this; }
+        @Override public void kindred$removedFromList() { removedFromList(); }
         private NativePlayer(ServerWorld world, GameProfile profile) {
             super(world.getServer(), world, profile, new SyncedClientOptions("en_us", 2,
                     net.minecraft.network.message.ChatVisibility.HIDDEN, false, 127,
@@ -3066,9 +3068,67 @@ final class NativePlayerBody implements BodyAdapter {
         @Override public void send(Packet<?> packet, PacketCallbacks callbacks) { }
     }
 
+    /**
+     * Native players taken off the server from outside their bodies since start, for the day's cost line: a connection
+     * the server closed (a kick, a duplicate login), or a removal from the player list by anything but the body itself.
+     * The body's own leaving never counts. Each one is logged once, as it happens.
+     */
+    static final java.util.concurrent.atomic.AtomicLong DISCONNECTS = new java.util.concurrent.atomic.AtomicLong();
+
+    /** The body taking itself off the player list: its own removal, not one to report. */
+    private boolean removingOwn;
+
+    private void removeOwn() {
+        removingOwn = true;
+        try {
+            player.server.getPlayerManager().remove(player);
+        } finally {
+            removingOwn = false;
+        }
+    }
+
+    /**
+     * Its player taken off the player list (E-70a's diagnostic): by anything but the body itself, the body is left held
+     * and never ticks again, so nothing else would say so (on #319 a night test's player was gone at daybreak, its body
+     * still held, nothing logged). Nothing changes here.
+     */
+    private void removedFromList() {
+        if (removingOwn) return;
+        DISCONNECTS.incrementAndGet();
+        KindredMod.LOGGER.warn("{}: taken off the player list from outside its body, from {}; its body is still held and no longer ticks",
+                identity.displayName(), callers());
+    }
+
+    /** The frames that called in, past the network's and the player list's own. */
+    private static String callers() {
+        return StackWalker.getInstance().walk(frames -> frames
+                .filter(f -> !f.getClassName().startsWith("dev.kindred.fabric.NativePlayerBody") && !f.getMethodName().contains("kindred$")
+                        && !f.getClassName().startsWith("net.minecraft.network.") && !f.getClassName().endsWith("ServerCommonNetworkHandler")
+                        && !(f.getClassName().endsWith("PlayerManager") && f.getMethodName().equals("remove")))
+                .limit(5)
+                .map(f -> f.getClassName().substring(f.getClassName().lastIndexOf('.') + 1) + "." + f.getMethodName() + ":" + f.getLineNumber())
+                .collect(java.util.stream.Collectors.joining(" < ")));
+    }
+
+    /**
+     * A native connection closed under its body (E-70a's diagnostic): the body leaves the player list at its next tick,
+     * and nothing else would say so (a night test's player was gone at daybreak, its body still held, nothing logged).
+     * The reason as the server gave it, its translation key, and the frames that closed it. Nothing changes here.
+     */
+    private static void closedUnder(String who, DisconnectionInfo info) {
+        DISCONNECTS.incrementAndGet();
+        var reason = info.reason();
+        String key = reason != null && reason.getContent() instanceof net.minecraft.text.TranslatableTextContent t ? t.getKey() : "";
+        String from = callers();
+        KindredMod.LOGGER.warn("{}: its native connection was closed under its body ({}{}), from {}; it leaves the player list at its next tick",
+                who, reason == null ? "no reason" : reason.getString(), key.isEmpty() ? "" : ", " + key, from);
+    }
+
     /** Never registered with ServerNetworkIo: world ticking owns the body and no packets accumulate. */
     private static final class NativeConnection extends ClientConnection {
         private boolean open = true;
+        /** Who it carries, for the line logged if it is closed under the body. */
+        private String who = "A native player";
         private PacketListener listener;
         /** E-71f's diagnostic: what reaches this connection, while a fixture listens; null otherwise. */
         private java.util.function.Consumer<Packet<?>> tap;
@@ -3089,6 +3149,9 @@ final class NativePlayerBody implements BodyAdapter {
         @Override public boolean isLocal() { return true; }
         @Override public SocketAddress getAddress() { return new InetSocketAddress("127.0.0.1", 0); }
         @Override public String getAddressAsString(boolean logIps) { return "Kindred native player"; }
-        @Override public void disconnect(DisconnectionInfo info) { open = false; }
+        @Override public void disconnect(DisconnectionInfo info) {
+            if (open) closedUnder(who, info);
+            open = false;
+        }
     }
 }

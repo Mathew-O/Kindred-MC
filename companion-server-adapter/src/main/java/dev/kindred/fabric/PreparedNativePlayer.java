@@ -16,4 +16,7 @@ public interface PreparedNativePlayer {
 
     /** The replacement entity vanilla respawn fills in; only valid while the owning body is respawning it. */
     ServerPlayerEntity kindred$respawned(ServerWorld world);
+
+    /** Taken off the player list: reported when anything but its own body did it (E-70a's diagnostic). */
+    void kindred$removedFromList();
 }

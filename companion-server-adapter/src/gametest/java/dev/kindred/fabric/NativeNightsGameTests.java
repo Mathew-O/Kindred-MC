@@ -115,7 +115,7 @@ public final class NativeNightsGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    context.assertTrue(player != null, "Its body");
+                    context.assertTrue(player != null, "Its body: " + gone(f));
                     long time = context.getWorld().getTimeOfDay() % 24_000L;
                     context.assertTrue(!player.isSleeping() || time >= dev.kindred.core.survival.Nights.SLEEP_FROM, "Not asleep before a bed can be slept in");
                     context.assertTrue(player.isSleeping() && player.getSleepingPosition().filter(context.getAbsolutePos(foot.south())::equals).isPresent(),
@@ -374,7 +374,7 @@ public final class NativeNightsGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    context.assertTrue(player != null, "Its body: " + f.runtime.lifeNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
+                    context.assertTrue(player != null, "Its body: " + f.runtime.lifeNote(f.id) + " / " + f.runtime.nativeLastResult(f.id) + " / " + gone(f));
                     lowest[0] = Math.min(lowest[0], player.getBlockY());
                     context.assertTrue(lowest[0] >= origin.getY() - 1, "Never dug in below its build: down to " + lowest[0] + " / " + f.runtime.lifeNote(f.id));
                     context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(), "Built: " + f.runtime.buildStatus(f.id).orElse("")
@@ -427,7 +427,7 @@ public final class NativeNightsGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    context.assertTrue(player != null, "Its body: " + f.runtime.bedChoreForTest(f.id));
+                    context.assertTrue(player != null, "Its body: " + f.runtime.bedChoreForTest(f.id) + " / " + gone(f));
                     boolean unsafe = zombie[0].isAlive() && zombie[0].squaredDistanceTo(player) < 16 * 16 || player.getHealth() < 10;
                     if (unsafe && walks(f.runtime.bedChoreForTest(f.id)) > walksAtDawn[0]) walkedUnsafe[0] = true;
                     if (unsafe && !context.getWorld().getBlockState(slept[0]).isIn(net.minecraft.registry.tag.BlockTags.BEDS)) walkedUnsafe[0] = true;
@@ -469,7 +469,7 @@ public final class NativeNightsGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    context.assertTrue(player != null, "Its body");
+                    context.assertTrue(player != null, "Its body: " + gone(f));
                     context.assertTrue(player.getInventory().count(net.minecraft.item.Items.WHITE_BED) == 1, "Its bed taken up, hungry as it is: "
                             + f.runtime.bedChoreForTest(f.id) + " / " + f.runtime.lifeNote(f.id) + " / food " + player.getHungerManager().getFoodLevel());
                     context.assertTrue(!context.getWorld().getBlockState(slept[0]).isIn(net.minecraft.registry.tag.BlockTags.BEDS), "Not left standing");
@@ -557,6 +557,25 @@ public final class NativeNightsGameTests implements FabricGameTest {
         context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
         context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Its own play resumed");
         return at;
+    }
+
+    /**
+     * What became of a body no longer in the player list (E-70a's diagnostic): on #319 a night test's player was gone at
+     * daybreak with its body still held and nothing logged. Whether the body is still connected, whether its entity was
+     * removed and why, whether it is out of every world, where it was and its health, and whether a listed player has
+     * its name.
+     */
+    private static String gone(NativePaidSkillsGameTests.Fixture f) {
+        var body = f.runtime.nativeBodyForTest(f.id);
+        if (body == null) return "no body held";
+        var entity = body.entity();
+        if (entity == null) return "a body without an entity, connected " + body.connected();
+        String name = entity.getGameProfile().getName();
+        var listed = entity.server.getPlayerManager().getPlayer(name);
+        return "connected " + body.connected() + ", removed " + entity.isRemoved() + " (" + entity.getRemovalReason() + "), out of every world "
+                + entity.notInAnyWorld + ", in " + entity.getWorld().getRegistryKey().getValue() + " at " + entity.getBlockPos().toShortString()
+                + ", health " + entity.getHealth() + ", dead " + entity.isDead() + ", a listed player named " + name + ": "
+                + (listed == null ? "none" : listed == entity ? "this body" : "another entity, " + listed.getUuid());
     }
 
     /** The walks toward its bed a chore line counts. */
