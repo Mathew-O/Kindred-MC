@@ -49,7 +49,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     f.runtime.createNative(f.source, "Drover");
                 })
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -158,7 +158,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Henwife"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -253,7 +253,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Granger"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -388,7 +388,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Swineherd"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -438,8 +438,8 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                         }
                     }
                     context.assertTrue(planted == 1, "Its one carrot planted: " + plot + ", " + planted + " / " + f.runtime.ranchNote(f.id) + " / "
-                            + (f.player() == null ? "-" : "hoe " + f.player().getInventory().count(Items.WOODEN_HOE) + ", carrots " + f.player().getInventory().count(Items.CARROT)));
-                    context.assertTrue(f.player().getInventory().count(Items.CARROT) == 0, "The one it had is in the ground");
+                            + (f.player() == null ? "-" : "hoe " + f.player().getInventory().count(Items.WOODEN_HOE) + ", carrots " + held(f, Items.CARROT)));
+                    context.assertTrue(held(f, Items.CARROT) == 0, "The one it had is in the ground");
                     context.assertTrue(f.runtime.ownRanch(f.id).isEmpty(), "No ranch before the carrots: " + f.runtime.ownRanch(f.id));
                 })
                 .createAndAdd(() -> {
@@ -458,7 +458,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     var pen = f.runtime.ownRanch(f.id);
                     context.assertTrue(pen.isPresent() && pen.get().kind().equals("PIG") && pen.get().complete(),
                             "A pig ranch of its own, run, after the harvest: " + pen + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.ranchStatus(f.id).orElse("")
-                            + " / carrots " + f.player().getInventory().count(Items.CARROT) + ", ripened " + ripened[0]);
+                            + " / carrots " + held(f, Items.CARROT) + ", ripened " + ripened[0]);
                 })
                 .createAndAdd(() -> {
                     pigsPenned(context, f, f.runtime.ownRanch(f.id).orElseThrow(), ripened[0]);
@@ -477,11 +477,11 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
         long adults = penned.stream().filter(c -> !c.isBaby()).count(), young = penned.stream().filter(c -> c.isBaby()).count();
         KindredMod.LOGGER.info("Own ranch with grown carrots: {} pigs and {} piglets penned; ripened {} times; {} carrots left",
-                adults, young, ripened, f.player().getInventory().count(Items.CARROT));
+                adults, young, ripened, held(f, Items.CARROT));
         context.assertTrue(adults == 2 && young == 1, "The pair penned and a piglet, fed carrots it grew: " + adults + " and " + young);
         // Planted only until it had the few it wanted (the first version farmed a fast-ripening plot 43 times).
         context.assertTrue(ripened <= 6, "Planted only for what it wanted: ripened " + ripened + " times, "
-                + f.player().getInventory().count(Items.CARROT) + " carrots left");
+                + held(f, Items.CARROT) + " carrots left");
     }
 
     /**
@@ -539,7 +539,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Shepherd"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -652,7 +652,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Herder"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
