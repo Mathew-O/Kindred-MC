@@ -10,3 +10,4 @@ confirm-branch-1.6 (3332aeca, only flagged): 0 min, peak 1171 MB, All 2 required
 confirm-branch-1.7 (3332aeca, only flagged): 0 min, peak 1272 MB, All 2 required tests passed, fence-top 0, disk 6.0G
 confirm-branch-2.1 (3332aeca, only flagged): 0 min, peak 1002 MB, 1 required tests failed, fence-top 0, disk 6.0G
 confirm-branch-2.2 (3332aeca, only flagged): 0 min, peak 1474 MB, All 2 required tests passed, fence-top 0, disk 6.0G
+confirm-branch-2.3 (3332aeca, only flagged): 0 min, peak 1211 MB, 1 required tests failed, fence-top 0, disk 6.0G
