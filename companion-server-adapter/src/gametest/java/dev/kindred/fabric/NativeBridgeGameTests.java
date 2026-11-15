@@ -206,7 +206,7 @@ public final class NativeBridgeGameTests implements FabricGameTest {
                         spawnedAt[0] = world.getTime();
                     }
                     // A tick for it to be seen; every tick after it, crouched.
-                    if (spawnedAt[0] >= 0 && world.getTime() > spawnedAt[0] + 1 && m.state == null) {
+                    if (spawnedAt[0] >= 0 && world.getTime() > spawnedAt[0] + 1 && m.state == null && m.onRun(run, run.f.player())) {
                         after[0]++;
                         if (run.f.player().isSneaking()) sneakingAfter[0]++;
                     }
@@ -274,13 +274,26 @@ public final class NativeBridgeGameTests implements FabricGameTest {
         Vec3d endPos;
         long endTick;
 
+        /**
+         * Whether a tick is still the run's own. Not once the last block is in and the player still: the run is over,
+         * the sneak let go, and its records close for as long as the writer takes. Nor once the runner has let the run's
+         * task go, or another has come: the next may come the same tick, before {@link Run#follow} sees the run's end.
+         * In a full suite both counted as the bridge's, upright ("Held crouch once the zombie was within eight: 120 of
+         * 123", #314, a retreat from the zombie following the bridge's last block).
+         */
+        boolean onRun(Run run, net.minecraft.server.network.ServerPlayerEntity player) {
+            var velocity = player.getVelocity();
+            if (run.verified.get() == GAP && velocity.x * velocity.x + velocity.z * velocity.z < 1e-6) return false;
+            if (task == null) return true;
+            String[] now = run.f.runtime.nativeTaskForTest(run.f.id);
+            return task.equals(now[0]) && !Set.of("COMPLETED", "BLOCKED", "CANCELLED").contains(now[1]);
+        }
+
         void tick(Run run, net.minecraft.server.network.ServerPlayerEntity player) {
             // Begun once it has moved off the middle of the pad's last block, where it stands while the task is admitted.
             if (run.verified.get() == 0 && !begun && player.getX() - run.origin.getX() < 0.55) return;
             begun = true;
-            // The last block in and the player still: the run is over, its records closing, the sneak let go.
-            var velocity = player.getVelocity();
-            if (run.verified.get() == GAP && velocity.x * velocity.x + velocity.z * velocity.z < 1e-6) return;
+            if (!onRun(run, player)) return;
             ticks++;
             if (player.isSneaking()) sneaking++;
             if (player.getY() < run.origin.getY() - 0.5) fell = true;
