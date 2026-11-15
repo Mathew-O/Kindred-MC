@@ -45,7 +45,7 @@ public final class NativeTerritoryRefusedGameTests implements FabricGameTest {
     public void aRefusedBreakIsWrittenOnceAMinuteAndAPlanningCheckWritesNothing(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1100);
         var server = context.getWorld().getServer();
-        UUID[] bodies = new UUID[2];
+        UUID[] bodies = new UUID[2], ids = new UUID[2];
         ServerPlayerEntity[] person = new ServerPlayerEntity[1];
         BlockPos target = new BlockPos(5, 2, 5);
         String[] red = new String[1], chunk = new String[1];
@@ -64,7 +64,11 @@ public final class NativeTerritoryRefusedGameTests implements FabricGameTest {
                     var statuses = f.runtime.nativeStatuses(Actor.console());
                     context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
                             "Both established");
-                    for (var status : statuses) bodies[player(f, status.nativeId()).getName().getString().equals("Ada") ? 0 : 1] = status.nativeId();
+                    for (var status : statuses) {
+                        int i = player(f, status.nativeId()).getName().getString().equals("Ada") ? 0 : 1;
+                        bodies[i] = status.nativeId();
+                        ids[i] = status.id();
+                    }
                     person[0] = MockPlayers.survival(context, "Cleo", new BlockPos(4, 2, 4));
                 })
                 .createAndAdd(() -> {
@@ -115,6 +119,16 @@ public final class NativeTerritoryRefusedGameTests implements FabricGameTest {
                         context.assertTrue(red[0].equals(e.subject()) && chunk[0].equals(e.place()) && "break".equals(e.get("what", "")),
                                 "Red's, its chunk, a break: " + e);
                     }
+                    // Told to Red alone, Ada its founder, citing each event: Bram by name, Cleo, a person, as "Someone" (newest first).
+                    var told = f.runtime.wire().inbox(ids[0], FactionsService.REFUSED);
+                    context.assertTrue(told.size() == 2, "Ada told of both: " + f.runtime.wire().inbox(ids[0]));
+                    var lines = told.stream().map(t -> t.message().facts().get("what").value()).toList();
+                    context.assertTrue(lines.get(0).startsWith("Bram tried to break a block on our land at " + chunk[0])
+                            && lines.get(1).startsWith("Someone tried to break a block on our land at " + chunk[0]), "Bram named, Cleo not: " + lines);
+                    context.assertTrue(lines.stream().noneMatch(l -> l.contains("Cleo")), "No person named: " + lines);
+                    context.assertTrue(told.getFirst().message().fromServer() && told.getFirst().message().eventIds().equals(bram.stream().map(WorldEvent::id).toList())
+                            && told.getLast().message().eventIds().equals(cleo.stream().map(WorldEvent::id).toList()), "Each cites its own event");
+                    context.assertTrue(f.runtime.wire().inbox(ids[1], FactionsService.REFUSED).isEmpty(), "Bram, of Blue, told nothing");
                     long[] counts = f.runtime.factions().refusalCounts();
                     context.assertTrue(counts[0] == 2 && counts[1] == 501 && counts[2] == 0, "Two written, 501 the same minute's: " + java.util.Arrays.toString(counts));
                     f.runtime.stop();
