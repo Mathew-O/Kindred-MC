@@ -871,11 +871,21 @@ final class PlayerRuntime {
                     matches.restore(ledgers.matches().values());
                     flushMatches();
                     chronicle.start();
-                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
-                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
-                        if (unread == null && events != null) webs.rebuild(events);
-                        else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
-                    }));
+                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer. F-32c: how long the read
+                    // took (from asking, the writer's queue included) and the replay on this thread, for a month's starts.
+                    long webAsked = System.nanoTime();
+                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> {
+                        long readMs = (System.nanoTime() - webAsked) / 1_000_000;
+                        server.execute(() -> {
+                            if (unread == null && events != null) {
+                                long replayStarted = System.nanoTime();
+                                webs.rebuild(events);
+                                KindredMod.LOGGER.info("Knowledge web rebuilt from the Record: {} events, read in {} ms on the writer, replayed in {} ms; "
+                                        + "the world's web {} relations, {} AI players' webs holding {}", events.size(), readMs,
+                                        (System.nanoTime() - replayStarted) / 1_000_000, webs.world().size(), webs.count(), webs.relations());
+                            } else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
+                        });
+                    });
                     entries.putAll(pendingEntries);
                     ready = true;
                     restoreLeftoverArenas();
@@ -8798,6 +8808,7 @@ final class PlayerRuntime {
             }
             if (factionWalk) entry.factionPlay.settledWalk = null;
             if (factionWalk) entry.factionPlay.walksEnded++;
+            if (factionWalk && state == SkillRunner.State.COMPLETED) entry.factionPlay.completedForTest(server.getTicks());
             if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
@@ -10775,6 +10786,14 @@ final class PlayerRuntime {
         return entry == null ? List.of() : List.copyOf(entry.factionPlay.endedForTest);
     }
 
+    /** For the fixtures (F-22c83): the ticks its faction walks completed, and the ticks it set places aside as water it saw. */
+    List<List<Long>> factionCompletedAndOverWaterForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of(List.of(), List.of())
+                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest));
+    }
+
     List<Long> factionDecisionsForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
@@ -11538,6 +11557,8 @@ final class PlayerRuntime {
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
         long fetchFrom;
+        /** When it began waiting in the front, under its trapdoor, for the front rail's drop to be picked up; -1 before (F-22c64). */
+        long underFrom = -1;
         /**
          * Where the rolling cart was two seconds ago, when, and whether it had moved a quarter of a block since the time
          * before: a cart pressed against something, or rocking in a dip, keeps a speed it gets nowhere by.
@@ -11587,6 +11608,35 @@ final class PlayerRuntime {
      * The slot of a plain block to shut a cell's front with a moment that it can take back after (one a hand breaks and
      * keeps, or one it has a tool for: cobblestone broken by hand drops nothing), or -1.
      */
+    /** How long it waits in a cell's front, under its trapdoor, for the front rail's drop to be picked up (F-22c64). */
+    static final int UNDER_TRAPDOOR_TICKS = 100;
+
+    /** The slot of a wooden trapdoor it holds, or -1 (F-22c64). */
+    private static int trapdoorSlot(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) if (inventory.getStack(slot).isIn(net.minecraft.registry.tag.ItemTags.WOODEN_TRAPDOORS)) return slot;
+        return -1;
+    }
+
+    /** The recipe for a wooden trapdoor from six of one kind of planks it holds, or null (F-22c64). */
+    private static String trapdoorRecipe(ServerPlayerEntity player) {
+        var counts = new java.util.LinkedHashMap<net.minecraft.item.Item, Integer>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < 36; slot++) {
+            var stack = inventory.getStack(slot);
+            if (stack.isIn(net.minecraft.registry.tag.ItemTags.PLANKS)) counts.merge(stack.getItem(), stack.getCount(), Integer::sum);
+        }
+        for (var held : counts.entrySet()) {
+            if (held.getValue() < 6) continue;
+            var id = net.minecraft.registry.Registries.ITEM.getId(held.getKey());
+            if (!id.getPath().endsWith("_planks")) continue;
+            var trapdoor = net.minecraft.util.Identifier.of(id.getNamespace(), id.getPath().substring(0, id.getPath().length() - "_planks".length()) + "_trapdoor");
+            if (net.minecraft.registry.Registries.ITEM.containsId(trapdoor)
+                    && net.minecraft.registry.Registries.ITEM.get(trapdoor).getDefaultStack().isIn(net.minecraft.registry.tag.ItemTags.WOODEN_TRAPDOORS)) return trapdoor.toString();
+        }
+        return null;
+    }
+
     private static int shutterSlot(ServerPlayerEntity player) {
         var inventory = player.getInventory();
         for (var shutter : SHUTTERS) {
@@ -12219,6 +12269,43 @@ final class PlayerRuntime {
                 // shut a moment against the lintel, the block's height left under it too low for a villager; then the boat
                 // broken over it, which sets the villager down where it sat, inside the cart's box on the floor. The boat's
                 // wood falls in the cell, out of reach: left there, and said.
+                // One in its boat: the boat is broken before the front rail comes up (F-22c64). A boat is the one thing at the
+                // cell an item collides with, and its box overhangs the front from the cart: a rail drop born inside it was
+                // pushed out north through the cart onto the cell's bed, out of reach, about one time in ten. So the opening
+                // is first shut over with a wooden trapdoor in its top half, against the lintel, leaving room under it for a
+                // player and none for a villager (1.8125 of 1.95); then the boat is broken, which sets the villager down in
+                // the cart's box on the floor, held there by the trapdoor; then the rail comes up, its drop only thrown,
+                // and is picked up from the front, stepped into under the trapdoor. The trapdoor stays over the front
+                // after the job block is in (CLOSE), as the floor's rail does.
+                BlockPos opening = b.slot.up();
+                boolean trapdoorShut = world.getBlockState(opening).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS);
+                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    if (!trapdoorShut) {
+                        int slot = trapdoorSlot(player);
+                        if (slot < 0) return giveUp(entry, body, "I've no trapdoor to shut the " + b.noun + "'s cell over with a moment.");
+                        if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
+                        if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, opening)) {
+                            return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        }
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "trapdoor"), "native_place", Map.of("x", String.valueOf(opening.getX()),
+                                "y", String.valueOf(opening.getY()), "z", String.valueOf(opening.getZ()), "slot", String.valueOf(slot), "side", "down")));
+                    }
+                    if (!player.canInteractWithEntity(boat, 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                    return List.of(new NativeTaskCandidate(bringTask(entry, "break boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
+                }
+                if (trapdoorShut) {
+                    // The cart taken back too, straight after the boat: held by the trapdoor, the villager needs no cart under
+                    // it, and, free of its boat in the cart's box, it pushes the cart off along its rail (vanilla). Broken at
+                    // once, at its rail's end, its item falls on the cell's floor, in reach of the front; pushed on to the bed
+                    // first, it fell out of reach.
+                    var cartIn = new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0.5, 1, 0.5);
+                    var carts = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, cartIn, net.minecraft.entity.Entity::isAlive);
+                    if (!carts.isEmpty()) {
+                        var cart = carts.getFirst();
+                        if (!player.canInteractWithEntity(cart, 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "take the cart back"), "native_cart", Map.of("mode", "break", "target", cart.getUuid().toString())));
+                    }
+                }
                 var state = world.getBlockState(b.slot);
                 if (state.isIn(net.minecraft.registry.tag.BlockTags.RAILS)) {
                     if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !body.miningEligible(b.slot)) {
@@ -12227,34 +12314,66 @@ final class PlayerRuntime {
                     return List.of(breakAt(bringTask(entry, "front rail"), b.slot));
                 }
                 if (b.railsNoted == 0) noteRailsByCell(entry, world, b, "the front rail taken up");
-                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
-                    BlockPos opening = b.slot.up();
-                    var job = net.minecraft.block.Block.getBlockFromItem(b.jobBlock);
-                    boolean jobIn = world.getBlockState(b.slot).isOf(job);
-                    boolean fits = jobIn || world.getBlockState(b.slot).isReplaceable() && world.doesNotIntersectEntities(null,
-                            job.getDefaultState().getCollisionShape(world, b.slot).offset(b.slot.getX(), b.slot.getY(), b.slot.getZ()));
-                    if (fits && !jobIn) {
-                        int slot = slotOf(player, b.jobBlock);
-                        if (slot < 0) return giveUp(entry, body, "I've lost the " + b.noun + "'s job block.");
-                        if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
-                        if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, b.slot)) {
-                            return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                if (trapdoorShut) {
+                    // Under the trapdoor, the front rail's drop picked up from the front: stepped into from the corridor by
+                    // its own box (a walk the navigator would not plan, under a top trapdoor), a while given to it there,
+                    // and stepped out again. What is still lying after that is let be and said, as before.
+                    // Anywhere in the cell, under the trapdoor's hold: its front, its floor, or up on its bed behind, to the cell's
+                    // full height (#318: up on the bed, or its feet a jump off the floor's block, it was taken to be out, and the
+                    // job block went in with it inside).
+                    boolean inside = player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).stretch(0, 2, 0));
+                    var cell = new net.minecraft.util.math.Box(b.slot).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0.5, 1, 0.5);
+                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+                            item -> item.isAlive() && (item.getStack().isOf(Items.RAIL) || item.getStack().isOf(Items.MINECART)));
+                    // Within its pickup reach (a player picks up what its box, a block wider, touches).
+                    var reach = player.getBoundingBox().expand(1, 0.5, 1);
+                    boolean inReach = lying.stream().anyMatch(item -> item.getBoundingBox().intersects(reach));
+                    if (!lying.isEmpty() && (b.underFrom < 0 || now - b.underFrom < UNDER_TRAPDOOR_TICKS) && (inReach || !inside)) {
+                        if (!inside) {
+                            var stand = b.slot.south(2);
+                            if (player.getPos().squaredDistanceTo(Vec3d.ofBottomCenter(stand)) > 0.0625) return List.of(standAt(bringTask(entry, "by the front"), stand));
+                            // Into the front, or on to the cell's floor where a drop lies beyond the front's reach: a player there
+                            // picks up what lies within a block of it, and a drop's throw carries it as far as the bed's foot.
+                            // Three only where the walk's end clears the bed's foot behind the floor (its stand is reached to within
+                            // a quarter of a block, and three from a quarter north of it met the bed).
+                            boolean beyondFront = lying.stream().anyMatch(item -> item.getBoundingBox().minZ < b.slot.getZ() + 0.2 - 1);
+                            boolean floorClear = player.getZ() - 3 - 0.3 >= b.floor.getZ();
+                            // The while given counts from the first step in, so that in and out again ends with it too.
+                            if (b.underFrom < 0) b.underFrom = now;
+                            return List.of(new NativeTaskCandidate(bringTask(entry, "into the front"), "native_walk", Map.of("direction", "north",
+                                    "blocks", beyondFront && floorClear ? "3" : "2")));
                         }
-                        return List.of(new NativeTaskCandidate(bringTask(entry, "job block"), "native_place", Map.of("x", String.valueOf(b.slot.getX()),
-                                "y", String.valueOf(b.slot.getY()), "z", String.valueOf(b.slot.getZ()), "slot", String.valueOf(slot), "side", "up")));
+                        if (b.underFrom < 0) b.underFrom = now;
+                        return List.of(waitTask(task, "For the front rail's drop and the cart's to be picked up"));
                     }
-                    if (!fits && !isShutter(world.getBlockState(opening))) {
-                        int slot = shutterSlot(player);
-                        if (slot < 0) return giveUp(entry, body, "I've no block to shut the " + b.noun + "'s cell with a moment.");
-                        if (slot >= 9) return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(slot), "target", "8")));
-                        if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) || !reaches(player, opening)) {
-                            return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
+                    // In the front with what lies out of its reach on the floor behind: a step on to the floor, where its end clears
+                    // the bed's foot (two blocks in from a quarter north of its stand, three would have met the bed).
+                    if (!lying.isEmpty() && inside && !inReach && now - b.underFrom < UNDER_TRAPDOOR_TICKS
+                            && player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot)) && player.getZ() - 1 - 0.3 >= b.floor.getZ()) {
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "on to the floor"), "native_walk", Map.of("direction", "north", "blocks", "1")));
+                    }
+                    // Out: done, or the while given is up, or inside with nothing lying in its reach (left there by the break's own
+                    // pickup, only just in the front): out to the stand, and in again from there, where it reaches what lies.
+                    if (inside && player.getY() > b.floor.getY() + 0.1) {
+                        // Up on the bed's foot behind the floor (shoved there by the villager it walked in against, in CI on
+                        // #318): no flat walk starts there, so down on to the middle of the floor first, and out from there.
+                        // The way down is planned only with the floor clear: while the villager stands on it, the route there
+                        // is blocked, so it is waited for, under the while given (counted from now if not yet begun).
+                        if (b.underFrom < 0) b.underFrom = now;
+                        if (villager != null && !villager.hasVehicle() && now - b.underFrom < UNDER_TRAPDOOR_TICKS
+                                && villager.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.floor))) {
+                            return List.of(waitTask(task, "For the " + b.noun + " to step off its cell's floor"));
                         }
-                        return List.of(new NativeTaskCandidate(bringTask(entry, "shut opening"), "native_place", Map.of("x", String.valueOf(opening.getX()),
-                                "y", String.valueOf(opening.getY()), "z", String.valueOf(opening.getZ()), "slot", String.valueOf(slot), "side", "down")));
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "down on to the floor"), "native_goto", Map.of("x", String.valueOf(b.floor.getX()),
+                                "y", String.valueOf(b.floor.getY()), "z", String.valueOf(b.floor.getZ()), "range", "0", "partial", "false", "centre_within", "0.2")));
                     }
-                    if (!player.canInteractWithEntity(boat, 0)) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
-                    return List.of(new NativeTaskCandidate(bringTask(entry, "break boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
+                    if (inside) {
+                        // Back to the stand across the corridor, by as far as it is from it, never past its middle by more than a
+                        // fifth of a block: the corridor's far wall is just beyond it (the break's own pickup can leave it only just
+                        // into the front, and rounded up from there, two blocks met the wall).
+                        long blocks = Math.max(1, Math.min(3, (long) Math.floor(Vec3d.ofBottomCenter(b.slot.south(2)).z - player.getZ() + 0.2)));
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "out of the front"), "native_walk", Map.of("direction", "south", "blocks", String.valueOf(blocks))));
+                    }
                 }
                 var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
                 for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
@@ -12262,8 +12381,14 @@ final class PlayerRuntime {
                     KindredMod.LOGGER.info("{} bringing: {} left lying in the {}'s cell at {}, out of reach", entry.data.displayName(), item.getStack(), b.noun, item.getPos());
                     b.unreached.add(item.getBlockPos());
                 }
-                if (b.railsNoted == 1) noteRailsByCell(entry, world, b, "the cart left in the cell");
-                KindredMod.LOGGER.info("{} bringing: the cart left in the {}'s cell, the {} {} it", entry.data.displayName(), b.noun, b.noun,
+                if (b.railsNoted == 1) noteRailsByCell(entry, world, b, trapdoorShut ? "the cart taken back" : "the cart left in the cell");
+                if (trapdoorShut) {
+                    var cartItems = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(b.floor).expand(2),
+                            item -> item.isAlive() && item.getStack().isOf(Items.MINECART)).stream().map(item -> item.getPos().toString()).toList();
+                    KindredMod.LOGGER.info("{} bringing: the cart taken back{}, the {} held in its cell under the trapdoor", entry.data.displayName(),
+                            cartItems.isEmpty() ? "" : " but for its item lying at " + cartItems, b.noun);
+                }
+                else KindredMod.LOGGER.info("{} bringing: the cart left in the {}'s cell, the {} {} it", entry.data.displayName(), b.noun, b.noun,
                         villager.getVehicle() != null ? "in" : "by");
                 b.phase = Bring.Phase.CLOSE;
                 return bringCandidates(entry, body);
@@ -12336,7 +12461,9 @@ final class PlayerRuntime {
             case CLOSE -> {
                 var state = world.getBlockState(b.slot);
                 if (state.isOf(net.minecraft.block.Block.getBlockFromItem(b.jobBlock))) {
-                    // The opening shut over it a moment (KEEP) opened again, to trade across.
+                    // The opening shut over it a moment (KEEP) opened again, to trade across. A trapdoor in its top half (F-22c64) is
+                // left there, as the floor's rail is: taken back over the job block, its item fell on it and was pushed out
+                // into the cell, and the gap under it is trade enough.
                     if (isShutter(world.getBlockState(b.slot.up()))) {
                         if (!reaches(player, b.slot.up())) return List.of(standAt(bringTask(entry, "by the front"), b.slot.south(2)));
                         return List.of(breakAt(bringTask(entry, "open"), b.slot.up()));
@@ -12600,13 +12727,25 @@ final class PlayerRuntime {
             // Plain blocks it can take back again: one to shut the cell's front with a moment, one a column of the bridge.
             int plain = shutterSlot(player) < 0 ? 0 : plainBlocks(player);
             int plainNeeded = 1 + (int) bridge.stream().filter(at -> world.getBlockState(at).isReplaceable()).count();
-            int railsHeld = 0, carts = 0, jobs = 0, shutters = plain >= plainNeeded ? 1 : 0;
+            int railsHeld = 0, carts = 0, jobs = 0, trapdoors = 0, shutters = plain >= plainNeeded ? 1 : 0;
             var inventory = player.getInventory();
             for (int slot = 0; slot < 36; slot++) {
                 var stack = inventory.getStack(slot);
                 if (stack.isOf(Items.RAIL)) railsHeld += stack.getCount();
                 if (stack.isOf(Items.MINECART)) carts += stack.getCount();
                 if (stack.isOf(jobBlock)) jobs += stack.getCount();
+                if (stack.isIn(net.minecraft.registry.tag.ItemTags.WOODEN_TRAPDOORS)) trapdoors += stack.getCount();
+            }
+            // One that strolls, held in a boat: a wooden trapdoor to shut its cell over with a moment while the boat is
+            // broken and the front rail comes up (F-22c64), made from six of its own planks of a kind at a table.
+            boolean byBoat = !villager.isAiDisabled() && boatSlot(player) >= 0;
+            if (byBoat && trapdoors < 1 && jobs >= 1 && shutters >= 1) {
+                String recipe = trapdoorRecipe(player);
+                if (recipe != null) {
+                    entry.bringMake = recipe;
+                    noteBring(entry, "Making a trapdoor to bring the " + noun + " home");
+                    return null;
+                }
             }
             int railsNeeded = (int) rails.stream().filter(at -> !world.getBlockState(at).isIn(net.minecraft.registry.tag.BlockTags.RAILS)).count();
             // Short of rails or a minecart: made from its own iron, as a player makes them, where it has the iron to spare.
@@ -12625,9 +12764,10 @@ final class PlayerRuntime {
                     return null;
                 }
             }
-            if (railsHeld < railsNeeded || carts < 1 || jobs < 1 || shutters < 1) {
+            if (railsHeld < railsNeeded || carts < 1 || jobs < 1 || shutters < 1 || byBoat && trapdoors < 1) {
                 noteBring(entry, "To bring the " + noun + " home: " + railsNeeded + " rails (" + railsHeld + " held), a minecart (" + carts + "), a "
-                        + profession.jobBlock().substring(10).replace('_', ' ') + " (" + jobs + ") and " + plainNeeded + " plain blocks it can take back (" + plain + ")");
+                        + profession.jobBlock().substring(10).replace('_', ' ') + " (" + jobs + "), " + plainNeeded + " plain blocks it can take back (" + plain + ")"
+                        + (byBoat ? " and a wooden trapdoor (" + trapdoors + ")" : ""));
                 return null;
             }
             var r = route.get();
@@ -12716,6 +12856,7 @@ final class PlayerRuntime {
         for (int slot = 0; slot < 36; slot++) {
             var stack = player.getInventory().getStack(slot);
             if (stack.isOf(Items.RAIL) || stack.isOf(Items.STICK) || stack.isOf(Items.MINECART)) held += stack.getCount() * (stack.isOf(Items.MINECART) ? 1000 : 1);
+            if (stack.isIn(net.minecraft.registry.tag.ItemTags.WOODEN_TRAPDOORS)) held += stack.getCount() * 100000;
         }
         UUID id = UUID.nameUUIDFromBytes(("bring:make:" + entry.data.id() + ":" + recipe + ":" + held).getBytes(StandardCharsets.UTF_8));
         var task = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 56.0,
@@ -12859,10 +13000,17 @@ final class PlayerRuntime {
         var cell = new net.minecraft.util.math.Box(b.floor).union(new net.minecraft.util.math.Box(b.floor.north(2))).expand(0, 1, 0);
         boolean cart = !world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, cell, net.minecraft.entity.Entity::isAlive).isEmpty()
                 || !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell, item -> item.isAlive() && item.getStack().isOf(Items.MINECART)).isEmpty();
-        boolean boat = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
+        // Its boat as it is there: whole, or broken over the cart into its item (F-22c64).
+        boolean boat = !world.getEntitiesByClass(net.minecraft.entity.vehicle.BoatEntity.class, cell, net.minecraft.entity.Entity::isAlive).isEmpty();
+        boolean boatItem = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cell,
                 item -> item.isAlive() && item.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)).isEmpty();
-        if (!cart && !boat) return "";
-        return " I've left " + (cart && boat ? "the cart and my boat" : cart ? "the cart" : "my boat") + " in there with it.";
+        boolean trapdoor = world.getBlockState(b.slot.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS);
+        var left = new java.util.ArrayList<String>();
+        if (cart) left.add("the cart");
+        if (boat) left.add("my boat");
+        else if (boatItem) left.add("my broken boat");
+        String said = left.isEmpty() ? "" : " I've left " + String.join(" and ", left) + " in there with it.";
+        return trapdoor ? said + " A trapdoor of mine shuts the top of its front." : said;
     }
 
     private static net.minecraft.entity.vehicle.AbstractMinecartEntity cartOf(net.minecraft.server.world.ServerWorld world, Bring b) {

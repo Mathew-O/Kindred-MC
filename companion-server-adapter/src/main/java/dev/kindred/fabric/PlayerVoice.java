@@ -131,9 +131,13 @@ final class PlayerVoice implements CompanionSocials.Voice {
         if (asked.isDone() && asked.join().isEmpty()) return false;
         asked.completeOnTimeout(Optional.empty(), Strategist.CHAT_DEADLINE.toMillis() + 1_000, TimeUnit.MILLISECONDS)
                 .thenAccept(line -> server.execute(() -> {
-                    var own = line.flatMap(Strategist.Line::say).flatMap(words -> dev.kindred.core.wire.WireVoice.check(message, plain, prefix, words));
-                    if (line.isPresent() && own.isEmpty()) KindredMod.LOGGER.info("{} voice: its words for {} dropped a fact or added one; the plain line instead",
-                            facts.name(), message.kind());
+                    var words = line.flatMap(Strategist.Line::say);
+                    var own = words.flatMap(said -> dev.kindred.core.wire.WireVoice.check(message, plain, prefix, said));
+                    // What was refused and why, for an operator to read the cause (from RUNNER 2's f34c3 run): the
+                    // message's facts, the model's words and the test they failed. In-game text only; nobody's details.
+                    if (line.isPresent() && own.isEmpty()) KindredMod.LOGGER.info("{} voice: its words for {} refused, {}; the plain line instead. Facts: {}; its words: {}",
+                            facts.name(), message.kind(), dev.kindred.core.wire.WireVoice.refusal(message, plain, prefix, words.orElse(null)).orElse("?"),
+                            dev.kindred.core.wire.WireVoice.facts(message), words.map(w -> "\"" + w.strip().replaceAll("[\\r\\n\\t]+", " ") + "\"").orElse("none"));
                     say.accept(prefix + own.orElse(plain));
                 }));
         return true;

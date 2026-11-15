@@ -6,7 +6,10 @@
     "GameTestStateMixin",
     "WorldWriteMixin",
     "StructureTestListenerMixin",
-    "PlayerInteractionMixin"
+    "PlayerInteractionMixin",
+    "ItemLeaveMixin",
+    "ItemEntityAccess",
+    "LecternGoneMixin"
   ],
   "injectors": {
     "defaultRequire": 1
