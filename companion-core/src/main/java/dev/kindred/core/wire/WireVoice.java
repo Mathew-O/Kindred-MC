@@ -40,22 +40,44 @@ public final class WireVoice {
      * The reply as it may be said after {@code prefix} ("[faction] Wren: "), or empty: the plain line is said instead.
      */
     public static Optional<String> check(Message message, String plain, String prefix, String reply) {
-        if (reply == null) return Optional.empty();
+        return refusal(message, plain, prefix, reply).isPresent() ? Optional.empty() : Optional.of(reply.strip());
+    }
+
+    /**
+     * Why {@link #check} refuses the reply, in words for an operator's log, or empty when it keeps it: no reply, an empty
+     * one, more than one line, a command, too long, the first fact it lacks (its key and value as given), or the first
+     * number the message does not have. The same tests in the same order as {@code check}, which rests on this.
+     */
+    public static Optional<String> refusal(Message message, String plain, String prefix, String reply) {
+        if (reply == null) return Optional.of("no reply");
         String said = reply.strip();
-        if (said.isEmpty() || said.indexOf('\n') >= 0 || said.indexOf('\r') >= 0 || said.startsWith("/")) return Optional.empty();
-        if ((prefix == null ? 0 : prefix.length()) + said.length() > Wording.MAX_CHARS) return Optional.empty();
+        if (said.isEmpty()) return Optional.of("an empty reply");
+        if (said.indexOf('\n') >= 0 || said.indexOf('\r') >= 0) return Optional.of("more than one line");
+        if (said.startsWith("/")) return Optional.of("a command");
+        int length = (prefix == null ? 0 : prefix.length()) + said.length();
+        if (length > Wording.MAX_CHARS) return Optional.of("too long: " + length + " characters with its prefix, over " + Wording.MAX_CHARS);
         String lower = said.toLowerCase(Locale.ROOT);
         var numbers = new HashSet<String>();
         numbers(plain, numbers);
-        for (Fact fact : message.facts().values()) {
-            String value = fact.value().strip();
+        for (var e : message.facts().entrySet()) {
+            String value = e.getValue().value().strip();
             if (value.isEmpty()) continue;
-            if (!lower.contains(value.toLowerCase(Locale.ROOT))) return Optional.empty();
+            if (!lower.contains(value.toLowerCase(Locale.ROOT))) return Optional.of("dropped the fact " + e.getKey() + " " + quoted(value));
             numbers(value, numbers);
         }
         Matcher m = DIGITS.matcher(said);
-        while (m.find()) if (!numbers.contains(m.group())) return Optional.empty();
-        return Optional.of(said);
+        while (m.find()) if (!numbers.contains(m.group())) return Optional.of("added the number " + m.group() + ", which no fact or the plain line has");
+        return Optional.empty();
+    }
+
+    /** The message's facts as an operator's log gives them: {@code key "value"}, in order. */
+    public static String facts(Message message) {
+        var out = new StringBuilder();
+        for (var e : message.facts().entrySet()) {
+            if (out.length() > 0) out.append(", ");
+            out.append(e.getKey()).append(' ').append(quoted(e.getValue().value()));
+        }
+        return out.toString();
     }
 
     private static void numbers(String text, java.util.Set<String> into) {
