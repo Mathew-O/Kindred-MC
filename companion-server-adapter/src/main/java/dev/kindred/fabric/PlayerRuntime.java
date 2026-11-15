@@ -3077,8 +3077,14 @@ final class PlayerRuntime {
         if (!running || !ready) return;
         long tick = server.getTicks();
         if (attentionScheduler.currentTick() == tick) return;
+        // M-06k7: the tick before this one, as the server timed it (kept at its count modulo the ring's size once it ends),
+        // and the heap in use once a second, for the cost line's window.
+        long[] tickTimes = server.getTickTimes();
+        if (tick > 1 && tickTimes.length > 0) tickWindow.add(tickTimes[(int) ((tick - 1) % tickTimes.length)], tick - 1);
         if (tick % 20 == 0) {
             teamCoordinator.handleTickExpiry(tick);
+            Runtime memory = Runtime.getRuntime();
+            heapHighWater = Math.max(heapHighWater, memory.totalMemory() - memory.freeMemory());
         }
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
@@ -18543,13 +18549,19 @@ final class PlayerRuntime {
         }
     }
 
+    /** The server's ticks since the cost line was last written, and the heap's high water then (M-06k7). */
+    private final dev.kindred.core.metrics.TickWindow tickWindow = new dev.kindred.core.metrics.TickWindow();
+    private long heapHighWater;
+
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
         var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
-                chronicle.kept(), wire.stateTold(), wire.refusals());
+                chronicle.kept(), wire.stateTold(), wire.refusals(), tickWindow.describe(), heapHighWater / (1024 * 1024));
+        tickWindow.reset();
+        heapHighWater = 0;
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;

@@ -951,6 +951,69 @@ console command here was run on a real server start on 2026-11-14 (main `9d33596
 way F-31g's restart soak ran: a world made, a plain start, play, a kill (SIGKILL), and the start after it. The
 answers quoted are that run's. Players' names, ids and places are that run's; yours differ.
 
+### Before the month run (M-06k7)
+
+The pack's settings as shipped (`packs/factions/config/kindred/factions.properties`, confirmed with Session A
+2026-11-15; Kindred writes the same file on a first start if it is missing, and refuses an unknown key or an
+out-of-range value, naming it):
+
+| Setting | Shipped | What it means over a month at 8 players |
+| --- | --- | --- |
+| `maxMembers`, `startPower`, `maxPower` | 10, 10, 10 | |
+| `deathLoss`, `regenSeconds` | 2, 3600 | five PvP deaths put a member at 0 power; it comes back one an hour online |
+| `claimCap`, `claimCost` | 80, 100 coins | per faction |
+| `spawnExclusion`, `safeRadius` | 500, 64 blocks | every first claim is a walk of 500 blocks or more from spawn; the hub's safe zone is 64 |
+| `pairCooldownSeconds`, `newAccountSeconds` | 1200, 3600 | |
+| `newFactionShieldHours`, `raidShieldMinutes` | 48, 30 | |
+| `startCoins`, `border` | 500, 8000 | |
+| `auctionSalePercent`, `auctionListingFee`, `auctionListings`, `auctionHours` | 3, 25, 5, 48 | the market's own prices are code, not settings |
+
+Set before the first start, and leave:
+- **Bases off.** `/aiplayer bases off` is the default (`bases=false` in `edits.properties`; the pack ships none). With
+  bases on, today's founders at spawn chase a claim target inside the 500-block exclusion and can end with no land
+  (Session A: 64 of 65 walks refused on seed 20261030). Bases stay off until M-06i2a and M-06i2b show bases on no
+  slower.
+- **The dragon fight off** (the default; `/aiplayer dragonfight on` turns it on). The standing goal is then the End portal.
+- **Memory:** `-Xms8G -Xmx10G` on the 12 GB host (the pack's README).
+- **Backups:** Textile Backup every 3 hours and at each stop, the last 16 kept (`config/textile_backup.json5`).
+- **The locked rules** (power from PvP deaths and online hours, raids only on overclaimed land, protected territory)
+  are not settings. Nothing to set.
+
+**Every day, read the pre-flight report.** It reads the console's `Kindred cost:` lines (one a game day, and one at
+each stop) and, with the server stopped, a copy of the Record:
+
+```
+tools/soak/preflight.py --console logs/latest.log --heap-max-mb 10240
+tools/soak/preflight.py --console logs/latest.log --db check/companions.sqlite --heap-max-mb 10240   # after a stop
+```
+
+It prints, per game day:
+- the database's size, and its growth measured between the days;
+- the server's ticks since the line before: how many, the mean, the 99th, how many over 50 ms, the longest;
+- the heap, and its high water;
+- the Wire's refusals by reason and channel;
+- refused attempts on factions' land, written and over a faction's cap;
+- `native.disconnects`;
+- the WARN lines grouped by kind, and every ERROR line with its time, the player and the tick.
+
+A month's size is shown only as a projection, so labelled, from the last measured day. It ends with a verdict:
+
+- **STOP, and call someone before playing on:**
+  - the copy's integrity check is not `ok`;
+  - any `ledger_check` differs, or an ERROR says a ledger differs from the World Record;
+  - the heap's high water above 90% of `-Xmx`.
+
+  The report exits with status 2. Keep the console log and the copy for whoever looks.
+- **WATCH, and look again tomorrow:**
+  - a day's p99 tick above 50 ms, or more than 5% of its ticks over 50 ms;
+  - refused attempts over a faction's daily cap (someone hammering a border);
+  - `native.disconnects` rising;
+  - any other ERROR line;
+  - unresolved actions in a copy (settle them at the next start, below).
+
+The 50 ms line is the tick's budget. F-31g measured 23.6 ms mean at 20 tps with 8 players, and M-06k's 12-game-day
+rules run 26.93 ms mean with 3.66% over 50 ms. A day near those is as measured before.
+
 ### Every start
 
 1. **Start the server.** Kindred loads its records first and says how many:
