@@ -166,12 +166,53 @@ public final class NativeLavaProbeGameTests implements FabricGameTest {
         escapes(context, 1, 1, false, 200);
     }
 
+    /**
+     * In plain terms: an AI player out of lava and still burning, with a water bucket it carries, puts the fire out with
+     * it and keeps the bucket, rather than burning to death on the bank.
+     *
+     * Technical: F-25c6b. STAGED: the no-effect escape above (a lake three by three and one deep, no effects), with a water
+     * bucket put in its inventory by the fixture besides the pickaxe, cobblestone and bread. Passes if it is out of the
+     * lava within 200 ticks, still alive once its fire is out, and holding the water bucket again afterwards.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "afterburnBucket", tickLimit = 1600)
+    public void stagedOutOfTheLavaBurningWithAWaterBucketItPutsTheFireOutAndKeepsTheBucket(TestContext context) {
+        escapes(context, 1, 1, false, 200, true, (o, player) -> player.getInventory().setStack(3, new ItemStack(Items.WATER_BUCKET)));
+    }
+
+    /**
+     * In plain terms: an AI player out of lava and still burning, with no bucket but water a couple of blocks off in plain
+     * sight, steps into it and lives.
+     *
+     * Technical: F-25c6b. STAGED: the no-effect escape above, and a hole of still water one block deep set into the lake's
+     * stone bank two blocks east of the lava, open above. Passes if it is out of the lava within 200 ticks and still alive
+     * once its fire is out.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "afterburnWater", tickLimit = 1600)
+    public void stagedOutOfTheLavaBurningItStepsIntoWaterInSightAndLives(TestContext context) {
+        escapes(context, 1, 1, false, 200, true, (o, player) -> {
+            var world = context.getWorld();
+            world.setBlockState(o.add(4, 0, 0), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(3, -1, 0), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(3, 0, 0), Blocks.WATER.getDefaultState());
+        });
+    }
+
     private static void escapes(TestContext context, int half, int deep, boolean fireResistance, int within) {
+        escapes(context, half, deep, fireResistance, within, false, (o, player) -> { });
+    }
+
+    /**
+     * As above; {@code outlive}: passing also asks that it is alive once the burning it carries out is out (with a bucket
+     * staged, that it holds the bucket again), not only logged; {@code stage}: more of the scene, given the lake's origin.
+     */
+    private static void escapes(TestContext context, int half, int deep, boolean fireResistance, int within, boolean outlive,
+                                java.util.function.BiConsumer<BlockPos, ServerPlayerEntity> stage) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         ServerPlayerEntity[] body = {null};
         long[] since = {-1};
         boolean[] wasIn = {false};
         long[] outAt = {-1};
+        boolean[] logged = {false};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Kindred"))
@@ -193,6 +234,7 @@ public final class NativeLavaProbeGameTests implements FabricGameTest {
                     inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
                     inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 32));
                     inventory.setStack(2, new ItemStack(Items.BREAD, 8));
+                    stage.accept(o, player);
                     player.clearStatusEffects();
                     if (fireResistance) player.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
                             net.minecraft.entity.effect.StatusEffects.FIRE_RESISTANCE, 2400));
@@ -232,8 +274,20 @@ public final class NativeLavaProbeGameTests implements FabricGameTest {
                     long waited = context.getWorld().getTime() - since[0];
                     boolean dead = player.isDead() || player.isRemoved() || f.player() != player;
                     context.assertTrue(dead || !player.isOnFire(), "Still burning: " + waited + " ticks, health " + player.getHealth());
-                    KindredMod.LOGGER.info("Lava escape: out after {} ticks; {} after {}", outAt[0],
-                            dead ? "burned to death" : "the fire out on " + player.getHealth() + " health", waited);
+                    if (!logged[0]) {
+                        logged[0] = true;
+                        KindredMod.LOGGER.info("Lava escape: out after {} ticks; {} after {}", outAt[0],
+                                dead ? "burned to death" : "the fire out on " + player.getHealth() + " health", waited);
+                    }
+                    if (outlive) {
+                        if (dead) throw new net.minecraft.test.GameTestException("Out of the lava after " + outAt[0] + " ticks, then burned to death after " + waited);
+                        boolean staged = body[0].getInventory().count(Items.WATER_BUCKET) + body[0].getInventory().count(Items.BUCKET) > 0;
+                        context.assertTrue(!staged || body[0].getInventory().count(Items.WATER_BUCKET) == 1,
+                                "The bucket not yet filled again: " + waited + " ticks");
+                        KindredMod.LOGGER.info("Lava escape: alive with the fire out after {} ticks, health {}; water buckets {}, empty buckets {}, water at its feet {}",
+                                waited, body[0].getHealth(), body[0].getInventory().count(Items.WATER_BUCKET), body[0].getInventory().count(Items.BUCKET),
+                                context.getWorld().getFluidState(body[0].getBlockPos()).isIn(net.minecraft.registry.tag.FluidTags.WATER));
+                    }
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
