@@ -409,6 +409,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     // where it stands, one cell of passage south, and a dark three-deep cave beyond.
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-4, -2, -3), p.add(4, 5, 6));
                     for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
                         boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
                                 || (Math.abs(x) <= 2 && z >= 2 && z <= 4 && y >= 0 && y <= 2);
@@ -473,6 +475,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-4, -2, -3), p.add(4, 5, 6));
                     for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
                         boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
                                 || (Math.abs(x) <= 2 && z >= 2 && z <= 4 && y >= 0 && y <= 2);
@@ -537,6 +541,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-4, -2, -3), p.add(4, 6, 6));
                     for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 4; y++) {
                         boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
                                 || (Math.abs(x) <= 2 && z >= 2 && z <= 4 && y >= 0 && y <= 3);
@@ -733,6 +739,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-4, -2, -3), p.add(4, 5, 6));
                     mouth[0] = p;
                     for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
                         boolean air = (x == 0 && z >= 0 && z <= 2 && (y == 0 || y == 1))
@@ -799,6 +807,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-4, -2, -3), p.add(4, 5, 6));
                     mouth[0] = p;
                     for (int x = -3; x <= 3; x++) for (int z = -2; z <= 5; z++) for (int y = -1; y <= 3; y++) {
                         boolean air = (x == 0 && (z == 0 || z == 1) && (y == 0 || y == 1))
@@ -1380,6 +1390,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     // of a 4-block knowledge cell, so the corner lies in a cave cell the player has not walked yet.
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -5), p.add(5, 5, 5));
                     Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
                     Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
                     // One block wider than the passage needs, so stone stands behind the ore and its drop cannot fly out.
@@ -1453,6 +1465,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     world.setTimeOfDay(14000);
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -5), p.add(5, 5, 5));
                     for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
                         world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
                     }
@@ -1513,6 +1527,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     // Solid stone around the player with a dark chamber opening in front of it.
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -5), p.add(5, 5, 5));
                     for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) for (int y = -1; y <= 3; y++) {
                         boolean air = x == 0 && z == 0 && (y == 0 || y == 1) || Math.abs(x) <= 2 && z >= 1 && z <= 3 && y >= 0 && y <= 2;
                         world.setBlockState(p.add(x, y, z), air ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
@@ -1569,6 +1585,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -5), p.add(5, 5, 5));
                     Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
                     Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
                     for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
@@ -1776,6 +1794,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -5), p.add(5, 5, 5));
                     Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
                     Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
                     for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
@@ -1843,6 +1863,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = base[0] = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -5), p.add(5, 12, 5));
                     for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 9; dy++) {
                         boolean pocket = dx == 0 && dz == 0 && (dy == 0 || dy == 1);
                         world.setBlockState(p.add(dx, dy, dz), pocket ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());
@@ -2327,6 +2349,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = start[0] = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-4, -2, -4), p.add(4, 10, 4));
                     for (int dx = -3; dx <= 3; dx++) for (int dz = -3; dz <= 3; dz++) for (int dy = -1; dy <= 7; dy++) {
                         world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
                     }
@@ -2880,6 +2904,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     world.setTimeOfDay(1000);
                     BlockPos p = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -3), p.add(5, 14, 3));
                     start[0] = p;
                     // Solid stone round a passage seven long, east to west, sealed: no daylight, no way but up.
                     for (int dx = -4; dx <= 4; dx++) for (int dz = -2; dz <= 2; dz++) for (int dy = -1; dy <= 12; dy++) {
