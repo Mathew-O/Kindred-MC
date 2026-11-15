@@ -1024,7 +1024,10 @@ rules run 26.93 ms mean with 3.66% over 50 ms. A day near those is as measured b
 
 1. **Start the server.** Kindred loads its records first and says how many:
    `Kindred AI-player foundation ready: 8 durable records; ...`. No AI player is in the world yet; none comes back by
-   itself (F-31g, finding 1).
+   itself (F-31g, finding 1). Just after, the knowledge web is rebuilt from the Record (F-32c):
+   `Knowledge web rebuilt from the Record: 7 events, read in 0 ms on the writer, replayed in 0 ms; the world's web 3
+   relations, 2 AI players' webs holding 0` (a GameTest's restart). Its read and replay grow only with claims and Wire news, not with the
+   whole Record. If either passes a second, or the relations near 20,000 a player, tell someone.
 2. **See where each stands:** `aiplayer native list`. One line a player:
    - `Kindred (<id>): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required.` Ready to
      connect.
