@@ -117,7 +117,10 @@ public final class Wire {
         }
 
         String budgetKey = scope.budgetKey() + (scope.earshot() != null ? "|" + message.from() : "");
-        String sameKey = budgetKey + "|" + message.sameness();
+        // The sender is part of a message's identity on its channel: two players telling the same thing ("Joined Oak"
+        // from each of two joiners) are two pieces of news, never one said twice (F-34d). A person still hears the same
+        // words once in a while, whoever says them (heardSame below).
+        String sameKey = budgetKey + "|" + (message.fromServer() ? "server" : message.from()) + "|" + message.sameness();
         if (!state) {
             Long last = lastSame.get(sameKey);
             if (last != null && now - last < channel.dedupeMillis) return Delivery.refused(message, Delivery.Refusal.DUPLICATE);

@@ -170,6 +170,19 @@ public final class ConstructionPlanner {
      */
     public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
                             Set<Pos> shunned, int spare, List<Blueprint.Block> setAside) {
+        // Within one plan, what each search for a way out learned is kept for the next: a step inside a large build asks it
+        // once per spot weighed, over the same blocks (E-08a1's cost). The answers are the same as without it.
+        var outer = WAYS_OUT.get();
+        WAYS_OUT.set(new WaysOut());
+        try {
+            return plan(blocks, clear, world, feet, items, scaffold, shunned, spare, setAside);
+        } finally {
+            WAYS_OUT.set(outer);
+        }
+    }
+
+    private static Step plan(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
+                             Set<Pos> shunned, int spare, List<Blueprint.Block> setAside) {
         BuildSite site = steps(blocks, clear, world);
         Map<Pos, BlockSpec> wanted = new HashMap<>(Blueprint.byPosition(setAside));
         wanted.putAll(Blueprint.byPosition(blocks));
@@ -853,25 +866,90 @@ public final class ConstructionPlanner {
         return dev.kindred.core.Capabilities.current().is(VanillaIds.DOORS, id) && !id.equals(VanillaIds.IRON_DOOR);
     }
 
+    /**
+     * What the searches for a way out within one plan have learned, by the site and the wanted blocks searched over (the
+     * site a scaffold column is weighed on is another) and the block being placed: the cells from which a way out was
+     * walked, and those from which every way was searched and none led out.
+     */
+    private static final class WaysOut {
+        record Key(BuildSite site, Map<Pos, BlockSpec> wanted, Pos placing) {
+            @Override public boolean equals(Object o) {
+                return o instanceof Key k && k.site == site && k.wanted == wanted && k.placing.equals(placing);
+            }
+            @Override public int hashCode() { return System.identityHashCode(site) * 31 + System.identityHashCode(wanted) * 17 + placing.hashCode(); }
+        }
+        final Map<Key, Set<Pos>> out = new HashMap<>(), shut = new HashMap<>();
+    }
+
+    private static final ThreadLocal<WaysOut> WAYS_OUT = new ThreadLocal<>();
+
     private static boolean sealedIn(BuildSite site, Pos stance, Pos placing, Map<Pos, BlockSpec> wanted, Box box) {
-        var seen = new HashSet<Pos>();
+        // Over the build as it will stand: every block still wanted in place (a door still to go a way through all the
+        // same), and the one being placed. Sideways and down through open cells, as before: a drop of any height, or down
+        // its own scaffold, is a way out. Up only as a player goes up on foot: a step of one onto something to stand on,
+        // with head room for the jump. Before, up was any open cell, through the air over a wall; a ring's last gap, two
+        // high, was filled from inside whenever no spot outside reached it, and the player shut in (E-08a1).
+        var ways = WAYS_OUT.get();
+        var key = ways == null ? null : new WaysOut.Key(site, wanted, placing);
+        Set<Pos> knownOut = ways == null ? Set.of() : ways.out.getOrDefault(key, Set.of());
+        Set<Pos> knownShut = ways == null ? Set.of() : ways.shut.getOrDefault(key, Set.of());
+        if (knownOut.contains(stance)) return false;
+        if (knownShut.contains(stance)) return true;
+        var from = new HashMap<Pos, Pos>();
         var queue = new ArrayDeque<Pos>();
         queue.add(stance);
-        seen.add(stance);
+        from.put(stance, stance);
         int budget = 20_000;
         while (!queue.isEmpty() && budget-- > 0) {
             Pos at = queue.poll();
-            if (!box.inside(at)) return false;
-            for (Face f : Face.values()) {
+            if (!box.inside(at) || knownOut.contains(at)) {
+                if (ways != null) {
+                    // The way walked leads out from every cell along it.
+                    var cells = ways.out.computeIfAbsent(key, k -> new HashSet<>());
+                    for (Pos p = at; ; p = from.get(p)) {
+                        cells.add(p);
+                        if (p.equals(stance)) break;
+                    }
+                }
+                return false;
+            }
+            Pos down = at.down();
+            if (openBuilt(site, down, placing, wanted) && !knownShut.contains(down) && from.putIfAbsent(down, at) == null) queue.add(down);
+            boolean standing = floorBuilt(site, down, placing, wanted);
+            for (Face f : SIDES) {
                 Pos next = at.offset(f);
-                if (!seen.add(next) || next.equals(placing)) continue;
-                // A door still to go is a way out all the same.
-                if (wanted.containsKey(next) && !doorway(wanted.get(next)) || wanted.containsKey(next.up()) && !doorway(wanted.get(next.up()))) continue;
-                if (!through(site, next) || !through(site, next.up())) continue;
-                queue.add(next);
+                if (openBuilt(site, next, placing, wanted) && openBuilt(site, next.up(), placing, wanted)) {
+                    if (!knownShut.contains(next) && from.putIfAbsent(next, at) == null) queue.add(next);
+                    continue;
+                }
+                Pos up = next.up();
+                if (standing && floorBuilt(site, next, placing, wanted) && openBuilt(site, up, placing, wanted)
+                        && openBuilt(site, up.up(), placing, wanted) && openBuilt(site, at.add(0, 2, 0), placing, wanted)
+                        && !knownShut.contains(up) && from.putIfAbsent(up, at) == null) {
+                    queue.add(up);
+                }
             }
         }
+        // Every way from here searched and none out: none leads out from any cell reached. Not so when the search was cut
+        // short; then nothing is kept.
+        if (ways != null && queue.isEmpty()) ways.shut.computeIfAbsent(key, k -> new HashSet<>()).addAll(from.keySet());
         return true;
+    }
+
+    /** A cell feet or head may pass once built: not the block placed, nor one still wanted but a wooden door. */
+    private static boolean openBuilt(BuildSite site, Pos at, Pos placing, Map<Pos, BlockSpec> wanted) {
+        if (at.equals(placing)) return false;
+        var spec = wanted.get(at);
+        if (spec != null) return doorway(spec);
+        return through(site, at);
+    }
+
+    /** A cell to stand on once built: the block placed, a block still wanted (not a door), or a floor there now. */
+    private static boolean floorBuilt(BuildSite site, Pos at, Pos placing, Map<Pos, BlockSpec> wanted) {
+        if (at.equals(placing)) return true;
+        var spec = wanted.get(at);
+        if (spec != null) return !doorway(spec);
+        return site.cell(at).map(Cell::floor).orElse(false);
     }
 
     /** The build's bounding box, by x and z: inside it a player is among the build. */
