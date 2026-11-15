@@ -54,6 +54,7 @@ public final class GameTestPacing implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ItemLeaves.register(); // F-22c84's diagnostic: chunks under a bring test's ground loading and unloading.
         FixtureBounds.install();
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             if (!(server instanceof TestServer)) return;

@@ -312,6 +312,12 @@ the same sizes unless set. One use's budget spent leaves the others' untouched; 
 the voice without stance consultations, set `KINDRED_ADVICE=off` (and `KINDRED_RESCUE=off` for no rescue plans). An
 evaluation run's `strategist=off` does the same, whatever its `voice` is set to.
 
+**What each call cost (F-19g).** Every stance, voice and Chronicle page call logs one line:
+`<name> strategist call: in 6852, cache read 6500, cache write 0, out 108 tokens, 1931 ms` (or `voice call:`, `chronicle
+call:`). "Cache read" tokens were served from the prompt cache, which is billed at a tenth. "Cache write" tokens were
+written to it. The OpenAI-compatible route does not report writes, and says `n/a`. A stance call whose cache read stays
+0 call after call is not being cached (F-19f). A page is never cached as built: its instructions are too short to cache.
+
 It also has a say in what comes next (F-19c). A reply may set a focus for the same five minutes: food first (hunt, and by day go out and look for animals when none is in sight, until well stocked) or wood first (logs while a tree stands). A reply's note may also teach a habit the player keeps in that world from then on: carry three more food, pack a second spare pickaxe for the work below, dig its own way rather than explore caves, or dig in for the night at dusk. A habit needs a note saying why, at most four are kept, and the strategist can retire one. A focus or a habit only reorders or resizes the route's ordinary jobs; fights, shelter and healing still come first. The habits live with their notes in the memory file below (shown as `"habit": "MORE_FOOD"` on a note). Delete the note, or the file, to make the player drop a habit; each goal the player starts in that world gets the habits it has learned there.
 
 It thinks ahead too (F-19e). It is sent a general Minecraft guide with its instructions: the way to the dragon, what each larger task needs, recipes, where things come from, how far mobs notice a player, and the dangers. The report shows the player's queue of follow-ups (what the tasks ahead want, what it holds, the work left), and a reply may add up to three: a shield after deaths to skeletons, more food after hungry nights, more arrows. Each is a need from a fixed list (bow, arrows, shield, water bucket, bed, string, feathers, wool, flint, sticks, blocks, food) with a count and the task it is for. A reply may also advise one way of doing a part of the run from the same fixed set as the pace above; the player takes it only where it can be done and costs at most half as much again as its own choice. The player gathers and crafts them itself, as with the End fight's own needs above, and drops them when met or when their task is behind it. Only the End goal works the queue so far. The follow-ups are kept in the memory file below (`"queue"`).
@@ -516,7 +522,7 @@ KINDRED_VOICE=off                              optional; the fixed replies only,
 
 Cost: each reply is one request on the chat lane, apart from the planning lane, with an eight-second deadline and 120 output tokens at most. It is reserved at about 1,000 tokens and settled to what it used. Replies count against the same rates (six a minute per player, twelve in all) and the same daily budgets as the strategist's advice: `KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS` (steady pace 50,000) and `KINDRED_STRATEGIST_DAILY_TOKENS` (steady pace 100,000). Nonstop chat with one player spends the player's steady budget in about six to eight minutes; after that the fixed replies carry on, and the log's one "budget is spent" line says so. Raise the two budgets for a chattier server, or set `KINDRED_VOICE=off`. The log says `Kindred voice on` at start and, for each reply, `<Echo> Chopping logs for a table. (to Steve, 1,180 in / 22 out, 1.4 s)`, or `Echo voice: no line (<why>); the fixed reply instead (...)`. The last six lines between a player and each speaker go with the next request for five minutes, in memory only, and the count of replies is kept in the player's model-context file as `conversations`.
 
-News an AI player sends on the Wire (its faction's, its team's, its side's) is said to the people who hear it in its own words too when the voice is on: the same chat lane, rates and budgets as a reply, one request for each person who hears it. What it says is kept only if every fact of the news is in it as given and it adds no number of its own; otherwise, or when its lane is busy or out of budget, they hear the plain line (`[faction] Echo: raid planned: target birch's east wall, when dusk.`), as with the voice off. The log says `Echo voice: its words for faction.raid_planned dropped a fact or added one; the plain line instead` when that happens.
+News an AI player sends on the Wire (its faction's, its team's, its side's) is said to the people who hear it in its own words too when the voice is on: the same chat lane, rates and budgets as a reply, one request for each person who hears it. What it says is kept only if every fact of the news is in it as given and it adds no number of its own; otherwise, or when its lane is busy or out of budget, they hear the plain line (`[faction] Echo: raid planned: target birch's east wall, when dusk.`), as with the voice off. When that happens the log names the test the words failed, the news's facts and the words themselves, as `Echo voice: its words for faction.raid_planned refused, dropped the fact target "birch's east wall"; the plain line instead. Facts: target "birch's east wall", when "dusk"; its words: "We raid at dusk."`. The other reasons are `added the number N, which no fact or the plain line has`, `more than one line`, `a command`, `too long`, `no reply` and `an empty reply`. Only in-game text is logged.
 
 #### Asks in chat (E-20b)
 Whoever may command a native player (its controller or an operator) can also ask it in chat to come over ("Echo, come here"), wait a moment, stop, or toss them some of an item it carries ("Echo, toss me some bread"). The model's reply carries the ask. The player says its reply, then does what the matching command does, through the same code and with the speaker's own authority, so every check the command makes is made again:
@@ -1014,11 +1020,39 @@ A month's size is shown only as a projection, so labelled, from the last measure
 The 50 ms line is the tick's budget. F-31g measured 23.6 ms mean at 20 tps with 8 players, and M-06k's 12-game-day
 rules run 26.93 ms mean with 3.66% over 50 ms. A day near those is as measured before.
 
+#### Go or no-go for the month run (M-06k8)
+
+Fill this in from the soak before the owner starts the month (RUNNER 2's, `tools/eval/run.py` as in
+[M-06k7](evidence/M-06k7.md): 8 players, the factions pack's defaults, bases off, 20 ticks a second, 36 game days, then
+`tools/soak/preflight.py --console <run>/console.txt --db <copy> --heap-max-mb 10240`).
+- **Go** needs every row with a threshold within it, and no STOP.
+- A row marked **open** has no threshold yet: its soak figure is to be read by the lead and the owner, not passed
+  or failed here.
+- A threshold is either set in code (the report's), or follows from a measured bound; none is guessed.
+
+| Check | Threshold, and where it comes from | Measured before, and on what | Tonight's soak |
+| --- | --- | --- | --- |
+| Heap ceiling | STOP if the high water is over 90% of `-Xmx`: 9,216 MB of `-Xmx10G` (`preflight.py`, `HEAP_STOP_SHARE`) | 1,069 MB at most at 20 tps, 8 players, 13 minutes; 1,336 MB at most in a 30-minute start, 6 GB heap (F-31g) | |
+| Database size | open: the host's free disk is not recorded here. The month is a projection, about 16.5 to 18 GB over 2,160 game days, with the Record kept as today (F-31c's option A, the owner's decision pending; the storage table above) | 66.5 MB after 6 game days with its write-ahead log, 8 players (`keepdb8-4c92b41`); 58.4 MB after five starts (F-31g) | |
+| Database growth a game day | open: the report shows it, and a month only as a projection | about 12 MB on days 1 and 2, then 6.2 to 8.9 MB (7.7 a day over days 3 to 6), 8 players (`keepdb8-4c92b41`); about 13 MB, game days 1.5 to 3, 8 players (F-31g, s1) | |
+| Write-ahead log | open: the report does not read it. The measured bound is about 4.2 MB, back to 4 MB after a checkpoint (`journal_size_limit`, F-31f) | at most 4.19 MB over five starts (F-31g); 61.6 to 77.6 MB during a day-30 ledger check, its 25 to 36 s, then 4.0 MB 10 s after (F-31f, a synthetic 1,994 MB store) | |
+| A restart's knowledge-web rebuild | open: the start line `Knowledge web rebuilt from the Record: …` (F-32c, #360) | the read 2 to 5 ms on a 3,000,000-event Record on sqlite-jdbc 3.50.3, with or without `ANALYZE` (F-32c); 0 to 1 ms at GameTest restarts | |
+| Log volume a game day | open | `latest.log` 1.46 MB, with a 0.44 MB `.gz`, over 6 game days, 8 players (`keepdb8-4c92b41`); 4.9 MB (0.28 MB gzipped) over 12 days, 3 players (`keepdb-101-d640518`) | |
+| Mean tick | WATCH, per day, if the p99 is over 50 ms or more than 5% of ticks are (`preflight.py`, `P99_WATCH_MS`, `OVER50_WATCH_SHARE`); no threshold on the mean itself | 23.6 ms, 1.3% over 50 ms, 8 players at 20 tps, early game (F-31g); 26.93 ms, 3.66% over 50 ms, 12 game days, 8 players, sprint on (M-06k) | |
+| p99 tick | as above | `tick query` P99 37.5 to 55.1 ms, once 188.2 ms (F-31g) | |
+| Worst tick | open: the report gives the longest, with its tick, and judges nothing on it | 307 ms, the run's third tick (F-31g); 1,126.47 ms, with 27 ticks over 200 ms, 12 game days, 8 players, sprint on (M-06k) | |
+| STOP lines | none for a go: an integrity check not `ok`, a `ledger_check` that differs, or a heap over its 90% (`preflight.py`) | none in the reports so far ([M-06k7](evidence/M-06k7.md) has the report on GameTest consoles only) | |
+| ERROR lines | each read, by kind, and each one WATCH (`preflight.py`); open whether any count stops a go | not yet counted on a soak | |
+
 ### Every start
 
 1. **Start the server.** Kindred loads its records first and says how many:
    `Kindred AI-player foundation ready: 8 durable records; ...`. No AI player is in the world yet; none comes back by
-   itself (F-31g, finding 1).
+   itself (F-31g, finding 1). Just after, the knowledge web is rebuilt from the Record (F-32c):
+   `Knowledge web rebuilt from the Record: 7 events, read in 0 ms on the writer, replayed in 0 ms; the world's web 3
+   relations, 2 AI players' webs holding 0` (a GameTest's restart). Its read and replay grow only with claims and Wire news, not with the
+   whole Record: 2 to 5 ms for the read on a 3,000,000-event Record (F-32c). No threshold is set yet; the month's own
+   figures come from RUNNER 2's soak. A web keeps at most 20,000 relations.
 2. **See where each stands:** `aiplayer native list`. One line a player:
    - `Kindred (<id>): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required.` Ready to
      connect.

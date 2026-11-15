@@ -41,6 +41,22 @@ class WireVoiceTest {
     }
 
     @Test
+    void aRefusalSaysWhichTestTheReplyFailedAndWhichFact() {
+        assertEquals(Optional.empty(), WireVoice.refusal(RAID, PLAIN, PREFIX, "We hit birch's east wall at dusk, be ready."));
+        var dropped = WireVoice.refusal(RAID, PLAIN, PREFIX, "We raid at dusk.").orElseThrow();
+        assertTrue(dropped.startsWith("dropped the fact ") && dropped.contains("\"birch's east wall\""), dropped);
+        assertEquals("added the number 5, which no fact or the plain line has",
+                WireVoice.refusal(RAID, PLAIN, PREFIX, "We hit birch's east wall at dusk with 5 of us.").orElseThrow());
+        assertEquals("more than one line", WireVoice.refusal(RAID, PLAIN, PREFIX, "birch's east wall at dusk\nsecond line").orElseThrow());
+        assertEquals("a command", WireVoice.refusal(RAID, PLAIN, PREFIX, "/kill birch's east wall dusk").orElseThrow());
+        assertTrue(WireVoice.refusal(RAID, PLAIN, PREFIX, "birch's east wall at dusk " + "x".repeat(Wording.MAX_CHARS)).orElseThrow().startsWith("too long: "));
+        assertEquals("no reply", WireVoice.refusal(RAID, PLAIN, PREFIX, null).orElseThrow());
+        assertEquals("an empty reply", WireVoice.refusal(RAID, PLAIN, PREFIX, "   ").orElseThrow());
+        // The log's facts: every key with its value as given, quoted.
+        for (var e : RAID.facts().entrySet()) assertTrue(WireVoice.facts(RAID).contains(e.getKey() + " \"" + e.getValue().value() + "\""), WireVoice.facts(RAID));
+    }
+
+    @Test
     void theVoiceIsToldTheLineAndItsFactsQuotedAsNews() {
         String text = WireVoice.request(RAID, "Mat", PLAIN);
         assertTrue(text.startsWith("Tell Mat this, in your own words"), text);
