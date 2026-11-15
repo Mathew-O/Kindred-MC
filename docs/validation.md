@@ -64,6 +64,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - E-07e1, a table in the goal's reach is in the dispatch's, the golden helmet made: [evidence](evidence/E-07e1.md)
 - E-71a, timed-crouch bridging: upright to the edge, crouched for the click, held where a fall could kill: [evidence](evidence/E-71a.md)
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
+- F-34c's second keyed runs (2026-11-15, main 37adcdc): both join lines once with no DUPLICATE, the refusal tally in the cost line, and a person's own death told to the faction as "A member died"; the voice's 3 claim lines all refused by its check and said plain; Echo's death news not heard by a dead, unrespawned person; the voice's cache not measurable (no per-call token counts): [evidence](evidence/F-34.md#the-second-keyed-runs-on-main-37adcdc-f-34c-2026-11-15)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
@@ -187,6 +188,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c68](evidence/F-22c68.md) (2026-11-12, test only): the late toss-cap staging moves the server's tick only forward; from a start in a day's last 30 ticks the old line stops the server ("Backward tick"), the new one passes 3 of 3; NativeTrustGameTests 9 of 9, 3 runs.
 - [F-22c69](evidence/F-22c69.md) (2026-11-12, CI): the build job's limit from 90 to 120 minutes, the suite having outgrown 90; the GameTests' split across jobs to follow.
 - [E-08a1](evidence/E-08a1.md) (2026-11-14, construction): no way out of a build up over its wall; the ring's last gap with no spot outside, placed from inside before and refused after; the construction package 104 of 104; `next` per call cheaper than main's with a cache within one plan.
+- [F-25c4dh](evidence/F-25c4dh.md) (2026-11-15, combat): a back-off a mob on foot catches up with is followed by a sword fight, no rest in the open with one after it, no meal while one can get at it; the staged second zombie killed its player 3 of 3 on main, 0 of 3 here.
 - [F-22c70](evidence/F-22c70.md) (2026-11-12, night shelter): no torch in a cell of the way it is making; the staged fixture 0 of 3 before, 9 of 9 after.
 - [F-22c72](evidence/F-22c72.md) (2026-11-14, night shelter): dug in for the night, no mining step meanwhile from the shelter it dug; the staged fixture 0 of 3 before, 3 of 3 after; 15 night and campaign classes 151 of 151, 3 runs.
 - [F-22c73](evidence/F-22c73.md) (2026-11-14, stranding): refused walks to pick up a drop do not strand it; the staged fixture 0 of 3 before, 18 of 18 with its control after.
