@@ -2673,6 +2673,75 @@ final class PlayerRuntime {
         return java.util.Optional.empty();
     }
 
+    /**
+     * The fire carried out of lava put out by earned means (F-25c6b), or its water taken back up after, or null. Burning
+     * where nothing at its feet burns, no fire resistance, outside the Nether (water boils away there): with a water bucket
+     * it pours water at its feet, the fire out the moment it stands in it; with none, it walks into water in plain sight
+     * within six blocks. Once out, the water it poured is filled back into its bucket. Lava leaves some fifteen seconds of
+     * burning, about fifteen health: out of a lake on six to nine, F-25c6a's escape burned to death on the bank.
+     */
+    private NativeTaskCandidate fireOutCandidate(Entry entry, ServerPlayerEntity player, boolean mayEdit) {
+        var world = player.getServerWorld();
+        long now = server.getTicks();
+        BlockPos feet = player.getBlockPos();
+        if (entry.firePoured != null && (now > entry.firePouredUntil || !world.getFluidState(entry.firePoured).isIn(FluidTags.WATER)
+                || !world.getFluidState(entry.firePoured).isStill())) {
+            entry.firePoured = null;
+        }
+        boolean burning = player.isOnFire() && !player.isInLava() && !player.isTouchingWater() && !isHazardousSituation(player, false)
+                && !player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.FIRE_RESISTANCE) && !world.getDimension().ultrawarm();
+        if (!burning) {
+            // Out: the water it poured, taken back up into its bucket.
+            if (entry.firePoured == null || !player.isOnGround() && !player.isTouchingWater() || !mayEdit
+                    || player.getInventory().count(Items.BUCKET) == 0) return null;
+            BlockPos water = entry.firePoured;
+            if (NativeBucketAction.fillAim(player, water).isEmpty()) return null;
+            return fireOutTask(entry, "fire_refill:" + water.asLong() + ":" + now / 100, 70.0, "native_bucket",
+                    Map.of("x", String.valueOf(water.getX()), "y", String.valueOf(water.getY()), "z", String.valueOf(water.getZ()), "mode", "fill"));
+        }
+        // A water bucket at hand: poured where it stands, onto the ground under it.
+        BlockPos ground = feet.down();
+        if (mayEdit && player.getInventory().count(Items.WATER_BUCKET) > 0 && player.isOnGround()
+                && world.getBlockState(feet).isReplaceable() && world.getFluidState(feet).isEmpty()
+                && !world.getBlockState(ground).getCollisionShape(world, ground).isEmpty()) {
+            entry.firePoured = feet.toImmutable();
+            entry.firePouredUntil = now + 600;
+            return fireOutTask(entry, "fire_pour:" + feet.asLong() + ":" + now / 40, 99.5, "native_bucket",
+                    Map.of("x", String.valueOf(feet.getX()), "y", String.valueOf(feet.getY()), "z", String.valueOf(feet.getZ()), "mode", "pour"));
+        }
+        // Else water in plain sight close by, walked into.
+        Vec3d eye = player.getEyePos();
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (BlockPos cell : BlockPos.iterate(feet.add(-6, -2, -6), feet.add(6, 1, 6))) {
+            double distance = cell.getSquaredDistance(feet);
+            if (distance >= bestDistance || distance > 36 || !world.isChunkLoaded(cell) || !world.getFluidState(cell).isIn(FluidTags.WATER)) continue;
+            if (!world.getBlockState(cell.up()).getCollisionShape(world, cell.up()).isEmpty()) continue;
+            // Seen as a player sees water, by its surface: a clear line to a point on its top, over fluids and past nothing solid.
+            boolean seen = false;
+            for (double dx : new double[]{0, 0.3, -0.3}) for (double dz : new double[]{0, 0.3, -0.3}) {
+                if (seen) break;
+                Vec3d surface = new Vec3d(cell.getX() + 0.5 + dx, cell.getY() + 0.85, cell.getZ() + 0.5 + dz);
+                seen = world.raycast(new net.minecraft.world.RaycastContext(eye, surface, net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
+                        net.minecraft.world.RaycastContext.FluidHandling.NONE, player)).getType() == net.minecraft.util.hit.HitResult.Type.MISS;
+            }
+            if (!seen) continue;
+            best = cell.toImmutable();
+            bestDistance = distance;
+        }
+        if (best == null) return null;
+        return fireOutTask(entry, "fire_water:" + best.asLong() + ":" + now / 40, 99.5, "native_goto",
+                Map.of("x", String.valueOf(best.getX()), "y", String.valueOf(best.getY()), "z", String.valueOf(best.getZ()), "range", "0.5", "partial", "true"));
+    }
+
+    private NativeTaskCandidate fireOutTask(Entry entry, String key, double score, String skill, Map<String, String> arguments) {
+        UUID taskId = UUID.nameUUIDFromBytes((key + ":" + entry.data.id()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        entry.fireOutTaskId = taskId;
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, score,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return new NativeTaskCandidate(candidate, skill, arguments);
+    }
+
     static boolean isHazardousSituation(ServerPlayerEntity player) {
         return isHazardousSituation(player, true);
     }
@@ -3386,6 +3455,12 @@ final class PlayerRuntime {
             candidates.add(new NativeTaskCandidate(candidate, "native_clutch", Map.of("slot", String.valueOf(clutchSlot))));
             return candidates;
         }
+        // 00b. Burning, out of lava and fire (F-25c6b): put out by what it has earned, before a step aside that puts out nothing.
+        var fireOut = fireOutCandidate(entry, player, mayEdit);
+        if (fireOut != null) {
+            candidates.add(fireOut);
+            return candidates;
+        }
         // 0. Hit hard by a player (E-41g): defended against, or got away from, before anything but a fall.
         var aggression = aggressionCandidates(entry, body);
         if (aggression != null) return new java.util.ArrayList<>(aggression);
@@ -4082,6 +4157,15 @@ final class PlayerRuntime {
         // food when hunger is low come before a claim or a walk to one.
         var faction = factionCandidates(entry, body);
         if (faction != null) return faction;
+
+        // In a faction world, its base's due stage (M-06i2), after what keeps it alive and its land's defence, ahead of
+        // other faction walks and of its goal: there the standing goal is the End or the dragon, and a base waits for no
+        // goal, so no faction player's base was ever built. On its own claims only; with no site there, it is looked at
+        // again after BASE_NO_SITE and the goal goes on meanwhile. Once begun it is a build, carried on below.
+        if (factionBaseDue(entry, body) && baseDecision(entry, body, onOwnClaims(player))) {
+            candidates.addAll(buildCandidates(entry, body));
+            return candidates;
+        }
 
         // Supplies it was asked to bring someone, fetched from its storage and handed over (E-01), before its own work.
         var delivering = deliveryCandidates(entry, body);
@@ -5426,8 +5510,62 @@ final class PlayerRuntime {
      * build like any other, its blocks fetched through its needs (E-08c). Whether it started a build.
      */
     private boolean baseDecision(Entry entry, NativePlayerBody body) {
+        return baseDecision(entry, body, null);
+    }
+
+    /**
+     * In a faction world, whether its base's stage is due now and not yet begun (M-06i2): bases on, edits allowed, the
+     * overworld, its other work done, its look-again time past, in a faction holding land, and a stage it took up again
+     * or the next one {@link dev.kindred.core.construction.BaseProgression} names. Never outside a faction world: there
+     * the base waits for no goal, as before.
+     */
+    private boolean factionBaseDue(Entry entry, NativePlayerBody body) {
+        if (!factionsWorld() || !bases || !worldEditsEnabled() || body == null) return false;
+        if (entry.build != null || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null
+                || entry.stable != null || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
+        var player = body.entity();
+        if (player.getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) return false;
+        if (server.getTicks() < entry.baseCheckAt || !basesLoaded(entry)) return false;
+        var ledgers = projected();
+        String own = ledgers.factions().of(player.getUuid()).map(f -> f.id().toString()).orElse("");
+        if (own.isEmpty() || !ledgers.claims().containsValue(own)) return false;
+        var record = entry.bases;
+        var last = record.built.isEmpty() ? null : record.built.get(record.built.size() - 1);
+        if (last != null && !last.complete()) return true;
+        return dev.kindred.core.construction.BaseProgression.next(baseProgress(body, last)).next().isPresent();
+    }
+
+    /** Whether its base's stage is being built now (M-06i2): its build is its base's. */
+    private static boolean factionBaseBegun(Entry entry) {
+        return entry.build != null && entry.build == entry.baseBuild;
+    }
+
+    /** Every chunk of a footprint its own faction's claim (M-06i2): a faction base is built on its own land only. */
+    private java.util.function.Predicate<dev.kindred.core.construction.BaseSite.Footprint> onOwnClaims(ServerPlayerEntity player) {
+        var ledgers = projected();
+        String own = ledgers.factions().of(player.getUuid()).map(f -> f.id().toString()).orElse("");
+        var claims = ledgers.claims();
+        String world = player.getServerWorld().getRegistryKey().getValue().toString();
+        return footprint -> {
+            if (own.isEmpty()) return false;
+            for (int cx = Math.floorDiv(footprint.minX(), 16); cx <= Math.floorDiv(footprint.maxX(), 16); cx++) {
+                for (int cz = Math.floorDiv(footprint.minZ(), 16); cz <= Math.floorDiv(footprint.maxZ(), 16); cz++) {
+                    if (!own.equals(claims.get(new dev.kindred.core.factions.Territory.Chunk(world, cx, cz).key()))) return false;
+                }
+            }
+            return true;
+        };
+    }
+
+    /**
+     * Its base's next step, as {@link #baseDecision(Entry, NativePlayerBody)}; with {@code onOwnClaims}, a faction base's turn
+     * (M-06i2): taken with its goal running (a faction world's standing goal is the End or the dragon, never none), sited
+     * only where the test holds (every chunk of the footprint its faction's), and no trading hall begun in that turn.
+     */
+    private boolean baseDecision(Entry entry, NativePlayerBody body,
+                                 java.util.function.Predicate<dev.kindred.core.construction.BaseSite.Footprint> onOwnClaims) {
         // Not before the work it was at before a restart is read: a base begun first would clear it (F-13).
-        if (!bases || !worldEditsEnabled() || goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
+        if (!bases || !worldEditsEnabled() || onOwnClaims == null && goalOf(entry) != dev.kindred.core.survival.SurvivalGoal.NONE || entry.build != null
                 || entry.ranch != null || entry.field != null || entry.seeding != null || entry.growing != null || entry.stable != null
                 || entry.snapshot().stopLatched() || entry.workRead != WorkRead.TAKEN) return false;
         var player = body.entity();
@@ -5479,7 +5617,7 @@ final class PlayerRuntime {
         }
         // A trading hall by its base once it keeps a villager worth a cell (E-45d), ahead of its next stage: one it
         // began taken up again, else sited on the nearest flat open ground to its base.
-        if (last != null && last.complete()) {
+        if (last != null && last.complete() && onOwnClaims == null) {
             var hall = record.hall;
             if (hall != null && !hall.complete() && hall.dimension().equals(dimension)) return startHall(entry, hall, "Back to its trading hall");
             if (hall == null && keepsAVillager(entry, body)) {
@@ -5533,7 +5671,7 @@ final class PlayerRuntime {
         var shape = dev.kindred.core.construction.Houses.shape(stage, style.variant());
         int[] span = dev.kindred.core.construction.Houses.span(shape, style.turns());
         var plan = dev.kindred.core.construction.Houses.of(stage, style);
-        var site = siteFor(entry.seenGround.ground(world), record, dimension, anchorX, anchorZ, span[0], span[1], height(plan), footprint -> true);
+        var site = siteFor(entry.seenGround.ground(world), record, dimension, anchorX, anchorZ, span[0], span[1], height(plan), onOwnClaims == null ? footprint -> true : onOwnClaims);
         if (site.isEmpty()) {
             // While it is still seeing ground it had not, it looks again soon: the site may be there once seen (F-35m1).
             long seen = entry.seenGround.version();
@@ -7545,9 +7683,11 @@ final class PlayerRuntime {
         // Burning from a blaze's fireball is no reason to drop the fight with it; standing in fire or lava still is.
         boolean burningInFight = "native_fight".equals(entry.skillId) && body.entity().isOnFire() && !body.entity().isInLava()
                 && !isHazardousSituation(body.entity(), false);
+        // Nor a stop to putting that fire out, its own water poured or walked into (F-25c6b).
+        boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false);
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
-        if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight || creeperThreat && !handlingCreeper || breakFall)
+        if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight && !puttingOut || creeperThreat && !handlingCreeper || breakFall)
                 && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
                 && !escapingWater) {
             entry.hazardInterrupted = true;
@@ -10149,6 +10289,12 @@ final class PlayerRuntime {
             play.decidedAt = tick;
             play.decidedForTest(tick);
             play.chosen = factionChoose(entry, player);
+            // Its base's stage due (M-06i2): a walk other than to defend its land is not set out on now, and is weighed
+            // again at the next decision; an act where it stands (a claim, a sale) still goes ahead.
+            if (play.chosen != null && FactionsPlayer.moves(play.chosen, player) && play.chosen.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND
+                    && factionBaseDue(entry, body)) {
+                play.chosen = null;
+            }
             if (play.chosen != null && FactionsPlayer.moves(play.chosen, player)) {
                 play.move = play.chosen;
                 play.chosen = null;
@@ -10173,6 +10319,9 @@ final class PlayerRuntime {
         // (M-06i1a). On seeds-10 (3286df0) the walks took players hundreds of blocks from the trees by their spawn before a
         // wooden tool: on 101 Echo and Sol 250 blocks west into water, 21 to 114 walks each, Echo never earning one.
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && woodFirst(entry)) return null;
+        // Its base's stage being built (M-06i2): a walk other than to defend its land waits till the stage is done, and
+        // is kept. A walk under way when a stage falls due goes on to its end first; the stage begins after it.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && factionBaseBegun(entry)) return null;
         // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
         if (play.setAside(tick).contains(move.target())) {
             settledInFlight(entry, play, player, move);
@@ -10608,6 +10757,13 @@ final class PlayerRuntime {
         if (entry == null) return;
         entry.factionPlay.move = move;
         entry.factionPlay.decidedAt = server.getTicks();
+    }
+
+    /** For fixtures: the goal its player is set to now (M-06i2). */
+    dev.kindred.core.survival.SurvivalGoal goalForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? null : goalOf(entry);
     }
 
     /** For fixtures: its bases' record read, as its play reads it (by the time its base or a villager it brings home asks); whether it is now. */
@@ -18782,6 +18938,11 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
+        /** The task putting out the fire carried out of lava, let through the hazard abort (F-25c6b). */
+        private UUID fireOutTaskId;
+        /** Water it poured at its feet to put out a fire, and until when it means to take it back up (F-25c6b). */
+        private BlockPos firePoured;
+        private long firePouredUntil;
         /** Walks of its own that found no way, since it came into play: a measure of how often it sets out in vain. */
         private int walksFailed;
         /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
