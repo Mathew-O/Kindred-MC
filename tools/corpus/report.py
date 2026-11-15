@@ -61,8 +61,10 @@ def leftover(log):
             if m:
                 batch = m.group(1)
                 continue
-            # The runtime's own stop, logged as the next batch starts, is not acting: its last action dropped unrun.
-            if batch is None or ("dropped before it ran" in line and "stop=true" in line):
+            # The runtime's own stop, logged as the next batch starts, is not acting: its last action dropped unrun, or a
+            # break in progress whose collection it ended (F-27a3).
+            if batch is None or ("dropped before it ran" in line and "stop=true" in line) \
+                    or "its collection ended (authority ended)" in line:
                 continue
             for name in set(re.findall(r"\bR[0-9a-f]{5,8}_\d\b", line)):
                 first.setdefault(name, batch)
