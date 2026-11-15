@@ -164,15 +164,17 @@ public final class NativeMobRhythmGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(18);
                     player.refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
                     player.setVelocity(Vec3d.ZERO);
-                    zombie[0] = FixtureGround.hostile(context, EntityType.ZOMBIE, context.getRelative(new Vec3d(p.getX() + 0.5, p.getY(), p.getZ() + 2.3)));
+                    // Still spawnMob, as on main: with mobs that come (FixtureGround.hostile, F-22c80) the rule fails in CI, "A block
+                    // asked for to hand still not in its hotbar 21 ticks on" (#332). That version is the behaviour fix's fail-before fixture.
+                    zombie[0] = context.spawnMob(EntityType.ZOMBIE, context.getRelative(new Vec3d(p.getX() + 0.5, p.getY(), p.getZ() + 2.3)));
                     zombie[0].equipStack(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
                     zombie[0].setTarget(player);
                     if (blocksInPack) {
                         // Outmatched: three after it (a second zombie and a spider), as kindred-21883 was.
-                        var second = FixtureGround.hostile(context, EntityType.ZOMBIE, context.getRelative(new Vec3d(p.getX() + 2.5, p.getY(), p.getZ() + 3.5)));
+                        var second = context.spawnMob(EntityType.ZOMBIE, context.getRelative(new Vec3d(p.getX() + 2.5, p.getY(), p.getZ() + 3.5)));
                         second.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
                         second.setTarget(player);
-                        var spider = FixtureGround.hostile(context, EntityType.SPIDER, context.getRelative(new Vec3d(p.getX() - 1.5, p.getY(), p.getZ() + 3.5)));
+                        var spider = context.spawnMob(EntityType.SPIDER, context.getRelative(new Vec3d(p.getX() - 1.5, p.getY(), p.getZ() + 3.5)));
                         spider.setTarget(player);
                     }
                     start[0] = world.getTime();
