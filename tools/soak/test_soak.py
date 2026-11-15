@@ -76,6 +76,16 @@ class RecordCompareTest(unittest.TestCase):
         lost, _, _ = report.compare(before, {6: before[6]})
         self.assertEqual([], lost)  # a pruned summary is counted against the tallies, not as lost
 
+    def test_a_refusals_tallies_are_their_own_and_a_pruned_refusal_is_not_lost(self):
+        # F-34c2a: territory.pruned tallies sum apart from action.pruned's, and a pruned refusal is counted against them.
+        rows = {1: self.row(1, "territory.pruned", "day_start_ms=0&total=2&break=1&hit=1&first=7&last=8", subject="0"),
+                2: self.row(2, "action.pruned", "day_start_ms=0&total=5&verified=5", subject="0")}
+        self.assertEqual({"total": 2}, dict(report.tallied(rows, kind="territory.pruned")))
+        self.assertEqual({"total": 5, "verified": 5}, dict(report.tallied(rows)))
+        before = {7: self.row(7, "territory.refused", "what=break"), 9: self.row(9, "claim", "", place="1,2")}
+        lost, _, _ = report.compare(before, {9: before[9]})
+        self.assertEqual([], lost)
+
     def test_a_memory_entry_seen_again_since_is_the_same_entry(self):
         earlier = report.entries({"peers": [{"id": "p1", "lastSeen": 10}, {"id": "p2", "lastSeen": 11}]})
         later = report.entries({"peers": [{"id": "p1", "lastSeen": 99}]})

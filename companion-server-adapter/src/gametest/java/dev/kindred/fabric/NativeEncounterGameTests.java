@@ -41,7 +41,7 @@ public final class NativeEncounterGameTests implements FabricGameTest {
                     player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
                     player.getInventory().selectedSlot = 0;
                     // Three and a half blocks off, out of a strike's reach; a helmet, so the sun does not finish it first.
-                    zombie[0] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(3.5, 2.0, 7.0));
+                    zombie[0] = FixtureGround.hostile(context, EntityType.ZOMBIE, new Vec3d(3.5, 2.0, 7.0));
                     zombie[0].equipStack(net.minecraft.entity.EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
                     context.assertTrue(f.runtime.nativeFight(f.source, f.id, zombie[0].getUuid(), 0) == 1, "Fight requested");
                 })

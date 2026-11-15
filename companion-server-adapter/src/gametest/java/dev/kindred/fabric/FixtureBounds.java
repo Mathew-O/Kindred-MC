@@ -134,6 +134,24 @@ public final class FixtureBounds {
         return plots;
     }
 
+    /**
+     * The ground the tests placed and not yet ended, other than {@code self}, keep: as much theirs as their plots. A live
+     * test's field reaches past its plot, and a restore of a neighbour's box over it took the lectern and the cart's item
+     * from a bring still running, once the kept chunks were held loaded (F-22c75b; 3 bring tests and 7 in all in one full
+     * suite, #331's run).
+     */
+    static java.util.List<Box> othersKept(GameTestState self) {
+        java.util.List<Box> boxes = new java.util.ArrayList<>();
+        synchronized (LIVE) {
+            for (var test : LIVE) {
+                if (test == self || test.isCompleted()) continue;
+                var kept = KEPT.get(test);
+                if (kept != null) synchronized (kept) { boxes.addAll(kept); }
+            }
+        }
+        return boxes;
+    }
+
     public static void exit(GameTestState test, GameTestState outer) {
         CURRENT.set(outer);
         if (!test.isCompleted()) return;
