@@ -127,7 +127,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 ## The 36-game-day soak, with the month run's go/no-go column (M-06k7, M-06k8) — 15 November 2026 (`claude/soak-554b0a6-1115`)
 
-- [The soak on main 554b0a6](evidence/eval/soak-554b0a6.md): seed 101, 8 players, the factions defaults, sprint off; 864,001 ticks of 864,000 in 43,602 s, 19.83 ticks a second (20.17 real minutes a game day); no STOP (integrity ok, 36 ledger checks agree, heap high water 1,791 MB), 0 ERROR lines; p99 over 50 ms on 26 of 37 day lines and over 5% of ticks over 50 ms on 7 days, so no-go as the table is written; six rows open. A soak report, no code change.
+- [The soak on main 554b0a6](evidence/eval/soak-554b0a6.md): seed 101, 8 players, the factions defaults, sprint off; 864,001 ticks of 864,000 in 43,602 s, 19.83 ticks a second (20.17 real minutes a game day); no STOP (integrity ok, 36 ledger checks agree, heap high water 1,791 MB), 0 ERROR lines; p99 over 50 ms on 26 of 37 day lines and over 5% of ticks over 50 ms on 7 days, so no-go as the table is written; six rows open. Addendum, a partial restart on 4e5b77d (no `level.dat` kept, so world time, gamerules and spawn start fresh): the knowledge web rebuilt 40 events (10 claims, 30 messages, of 139,373) in 18 ms read and 5 ms replay; days 1 and 2 a mean of 18.4 and 18.7 ms, a p99 of 29 and 27 ms, 8 and 4 ticks over 50 ms; no STOP, WATCH or ERROR. A soak report, no code change.
 
 ## The slow ticks of the 8-player faction world recorded with JFR (M-06k6) — 14 November 2026 (`claude/factions8b-jfr-1114`)
 

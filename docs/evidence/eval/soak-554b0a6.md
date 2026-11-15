@@ -41,7 +41,7 @@ The table's first three columns are as in the operator guide; only the soak colu
 | Database size | open (host disk not recorded) | 95,731,712 bytes kept (WAL checkpointed away at shutdown); 99,926,016 bytes on the day-36 line, which includes a 4,194,304-byte WAL | **open** |
 | Database growth a game day | open | 20.7 MB days 1 to 2, 18.5 MB 2 to 3, 10.1 MB 3 to 4, 6.1 to 6.5 MB 4 to 6, 1.0 to 1.4 MB 7 to 12, 0.16 to 0.32 MB 12 to 30, 0 bytes 31 to 36 (freed pages reused; 440 to 461 events a game day still written). The report's month, "100 MB", is the last day's growth (0) times 2,160 plus today's size, so it is not a measure of the month | **open** |
 | Write-ahead log | open; measured bound about 4.2 MB | at most 4,194,304 bytes, sampled each minute **from 17:36 only** (game day 24 on): 249 samples, all 4,194,304. Not sampled before 17:36 | **open** |
-| A restart's knowledge-web rebuild | open | **not measured:** the soak had no restart, and 554b0a6 predates the start line (#360) | **open** |
+| A restart's knowledge-web rebuild | open | **not measured in the soak**, since it had no restart and 554b0a6 predates the start line (#360). Measured on a partial restart (addendum below): 40 events, read in 18 ms on the writer, replayed in 5 ms | **open** (measured; no threshold) |
 | Log volume a game day | open | `latest.log` 13,547,681 bytes over 36 game days, 0.376 MB a game day; 922,923 bytes gzipped. `console.txt` 13,555,154 bytes, 115,156 lines | **open** |
 | Mean tick | WATCH per day if the p99 is over 50 ms or more than 5% of ticks are; none on the mean | mean 35.06 ms over 864,362 counted ticks; per day 30.3 to 49.9 ms. Over 50 ms: 40,084 ticks, 4.64% of the run; over 5% on 7 days (1 24.0%, 4 14.8%, 8 11.0%, 9 11.7%, 11 18.4%, 12 35.8%, 17 5.1%) | **no-go** (7 days outside) |
 | p99 tick | as above | over 50 ms on 26 of 37 day lines (1, 3 to 18, 21, 23 to 28, 32, 37; day 37 is 364 ticks). Highest 110 ms. Days 13 to 36: 47 to 58 ms | **no-go** (26 days outside) |
@@ -64,4 +64,56 @@ The table's first three columns are as in the operator guide; only the soak colu
 
 ## Not claimed
 - No release gate, no M-06k8 completion and no threshold for an open row: those are the lead's and the owner's.
-- Nothing about a restart, since none was run.
+- The soak itself had no restart. The addendum's restart is partial, not the month run's.
+
+## Addendum, 2026-11-15 22:23 to 23:04 UTC: a partial restart on main 4e5b77d
+
+**The question (lead):** start the kept soak world unchanged on current main and read #360's rebuild line. Let it run
+about 2 game days, to see whether a restart repeats the soak's slow early ticks.
+
+**Why "partial":** `run.py --keep-world` keeps the region files, the players' saves and the companion database. It
+keeps no `level.dat` and no memory files. So this start has the soak's ground, players' saves and Record, but world
+time, gamerules and spawn start fresh, and the players have no memory files. It is not the restart the month run will
+have. The gap is filed for a harness fix: `--keep-world` should also keep `level.dat` and the memory files.
+
+**Setup:**
+- **The world:** a copy of `world-kept/` (region, DIM-1, playerdata, `companions.sqlite` at 95,731,712 bytes) and the
+  run's `usercache.json`, in a new folder. The kept world was only read.
+- **The build:** main 4e5b77d (#366's merge), its release jar (`remapJar`).
+- **The start:** as an operator would, with no `KINDRED_EVAL` and no model key, the policy `maxNativePlayers=8`, and
+  `-Xmx10G`. Then at the console: `aiplayer mode world factions`; each of the 8 players `aiplayer native connect`,
+  then `aiplayer native resume` (soak.py's steps). All 8 joined.
+- **The stop:** real time, no sprint. `/stop` after the day-2 cost line, 2,429 s after the start; exit 0.
+- **The report:** `preflight.py --console console-r1.txt --db <copy> --heap-max-mb 10240`.
+
+**The start:**
+- **Ready:** 16 s after launch. The foundation line reads `8 durable records`.
+- **The rebuild:** `Knowledge web rebuilt from the Record: 40 events, read in 18 ms on the writer, replayed in 5 ms;
+  the world's web 10 relations, 8 AI players' webs holding 0`.
+  - **Cross-check:** 40 web events of 139,373 in all. The soak's copy holds 10 `claim` and 30 `message` events, and
+    no `unclaim`, `capture` or `correction`: the kinds F-32 replays.
+
+**The ticks, day by day (the cost lines; `server.getTicks()` starts again at 0):**
+
+| Day line | Ticks | Mean | p99 | Over 50 ms | Longest | Heap high water |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 23,998 | 18.4 ms | 29 ms | 8 | 126 ms (tick 6,000) | 1,114 MB |
+| 2 | 24,000 | 18.7 ms | 27 ms | 4 | 72 ms | 1,146 MB |
+| 3 (to the stop) | 281 | 19.9 ms | 29 ms | 1 | 59 ms | 1,094 MB |
+
+**Against the soak:** the soak's day 1 had a mean of 36.3 ms, a p99 of 99 ms and 5,767 ticks over 50 ms; its days 13 to 36
+had a p99 of 47 to 58 ms. On this restart the slow early ticks did not come back. No "Can't keep up" line was written.
+Why is not separated here. Not tested: whether the copied ground being already generated is the cause, and the build
+differs (554b0a6 against 4e5b77d).
+
+**The report:**
+- **STOP:** none. Integrity ok, schema 15, 38 `ledger_check`s all agree, 0 unresolved actions.
+- **The Record:** 138,397 events in the copy after the stop. The `fold` (2 passes, 180 removed) and `action_bound`
+  (2 passes, 941 removed) prunes ran.
+- **WATCH:** none.
+- **ERROR lines:** 0.
+- **Database:** 99,926,016 bytes on the day-2 line, WAL included; 57,792 bytes of growth from day 1 to day 2.
+- **Deaths:** none in the console over the two game days.
+
+**The restart row,** filled from this start: the rebuild was 23 ms in all (18 ms read, 5 ms replay) for 40 events, on
+a partial restart. Its threshold stays open, for the lead and the owner.
