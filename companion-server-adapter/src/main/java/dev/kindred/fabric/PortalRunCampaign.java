@@ -7023,16 +7023,37 @@ final class PortalRunCampaign {
                 BlockPos.ofFloored(box.maxX - 1.0E-6, feet.getY(), box.maxZ - 1.0E-6))) {
             if (cell.equals(feet) || passable(world, cell) && passable(world, cell.up())) occupied.add(cell.toImmutable());
         }
-        var open = new java.util.LinkedHashSet<BlockPos>();
-        for (BlockPos cell : occupied) {
-            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down()) && !keep.contains(gap)) open.add(gap);
-        }
+        var open = waysIn(world, occupied, keep);
         if (open.isEmpty() || open.size() > 2 + 2 * occupied.size()) return Optional.empty();
         for (BlockPos cell : open) {
             Optional<Task> place = placeBlock(body, cell, "Seal the shelter at " + cell.toShortString());
             if (place.isPresent()) return place;
         }
         return Optional.empty();
+    }
+
+    /** The openings round the cells its body stands in, other than those cells and {@code keep}: the ways in left. */
+    private static java.util.LinkedHashSet<BlockPos> waysIn(ServerWorld world, List<BlockPos> occupied, java.util.Set<BlockPos> keep) {
+        var open = new java.util.LinkedHashSet<BlockPos>();
+        for (BlockPos cell : occupied) {
+            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down()) && !keep.contains(gap)) open.add(gap);
+        }
+        return open;
+    }
+
+    /**
+     * The ways into its pocket and the room for its bed, other than the pocket and the room themselves (F-25c4di1): from the
+     * cell its feet are in and from each half of the bed's room, at foot and head and over the head.
+     */
+    private static java.util.Set<BlockPos> waysIntoBedPocket(ServerWorld world, BlockPos feet, List<BlockPos> room) {
+        var inside = new java.util.HashSet<BlockPos>(room);
+        inside.add(feet);
+        inside.add(feet.up());
+        var open = new java.util.LinkedHashSet<BlockPos>();
+        for (BlockPos cell : List.of(feet, room.get(0), room.get(2))) {
+            for (BlockPos gap : openings(world, cell)) if (!inside.contains(gap)) open.add(gap);
+        }
+        return open;
     }
 
     /** How far below the ground's top over it a night's shelter is: the night's dig-in goes three down (F-25c4bx). */
@@ -7065,6 +7086,8 @@ final class PortalRunCampaign {
     private Direction bedRoomWay;
     /** A night spent holed up with no bed to sleep in: a bed is wanted first thing (E-70a). */
     private boolean bedUrgent;
+    /** What it last said of keeping its bed in its pack for want of a closed pocket, so it is said once. */
+    private String lastBedKept;
     /** What it last said of staying up for night work, so it is said once a night. */
     private String lastNightWork;
     /** Lying down in the bed it carries more often than this in a night, it gives the night up to its other work. */
@@ -7189,6 +7212,20 @@ final class PortalRunCampaign {
         var room = List.of(bedRoomFor.getFirst(), bedRoomFor.getFirst().up(), bedRoomFor.getLast(), bedRoomFor.getLast().up());
         Optional<Task> seal = seal(body, java.util.Set.copyOf(room));
         if (seal.isPresent()) return seal;
+        // Only in a pocket with no way in left (F-25c4di1). The seal gives nothing for a cave too open to seal, or when no
+        // block of its own will go in, as well as for a pocket closed: in E-40 rung c (`e40c4-b23acc0`) its seal's first
+        // block was refused and 303 Kindred's bed went down in a pocket still open, and on iteration 23 (`e40a23-3115b1c`)
+        // 101 Sol's went down in a cave it never sealed. Woken among the cave's mobs, each died there again and again, its
+        // spawn at that bed. With a way in left, the bed stays in its pack: the night as before, without it.
+        var waysIn = waysIntoBedPocket(world, feet, room);
+        if (!waysIn.isEmpty()) {
+            String note = "its bed kept in its pack: its pocket has a way in at " + waysIn.iterator().next().toShortString();
+            if (!note.equals(lastBedKept)) {
+                lastBedKept = note;
+                event(note);
+            }
+            return Optional.empty();
+        }
         // The cells over the bed too: the one over its foot puts its head's cell in sight to dig, and a bed with ground
         // over either half is one vanilla will not let it lie in.
         for (BlockPos cell : room) {
