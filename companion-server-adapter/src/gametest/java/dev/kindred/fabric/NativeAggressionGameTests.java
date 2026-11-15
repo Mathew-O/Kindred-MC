@@ -84,6 +84,9 @@ public final class NativeAggressionGameTests implements FabricGameTest {
                     for (var status : statuses) if (!status.id().equals(f.id)) ids[1] = status.id();
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its field, wider than its plot, put back as the test ends, passed or failed
+                    // (F-22c75b): left standing, its fences and blocks lay in or beside a later test's plot.
+                    FixtureGround.keep(context, o.add(-10, 1, -10), o.add(40, 6, 40));
                     for (int x = -10; x <= 40; x++) for (int z = -10; z <= 40; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
