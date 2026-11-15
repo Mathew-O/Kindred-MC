@@ -301,6 +301,16 @@ public final class Chronicle {
      * the deaths" was measured against the ticks), and words about the page itself rather than the world.
      */
     private static final Pattern ORDER = Pattern.compile("\\b(earlier|before|between|meanwhile|previously|prior to|beforehand)\\b", Pattern.CASE_INSENSITIVE);
+    /**
+     * The first word in {@code sentence} that would put events in an order of its own (F-33d), as {@link #check} refuses
+     * on a model's page; empty when it has none. A model's sentence with one is dropped before its page is joined.
+     */
+    public static Optional<String> orderWord(String sentence) {
+        if (sentence == null) return Optional.empty();
+        var m = ORDER.matcher(sentence);
+        return m.find() ? Optional.of(m.group()) : Optional.empty();
+    }
+
     private static final Pattern META = Pattern.compile("\\b(the|these|those) (lines?|page|entries|entry|records? given)\\b|\\bthe chronicle\\b", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PRICE = Pattern.compile("\\b([a-z][\\w ]{1,30}?)\\s+(?:sold\\s+)?(?:at|for)\\s+(\\d+)\\s+coins?\\b", Pattern.CASE_INSENSITIVE);

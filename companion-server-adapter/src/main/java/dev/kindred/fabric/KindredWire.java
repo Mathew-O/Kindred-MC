@@ -129,7 +129,9 @@ final class KindredWire {
     List<Listener> roster() {
         var out = new ArrayList<Listener>();
         for (ServerPlayerEntity body : server.getPlayerManager().getPlayerList()) {
-            if (body.isRemoved()) continue;
+            // A body vanilla took out of the world at its death stays in the player list until it respawns: someone
+            // on the death screen, still online, and told as every online listener is (F-34c1a). Any other removed body is gone.
+            if (body.isRemoved() && !(body.isDead() && body.getRemovalReason() == net.minecraft.entity.Entity.RemovalReason.KILLED)) continue;
             UUID ai = memberships.aiPlayerOf(body);
             UUID id = ai != null ? ai : body.getUuid();
             Belongs b = memberships.of(id, body);

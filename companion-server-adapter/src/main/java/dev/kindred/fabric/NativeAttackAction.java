@@ -122,13 +122,16 @@ final class NativeAttackAction extends NativeRecordedAction {
         if (admission.take().isEmpty()) return waiting();
         try {
             int attackSlot = slot != null && slot >= 0 && slot < 9 ? slot : player.getInventory().selectedSlot;
+            // What it strikes with, and how many of it the game counts broken before the blow (F-25c4df).
+            var weapon = before.stacks()[attackSlot].getItem();
+            int brokenBefore = broken(weapon);
             result = operation.tick(args, Optional.empty(), true);
             if (admission.phase() == ActionAdmission.Phase.CLOSED) {
                 unknown = true;
                 result = Step.blocked("Authority ended during attack; reconcile", true);
             } else if (result.status() == Status.COMPLETED && !NativePlayerSkills.uncertain(operation)) {
                 var after = InventoryEvidence.capture(body);
-                if (verifyAttackConservation(before, after, attackSlot)) {
+                if (verifyAttackConservation(before, after, attackSlot, broken(weapon) - brokenBefore)) {
                     admission.verify(after.description() + "; " + result.progress(), "Native attack item conservation verified");
                 } else {
                     unknown = true;
@@ -151,7 +154,19 @@ final class NativeAttackAction extends NativeRecordedAction {
         return waiting();
     }
 
-    private static boolean verifyAttackConservation(InventoryEvidence before, InventoryEvidence after, int attackSlot) {
+    /** How many of {@code item} the game counts this player has broken (its own statistic). */
+    private int broken(net.minecraft.item.Item item) {
+        return body.entity().getStatHandler().getStat(net.minecraft.stat.Stats.BROKEN.getOrCreateStat(item));
+    }
+
+    /**
+     * Nothing but wear: every other slot as it was, and the weapon struck with the same item at most two wear on, or gone
+     * only as the game counts it broken by the blow, {@code brokenByTheBlow} exactly one, as {@code NativeFightAction}
+     * reads a worn-out weapon (F-25c4o). In E-40 rung c (`e40c4-b23acc0`) seed 101 Kindred's last pickaxe broke on its blow
+     * at a sheep, the empty slot was read as a different item, and it was held for reconciliation for the rest of the run
+     * (F-25c4df). Anything else still asks for reconciliation.
+     */
+    static boolean verifyAttackConservation(InventoryEvidence before, InventoryEvidence after, int attackSlot, int brokenByTheBlow) {
         if (before.stacks().length != after.stacks().length) return false;
         for (int i = 0; i < before.stacks().length; i++) {
             var b = before.stacks()[i];
@@ -162,6 +177,10 @@ final class NativeAttackAction extends NativeRecordedAction {
                 }
             } else {
                 if (b.isEmpty() && a.isEmpty()) continue;
+                if (b.isDamageable() && b.getCount() == 1 && a.isEmpty()) {
+                    if (brokenByTheBlow != 1) return false;
+                    continue;
+                }
                 if (b.getItem() != a.getItem()) return false;
                 if (b.isDamageable()) {
                     int damageBefore = b.getDamage();

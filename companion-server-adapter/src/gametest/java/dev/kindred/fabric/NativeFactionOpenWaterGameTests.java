@@ -71,6 +71,12 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
         paced(context, true);
     }
 
+    /**
+     * The fewest intervals between its choices the paced test must check, those not following a faction walk that completed
+     * (set from main's runs, F-22c83's evidence), so the check never passes with nothing to check.
+     */
+    private static final int CHECKED = 3;
+
     private static void paced(TestContext context, boolean causeway) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3600);
         var server = context.getWorld().getServer();
@@ -105,10 +111,29 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                     var ended = f.runtime.factionWalksEndedForTest(f.id);
                     var decided = f.runtime.factionDecisionsForTest(f.id);
                     KindredMod.LOGGER.info("Paced fixture: walks ended {}; choices at {}", ended, decided);
+                    // An interval between its choices is let be only for a faction walk that completed in it (it got there,
+                    // and weighed again at once, as it should), and never where a place was set aside as water in it, which
+                    // is what the interval is about (F-22c83).
+                    var events = f.runtime.factionCompletedAndOverWaterForTest(f.id);
+                    var completed = events.get(0);
+                    var overWater = events.get(1);
+                    int checked = 0;
+                    var exempt = new java.util.ArrayList<String>();
                     for (int i = 1; i < decided.size(); i++) {
-                        context.assertTrue(decided.get(i) - decided.get(i - 1) >= FactionsPlayer.DECIDE_TICKS,
-                                "Its next choice " + (decided.get(i) - decided.get(i - 1)) + " ticks after the last, before the decision interval: " + decided);
+                        long from = decided.get(i - 1), to = decided.get(i);
+                        boolean walkCompleted = completed.stream().anyMatch(t -> t > from && t <= to);
+                        boolean setAsideAsWater = overWater.stream().anyMatch(t -> t > from && t <= to);
+                        if (walkCompleted && !setAsideAsWater) {
+                            exempt.add(from + ".." + to);
+                            continue;
+                        }
+                        checked++;
+                        context.assertTrue(to - from >= FactionsPlayer.DECIDE_TICKS,
+                                "Its next choice " + (to - from) + " ticks after the last, before the decision interval: " + decided
+                                        + "; walks completed at " + completed + ", places set aside as water at " + overWater);
                     }
+                    KindredMod.LOGGER.info("Paced fixture: {} intervals checked, let be after a walk that completed: {}", checked, exempt);
+                    context.assertTrue(checked >= CHECKED, "At least " + CHECKED + " intervals between its choices checked: " + checked + " (let be: " + exempt + ")");
                 })
                 .completeIfSuccessful();
     }
