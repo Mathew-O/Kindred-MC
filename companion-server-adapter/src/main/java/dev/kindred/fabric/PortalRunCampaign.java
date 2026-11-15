@@ -686,7 +686,7 @@ final class PortalRunCampaign {
 
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
-        wakeBedBreakEnded(task);
+        bedTaskEnded(task, completed);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -7104,9 +7104,30 @@ final class PortalRunCampaign {
     private boolean wakeBedSaid;
     static final String WAKE_BED_LABEL = "Take its bed back up: woken at it after its death";
 
-    /** The one break of its bed on waking has run, however it went (F-25c4di1): it is not offered again. */
-    void wakeBedBreakEnded(Task task) {
-        if (task != null && WAKE_BED_LABEL.equals(task.label())) wakeBedAt = null;
+    /** Its bed set down for the night: the step's label, as the runtime hears how it went. */
+    static final String BED_DOWN_LABEL = "Set its bed down in its pocket for the night";
+    /** Refusals of setting its bed down tonight, and until when it is not offered again (F-25c4di1c). */
+    private int bedDownRefusals;
+    private long bedDownAgainAt = -1;
+    /** A while between tries at setting its bed down after a refusal, and the refusals after which it gives the night up. */
+    static final long BED_DOWN_BACKOFF = 200;
+    static final int BED_DOWN_REFUSALS = 3;
+
+    /**
+     * One of its bed's own steps has run, as the runtime saw it end. The one break of its bed on waking (F-25c4di1), however it
+     * went, is not offered again. A set-down that did not go is offered again only after {@value #BED_DOWN_BACKOFF} ticks,
+     * and after {@value #BED_DOWN_REFUSALS} in a night not again that night (F-25c4di1c): vanilla sets no bed down where an
+     * entity stands in its cells, and says nothing, so the spot refuses it again and again while nothing about it changes.
+     */
+    void bedTaskEnded(Task task, boolean completed) {
+        if (task == null) return;
+        if (WAKE_BED_LABEL.equals(task.label())) wakeBedAt = null;
+        if (BED_DOWN_LABEL.equals(task.label()) && !completed) {
+            bedDownRefusals++;
+            bedDownAgainAt = lastTick + BED_DOWN_BACKOFF;
+            event(bedDownRefusals >= BED_DOWN_REFUSALS ? "gives up setting its bed down tonight: refused " + bedDownRefusals + " times"
+                    : "its bed refused where it would set it down; tried again in a while");
+        }
     }
     /** How long after a death its waking at its bed counts as just after it: the respawn, and a few seconds. */
     private static final long WAKE_BED_WINDOW = 600;
@@ -7177,7 +7198,7 @@ final class PortalRunCampaign {
         // elsewhere, by vanilla's own rule. Not put off for a mob about, as the morning chore is: in E-40 iteration 23
         // (`e40a23-3115b1c`) 101 Sol died 12 times in the caves round its bed at −377, 31, −143, woke there each time with
         // nothing, and a hostile was always within 16 of it. One break only: refused, the bed waits for the morning chore.
-        // Offered until that one break has run (the runtime's word: wakeBedBreakEnded), its bed is gone, it is out of reach of
+        // Offered until that one break has run (the runtime's word: bedTaskEnded), its bed is gone, it is out of reach of
         // it, or the window is past.
         if (wakeBedAt != null && !player.isSleeping()) {
             BlockPos bed = wakeBedAt;
@@ -7198,6 +7219,8 @@ final class PortalRunCampaign {
         // Morning: its bed back up, unless it was left far behind.
         if (!sleepable) {
             bedTries = 0;
+            bedDownRefusals = 0;
+            bedDownAgainAt = -1;
             bedGoingAt = null;
             bedRoomFor = null;
             if (carriedBedAt == null || player.isSleeping()) return Optional.empty();
@@ -7287,9 +7310,11 @@ final class PortalRunCampaign {
             bedRoomFor = null;
             return Optional.empty();
         }
+        // Refused where it would set it down (F-25c4di1c): not again for a while, and after a few, not tonight.
+        if (bedDownRefusals >= BED_DOWN_REFUSALS || lastTick < bedDownAgainAt) return Optional.empty();
         bedGoingAt = foot;
         return Optional.of(new Task("native_bed", Map.of("x", String.valueOf(foot.getX()), "y", String.valueOf(foot.getY() - 1),
-                "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), "Set its bed down in its pocket for the night"));
+                "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), BED_DOWN_LABEL));
     }
 
     /**
