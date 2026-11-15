@@ -686,6 +686,7 @@ final class PortalRunCampaign {
 
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
+        wakeBedBreakEnded(task);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -966,6 +967,15 @@ final class PortalRunCampaign {
                     facts.food(), facts.how(), true);
         }
         deathCount++;
+        // Dead with its own bed standing where it set it down: it wakes there, and takes the bed up first (F-25c4di1).
+        seeCarriedBed(world);
+        if (carriedBedAt != null) {
+            wakeBedAt = carriedBedAt;
+            wakeBedDeath = pos.toImmutable();
+            wakeBedCause = cause;
+            wakeBedUntil = tick + WAKE_BED_WINDOW;
+            wakeBedSaid = false;
+        }
         if (deathsSeen.size() >= 8) deathsSeen.removeFirst();
         deathsSeen.addLast(new Death(pos.toImmutable(), cause, stage, facts));
         event("died at " + pos.toShortString().replace(",", "") + ": " + cause + " (stage " + stageLabel(stage) + ")");
@@ -7084,6 +7094,22 @@ final class PortalRunCampaign {
     /** The two cells, beside its pocket, its bed goes in tonight: chosen before the pocket is sealed, so left open. */
     private List<BlockPos> bedRoomFor;
     private Direction bedRoomWay;
+    /**
+     * The bed it set down and was standing at its last death, the death's place and cause, and until when it may still be
+     * woken there: on waking within reach of it, it takes the bed up (F-25c4di1).
+     */
+    private BlockPos wakeBedAt, wakeBedDeath;
+    private String wakeBedCause;
+    private long wakeBedUntil = -1;
+    private boolean wakeBedSaid;
+    static final String WAKE_BED_LABEL = "Take its bed back up: woken at it after its death";
+
+    /** The one break of its bed on waking has run, however it went (F-25c4di1): it is not offered again. */
+    void wakeBedBreakEnded(Task task) {
+        if (task != null && WAKE_BED_LABEL.equals(task.label())) wakeBedAt = null;
+    }
+    /** How long after a death its waking at its bed counts as just after it: the respawn, and a few seconds. */
+    private static final long WAKE_BED_WINDOW = 600;
     /** A night spent holed up with no bed to sleep in: a bed is wanted first thing (E-70a). */
     private boolean bedUrgent;
     /** What it last said of keeping its bed in its pack for want of a closed pocket, so it is said once. */
@@ -7146,6 +7172,29 @@ final class PortalRunCampaign {
         seeCarriedBed(world);
         if (carriedBedAt != null && (!world.isChunkLoaded(carriedBedAt) || !world.getBlockState(carriedBedAt).isIn(BlockTags.BEDS))) carriedBedAt = null;
         if (bedSlot(player) >= 0) bedUrgent = false;
+        // Woken with nothing at its own bed just after a death (F-25c4di1): the bed taken up at once, from where it wakes,
+        // by one break of its own hand, and back in its pack by vanilla's drop and pickup; its next death wakes it
+        // elsewhere, by vanilla's own rule. Not put off for a mob about, as the morning chore is: in E-40 iteration 23
+        // (`e40a23-3115b1c`) 101 Sol died 12 times in the caves round its bed at −377, 31, −143, woke there each time with
+        // nothing, and a hostile was always within 16 of it. One break only: refused, the bed waits for the morning chore.
+        // Offered until that one break has run (the runtime's word: wakeBedBreakEnded), its bed is gone, it is out of reach of
+        // it, or the window is past.
+        if (wakeBedAt != null && !player.isSleeping()) {
+            BlockPos bed = wakeBedAt;
+            boolean inReach = carriedBedAt != null && carriedBedAt.equals(bed)
+                    && player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(bed)) <= 4.5 * 4.5;
+            if (!inReach || lastTick > wakeBedUntil || !player.isAlive()) {
+                wakeBedAt = null;
+            } else {
+                if (!wakeBedSaid) {
+                    wakeBedSaid = true;
+                    event("takes up its bed at " + bed.toShortString() + ": woken at it after its death at " + wakeBedDeath.toShortString());
+                    KindredMod.LOGGER.info("{} takes up its bed at {}: woken at it after its death at {} ({})", player.getName().getString(),
+                            bed.toShortString(), wakeBedDeath.toShortString(), wakeBedCause);
+                }
+                return Optional.of(new Task("native_break", coords(bed, Map.of("carried_bed", "true")), WAKE_BED_LABEL));
+            }
+        }
         // Morning: its bed back up, unless it was left far behind.
         if (!sleepable) {
             bedTries = 0;
