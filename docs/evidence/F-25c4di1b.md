@@ -89,7 +89,12 @@ Status: complete (2026-11-15). Its parent F-25c4di1, the respawn loop's deaths, 
   - Each flagged player dies in some of the full runs, so the new lines in `died` do run there.
   - None has a bed: no line of any of the three mentions one in any full run. So `seeCarriedBed` finds nothing, no bed is noted, and the take-up is never offered.
   - The one other new line, in the runtime, acts only on the take-up's own label.
-- **kindred-36022** passed alone 3 of 3 on the base. Its clearance is the branch failing it only 1 of 3 alone (p = 0.5), with the change taking no step in it. It was cleared on F-25c4df's and F-25c4di's gates too.
+- **No changed line acts in them:** `died()`'s new lines run there but change nothing without a bed.
+- **kindred-36022, the lead's three-part rule:**
+  1. **Main fails it alone at least once.** It passed alone 3 of 3 on this gate's base. But on MODES's E-71b1 gate (#359, `docs/evidence/E-71b1.md`, its corpus gate), main 7d5ec42 failed it alone 2 of 3 (passed 1 of 3), against that branch's 1 of 3.
+  2. **The branch is not worse at a one-sided Fisher p < 0.10:** here 1 of 3 failed against the base's 0 of 3, p = 0.5.
+  3. **No changed line acts in it:** above.
+- It was cleared on F-25c4df's and F-25c4di's gates too.
 - **Where it is kept:** the summaries, the XML, the report and the confirms are on `claude/spacer-runs-1112` under `gate25c4di1b/`.
 
 ## Remaining (F-25c4di1, open)
