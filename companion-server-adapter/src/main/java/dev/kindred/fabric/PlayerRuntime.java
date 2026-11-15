@@ -8798,6 +8798,7 @@ final class PlayerRuntime {
             }
             if (factionWalk) entry.factionPlay.settledWalk = null;
             if (factionWalk) entry.factionPlay.walksEnded++;
+            if (factionWalk && state == SkillRunner.State.COMPLETED) entry.factionPlay.completedForTest(server.getTicks());
             if (factionWalk && factionMove != null) entry.factionPlay.endedForTest(factionMove.target(), server.getTicks());
             if (factionMove != null && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected()
                     && FactionsPlayer.taskId(entry.nativeBody.entity().getUuid(), factionMove).equals(entry.currentTaskId)) {
@@ -10752,6 +10753,14 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? List.of() : List.copyOf(entry.factionPlay.endedForTest);
+    }
+
+    /** For the fixtures (F-22c83): the ticks its faction walks completed, and the ticks it set places aside as water it saw. */
+    List<List<Long>> factionCompletedAndOverWaterForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? List.of(List.of(), List.of())
+                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest));
     }
 
     List<Long> factionDecisionsForTest(UUID player) {
