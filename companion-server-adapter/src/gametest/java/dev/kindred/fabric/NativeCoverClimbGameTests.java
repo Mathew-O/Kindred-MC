@@ -73,7 +73,7 @@ public final class NativeCoverClimbGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(8);
                     context.getWorld().setTimeOfDay(1000);
                     startY[0] = player.getBlockY();
-                    zombie[0] = context.spawnMob(net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(6.5, 3, 3.5));
+                    zombie[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(6.5, 3, 3.5));
                     zombie[0].setTarget(player);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
