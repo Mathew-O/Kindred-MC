@@ -4,3 +4,4 @@ run3 (c00cf589): 47 min, peak 3091 MB, 116 required tests failed, fence-top 18, 
 confirm-branch-1.1 (c00cf589, only flagged): 0 min, peak 1224 MB, All 2 required tests passed, fence-top 0, disk 11G
 confirm-branch-1.2 (c00cf589, only flagged): 0 min, peak 1093 MB, 1 required tests failed, fence-top 0, disk 11G
 confirm-branch-2.1 (c00cf589, only flagged): 0 min, peak 1153 MB, All 2 required tests passed, fence-top 0, disk 11G
+confirm-branch-2.2 (c00cf589, only flagged): 0 min, peak 1242 MB, All 2 required tests passed, fence-top 0, disk 11G
