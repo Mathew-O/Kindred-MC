@@ -1,2 +1,3 @@
 run1 (cc67d1d1): 48 min, peak 3061 MB, 125 required tests failed, fence-top 32, disk 8.9G
 run2 (cc67d1d1): 48 min, peak 3583 MB, 113 required tests failed, fence-top 26, disk 9.0G
+run3 (cc67d1d1): 48 min, peak 3066 MB, 106 required tests failed, fence-top 32, disk 8.9G
