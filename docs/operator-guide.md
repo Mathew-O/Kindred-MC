@@ -1048,7 +1048,11 @@ Fill this in from the soak before the owner starts the month (RUNNER 2's, `tools
 
 1. **Start the server.** Kindred loads its records first and says how many:
    `Kindred AI-player foundation ready: 8 durable records; ...`. No AI player is in the world yet; none comes back by
-   itself (F-31g, finding 1).
+   itself (F-31g, finding 1). Just after, the knowledge web is rebuilt from the Record (F-32c):
+   `Knowledge web rebuilt from the Record: 7 events, read in 0 ms on the writer, replayed in 0 ms; the world's web 3
+   relations, 2 AI players' webs holding 0` (a GameTest's restart). Its read and replay grow only with claims and Wire news, not with the
+   whole Record: 2 to 5 ms for the read on a 3,000,000-event Record (F-32c). No threshold is set yet; the month's own
+   figures come from RUNNER 2's soak. A web keeps at most 20,000 relations.
 2. **See where each stands:** `aiplayer native list`. One line a player:
    - `Kindred (<id>): ESTABLISHED, offline; stopped. Native body is offline; explicit connect is required.` Ready to
      connect.

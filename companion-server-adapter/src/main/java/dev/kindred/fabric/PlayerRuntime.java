@@ -871,11 +871,21 @@ final class PlayerRuntime {
                     matches.restore(ledgers.matches().values());
                     flushMatches();
                     chronicle.start();
-                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer.
-                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> server.execute(() -> {
-                        if (unread == null && events != null) webs.rebuild(events);
-                        else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
-                    }));
+                    // F-32b: the world's web rebuilt from the Record, read on the ordered writer. F-32c: how long the read
+                    // took (from asking, the writer's queue included) and the replay on this thread, for a month's starts.
+                    long webAsked = System.nanoTime();
+                    store.allWorldEvents(KnowledgeWebs.KINDS).whenComplete((events, unread) -> {
+                        long readMs = (System.nanoTime() - webAsked) / 1_000_000;
+                        server.execute(() -> {
+                            if (unread == null && events != null) {
+                                long replayStarted = System.nanoTime();
+                                webs.rebuild(events);
+                                KindredMod.LOGGER.info("Knowledge web rebuilt from the Record: {} events, read in {} ms on the writer, replayed in {} ms; "
+                                        + "the world's web {} relations, {} AI players' webs holding {}", events.size(), readMs,
+                                        (System.nanoTime() - replayStarted) / 1_000_000, webs.world().size(), webs.count(), webs.relations());
+                            } else KindredMod.LOGGER.warn("Knowledge web: the Record could not be read: {}", String.valueOf(unread));
+                        });
+                    });
                     entries.putAll(pendingEntries);
                     ready = true;
                     restoreLeftoverArenas();
