@@ -186,7 +186,8 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     /**
      * As the strolling bring, staged (F-22c84, cause #2): the tick the cart in the cell under the shut trapdoor is broken, its
-     * item lying on the cell's floor, Hal held until twenty ticks after the front's rail is up a third of a block
+     * item lying on the cell's floor, Hal held, nothing in the cell picked up, until eighty ticks after the front's rail is up
+     * a third of a block
      * east of the middle of its stand before the front, with the oak boat's item on the floor beside the cart's. In CI on
      * #354 (`c3d0cc4`, run 43719957093) and #355 (run 43720019149), Hal stood there walking to its stand 1,990 times while
      * both items lay, and they despawned at age 6000: the stand is asked for to within a quarter of a block, a walk to a
@@ -640,19 +641,28 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, net.minecraft.entity.Entity::isAlive).stream()
                                             .map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList());
                         }
-                        // Held there until twenty ticks after the front's rail is up (a break's own collection had walked it back
-                        // on to its stand), then let go.
-                        if (front.equals(offFront[0]) && up != null && offFrom[0] < 0) offFrom[0] = Math.max(up, world.getTime()) + 20;
+                        // Held there until eighty ticks after the front's rail is up, then let go: past the bound of the rail's
+                        // break collecting its own drop (about 71 ticks), which, still under way as Hal was let go, walked it into
+                        // reach of the cell's items (a probe: Hal moving north from the tick it was let go).
+                        if (front.equals(offFront[0]) && up != null && offFrom[0] < 0) offFrom[0] = Math.max(up, world.getTime()) + 80;
                         if (hal != null && front.equals(offFront[0]) && (offFrom[0] < 0 || world.getTime() < offFrom[0])) {
                             BlockPos stand = front.south(2);
-                            hal.refreshPositionAndAngles(stand.getX() + 0.5 + 0.3, hal.getY(), stand.getZ() + 0.5, hal.getYaw(), hal.getPitch());
+                            // On the stand's floor, at rest: a walk to a block's middle ends at once only on the ground and at rest,
+                            // and one let go in the air had walked on into the quarter-block.
+                            hal.refreshPositionAndAngles(stand.getX() + 0.5 + 0.3, stand.getY(), stand.getZ() + 0.5, hal.getYaw(), hal.getPitch());
                             hal.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            // And nothing in the cell picked up while held (a break's collection had carried Hal to them between
+                            // two holds, within a tick), so all of it still lies there as Hal is let go.
+                            for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, net.minecraft.entity.Entity::isAlive)) item.setPickupDelay(2);
                         }
                         if (hal != null && front.equals(offFront[0]) && offFrom[0] >= 0 && offLeft[0] == null && world.getTime() - offFrom[0] >= 600) {
                             var left = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems,
                                     i -> i.isAlive() && (i.getStack().isOf(Items.MINECART) || i.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)));
                             if (!left.isEmpty()) offLeft[0] = left.stream().map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())
                                     + " age " + i.getItemAge()).toList() + ", Hal at " + hal.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ());
+                            else if (count(hal.getInventory(), Items.MINECART) < 1) offLeft[0] = "none in the cell, but Hal holds no minecart: "
+                                    + world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems.expand(4), net.minecraft.entity.Entity::isAlive).stream()
+                                            .map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList();
                             else offLeft[0] = "";
                         }
                         // Staged (#318): the first tick, after its rail is up, that the cell holds no boat, cart, rail or cart
