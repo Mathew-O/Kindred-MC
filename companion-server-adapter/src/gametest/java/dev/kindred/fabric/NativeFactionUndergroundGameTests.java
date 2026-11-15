@@ -22,7 +22,8 @@ import net.minecraft.util.math.Vec3d;
  * legs began below Y 50 215 times of 235, from its branch mine, and it held no land.
  *
  * Technical: staged 200 blocks from the world's spawn, inside a 250-block spawn exclusion, in a lit tunnel, sealed, four
- * blocks up a hill of stone 29 high that runs on 60 blocks past it toward its claim: 24 blocks of stone over it. Its staged
+ * blocks up a hill of stone 29 high that runs on 60 blocks past it toward its claim: 24 blocks of stone over it. It
+ * has seen the sky on the hill's top first, as a player has before it goes down its mine. Its staged
  * inventory: 16 bread. No goal of its own. Asserted: its faction's choice is a claim outside the exclusion; in 1,200
  * ticks in the tunnel no faction walk is refused; then, set at the surface above, a faction walk is asked within 600.
  */
@@ -57,15 +58,23 @@ public final class NativeFactionUndergroundGameTests implements FabricGameTest {
                     // The tunnel, two high, running north and south, sealed at its ends, lit so that nothing spawns in it.
                     for (int z = 4; z <= 12; z++) for (int y = floor; y <= floor + 1; y++) world.setBlockState(new BlockPos(200, y, z), Blocks.AIR.getDefaultState());
                     for (int z = 4; z <= 12; z += 4) world.setBlockState(new BlockPos(200, floor, z), Blocks.TORCH.getDefaultState());
+                })
+                // The light settled: no sky's light in the sealed tunnel, the sky's on the hill's top.
+                .createAndAdd(() -> context.assertTrue(world.getLightLevel(net.minecraft.world.LightType.SKY, stand) == 0
+                        && world.getLightLevel(net.minecraft.world.LightType.SKY, new BlockPos(200, ground + 29, 8)) > 0, "The light settled"))
+                .createAndAdd(() -> {
                     world.setTimeOfDay(1000);
                     var player = f.player();
                     player.getInventory().clear();
                     player.getInventory().setStack(0, new ItemStack(Items.BREAD, 16));
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
+                    // On the hill's top first, under the sky, as a player is before it goes down its mine; then down in the tunnel.
+                    player.refreshPositionAndAngles(200.5, ground + 29, 8.5, 0, 0);
+                    context.assertTrue(!f.runtime.factionSawForTest(f.id), "Under the sky on the hill's top");
                     player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
                     player.setVelocity(Vec3d.ZERO);
-                    context.assertTrue(FactionsPlayer.deepBelow(player), "Deep below the surface");
+                    context.assertTrue(f.runtime.factionSawForTest(f.id), "Deep below the surface, by what it saw: 25 below where it saw the sky");
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NONE) == 1, "No goal");
                     f.runtime.factionsWorldForTest(PACK);

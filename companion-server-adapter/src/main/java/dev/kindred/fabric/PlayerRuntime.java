@@ -10318,6 +10318,7 @@ final class PlayerRuntime {
         if (!factionsWorld() || !ready || !running) return null;
         var player = body.entity();
         var play = entry.factionPlay;
+        play.saw(player);
         long tick = server.getTicks();
         if (play.move == null && tick - play.decidedAt >= FactionsPlayer.DECIDE_TICKS) {
             play.decidedAt = tick;
@@ -10377,7 +10378,7 @@ final class PlayerRuntime {
         // Kindred's began below Y 50 215 times of 235, and it held no land. No walk is asked, so no refusal is counted and
         // no way made. A hollow, a box or a notch dug in a wall is not deep: there the walk is asked, refused and backed off,
         // and a way made out (F-35h, F-35i, #120), as before.
-        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && FactionsPlayer.deepBelow(player)) return null;
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && play.deepBelow(player)) return null;
         // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
         // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
         // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
@@ -10806,6 +10807,16 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? null : goalOf(entry);
+    }
+
+    /** For fixtures (M-06i2c1): it sees where it stands, as at each faction decision; and whether it is deep below now. */
+    boolean factionSawForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
+        var body = entry.nativeBody.entity();
+        entry.factionPlay.saw(body);
+        return entry.factionPlay.deepBelow(body);
     }
 
     /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */

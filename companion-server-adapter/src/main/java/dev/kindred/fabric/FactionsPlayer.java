@@ -107,17 +107,24 @@ final class FactionsPlayer {
         return pos.getY() >= top - 1;
     }
 
-    /** How far below the top of its column it stands, at most, and is not deep below the surface (M-06i2c1). */
+    /** How far below where it last saw the sky it stands, at most, and is not deep below the surface (M-06i2c1). */
     static final int DEEP = 8;
+    /** The height it last stood at with the sky's light at its feet (M-06i2c1); {@link Integer#MIN_VALUE} before it has. */
+    private int skyY = Integer.MIN_VALUE;
+
+    /** What it sees where it stands: with the sky's light at its feet, it is where it saw the sky from. */
+    void saw(ServerPlayerEntity player) {
+        if (player.getServerWorld().getLightLevel(net.minecraft.world.LightType.SKY, player.getBlockPos()) > 0) skyY = player.getBlockY();
+    }
 
     /**
-     * Whether it stands deep below the surface: more than {@value #DEEP} blocks below the topmost solid block of its column,
-     * leaves not counted, as in a mine or a cave under a hill; a hollow, a box round it or a notch dug in a wall is not.
+     * Whether it stands deep below the surface, by what it has seen: no sky's light at its feet, and more than
+     * {@value #DEEP} blocks below where it last saw the sky, as in a mine or a cave it went down into. A hollow, a box
+     * round it or a notch dug in a wall where it stood is not; nor, before it has seen the sky at all, is anywhere.
      */
-    static boolean deepBelow(ServerPlayerEntity player) {
-        var pos = player.getBlockPos();
-        int top = player.getServerWorld().getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
-        return top - pos.getY() > DEEP;
+    boolean deepBelow(ServerPlayerEntity player) {
+        return skyY != Integer.MIN_VALUE && skyY - player.getBlockY() > DEEP
+                && player.getServerWorld().getLightLevel(net.minecraft.world.LightType.SKY, player.getBlockPos()) == 0;
     }
 
     /** Places set aside in a row, with no walk between, before every faction walk waits; and how far a move ends the wait early. */
