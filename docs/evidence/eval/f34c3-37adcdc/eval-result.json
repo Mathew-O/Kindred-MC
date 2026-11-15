@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=72000; sprint=off; strategist=off; voice=on; keep=none; lessons=on; atlas=on; rescue=on; advice=on; mode=factions; founders=1",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 72000,
+  "ticksRun": 72000,
+  "complete": true,
+  "days": 4.277,
+  "factions": {"audited": true, "note": "", "counts": {"events": 178, "factions": 1, "claims": 3, "captures": 0, "sales": 31, "purchases": 0, "listings": 0, "deliveries": 0, "deaths": 3, "kills": 0}, "violations": []},
+  "items": {"windows": 3609, "gained": 5447, "paid": 5447, "lapsed": 248, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 134.6, "snapshotMicrosMax": 10656.6, "tagMicrosMean": 160.6, "tagMicrosMax": 22194.3, "bySource": {"container.take:furnace": 79, "pickup:class_1540.method_5773": 4, "pickup:class_2248.method_36993": 4828, "pickup:class_3222.method_7329": 120, "pickup:class_52.method_331": 85, "screen:class_1707": 23, "screen:class_1714": 66, "screen:class_1723": 488, "use:item": 2}, "dropsByOrigin": {"class_1428.method_6007": 55, "class_1540.method_5773": 6, "class_2248.method_36993": 4831, "class_3222.method_7329": 33, "class_52.method_331": 103}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 22.03, "tickMsWorst": 258.85, "tickMsWorstAt": 265, "ticksOver50ms": 743, "ticksOver200ms": 2, "heapMbMax": 934, "samples": 3600},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 780, "stone_tools": 1800, "iron_ingot": 7580, "iron_pickaxe": 29740},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 7916,
+      "chunkLoads": 2426,
+      "chunkMinutes": 17340.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 1380, "iron_ingot": 5720, "iron_pickaxe": 20280},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 44460, "x": -278, "y": -49, "z": -120, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 3371,
+      "chunkLoads": 4714,
+      "chunkMinutes": 17340.0,
+      "bridgeBlocks": 7,
+      "bridgeSeconds": 2.6
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1620, "stone_tools": 2660, "iron_ingot": 10500},
+      "deaths": [
+        {"tick": 17045, "cause": "Echo was slain by Zombie", "x": -402, "y": 37, "z": -88, "light": 13, "timeOfDay": 17207, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Interrupted: Tunnel past liquid toward iron: clear -403, 37, -88", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 3369,
+      "chunkLoads": 4767,
+      "chunkMinutes": 17335.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
