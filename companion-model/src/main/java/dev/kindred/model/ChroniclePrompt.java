@@ -27,7 +27,9 @@ public final class ChroniclePrompt {
             sale or promise in a sentence of its own. At most twelve sentences.
             - Use only what the line says. Add no event, place, reason or feeling it does not give.
             - Give a count, an owner or a price only exactly as the line gives it.
-            - Something a line marks as said or claimed is told as said, never as fact.""";
+            - Something a line marks as said or claimed is told as said, never as fact.
+            - Never put events in an order yourself: no "before", "earlier", "between", "meanwhile", "previously", \
+            "prior to" or "beforehand". Your sentences are put in the order things happened for you.""";
 
     public static final String SENTENCES = "At most twelve sentences, each with the numbers of the lines it tells.";
     public static final String LINE = "The numbers of the lines this sentence tells, each as given.";
@@ -40,7 +42,18 @@ public final class ChroniclePrompt {
      */
     public static Strategist.Page page(List<long[]> numbersAndIndexes, List<String> sentences, long in, long cached, long out, long millis) {
         var order = new java.util.ArrayList<Integer>();
-        for (int i = 0; i < sentences.size(); i++) if (numbersAndIndexes.get(i).length > 0) order.add(i);
+        // F-33d: a sentence that orders events in words of its own is left out, its numbers with it, and the rest of the
+        // page kept; core's check then holds the rest to every other rule, so a page with nothing left is no page.
+        var dropped = new java.util.ArrayList<String>();
+        for (int i = 0; i < sentences.size(); i++) {
+            if (numbersAndIndexes.get(i).length == 0) continue;
+            var word = Chronicle.orderWord(sentences.get(i));
+            if (word.isPresent()) {
+                dropped.add("\"" + word.get() + "\": " + sentences.get(i).strip());
+                continue;
+            }
+            order.add(i);
+        }
         order.sort(java.util.Comparator.comparingLong(i -> java.util.Arrays.stream(numbersAndIndexes.get(i)).min().orElse(Long.MAX_VALUE)));
         var text = new StringBuilder();
         var cites = new java.util.ArrayList<Long>();
@@ -51,8 +64,10 @@ public final class ChroniclePrompt {
             text.append(said.endsWith(".") || said.endsWith("!") || said.endsWith("?") ? said : said + ".");
             for (long n : numbersAndIndexes.get(i)) if (!cites.contains(n)) cites.add(n);
         }
-        if (text.isEmpty()) return Strategist.Page.failed("no sentences", in, cached, out, millis);
-        return new Strategist.Page(java.util.Optional.of(text.toString()), cites, in, cached, out, millis, java.util.Optional.empty());
+        if (text.isEmpty()) {
+            return Strategist.Page.failed(dropped.isEmpty() ? "no sentences" : "every sentence ordered events itself", in, cached, out, millis).withDropped(dropped);
+        }
+        return new Strategist.Page(java.util.Optional.of(text.toString()), cites, in, cached, out, millis, java.util.Optional.empty()).withDropped(dropped);
     }
 
     /** The request for one page: what it covers, then the tier below as numbered lines. */
