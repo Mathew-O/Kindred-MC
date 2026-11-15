@@ -6075,6 +6075,21 @@ final class PortalRunCampaign {
     }
 
     Optional<Task> flint(NativePlayerBody body) {
+        return flint(body, true);
+    }
+
+    /**
+     * Flint from what is at hand only: gravel beside it, gravel it carries, or gravel within the twelve that made flint
+     * count as at hand ({@code FollowUps.atHand}); never a search or a tunnel. For flint on the way, not yet due at its gate:
+     * in E-40 rung c (`e40c4-b23acc0`) on 303 Kindred, respawned with nothing at its bed in a cave of mobs, gravel seen
+     * twelve off with no route to it sent "on the way, for what comes later" to tunnel for gravel instead, some 580 steps
+     * over 23 deaths, against 242 on the climb its stage wanted (F-25c4di).
+     */
+    Optional<Task> flintAtHand(NativePlayerBody body) {
+        return flint(body, false);
+    }
+
+    private Optional<Task> flint(NativePlayerBody body, boolean search) {
         var player = body.entity();
         var inventory = player.getInventory();
         int gravelSlot = -1;
@@ -6087,6 +6102,7 @@ final class PortalRunCampaign {
             if (world.getBlockState(spot).isOf(Blocks.GRAVEL) && breakableNow(body, spot)) return Optional.of(breakAt(spot, "Dig gravel for flint"));
         }
         if (gravelSlot >= 0) return placeItem(body, Items.GRAVEL, "Set down gravel to dig for flint");
+        if (!search) return gather(body, WorldKnowledge.Kind.GRAVEL, 12, "gravel");
         return gather(body, WorldKnowledge.Kind.GRAVEL, 48, "gravel").or(() -> search(body, "gravel"));
     }
 
