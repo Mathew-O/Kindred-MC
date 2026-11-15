@@ -109,6 +109,31 @@ public final class FixtureBounds {
                 .add(new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 1, max.getZ() + 1));
     }
 
+    /** The live test whose plot or kept ground holds the point, by its template path; null for none (F-22c84). */
+    static String liveTestAt(double x, double y, double z) {
+        synchronized (LIVE) {
+            for (var test : LIVE) {
+                if (test.isCompleted()) continue;
+                try {
+                    if (test.getBoundingBox().expand(1).contains(x, y, z)) return test.getTemplatePath();
+                } catch (RuntimeException unplaced) {
+                    continue;
+                }
+                var kept = KEPT.get(test);
+                if (kept != null) synchronized (kept) {
+                    for (var box : kept) if (box.contains(x, y, z)) return test.getTemplatePath();
+                }
+            }
+        }
+        return null;
+    }
+
+    /** The player whose own step is running now, by name; null for none (F-22c84). */
+    static String actingName() {
+        var player = ACTING.get();
+        return player == null ? null : player.getGameProfile().getName();
+    }
+
     public static GameTestState placed(GameTestState test) {
         if (test != null) LIVE.add(test);
         return test;

@@ -176,13 +176,14 @@ public final class ClaudeStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             var usage = message.usage();
             long cached = usage.cacheReadInputTokens().orElse(0L);
-            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            long write = usage.cacheCreationInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + write, out = usage.outputTokens();
             String stop = message.stopReason().map(Object::toString).orElse("none");
             if (!stop.equalsIgnoreCase("end_turn")) {
-                return new Outcome(Optional.empty(), in, cached, out, millis, Optional.of("stopped: " + stop));
+                return new Outcome(Optional.empty(), in, cached, out, millis, Optional.of("stopped: " + stop), write);
             }
             Optional<Reply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
-            if (reply.isEmpty()) return new Outcome(Optional.empty(), in, cached, out, millis, Optional.of("no reply text"));
+            if (reply.isEmpty()) return new Outcome(Optional.empty(), in, cached, out, millis, Optional.of("no reply text"), write);
             Reply r = reply.get();
             var places = r.avoid() == null ? List.<StrategyAdvice.Place>of()
                     : r.avoid().stream().filter(Objects::nonNull).map(s -> new StrategyAdvice.Place(s.x(), s.y(), s.z())).toList();
@@ -190,7 +191,7 @@ public final class ClaudeStrategist implements Strategist {
                     .flatMap(f -> Want.parse(f.need(), f.count(), name(f.task()), f.why()).stream()).toList();
             var advice = StrategyAdvice.validated(r.stance() == null ? null : r.stance().name(), places, r.note(), r.reason(), reported,
                     name(r.focus()), name(r.habit()), name(r.retire()), queue, name(r.approach()));
-            return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"));
+            return new Outcome(advice, in, cached, out, millis, advice.isPresent() ? Optional.empty() : Optional.of("unusable reply"), write);
         } catch (RateLimitException limited) {
             return Outcome.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
         } catch (AnthropicServiceException service) {
@@ -221,7 +222,8 @@ public final class ClaudeStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             var usage = message.usage();
             long cached = usage.cacheReadInputTokens().orElse(0L);
-            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            long write = usage.cacheCreationInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + write, out = usage.outputTokens();
             String stop = message.stopReason().map(Object::toString).orElse("none");
             if (!stop.equalsIgnoreCase("end_turn")) {
                 return new Answer(Optional.empty(), Optional.empty(), "", in, cached, out, millis, Optional.of("stopped: " + stop));
@@ -264,7 +266,8 @@ public final class ClaudeStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             var usage = message.usage();
             long cached = usage.cacheReadInputTokens().orElse(0L);
-            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            long write = usage.cacheCreationInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + write, out = usage.outputTokens();
             String stop = message.stopReason().map(Object::toString).orElse("none");
             if (!stop.equalsIgnoreCase("end_turn")) return Rescue.failed("stopped: " + stop, in, cached, out, millis);
             Optional<RescueReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
@@ -308,13 +311,14 @@ public final class ClaudeStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             var usage = message.usage();
             long cached = usage.cacheReadInputTokens().orElse(0L);
-            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            long write = usage.cacheCreationInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + write, out = usage.outputTokens();
             String stop = message.stopReason().map(Object::toString).orElse("none");
-            if (!stop.equalsIgnoreCase("end_turn")) return Line.failed("stopped: " + stop, in, cached, out, millis);
+            if (!stop.equalsIgnoreCase("end_turn")) return Line.failed("stopped: " + stop, in, cached, out, millis).withCacheWrite(write);
             Optional<VoiceReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
-            if (reply.isEmpty()) return Line.failed("no reply text", in, cached, out, millis);
+            if (reply.isEmpty()) return Line.failed("no reply text", in, cached, out, millis).withCacheWrite(write);
             var r = reply.get();
-            return Line.checked(conversation, r.say(), name(r.ask()), r.item(), r.reason(), in, cached, out, millis);
+            return Line.checked(conversation, r.say(), name(r.ask()), r.item(), r.reason(), in, cached, out, millis).withCacheWrite(write);
         } catch (RateLimitException limited) {
             return Line.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
         } catch (AnthropicServiceException service) {
@@ -349,14 +353,15 @@ public final class ClaudeStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             var usage = message.usage();
             long cached = usage.cacheReadInputTokens().orElse(0L);
-            long in = usage.inputTokens() + cached + usage.cacheCreationInputTokens().orElse(0L), out = usage.outputTokens();
+            long write = usage.cacheCreationInputTokens().orElse(0L);
+            long in = usage.inputTokens() + cached + write, out = usage.outputTokens();
             String stop = message.stopReason().map(Object::toString).orElse("none");
-            if (!stop.equalsIgnoreCase("end_turn")) return Page.failed("stopped: " + stop, in, cached, out, millis);
+            if (!stop.equalsIgnoreCase("end_turn")) return Page.failed("stopped: " + stop, in, cached, out, millis).withCacheWrite(write);
             Optional<PageReply> reply = message.content().stream().flatMap(block -> block.text().stream()).map(text -> text.text()).findFirst();
-            if (reply.isEmpty()) return Page.failed("no reply text", in, cached, out, millis);
+            if (reply.isEmpty()) return Page.failed("no reply text", in, cached, out, millis).withCacheWrite(write);
             var said = reply.get().sentences() == null ? List.<PageSentence>of() : reply.get().sentences();
             return ChroniclePrompt.page(said.stream().map(x -> x.lines() == null ? new long[0] : x.lines().stream().filter(java.util.Objects::nonNull).mapToLong(Long::longValue).toArray()).toList(), said.stream().map(PageSentence::text).toList(),
-                    in, cached, out, millis);
+                    in, cached, out, millis).withCacheWrite(write);
         } catch (RateLimitException limited) {
             return Page.failed("rate limited", (System.nanoTime() - started) / 1_000_000);
         } catch (AnthropicServiceException service) {
