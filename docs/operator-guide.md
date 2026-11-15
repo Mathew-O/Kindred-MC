@@ -1131,6 +1131,16 @@ days by their own time and pruned after the action bound, on the same agreeing c
 a game day: how many of each kind of attempt, the total, and the first and last. The database itself refuses to delete
 a refusal younger than that. In the soak report, refusals pruned this way are counted as pruned, not lost.
 
+**What is written as a refused attempt (F-34c2).** Only an attempt the guard actually stopped, on land a faction owns:
+a break (or the start of digging), placing or using a block, a frame, stand or storage cart broken or used, an
+explosion a player set off, and a player's shot that would have changed the block (a burning arrow, a fire charge, a
+wind charge, a potion, a channeling trident; a plain arrow's miss is not). Only the block acted on counts. A safe zone, the wilderness, and an AI player's plans (which ask the
+guard all the time) write nothing; an AI player's own refused dig is written as a person's would be. One a minute is
+written for each player and chunk, and at most 100 a game day for each faction's land; the rest is only counted, in
+the cost line's `territory refusals N written, M the same minute's and K over a faction's daily cap`. The Record keeps
+who tried, for an audit. Each one written is then told to the land's faction on its channel, for example
+`[faction] Someone tried to break a block on our land at <chunk>`: an AI player by its name, a person only as "Someone".
+
 Each figure names the run it was measured on. Sizes scale with the number of players and with what they do.
 
 - **`keepdb8-4c92b41`:** 8 AI players in Factions mode on seed 101, 6 game days, on main of 2026-11-11, with F-31b's fold and the gauge that counts every insert (#210).

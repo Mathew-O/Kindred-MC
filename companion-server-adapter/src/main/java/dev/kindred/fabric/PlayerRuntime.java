@@ -579,7 +579,7 @@ final class PlayerRuntime {
         // M-06e's notices in today's words after the channel's prefix (their line is the "what" fact).
         var wording = new dev.kindred.core.wire.Wording().with(dev.kindred.core.factions.Capture.VULNERABLE, "{what}")
                 .with(dev.kindred.core.factions.Capture.SECURE, "{what}").with(FactionsService.CAPTURED, "{what}")
-                .with(MEMBER_DIED, "{who} died: {cause}");
+                .with(MEMBER_DIED, "{who} died: {cause}").with(FactionsService.REFUSED, "{what}");
         wire = new KindredWire(server, KindredWire.defaultWire(KindredWire.FACTION_ANNOUNCEMENTS), wording, new WireMemberships(), webs,
                 (person, words) -> { // In chat, as before; what a fixture hears, as the social lane's.
                     var said = Text.literal(words);
@@ -590,6 +590,8 @@ final class PlayerRuntime {
         setFactionOf(this::factionKey);
         // M-06e on the Wire: the notices' events written, then told, citing them; the notifier their one writer.
         factions.onNotice((events, notices) -> recordAndTellAll(events, ids -> notices.stream().map(n -> noticeMessage(n, ids)).toList(), null));
+        // F-34c2: a refused attempt on a faction's land names an AI player; a person only as "Someone".
+        factions.refusalNames(player -> entryForPlayer(player.getUuid()) != null ? player.getGameProfile().getName() : null);
         wire.recordTo(this::record); // F-32b: each delivery to AI players kept in the World Record.
         wire.onState(peerRadio::teamState); // F-34c: a teammate's update into the receiver's ledger, and nowhere else.
         // F-34c: a match's titles to an AI player in it as the server's word to it alone; a person has them on screen.
@@ -18584,7 +18586,7 @@ final class PlayerRuntime {
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
         var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
-                chronicle.kept(), wire.stateTold(), wire.refusals(), tickWindow.describe(), heapHighWater / (1024 * 1024));
+                chronicle.kept(), wire.stateTold(), wire.refusals(), factions.refusalCounts(), tickWindow.describe(), heapHighWater / (1024 * 1024));
         tickWindow.reset();
         heapHighWater = 0;
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);

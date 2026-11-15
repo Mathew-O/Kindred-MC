@@ -137,6 +137,7 @@
       "dev.kindred.fabric.NativeSettleGameTests",
       "dev.kindred.fabric.NativeFactionPowerGameTests",
       "dev.kindred.fabric.NativeTerritoryGameTests",
+      "dev.kindred.fabric.NativeTerritoryRefusedGameTests",
       "dev.kindred.fabric.NativeMobGriefGameTests",
       "dev.kindred.fabric.NativeSafeZoneGameTests",
       "dev.kindred.fabric.NativeMarketGameTests",
