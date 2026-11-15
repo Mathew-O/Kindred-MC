@@ -120,6 +120,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06k: the rules on the eval engine](evidence/M-06k.md#the-rules-on-the-eval-engine-2026-11-12-claudem06k-rules-1112).
 
+## The slow ticks of the 8-player faction world recorded with JFR (M-06k6) — 14 November 2026 (`claude/factions8b-jfr-1114`)
+
+- [factions8b on main 24c1aab with Java Flight Recorder](evidence/eval/factions8b-jfr-24c1aab.md): seeds 102 and 101, sprint off; the ticks over 50 ms by family (Kindred's routes 32.5% on 101, its sight scan 26.0% on 102, GC under 1%, the construction planner and SQLite none on the server thread); the worst tick (2.8 s) vanilla's portal-exit chunk generation on an AI player's Nether entry; the rise against 4ba244e not separated. Diagnostic, no code change.
+
 ## The hitches attributed by cause (M-06k) — 12 November 2026 (`claude/m06k-hitches-1112`)
 
 - [M-06k: the hitches attributed by cause](evidence/M-06k.md#the-hitches-attributed-by-cause-2026-11-12-claudem06k-hitches-1112).
@@ -185,6 +189,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [F-22c75b](evidence/F-22c75b.md) (2026-11-14, test-only): an audit of the blocks each fixture sets outside its plot (345 of 818 tests in 102 classes); a restore never writes into another test's plot; a second kept box put back; the atlas fixtures keep their raised ground, whose night floor failed two bring tests placed after it 2 of 2 on main's code, 31 of 31 in 5 runs after; CI on the PR remaining.
 - [F-22c75c](evidence/F-22c75c.md) (2026-11-14, test-only): the seen-columns yard inside its own wide structure; BranchMine + SeenColumns 1 of 3 failed on main with CI's message, 5 of 5 each of 3 runs after; CI on the PR remaining.
 - [F-22c77](evidence/F-22c77.md) (2026-11-14, workstations): a workstation goes down where it fits whichever way it is turned, and a cell refused three times is let be; the staged fixture 0 of 3 before, 3 of 3 after.
+- (2026-11-14, test-only) `AttentionWorkSchedulerTest.expiredAndStaleGenerationTokenRejected` failed on #309's build (`91a4a09`): `selectNext()` empty at line 132. It read the wall clock against the default two-millisecond soft budget, which a busy runner spent before the first selection, as three of its neighbours once did (recorded further down). Both its schedulers now take the default caps with a 60 ms soft limit, as `deterministicSliceAndDetailedScanBudgetCaps` does; its two refusals can now come only from the tick moving on and the body being replaced. The scheduler is unchanged.
 - [F-25c4dg](evidence/F-25c4dg.md) (2026-11-14, out from under the sea): with no pickaxe, sealed in a shaft under the sea, it opens the roof by hand and swims up; the staged fixture 3 of 3 failing before, 3 of 3 passing after; the run's two scenes 3 of 3 each alone on the fix; the corpus gate 0 confirmed, sol-10569 cleared under the three-part rule.
 - [F-27a2](evidence/F-27a2.md) (2026-11-14, corpus harness): a scene recorded in the Nether or the End is staged there; the Nether fixture 3 of 3 failing before (made in the Overworld), 3 of 3 passing after; the corpus gate 0 confirmed, sol-10569 cleared under the three-part rule (main 2 of 9 alone, the branch 2 of 9).
 - [F-35h2b](evidence/F-35h2b.md) (2026-11-12, factions at night): at nightfall, not dug in, a faction walk other than DEFEND yields to the goal's dig-in, never for nothing; the staged fixture 0 of 3 before, 3 of 3 after, on its own land; the corpus gate passes; CI on the PR remaining.
