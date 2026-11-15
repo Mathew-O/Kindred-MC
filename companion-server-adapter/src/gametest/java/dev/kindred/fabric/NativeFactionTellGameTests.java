@@ -89,6 +89,71 @@ public final class NativeFactionTellGameTests implements FabricGameTest {
     }
 
     /**
+     * Two joins of one faction a moment apart, each "Joined <name>", are each told and each in the Record (F-34d): the
+     * second was once refused on the Wire as a duplicate of the first, since a message's identity left out its sender,
+     * and a refused message is never the Record's (Echo's join after Sol's in RUNNER 2's run).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "factionTellTwoJoins", tickLimit = 1800)
+    public void twoJoinsAMomentApartAreEachToldAndEachInTheRecord(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1700);
+        String[] names = {"Ada", "Bram", "Cora"};
+        UUID[] ids = new UUID[3], bodies = new UUID[3];
+        @SuppressWarnings("unchecked") CompletableFuture<List<WorldEvent>>[] record = new CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    f.runtime.factionsWorldForTest(WIDE);
+                    f.runtime.createNative(f.source, "Ada");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Ada allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Bram"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 2, "Bram allocated"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Cora"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 3 && statuses.stream().allMatch(s -> s.phase() == StoredNativePlayer.Phase.ESTABLISHED && s.connected()),
+                            "All three established");
+                    for (var status : statuses) {
+                        int i = List.of(names).indexOf(player(f, status.nativeId()).getName().getString());
+                        ids[i] = status.id();
+                        bodies[i] = status.nativeId();
+                    }
+                    context.assertTrue(f.runtime.factionActForTest(ids[0], FactionPlay.Kind.FOUND, "").accepted(), "Ada founds her faction");
+                })
+                .createAndAdd(() -> {
+                    var faction = f.runtime.factions().book().of(bodies[0]).orElseThrow();
+                    context.assertTrue(f.runtime.faction(f.source, bodies[0], "invite", List.of("Bram")).accepted(), "Ada invites Bram");
+                    context.assertTrue(f.runtime.faction(f.source, bodies[0], "invite", List.of("Cora")).accepted(), "Ada invites Cora");
+                    context.assertTrue(f.runtime.factionActForTest(ids[1], FactionPlay.Kind.JOIN, faction.id().toString()).accepted(), "Bram joins");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(!f.runtime.wire().inbox(ids[0], "faction.joined").isEmpty(), "Ada told of Bram's join");
+                    var faction = f.runtime.factions().book().of(bodies[0]).orElseThrow();
+                    context.assertTrue(f.runtime.factionActForTest(ids[2], FactionPlay.Kind.JOIN, faction.id().toString()).accepted(), "Cora joins");
+                })
+                .createAndAdd(() -> {
+                    var told = f.runtime.wire().inbox(ids[0], "faction.joined").stream().map(t -> t.message().from()).collect(java.util.stream.Collectors.toSet());
+                    context.assertTrue(told.equals(Set.of(ids[1], ids[2])), "Ada told of each join, Bram's and Cora's: " + f.runtime.wire().inbox(ids[0]));
+                    context.assertTrue(f.runtime.wire().inbox(ids[1], "faction.joined").stream().anyMatch(t -> ids[2].equals(t.message().from())),
+                            "Bram told of Cora's: " + f.runtime.wire().inbox(ids[1]));
+                    record[0] = f.runtime.worldEventsForTest(Set.of(FactionLedger.JOIN, dev.kindred.core.knowledge.WebFeed.MESSAGE));
+                })
+                .createAndAdd(() -> context.assertTrue(record[0].isDone(), "The Record read"))
+                .createAndAdd(() -> {
+                    var events = record[0].join();
+                    var joins = events.stream().filter(e -> e.kind().equals(FactionLedger.JOIN)).toList();
+                    var notes = events.stream().filter(e -> e.kind().equals(dev.kindred.core.knowledge.WebFeed.MESSAGE)
+                            && "faction.joined".equals(e.data().get("kind"))).toList();
+                    context.assertTrue(joins.size() == 2, "Two joins in the Record: " + joins);
+                    context.assertTrue(notes.stream().map(WorldEvent::actor).collect(java.util.stream.Collectors.toSet()).equals(Set.of(ids[1], ids[2])) && notes.size() == 2,
+                            "The Record's note of each join's message, one each: " + notes);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The stop barrier stops the tell, never the events: a claim written just before the stop keeps its Record event and
      * its tell is dropped; one made as the stop begins (after its barrier) is still written through the ordered writer,
      * which the stop waits on, and nothing is told of it. After a restart the Record holds both claims, so an audit never

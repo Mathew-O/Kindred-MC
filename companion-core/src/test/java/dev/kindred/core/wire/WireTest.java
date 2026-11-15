@@ -154,6 +154,33 @@ class WireTest {
     }
 
     @Test
+    void twoPlayersTellingTheSameThingAreTwoMessagesNotOneSaidTwice() {
+        // F-34d: Sol, then Echo, joined Oak 27 s apart, each "Joined Oak"; Echo's was refused as a duplicate of Sol's.
+        var wire = new Wire(Wire.Config.defaults());
+        var kin = ai("Kindred", "oak", "", SPAWN);
+        var sol = ai("Sol", "oak", "", SPAWN);
+        var echo = ai("Echo", "oak", "", SPAWN);
+        var mat = person("Mat", "oak", "", SPAWN);
+        var roster = List.of(kin, sol, echo, mat);
+        java.util.function.Function<Listener, Message> joined = who -> Message.of("faction.joined", who.id(), Scope.faction("oak"),
+                facts("what", Fact.of("Joined Oak", Visibility.FACTION)), List.of(7L));
+        var first = wire.send(joined.apply(sol), FACTIONS, roster, 0);
+        assertTrue(first.sent());
+        var second = wire.send(joined.apply(echo), FACTIONS, roster, 27_000);
+        assertTrue(second.sent(), "another sender's news: " + second.refused());
+        assertTrue(second.receivers().contains(kin.id()) && second.receivers().contains(sol.id()));
+        // A person hears the same words once in a while, whoever says them (as for a public notice, below).
+        assertEquals(List.of(mat.id()), first.phrase().stream().map(Delivery.Phrase::person).toList());
+        assertEquals(List.of(mat.id()), second.quiet());
+        // One sender's same message is still one on the channel.
+        assertEquals(Delivery.Refusal.DUPLICATE, wire.send(joined.apply(echo), FACTIONS, roster, 28_000).refused().orElseThrow());
+        // The server's own notice keeps its identity apart from any player's.
+        var server = Message.of("faction.joined", null, Scope.faction("oak"), facts("what", Fact.of("Joined Oak", Visibility.FACTION)), List.of(8L));
+        assertTrue(wire.send(server, FACTIONS, roster, 29_000).sent());
+        assertEquals(Delivery.Refusal.DUPLICATE, wire.send(server, FACTIONS, roster, 30_000).refused().orElseThrow());
+    }
+
+    @Test
     void thePublicNoticeIsSaidOncePerPersonInEarshotAndAnnouncementsAreTheServersAlone() {
         var wire = new Wire(Wire.Config.defaults().withAnnouncements(Set.of("market.shortage", "faction.vulnerable")));
         var far = new Listener.Place("minecraft:overworld", 500, 64, 0);
