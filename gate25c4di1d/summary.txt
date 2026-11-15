@@ -25,3 +25,4 @@ confirm-main-2.1 (aacbfca7, only flagged): 0 min, peak 1369 MB, All 2 required t
 confirm-main-2.2 (aacbfca7, only flagged): 0 min, peak 1097 MB, 1 required tests failed, fence-top 0, disk 7.2G
 confirm-main-2.3 (aacbfca7, only flagged): 0 min, peak 1321 MB, All 2 required tests passed, fence-top 1, disk 7.2G
 confirm-main-2.4 (aacbfca7, only flagged): 0 min, peak 1209 MB, 1 required tests failed, fence-top 0, disk 7.2G
+confirm-main-2.5 (aacbfca7, only flagged): 0 min, peak 1384 MB, All 2 required tests passed, fence-top 0, disk 7.2G
