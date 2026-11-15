@@ -1,1 +1,2 @@
 run1 (c00cf589): 51 min, peak 3031 MB, 124 required tests failed, fence-top 26, disk 11G
+run2 (c00cf589): 49 min, peak 3350 MB, 124 required tests failed, fence-top 19, disk 11G
