@@ -84,4 +84,39 @@ public final class NativeCostGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * The month run's pre-flight (M-06k7): the cost line gives the server's ticks since the last line as they were timed
+     * (how many, the mean, the 99th, how many over 50 ms, the longest) and the heap's high water, then begins again.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "costTicks", tickLimit = 600)
+    public void theCostLineGivesTheTicksSinceTheLastLineAndTheHeapsHighWater(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 500);
+        var server = context.getWorld().getServer();
+        long[] from = new long[1];
+        @SuppressWarnings("unchecked") CompletableFuture<String>[] line = new CompletableFuture[2];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    line[0] = f.runtime.logCost(1); // Begins the window.
+                    from[0] = server.getTicks();
+                })
+                // A fixture's runtime is ticked through its bodies; this one has none, so each tick is handed to it.
+                .createAndAdd(() -> {
+                    f.runtime.onServerTick(server);
+                    context.assertTrue(server.getTicks() - from[0] >= 45, "Forty-odd ticks");
+                })
+                .createAndAdd(() -> line[1] = f.runtime.logCost(1))
+                .createAndAdd(() -> {
+                    context.assertTrue(line[1].isDone(), "Measured");
+                    String s = line[1].join();
+                    var ticks = java.util.regex.Pattern.compile("server ticks (\\d+): mean ([\\d.]+) ms, p99 (\\d+) ms, (\\d+) over 50 ms, longest ([\\d.]+) ms").matcher(s);
+                    context.assertTrue(ticks.find() && Long.parseLong(ticks.group(1)) >= 40 && Double.parseDouble(ticks.group(2)) > 0, "The ticks since the last line: " + s);
+                    var heap = java.util.regex.Pattern.compile("high water (\\d+) MB since the last line").matcher(s);
+                    context.assertTrue(heap.find() && Long.parseLong(heap.group(1)) > 0, "The heap's high water: " + s);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .completeIfSuccessful();
+    }
 }

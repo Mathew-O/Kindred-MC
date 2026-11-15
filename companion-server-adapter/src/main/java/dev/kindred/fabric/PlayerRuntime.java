@@ -3077,8 +3077,14 @@ final class PlayerRuntime {
         if (!running || !ready) return;
         long tick = server.getTicks();
         if (attentionScheduler.currentTick() == tick) return;
+        // M-06k7: the tick before this one, as the server timed it (kept at its count modulo the ring's size once it ends),
+        // and the heap in use once a second, for the cost line's window.
+        long[] tickTimes = server.getTickTimes();
+        if (tick > 1 && tickTimes.length > 0) tickWindow.add(tickTimes[(int) ((tick - 1) % tickTimes.length)], tick - 1);
         if (tick % 20 == 0) {
             teamCoordinator.handleTickExpiry(tick);
+            Runtime memory = Runtime.getRuntime();
+            heapHighWater = Math.max(heapHighWater, memory.totalMemory() - memory.freeMemory());
         }
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
@@ -3443,6 +3449,25 @@ final class PlayerRuntime {
      * defending itself from a mob that is on it. A fall is broken with water only where it may edit ({@code mayEdit});
      * a barricade, the Nether's blazes and an expedition's return are its work, and need {@code admitted}.
      */
+    /**
+     * A hostile on foot after the player within {@code range} that can get at it now (F-25c4dh): within two blocks, or in
+     * sight with a walk to it. Not a shooter or a creeper, which eating does not decide; not one outside a wall, across water
+     * or a drop it cannot take, where its path ends short of the player.
+     */
+    static boolean mobCanReachToEat(ServerPlayerEntity player, double range) {
+        for (var mob : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class,
+                player.getBoundingBox().expand(range, 2, range), m -> m.isAlive() && m.getTarget() == player
+                        && !(m instanceof net.minecraft.entity.ai.RangedAttackMob) && !(m instanceof net.minecraft.entity.mob.CreeperEntity))) {
+            double d2 = player.squaredDistanceTo(mob);
+            if (d2 > range * range) continue;
+            if (d2 <= 2.0 * 2.0) return true;
+            if (!mob.canSee(player)) continue;
+            var path = mob.getNavigation().findPathTo(player, 1);
+            if (path != null && path.reachesTarget()) return true;
+        }
+        return false;
+    }
+
     private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body, boolean admitted, boolean mayEdit) {
         var candidates = new java.util.ArrayList<NativeTaskCandidate>();
         var player = body.entity();
@@ -3580,6 +3605,12 @@ final class PlayerRuntime {
         // Y=8 with a mob on it, began to eat a dozen times in its last two seconds, each cancelled for the threat, and never
         // swam up (F-25c4af).
         boolean outOfBreath = inDeepWater(player) && player.getAir() < player.getMaxAir() / 2;
+        // Not with a mob on foot after it within six blocks that can get at it: eating takes over a second and a half, a
+        // zombie closes six blocks in that time, each hit lands meanwhile, and the fight or the way off waits. In e40a22's A1
+        // players died eating (505-kindred-33951 with cooked porkchop in hand) and the staged second zombie killed its player
+        // mid-meal (F-25c4dh). Only one that can reach it: walled in for the night with a zombie outside, it eats as before.
+        // And with the bar at six or below, where hunger is about to cost health, only one already in reach holds it back.
+        boolean pressedToEat = mobCanReachToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
         // With nothing better held, rotten flesh or raw chicken is eaten when hurt with too little in the bar to heal (under
         // 18) or too hungry to sprint, as a player does: their hunger costs less than going on unhealed. In E-40's iteration
         // 8 (`e40a8-aed3e82`) 20 of the 23 deaths came with the bar under 18, and Echo on 101 died at two health and two
@@ -3587,7 +3618,7 @@ final class PlayerRuntime {
         boolean lastResort = (needsHealth && foodLevel < 18 || foodLevel <= 6) && !holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
         java.util.function.Predicate<ItemStack> eligible = stack -> isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)
                 || lastResort && canEatVanilla && (stack.isOf(Items.ROTTEN_FLESH) || stack.isOf(Items.CHICKEN));
-        if ((canEatVanilla || needsHealth) && !outOfBreath) {
+        if ((canEatVanilla || needsHealth) && !outOfBreath && !pressedToEat) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
             for (int slot = 0; slot < 9; slot++) {
@@ -18543,13 +18574,19 @@ final class PlayerRuntime {
         }
     }
 
+    /** The server's ticks since the cost line was last written, and the heap's high water then (M-06k7). */
+    private final dev.kindred.core.metrics.TickWindow tickWindow = new dev.kindred.core.metrics.TickWindow();
+    private long heapHighWater;
+
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
         var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
-                chronicle.kept(), wire.stateTold(), wire.refusals());
+                chronicle.kept(), wire.stateTold(), wire.refusals(), tickWindow.describe(), heapHighWater / (1024 * 1024));
+        tickWindow.reset();
+        heapHighWater = 0;
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
