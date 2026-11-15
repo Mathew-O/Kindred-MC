@@ -29,6 +29,21 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "obsidianPickup", tickLimit = 1500)
     public void anUntakenStepToTakeTheWaterBackLeavesNoObsidianBehind(TestContext context) {
+        scene(context, false);
+    }
+
+    /**
+     * As above, with the poured water's drain staged (F-22c94): the tick its water is back in the bucket, the shore cell it
+     * was poured on left holding the last of its flow, as a source taken up leaves it for a few ticks. In CI on #357 and
+     * #360 the player went exploring then with the obsidian lying in the draining water ("Went exploring with its obsidian
+     * left in the water"). Passes as above.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "obsidianPickupDrain", tickLimit = 1500)
+    public void theWaterTakenBackItsLastFlowStillDrainingTheObsidianIsPickedUpFirst(TestContext context) {
+        scene(context, true);
+    }
+
+    private static void scene(TestContext context, boolean drain) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos lava = context.getAbsolutePos(new BlockPos(5, 1, 3));
         BlockPos shore = context.getAbsolutePos(new BlockPos(4, 2, 3));
@@ -47,10 +62,32 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 if (seen.length() < 3000) seen.append(progress.replaceAll("^.* - ", "")).append("; ");
                 if (progress.contains("Explore") && ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 0) exploredFirst[0] = true;
             }
+            // Staged (F-22c94): the mined obsidian not to be picked up in passing until the water is back, as in CI, where it
+            // lay out of the player's way; then let go, the water's last flow still draining over it.
+            if (drain && !waterBack[0]) {
+                for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
+                        new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8),
+                        i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) item.setPickupDelay(20);
+            }
             // From the untaken step until its water is back in the bucket: a wait for the drop, or a refill by the bucket's
             // own upkeep, is a goal with the obsidian site given up while its water still stands.
             if (asked[0] != null && !waterBack[0]) {
-                if (ItemMoves.count(f.player().getInventory(), Items.WATER_BUCKET) == 1) waterBack[0] = true;
+                if (ItemMoves.count(f.player().getInventory(), Items.WATER_BUCKET) == 1) {
+                    waterBack[0] = true;
+                    // Staged (F-22c94): the shore cell left holding the last of the flow, draining as a taken-up source's does.
+                    if (drain) {
+                        for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
+                                new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8),
+                                i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) {
+                            item.setPickupDelay(0);
+                            KindredMod.LOGGER.info("Obsidian pickup: the obsidian let go at {}, in {}", item.getPos(), context.getWorld().getFluidState(item.getBlockPos()));
+                        }
+                    }
+                    if (drain && context.getWorld().getFluidState(shore).isEmpty()) {
+                        context.getWorld().setBlockState(shore, net.minecraft.fluid.Fluids.FLOWING_WATER.getFlowing(7, false).getBlockState());
+                        KindredMod.LOGGER.info("Obsidian pickup: the water back, its last flow left on the shore at {}", shore.toShortString());
+                    }
+                }
                 else if (lostSite[0] == null && progress != null && (progress.contains("Wait for the drop to settle")
                         || progress.contains("Fill a bucket at") || progress.contains("Walk to water"))) lostSite[0] = progress.replaceAll("^.* - ", "");
             }
