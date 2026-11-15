@@ -1,0 +1,73 @@
+[05:29:56] [Render thread/INFO]: [System] [CHAT] This world plays Factions.
+[05:29:56] [Render thread/INFO]: [System] [CHAT] Factions rules:
+[05:29:56] [Render thread/INFO]: [System] [CHAT]  Play: survival in factions: found or join one, claim land by its power, earn coins at the market
+[05:29:56] [Render thread/INFO]: [System] [CHAT]  Building: the server's edit policy; claimed land only by its faction, the same for people and AI players
+[05:29:56] [Render thread/INFO]: [System] [CHAT]  Fighting: only between members of different factions, never in safe zones; joining a faction is joining the match; leave it any time
+[05:29:56] [Render thread/INFO]: [System] [CHAT]  Items: none handed out
+[05:29:56] [Render thread/INFO]: [System] [CHAT]  Deaths: respawn as usual; a death to another faction costs two power
+[05:29:56] [Render thread/INFO]: [System] [CHAT]  Winning: no end: the factions' standing by land and power
+[05:30:09] [Render thread/INFO]: [System] [CHAT] Outsider joined the game
+[05:30:14] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:30:37] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:30:50] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Stone Age]
+[05:30:54] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Getting an Upgrade]
+[05:31:00] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:31:24] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:31:33] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Stone Age]
+[05:31:36] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Stone Age]
+[05:31:39] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Getting an Upgrade]
+[05:31:41] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Getting an Upgrade]
+[05:31:47] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:32:10] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:32:33] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:32:56] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:33:20] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:33:43] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:34:06] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:34:07] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Monster Hunter]
+[05:34:29] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:34:45] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Acquire Hardware]
+[05:34:53] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:35:16] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:35:39] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:36:02] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:36:18] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Not Today, Thank You]
+[05:36:21] [Render thread/INFO]: [System] [CHAT] Echo was shot by Skeleton
+[05:36:22] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Monster Hunter]
+[05:36:25] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:36:49] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:37:12] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:37:26] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Suit Up]
+[05:37:35] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:37:58] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:38:22] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:38:45] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:39:08] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:39:31] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:39:55] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:40:18] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:40:41] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:41:04] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:41:06] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Isn't It Iron Pick]
+[05:41:28] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:41:51] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:42:14] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:42:37] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:43:01] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:43:24] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:43:47] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:44:10] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:44:34] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:44:57] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:45:20] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[05:46:50] [Render thread/INFO]: [System] [CHAT] Outsider drowned
+[05:54:45] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Acquire Hardware]
+[06:02:48] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Suit Up]
+[06:07:48] [Render thread/INFO]: [System] [CHAT] Tester was slain by Zombie
+[06:08:24] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Acquire Hardware]
+[06:09:33] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Suit Up]
+[06:14:22] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Isn't It Iron Pick]
+[06:20:10] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Sweet Dreams]
+[06:22:45] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Hot Stuff]
+[06:23:52] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Not Today, Thank You]
+[06:24:35] [Render thread/INFO]: [System] [CHAT] Echo was slain by Zombie
