@@ -33,8 +33,9 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
     }
 
     /**
-     * As above, with the poured water's drain staged (F-22c94): the tick its water is back in the bucket, the shore cell it
-     * was poured on left holding the last of its flow, as a source taken up leaves it for a few ticks. In CI on #357 and
+     * As above, staged (F-22c94): from the obsidian mined until its water is back in the bucket, the player held on its stand,
+     * off the drop's way, and then the shore cell the water was poured on left holding the last of its flow, as a source
+     * taken up leaves it for a few ticks. In CI on #357 and
      * #360 the player went exploring then with the obsidian lying in the draining water ("Went exploring with its obsidian
      * left in the water"). Passes as above.
      */
@@ -62,12 +63,16 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 if (seen.length() < 3000) seen.append(progress.replaceAll("^.* - ", "")).append("; ");
                 if (progress.contains("Explore") && ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 0) exploredFirst[0] = true;
             }
-            // Staged (F-22c94): the mined obsidian not to be picked up in passing until the water is back, as in CI, where it
-            // lay out of the player's way; then let go, the water's last flow still draining over it.
-            if (drain && !waterBack[0]) {
-                for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
-                        new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8),
-                        i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) item.setPickupDelay(20);
+            // Staged (F-22c94): from the obsidian mined until its water is back in the bucket, the player held on its stand,
+            // two cells off the hole the obsidian lies in, so it never passes over the drop, as in CI, where it lay out of
+            // the player's way; the drop itself is not touched. Then let go, the water's last flow still draining over it.
+            var standWorld = context.getWorld();
+            if (drain && !waterBack[0] && !standWorld.getBlockState(lava).isOf(Blocks.OBSIDIAN) && !standWorld.getFluidState(lava).isIn(FluidTags.LAVA)) {
+                var held = f.player();
+                if (held != null) {
+                    held.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, held.getYaw(), held.getPitch());
+                    held.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                }
             }
             // From the untaken step until its water is back in the bucket: a wait for the drop, or a refill by the bucket's
             // own upkeep, is a goal with the obsidian site given up while its water still stands.
@@ -79,8 +84,7 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                         for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
                                 new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8),
                                 i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) {
-                            item.setPickupDelay(0);
-                            KindredMod.LOGGER.info("Obsidian pickup: the obsidian let go at {}, in {}", item.getPos(), context.getWorld().getFluidState(item.getBlockPos()));
+                            KindredMod.LOGGER.info("Obsidian pickup: the player let go, the obsidian at {}, in {}", item.getPos(), context.getWorld().getFluidState(item.getBlockPos()));
                         }
                     }
                     if (drain && context.getWorld().getFluidState(shore).isEmpty()) {
