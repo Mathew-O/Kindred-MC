@@ -136,6 +136,20 @@ final class NativePlayerBody implements BodyAdapter {
     private long ticksRun;
     /** What this player can know of others' health from the hits it saw land (E-41a); never the server's number. */
     private final dev.kindred.core.tactics.HealthBeliefs beliefs = new dev.kindred.core.tactics.HealthBeliefs();
+
+    /**
+     * The drops of its own breaks, the last 64 (F-22c94a): a player knows where what it broke fell even when it is out of
+     * sight, as the obsidian in the hole its lava left, under the shore it stood on. Only these; never another's.
+     */
+    private final java.util.LinkedHashSet<java.util.UUID> ownDrops = new java.util.LinkedHashSet<>();
+
+    void knowOwnDrop(java.util.UUID drop) {
+        ownDrops.remove(drop);
+        ownDrops.add(drop);
+        while (ownDrops.size() > 64) ownDrops.remove(ownDrops.iterator().next());
+    }
+
+    boolean ownDrop(java.util.UUID drop) { return ownDrops.contains(drop); }
     private boolean creativeAllowed;
     private boolean adventureAllowed;
     /**
