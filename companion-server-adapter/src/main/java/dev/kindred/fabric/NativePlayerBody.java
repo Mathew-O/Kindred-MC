@@ -139,7 +139,8 @@ final class NativePlayerBody implements BodyAdapter {
 
     /**
      * The drops of its own breaks, the last 64 (F-22c94a): a player knows where what it broke fell even when it is out of
-     * sight, as the obsidian in the hole its lava left, under the shore it stood on. Only these; never another's.
+     * sight, as the obsidian in the hole its lava left, under the shore it stood on. Only these; never another's. Kept in
+     * memory only, never saved, and cleared as the body respawns.
      */
     private final java.util.LinkedHashSet<java.util.UUID> ownDrops = new java.util.LinkedHashSet<>();
 
@@ -319,6 +320,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (controls != null && arbiter != null) arbiter.cancel(controls);
         haltControls();
         controls = null;
+        ownDrops.clear(); // Its own breaks' drops are its last life's (F-22c94a).
         NativePlayer dead = player;
         var handler = dead.networkHandler;
         ServerPlayerEntity fresh;
