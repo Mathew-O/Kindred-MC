@@ -1,1 +1,2 @@
 run1 (822b33db): 48 min, peak 2992 MB, 123 required tests failed, fence-top 22, disk 7.5G
+run2 (822b33db): 48 min, peak 2996 MB, 119 required tests failed, fence-top 25, disk 7.3G
