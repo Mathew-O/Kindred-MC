@@ -107,6 +107,19 @@ final class FactionsPlayer {
         return pos.getY() >= top - 1;
     }
 
+    /** How far below the top of its column it stands, at most, and is not deep below the surface (M-06i2c1). */
+    static final int DEEP = 8;
+
+    /**
+     * Whether it stands deep below the surface: more than {@value #DEEP} blocks below the topmost solid block of its column,
+     * leaves not counted, as in a mine or a cave under a hill; a hollow, a box round it or a notch dug in a wall is not.
+     */
+    static boolean deepBelow(ServerPlayerEntity player) {
+        var pos = player.getBlockPos();
+        int top = player.getServerWorld().getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
+        return top - pos.getY() > DEEP;
+    }
+
     /** Places set aside in a row, with no walk between, before every faction walk waits; and how far a move ends the wait early. */
     static final int STREAK = 2, STREAK_MOVED = 32;
     /** Every faction walk's first wait, in ticks (half a minute); it doubles with each, to a game day at most. */

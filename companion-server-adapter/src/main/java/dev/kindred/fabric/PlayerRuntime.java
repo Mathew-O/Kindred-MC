@@ -10361,6 +10361,14 @@ final class PlayerRuntime {
         // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
         // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
         if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
+        // Deep below the surface (M-06i2c1): a walk other than to defend its land waits till it is up, as a player in its
+        // mine comes up before it sets off overland; its own goal and its climbs bring it up. Asked from a tunnel, a leg ends
+        // 48 blocks on at its own height, inside the rock, where no route ends: on Factions seed 20261030 (M-06i2a's
+        // comparison) 919 faction legs were refused for no route and 15 of them ended where it could stand; with bases on,
+        // Kindred's began below Y 50 215 times of 235, and it held no land. No walk is asked, so no refusal is counted and
+        // no way made. A hollow, a box or a notch dug in a wall is not deep: there the walk is asked, refused and backed off,
+        // and a way made out (F-35h, F-35i, #120), as before.
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && FactionsPlayer.deepBelow(player)) return null;
         // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
         // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
         // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
@@ -10789,6 +10797,14 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? null : goalOf(entry);
+    }
+
+    /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */
+    boolean factionWalkingForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry != null && "native_goto".equals(entry.skillId) && entry.dispatchSource != null
+                && entry.dispatchSource.startsWith("factionCandidates");
     }
 
     /** What the fixture's AI player is walking to in the faction world, if anything. */
