@@ -31,3 +31,4 @@ confirm-main-2.3 (4fc62f53, only flagged): 0 min, peak 1209 MB, 1 required tests
 confirm-main-2.4 (4fc62f53, only flagged): 0 min, peak 1216 MB, 1 required tests failed, fence-top 0, disk 7.9G
 confirm-main-2.5 (4fc62f53, only flagged): 0 min, peak 1147 MB, All 2 required tests passed, fence-top 0, disk 7.9G
 confirm-main-2.6 (4fc62f53, only flagged): 0 min, peak 999 MB, 1 required tests failed, fence-top 0, disk 7.9G
+confirm-main-3.1 (4fc62f53, only flagged): 0 min, peak 1208 MB, 1 required tests failed, fence-top 2, disk 7.9G
