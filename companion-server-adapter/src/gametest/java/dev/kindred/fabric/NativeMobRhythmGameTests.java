@@ -65,7 +65,7 @@ public final class NativeMobRhythmGameTests implements FabricGameTest {
                 // Four blocks off, out of reach, coming at it.
                 for (int z = 0; z < 2; z++) zombie[z] = null;
                 for (int z = 0; z < count; z++) {
-                    zombie[z] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(3.5 + z * 1.5, 2.0, startZ));
+                    zombie[z] = FixtureGround.hostile(context, EntityType.ZOMBIE, new Vec3d(3.5 + z * 1.5, 2.0, startZ));
                     zombie[z].equipStack(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
                     zombie[z].setTarget(player);
                 }
@@ -164,6 +164,8 @@ public final class NativeMobRhythmGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(18);
                     player.refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
                     player.setVelocity(Vec3d.ZERO);
+                    // Still spawnMob, as on main: with mobs that come (FixtureGround.hostile, F-22c80) the rule fails in CI, "A block
+                    // asked for to hand still not in its hotbar 21 ticks on" (#332). That version is the behaviour fix's fail-before fixture.
                     zombie[0] = context.spawnMob(EntityType.ZOMBIE, context.getRelative(new Vec3d(p.getX() + 0.5, p.getY(), p.getZ() + 2.3)));
                     zombie[0].equipStack(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
                     zombie[0].setTarget(player);

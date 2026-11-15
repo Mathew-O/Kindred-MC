@@ -74,6 +74,20 @@ final class FixtureGround {
         }
     }
 
+    /**
+     * A hostile mob that acts as in a live world, at {@code relative} (F-22c80). {@link TestContext#spawnMob} clears
+     * every goal and task of the mob it spawns: a zombie told {@code setTarget(player)} keeps its target and stands where
+     * it spawned (0 blows in 300 ticks, 7 blocks off), where one spawned here closes in and strikes (8 blows). A fixture
+     * whose mob is to come at the player spawns it here; one that wants it still keeps {@code spawnMob} or turns its AI
+     * off. Persistent, so it never despawns mid-test.
+     */
+    static <E extends net.minecraft.entity.mob.MobEntity> E hostile(TestContext context, net.minecraft.entity.EntityType<E> type,
+                                                                     net.minecraft.util.math.Vec3d relative) {
+        E mob = context.spawnEntity(type, relative);
+        mob.setPersistent();
+        return mob;
+    }
+
     /** What lies from {@code min} to {@code max} now, to be put back by {@link #restore}. */
     static void keep(TestContext context, BlockPos min, BlockPos max) {
         var world = context.getWorld();

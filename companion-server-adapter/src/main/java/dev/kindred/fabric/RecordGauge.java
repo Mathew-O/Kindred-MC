@@ -22,7 +22,8 @@ import java.util.concurrent.CompletableFuture;
 final class RecordGauge {
     /** What the runtime holds in memory now. */
     record Held(long recordThrough, int webs, long webRelations, int worldRelations, long inboxed, int chroniclePages, long teamStateTold,
-                String wireRefused, long[] territoryRefused) { }
+                String wireRefused, long[] territoryRefused,
+                String ticks, long heapHighMb) { }
 
     /** The day's line from the store's {@code growth}, the database's files measured off the thread first. */
     static CompletableFuture<String> line(long day, Path database, Held held, SqliteCompanionStore.Growth growth) {
@@ -43,7 +44,8 @@ final class RecordGauge {
                     + " messages; Wire " + held.wireRefused() + "; territory refusals " + held.territoryRefused()[0] + " written, "
                     + held.territoryRefused()[1] + " the same minute's and " + held.territoryRefused()[2] + " over a faction's daily cap, only counted"
                     + "; teammates' updates (team.state) " + held.teamStateTold() + " told since start, kept only in the peer ledgers"
-                    + "; Chronicle " + held.chroniclePages() + " pages kept; heap in use " + heap + " MB"
+                    + "; Chronicle " + held.chroniclePages() + " pages kept; heap in use " + heap + " MB, high water " + held.heapHighMb()
+                    + " MB since the last line; server " + held.ticks() + " since the last line"
                     + "; far looks " + looks + " since start, " + rays + " sight lines, " + lookNanos / 1_000_000 + " ms"
                     + "; native.disconnects " + disconnects + " since start";
         });
