@@ -51,7 +51,7 @@ Status: complete (2026-11-15). Its parent F-25c4di1, the respawn loop's deaths, 
 - **For comparison,** F-25c4di1b's gate: 333, 345 and 352 pass a run, and 234, 235 and 237 of the 242.
 - **Over the three runs:** 285 of 458 scenes pass all three (62.2%), and 64 are newly passing against the baseline.
 - **Replay players acting after their own batch:** 0, 0 and 0 (main's `report.py`, with F-27a3's skips).
-- **The change in the corpus:** no set-down was refused in any run (`native_bed` BLOCKED 0, 0 and 0). The set-down was offered 2, 2 and 0 times, and 1, 1 and 0 beds went down. So the backoff never acted. The 426 refusals of F-25c4di1b's run 3 were in a scene that does not reach its night in these runs.
+- **The change in the corpus:** no set-down was refused in any run (`native_bed` BLOCKED 0, 0 and 0). The set-down was offered 2, 2 and 0 times, and 1, 1 and 0 beds went down. So the backoff never acted in any corpus scene, because none had a refused set-down; the staged fixture is its proof. The 426 refusals of F-25c4di1b's run 3 were in a scene that does not reach its night in these runs.
 - **Flagged:** 6 scenes. Each was confirmed alone, in a run of its own, 3 times on the branch and 3 times on 4fc62f53, as `gate.sh` does. **The report confirms 1 and clears 5:**
 
 | Scene | Branch failed (alone) | Base failed (alone) | One-sided Fisher p, branch worse |
