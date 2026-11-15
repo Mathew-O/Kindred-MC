@@ -1,0 +1,322 @@
+{
+  "kind": "death",
+  "player": "Sol",
+  "tick": 253715,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -202,
+    72,
+    -63
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.931128663950716,
+    8.0,
+    16.591899165913425
+  ],
+  "yaw": -99.17587,
+  "pitch": 27.56625,
+  "health": 6.4054646,
+  "food": 13,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 1
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 62
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 21
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 32
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 3
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:white_wool",
+        "count": 3
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 19528,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "End: Prepare: shelter for the night - Dig in for the night: step down",
+  "task": "Dig in for the night: step down",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Sol was shot by Skeleton",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [
+      {
+        "at": [
+          20,
+          8,
+          11
+        ],
+        "left": 2243
+      },
+      {
+        "at": [
+          9,
+          8,
+          23
+        ],
+        "left": 2310
+      }
+    ],
+    "failures": [
+      {
+        "at": [
+          20,
+          8,
+          11
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          9,
+          8,
+          23
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [
+      [
+        16,
+        9,
+        15
+      ],
+      [
+        16,
+        8,
+        15
+      ]
+    ],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        17,
+        7,
+        16
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "STONE": [
+        [
+          11,
+          8,
+          25
+        ],
+        [
+          11,
+          7,
+          25
+        ],
+        [
+          10,
+          8,
+          26
+        ],
+        [
+          10,
+          5,
+          24
+        ],
+        [
+          10,
+          4,
+          24
+        ],
+        [
+          10,
+          7,
+          25
+        ],
+        [
+          10,
+          6,
+          25
+        ],
+        [
+          10,
+          3,
+          23
+        ],
+        [
+          15,
+          14,
+          26
+        ],
+        [
+          14,
+          13,
+          26
+        ],
+        [
+          16,
+          15,
+          26
+        ],
+        [
+          3,
+          0,
+          15
+        ],
+        [
+          3,
+          0,
+          16
+        ],
+        [
+          7,
+          5,
+          26
+        ],
+        [
+          7,
+          4,
+          25
+        ],
+        [
+          7,
+          3,
+          24
+        ],
+        [
+          9,
+          8,
+          26
+        ],
+        [
+          9,
+          5,
+          25
+        ],
+        [
+          9,
+          4,
+          24
+        ],
+        [
+          9,
+          7,
+          26
+        ],
+        [
+          9,
+          6,
+          25
+        ],
+        [
+          9,
+          3,
+          23
+        ],
+        [
+          8,
+          5,
+          25
+        ],
+        [
+          8,
+          4,
+          24
+        ],
+        [
+          8,
+          7,
+          26
+        ],
+        [
+          8,
+          6,
+          26
+        ],
+        [
+          8,
+          3,
+          22
+        ]
+      ]
+    },
+    "strandedAt": [
+      10,
+      7,
+      22
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 90,
+    "exploreStalls": 1,
+    "exploreFailures": 81,
+    "stuckSpells": 2,
+    "stuckLevel": 0,
+    "leftOut": 20059
+  },
+  "log": [
+    "[22:41:53] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:41:54] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:41:55] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:41:55] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:41:55] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -216, 93, -12 [Back off from creeper]",
+    "[22:42:04] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:42:05] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:42:06] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:42:07] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:42:09] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:42:11] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+    "[22:42:11] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from creeper]",
+    "[22:42:11] [Server thread/INFO]: Sol native_place BLOCKED: Block placement produced no effect or was obstructed [Take cover from skeleton]",
+    "[22:42:13] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from skeleton the way it came]",
+    "[22:42:14] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+    "[22:42:14] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[22:42:14] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[22:42:14] [Server thread/INFO]: Sol native_break COMPLETED [Dig in for the night: clear -185, 79, -47]",
+    "[22:42:14] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Dig in for the night: step down]",
+    "[22:42:14] [Server thread/INFO]: Sol died at -186, 80, -47: Sol was shot by Skeleton (tick 253715, night, under the sky, hunger 13, armour 0, holding dirt, no shield; doing \"Dig in for the night: step down\" in \"End: Prepare: shelter for the night - Dig in for the night: step down\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

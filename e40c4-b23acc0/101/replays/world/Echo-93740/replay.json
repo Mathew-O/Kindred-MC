@@ -1,0 +1,899 @@
+{
+  "kind": "spell",
+  "player": "Echo",
+  "tick": 93740,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -237,
+    36,
+    91
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.517700230647336,
+    8.0,
+    16.645908620877364
+  ],
+  "yaw": 1.1872306,
+  "pitch": 7.9960217,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 11.8,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:cooked_porkchop",
+        "count": 2
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 1
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 5
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 12
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 37
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 24
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:torch",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 51
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 12
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 15
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 18
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 29,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 30,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 31,
+      "stack": {
+        "id": "minecraft:lapis_lazuli",
+        "count": 16
+      }
+    },
+    {
+      "slot": 32,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 8
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 1
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 21739,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "DRAGON",
+  "stage": "Iron: no progress here for a while - dig toward elsewhere: clear -221, 45, 108",
+  "task": "dig toward elsewhere: clear -221, 45, 108",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          16,
+          9,
+          15
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        32,
+        9,
+        16
+      ],
+      [
+        32,
+        9,
+        17
+      ],
+      [
+        32,
+        8,
+        17
+      ],
+      [
+        31,
+        9,
+        17
+      ],
+      [
+        31,
+        8,
+        17
+      ],
+      [
+        30,
+        9,
+        17
+      ],
+      [
+        30,
+        8,
+        17
+      ],
+      [
+        29,
+        9,
+        17
+      ],
+      [
+        29,
+        8,
+        17
+      ],
+      [
+        28,
+        9,
+        17
+      ],
+      [
+        28,
+        8,
+        17
+      ],
+      [
+        27,
+        9,
+        17
+      ],
+      [
+        27,
+        8,
+        17
+      ],
+      [
+        26,
+        9,
+        17
+      ],
+      [
+        26,
+        8,
+        17
+      ],
+      [
+        25,
+        9,
+        17
+      ],
+      [
+        25,
+        8,
+        17
+      ],
+      [
+        24,
+        9,
+        17
+      ],
+      [
+        24,
+        8,
+        17
+      ],
+      [
+        23,
+        9,
+        17
+      ],
+      [
+        23,
+        8,
+        17
+      ],
+      [
+        22,
+        9,
+        17
+      ],
+      [
+        22,
+        8,
+        17
+      ],
+      [
+        21,
+        9,
+        17
+      ],
+      [
+        21,
+        8,
+        17
+      ],
+      [
+        20,
+        9,
+        17
+      ],
+      [
+        20,
+        8,
+        17
+      ],
+      [
+        19,
+        9,
+        17
+      ],
+      [
+        19,
+        8,
+        17
+      ],
+      [
+        18,
+        9,
+        17
+      ],
+      [
+        18,
+        8,
+        17
+      ],
+      [
+        17,
+        9,
+        17
+      ],
+      [
+        17,
+        8,
+        17
+      ],
+      [
+        16,
+        9,
+        17
+      ],
+      [
+        16,
+        9,
+        16
+      ],
+      [
+        16,
+        9,
+        15
+      ],
+      [
+        16,
+        8,
+        17
+      ],
+      [
+        16,
+        8,
+        16
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        29,
+        8,
+        17
+      ],
+      [
+        25,
+        8,
+        17
+      ],
+      [
+        21,
+        8,
+        17
+      ],
+      [
+        17,
+        8,
+        17
+      ],
+      [
+        13,
+        8,
+        17
+      ],
+      [
+        13,
+        8,
+        13
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "STONE": [
+        [
+          32,
+          7,
+          17
+        ],
+        [
+          32,
+          8,
+          28
+        ],
+        [
+          32,
+          8,
+          29
+        ],
+        [
+          32,
+          9,
+          20
+        ],
+        [
+          32,
+          9,
+          18
+        ],
+        [
+          32,
+          9,
+          19
+        ],
+        [
+          32,
+          8,
+          30
+        ],
+        [
+          32,
+          8,
+          31
+        ],
+        [
+          32,
+          8,
+          21
+        ],
+        [
+          32,
+          8,
+          22
+        ],
+        [
+          32,
+          8,
+          23
+        ],
+        [
+          32,
+          8,
+          24
+        ],
+        [
+          32,
+          8,
+          25
+        ],
+        [
+          32,
+          8,
+          26
+        ],
+        [
+          32,
+          8,
+          27
+        ],
+        [
+          32,
+          9,
+          26
+        ],
+        [
+          32,
+          9,
+          30
+        ],
+        [
+          32,
+          9,
+          28
+        ],
+        [
+          32,
+          9,
+          27
+        ],
+        [
+          32,
+          9,
+          29
+        ],
+        [
+          32,
+          8,
+          19
+        ],
+        [
+          32,
+          8,
+          20
+        ],
+        [
+          32,
+          9,
+          21
+        ],
+        [
+          32,
+          9,
+          22
+        ],
+        [
+          32,
+          9,
+          23
+        ],
+        [
+          32,
+          9,
+          24
+        ],
+        [
+          32,
+          9,
+          25
+        ],
+        [
+          31,
+          7,
+          17
+        ],
+        [
+          31,
+          9,
+          18
+        ],
+        [
+          30,
+          7,
+          17
+        ],
+        [
+          30,
+          8,
+          18
+        ],
+        [
+          29,
+          7,
+          17
+        ],
+        [
+          28,
+          7,
+          17
+        ],
+        [
+          27,
+          7,
+          17
+        ],
+        [
+          27,
+          8,
+          16
+        ],
+        [
+          26,
+          7,
+          17
+        ],
+        [
+          26,
+          8,
+          16
+        ],
+        [
+          26,
+          8,
+          18
+        ],
+        [
+          25,
+          7,
+          17
+        ],
+        [
+          25,
+          9,
+          16
+        ],
+        [
+          25,
+          9,
+          18
+        ],
+        [
+          25,
+          8,
+          16
+        ],
+        [
+          25,
+          8,
+          18
+        ],
+        [
+          24,
+          7,
+          17
+        ],
+        [
+          24,
+          9,
+          16
+        ],
+        [
+          24,
+          8,
+          16
+        ],
+        [
+          24,
+          8,
+          18
+        ],
+        [
+          23,
+          7,
+          17
+        ],
+        [
+          23,
+          8,
+          16
+        ],
+        [
+          23,
+          8,
+          18
+        ],
+        [
+          22,
+          7,
+          17
+        ],
+        [
+          22,
+          8,
+          16
+        ],
+        [
+          21,
+          7,
+          17
+        ],
+        [
+          20,
+          7,
+          17
+        ],
+        [
+          19,
+          7,
+          17
+        ],
+        [
+          18,
+          7,
+          17
+        ],
+        [
+          18,
+          8,
+          18
+        ],
+        [
+          17,
+          8,
+          18
+        ]
+      ],
+      "COAL_ORE": [
+        [
+          17,
+          9,
+          16
+        ],
+        [
+          16,
+          10,
+          16
+        ]
+      ],
+      "CAVE": [
+        [
+          29,
+          8,
+          17
+        ],
+        [
+          27,
+          8,
+          17
+        ],
+        [
+          21,
+          8,
+          17
+        ],
+        [
+          20,
+          8,
+          17
+        ]
+      ]
+    },
+    "strandedAt": [
+      16,
+      8,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 10,
+    "exploreHeading": "west",
+    "exploreStalls": 1,
+    "exploreFailures": 0,
+    "stuckSpells": 4,
+    "stuckLevel": 2,
+    "leftOut": 12230
+  },
+  "log": [
+    "[21:59:44] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:44] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:44] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:44] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:44] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:44] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Ready a torch]",
+    "[21:59:45] [Server thread/INFO]: Echo native_swap COMPLETED [Seal the shelter at -221, 45, 106: ready a block]",
+    "[21:59:45] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -221, 44, 131 [try elsewhere, toward -221, 44, 131]"
+  ]
+}

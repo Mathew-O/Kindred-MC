@@ -1,0 +1,147 @@
+[22:22:47] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:48] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:49] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:50] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:51] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:51] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:52] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:53] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:54] [Server thread/INFO]: Kindred goal at -268 44 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 46, -223 by hand (tried elsewhere 2 times)
+[22:22:54] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]
+[22:22:56] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 46, -223 by hand]
+[22:22:56] [Server thread/INFO]: Kindred goal at -268 44 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:22:56] [Server thread/INFO]: Kindred goal at -268 44 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 45, -223 by hand (tried elsewhere 2 times)
+[22:22:56] [Server thread/INFO]: Kindred goal at -268 45 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 47, -223 by hand (tried elsewhere 2 times)
+[22:22:56] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:22:58] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 47, -223 by hand]
+[22:22:58] [Server thread/INFO]: Kindred goal at -268 45 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:22:58] [Server thread/INFO]: Kindred goal at -268 45 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 46, -223 by hand (tried elsewhere 2 times)
+[22:22:58] [Server thread/INFO]: Kindred goal at -268 46 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 48, -223 by hand (tried elsewhere 2 times)
+[22:22:58] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:00] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 48, -223 by hand]
+[22:23:00] [Server thread/INFO]: Kindred goal at -268 46 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:00] [Server thread/INFO]: Kindred goal at -268 46 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 47, -223 by hand (tried elsewhere 2 times)
+[22:23:00] [Server thread/INFO]: Kindred goal at -268 47 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 49, -223 by hand (tried elsewhere 2 times)
+[22:23:00] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:01] [Server thread/INFO]: Kindred goal at -268 47 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:01] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 49, -223 by hand]
+[22:23:01] [Server thread/INFO]: Kindred goal at -268 48 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 50, -223 by hand (tried elsewhere 2 times)
+[22:23:01] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:03] [Server thread/INFO]: Kindred goal at -268 48 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:03] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 50, -223 by hand]
+[22:23:03] [Server thread/INFO]: Kindred goal at -268 48 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 49, -223 by hand (tried elsewhere 2 times)
+[22:23:03] [Server thread/INFO]: Kindred goal at -268 49 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 51, -223 by hand (tried elsewhere 2 times)
+[22:23:03] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:04] [Server thread/INFO]: Kindred goal at -268 49 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:04] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 51, -223 by hand]
+[22:23:05] [Server thread/INFO]: Kindred goal at -268 50 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 52, -223 by hand (tried elsewhere 2 times)
+[22:23:05] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:06] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 52, -223 by hand]
+[22:23:06] [Server thread/INFO]: Kindred goal at -268 50 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Kindred goal at -268 50 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 51, -223 by hand (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Kindred goal at -268 51 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 53, -223 by hand (tried elsewhere 2 times)
+[22:23:06] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:08] [Server thread/INFO]: Kindred goal at -268 51 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 53, -223 by hand]
+[22:23:08] [Server thread/INFO]: Kindred goal at -268 51 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 52, -223 by hand (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Kindred goal at -268 52 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 54, -223 by hand (tried elsewhere 2 times)
+[22:23:08] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:10] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 54, -223 by hand]
+[22:23:10] [Server thread/INFO]: Kindred goal at -268 52 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Kindred goal at -268 53 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 55, -223 by hand (tried elsewhere 2 times)
+[22:23:10] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:11] [Server thread/INFO]: Kindred goal at -268 53 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 55, -223 by hand]
+[22:23:11] [Server thread/INFO]: Kindred goal at -268 54 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 56, -223 by hand (tried elsewhere 2 times)
+[22:23:11] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:13] [Server thread/INFO]: Kindred goal at -268 54 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 56, -223 by hand]
+[22:23:13] [Server thread/INFO]: Kindred goal at -268 55 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 57, -223 by hand (tried elsewhere 2 times)
+[22:23:13] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:15] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 57, -223 by hand]
+[22:23:15] [Server thread/INFO]: Kindred goal at -268 55 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Kindred goal at -268 55 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 56, -223 by hand (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Kindred goal at -268 56 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 58, -223 by hand (tried elsewhere 2 times)
+[22:23:15] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:16] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 58, -223 by hand]
+[22:23:16] [Server thread/INFO]: Kindred goal at -268 56 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Kindred goal at -268 56 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 57, -223 by hand (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Kindred goal at -268 57 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 59, -223 by hand (tried elsewhere 2 times)
+[22:23:17] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:18] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 59, -223 by hand]
+[22:23:18] [Server thread/INFO]: Kindred goal at -268 57 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Kindred goal at -268 57 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 58, -223 by hand (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Kindred goal at -268 58 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 60, -223 by hand (tried elsewhere 2 times)
+[22:23:18] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:20] [Server thread/INFO]: Kindred goal at -268 58 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:20] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 60, -223 by hand]
+[22:23:20] [Server thread/INFO]: Kindred goal at -268 59 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 61, -223 by hand (tried elsewhere 2 times)
+[22:23:20] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:22] [Server thread/INFO]: Kindred goal at -268 59 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:22] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 61, -223 by hand]
+[22:23:22] [Server thread/INFO]: Kindred goal at -268 60 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 62, -223 by hand (tried elsewhere 2 times)
+[22:23:22] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:24] [Server thread/INFO]: Kindred goal at -268 60 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:24] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 62, -223 by hand]
+[22:23:24] [Server thread/INFO]: Kindred goal at -268 60 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 61, -223 by hand (tried elsewhere 2 times)
+[22:23:24] [Server thread/INFO]: Kindred goal at -268 61 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 63, -223 by hand (tried elsewhere 2 times)
+[22:23:24] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:25] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 63, -223 by hand]
+[22:23:25] [Server thread/INFO]: Kindred goal at -268 61 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:25] [Server thread/INFO]: Kindred goal at -268 61 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 62, -223 by hand (tried elsewhere 2 times)
+[22:23:25] [Server thread/INFO]: Kindred goal at -268 62 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 64, -223 by hand (tried elsewhere 2 times)
+[22:23:25] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:27] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 64, -223 by hand]
+[22:23:27] [Server thread/INFO]: Kindred goal at -268 62 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:27] [Server thread/INFO]: Kindred goal at -268 63 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 65, -223 by hand (tried elsewhere 2 times)
+[22:23:27] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:29] [Server thread/INFO]: Kindred goal at -268 63 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:29] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 65, -223 by hand]
+[22:23:29] [Server thread/INFO]: Kindred goal at -268 64 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 66, -223 by hand (tried elsewhere 2 times)
+[22:23:29] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:30] [Server thread/INFO]: Kindred goal at -268 64 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:30] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 66, -223 by hand]
+[22:23:30] [Server thread/INFO]: Kindred goal at -268 65 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 67, -223 by hand (tried elsewhere 2 times)
+[22:23:30] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:32] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 67, -223 by hand]
+[22:23:32] [Server thread/INFO]: Kindred goal at -268 65 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:32] [Server thread/INFO]: Kindred goal at -268 65 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 66, -223 by hand (tried elsewhere 2 times)
+[22:23:32] [Server thread/INFO]: Kindred goal at -268 66 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 68, -223 by hand (tried elsewhere 2 times)
+[22:23:32] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:34] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 68, -223 by hand]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 66 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 66 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 67, -223 by hand (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 67 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 69, -223 (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 67 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 69, -223]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 68 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 70, -223 (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[22:23:34] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:34] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 70, -223]
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 68 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred goal at -268 69 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -268, 71, -223 (tried elsewhere 2 times)
+[22:23:34] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[22:23:34] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:35] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for logs: clear -268, 71, -223]
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 69 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 69 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 70, -223 (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred picked up 1 minecraft:dirt
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 70 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 71, -223 (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 70 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: pillar up (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 70 -223: Wood: Gather logs for a crafting table - Climb toward the surface for logs: clear -267, 71, -223 (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred goal at -268 71 -223: Wood: on the way, for what comes later - Approach sheep for wool (tried elsewhere 2 times)
+[22:23:35] [Server thread/INFO]: Kindred native_pillar COMPLETED [Climb toward the surface for logs: pillar up]
+[22:23:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:35] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred goal at -276 77 -232: Wood: on the way, for what comes later - Hunt sheep for wool (tried elsewhere 2 times)
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_attack COMPLETED [Hunt sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred goal at -277 77 -233: Wood: on the way, for what comes later - Approach sheep for wool (tried elsewhere 2 times)
+[22:23:36] [Server thread/INFO]: Kindred native_attack COMPLETED [Hunt sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred native_goto COMPLETED [Approach sheep for wool]
+[22:23:36] [Server thread/INFO]: Kindred goal at -280 78 -235: Wood: on the way, for what comes later - Hunt sheep for wool (tried elsewhere 2 times)
+[22:23:36] [Server thread/INFO]: Kindred goal at -280 78 -235: Wood: Pick up white wool (tried elsewhere 2 times)
