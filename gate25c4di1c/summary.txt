@@ -8,3 +8,4 @@ confirm-branch-1.4 (822b33db, only flagged): 0 min, peak 999 MB, 1 required test
 confirm-branch-1.5 (822b33db, only flagged): 0 min, peak 1136 MB, All 2 required tests passed, fence-top 0, disk 7.9G
 confirm-branch-1.6 (822b33db, only flagged): 0 min, peak 1020 MB, 1 required tests failed, fence-top 0, disk 7.9G
 confirm-branch-2.1 (822b33db, only flagged): 0 min, peak 1311 MB, All 2 required tests passed, fence-top 0, disk 7.9G
+confirm-branch-2.2 (822b33db, only flagged): 0 min, peak 955 MB, All 2 required tests passed, fence-top 0, disk 7.9G
