@@ -3950,8 +3950,16 @@ final class PortalRunCampaign {
             if (fallingColumn(world, cell)) {
                 Optional<BlockPos> clear = clearOfTheColumn(player, cell);
                 if (clear.isPresent()) {
-                    return Optional.of(go(clear.get(), 0.3, false, "Dig out of the wall: out from under the falling "
-                            + net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(cell).getBlock()).getPath() + " to " + clear.get().toShortString()));
+                    String block = net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(cell).getBlock()).getPath();
+                    // Its own cell: to its middle, near enough that the slab about its eyes is clear of the next. A walk to
+                    // the cell it stands in ended where it began, its eyes still in the column beside it, 60 to 72 times
+                    // till it died: three of E-40 iteration 22's four suffocations (`e40a22-d2389c9`) (F-22c79).
+                    if (clear.get().equals(player.getBlockPos())) {
+                        return Optional.of(new Task("native_goto", coords(clear.get(), Map.of("range", "0", "partial", "false",
+                                "centre_within", String.valueOf(EYES_CLEAR_WITHIN))), "Dig out of the wall: to the middle of its cell, clear of the falling "
+                                + block + " beside it"));
+                    }
+                    return Optional.of(go(clear.get(), 0.3, false, "Dig out of the wall: out from under the falling " + block + " to " + clear.get().toShortString()));
                 }
             }
             return Optional.of(clearAt(cell, "Dig out of the wall at " + cell.toShortString()));
@@ -3973,7 +3981,10 @@ final class PortalRunCampaign {
     private Optional<BlockPos> clearOfTheColumn(ServerPlayerEntity player, BlockPos cell) {
         var world = player.getServerWorld();
         BlockPos feet = player.getBlockPos();
-        if ((cell.getX() != feet.getX() || cell.getZ() != feet.getZ()) && roomToStand(world, feet)) return Optional.of(feet);
+        // Its own cell only while it is off its middle: centred, its eyes are clear of every cell beside, so a column it is
+        // still in is over it, and it steps out from under that as from any.
+        boolean offMiddle = Math.abs(player.getX() - (feet.getX() + 0.5)) > EYES_CLEAR_WITHIN || Math.abs(player.getZ() - (feet.getZ() + 0.5)) > EYES_CLEAR_WITHIN;
+        if ((cell.getX() != feet.getX() || cell.getZ() != feet.getZ()) && offMiddle && roomToStand(world, feet)) return Optional.of(feet);
         for (Direction direction : Direction.Type.HORIZONTAL) {
             BlockPos beside = feet.offset(direction);
             if (beside.getX() == cell.getX() && beside.getZ() == cell.getZ()) continue;
@@ -3983,6 +3994,12 @@ final class PortalRunCampaign {
         }
         return Optional.empty();
     }
+
+    /**
+     * How near its cell's middle a body's eyes are clear of the cells beside: the slab about the eyes that suffocation
+     * tests is 0.8 of its width (0.48) across, so within 0.15 of the middle it reaches 0.39 from it, short of the next cell.
+     */
+    static final double EYES_CLEAR_WITHIN = 0.15;
 
     /** Feet and head room clear of blocks and fluids, over a full floor. */
     private static boolean roomToStand(net.minecraft.server.world.ServerWorld world, BlockPos feet) {

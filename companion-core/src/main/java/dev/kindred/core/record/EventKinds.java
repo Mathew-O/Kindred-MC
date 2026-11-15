@@ -41,6 +41,8 @@ public final class EventKinds {
                 // The Record's own ledgers (F-31a) and the journal and action ledger written as events.
                 ActionLedgerView.ACTION, ActionLedgerView.FOLDED, ActionLedgerView.PRUNED, ActionLedgerView.JOURNAL, ClaimLedger.CLAIM, ClaimLedger.UNCLAIM, ClaimLedger.CAPTURE,
                 DeathLedger.DEATH, MatchLedger.MATCH, Ledgers.CHECK,
+                // Refused attempts on a faction's land and their bound's tallies (F-34c2, F-34c2a).
+                TerritoryRefusals.REFUSED, TerritoryRefusals.PRUNED,
                 // Factions (M-06).
                 FactionLedger.CREATE, FactionLedger.INVITE, FactionLedger.JOIN, FactionLedger.LEAVE, FactionLedger.RANK,
                 FactionLedger.WISH, FactionLedger.HOME, FactionLedger.COLOUR, FactionLedger.DISBAND,

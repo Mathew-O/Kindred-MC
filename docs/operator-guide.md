@@ -896,6 +896,11 @@ In a faction world:
   `Wire 3 refused since start (BUDGET on team 1, DUPLICATE on faction 2)` (F-34e). It never says what a refused message
   said, who sent it or to whom. A refusal now and then is routine (a channel's minute spent, the same news twice), but a
   count that keeps climbing on one channel means news players should have had is not going out.
+  It also gives `native.disconnects N since start`: AI players taken off the server from outside, either a connection the
+  server closed (a kick, a duplicate login) or a removal from the player list by anything but the player itself. Each one
+  is also logged at WARN as it happens, with the player's name, the reason where there is one, and where it came from
+  (`<name>: its native connection was closed under its body (...)` or `<name>: taken off the player list from outside its
+  body, ...`). A count above 0 that you did not cause is worth reporting.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);
@@ -1055,6 +1060,13 @@ history older than 30 game days (10 real hours) is then pruned: each action's ro
 `action.pruned` tally a game day keeps how many by state and the first and last of them. A day pruned over several
 passes has several tallies, and its figures are their sum. Unresolved actions, and any action that was ever uncertain,
 are kept whatever their age.
+
+**Schema 15 cannot be undone either (F-34c2a).** The first start of a build with the refusals' bound moves the
+database to schema 15. Older builds refuse it at start; the same copy of `<world>/kindred/`, taken before that first
+start, is the only way back. Refused attempts on a faction's land (`territory.refused`, F-34c2) are then kept 30 game
+days by their own time and pruned after the action bound, on the same agreeing check, with a `territory.pruned` tally
+a game day: how many of each kind of attempt, the total, and the first and last. The database itself refuses to delete
+a refusal younger than that. In the soak report, refusals pruned this way are counted as pruned, not lost.
 
 Each figure names the run it was measured on. Sizes scale with the number of players and with what they do.
 

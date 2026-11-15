@@ -21,6 +21,9 @@ FOLDED_KIND = "action"
 # F-31b1: a settled action past the bound is pruned, its row and its action.folded summary, with an action.pruned tally.
 SUMMARY_KIND = "action.folded"
 PRUNED_KIND = "action.pruned"
+# F-34c2a: a refused attempt on a faction's land past the bound is pruned, with a territory.pruned tally a game day.
+REFUSED_KIND = "territory.refused"
+REFUSED_PRUNED_KIND = "territory.pruned"
 TALLIED = ("total", "verified", "failed", "cancelled")
 # Console lines about outcomes that could not be settled, or things set aside, after a start.
 RECONCILE = re.compile(r"(?i)(reconcil|uncertain|ambiguous|unreadable|set aside|could not be read|not replayed|blocked for|storage inspection)")
@@ -58,12 +61,13 @@ def events(db):
     return {r[0]: r for r in rows}
 
 
-def tallied(rows, after=0):
-    """The action bound's tallies after event id {after}, summed (F-31b1): a day pruned over several passes has several."""
+def tallied(rows, after=0, kind=PRUNED_KIND):
+    """The bound's tallies of {kind} after event id {after}, summed (F-31b1, F-34c2a): a day pruned over several passes
+    has several."""
     from urllib.parse import parse_qs
     total = collections.Counter()
     for eid, row in rows.items():
-        if eid > after and row[1] == PRUNED_KIND:
+        if eid > after and row[1] == kind:
             fields = {k: v[0] for k, v in parse_qs(row[5] or "").items()}
             for key in TALLIED:
                 if int(fields.get(key) or 0):
@@ -143,7 +147,7 @@ def compare(before, after):
     """What the later snapshot lost or wrote again of the earlier one's Record."""
     lost, changed = [], []
     for eid, row in before.items():
-        if row[1] in (FOLDED_KIND, SUMMARY_KIND):
+        if row[1] in (FOLDED_KIND, SUMMARY_KIND, REFUSED_KIND):
             continue
         if eid not in after:
             lost.append(row)
@@ -211,6 +215,11 @@ def main():
             if "action_ledger" in entry["rowsLost"]:
                 entry["rowsLost"]["action_ledger"] = max(0, entry["rowsLost"]["action_ledger"] - pruned)
             entry["summariesLostBeyondPruned"] = max(0, summaries - pruned)
+            # Refusals the refusals' bound pruned since are not lost; any beyond its tallies are (F-34c2a).
+            refusals_pruned = tallied(current["events"], max(previous["events"]) if previous["events"] else 0, REFUSED_PRUNED_KIND)["total"]
+            refusals_gone = sum(1 for eid, row in previous["events"].items() if row[1] == REFUSED_KIND and eid not in current["events"])
+            entry["refusalsPrunedSince"] = refusals_pruned
+            entry["refusalsLostBeyondPruned"] = max(0, refusals_gone - refusals_pruned)
             mem = {}
             for name, was in previous["memory"].items():
                 now = current["memory"].get(name)

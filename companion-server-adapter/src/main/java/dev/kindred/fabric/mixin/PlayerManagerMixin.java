@@ -14,6 +14,7 @@ import net.minecraft.server.world.ServerWorld;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Optional;
 
@@ -28,6 +29,12 @@ abstract class PlayerManagerMixin {
     @Inject(method = "loadPlayerData", at = @At("HEAD"), cancellable = true)
     private void kindred$preparedState(ServerPlayerEntity player, CallbackInfoReturnable<Optional<NbtCompound>> result) {
         if (player instanceof PreparedNativePlayer nativePlayer) result.setReturnValue(nativePlayer.kindred$loadPreparedState());
+    }
+
+    /** A native player taken off the list by anything but its own body is reported; nothing else changes (E-70a). */
+    @Inject(method = "remove", at = @At("HEAD"))
+    private void kindred$nativeRemoved(ServerPlayerEntity player, CallbackInfo ci) {
+        if (player instanceof PreparedNativePlayer nativePlayer) nativePlayer.kindred$removedFromList();
     }
 
     /** Vanilla respawn builds a fresh entity; a native body's replacement must stay a native body. */
