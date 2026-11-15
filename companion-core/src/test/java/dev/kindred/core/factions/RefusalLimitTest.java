@@ -46,7 +46,9 @@ class RefusalLimitTest {
         // Past the cap: a new chunk the same day is counted, not written; the next game day starts again.
         var more = new RefusalLimit(cap);
         for (int i = 0; i < cap; i++) assertEquals(WRITE, more.admit(UUID.randomUUID(), "w:9:" + i, "red", i, 3));
-        assertEquals(FACTION_CAP, more.admit(UUID.randomUUID(), "w:9:x", "red", cap, 3));
+        UUID late = UUID.randomUUID();
+        assertEquals(FACTION_CAP, more.admit(late, "w:9:x", "red", cap, 3));
+        assertTrue(more.sameMinute(late, "w:9:x", cap + 10), "over the cap, its repeats take the one-lookup path too");
         assertEquals(WRITE, more.admit(UUID.randomUUID(), "w:9:x", "blue", cap, 3), "another faction's cap is its own");
         assertEquals(WRITE, more.admit(UUID.randomUUID(), "w:9:y", "red", cap + 1, 4), "a new game day");
         assertEquals(1, more.counts()[2]);

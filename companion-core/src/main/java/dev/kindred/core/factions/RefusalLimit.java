@@ -50,6 +50,8 @@ public final class RefusalLimit {
             return Verdict.SAME_MINUTE;
         }
         if (writtenToday.getOrDefault(faction, 0) >= dailyCap) {
+            // Kept for the minute as if written, so the repeats that follow take the one-lookup path (Session A's review).
+            lastWritten.put(key, nowMs);
             overCap++;
             return Verdict.FACTION_CAP;
         }

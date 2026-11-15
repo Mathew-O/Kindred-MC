@@ -18,8 +18,11 @@ abstract class ProjectileTerritoryMixin {
     private void kindred$noEffectOnProtectedLand(BlockHitResult hit, CallbackInfo info) {
         var self = (ProjectileEntity) (Object) this;
         if (TerritoryGuard.mayHit(self.getWorld(), self.getOwner(), hit.getBlockPos())) return;
-        // A player's shot refused is written for the land's faction (F-34c2); a shot with no shooter names no one.
-        if (self.getOwner() instanceof net.minecraft.server.network.ServerPlayerEntity shooter) TerritoryGuard.refused(shooter, self.getWorld(), hit.getBlockPos(), "hit");
+        // A player's shot that would have changed the block is written for the land's faction (F-34c2); a plain arrow's miss
+        // is cancelled the same but is no attempt on the land, and a shot with no shooter names no one.
+        if (self.getOwner() instanceof net.minecraft.server.network.ServerPlayerEntity shooter && TerritoryGuard.wouldChange(self)) {
+            TerritoryGuard.refused(shooter, self.getWorld(), hit.getBlockPos(), "hit");
+        }
         info.cancel();
     }
 }

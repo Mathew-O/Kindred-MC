@@ -21,8 +21,8 @@ abstract class ExplosionTerritoryMixin {
     @Inject(method = "affectWorld", at = @At("HEAD"))
     private void kindred$spareProtectedLand(boolean particles, CallbackInfo info) {
         var explosion = (Explosion) (Object) this;
-        // Set off by a player (its igniter, as TNT lit or a creeper's target is not), each chunk it was kept from written
-        // once for the land's faction (F-34c2); with no player to name, nothing is written.
+        // Set off by a player (TNT that player lit: its causing entity), each chunk it was kept from is written once for the
+        // land's faction (F-34c2); a blast with no player behind it (a creeper's, a lone TNT's) names no one and writes nothing.
         var igniter = explosion.getCausingEntity() instanceof net.minecraft.server.network.ServerPlayerEntity player ? player : null;
         var told = new java.util.HashSet<Long>();
         explosion.getAffectedBlocks().removeIf(pos -> {

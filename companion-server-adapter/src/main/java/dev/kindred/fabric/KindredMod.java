@@ -189,8 +189,11 @@ public final class KindredMod implements ModInitializer {
             var beside = at.offset(hit.getSide());
             boolean here = TerritoryGuard.mayChange(someone, at);
             if (here && TerritoryGuard.mayChange(someone, beside)) return net.minecraft.util.ActionResult.PASS;
+            // Written only for the block acted on (Session A's review): the place beside when placing, the block itself when
+            // using. Opening one's own door whose face looks into another's chunk is refused as before, and writes nothing.
             boolean placing = someone.getStackInHand(hand).getItem() instanceof net.minecraft.item.BlockItem;
-            TerritoryGuard.refused(someone, world, here ? beside : at, placing ? "place" : "use");
+            var acted = placing ? beside : at;
+            if (!(placing ? TerritoryGuard.mayChange(someone, beside) : here)) TerritoryGuard.refused(someone, world, acted, placing ? "place" : "use");
             return net.minecraft.util.ActionResult.FAIL;
         });
         net.fabricmc.fabric.api.event.player.AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {

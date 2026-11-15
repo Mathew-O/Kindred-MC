@@ -123,6 +123,103 @@ public final class NativeTerritoryRefusedGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /** The local x at which a new chunk begins, between 4 and 20, so x - 1 is the wilderness and x the claim. */
+    private static int border(TestContext context) {
+        for (int x = 4; x <= 20; x++) if (Math.floorMod(context.getAbsolutePos(new BlockPos(x, 0, 0)).getX(), 16) == 0) return x;
+        throw new IllegalStateException("No chunk border");
+    }
+
+    /**
+     * Session A's review: only the block acted on is written, and only a shot that would have changed it. Using a block
+     * on one's own side whose face looks into Red's chunk is refused as before and writes nothing; placing into Red's
+     * chunk from there writes one "place". A plain arrow landing on Red's land writes nothing; a burning arrow one "hit".
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "territoryRefusedActedOn", tickLimit = 800)
+    public void onlyTheBlockActedOnAndAShotThatWouldChangeItAreWritten(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 700);
+        var server = context.getWorld().getServer();
+        ServerPlayerEntity[] people = new ServerPlayerEntity[2];
+        net.minecraft.entity.projectile.ArrowEntity[] arrows = new net.minecraft.entity.projectile.ArrowEntity[2];
+        int[] b = new int[1];
+        Set<String> claimed = new java.util.HashSet<>();
+        @SuppressWarnings("unchecked") CompletableFuture<List<WorldEvent>>[] record = new CompletableFuture[1];
+        FixtureGround.whenDone(context, () -> {
+            for (var p : people) if (p != null && server.getPlayerManager().getPlayer(p.getUuid()) != null) server.getPlayerManager().remove(p);
+        });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
+                    b[0] = border(context);
+                    FixtureGround.simulated(context, context.getAbsolutePos(new BlockPos(b[0] - 4, 0, 0)), context.getAbsolutePos(new BlockPos(b[0] + 6, 0, 8)));
+                    for (int x = b[0] - 4; x <= b[0] + 6; x++) for (int z = 0; z <= 8; z++) {
+                        context.setBlockState(x, 1, z, Blocks.STONE);
+                        for (int y = 2; y <= 8; y++) context.setBlockState(x, y, z, Blocks.AIR);
+                    }
+                    // Red's land from the border east, its owner as the claims ledger keeps it.
+                    int column = context.getAbsolutePos(new BlockPos(b[0], 0, 0)).getX() >> 4;
+                    for (int z = 0; z <= 8; z++) {
+                        String key = ClaimLedger.chunk(W, column, context.getAbsolutePos(new BlockPos(b[0], 0, z)).getZ() >> 4);
+                        if (claimed.add(key)) f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, "red-id", key, Map.of()));
+                    }
+                    context.setBlockState(b[0] - 1, 2, 4, Blocks.OAK_PLANKS);
+                    people[0] = MockPlayers.survival(context, "Cleo", new BlockPos(b[0] - 3, 2, 4));
+                    people[1] = MockPlayers.survival(context, "Dov", new BlockPos(b[0] - 3, 2, 6));
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.recordWritten(), "Claimed");
+                    var cleo = people[0];
+                    var own = context.getAbsolutePos(new BlockPos(b[0] - 1, 2, 4));
+                    var toward = new net.minecraft.util.hit.BlockHitResult(net.minecraft.util.math.Vec3d.ofCenter(own), net.minecraft.util.math.Direction.EAST, own, false);
+                    // Using its own side's block, the face toward Red's chunk: refused as before, nothing written.
+                    var used = cleo.interactionManager.interactBlock(cleo, context.getWorld(), net.minecraft.item.ItemStack.EMPTY, net.minecraft.util.Hand.MAIN_HAND, toward);
+                    context.assertTrue(!used.isAccepted(), "the use refused: " + used);
+                    context.assertTrue(f.runtime.factions().refusalCounts()[0] == 0, "and nothing written");
+                    // Placing into Red's chunk from there: the place beside is Red's, so one "place".
+                    var planks = new net.minecraft.item.ItemStack(net.minecraft.item.Items.OAK_PLANKS, 4);
+                    cleo.setStackInHand(net.minecraft.util.Hand.MAIN_HAND, planks);
+                    cleo.interactionManager.interactBlock(cleo, context.getWorld(), planks, net.minecraft.util.Hand.MAIN_HAND, toward);
+                    context.expectBlock(Blocks.AIR, new BlockPos(b[0], 2, 4));
+                    // Dov's two arrows straight down onto Red's land: a plain one first.
+                    arrows[0] = arrow(context, people[1], new BlockPos(b[0] + 2, 7, 2), false);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(arrows[0].age > 30 && arrows[0].getY() < context.getAbsolutePos(new BlockPos(0, 4, 0)).getY(), "The plain arrow landed");
+                    var down = arrows[0].getBlockPos();
+                    context.assertTrue(claimed.contains(ClaimLedger.chunk(W, down.getX() >> 4, down.getZ() >> 4)), "The plain arrow came down on Red's land");
+                    context.assertTrue(f.runtime.factions().refusalCounts()[0] == 1, "Only Cleo's place written: " + java.util.Arrays.toString(f.runtime.factions().refusalCounts()));
+                    arrows[1] = arrow(context, people[1], new BlockPos(b[0] + 4, 7, 6), true);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(arrows[1].age > 30 && arrows[1].getY() < context.getAbsolutePos(new BlockPos(0, 4, 0)).getY(), "The burning arrow landed");
+                    context.assertTrue(f.runtime.factions().refusalCounts()[0] == 2, "Dov's burning arrow written: " + java.util.Arrays.toString(f.runtime.factions().refusalCounts()));
+                    record[0] = f.runtime.worldEventsForTest(Set.of(TerritoryRefusals.REFUSED));
+                })
+                .createAndAdd(() -> context.assertTrue(record[0].isDone(), "The Record read"))
+                .createAndAdd(() -> {
+                    var refusals = record[0].join();
+                    var whats = refusals.stream().map(e -> e.get("what", "") + ":" + (people[0].getUuid().equals(e.actor()) ? "Cleo" : people[1].getUuid().equals(e.actor()) ? "Dov" : "?")).sorted().toList();
+                    context.assertTrue(whats.equals(List.of("hit:Dov", "place:Cleo")), "A place and a hit, no use and no plain arrow: " + refusals);
+                    context.assertTrue(refusals.stream().allMatch(e -> "red-id".equals(e.subject()) && claimed.contains(e.place())), "Red's chunks: " + refusals);
+                    for (var a : arrows) if (a != null && !a.isRemoved()) a.discard();
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .completeIfSuccessful();
+    }
+
+    /** An arrow of {@code owner}'s, burning or not, let fall straight down from local {@code from}. */
+    private static net.minecraft.entity.projectile.ArrowEntity arrow(TestContext context, ServerPlayerEntity owner, BlockPos from, boolean burning) {
+        var at = context.getAbsolutePos(from);
+        var arrow = new net.minecraft.entity.projectile.ArrowEntity(context.getWorld(), at.getX() + 0.5, at.getY(), at.getZ() + 0.5,
+                new net.minecraft.item.ItemStack(net.minecraft.item.Items.ARROW), null);
+        arrow.setOwner(owner);
+        arrow.setVelocity(0, -1.5, 0);
+        if (burning) arrow.setOnFireFor(30);
+        context.getWorld().spawnEntity(arrow);
+        return arrow;
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "territoryRefusedSafe", tickLimit = 800)
     public void aRefusalInASafeZoneOrTheWildernessWritesNothing(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 700);
