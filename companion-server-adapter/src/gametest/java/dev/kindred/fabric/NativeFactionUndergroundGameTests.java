@@ -25,7 +25,7 @@ import net.minecraft.util.math.Vec3d;
  * blocks up a hill of stone 29 high that runs on 60 blocks past it toward its claim: 24 blocks of stone over it. It
  * has seen the sky on the hill's top first, as a player has before it goes down its mine. Its staged
  * inventory: 16 bread. No goal of its own. Asserted: its faction's choice is a claim outside the exclusion; in 1,200
- * ticks in the tunnel no faction walk is refused; then, set at the surface above, a faction walk is asked within 600.
+ * ticks in the tunnel no faction walk is refused, and its faction decisions go on there; then, set at the surface above, a faction walk is asked within 600.
  */
 public final class NativeFactionUndergroundGameTests implements FabricGameTest {
     private static final FactionSettings PACK = FactionSettings.parse(Map.of("border", "60000000", "spawnExclusion", "250"));
@@ -67,14 +67,14 @@ public final class NativeFactionUndergroundGameTests implements FabricGameTest {
                     var player = f.player();
                     player.getInventory().clear();
                     player.getInventory().setStack(0, new ItemStack(Items.BREAD, 16));
+                    // What it mined: four stacks of cobblestone, of which it keeps 64 and the rest is spare to sell.
+                    for (int slot = 1; slot <= 4; slot++) player.getInventory().setStack(slot, new ItemStack(Items.COBBLESTONE, 64));
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
-                    // On the hill's top first, under the sky, as a player is before it goes down its mine; then down in the tunnel.
+                    // On the hill's top first, under the sky, as a player is before it goes down its mine: there it founds
+                    // Red and chooses its first claim, a walk out of the exclusion.
                     player.refreshPositionAndAngles(200.5, ground + 29, 8.5, 0, 0);
                     context.assertTrue(!f.runtime.factionSawForTest(f.id), "Under the sky on the hill's top");
-                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
-                    player.setVelocity(Vec3d.ZERO);
-                    context.assertTrue(f.runtime.factionSawForTest(f.id), "Deep below the surface, by what it saw: 25 below where it saw the sky");
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NONE) == 1, "No goal");
                     f.runtime.factionsWorldForTest(PACK);
@@ -86,6 +86,10 @@ public final class NativeFactionUndergroundGameTests implements FabricGameTest {
                     context.assertTrue(choice != null && choice.kind() == FactionPlay.Kind.CLAIM, "A first claim chosen: " + choice);
                     context.assertTrue(Territory.Chunk.of(choice.target()).nearestToSpawn() >= PACK.spawnExclusion(),
                             "Its first claim outside the spawn exclusion: " + choice);
+                    // Then down in the tunnel, its claim's walk chosen.
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    context.assertTrue(f.runtime.factionSawForTest(f.id), "Deep below the surface, by what it saw: 25 below where it saw the sky");
                     start[0] = server.getTicks();
                 })
                 .createAndAdd(() -> {
@@ -96,6 +100,13 @@ public final class NativeFactionUndergroundGameTests implements FabricGameTest {
                     walks[0] = -2;
                     context.assertTrue(blocked[0] == 0, "No faction walk refused into the rock: " + blocked[0] + " refused, at "
                             + f.player().getBlockPos().toShortString());
+                    // Its faction play goes on below, decision after decision, though it asks no walk there: a sale or a claim
+                    // where it stands is not held up while it mines (on seed 20261030, held so, its founders sold nothing).
+                    long below = f.runtime.factionDecisionsForTest(f.id).stream().filter(t -> t > start[0]).count();
+                    context.assertTrue(below >= 2, "Its faction decisions go on below, after its first: " + below + " in " + BELOW + " ticks, every "
+                            + FactionsPlayer.DECIDE_TICKS + " due");
+                    int cobblestone = f.player().getInventory().count(Items.COBBLESTONE);
+                    context.assertTrue(cobblestone == 64, "It sold its spare where it stands, below, and kept 64: " + cobblestone + " held");
                     // Up at the surface above, where it may walk on.
                     var player = f.player();
                     int top = world.getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, 200, 8);

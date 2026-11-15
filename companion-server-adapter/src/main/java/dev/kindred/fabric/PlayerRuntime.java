@@ -10378,7 +10378,15 @@ final class PlayerRuntime {
         // Kindred's began below Y 50 215 times of 235, and it held no land. No walk is asked, so no refusal is counted and
         // no way made. A hollow, a box or a notch dug in a wall is not deep: there the walk is asked, refused and backed off,
         // and a way made out (F-35h, F-35i, #120), as before.
-        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && play.deepBelow(player)) return null;
+        // Its move is settled, as on arrival, so that its faction play goes on below at the decision interval: held, its
+        // next decision waited on a walk never asked, and on seed 20261030 its founders sold nothing (32 and 14 sales on
+        // main). Below, a decision is what it can do where it stands, or a walk home to defend (factionChoose).
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && play.deepBelow(player)) {
+            settledInFlight(entry, play, player, move);
+            play.move = null;
+            play.decidedAt = tick;
+            return null;
+        }
         // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
         // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
         // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
@@ -10607,8 +10615,12 @@ final class PlayerRuntime {
     private dev.kindred.core.factions.FactionPlay.Choice factionChoose(Entry entry, ServerPlayerEntity player) {
         if (market.holds().held(player.getUuid())) return null;
         var choices = dev.kindred.core.factions.FactionPlay.decide(factionView(entry, player));
-        if (choices.isEmpty()) return null;
-        var choice = choices.getFirst();
+        // Deep below the surface (M-06i2c1): the first it can do where it stands, a sale or a claim of the chunk it is in,
+        // or a walk home to defend; a walk elsewhere is chosen from the surface.
+        boolean deep = entry.factionPlay.deepBelow(player);
+        var choice = choices.stream().filter(c -> !deep || c.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
+                || !FactionsPlayer.moves(c, player)).findFirst().orElse(null);
+        if (choice == null) return null;
         entry.decided(server.getTicks(), "faction: " + choice.reason() + (choice.target().isEmpty() ? "" : " (" + choice.target() + ")"));
         return choice;
     }
