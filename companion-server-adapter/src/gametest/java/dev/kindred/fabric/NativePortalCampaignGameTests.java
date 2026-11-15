@@ -40,7 +40,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     f.player().getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
                     f.player().getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
-                    husk[0] = context.spawnMob(net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    husk[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
                     husk[0].setTarget(f.player());
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
@@ -139,7 +139,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     player.setHealth(8);
                     player.getHungerManager().setFoodLevel(10); // No natural healing while it fights.
                     player.getHungerManager().setSaturationLevel(0);
-                    zombie[0] = context.spawnMob(net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    zombie[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
                     zombie[0].setTarget(player);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
@@ -277,7 +277,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     BlockPos feet = player.getBlockPos();
                     BlockPos a = context.getAbsolutePos(new BlockPos(1, 2, 1)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
                     BlockPos corner = feet.getSquaredDistance(a) > feet.getSquaredDistance(b) ? new BlockPos(1, 2, 1) : new BlockPos(6, 2, 6);
-                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, net.minecraft.util.math.Vec3d.ofBottomCenter(corner));
+                    skeleton[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.SKELETON, net.minecraft.util.math.Vec3d.ofBottomCenter(corner));
                     skeleton[0].equipStack(net.minecraft.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
                     skeleton[0].setTarget(player);
                     f.runtime.nativeLifecycle(f.source, "resume", f.id);
@@ -366,7 +366,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
                     player.getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
                     player.getInventory().offHand.set(0, new ItemStack(Items.SHIELD));
-                    creeper[0] = context.spawnMob(net.minecraft.entity.EntityType.CREEPER, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    creeper[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.CREEPER, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
                     creeper[0].setTarget(player);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
@@ -646,7 +646,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     f.player().getInventory().setStack(0, new ItemStack(Items.BREAD, 5));
-                    zombie[0] = context.spawnMob(net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    zombie[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
                     zombie[0].setTarget(f.player());
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
@@ -693,7 +693,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     BlockPos feet = player.getBlockPos();
                     BlockPos a = context.getAbsolutePos(new BlockPos(1, 2, 1)), b = context.getAbsolutePos(new BlockPos(6, 2, 6));
                     BlockPos corner = feet.getSquaredDistance(a) > feet.getSquaredDistance(b) ? new BlockPos(1, 2, 1) : new BlockPos(6, 2, 6);
-                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, net.minecraft.util.math.Vec3d.ofBottomCenter(corner));
+                    skeleton[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.SKELETON, net.minecraft.util.math.Vec3d.ofBottomCenter(corner));
                     skeleton[0].equipStack(net.minecraft.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
                     skeleton[0].setTarget(player);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
@@ -916,7 +916,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     player.getInventory().setStack(0, new ItemStack(Items.WOODEN_SWORD)); // A long fight, so the creeper comes mid-way.
                     player.getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
                     player.getInventory().offHand.set(0, new ItemStack(Items.SHIELD));
-                    husk[0] = context.spawnMob(net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    husk[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
                     husk[0].setTarget(player);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
@@ -1157,7 +1157,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     f.player().getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
                     f.player().getInventory().setStack(1, new ItemStack(Items.BREAD, 5));
-                    husk[0] = context.spawnMob(net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
+                    husk[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.HUSK, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
                     husk[0].setTarget(f.player());
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
@@ -1213,7 +1213,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     inventory.setStack(0, new ItemStack(Items.IRON_SWORD));
                     inventory.setStack(1, new ItemStack(Items.BREAD, 5));
                     inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 16));
-                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
+                    skeleton[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.SKELETON, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
                     skeleton[0].setTarget(f.player());
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
@@ -1272,7 +1272,7 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(10); // No natural healing while it fights.
                     player.getHungerManager().setSaturationLevel(0);
                     BlockPos at = player.getBlockPos();
-                    skeleton[0] = context.spawnMob(net.minecraft.entity.EntityType.SKELETON, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
+                    skeleton[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.SKELETON, new net.minecraft.util.math.Vec3d(6.5, 2, 6.5));
                     skeleton[0].setTarget(player);
                     zombie[0] = net.minecraft.entity.EntityType.ZOMBIE.create(context.getWorld());
                     zombie[0].refreshPositionAndAngles(at.getX() - 0.5, at.getY(), at.getZ() + 0.5, 270, 0); // The next cell west.
