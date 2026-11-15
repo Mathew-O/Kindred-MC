@@ -29,9 +29,20 @@ public interface Strategist extends AutoCloseable {
      * if it did.
      */
     record Outcome(Optional<StrategyAdvice> advice, long inputTokens, long cachedTokens, long outputTokens, long millis,
-                   Optional<String> failure) {
+                   Optional<String> failure, long cacheWriteTokens) {
+        /** With no cache write reported: {@link #NOT_REPORTED}. */
+        public Outcome(Optional<StrategyAdvice> advice, long inputTokens, long cachedTokens, long outputTokens, long millis, Optional<String> failure) {
+            this(advice, inputTokens, cachedTokens, outputTokens, millis, failure, NOT_REPORTED);
+        }
+
         static Outcome failed(String why, long millis) { return new Outcome(Optional.empty(), 0, 0, 0, millis, Optional.of(why)); }
+
+        /** The same, with the tokens written to the prompt cache as the provider reported them (F-19g). */
+        public Outcome withCacheWrite(long tokens) { return new Outcome(advice, inputTokens, cachedTokens, outputTokens, millis, failure, tokens); }
     }
+
+    /** A cache write the provider did not report (F-19g): the OpenAI-compatible path, or a call that never reached it. */
+    long NOT_REPORTED = -1;
 
     /** Ask for advice on {@code report}; places in the reply must lie near {@code reported}. */
     CompletableFuture<Outcome> advise(String report, List<StrategyAdvice.Place> reported);
@@ -127,12 +138,20 @@ public interface Strategist extends AutoCloseable {
      * {@code Chronicle.check} decides whether it is kept.
      */
     record Page(Optional<String> text, List<Long> cites, long inputTokens, long cachedTokens, long outputTokens, long millis,
-                Optional<String> failure) {
+                Optional<String> failure, long cacheWriteTokens) {
         public Page {
             cites = cites == null ? List.of() : cites.stream().filter(java.util.Objects::nonNull).toList();
             Objects.requireNonNull(text);
             Objects.requireNonNull(failure);
         }
+
+        /** With no cache write reported: {@link #NOT_REPORTED}. */
+        public Page(Optional<String> text, List<Long> cites, long inputTokens, long cachedTokens, long outputTokens, long millis, Optional<String> failure) {
+            this(text, cites, inputTokens, cachedTokens, outputTokens, millis, failure, NOT_REPORTED);
+        }
+
+        /** The same, with the tokens written to the prompt cache as the provider reported them (F-19g). */
+        public Page withCacheWrite(long tokens) { return new Page(text, cites, inputTokens, cachedTokens, outputTokens, millis, failure, tokens); }
 
         static Page failed(String why, long millis) { return new Page(Optional.empty(), List.of(), 0, 0, 0, millis, Optional.of(why)); }
 
@@ -203,11 +222,20 @@ public interface Strategist extends AutoCloseable {
      * is a failure: nothing of it is said or done, and the player's fixed reply is used instead.
      */
     record Line(Optional<String> say, Ask ask, Optional<String> item, String reason, long inputTokens, long cachedTokens, long outputTokens,
-                long millis, Optional<String> failure) {
+                long millis, Optional<String> failure, long cacheWriteTokens) {
         public Line {
             Objects.requireNonNull(ask);
             Objects.requireNonNull(item);
         }
+
+        /** With no cache write reported: {@link #NOT_REPORTED}. */
+        public Line(Optional<String> say, Ask ask, Optional<String> item, String reason, long inputTokens, long cachedTokens, long outputTokens,
+                    long millis, Optional<String> failure) {
+            this(say, ask, item, reason, inputTokens, cachedTokens, outputTokens, millis, failure, NOT_REPORTED);
+        }
+
+        /** The same, with the tokens written to the prompt cache as the provider reported them (F-19g). */
+        public Line withCacheWrite(long tokens) { return new Line(say, ask, item, reason, inputTokens, cachedTokens, outputTokens, millis, failure, tokens); }
 
         /** A line that asks nothing. */
         public Line(Optional<String> say, String reason, long inputTokens, long cachedTokens, long outputTokens, long millis, Optional<String> failure) {
