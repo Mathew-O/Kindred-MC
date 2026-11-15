@@ -1,0 +1,254 @@
+{
+  "kind": "death",
+  "player": "Echo",
+  "tick": 10948,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -26,
+    -32,
+    -18
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.65966944615058,
+    8.0,
+    16.340330553849416
+  ],
+  "yaw": 45.0,
+  "pitch": -51.94478,
+  "health": 14.166666,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 12
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:feather",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:leather",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 34
+        }
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 51
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:cooked_beef",
+        "count": 1
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 1
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 1
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 57
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:raw_copper",
+        "count": 8
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 17
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 11
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 15
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 5
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:raw_iron",
+        "count": 4
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:rotten_flesh",
+        "count": 5
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:string",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 4,
+  "timeOfDay": 10948,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: fight back - Fight zombie",
+  "task": "Fight zombie",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Echo was doomed to fall by Zombie",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "exploreStalls": 1,
+    "exploreFailures": 2,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 6593
+  },
+  "log": [
+    "[08:44:43] [Server thread/INFO]: Echo native_goto COMPLETED [Pick up iron ingot]",
+    "[08:44:44] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[08:44:44] [Server thread/INFO]: Echo native_break COMPLETED [Dig down toward iron: clear -10, 21, -3]",
+    "[08:44:44] [Server thread/INFO]: Echo native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:3654]",
+    "[08:44:45] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3664]",
+    "[08:44:45] [Server thread/INFO]: Echo native_place COMPLETED [Place a crafting table]",
+    "[08:44:45] [Server thread/INFO]: Echo native_craft COMPLETED [Craft stone pickaxe]",
+    "[08:44:46] [Server thread/INFO]: Echo native_break CANCELLED: A hostile mob is attacking; fight back first [Pick up the crafting table]",
+    "[08:44:49] [Server thread/INFO]: Echo native_fight BLOCKED: Lost sight of the target [Fight zombie]",
+    "[08:44:49] [Server thread/INFO]: Echo native_place COMPLETED [Take cover from skeleton]",
+    "[08:44:49] [Server thread/INFO]: Echo native_break COMPLETED [Mine iron ore at -10, 18, -3]",
+    "[08:44:49] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -11, 15, 0 [Explore the cave toward iron]",
+    "[08:44:49] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -13, 19, -3 [Explore the cave toward iron]",
+    "[08:44:50] [Server thread/INFO]: Echo native_stair COMPLETED [Climb to the cave toward iron: stairs up 1]",
+    "[08:44:50] [Server thread/INFO]: Echo native_bridge COMPLETED [Climb to the cave toward iron: bridge 1]",
+    "[08:44:50] [Server thread/INFO]: Echo native_stair CANCELLED: A hostile mob is attacking; fight back first [Climb to the cave toward iron: stairs up 2]",
+    "[08:44:51] [Server thread/INFO]: Echo native_goto BLOCKED: No walkable route toward -12, 15, -2 [Back off from zombie the way it came]",
+    "[08:44:52] [Server thread/INFO]: Echo native_fight BLOCKED: The fight broke off [Fight zombie]",
+    "[08:44:52] [Server thread/INFO]: Echo native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3664]",
+    "[08:44:53] [Server thread/INFO]: Echo native_wait CANCELLED: A hostile mob is attacking; fight back first [Rest to heal]"
+  ]
+}

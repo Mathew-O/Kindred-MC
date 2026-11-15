@@ -1,0 +1,156 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 108040,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    139,
+    64,
+    184
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.471077666377965,
+    8.753199980521202,
+    16.46053895247286
+  ],
+  "yaw": -362.5981,
+  "pitch": 4.768826,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 1.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 7
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 64
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:rabbit_foot",
+        "count": 2
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 9
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 27
+      }
+    }
+  ],
+  "selected": 1,
+  "timeOfDay": 12039,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 155, 72, 224",
+  "task": "try elsewhere, toward 155, 72, 224",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {},
+    "exploreHeading": "west",
+    "exploreStalls": 1,
+    "exploreFailures": 9,
+    "stuckSpells": 4,
+    "stuckLevel": 4,
+    "leftOut": 7456
+  },
+  "log": [
+    "[08:33:48] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[08:33:48] [Server thread/INFO]: Sol native_goto COMPLETED [Cut through east for logs: advance]",
+    "[08:33:50] [Server thread/INFO]: Sol native_goto COMPLETED [Explore east for logs]",
+    "[08:33:50] [Server thread/INFO]: Sol native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3664]",
+    "[08:33:51] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:51] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:52] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:52] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:52] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:53] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:53] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:53] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:54] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:54] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:54] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:54] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:54] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:55] [Server thread/INFO]: Sol native_goto COMPLETED [Approach rabbit]",
+    "[08:33:56] [Server thread/INFO]: Sol native_goto COMPLETED [To where it last saw game at 154, 72, 199]",
+    "[08:33:57] [Server thread/INFO]: Sol native_goto COMPLETED [Pick up food]"
+  ]
+}

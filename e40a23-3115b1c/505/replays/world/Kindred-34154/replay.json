@@ -1,0 +1,614 @@
+{
+  "kind": "death",
+  "player": "Kindred",
+  "tick": 34154,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -8,
+    40,
+    34
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.551482793202496,
+    8.304975381296458,
+    16.51289401165262
+  ],
+  "yaw": 7998.548,
+  "pitch": 18.159489,
+  "health": 20.0,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 15,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:cooked_porkchop",
+        "count": 5
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:acacia_log",
+        "count": 3
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:dirt",
+        "count": 42
+      }
+    },
+    {
+      "slot": 4,
+      "stack": {
+        "id": "minecraft:stone_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 5,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 43
+      }
+    },
+    {
+      "slot": 6,
+      "stack": {
+        "id": "minecraft:wooden_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 3
+        }
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stone_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 114
+        }
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:iron_pickaxe",
+        "count": 1,
+        "components": {
+          "minecraft:damage": 7
+        }
+      }
+    },
+    {
+      "slot": 9,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 10,
+      "stack": {
+        "id": "minecraft:bucket",
+        "count": 2
+      }
+    },
+    {
+      "slot": 11,
+      "stack": {
+        "id": "minecraft:gravel",
+        "count": 52
+      }
+    },
+    {
+      "slot": 12,
+      "stack": {
+        "id": "minecraft:flint",
+        "count": 7
+      }
+    },
+    {
+      "slot": 13,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 14,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 15,
+      "stack": {
+        "id": "minecraft:diorite",
+        "count": 6
+      }
+    },
+    {
+      "slot": 16,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 64
+      }
+    },
+    {
+      "slot": 17,
+      "stack": {
+        "id": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    {
+      "slot": 18,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 19,
+      "stack": {
+        "id": "minecraft:coal",
+        "count": 2
+      }
+    },
+    {
+      "slot": 20,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 21,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 22,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 23,
+      "stack": {
+        "id": "minecraft:andesite",
+        "count": 44
+      }
+    },
+    {
+      "slot": 24,
+      "stack": {
+        "id": "minecraft:granite",
+        "count": 49
+      }
+    },
+    {
+      "slot": 25,
+      "stack": {
+        "id": "minecraft:iron_ingot",
+        "count": 3
+      }
+    },
+    {
+      "slot": 26,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 27,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 21
+      }
+    },
+    {
+      "slot": 28,
+      "stack": {
+        "id": "minecraft:furnace",
+        "count": 1
+      }
+    },
+    {
+      "slot": 33,
+      "stack": {
+        "id": "minecraft:iron_sword",
+        "count": 1
+      }
+    },
+    {
+      "slot": 34,
+      "stack": {
+        "id": "minecraft:cobblestone",
+        "count": 64
+      }
+    },
+    {
+      "slot": 35,
+      "stack": {
+        "id": "minecraft:acacia_planks",
+        "count": 3
+      }
+    },
+    {
+      "slot": 38,
+      "stack": {
+        "id": "minecraft:iron_chestplate",
+        "count": 1
+      }
+    },
+    {
+      "slot": 40,
+      "stack": {
+        "id": "minecraft:shield",
+        "count": 1
+      }
+    }
+  ],
+  "selected": 8,
+  "timeOfDay": 10154,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Iron: in deep water with no way out it can reach",
+  "task": "Get out of the water: to dry ground",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "Kindred drowned",
+  "ticks": 1200,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        14,
+        0,
+        17
+      ],
+      [
+        15,
+        2,
+        16
+      ],
+      [
+        15,
+        1,
+        17
+      ],
+      [
+        15,
+        1,
+        16
+      ],
+      [
+        15,
+        0,
+        17
+      ],
+      [
+        15,
+        0,
+        16
+      ],
+      [
+        16,
+        2,
+        16
+      ],
+      [
+        16,
+        1,
+        16
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        12,
+        0,
+        14
+      ],
+      [
+        16,
+        0,
+        14
+      ],
+      [
+        16,
+        4,
+        14
+      ],
+      [
+        16,
+        8,
+        14
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "STONE": [
+        [
+          7,
+          16,
+          2
+        ],
+        [
+          7,
+          16,
+          3
+        ],
+        [
+          7,
+          13,
+          0
+        ],
+        [
+          7,
+          15,
+          2
+        ],
+        [
+          7,
+          15,
+          1
+        ],
+        [
+          7,
+          14,
+          0
+        ],
+        [
+          7,
+          14,
+          1
+        ],
+        [
+          6,
+          16,
+          1
+        ],
+        [
+          6,
+          12,
+          0
+        ],
+        [
+          6,
+          12,
+          1
+        ],
+        [
+          6,
+          15,
+          0
+        ],
+        [
+          5,
+          16,
+          3
+        ],
+        [
+          5,
+          16,
+          2
+        ],
+        [
+          5,
+          13,
+          1
+        ],
+        [
+          5,
+          13,
+          0
+        ],
+        [
+          5,
+          15,
+          3
+        ],
+        [
+          5,
+          15,
+          2
+        ],
+        [
+          5,
+          15,
+          1
+        ],
+        [
+          5,
+          14,
+          1
+        ],
+        [
+          5,
+          14,
+          2
+        ],
+        [
+          5,
+          14,
+          0
+        ],
+        [
+          13,
+          0,
+          17
+        ],
+        [
+          14,
+          2,
+          16
+        ],
+        [
+          14,
+          1,
+          17
+        ],
+        [
+          14,
+          1,
+          16
+        ],
+        [
+          14,
+          0,
+          18
+        ],
+        [
+          14,
+          0,
+          16
+        ],
+        [
+          15,
+          3,
+          16
+        ],
+        [
+          15,
+          2,
+          17
+        ],
+        [
+          15,
+          2,
+          15
+        ],
+        [
+          15,
+          1,
+          18
+        ],
+        [
+          15,
+          1,
+          15
+        ],
+        [
+          15,
+          0,
+          18
+        ],
+        [
+          15,
+          0,
+          15
+        ],
+        [
+          16,
+          2,
+          17
+        ],
+        [
+          16,
+          2,
+          14
+        ],
+        [
+          16,
+          1,
+          17
+        ],
+        [
+          16,
+          1,
+          15
+        ],
+        [
+          16,
+          0,
+          17
+        ],
+        [
+          16,
+          0,
+          16
+        ],
+        [
+          17,
+          2,
+          16
+        ],
+        [
+          17,
+          1,
+          16
+        ]
+      ]
+    },
+    "strandedAt": [
+      16,
+      11,
+      16
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 186,
+    "exploreHeading": "east",
+    "exploreStalls": 0,
+    "exploreFailures": 4,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 7262
+  },
+  "log": [
+    "[08:48:43] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 6, 39, 52]",
+    "[08:48:43] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 6, 38, 51]",
+    "[08:48:43] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 6, 39, 51]",
+    "[08:48:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: step up]",
+    "[08:48:43] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 6, 40, 51]",
+    "[08:48:44] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 7, 39, 51]",
+    "[08:48:44] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 7, 40, 51]",
+    "[08:48:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: step up]",
+    "[08:48:44] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 7, 41, 51]",
+    "[08:48:44] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 7, 40, 50]",
+    "[08:48:44] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 7, 41, 50]",
+    "[08:48:44] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: step up]",
+    "[08:48:45] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 7, 42, 50]",
+    "[08:48:45] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 8, 41, 50]",
+    "[08:48:45] [Server thread/INFO]: Kindred native_break COMPLETED [Climb toward the surface for water: clear 8, 42, 50]",
+    "[08:48:45] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb toward the surface for water: step up]",
+    "[08:48:45] [Server thread/INFO]: Kindred native_break COMPLETED [Mine coal ore at 8, 42, 49]",
+    "[08:48:46] [Server thread/INFO]: Kindred native_break COMPLETED [Mine coal ore at 8, 43, 50]",
+    "[08:48:48] [Server thread/INFO]: Kindred native_goto CANCELLED: In deep water; up for air first [Explore north for water]",
+    "[08:48:51] [Server thread/INFO]: Kindred native_goto BLOCKED: Route to 6, 30, 51 is blocked [Get out of the water: to dry ground]"
+  ]
+}

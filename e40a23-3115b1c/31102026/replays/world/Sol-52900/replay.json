@@ -1,0 +1,766 @@
+{
+  "kind": "spell",
+  "player": "Sol",
+  "tick": 52900,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    75,
+    60,
+    396
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.46544578681437,
+    8.0,
+    16.369031190724797
+  ],
+  "yaw": -378.48312,
+  "pitch": 18.113125,
+  "health": 20.0,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [
+    {
+      "slot": 0,
+      "stack": {
+        "id": "minecraft:sand",
+        "count": 61
+      }
+    },
+    {
+      "slot": 1,
+      "stack": {
+        "id": "minecraft:rabbit",
+        "count": 2
+      }
+    },
+    {
+      "slot": 2,
+      "stack": {
+        "id": "minecraft:rabbit_hide",
+        "count": 1
+      }
+    },
+    {
+      "slot": 3,
+      "stack": {
+        "id": "minecraft:oak_log",
+        "count": 2
+      }
+    },
+    {
+      "slot": 7,
+      "stack": {
+        "id": "minecraft:stick",
+        "count": 4
+      }
+    },
+    {
+      "slot": 8,
+      "stack": {
+        "id": "minecraft:oak_planks",
+        "count": 2
+      }
+    }
+  ],
+  "selected": 0,
+  "timeOfDay": 4899,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: no progress here for a while - try elsewhere, toward 115, 68, 412",
+  "task": "try elsewhere, toward 115, 68, 412",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "no progress for 3600 ticks",
+  "ticks": 3600,
+  "pass": "out within 3600 ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last 1800 ticks",
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          23,
+          8,
+          0
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          16,
+          8,
+          17
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          16,
+          8,
+          18
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          25,
+          8,
+          12
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          16,
+          9,
+          20
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          12,
+          0,
+          0
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [
+      {
+        "at": [
+          20,
+          7,
+          24
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          20,
+          9,
+          7
+        ],
+        "n": 1
+      }
+    ],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [
+      [
+        17,
+        0,
+        24
+      ]
+    ],
+    "dug": [
+      [
+        13,
+        0,
+        0
+      ],
+      [
+        13,
+        1,
+        0
+      ],
+      [
+        13,
+        2,
+        0
+      ],
+      [
+        13,
+        3,
+        0
+      ],
+      [
+        13,
+        3,
+        2
+      ],
+      [
+        14,
+        0,
+        0
+      ],
+      [
+        14,
+        0,
+        1
+      ],
+      [
+        14,
+        1,
+        0
+      ],
+      [
+        14,
+        1,
+        1
+      ],
+      [
+        14,
+        2,
+        0
+      ],
+      [
+        14,
+        2,
+        2
+      ],
+      [
+        14,
+        3,
+        0
+      ],
+      [
+        15,
+        0,
+        0
+      ],
+      [
+        15,
+        0,
+        1
+      ],
+      [
+        15,
+        1,
+        0
+      ],
+      [
+        15,
+        3,
+        0
+      ],
+      [
+        12,
+        1,
+        0
+      ],
+      [
+        12,
+        2,
+        0
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        17,
+        4,
+        24
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "LOG": [
+        [
+          20,
+          10,
+          25
+        ],
+        [
+          20,
+          11,
+          25
+        ],
+        [
+          20,
+          11,
+          26
+        ],
+        [
+          20,
+          11,
+          27
+        ]
+      ],
+      "WATER": [
+        [
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          2,
+          1
+        ],
+        [
+          0,
+          2,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ],
+        [
+          0,
+          2,
+          4
+        ],
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          1,
+          2,
+          0
+        ],
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          2,
+          0
+        ]
+      ],
+      "LEAVES": [
+        [
+          22,
+          12,
+          24
+        ],
+        [
+          22,
+          12,
+          26
+        ],
+        [
+          22,
+          12,
+          28
+        ],
+        [
+          22,
+          10,
+          23
+        ],
+        [
+          22,
+          10,
+          24
+        ],
+        [
+          22,
+          10,
+          25
+        ],
+        [
+          22,
+          10,
+          26
+        ],
+        [
+          22,
+          10,
+          29
+        ],
+        [
+          22,
+          11,
+          23
+        ],
+        [
+          22,
+          11,
+          25
+        ],
+        [
+          22,
+          11,
+          26
+        ],
+        [
+          22,
+          11,
+          27
+        ],
+        [
+          22,
+          11,
+          29
+        ],
+        [
+          21,
+          12,
+          24
+        ],
+        [
+          21,
+          12,
+          25
+        ],
+        [
+          21,
+          12,
+          27
+        ],
+        [
+          21,
+          12,
+          28
+        ],
+        [
+          21,
+          12,
+          29
+        ],
+        [
+          21,
+          10,
+          24
+        ],
+        [
+          21,
+          10,
+          25
+        ],
+        [
+          21,
+          10,
+          26
+        ],
+        [
+          21,
+          10,
+          27
+        ],
+        [
+          21,
+          10,
+          29
+        ],
+        [
+          21,
+          11,
+          24
+        ],
+        [
+          21,
+          11,
+          26
+        ],
+        [
+          21,
+          11,
+          27
+        ],
+        [
+          21,
+          9,
+          24
+        ],
+        [
+          21,
+          9,
+          25
+        ],
+        [
+          21,
+          9,
+          26
+        ],
+        [
+          21,
+          9,
+          27
+        ],
+        [
+          18,
+          12,
+          27
+        ],
+        [
+          18,
+          12,
+          28
+        ],
+        [
+          18,
+          10,
+          23
+        ],
+        [
+          18,
+          10,
+          26
+        ],
+        [
+          18,
+          11,
+          23
+        ],
+        [
+          18,
+          11,
+          25
+        ],
+        [
+          18,
+          11,
+          26
+        ],
+        [
+          18,
+          11,
+          27
+        ],
+        [
+          18,
+          9,
+          23
+        ],
+        [
+          20,
+          12,
+          24
+        ],
+        [
+          20,
+          12,
+          25
+        ],
+        [
+          20,
+          12,
+          26
+        ],
+        [
+          20,
+          12,
+          27
+        ],
+        [
+          20,
+          12,
+          28
+        ],
+        [
+          20,
+          10,
+          23
+        ],
+        [
+          20,
+          10,
+          24
+        ],
+        [
+          20,
+          10,
+          26
+        ],
+        [
+          20,
+          10,
+          27
+        ],
+        [
+          20,
+          10,
+          28
+        ],
+        [
+          20,
+          10,
+          29
+        ],
+        [
+          20,
+          11,
+          23
+        ],
+        [
+          20,
+          11,
+          24
+        ],
+        [
+          20,
+          11,
+          28
+        ],
+        [
+          20,
+          11,
+          29
+        ],
+        [
+          20,
+          9,
+          25
+        ],
+        [
+          20,
+          9,
+          26
+        ],
+        [
+          20,
+          9,
+          27
+        ],
+        [
+          19,
+          12,
+          23
+        ],
+        [
+          19,
+          12,
+          24
+        ],
+        [
+          19,
+          12,
+          25
+        ],
+        [
+          19,
+          12,
+          26
+        ],
+        [
+          19,
+          12,
+          27
+        ],
+        [
+          19,
+          10,
+          23
+        ],
+        [
+          19,
+          10,
+          24
+        ],
+        [
+          19,
+          10,
+          25
+        ],
+        [
+          19,
+          10,
+          26
+        ],
+        [
+          19,
+          10,
+          27
+        ],
+        [
+          19,
+          10,
+          28
+        ],
+        [
+          19,
+          11,
+          23
+        ],
+        [
+          19,
+          11,
+          24
+        ],
+        [
+          19,
+          11,
+          25
+        ],
+        [
+          19,
+          11,
+          26
+        ],
+        [
+          19,
+          11,
+          27
+        ],
+        [
+          19,
+          11,
+          28
+        ],
+        [
+          19,
+          9,
+          23
+        ],
+        [
+          19,
+          9,
+          24
+        ],
+        [
+          19,
+          9,
+          25
+        ]
+      ]
+    },
+    "strandedAt": [
+      14,
+      2,
+      2
+    ],
+    "strandedWalks": 1,
+    "strandedAgo": 3745,
+    "exploreHeading": "west",
+    "exploreStalls": 0,
+    "exploreFailures": 4,
+    "stuckSpells": 2,
+    "stuckLevel": 2,
+    "leftOut": 6838
+  },
+  "log": [
+    "[08:22:44] [Server thread/INFO]: Sol native_break BLOCKED: Break preconditions changed before dispatch; nothing was broken [Climb toward the surface for logs: clear 90, 62, 397]",
+    "[08:22:44] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 90, 60, 397]",
+    "[08:22:44] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[08:22:44] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 90, 60, 397]",
+    "[08:22:45] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[08:22:45] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 90, 60, 397]",
+    "[08:22:45] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[08:22:45] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 91, 68, 414 [Climb toward the surface for logs: back the way it came]",
+    "[08:22:45] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 89, 61, 397]",
+    "[08:22:45] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[08:22:46] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 91, 68, 413 [Climb toward the surface for logs: back the way it came]",
+    "[08:22:46] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 89, 62, 398]",
+    "[08:22:46] [Server thread/INFO]: Sol native_wait COMPLETED [Climb toward the surface for logs: let what falls settle]",
+    "[08:22:46] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 89, 62, 398]",
+    "[08:22:46] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[08:22:46] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward 91, 69, 416 [Climb toward the surface for logs: back the way it came]",
+    "[08:22:47] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for logs: clear 88, 63, 398]",
+    "[08:22:47] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: step up]",
+    "[08:22:47] [Server thread/INFO]: Sol native_goto COMPLETED [Jump down from the ledge]",
+    "[08:22:49] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for logs: back the way it came]"
+  ]
+}
