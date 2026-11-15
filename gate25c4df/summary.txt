@@ -26,3 +26,4 @@ confirm-main-1.4 (d257164f, only flagged): 0 min, peak 1056 MB, All 2 required t
 confirm-main-1.5 (d257164f, only flagged): 0 min, peak 1175 MB, All 2 required tests passed, fence-top 0, disk 5.6G
 confirm-main-1.6 (d257164f, only flagged): 0 min, peak 985 MB, 1 required tests failed, fence-top 0, disk 5.6G
 confirm-main-2.1 (d257164f, only flagged): 0 min, peak 1035 MB, All 2 required tests passed, fence-top 1, disk 5.6G
+confirm-main-2.2 (d257164f, only flagged): 0 min, peak 1389 MB, All 2 required tests passed, fence-top 0, disk 5.6G
