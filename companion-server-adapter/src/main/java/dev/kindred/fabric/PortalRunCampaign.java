@@ -7112,6 +7112,9 @@ final class PortalRunCampaign {
     /** A while between tries at setting its bed down after a refusal, and the refusals after which it gives the night up. */
     static final long BED_DOWN_BACKOFF = 200;
     static final int BED_DOWN_REFUSALS = 3;
+    /** Steps clear of its bed's room tonight, and the most a night (F-25c4di1d). */
+    private int bedClearTries;
+    static final int BED_CLEAR_TRIES = 3;
 
     /**
      * One of its bed's own steps has run, as the runtime saw it end. The one break of its bed on waking (F-25c4di1), however it
@@ -7221,6 +7224,7 @@ final class PortalRunCampaign {
             bedTries = 0;
             bedDownRefusals = 0;
             bedDownAgainAt = -1;
+            bedClearTries = 0;
             bedGoingAt = null;
             bedRoomFor = null;
             if (carriedBedAt == null || player.isSleeping()) return Optional.empty();
@@ -7312,6 +7316,14 @@ final class PortalRunCampaign {
         }
         // Refused where it would set it down (F-25c4di1c): not again for a while, and after a few, not tonight.
         if (bedDownRefusals >= BED_DOWN_REFUSALS || lastTick < bedDownAgainAt) return Optional.empty();
+        // Its own body over the bed's cells (F-25c4di1d): vanilla sets no bed down where an entity stands in them, and its
+        // body at the pocket's edge is one. It steps to its cell's middle first, a few times a night at most.
+        var bedCells = new Box(foot).union(new Box(bedRoomFor.getLast()));
+        if (player.getBoundingBox().intersects(bedCells) && bedClearTries < BED_CLEAR_TRIES) {
+            bedClearTries++;
+            return Optional.of(new Task("native_goto", Map.of("x", String.valueOf(feet.getX()), "y", String.valueOf(feet.getY()),
+                    "z", String.valueOf(feet.getZ()), "range", "0", "centre_within", "0.15"), "Step clear of its bed's room"));
+        }
         bedGoingAt = foot;
         return Optional.of(new Task("native_bed", Map.of("x", String.valueOf(foot.getX()), "y", String.valueOf(foot.getY() - 1),
                 "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), BED_DOWN_LABEL));
