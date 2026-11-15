@@ -1020,6 +1020,30 @@ A month's size is shown only as a projection, so labelled, from the last measure
 The 50 ms line is the tick's budget. F-31g measured 23.6 ms mean at 20 tps with 8 players, and M-06k's 12-game-day
 rules run 26.93 ms mean with 3.66% over 50 ms. A day near those is as measured before.
 
+#### Go or no-go for the month run (M-06k8)
+
+Fill this in from the soak before the owner starts the month (RUNNER 2's, `tools/eval/run.py` as in
+[M-06k7](evidence/M-06k7.md): 8 players, the factions pack's defaults, bases off, 20 ticks a second, 36 game days, then
+`tools/soak/preflight.py --console <run>/console.txt --db <copy> --heap-max-mb 10240`).
+- **Go** needs every row with a threshold within it, and no STOP.
+- A row marked **open** has no threshold yet: its soak figure is to be read by the lead and the owner, not passed
+  or failed here.
+- A threshold is either set in code (the report's), or follows from a measured bound; none is guessed.
+
+| Check | Threshold, and where it comes from | Measured before, and on what | Tonight's soak |
+| --- | --- | --- | --- |
+| Heap ceiling | STOP if the high water is over 90% of `-Xmx`: 9,216 MB of `-Xmx10G` (`preflight.py`, `HEAP_STOP_SHARE`) | 1,069 MB at most at 20 tps, 8 players, 13 minutes; 1,336 MB at most in a 30-minute start, 6 GB heap (F-31g) | |
+| Database size | open: the host's free disk is not recorded here. The month is a projection, about 16.5 to 18 GB over 2,160 game days, with the Record kept as today (F-31c's option A, the owner's decision pending; the storage table above) | 66.5 MB after 6 game days with its write-ahead log, 8 players (`keepdb8-4c92b41`); 58.4 MB after five starts (F-31g) | |
+| Database growth a game day | open: the report shows it, and a month only as a projection | about 12 MB on days 1 and 2, then 6.2 to 8.9 MB (7.7 a day over days 3 to 6), 8 players (`keepdb8-4c92b41`); about 13 MB, game days 1.5 to 3, 8 players (F-31g, s1) | |
+| Write-ahead log | open: the report does not read it. The measured bound is about 4.2 MB, back to 4 MB after a checkpoint (`journal_size_limit`, F-31f) | at most 4.19 MB over five starts (F-31g); 61.6 to 77.6 MB during a day-30 ledger check, its 25 to 36 s, then 4.0 MB 10 s after (F-31f, a synthetic 1,994 MB store) | |
+| A restart's knowledge-web rebuild | open: the start line `Knowledge web rebuilt from the Record: …` (F-32c, #360) | the read 2 to 5 ms on a 3,000,000-event Record on sqlite-jdbc 3.50.3, with or without `ANALYZE` (F-32c); 0 to 1 ms at GameTest restarts | |
+| Log volume a game day | open | `latest.log` 1.46 MB, with a 0.44 MB `.gz`, over 6 game days, 8 players (`keepdb8-4c92b41`); 4.9 MB (0.28 MB gzipped) over 12 days, 3 players (`keepdb-101-d640518`) | |
+| Mean tick | WATCH, per day, if the p99 is over 50 ms or more than 5% of ticks are (`preflight.py`, `P99_WATCH_MS`, `OVER50_WATCH_SHARE`); no threshold on the mean itself | 23.6 ms, 1.3% over 50 ms, 8 players at 20 tps, early game (F-31g); 26.93 ms, 3.66% over 50 ms, 12 game days, 8 players, sprint on (M-06k) | |
+| p99 tick | as above | `tick query` P99 37.5 to 55.1 ms, once 188.2 ms (F-31g) | |
+| Worst tick | open: the report gives the longest, with its tick, and judges nothing on it | 307 ms, the run's third tick (F-31g); 1,126.47 ms, with 27 ticks over 200 ms, 12 game days, 8 players, sprint on (M-06k) | |
+| STOP lines | none for a go: an integrity check not `ok`, a `ledger_check` that differs, or a heap over its 90% (`preflight.py`) | none in the reports so far ([M-06k7](evidence/M-06k7.md) has the report on GameTest consoles only) | |
+| ERROR lines | each read, by kind, and each one WATCH (`preflight.py`); open whether any count stops a go | not yet counted on a soak | |
+
 ### Every start
 
 1. **Start the server.** Kindred loads its records first and says how many:
