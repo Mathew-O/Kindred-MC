@@ -329,6 +329,9 @@ final class StrategistBridge implements AutoCloseable {
             long used = page.inputTokens() - page.cachedTokens() + (page.cachedTokens() + 9) / 10 + page.outputTokens();
             if (used > 0) charge(state, used - reserved, Use.PAGES);
             KindredMod.LOGGER.info("{} chronicle call: {}", name, dev.kindred.model.ModelUsage.of(page)); // F-19g
+            // F-33d: each sentence left out of the page for ordering events itself, so a run can count them and why.
+            if (!page.dropped().isEmpty()) KindredMod.LOGGER.info("{} chronicle: {} sentence(s) left out, ordering events itself: {}", name,
+                    page.dropped().size(), page.dropped());
             if (page.failure().isPresent()) KindredMod.LOGGER.info("{} chronicle: no page ({})", name, page.failure().get());
             paged.complete(page.failure().isPresent() ? Optional.empty() : Optional.of(page));
         }));
