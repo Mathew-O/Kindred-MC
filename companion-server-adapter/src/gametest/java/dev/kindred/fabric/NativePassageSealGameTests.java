@@ -81,7 +81,7 @@ public final class NativePassageSealGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(20);
                     context.getWorld().setTimeOfDay(1000);
                     for (int i = 0; i < count; i++) {
-                        zombies[i] = context.spawnMob(EntityType.ZOMBIE, new Vec3d(6.5 + i, 2, 1.5));
+                        zombies[i] = FixtureGround.hostile(context, EntityType.ZOMBIE, new Vec3d(6.5 + i, 2, 1.5));
                         zombies[i].setBaby(false);
                         zombies[i].setTarget(player);
                     }

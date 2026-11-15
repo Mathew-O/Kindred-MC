@@ -62,7 +62,7 @@ public final class NativeWeaponToHandGameTests implements FabricGameTest {
                     inventory.selectedSlot = 8;
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
-                    zombie[0] = context.spawnMob(net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
+                    zombie[0] = FixtureGround.hostile(context, net.minecraft.entity.EntityType.ZOMBIE, new net.minecraft.util.math.Vec3d(1.5, 2, 6.5));
                     zombie[0].setTarget(player);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
