@@ -18054,6 +18054,29 @@ final class PlayerRuntime {
             }
             if (totals[0] > 0) KindredMod.LOGGER.info("Kindred action bound: {} settled actions older than 30 game days pruned, {} day tallies, in {} ms on the writer",
                     totals[0], totals[1], totals[2]);
+            pruneRefusals(database, check, olderThanMs, ACTION_FOLD_PASSES, new long[3]);
+        });
+    }
+
+    /**
+     * The refusals' bound's passes (F-34c2a), after the action bound, on the same check: refused attempts on a faction's
+     * land older than thirty game days pruned with a day's tally, as many passes as the action bound may take.
+     */
+    private static void pruneRefusals(SqliteCompanionStore database, SqliteCompanionStore.LedgerCheck check, long olderThanMs, int passes, long[] totals) {
+        database.pruneTerritoryRefusals(check, olderThanMs, ACTION_FOLD_MAX).whenComplete((prune, failed) -> {
+            if (failed != null) {
+                KindredMod.LOGGER.warn("Refusals' bound could not run: {}", failed.toString());
+                return;
+            }
+            totals[0] += prune.refusals();
+            totals[1] += prune.days();
+            totals[2] += prune.millis();
+            if (prune.refusals() == ACTION_FOLD_MAX && passes > 1) {
+                pruneRefusals(database, check, olderThanMs, passes - 1, totals);
+                return;
+            }
+            if (totals[0] > 0) KindredMod.LOGGER.info("Kindred refusals' bound: {} refused attempts older than 30 game days pruned, {} day tallies, in {} ms on the writer",
+                    totals[0], totals[1], totals[2]);
         });
     }
 
