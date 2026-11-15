@@ -14868,6 +14868,12 @@ final class PlayerRuntime {
         return started;
     }
 
+    /** The strategist's bridge (or the memory alone), for fixtures to read its budgets. */
+    StrategistBridge strategistForTest() {
+        requireThread();
+        return memory;
+    }
+
     /** A strategist given in place of the environment's, for fixtures (E-44, E-16d). */
     void strategistForFixtures(dev.kindred.model.Strategist given) {
         memory.close();
@@ -18339,7 +18345,7 @@ final class PlayerRuntime {
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
         var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
-                chronicle.kept(), wire.stateTold());
+                chronicle.kept(), wire.stateTold(), wire.refusals());
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;

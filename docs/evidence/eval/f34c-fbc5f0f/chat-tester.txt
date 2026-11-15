@@ -1,0 +1,29 @@
+[19:13:50] [Render thread/INFO]: [System] [CHAT] This world plays Factions.
+[19:13:50] [Render thread/INFO]: [System] [CHAT] Factions rules:
+[19:13:50] [Render thread/INFO]: [System] [CHAT]  Play: survival in factions: found or join one, claim land by its power, earn coins at the market
+[19:13:50] [Render thread/INFO]: [System] [CHAT]  Building: the server's edit policy; claimed land only by its faction, the same for people and AI players
+[19:13:50] [Render thread/INFO]: [System] [CHAT]  Fighting: only between members of different factions, never in safe zones; joining a faction is joining the match; leave it any time
+[19:13:50] [Render thread/INFO]: [System] [CHAT]  Items: none handed out
+[19:13:50] [Render thread/INFO]: [System] [CHAT]  Deaths: respawn as usual; a death to another faction costs two power
+[19:13:50] [Render thread/INFO]: [System] [CHAT]  Winning: no end: the factions' standing by land and power
+[19:14:07] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[19:14:27] [Render thread/INFO]: [System] [CHAT] Outsider joined the game
+[19:14:46] [Render thread/INFO]: [System] [CHAT] Not invited to Kindred_Hold
+[19:15:02] [Render thread/INFO]: [System] [CHAT] Joined Kindred_Hold
+[19:15:04] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Stone Age]
+[19:15:06] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Stone Age]
+[19:15:10] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Getting an Upgrade]
+[19:15:16] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Getting an Upgrade]
+[19:16:11] [Render thread/INFO]: [System] [CHAT] [faction] Kindred: Heads up Tester: Claimed minecraft:overworld:-29:-16 for Kindred_Hold (1 / 40).
+[19:16:15] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Stone Age]
+[19:16:20] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Getting an Upgrade]
+[19:16:55] [Render thread/INFO]: [System] [CHAT] [faction] Kindred: claim: where minecraft:overworld:-30:-16, what Claimed minecraft:overworld:-30:-16 for Kindred_Hold (2 / 40).
+[19:17:34] [Render thread/INFO]: [System] [CHAT] [faction] Kindred: Tester, news from the faction channel: Claimed minecraft:overworld:-29:-17 for Kindred_Hold (3 / 40).
+[19:17:45] [Render thread/INFO]: [System] [CHAT] Sol has made the advancement [Monster Hunter]
+[19:17:51] [Render thread/INFO]: [System] [CHAT] Sol was slain by Zombie
+[19:18:48] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Acquire Hardware]
+[19:23:43] [Render thread/INFO]: [System] [CHAT] Sol was slain by Spider
+[19:27:07] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Acquire Hardware]
+[19:28:04] [Render thread/INFO]: [System] [CHAT] Echo has made the advancement [Suit Up]
+[19:28:55] [Render thread/INFO]: [System] [CHAT] Tester was slain by Zombie
+[19:33:04] [Render thread/INFO]: [System] [CHAT] Kindred has made the advancement [Suit Up]

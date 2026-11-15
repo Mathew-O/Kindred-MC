@@ -283,6 +283,11 @@ KINDRED_STRATEGIST_MODEL=<model id>            optional; the provider's default 
 KINDRED_STRATEGIST_PACE=steady|realtime        optional; default steady (see below)
 KINDRED_STRATEGIST_DAILY_TOKENS=<tokens>       optional; daily budget for all players (steady 100000, realtime 10000000)
 KINDRED_STRATEGIST_PLAYER_DAILY_TOKENS=<n>     optional; daily budget per player (steady 50000, realtime 5000000)
+KINDRED_VOICE_DAILY_TOKENS=<tokens>            optional; the voice's own daily budget for all players (default as advice's)
+KINDRED_VOICE_PLAYER_DAILY_TOKENS=<n>          optional; the voice's own daily budget per player (default as advice's)
+KINDRED_CHRONICLE_DAILY_TOKENS=<tokens>        optional; the Chronicle's pages' own daily budget for all players (default as advice's)
+KINDRED_CHRONICLE_PLAYER_DAILY_TOKENS=<n>      optional; the pages' own daily budget per player (default as advice's)
+KINDRED_ADVICE=off                             optional; no stance and no questions asked of it (the voice and the pages, if used, still are)
 KINDRED_STRATEGIST_EFFORT=low|medium|high      optional; default low
 KINDRED_STRATEGIST_THINKING=off|on             optional; default off
 ```
@@ -300,6 +305,12 @@ OPENROUTER_API_KEY    openai/gpt-4o-mini
 ```
 Model line-ups change often: check the provider's current list, and set `KINDRED_STRATEGIST_MODEL` if a default has been retired. With several keys set, the first in this list is used unless `KINDRED_STRATEGIST_PROVIDER` names one. A single `KINDRED_STRATEGIST_API_KEY` also works; its provider is recognised by the key's prefix (`sk-ant-`, `sk-or-`, `gsk_`, `xai-`, `AIza`, then `sk-` for OpenAI), and a Mistral or DeepSeek key needs the provider named. Any other server speaking OpenAI's chat completions, such as a local Ollama or LM Studio, needs only `KINDRED_STRATEGIST_BASE_URL` and `KINDRED_STRATEGIST_MODEL`, and no key. All but Anthropic go through the JDK's HTTP client and the Gson the server already carries, so they also work from the release jar. The reply is asked for with a strict JSON schema (JSON mode for DeepSeek, or once more in JSON mode when a provider refuses the schema) and validated in core exactly as Claude's is. Anthropic's own models can be reached from the release jar the same way: `KINDRED_STRATEGIST_PROVIDER=openai-compatible`, `KINDRED_STRATEGIST_BASE_URL=https://api.anthropic.com/v1`, the key in `KINDRED_STRATEGIST_API_KEY` and the model named. Every request to Anthropic's server then asks for no thinking, as the SDK route does: its newer models otherwise think first, and a rescue's short reply came back empty (F-29). Nothing is cached on that route, so each consultation reads its whole report, about 6,700 tokens.
 The pace sets how closely it follows play. Steady asks on the big changes (the goal starting, a death, a new stage) and otherwise every few minutes, within the contract's default budgets. Real time asks as often as the planning lane allows (every ten seconds per player at most), and also whenever something new happens: a fight with a new foe, a hit that costs six health or more, nightfall or daybreak. Its advice lapses after a minute of game time unless renewed. Answers come back in about two seconds: requests go at low effort without thinking first, with the instructions cached. Measured on one report, that was about 1.9 seconds every time, against 2.8 to 4.0 at the model's own default, with the same advice. Before the Minecraft guide was added (below), a question cost about $0.00013 with the instructions cached, so real time at the full rate was about five cents an hour per player; the guide is cached with the instructions, and a question now reads about 4,500 cached tokens and sends 200 to 300.
+
+**Each use has its own budget (E-20d).** The stance, its questions and rescue plans share advice's budgets (the two
+`KINDRED_STRATEGIST_*_DAILY_TOKENS`). The voice's talk and Wire lines, and the Chronicle's pages, each have their own,
+the same sizes unless set. One use's budget spent leaves the others' untouched; the per-minute rates are shared. For
+the voice without stance consultations, set `KINDRED_ADVICE=off` (and `KINDRED_RESCUE=off` for no rescue plans). An
+evaluation run's `strategist=off` does the same, whatever its `voice` is set to.
 
 It also has a say in what comes next (F-19c). A reply may set a focus for the same five minutes: food first (hunt, and by day go out and look for animals when none is in sight, until well stocked) or wood first (logs while a tree stands). A reply's note may also teach a habit the player keeps in that world from then on: carry three more food, pack a second spare pickaxe for the work below, dig its own way rather than explore caves, or dig in for the night at dusk. A habit needs a note saying why, at most four are kept, and the strategist can retire one. A focus or a habit only reorders or resizes the route's ordinary jobs; fights, shelter and healing still come first. The habits live with their notes in the memory file below (shown as `"habit": "MORE_FOOD"` on a note). Delete the note, or the file, to make the player drop a habit; each goal the player starts in that world gets the habits it has learned there.
 
@@ -881,6 +892,10 @@ In a faction world:
   2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
   The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
   for a long run; for eight players and a month, see "A month-long run: what grows on disk" below.
+  The same line counts the messages the Wire refused since start, by why and on which channel, for example
+  `Wire 3 refused since start (BUDGET on team 1, DUPLICATE on faction 2)` (F-34e). It never says what a refused message
+  said, who sent it or to whom. A refusal now and then is routine (a channel's minute spent, the same news twice), but a
+  count that keeps climbing on one channel means news players should have had is not going out.
 - Land (M-06d): `/faction claim` claims the chunk you stand in for 100 coins (an officer or the leader), the first
   anywhere legal and the rest touching your land, never next to another faction's land (allies excepted), never within
   500 blocks of spawn, beyond the border, in the Nether or the End, or over capacity (the lesser of power and 80);

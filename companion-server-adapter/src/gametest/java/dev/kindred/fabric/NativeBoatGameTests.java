@@ -53,6 +53,9 @@ public final class NativeBoatGameTests implements FabricGameTest {
                     // The test server sets no simulation distance, so only players tick outside the test's own chunks;
                     // a live server ticks the ground round its players. The channel's chunks are kept ticking here.
                     forceChunks(world, o, true);
+                    // Its channel and shores, twenty over the plot and wider than it, put back as the test ends, passed or
+                    // failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-3, -4, -5), o.add(32, 4, 5));
                     for (int x = -3; x <= 32; x++) for (int z = -5; z <= 5; z++) for (int y = -4; y <= 4; y++) {
                         world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
@@ -146,6 +149,9 @@ public final class NativeBoatGameTests implements FabricGameTest {
                     // Far off the test grid: batches reuse the same ground, and a sea left there floods the next tests.
                     BlockPos o = origin[0] = f.player().getBlockPos().add(4000, 24, 0).toImmutable();
                     forceSea(world, o, true);
+                    // The sea put back as the test ends, passed or failed (F-22c75b): left standing, its twenty thousand
+                    // blocks of water lay wherever the grid reaches next.
+                    FixtureGround.keep(context, o.add(-24, -6, -24), o.add(56, 4, 24));
                     // Open sea, five deep, with no shore within twenty blocks of the player.
                     for (int x = -24; x <= 56; x++) for (int z = -24; z <= 24; z++) {
                         world.setBlockState(o.add(x, -6, z), Blocks.STONE.getDefaultState());
