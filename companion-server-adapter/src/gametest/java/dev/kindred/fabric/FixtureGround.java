@@ -74,6 +74,20 @@ final class FixtureGround {
         }
     }
 
+    /**
+     * A hostile mob that acts as in a live world, at {@code relative} (F-22c80). {@link TestContext#spawnMob} clears
+     * every goal and task of the mob it spawns: a zombie told {@code setTarget(player)} keeps its target and stands where
+     * it spawned (0 blows in 300 ticks, 7 blocks off), where one spawned here closes in and strikes (8 blows). A fixture
+     * whose mob is to come at the player spawns it here; one that wants it still keeps {@code spawnMob} or turns its AI
+     * off. Persistent, so it never despawns mid-test.
+     */
+    static <E extends net.minecraft.entity.mob.MobEntity> E hostile(TestContext context, net.minecraft.entity.EntityType<E> type,
+                                                                     net.minecraft.util.math.Vec3d relative) {
+        E mob = context.spawnEntity(type, relative);
+        mob.setPersistent();
+        return mob;
+    }
+
     /** What lies from {@code min} to {@code max} now, to be put back by {@link #restore}. */
     static void keep(TestContext context, BlockPos min, BlockPos max) {
         var world = context.getWorld();
@@ -125,7 +139,9 @@ final class FixtureGround {
         var world = context.getWorld();
         var self = stateOf(context);
         var others = FixtureBounds.othersPlots(self);
-        int left = 0, spared = 0;
+        // The ground a live neighbour keeps is as much its own as its plot (F-22c75b): left as it is, and counted apart.
+        var othersKept = FixtureBounds.othersKept(self);
+        int left = 0, spared = 0, leftKept = 0, sparedKept = 0;
         // The last kept first: a box kept after the fixture laid ground over an earlier one holds that ground, and the
         // earlier box what was there before it.
         for (int k = boxes.size() - 1; k >= 0; k--) {
@@ -143,11 +159,16 @@ final class FixtureGround {
                     left++;
                     continue;
                 }
+                if (within(othersKept, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5)) {
+                    leftKept++;
+                    continue;
+                }
                 world.setBlockState(at, state, Block.NOTIFY_LISTENERS | Block.FORCE_STATE | Block.SKIP_DROPS);
             }
             var box = new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 8, max.getZ() + 1);
             for (Entity entity : world.getEntitiesByClass(Entity.class, box, e -> !(e instanceof PlayerEntity))) {
                 if (within(others, entity.getX(), entity.getY(), entity.getZ())) spared++;
+                else if (within(othersKept, entity.getX(), entity.getY(), entity.getZ())) sparedKept++;
                 else entity.discard();
             }
             held(world, min, max, false);
@@ -155,6 +176,10 @@ final class FixtureGround {
         if (left > 0 || spared > 0) {
             KindredMod.LOGGER.info("{}: its ground put back but {} blocks and {} entities within another test's plot left as they are",
                     self == null ? "A fixture" : self.getTemplatePath(), left, spared);
+        }
+        if (leftKept > 0 || sparedKept > 0) {
+            KindredMod.LOGGER.info("{}: its ground put back but {} blocks and {} entities within ground a live test keeps left as they are",
+                    self == null ? "A fixture" : self.getTemplatePath(), leftKept, sparedKept);
         }
     }
 
