@@ -264,7 +264,8 @@ final class StrategistBridge implements AutoCloseable {
             state.talking = false;
             // Checked here again, whoever served it: a provider that let a place or a command through is still refused.
             var line = given == null || given.say().isEmpty() ? given : Strategist.Line.checked(conversation, given.say().get(), given.ask().name(),
-                    given.item().orElse(null), given.reason(), given.inputTokens(), given.cachedTokens(), given.outputTokens(), given.millis());
+                    given.item().orElse(null), given.reason(), given.inputTokens(), given.cachedTokens(), given.outputTokens(), given.millis())
+                    .withCacheWrite(given.cacheWriteTokens());
             if (failure != null || line == null) { // The reservation stands: it may still have been billed.
                 KindredMod.LOGGER.warn("{} voice: no line for {}: {}", name, listener, String.valueOf(failure));
                 answered.complete(Optional.empty());
@@ -272,6 +273,7 @@ final class StrategistBridge implements AutoCloseable {
             }
             long used = line.inputTokens() - line.cachedTokens() + (line.cachedTokens() + 9) / 10 + line.outputTokens();
             if (used > 0) charge(state, used - reserved, Use.VOICE);
+            KindredMod.LOGGER.info("{} voice call: {}", name, dev.kindred.model.ModelUsage.of(line)); // F-19g
             if (state.context != null) {
                 state.context.conversations++;
                 state.context.inputTokens += line.inputTokens();
@@ -326,6 +328,7 @@ final class StrategistBridge implements AutoCloseable {
             }
             long used = page.inputTokens() - page.cachedTokens() + (page.cachedTokens() + 9) / 10 + page.outputTokens();
             if (used > 0) charge(state, used - reserved, Use.PAGES);
+            KindredMod.LOGGER.info("{} chronicle call: {}", name, dev.kindred.model.ModelUsage.of(page)); // F-19g
             if (page.failure().isPresent()) KindredMod.LOGGER.info("{} chronicle: no page ({})", name, page.failure().get());
             paged.complete(page.failure().isPresent() ? Optional.empty() : Optional.of(page));
         }));
@@ -471,6 +474,7 @@ final class StrategistBridge implements AutoCloseable {
             }
             long used = outcome.inputTokens() - outcome.cachedTokens() + (outcome.cachedTokens() + 9) / 10 + outcome.outputTokens();
             if (used > 0) charge(state, used - reserved, Use.ADVICE); // Settle the reservation to what was used; without usage it stands.
+            KindredMod.LOGGER.info("{} strategist call: {}", name, dev.kindred.model.ModelUsage.of(outcome)); // F-19g
             state.context.consultations++;
             state.context.inputTokens += outcome.inputTokens();
             state.context.outputTokens += outcome.outputTokens();
