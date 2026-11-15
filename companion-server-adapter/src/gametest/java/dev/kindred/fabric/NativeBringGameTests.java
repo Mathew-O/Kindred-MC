@@ -620,7 +620,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 net.minecraft.entity.Entity::isAlive).isEmpty();
                         boolean cartBroken = !cartThere && cartInCell.remove(front);
                         if (cartThere) cartInCell.add(front);
-                        if (onBed == 3 && offFront[0] == null && cartBroken && !jobIn && hal != null
+                        // Or, if the cart was broken before the trapdoor was shut, the first tick the trapdoor is shut with the cart's
+                        // item lying in the cell (so a bring that takes another order is still staged).
+                        if (onBed == 3 && offFront[0] == null && (cartBroken || shut) && !jobIn && hal != null
                                 && !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, i -> i.isAlive() && i.getStack().isOf(Items.MINECART)).isEmpty()) {
                             offFront[0] = front;
                             if (world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems,
@@ -641,12 +643,12 @@ public final class NativeBringGameTests implements FabricGameTest {
                         // Held there until twenty ticks after the front's rail is up (a break's own collection had walked it back
                         // on to its stand), then let go.
                         if (front.equals(offFront[0]) && up != null && offFrom[0] < 0) offFrom[0] = Math.max(up, world.getTime()) + 20;
-                        if (front.equals(offFront[0]) && (offFrom[0] < 0 || world.getTime() < offFrom[0])) {
+                        if (hal != null && front.equals(offFront[0]) && (offFrom[0] < 0 || world.getTime() < offFrom[0])) {
                             BlockPos stand = front.south(2);
                             hal.refreshPositionAndAngles(stand.getX() + 0.5 + 0.3, hal.getY(), stand.getZ() + 0.5, hal.getYaw(), hal.getPitch());
                             hal.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                         }
-                        if (front.equals(offFront[0]) && offFrom[0] >= 0 && offLeft[0] == null && world.getTime() - offFrom[0] >= 600) {
+                        if (hal != null && front.equals(offFront[0]) && offFrom[0] >= 0 && offLeft[0] == null && world.getTime() - offFrom[0] >= 600) {
                             var left = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems,
                                     i -> i.isAlive() && (i.getStack().isOf(Items.MINECART) || i.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)));
                             if (!left.isEmpty()) offLeft[0] = left.stream().map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())
@@ -708,6 +710,15 @@ public final class NativeBringGameTests implements FabricGameTest {
                     if (onBed == 1 || onBed == 2) context.assertTrue(bedFrom[0] >= 0, "Hal staged up on the bed's foot with the front's rail up");
                     if (onBed == 3) {
                         context.assertTrue(offFront[0] != null && offFrom[0] >= 0, "Hal staged off its stand as the cart in the cell under the trapdoor was broken, and let go");
+                        // A bring that ended before 600 ticks after Hal was let go is judged as it ended: nothing of the cart's or
+                        // boat's left in the cell, and the cart in Hal's hand.
+                        if (offLeft[0] == null && offFront[0] != null && f.player() != null) {
+                            var cellEnd = new net.minecraft.util.math.Box(offFront[0]).union(new net.minecraft.util.math.Box(offFront[0].north(3))).stretch(0, 2, 0).expand(0.5);
+                            var lying = context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellEnd,
+                                    i -> i.isAlive() && (i.getStack().isOf(Items.MINECART) || i.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)));
+                            offLeft[0] = !lying.isEmpty() ? "as the bring ended: " + lying.stream().map(i -> i.getStack() + " at " + i.getPos()).toList()
+                                    : count(f.player().getInventory(), Items.MINECART) < 1 ? "as the bring ended, none in the cell, but Hal holds no minecart" : "";
+                        }
                         context.assertTrue(offLeft[0] != null && offLeft[0].isEmpty(), "The cart's and boat's items taken up within 600 ticks: " + offLeft[0]);
                     }
                     context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
