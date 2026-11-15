@@ -124,6 +124,74 @@ public final class NativeFactionDeathGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * A person on the death screen is still online, so is told as every online member is (M-06e: "both factions' members
+     * online are told"): once vanilla has taken the dead body out of the world (20 ticks after death), until it respawns,
+     * a member's death still reaches that person, at once, not on respawn (F-34c1a, from RUNNER 2's f34c3 run).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "factionDeathScreen", tickLimit = 1400)
+    public void aPersonOnTheDeathScreenIsToldOfAMembersDeath(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1300);
+        UUID[] bodies = new UUID[1];
+        ServerPlayerEntity[] person = new ServerPlayerEntity[1];
+        boolean[] dead = {false, false};
+        int[] since = {0};
+        List<String> cleoHeard = new ArrayList<>();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    f.runtime.factionsWorldForTest(WIDE);
+                    f.runtime.createNative(f.source, "Ada");
+                })
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED
+                            && statuses.getFirst().connected(), "Ada established");
+                    bodies[0] = statuses.getFirst().nativeId();
+                    person[0] = MockPlayers.survival(context, "Cleo", new BlockPos(1, 2, 1));
+                    f.runtime.heardForFixtures((who, text) -> { if (who == person[0]) cleoHeard.add(text.getString()); });
+                    context.assertTrue(f.runtime.faction(f.source, person[0].getUuid(), "create", List.of("Red", "RED", "red")).accepted(), "Cleo founds Red");
+                    context.assertTrue(f.runtime.faction(f.source, person[0].getUuid(), "invite", List.of("Ada")).accepted(), "Cleo invites Ada");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.faction(f.source, bodies[0], "join", List.of("Red")).accepted(), "Ada joins Red"))
+                .createAndAdd(() -> {
+                    if (!dead[1]) {
+                        var source = person[0].getDamageSources().generic();
+                        person[0].damage(source, 1000f);
+                        dead[1] = person[0].isDead();
+                        if (dead[1]) f.runtime.playerDied(person[0], source);
+                    }
+                    context.assertTrue(dead[1], "Cleo died");
+                })
+                .createAndAdd(() -> {
+                    // The death screen: the body out of the world, the person still on the server, not respawned. A mock
+                    // player's connection is not the server's to tick, so its ticks are run here as its connection would
+                    // (as NativeNightsGameTests does): vanilla takes a dead body out of the world 20 ticks after its death.
+                    if (!person[0].isRemoved()) person[0].playerTick();
+                    context.assertTrue(person[0].isRemoved() && person[0].isDead(), "Cleo's body taken out of the world, not respawned");
+                    context.assertTrue(server(f).getPlayerManager().getPlayer(person[0].getUuid()) == person[0], "Cleo still on the server");
+                    since[0] = cleoHeard.size();
+                })
+                .createAndAdd(() -> {
+                    var ada = player(f, bodies[0]);
+                    if (!dead[0]) {
+                        ada.damage(ada.getDamageSources().generic(), 1000f);
+                        dead[0] = ada.isDead();
+                    }
+                    context.assertTrue(dead[0], "Ada died");
+                })
+                .createAndAdd(() -> {
+                    var after = cleoHeard.subList(since[0], cleoHeard.size());
+                    context.assertTrue(person[0].isRemoved() && person[0].isDead(), "Cleo still on the death screen");
+                    context.assertTrue(after.stream().filter(l -> l.contains("Ada died")).count() == 1, "Cleo, on the death screen, hears Ada died once: " + after);
+                    f.runtime.heardForFixtures(null);
+                    f.runtime.stop();
+                    server(f).getPlayerManager().remove(person[0]);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** Outside a faction world, or out of any faction, a death is only written: nobody is told of it. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "factionDeathNone", tickLimit = 1200)
     public void aDeathOutOfAnyFactionIsWrittenAndToldToNoOne(TestContext context) {
