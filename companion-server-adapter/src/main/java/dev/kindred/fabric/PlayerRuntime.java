@@ -3077,8 +3077,14 @@ final class PlayerRuntime {
         if (!running || !ready) return;
         long tick = server.getTicks();
         if (attentionScheduler.currentTick() == tick) return;
+        // M-06k7: the tick before this one, as the server timed it (kept at its count modulo the ring's size once it ends),
+        // and the heap in use once a second, for the cost line's window.
+        long[] tickTimes = server.getTickTimes();
+        if (tick > 1 && tickTimes.length > 0) tickWindow.add(tickTimes[(int) ((tick - 1) % tickTimes.length)], tick - 1);
         if (tick % 20 == 0) {
             teamCoordinator.handleTickExpiry(tick);
+            Runtime memory = Runtime.getRuntime();
+            heapHighWater = Math.max(heapHighWater, memory.totalMemory() - memory.freeMemory());
         }
         attentionScheduler.beginTick(tick, System.nanoTime());
         blocksScannedThisTick = 0;
@@ -18167,6 +18173,29 @@ final class PlayerRuntime {
             }
             if (totals[0] > 0) KindredMod.LOGGER.info("Kindred action bound: {} settled actions older than 30 game days pruned, {} day tallies, in {} ms on the writer",
                     totals[0], totals[1], totals[2]);
+            pruneRefusals(database, check, olderThanMs, ACTION_FOLD_PASSES, new long[3]);
+        });
+    }
+
+    /**
+     * The refusals' bound's passes (F-34c2a), after the action bound, on the same check: refused attempts on a faction's
+     * land older than thirty game days pruned with a day's tally, as many passes as the action bound may take.
+     */
+    private static void pruneRefusals(SqliteCompanionStore database, SqliteCompanionStore.LedgerCheck check, long olderThanMs, int passes, long[] totals) {
+        database.pruneTerritoryRefusals(check, olderThanMs, ACTION_FOLD_MAX).whenComplete((prune, failed) -> {
+            if (failed != null) {
+                KindredMod.LOGGER.warn("Refusals' bound could not run: {}", failed.toString());
+                return;
+            }
+            totals[0] += prune.refusals();
+            totals[1] += prune.days();
+            totals[2] += prune.millis();
+            if (prune.refusals() == ACTION_FOLD_MAX && passes > 1) {
+                pruneRefusals(database, check, olderThanMs, passes - 1, totals);
+                return;
+            }
+            if (totals[0] > 0) KindredMod.LOGGER.info("Kindred refusals' bound: {} refused attempts older than 30 game days pruned, {} day tallies, in {} ms on the writer",
+                    totals[0], totals[1], totals[2]);
         });
     }
 
@@ -18529,13 +18558,19 @@ final class PlayerRuntime {
         }
     }
 
+    /** The server's ticks since the cost line was last written, and the heap's high water then (M-06k7). */
+    private final dev.kindred.core.metrics.TickWindow tickWindow = new dev.kindred.core.metrics.TickWindow();
+    private long heapHighWater;
+
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
         var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
-                chronicle.kept(), wire.stateTold(), wire.refusals());
+                chronicle.kept(), wire.stateTold(), wire.refusals(), tickWindow.describe(), heapHighWater / (1024 * 1024));
+        tickWindow.reset();
+        heapHighWater = 0;
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;

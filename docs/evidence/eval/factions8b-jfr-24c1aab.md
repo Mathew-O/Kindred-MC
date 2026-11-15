@@ -26,7 +26,24 @@ Status: a diagnostic. It changes no code and claims no fix. The performance camp
 | 102 | 4ba244e (sprint on) | 26.21 | 773.75 (21,180) | 757 | 6 | 1,355 |
 | 102 | 24c1aab (sprint off, JFR on) | 41.32 | 2,836.28 (60,866) | 9,484 | 4 | 1,273 |
 
-**The rise in mean tick and in ticks over 50 ms is not separated.** Three things differ from 4ba244e at once: the build (222 merges into main between 4ba244e and 24c1aab, among them #256, far-column sight), sprint off, and the recorder's own cost. These two runs cannot say how much each contributes. A control is queued (seed 102, the same jar, sprint off, the recorder off), and its result will be added here.
+**The rise in mean tick and in ticks over 50 ms is not separated.** Three things differ from 4ba244e at once: the build (222 merges into main between 4ba244e and 24c1aab, among them #256, far-column sight), sprint off, and the recorder's own cost. These two runs cannot say how much each contributes. The control (seed 102, the same jar, sprint off, the recorder off) is below: most of the rise is the recorder's.
+
+## The control: the recorder's own cost (2026-11-15)
+- **The run:** seed 102 again with the same jar (sha256 6236f3d3…), `sprint=off`, with the recorder off; nothing else changed. It ran 04:14 to 05:15 UTC, exit 0, 72,000 ticks, audit clean (0 violations, 3 factions, 6 claims).
+- **The question (the lead):** how much of the recorded run's 41.32 ms mean and 9,484 ticks over 50 ms is the recorder's?
+
+| Seed 102 | Mean tick, ms | Worst tick, ms (at run tick) | Ticks over 50 ms | Over 200 ms | Heap at most, MB |
+| --- | --- | --- | --- | --- | --- |
+| 4ba244e (sprint on) | 26.21 | 773.75 (21,180) | 757 | 6 | 1,355 |
+| 24c1aab, sprint off, JFR on | 41.32 | 2,836.28 (60,866) | 9,484 | 4 | 1,273 |
+| 24c1aab, sprint off, JFR off (the control) | 30.63 | 624.70 (260) | 2,330 | 3 | 1,057 |
+
+- **The recorder's share:** about 10.7 ms of the mean (41.32 against 30.63) and about 7,150 of the ticks over 50 ms (9,484 against 2,330).
+  - So most of the rise in the recorded runs is the recording itself, with settings this heavy (5 ms samples, parks and monitor waits over 5 ms with stacks).
+  - The attribution's shares above are within the recorded runs. Their absolute times are inflated by the same amount.
+- **What is left against 4ba244e:** +4.4 ms of mean and +1,573 ticks over 50 ms. The build and sprint off are still not separated, and both runs are one run each.
+- **The worst tick:** the control's is at run tick 260, the start of the run. It had no portal-exit hitch like the recorded run's 2.8 s, and its world differed from the first animal on (vanilla's per-run randomness).
+- **For M-06k6's month-run cost:** the control's 30.63 ms mean and 2,330 ticks over 50 ms are the figures for this build and world without a recorder (one seed, 8 players, sprint off).
 
 ## How a tick is attributed
 - **Finding the ticks:** a tool reads each recording through `jdk.jfr.consumer`. A tick is a run of the server thread's samples and parks inside `MinecraftServer.tick`, with no gap of 8 ms or more between them. Frame names are put back through the pinned Yarn mappings (1.21.1+build.3).
