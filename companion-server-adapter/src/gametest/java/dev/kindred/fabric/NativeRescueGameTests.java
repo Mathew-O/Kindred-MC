@@ -96,6 +96,9 @@ public final class NativeRescueGameTests implements FabricGameTest {
     private static void pit(TestContext context, NativePaidSkillsGameTests.Fixture f, Stub stub, BlockPos[] base) {
         var world = context.getWorld();
         BlockPos b = base[0] = f.player().getBlockPos().up(20).toImmutable();
+        // The pit, twenty over the plot and wider than it, and the glass its player sets in it, put back as the test ends,
+        // passed or failed (F-22c75b): left standing, its obsidian lay over a later test's plot.
+        FixtureGround.keep(context, b.add(-5, -2, -5), b.add(5, 8, 5));
         // A block of obsidian seven across and four deep, a shaft one wide and three deep in its middle, the sky above.
         for (int x = -3; x <= 3; x++) for (int z = -3; z <= 3; z++) {
             for (int y = -1; y <= 2; y++) world.setBlockState(b.add(x, y, z), Blocks.OBSIDIAN.getDefaultState());
@@ -415,6 +418,8 @@ public final class NativeRescueGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos b = base[0] = f.player().getBlockPos().up(20).toImmutable();
+                    // The pit and its player's glass, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, b.add(-5, -2, -5), b.add(5, 8, 5));
                     for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) {
                         for (int y = -1; y <= 2; y++) {
                             boolean shaft = Math.abs(x) <= 2 && Math.abs(z) <= 2 && y >= 0;
