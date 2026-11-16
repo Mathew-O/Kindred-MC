@@ -34,12 +34,34 @@ public final class NativeToldTreesGameTests implements FabricGameTest {
      * oaks, Dune at the far end with no tree within its sight or its exploring's reach round where it started. Cutter cuts
      * its first logs and tells the team where; Dune walks there and cuts its own. In E-40's iteration 12
      * (`e40a12-66a7c0a`) on the desert seed 31102026, Echo cut its first logs 150 blocks from spawn in the first minute,
-     * and Kindred looked for trees for the whole run and never made a table. Staged: a strip of sand nine wide on stone,
-     * open to the sky, daylight held; eight oaks at its far end; both players with bread and nothing else. Passes once
+     * and Kindred looked for trees for the whole run and never made a table. Staged: a strip of sand eleven wide on stone,
+     * laid flush with the floor beside it (F-22c89), open to the sky, daylight held; eight oaks at its far end; both players with bread and nothing else. Passes once
      * Dune holds a log it cut.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "toldTrees", tickLimit = 4000)
     public void toldWhereATeammateFoundTreesAPlayerWithNoWoodWalksThereForItsLogs(TestContext context) {
+        scene(context, false);
+    }
+
+    /**
+     * As above, with Dune set down 31 blocks off the strip's south edge as its goal starts, where its own exploring took it
+     * on main's run 43688149140 (F-22c89): it explored south, walked off the strip, then two blocks over the floor, and
+     * never reached a log. Passes,
+     * as above, once Dune holds a log it cut.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "toldTreesOffEdge", tickLimit = 4000)
+    public void setDownOffTheStripsEdgeAPlayerToldOfTreesStillWalksThereForItsLogs(TestContext context) {
+        scene(context, true);
+    }
+
+    /** The height of the topmost block with a collision shape in the column at {@code at}, looking down from {@code from}. */
+    private static int floorBeside(net.minecraft.server.world.ServerWorld world, BlockPos at, int from) {
+        BlockPos c = new BlockPos(at.getX(), from, at.getZ());
+        while (c.getY() > world.getBottomY() && world.getBlockState(c).getCollisionShape(world, c).isEmpty()) c = c.down();
+        return c.getY();
+    }
+
+    private static void scene(TestContext context, boolean offEdge) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3900);
         UUID[] ids = new UUID[2], players = new UUID[2]; // Dune, Cutter
         BlockPos[] at = new BlockPos[1];
@@ -65,10 +87,22 @@ public final class NativeToldTreesGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     world.setTimeOfDay(1000);
                     var dune = player(f, players[0]);
-                    BlockPos p = at[0] = dune.getBlockPos().add(0, 0, 0).toImmutable();
-                    FixtureGround.keep(context, p.add(-8, -2, -5), p.add(FAR + 12, 12, 5));
+                    // The strip is laid flush with the floor beside it (F-22c89): built two over it, its long sides were
+                    // a drop a player with nothing to place could not climb back, and a player whose exploring took it
+                    // off the strip never reached the trees.
+                    BlockPos spawn = dune.getBlockPos().toImmutable();
+                    int floor = floorBeside(world, spawn.add(0, 0, 6), spawn.getY() + 3);
+                    for (int x = 0; x <= FAR + 12; x += 24) {
+                        for (int side : new int[] {-6, 6}) {
+                            int there = floorBeside(world, spawn.add(x, 0, side), spawn.getY() + 3);
+                            context.assertTrue(there == floor, "The floor beside the strip is level: " + there + " at " + spawn.add(x, 0, side).toShortString() + ", not " + floor);
+                        }
+                    }
+                    BlockPos p = at[0] = new BlockPos(spawn.getX(), floor + 1, spawn.getZ());
+                    int top = Math.max(spawn.getY(), p.getY()) + 12 - p.getY();
+                    FixtureGround.keep(context, p.add(-8, -2, -5), p.add(FAR + 12, top, 5));
                     FixtureGround.simulated(context, p.add(-8, 0, -5), p.add(FAR + 12, 0, 5));
-                    for (BlockPos c : BlockPos.iterate(p.add(-8, -2, -5), p.add(FAR + 12, 12, 5))) {
+                    for (BlockPos c : BlockPos.iterate(p.add(-8, -2, -5), p.add(FAR + 12, top, 5))) {
                         int dy = c.getY() - p.getY();
                         world.setBlockState(c, (dy == -2 ? Blocks.STONE : dy == -1 ? Blocks.SAND : Blocks.AIR).getDefaultState());
                     }
@@ -95,6 +129,18 @@ public final class NativeToldTreesGameTests implements FabricGameTest {
                     }
                 })
                 .createAndAdd(() -> context.assertTrue(player(f, players[0]).isOnGround() && player(f, players[1]).isOnGround(), "Both on the sand"))
+                .createAndAdd(() -> {
+                    if (!offEdge) return;
+                    // 31 blocks off the strip's south edge, where CI's explore south ended, on the floor beside the strip.
+                    var world = context.getWorld();
+                    BlockPos out = at[0].add(0, 3, 31);
+                    while (out.getY() > world.getBottomY() && world.getBlockState(out.down()).getCollisionShape(world, out.down()).isEmpty()) out = out.down();
+                    var dune = player(f, players[0]);
+                    dune.refreshPositionAndAngles(out.getX() + 0.5, out.getY(), out.getZ() + 0.5, 0, 0);
+                    dune.setVelocity(Vec3d.ZERO);
+                    KindredMod.LOGGER.info("Told trees off the edge: Dune set down at {} from the strip's floor at {}", out.toShortString(), at[0].toShortString());
+                })
+                .createAndAdd(() -> context.assertTrue(player(f, players[0]).isOnGround(), "Dune on the ground"))
                 .createAndAdd(() -> {
                     context.assertTrue(f.runtime.startGoal(f.source, ids[0], SurvivalGoal.NETHER_PORTAL) == 1, "Dune's goal accepted");
                     context.assertTrue(f.runtime.startGoal(f.source, ids[1], SurvivalGoal.NETHER_PORTAL) == 1, "Cutter's goal accepted");
