@@ -203,9 +203,10 @@ public final class NativeBringGameTests implements FabricGameTest {
      * corner (-3, 0, 9), and slowed until it sits in Hal's boat. Held there, at (-3, 0, 8), the line's stop goes down
      * beside the hall's west wall (-3, 0, 3); as its last pickup ends, Hal is set a block south of it, where it picked the
      * stop's dirt up in CI's run, and climbs out to put the hall's door back by a stair of one block from the dirt it holds.
-     * In CI on #380 (`41a021c`, run 43783885635, `aFrontRailsDropBornInsideTheBoatsBoxIsStillPickedUp`) the same: "stairs up
-     * 1", the step left standing, 3 dirt of 4 home; the other fourteen climbs out in that run walked on. Held: every dirt
-     * Hal set down along the way comes home.
+     * Both are staging, test-only: CI's job log (#380, `41a021c`, run 43783885635, job 133027070300, line 69272) shows
+     * `aFrontRailsDropBornInsideTheBoatsBoxIsStillPickedUp` climbing out there by "Back up to the build: stairs up 1", the
+     * step left standing and 3 dirt of 4 home, but only that once: its fourteen other climbs out walked on, and unstaged
+     * here the climb took a stair in 3 of 6 runs. Held: every dirt Hal set down along the way comes home.
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringClimbOut", tickLimit = 14000)
     public void climbingOutToPutTheDoorBackHalTakesItsStepHomeToo(TestContext context) {
