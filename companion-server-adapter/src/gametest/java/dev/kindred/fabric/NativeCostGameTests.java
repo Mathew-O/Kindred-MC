@@ -119,4 +119,27 @@ public final class NativeCostGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * Each player's position-keyed body maps on the cost line (F-31j), by name and size: a fresh player holds none of
+     * them. The month run reads their growth off this; nothing here bounds them.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "costBodyMaps", tickLimit = 600)
+    public void theCostLineGivesEachPlayersBodyMapsBySize(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 500);
+        @SuppressWarnings("unchecked") CompletableFuture<String>[] line = new CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Counter"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> line[0] = f.runtime.logCost(1))
+                .createAndAdd(() -> {
+                    context.assertTrue(line[0].isDone(), "Measured");
+                    String s = line[0].join();
+                    context.assertTrue(s.endsWith("; " + PlayerRuntime.BODY_MAPS + " {Counter=0/0/0/0/0/0/0}"), "Its body maps, by player and size: " + s);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .completeIfSuccessful();
+    }
 }

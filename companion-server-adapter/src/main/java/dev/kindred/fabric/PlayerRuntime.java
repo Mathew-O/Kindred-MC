@@ -18903,9 +18903,28 @@ final class PlayerRuntime {
                 chronicle.kept(), wire.stateTold(), wire.refusals(), factions.refusalCounts(), tickWindow.describe(), heapHighWater / (1024 * 1024));
         tickWindow.reset();
         heapHighWater = 0;
-        var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
+        // The body's position-keyed maps by player (F-31j), counted here on the server thread that changes them.
+        String maps = bodyMaps();
+        var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth)
+                .thenApply(text -> text + "; " + BODY_MAPS + " " + maps);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
+    }
+
+    /** The cost line's name for {@link #bodyMaps}, its sizes in this order (F-31j). */
+    static final String BODY_MAPS = "body maps by player, place refusals/set aside/chests used/seen at stores/untrusted stores/recently taken/raids";
+
+    /**
+     * Each player's position-keyed body maps, by size, for the month run's cost line (F-31j): what each holds now, so
+     * the run shows whether any grows without end. Read only; nothing here changes what they keep.
+     */
+    private String bodyMaps() {
+        var by = new java.util.TreeMap<String, String>();
+        for (Entry entry : entries.values()) {
+            by.put(entry.data.displayName(), entry.placeRefusals.size() + "/" + entry.placeSetAside.size() + "/" + entry.chestsUsed.size() + "/"
+                    + entry.seenAtStores.size() + "/" + entry.untrustedStores.size() + "/" + entry.recentlyTaken.size() + "/" + entry.raids.size());
+        }
+        return by.toString();
     }
 
     /** One event written to the World Record (F-31). */
