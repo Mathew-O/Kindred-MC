@@ -143,6 +143,8 @@ public final class NativeLessonsGameTests implements FabricGameTest {
                     BlockPos p = home[0];
                     Direction alongX = (p.getX() & 3) >= 2 ? Direction.EAST : Direction.WEST;
                     Direction alongZ = (p.getZ() & 3) >= 2 ? Direction.SOUTH : Direction.NORTH;
+                    // Its rock and passage, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, p.add(-4, -1, -4), p.add(4, 3, 4));
                     for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -1; dy <= 3; dy++) {
                         world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
                     }
