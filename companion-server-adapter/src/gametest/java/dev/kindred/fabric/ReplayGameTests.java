@@ -249,6 +249,44 @@ public final class ReplayGameTests implements FabricGameTest {
         return at;
     }
 
+    /** Ticks from a death to its respawn when a waking's record does not say: the body lies its last twenty ticks first. */
+    static final long WAKE_AGO = 20;
+
+    /**
+     * A waking's campaign told of the death it follows (F-27a5), as its own {@code died} learned it in the run: where it
+     * died (the record's {@code death}, at its place in the staged scene), the cause, whether a mob killed it, and how long
+     * before the waking. Nothing else: no drop's place and no item is read from the scene for it, and nothing the player did
+     * not know. The drops themselves are the scene's own item entities, placed with its structure. Only when the death lies
+     * in the scene's box, and only for a player with a goal (no goal, no campaign).
+     */
+    static void tellOfItsDeath(PlayerRuntime runtime, UUID id, JsonObject state, BlockPos boxOrigin, net.minecraft.server.world.ServerWorld world,
+                                       long now, int run, String name) {
+        if (!state.has("deathInside") || !state.get("deathInside").getAsBoolean() || !state.has("death") || !state.get("death").isJsonArray()) return;
+        var campaign = runtime.campaignForTest(id);
+        if (campaign == null) return;
+        var death = state.getAsJsonArray("death");
+        var origin = state.getAsJsonArray("origin");
+        BlockPos at = boxOrigin.add(death.get(0).getAsInt() - origin.get(0).getAsInt(), death.get(1).getAsInt() - origin.get(1).getAsInt(),
+                death.get(2).getAsInt() - origin.get(2).getAsInt());
+        long ago = state.has("deathAgo") ? state.get("deathAgo").getAsLong() : WAKE_AGO;
+        String cause = deathCause(state.has("cause") ? state.get("cause").getAsString() : "");
+        boolean byMob = state.has("deathByMob") ? state.get("deathByMob").getAsBoolean() : byAMob(cause);
+        campaign.died(at, world, now - ago, byMob, cause);
+        KindredMod.LOGGER.info("Replay {} of {}: its campaign told of its death at {}, {} ticks before, {} ({}), as it learned it in the run", run, name,
+                at.toShortString(), ago, byMob ? "by a mob" : "not by a mob", cause);
+    }
+
+    /** The death's own words in a waking's cause, "respawned after its death at x, y, z (Sol was slain by Zombie)…". */
+    static String deathCause(String cause) {
+        int open = cause.indexOf('('), close = cause.lastIndexOf(')');
+        return open >= 0 && close > open ? cause.substring(open + 1, close) : "died";
+    }
+
+    /** Whether a death's words name a mob as its killer, for a waking recorded before its record said (F-27a5). */
+    static boolean byAMob(String cause) {
+        return cause.matches(".*\\b(slain|shot|blown up|killed|fireballed|stung|impaled|squashed|frozen to death) by [A-Z].*");
+    }
+
     /** The scene box's size along {@code axis} as recorded, or the recorder's own when the scene has none. */
     private static int sizeOf(JsonObject state, int axis, int otherwise) {
         return state.has("size") && state.get("size").isJsonArray() && state.getAsJsonArray("size").size() > axis
@@ -399,6 +437,7 @@ public final class ReplayGameTests implements FabricGameTest {
                         if (hook != null) hook.accept(campaign, dropped);
                         MUST_RESTORE.remove(state.get("player").getAsString());
                     }
+                    if (waking) tellOfItsDeath(runtime, id[0], state, boxOrigin, body.getServerWorld(), server.getTicks(), run, name);
                     from[0] = body.getPos();
                     began[0] = context.getTick();
                 })
