@@ -132,7 +132,9 @@ final class NativeBedAction extends NativeRecordedAction {
             try {
                 if (!body.placeBed(lease.get(), slot, floor, facing)) return settle("Bed authority denied");
                 placed = true;
-                if (!world.getBlockState(foot()).isIn(BlockTags.BEDS) || !world.getBlockState(head()).isIn(BlockTags.BEDS)) return settle("The bed was not set down");
+                if (!world.getBlockState(foot()).isIn(BlockTags.BEDS) || !world.getBlockState(head()).isIn(BlockTags.BEDS)) {
+                    return settle("The bed was not set down" + standingIn(world));
+                }
                 if (!body.useBed(lease.get(), foot())) return settle("The bed could not be used");
             } catch (RuntimeException failure) {
                 unknown = true;
@@ -143,6 +145,22 @@ final class NativeBedAction extends NativeRecordedAction {
             return settle(null);
         }
         return waiting();
+    }
+
+    /**
+     * What stands in the bed's two cells, by kind and name, as the reason's tail (F-25c4di1d): vanilla sets no bed down where
+     * an entity overlaps its cells and says nothing, so a refusal says what it was, its own body, a mob or an item frame.
+     */
+    private String standingIn(net.minecraft.server.world.ServerWorld world) {
+        var cells = new net.minecraft.util.math.Box(foot()).union(new net.minecraft.util.math.Box(head()));
+        var there = world.getOtherEntities(null, cells, entity -> entity.isAlive() && !entity.isSpectator());
+        if (there.isEmpty()) return "";
+        var names = new java.util.ArrayList<String>();
+        for (var entity : there) {
+            names.add((entity == body.entity() ? "its own body" : Registries.ENTITY_TYPE.getId(entity.getType()).toString())
+                    + (entity == body.entity() ? "" : " " + entity.getName().getString()));
+        }
+        return ": in its cells " + String.join(", ", names);
     }
 
     private Step settle(String reason) {

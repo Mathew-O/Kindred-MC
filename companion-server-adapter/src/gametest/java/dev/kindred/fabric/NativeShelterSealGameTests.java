@@ -38,6 +38,8 @@ public class NativeShelterSealGameTests implements FabricGameTest {
                     BlockPos a = cells[0] = feet.add(3, 0, 0);
                     BlockPos b = cells[1] = a.south();
                     cells[2] = a.north();
+                    // Its pocket's rock, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, a.add(-2, -1, -5), b.add(2, 5, 2));
                     for (BlockPos c : BlockPos.iterate(a.add(-2, -1, -5), b.add(2, 5, 2))) world.setBlockState(c, Blocks.STONE.getDefaultState());
                     for (BlockPos c : new BlockPos[] {a, a.up(), b, b.up()}) world.setBlockState(c, Blocks.AIR.getDefaultState());
                     // The corridor it came in by, on from the pocket's first cell.
