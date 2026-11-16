@@ -35,6 +35,10 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
         UUID[] ids = new UUID[2], players = new UUID[2], match = new UUID[1];
         boolean[] leaked = {false};
         boolean[] rockets = {false};
+        // The sandstone on each plot, counted once, the tick the round is seen ended (F-22c87): counted again on each retry of
+        // the last step, a later check's failure was hidden behind "0, 0" once the arena was cleared 30 seconds after the
+        // podium (#358's CI, run 43727378030).
+        int[][] builtAtEnd = {null};
         String[] heldWhat = {""};
         dev.kindred.core.construction.Pos[] podium = new dev.kindred.core.construction.Pos[1];
         @SuppressWarnings("unchecked") java.util.Map<UUID, dev.kindred.core.construction.Pos>[] spotOf = new java.util.Map[1];
@@ -124,6 +128,17 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                     }
                     context.assertTrue(state == MatchRegistry.State.ENDED, "Voted on and decided: " + state + "; " + f.runtime.buildStatus(ids[0]).orElse("")
                             + " / " + f.runtime.buildStatus(ids[1]).orElse(""));
+                    if (builtAtEnd[0] == null) {
+                        int[] counted = new int[2];
+                        for (int i = 0; i < 2; i++) {
+                            int x0 = 2 + i * (BuildBattle.PLOT + BuildBattle.GAP);
+                            for (int x = 0; x < BuildBattle.PLOT; x++) for (int z = 0; z < BuildBattle.PLOT; z++) for (int y = 2; y <= 10; y++) {
+                                var at = context.getWorld().getBlockState(o.add(x0 + x, y, 2 + z));
+                                if (at.isIn(net.minecraft.registry.tag.BlockTags.SAND) || at.getBlock().getTranslationKey().contains("sandstone")) counted[i]++;
+                            }
+                        }
+                        builtAtEnd[0] = counted;
+                    }
                     // Kept as the round ends: a rocket lives about a second, less than a later step may take to run.
                     var world = context.getWorld();
                     if (!world.getEntitiesByType(EntityType.FIREWORK_ROCKET, new Box(o).expand(48), e -> true).isEmpty()) rockets[0] = true;
@@ -131,14 +146,7 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var battle = f.runtime.matches().getFirst();
                     var world = context.getWorld();
-                    int[] built = new int[2];
-                    for (int i = 0; i < 2; i++) {
-                        int x0 = 2 + i * (BuildBattle.PLOT + BuildBattle.GAP);
-                        for (int x = 0; x < BuildBattle.PLOT; x++) for (int z = 0; z < BuildBattle.PLOT; z++) for (int y = 2; y <= 10; y++) {
-                            if (world.getBlockState(o.add(x0 + x, y, 2 + z)).isIn(net.minecraft.registry.tag.BlockTags.SAND)
-                                    || world.getBlockState(o.add(x0 + x, y, 2 + z)).getBlock().getTranslationKey().contains("sandstone")) built[i]++;
-                        }
-                    }
+                    int[] built = builtAtEnd[0];
                     KindredMod.LOGGER.info("Build battle: {} ({}), winners {}; sandstone built {} and {}", battle.state(), battle.result(),
                             battle.winners().stream().map(p -> player(f, p).getName().getString()).toList(), built[0], built[1]);
                     context.assertTrue(built[0] > 20 && built[1] > 20, "Both built a pyramid: " + built[0] + ", " + built[1]);
