@@ -7461,6 +7461,9 @@ final class PlayerRuntime {
         matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
         BlockPos deathPos = player.getBlockPos().toImmutable();
+        entry.lastDeathAt = deathPos;
+        entry.lastDeathWorld = player.getServerWorld().getRegistryKey().getValue().toString();
+        entry.lastDeathCause = player.getDamageTracker().getDeathMessage().getString();
         // What it died in, for a run's report to weigh deaths by (B7): read before its work is stopped below.
         String circumstances = deathCircumstances(entry, player);
         // The scene and its state kept for a replay, before its work stops and vanilla drops what it holds (F-27).
@@ -7580,6 +7583,7 @@ final class PlayerRuntime {
         entry.lastTacticalObservation = null;
         entry.blocker = "Respawned after dying.";
         KindredMod.LOGGER.info("{} respawned at {}", entry.data.displayName(), body.entity().getBlockPos().toShortString());
+        captureWaking(entry, body);
         persistNativeSaveReceipt(entry);
     }
 
@@ -10329,6 +10333,7 @@ final class PlayerRuntime {
         if (!factionsWorld() || !ready || !running) return null;
         var player = body.entity();
         var play = entry.factionPlay;
+        play.saw(player);
         long tick = server.getTicks();
         if (play.move == null && tick - play.decidedAt >= FactionsPlayer.DECIDE_TICKS) {
             play.decidedAt = tick;
@@ -10381,6 +10386,22 @@ final class PlayerRuntime {
         // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
         // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
         if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
+        // Deep below the surface (M-06i2c1): a walk other than to defend its land waits till it is up, as a player in its
+        // mine comes up before it sets off overland; its own goal and its climbs bring it up. Asked from a tunnel, a leg ends
+        // 48 blocks on at its own height, inside the rock, where no route ends: on Factions seed 20261030 (M-06i2a's
+        // comparison) 919 faction legs were refused for no route and 15 of them ended where it could stand; with bases on,
+        // Kindred's began below Y 50 215 times of 235, and it held no land. No walk is asked, so no refusal is counted and
+        // no way made. A hollow, a box or a notch dug in a wall is not deep: there the walk is asked, refused and backed off,
+        // and a way made out (F-35h, F-35i, #120), as before.
+        // Its move is settled, as on arrival, so that its faction play goes on below at the decision interval: held, its
+        // next decision waited on a walk never asked, and on seed 20261030 its founders sold nothing (32 and 14 sales on
+        // main). Below, a decision is what it can do where it stands, or a walk home to defend (factionChoose).
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && play.deepBelow(player)) {
+            settledInFlight(entry, play, player, move);
+            play.move = null;
+            play.decidedAt = tick;
+            return null;
+        }
         // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
         // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
         // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
@@ -10609,8 +10630,12 @@ final class PlayerRuntime {
     private dev.kindred.core.factions.FactionPlay.Choice factionChoose(Entry entry, ServerPlayerEntity player) {
         if (market.holds().held(player.getUuid())) return null;
         var choices = dev.kindred.core.factions.FactionPlay.decide(factionView(entry, player));
-        if (choices.isEmpty()) return null;
-        var choice = choices.getFirst();
+        // Deep below the surface (M-06i2c1): the first it can do where it stands, a sale or a claim of the chunk it is in,
+        // or a walk home to defend; a walk elsewhere is chosen from the surface.
+        boolean deep = entry.factionPlay.deepBelow(player);
+        var choice = choices.stream().filter(c -> !deep || c.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
+                || !FactionsPlayer.moves(c, player)).findFirst().orElse(null);
+        if (choice == null) return null;
         entry.decided(server.getTicks(), "faction: " + choice.reason() + (choice.target().isEmpty() ? "" : " (" + choice.target() + ")"));
         return choice;
     }
@@ -10817,6 +10842,24 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? null : goalOf(entry);
+    }
+
+    /** For fixtures (M-06i2c1): it sees where it stands, as at each faction decision; and whether it is deep below now. */
+    boolean factionSawForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
+        var body = entry.nativeBody.entity();
+        entry.factionPlay.saw(body);
+        return entry.factionPlay.deepBelow(body);
+    }
+
+    /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */
+    boolean factionWalkingForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry != null && "native_goto".equals(entry.skillId) && entry.dispatchSource != null
+                && entry.dispatchSource.startsWith("factionCandidates");
     }
 
     /** For fixtures: its bases' record read, as its play reads it (by the time its base or a villager it brings home asks); whether it is now. */
@@ -16122,10 +16165,35 @@ final class PlayerRuntime {
 
     /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
     private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
+        return memoryOf(entry, DeathReplays.WIDTH, DeathReplays.HEIGHT);
+    }
+
+    /** As {@link #memoryOf(Entry)}, its goal's memory cut to a box {@code width} across and {@code height} high. */
+    private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry, int width, int height) {
         var campaign = entry.campaign;
         if (campaign == null) return null;
         long tick = server.getTicks();
-        return origin -> campaign.memoryIn(origin, DeathReplays.WIDTH, DeathReplays.HEIGHT, tick);
+        return origin -> campaign.memoryIn(origin, width, height, tick);
+    }
+
+    /**
+     * With replays on, the scene as it wakes from a death kept (F-27a4): a {@code "respawn"} scene round where it woke and,
+     * within reach, where it died and what it dropped there, for the corpus to play again from its waking. Its pass is to be
+     * alive at its budget's end; whether its armour is back on is reported beside it. Nothing here changes the player or the
+     * world.
+     */
+    private void captureWaking(Entry entry, NativePlayerBody body) {
+        if (replays == null) return;
+        var player = body.entity();
+        String here = player.getServerWorld().getRegistryKey().getValue().toString();
+        BlockPos death = entry.lastDeathAt != null && here.equals(entry.lastDeathWorld) ? entry.lastDeathAt : null;
+        var box = DeathReplays.wakeBox(player.getBlockPos(), death);
+        String cause = "respawned after its death at " + (entry.lastDeathAt == null ? "unknown" : entry.lastDeathAt.toShortString())
+                + (entry.lastDeathCause == null ? "" : " (" + entry.lastDeathCause + ")") + (box.deathInside() ? "" : ", the death outside its box");
+        replays.captureWaking(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("respawn", String.valueOf(goalOf(entry)),
+                entry.campaign == null ? "no goal" : entry.campaign.progress(), "waking", entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
+                entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), cause,
+                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt);
     }
 
     /**
@@ -19397,6 +19465,9 @@ final class PlayerRuntime {
         private long attendedAt = Long.MIN_VALUE / 2;
         private UUID attentionTaskId;
         private boolean awaitingRespawn;
+        /** Where it last died, in which dimension and how, for the scene cut as it wakes (F-27a4); null before any death. */
+        private BlockPos lastDeathAt;
+        private String lastDeathWorld, lastDeathCause;
         private boolean campaignFightInterrupt;
         private boolean endPortalAnnounced, dragonAnnounced;
         private UUID tacticalRetreatTaskId;

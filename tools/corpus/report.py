@@ -51,6 +51,19 @@ def outcomes(results):
     return out
 
 
+def armour_back(log):
+    """A run's waking scenes that reached their budget's end (F-27a4): how many with their armour back on, of how many."""
+    import re
+    on = total = 0
+    with open(log, encoding="utf-8", errors="replace") as lines:
+        for line in lines:
+            m = re.search(r"Replay \d+ of \S+: its armour back on: (yes|no)", line)
+            if m:
+                total += 1
+                on += m.group(1) == "yes"
+    return on, total
+
+
 def leftover(log):
     """Replay players (R<hex>_<run>) whose lines go on after their own batch ended: a test that ended without its stop."""
     import re
@@ -122,6 +135,10 @@ def main():
             n = sum(k.values())
             lines.append(f"| {m} | {k['pass']} | {k['intermittent']} | {k['fail']} | {n} | {100.0 * k['pass'] / max(1, n):.1f}% |")
     if args.logs:
+        armour = [armour_back(log) for log in args.logs if log.is_file()]
+        if any(total for _, total in armour):
+            lines += ["", "Waking scenes, its armour back on at the budget's end (reported, not the pass), by run: "
+                      + ", ".join(f"{on} of {total}" for on, total in armour)]
         left = [leftover(log) for log in args.logs if log.is_file()]
         lines += ["", f"Replay players still acting after their own batch, by run: {', '.join(str(n) for n in left)} (should be 0)"]
     if staged:

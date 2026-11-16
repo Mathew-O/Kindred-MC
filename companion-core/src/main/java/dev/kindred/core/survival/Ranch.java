@@ -245,7 +245,13 @@ public final class Ranch {
             phase = Phase.BUILD;
             return new Step.Build();
         }
-        if (phase == Phase.BUILD) phase = Phase.FETCH;
+        if (phase == Phase.BUILD) {
+            phase = Phase.FETCH;
+            // The herd it began with, the young too, counted penned at once: one that slips out through the open gate as it
+            // goes in, before the gate shuts on them, is brought back before it is done (F-22c86: in CI on #344 a calf walked
+            // out so, never counted, and the run said done with it outside).
+            seen.animals().stream().filter(a -> a.kind() == kind && inside(a.at())).forEach(a -> penned.add(a.id()));
+        }
         var adultsIn = seen.animals().stream().filter(a -> a.kind() == kind && a.adult() && inside(a.at())).toList();
         boolean in = inside(seen.feet());
         if (phase == Phase.RETURN) {
