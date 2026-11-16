@@ -6284,6 +6284,8 @@ final class PortalRunCampaign {
     private int lavaLegStalls;
     private static final int LAVA_LEG = 96;
     private static final String LAVA_LEG_LABEL = "Cast: walk toward the lava at ";
+    /** How long a pool no walk reaches and no dig gets nearer is set aside (F-25c4dj). */
+    private static final long POOL_ASIDE = 1200;
     /** Whether the frame is to be cast, as the last plan reckoned it. */
     private boolean castRoute;
     /** Lava it saw that no walk led to: the pool is dug toward, not walked for source by source (F-25c4ad). */
@@ -6320,6 +6322,24 @@ final class PortalRunCampaign {
         if (lavaNoWalk != null && castLava.getSquaredDistance(lavaNoWalk) <= 16 * 16 && eyeDistance(player, castLava) > 4.2) {
             Optional<Task> dig = digToward(body, castLava, "Cast: dig toward the lava at " + castLava.toShortString());
             if (dig.isPresent()) return dig;
+            // No walk reaches this pool and no dig gets it nearer from here: the pool is set aside a while, every source of it
+            // it knows, and the cast's own search takes over, never the walk again (F-25c4dj). Walked for again, each refusal
+            // set one source aside and the next was walked for at once: in E-40's iteration 23 (`e40a23-3115b1c`) 505 Sol was
+            // refused 1,346 walks in 47 s, 26 to 33 a second.
+            BlockPos pool = lavaNoWalk;
+            var world = player.getServerWorld();
+            int aside = 0;
+            for (BlockPos source : BlockPos.iterate(pool.add(-8, -4, -8), pool.add(8, 4, 8))) {
+                if (world.isChunkLoaded(source) && world.getFluidState(source).isIn(FluidTags.LAVA)) {
+                    cellsAside.put(source.asLong(), lastTick + POOL_ASIDE);
+                    aside++;
+                }
+            }
+            event("its lava's pool at " + pool.toShortString() + " set aside a while: no walk reaches it, no dig gets nearer (" + aside + " sources)");
+            castLava = null;
+            lavaNoWalk = null;
+            return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
+                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
         if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
