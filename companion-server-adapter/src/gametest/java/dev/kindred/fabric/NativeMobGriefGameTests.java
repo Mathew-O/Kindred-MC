@@ -49,8 +49,15 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
         for (int row : rows) runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, owner, ClaimLedger.chunk(W, x, row), Map.of()));
     }
 
-    /** The ground from {@code fromX} to {@code toX} cleared on stone, open to height 8, kept simulated; a stone roof over it. */
+    /**
+     * The ground from {@code fromX} to {@code toX} cleared on stone, open to height 8, kept simulated; a stone roof over it.
+     * It reaches past the plot to the chunk border, so it is kept and put back as the test ends, passed or failed, with
+     * the pens, dirt, leaves and doors laid in it (F-22c75b): left standing, they lay beside a later test's plot.
+     */
     private static void floor(TestContext context, int fromX, int toX, int fromZ, int toZ) {
+        BlockPos a = context.getAbsolutePos(new BlockPos(fromX, 1, fromZ)), c = context.getAbsolutePos(new BlockPos(toX, 9, toZ));
+        FixtureGround.keep(context, new BlockPos(Math.min(a.getX(), c.getX()), Math.min(a.getY(), c.getY()), Math.min(a.getZ(), c.getZ())),
+                new BlockPos(Math.max(a.getX(), c.getX()), Math.max(a.getY(), c.getY()), Math.max(a.getZ(), c.getZ())));
         FixtureGround.simulated(context, context.getAbsolutePos(new BlockPos(fromX, 0, fromZ)), context.getAbsolutePos(new BlockPos(toX, 0, toZ)));
         for (int x = fromX; x <= toX; x++) for (int z = fromZ; z <= toZ; z++) {
             context.setBlockState(x, 1, z, Blocks.STONE);

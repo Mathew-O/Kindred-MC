@@ -48,6 +48,13 @@ final class DeathReplays implements AutoCloseable {
     /** A {@code "spell"} scene's pass: out of where it was stuck within its budget. */
     static final String SPELL_PASS = "out within " + SPELL_TICKS + " ticks: its goal gains something, or it leaves the 8 blocks round where it was caught and stays out for the last "
             + (SPELL_TICKS / 2) + " ticks";
+    /** A waking's budget (F-27a4): two minutes from the respawn; its pass, and what it reports beside it. */
+    static final int WAKE_TICKS = 2400;
+    static final String WAKE_PASS = "alive at the end of " + WAKE_TICKS + " ticks";
+    static final String WAKE_REPORTED = "its armour back on (reported, not the pass)";
+    /** A waking's box at most this wide, its death's margin at least this; the usual margin otherwise (F-27a4). */
+    static final int WAKE_MAX = 64, WAKE_MIN_MARGIN = 8;
+
     /** A capture at most once a minute for each player; its vitals as they were ten seconds before. */
     private static final long GAP = 1200, BEFORE = 200;
     private static final int KEPT_VITALS = 16, LOG_LINES = 20;
@@ -71,7 +78,7 @@ final class DeathReplays implements AutoCloseable {
         return thread;
     });
     private final Map<String, ArrayDeque<Vitals>> vitals = new HashMap<>();
-    private final Map<String, Long> last = new HashMap<>();
+    private final Map<String, Long> last = new HashMap<>(), lastWake = new HashMap<>();
     private Capture latest;
     private boolean warmed;
 
@@ -103,17 +110,68 @@ final class DeathReplays implements AutoCloseable {
         Long before = last.get(player);
         if (before != null && tick - before < GAP) return java.util.Optional.empty();
         last.put(player, tick);
+        BlockPos feet = body.getBlockPos();
+        return take(player, body, tick, context, feet.add(-WIDTH / 2, -HEIGHT / 2, -WIDTH / 2), new int[] {WIDTH, HEIGHT, WIDTH}, Map.of());
+    }
+
+    /**
+     * A waking's box (F-27a4): round the respawn spot, and, when the death it follows is in the same dimension and both fit
+     * in {@value #WAKE_MAX} blocks with at least {@value #WAKE_MIN_MARGIN} round each, round both, the death's drops in it
+     * too; otherwise the usual box round the respawn spot, the death outside it.
+     */
+    record WakeBox(BlockPos origin, int[] size, boolean deathInside) { }
+
+    static WakeBox wakeBox(BlockPos feet, BlockPos death) {
+        BlockPos usual = feet.add(-WIDTH / 2, -HEIGHT / 2, -WIDTH / 2);
+        var usualBox = new WakeBox(usual, new int[] {WIDTH, HEIGHT, WIDTH}, false);
+        if (death == null) return usualBox;
+        int[] at = {feet.getX(), feet.getY(), feet.getZ()}, then = {death.getX(), death.getY(), death.getZ()};
+        int[] origin = new int[3], size = new int[3];
+        for (int axis = 0; axis < 3; axis++) {
+            boolean up = axis == 1;
+            int lo = Math.min(at[axis], then[axis]), span = Math.abs(at[axis] - then[axis]) + 1;
+            // Across: the usual margin of 16 if both fit in 64, narrowed to fit down to 8. Up: 8, narrowed down to 2, in 34.
+            int usualSize = up ? HEIGHT : WIDTH, max = up ? 2 * HEIGHT : WAKE_MAX, least = up ? 2 : WAKE_MIN_MARGIN;
+            int margin = Math.min(usualSize / 2, (max - span) / 2);
+            if (margin < least) return usualBox;
+            int length = Math.max(usualSize, span + 2 * margin);
+            size[axis] = length;
+            origin[axis] = lo - (length - span) / 2;
+        }
+        return new WakeBox(new BlockPos(origin[0], origin[1], origin[2]), size, true);
+    }
+
+    /**
+     * The capture at a respawn (F-27a4), on the server thread as the player wakes: a {@code "respawn"} scene in {@code box},
+     * the death it follows ({@code death}, its {@code cause}) and the drops lying in the box recorded beside it. Its own once
+     * a minute, apart from the death's, which it follows by a second.
+     */
+    java.util.Optional<Capture> captureWaking(String player, ServerPlayerEntity body, long tick, Context context, WakeBox box, BlockPos death) {
+        Long before = lastWake.get(player);
+        if (before != null && tick - before < GAP) return java.util.Optional.empty();
+        lastWake.put(player, tick);
+        var extra = new java.util.LinkedHashMap<String, Object>();
+        extra.put("death", death == null ? null : new int[] {death.getX(), death.getY(), death.getZ()});
+        extra.put("deathInside", box.deathInside());
+        extra.put("ticks", WAKE_TICKS);
+        extra.put("pass", WAKE_PASS);
+        extra.put("reported", WAKE_REPORTED);
+        return take(player, body, tick, context, box.origin(), box.size(), extra);
+    }
+
+    private java.util.Optional<Capture> take(String player, ServerPlayerEntity body, long tick, Context context, BlockPos origin, int[] size,
+                                             Map<String, Object> extra) {
         var threads = java.lang.management.ManagementFactory.getThreadMXBean();
         long start = System.nanoTime(), cpuStart = threads.getCurrentThreadCpuTime();
         var world = body.getServerWorld();
-        BlockPos feet = body.getBlockPos();
-        BlockPos origin = feet.add(-WIDTH / 2, -HEIGHT / 2, -WIDTH / 2);
         // On the tick, only what the world holds is read: each block as it stands, the data of the few that have any,
         // and the mobs'. The structure is made from the copies off the tick, as vanilla's would be; vanilla's own,
         // which looks up a block entity and tests the shape of every block on the tick, took up to 71 ms under load.
-        var scene = Scene.copy(world, origin);
+        var scene = Scene.copy(world, origin, size[0], size[1], size[2]);
         // On the tick only copies are taken; the state is turned into its file off it, the items' components with it.
-        Map<String, Object> state = state(player, body, origin, tick, context);
+        Map<String, Object> state = state(player, body, origin, size, tick, context);
+        for (var entry : extra.entrySet()) if (entry.getValue() != null) state.put(entry.getKey(), entry.getValue());
+        if (!extra.isEmpty()) state.put("drops", scene.drops());
         var registries = world.getRegistryManager();
         long spent = System.nanoTime() - start, cpu = threads.getCurrentThreadCpuTime() - cpuStart;
         Path folder = dir.resolve(player + "-" + tick);
@@ -131,7 +189,7 @@ final class DeathReplays implements AutoCloseable {
     record Capture(Path folder, long nanosOnThread, long cpuNanosOnThread, Future<?> written) { }
 
     /** What the replay keeps of the player, copied on the server thread: plain values, and copies of what it held. */
-    private Map<String, Object> state(String player, ServerPlayerEntity body, BlockPos origin, long tick, Context context) {
+    private Map<String, Object> state(String player, ServerPlayerEntity body, BlockPos origin, int[] size, long tick, Context context) {
         var world = body.getServerWorld();
         var state = new java.util.LinkedHashMap<String, Object>();
         state.put("kind", context.kind());
@@ -139,7 +197,7 @@ final class DeathReplays implements AutoCloseable {
         state.put("tick", tick);
         state.put("dimension", world.getRegistryKey().getValue().toString());
         state.put("origin", new int[] {origin.getX(), origin.getY(), origin.getZ()});
-        state.put("size", new int[] {WIDTH, HEIGHT, WIDTH});
+        state.put("size", size);
         state.put("at", new double[] {body.getX() - origin.getX(), body.getY() - origin.getY(), body.getZ() - origin.getZ()});
         state.put("yaw", body.getYaw());
         state.put("pitch", body.getPitch());
@@ -212,6 +270,21 @@ final class DeathReplays implements AutoCloseable {
                     json.add("effects", effects);
                 }
                 case "memory" -> json.add("memory", (JsonObject) value);
+                case "death" -> json.add("death", array((int[]) value));
+                case "drops" -> {
+                    JsonArray drops = new JsonArray();
+                    for (Object[] drop : (List<Object[]>) value) {
+                        JsonObject item = new JsonObject();
+                        item.addProperty("item", (String) drop[0]);
+                        item.addProperty("count", (Integer) drop[1]);
+                        item.addProperty("age", (Integer) drop[2]);
+                        JsonArray where = new JsonArray();
+                        for (int k = 3; k < 6; k++) where.add((Double) drop[k]);
+                        item.add("at", where);
+                        drops.add(item);
+                    }
+                    json.add("drops", drops);
+                }
                 case "inventory" -> {
                     JsonArray items = new JsonArray();
                     for (Object[] held : (List<Object[]>) value) {
@@ -253,16 +326,20 @@ final class DeathReplays implements AutoCloseable {
      * The ground round the player as it died: its blocks, the data of those that have any, and the mobs in it, copied
      * on the server thread; {@link #templateNbt} makes of them the structure file vanilla's {@code writeNbt} would.
      */
-    record Scene(BlockState[] states, Map<Integer, NbtCompound> blockData, List<Mob> mobs) {
+    record Scene(BlockState[] states, Map<Integer, NbtCompound> blockData, List<Mob> mobs, int w, int h, int d) {
         record Mob(Vec3d at, NbtCompound nbt) { }
 
         static Scene copy(net.minecraft.server.world.ServerWorld world, BlockPos origin) {
-            var states = new BlockState[WIDTH * HEIGHT * WIDTH];
+            return copy(world, origin, WIDTH, HEIGHT, WIDTH);
+        }
+
+        static Scene copy(net.minecraft.server.world.ServerWorld world, BlockPos origin, int w, int h, int d) {
+            var states = new BlockState[w * h * d];
             var blockData = new HashMap<Integer, NbtCompound>();
             var registries = world.getRegistryManager();
             var at = new BlockPos.Mutable();
             int i = 0;
-            for (int y = 0; y < HEIGHT; y++) for (int x = 0; x < WIDTH; x++) for (int z = 0; z < WIDTH; z++, i++) {
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) for (int z = 0; z < d; z++, i++) {
                 at.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
                 BlockState state = world.getBlockState(at);
                 states[i] = state;
@@ -272,13 +349,28 @@ final class DeathReplays implements AutoCloseable {
                 }
             }
             var mobs = new ArrayList<Mob>();
-            var box = new Box(origin.getX(), origin.getY(), origin.getZ(), origin.getX() + WIDTH, origin.getY() + HEIGHT, origin.getZ() + WIDTH);
+            var box = new Box(origin.getX(), origin.getY(), origin.getZ(), origin.getX() + w, origin.getY() + h, origin.getZ() + d);
             for (Entity entity : world.getOtherEntities(null, box, e -> !(e instanceof PlayerEntity))) {
                 NbtCompound nbt = new NbtCompound();
                 entity.saveNbt(nbt);
                 mobs.add(new Mob(new Vec3d(entity.getX() - origin.getX(), entity.getY() - origin.getY(), entity.getZ() - origin.getZ()), nbt));
             }
-            return new Scene(states, blockData, mobs);
+            return new Scene(states, blockData, mobs, w, h, d);
+        }
+
+        /**
+         * The item entities in the scene as it was copied (F-27a4): what each is, how many, how old in ticks, and where in
+         * the box, for a waking's record of the drops it may go back for. The entities themselves are in the structure.
+         */
+        List<Object[]> drops() {
+            var drops = new ArrayList<Object[]>();
+            for (Mob mob : mobs) {
+                if (!"minecraft:item".equals(mob.nbt().getString("id"))) continue;
+                var item = mob.nbt().getCompound("Item");
+                drops.add(new Object[] {item.getString("id"), item.contains("count") ? item.getInt("count") : 1, (int) mob.nbt().getShort("Age"),
+                        mob.at().x, mob.at().y, mob.at().z});
+            }
+            return drops;
         }
 
         /**
@@ -300,7 +392,7 @@ final class DeathReplays implements AutoCloseable {
             NbtList blocks = new NbtList();
             for (List<Integer> group : List.of(full, other, withData)) {
                 for (int i : group) {
-                    int y = i / (WIDTH * WIDTH), x = i / WIDTH % WIDTH, z = i % WIDTH;
+                    int y = i / (w * d), x = i / d % w, z = i % d;
                     NbtCompound block = new NbtCompound();
                     block.put("pos", ints(x, y, z));
                     block.putInt("state", palette.computeIfAbsent(states[i], state -> palette.size()));
@@ -327,7 +419,7 @@ final class DeathReplays implements AutoCloseable {
             nbt.put("blocks", blocks);
             nbt.put("palette", paletteNbt);
             nbt.put("entities", entities);
-            nbt.put("size", ints(WIDTH, HEIGHT, WIDTH));
+            nbt.put("size", ints(w, h, d));
             return NbtHelper.putDataVersion(nbt);
         }
 
