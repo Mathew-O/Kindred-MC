@@ -30,3 +30,4 @@ confirm-main-1.5 (7720a7fa, only flagged): 0 min, peak 1257 MB, All 2 required t
 confirm-main-1.6 (7720a7fa, only flagged): 0 min, peak 1360 MB, 1 required tests failed, fence-top 0, disk 6.0G
 confirm-main-1.7 (7720a7fa, only flagged): 0 min, peak 1178 MB, All 2 required tests passed, fence-top 0, disk 6.0G
 confirm-main-2.1 (7720a7fa, only flagged): 0 min, peak 1305 MB, All 2 required tests passed, fence-top 0, disk 6.0G
+confirm-main-2.2 (7720a7fa, only flagged): 0 min, peak 1300 MB, All 2 required tests passed, fence-top 0, disk 6.0G
