@@ -1,0 +1,427 @@
+{
+  "kind": "respawn",
+  "player": "Echo",
+  "tick": 29276,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -13,
+    62,
+    40
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 7.0,
+  "food": 12,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 5276,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Explore west for animals",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "respawned after its death at 103, 70, 211 (Echo suffocated in a wall), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        26,
+        12,
+        0
+      ],
+      [
+        26,
+        12,
+        1
+      ],
+      [
+        26,
+        11,
+        0
+      ],
+      [
+        26,
+        11,
+        1
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "WATER": [
+        [
+          17,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          1
+        ],
+        [
+          18,
+          0,
+          2
+        ],
+        [
+          19,
+          0,
+          0
+        ],
+        [
+          19,
+          0,
+          1
+        ],
+        [
+          19,
+          0,
+          2
+        ],
+        [
+          19,
+          0,
+          3
+        ],
+        [
+          19,
+          0,
+          4
+        ],
+        [
+          20,
+          0,
+          0
+        ],
+        [
+          20,
+          0,
+          1
+        ],
+        [
+          20,
+          0,
+          2
+        ],
+        [
+          20,
+          0,
+          3
+        ],
+        [
+          20,
+          0,
+          4
+        ],
+        [
+          20,
+          0,
+          5
+        ],
+        [
+          21,
+          0,
+          30
+        ],
+        [
+          21,
+          0,
+          0
+        ],
+        [
+          21,
+          0,
+          1
+        ],
+        [
+          21,
+          0,
+          2
+        ],
+        [
+          21,
+          0,
+          3
+        ],
+        [
+          21,
+          0,
+          4
+        ],
+        [
+          21,
+          0,
+          5
+        ],
+        [
+          21,
+          0,
+          6
+        ],
+        [
+          21,
+          0,
+          7
+        ],
+        [
+          22,
+          0,
+          29
+        ],
+        [
+          22,
+          0,
+          0
+        ],
+        [
+          22,
+          0,
+          1
+        ],
+        [
+          22,
+          0,
+          2
+        ],
+        [
+          22,
+          0,
+          3
+        ],
+        [
+          22,
+          0,
+          4
+        ],
+        [
+          22,
+          0,
+          5
+        ],
+        [
+          22,
+          0,
+          6
+        ],
+        [
+          22,
+          0,
+          7
+        ],
+        [
+          23,
+          0,
+          0
+        ],
+        [
+          23,
+          0,
+          1
+        ],
+        [
+          23,
+          0,
+          2
+        ],
+        [
+          23,
+          0,
+          3
+        ],
+        [
+          23,
+          0,
+          4
+        ],
+        [
+          23,
+          0,
+          5
+        ],
+        [
+          23,
+          0,
+          6
+        ],
+        [
+          23,
+          0,
+          7
+        ],
+        [
+          23,
+          0,
+          8
+        ],
+        [
+          24,
+          0,
+          0
+        ],
+        [
+          24,
+          0,
+          1
+        ],
+        [
+          24,
+          0,
+          2
+        ],
+        [
+          24,
+          0,
+          3
+        ],
+        [
+          24,
+          0,
+          4
+        ],
+        [
+          24,
+          0,
+          5
+        ],
+        [
+          24,
+          0,
+          6
+        ],
+        [
+          24,
+          0,
+          7
+        ],
+        [
+          24,
+          0,
+          8
+        ],
+        [
+          24,
+          0,
+          9
+        ],
+        [
+          25,
+          0,
+          0
+        ],
+        [
+          25,
+          0,
+          1
+        ],
+        [
+          25,
+          0,
+          2
+        ],
+        [
+          25,
+          0,
+          3
+        ],
+        [
+          25,
+          0,
+          5
+        ],
+        [
+          26,
+          0,
+          0
+        ],
+        [
+          26,
+          0,
+          1
+        ],
+        [
+          26,
+          0,
+          2
+        ],
+        [
+          26,
+          0,
+          3
+        ]
+      ]
+    },
+    "home": [
+      18,
+      7,
+      14
+    ],
+    "exploreHeading": "west",
+    "exploreStalls": 2,
+    "exploreFailures": 7,
+    "stuckSpells": 1,
+    "stuckLevel": 0,
+    "leftOut": 5754
+  },
+  "death": [
+    103,
+    70,
+    211
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:48] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:49] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:49] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:49] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:49] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:49] [Server thread/INFO]: Echo native_bridge CANCELLED: Stuck in a wall; dig out first [make a way elsewhere: bridge 1]",
+    "[01:42:49] [Server thread/INFO]: Echo died at 103, 70, 211: Echo suffocated in a wall (tick 29257, day, under cover, hunger 12, armour 6, holding andesite, a shield; doing \"native_bridge\" in \"Interrupted: make a way elsewhere: bridge 1\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+  ]
+}

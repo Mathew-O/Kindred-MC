@@ -1,0 +1,954 @@
+{
+  "kind": "respawn",
+  "player": "Kindred",
+  "tick": 13819,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -26,
+    64,
+    -25
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 5.0,
+  "food": 17,
+  "saturation": 0.8,
+  "air": 141,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 13819,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: to dry ground",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "respawned after its death at -54, 42, 26 (Kindred drowned), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        10,
+        8,
+        17
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "LOG": [
+        [
+          11,
+          13,
+          17
+        ],
+        [
+          11,
+          11,
+          13
+        ],
+        [
+          11,
+          10,
+          13
+        ],
+        [
+          11,
+          9,
+          13
+        ],
+        [
+          11,
+          8,
+          13
+        ],
+        [
+          10,
+          15,
+          13
+        ],
+        [
+          10,
+          14,
+          13
+        ],
+        [
+          10,
+          14,
+          17
+        ],
+        [
+          10,
+          13,
+          13
+        ],
+        [
+          10,
+          12,
+          13
+        ],
+        [
+          12,
+          12,
+          1
+        ],
+        [
+          12,
+          12,
+          17
+        ],
+        [
+          12,
+          11,
+          17
+        ],
+        [
+          12,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          13
+        ],
+        [
+          12,
+          10,
+          17
+        ],
+        [
+          12,
+          11,
+          1
+        ],
+        [
+          12,
+          8,
+          1
+        ],
+        [
+          12,
+          9,
+          1
+        ],
+        [
+          12,
+          15,
+          31
+        ],
+        [
+          12,
+          14,
+          31
+        ],
+        [
+          12,
+          13,
+          31
+        ],
+        [
+          12,
+          12,
+          31
+        ],
+        [
+          12,
+          11,
+          31
+        ],
+        [
+          12,
+          10,
+          31
+        ],
+        [
+          27,
+          15,
+          16
+        ]
+      ],
+      "LEAVES": [
+        [
+          14,
+          14,
+          31
+        ],
+        [
+          14,
+          14,
+          30
+        ],
+        [
+          14,
+          14,
+          32
+        ],
+        [
+          14,
+          13,
+          30
+        ],
+        [
+          14,
+          13,
+          32
+        ],
+        [
+          14,
+          13,
+          31
+        ],
+        [
+          12,
+          16,
+          30
+        ],
+        [
+          12,
+          16,
+          31
+        ],
+        [
+          12,
+          16,
+          32
+        ],
+        [
+          12,
+          15,
+          32
+        ],
+        [
+          12,
+          15,
+          30
+        ],
+        [
+          12,
+          14,
+          30
+        ],
+        [
+          12,
+          14,
+          29
+        ],
+        [
+          12,
+          14,
+          32
+        ],
+        [
+          12,
+          13,
+          30
+        ],
+        [
+          12,
+          13,
+          29
+        ],
+        [
+          12,
+          13,
+          32
+        ],
+        [
+          13,
+          16,
+          31
+        ],
+        [
+          13,
+          15,
+          30
+        ],
+        [
+          13,
+          15,
+          31
+        ],
+        [
+          13,
+          15,
+          32
+        ],
+        [
+          13,
+          14,
+          32
+        ],
+        [
+          13,
+          14,
+          29
+        ],
+        [
+          13,
+          14,
+          31
+        ],
+        [
+          13,
+          14,
+          30
+        ],
+        [
+          13,
+          13,
+          29
+        ],
+        [
+          13,
+          13,
+          30
+        ],
+        [
+          13,
+          13,
+          32
+        ],
+        [
+          13,
+          13,
+          31
+        ],
+        [
+          10,
+          14,
+          31
+        ],
+        [
+          10,
+          14,
+          30
+        ],
+        [
+          10,
+          14,
+          32
+        ],
+        [
+          10,
+          13,
+          31
+        ],
+        [
+          10,
+          13,
+          30
+        ],
+        [
+          10,
+          13,
+          32
+        ],
+        [
+          11,
+          16,
+          31
+        ],
+        [
+          11,
+          15,
+          31
+        ],
+        [
+          11,
+          14,
+          32
+        ],
+        [
+          11,
+          14,
+          30
+        ],
+        [
+          11,
+          14,
+          29
+        ],
+        [
+          11,
+          14,
+          31
+        ],
+        [
+          11,
+          13,
+          30
+        ],
+        [
+          11,
+          13,
+          29
+        ],
+        [
+          11,
+          13,
+          31
+        ],
+        [
+          11,
+          13,
+          32
+        ],
+        [
+          11,
+          15,
+          17
+        ],
+        [
+          11,
+          15,
+          16
+        ],
+        [
+          11,
+          15,
+          18
+        ],
+        [
+          11,
+          14,
+          17
+        ],
+        [
+          11,
+          14,
+          16
+        ],
+        [
+          11,
+          14,
+          18
+        ],
+        [
+          10,
+          15,
+          18
+        ],
+        [
+          10,
+          15,
+          19
+        ],
+        [
+          10,
+          14,
+          20
+        ],
+        [
+          10,
+          14,
+          18
+        ],
+        [
+          13,
+          15,
+          14
+        ],
+        [
+          13,
+          15,
+          12
+        ],
+        [
+          13,
+          15,
+          13
+        ],
+        [
+          13,
+          15,
+          15
+        ],
+        [
+          13,
+          14,
+          17
+        ],
+        [
+          13,
+          14,
+          15
+        ],
+        [
+          13,
+          14,
+          16
+        ],
+        [
+          13,
+          11,
+          13
+        ],
+        [
+          13,
+          10,
+          13
+        ],
+        [
+          12,
+          15,
+          15
+        ],
+        [
+          12,
+          15,
+          14
+        ],
+        [
+          12,
+          15,
+          16
+        ],
+        [
+          12,
+          15,
+          17
+        ],
+        [
+          12,
+          14,
+          14
+        ],
+        [
+          12,
+          14,
+          15
+        ],
+        [
+          12,
+          14,
+          16
+        ],
+        [
+          12,
+          14,
+          17
+        ],
+        [
+          14,
+          10,
+          13
+        ],
+        [
+          14,
+          10,
+          14
+        ],
+        [
+          30,
+          15,
+          15
+        ],
+        [
+          30,
+          15,
+          14
+        ],
+        [
+          30,
+          15,
+          16
+        ],
+        [
+          30,
+          15,
+          17
+        ],
+        [
+          30,
+          15,
+          18
+        ],
+        [
+          28,
+          15,
+          14
+        ],
+        [
+          28,
+          15,
+          16
+        ],
+        [
+          28,
+          15,
+          13
+        ],
+        [
+          28,
+          15,
+          15
+        ],
+        [
+          28,
+          15,
+          17
+        ],
+        [
+          28,
+          15,
+          18
+        ],
+        [
+          28,
+          15,
+          19
+        ],
+        [
+          28,
+          16,
+          15
+        ],
+        [
+          28,
+          16,
+          16
+        ],
+        [
+          28,
+          16,
+          17
+        ],
+        [
+          29,
+          15,
+          14
+        ],
+        [
+          29,
+          15,
+          16
+        ],
+        [
+          29,
+          15,
+          13
+        ],
+        [
+          29,
+          15,
+          15
+        ],
+        [
+          29,
+          15,
+          17
+        ],
+        [
+          29,
+          15,
+          18
+        ],
+        [
+          29,
+          15,
+          19
+        ],
+        [
+          29,
+          16,
+          16
+        ],
+        [
+          26,
+          15,
+          14
+        ],
+        [
+          26,
+          15,
+          15
+        ],
+        [
+          26,
+          15,
+          13
+        ],
+        [
+          26,
+          15,
+          16
+        ],
+        [
+          26,
+          15,
+          17
+        ],
+        [
+          26,
+          15,
+          18
+        ],
+        [
+          26,
+          15,
+          19
+        ],
+        [
+          26,
+          16,
+          15
+        ],
+        [
+          26,
+          16,
+          16
+        ],
+        [
+          26,
+          16,
+          17
+        ],
+        [
+          25,
+          16,
+          16
+        ],
+        [
+          25,
+          15,
+          14
+        ],
+        [
+          25,
+          15,
+          16
+        ],
+        [
+          25,
+          15,
+          13
+        ],
+        [
+          25,
+          15,
+          15
+        ],
+        [
+          25,
+          15,
+          17
+        ],
+        [
+          25,
+          15,
+          18
+        ],
+        [
+          25,
+          15,
+          19
+        ],
+        [
+          27,
+          15,
+          14
+        ],
+        [
+          27,
+          15,
+          13
+        ],
+        [
+          27,
+          15,
+          15
+        ],
+        [
+          27,
+          15,
+          17
+        ],
+        [
+          27,
+          15,
+          18
+        ],
+        [
+          27,
+          15,
+          19
+        ],
+        [
+          27,
+          16,
+          14
+        ],
+        [
+          27,
+          16,
+          15
+        ],
+        [
+          27,
+          16,
+          16
+        ],
+        [
+          27,
+          16,
+          17
+        ],
+        [
+          27,
+          16,
+          18
+        ],
+        [
+          24,
+          15,
+          17
+        ],
+        [
+          24,
+          15,
+          14
+        ],
+        [
+          24,
+          15,
+          15
+        ],
+        [
+          24,
+          15,
+          16
+        ],
+        [
+          24,
+          15,
+          18
+        ]
+      ]
+    },
+    "home": [
+      27,
+      9,
+      25
+    ],
+    "exploreStalls": 16,
+    "exploreFailures": 8,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 6035
+  },
+  "death": [
+    -54,
+    42,
+    26
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [
+    {
+      "item": "minecraft:stick",
+      "count": 2,
+      "age": 1797,
+      "at": [
+        9.874721512671321,
+        8.0,
+        12.731287300541926
+      ]
+    },
+    {
+      "item": "minecraft:stick",
+      "count": 1,
+      "age": 2225,
+      "at": [
+        11.875,
+        8.0,
+        12.861509145096802
+      ]
+    },
+    {
+      "item": "minecraft:stick",
+      "count": 1,
+      "age": 2032,
+      "at": [
+        13.728285589649097,
+        1.0,
+        13.280934969028008
+      ]
+    },
+    {
+      "item": "minecraft:acacia_sapling",
+      "count": 1,
+      "age": 1954,
+      "at": [
+        11.167191185025095,
+        8.0,
+        12.12487825850784
+      ]
+    },
+    {
+      "item": "minecraft:acacia_sapling",
+      "count": 1,
+      "age": 1632,
+      "at": [
+        11.558449230093649,
+        8.0,
+        15.397392292149961
+      ]
+    },
+    {
+      "item": "minecraft:acacia_sapling",
+      "count": 1,
+      "age": 1534,
+      "at": [
+        12.035788682911134,
+        8.0,
+        11.731568564256083
+      ]
+    }
+  ],
+  "log": [
+    "[02:42:53] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[02:42:54] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[02:42:55] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[02:42:55] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[02:42:56] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[02:42:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[02:42:57] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from spider]",
+    "[02:42:58] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[02:42:59] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight creeper]",
+    "[02:43:00] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[02:43:00] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight spider]",
+    "[02:43:01] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:43:02] [Server thread/INFO]: Kindred native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:43:03] [Server thread/INFO]: Kindred native_goto CANCELLED: In deep water; up for air first [Back off from zombie]",
+    "[02:43:03] [Server thread/INFO]: Kindred native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:3691]",
+    "[02:43:03] [Server thread/INFO]: Kindred native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3701]",
+    "[02:43:04] [Server thread/INFO]: Kindred native_eat CANCELLED: Hazard/threat detected: urgent retreat required [from evaluateEssentialSurvivalCandidates:3701]",
+    "[02:43:06] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Get out of the water: to dry ground]",
+    "[02:43:06] [Server thread/INFO]: Kindred died at -54, 42, 26: Kindred drowned (tick 13800, night, under cover, hunger 17, armour 0, holding rotten_flesh, no shield; doing \"Get out of the water: to dry ground\" in \"Iron: Get out of the water: to dry ground\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "kind": "respawn",
+  "player": "Echo",
+  "tick": 64743,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -57,
+    60,
+    -58
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 20.0,
+  "food": 16,
+  "saturation": 0.0,
+  "air": -15,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 2299,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: to dry ground",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "respawned after its death at -95, -39, 125 (Echo drowned), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "GRAVEL": [
+        [
+          2,
+          4,
+          25
+        ],
+        [
+          2,
+          1,
+          23
+        ],
+        [
+          2,
+          3,
+          26
+        ],
+        [
+          2,
+          3,
+          23
+        ],
+        [
+          2,
+          3,
+          24
+        ],
+        [
+          2,
+          3,
+          25
+        ],
+        [
+          2,
+          2,
+          25
+        ],
+        [
+          2,
+          2,
+          24
+        ],
+        [
+          5,
+          2,
+          25
+        ]
+      ]
+    },
+    "home": [
+      30,
+      9,
+      32
+    ],
+    "exploreStalls": 59,
+    "exploreFailures": 35,
+    "stuckSpells": 3,
+    "stuckLevel": 0,
+    "leftOut": 10007
+  },
+  "death": [
+    -95,
+    -39,
+    125
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[02:18:08] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:08] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:08] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:08] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:09] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:09] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:09] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:09] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:10] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:10] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:10] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:11] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:11] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:12] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:12] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:12] [Server thread/INFO]: Echo native_wait COMPLETED [Cast: let the water drain]",
+    "[02:18:14] [Server thread/INFO]: Echo native_goto CANCELLED: In deep water; up for air first [try elsewhere, toward -27, 69, -26]",
+    "[02:18:17] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -99, -51, 126 is blocked [Get out of the water: to dry ground]",
+    "[02:18:20] [Server thread/INFO]: Echo native_goto CANCELLED: The player died [Get out of the water: to dry ground]",
+    "[02:18:20] [Server thread/INFO]: Echo died at -95, -39, 125: Echo drowned (tick 64724, day, under cover, hunger 16, armour 6, holding stone_pickaxe, a shield; doing \"Get out of the water: to dry ground\" in \"Iron: Get out of the water: to dry ground (tried elsewhere 3 times)\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+  ]
+}

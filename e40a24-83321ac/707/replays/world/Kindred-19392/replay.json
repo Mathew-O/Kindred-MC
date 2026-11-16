@@ -1,0 +1,132 @@
+{
+  "kind": "respawn",
+  "player": "Kindred",
+  "tick": 19392,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -26,
+    62,
+    -10
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 13.900002,
+  "food": 15,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 19392,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "respawned after its death at 103, 17, -104 (Kindred hit the ground too hard while trying to escape Zombie), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "GRAVEL": [
+        [
+          0,
+          14,
+          24
+        ],
+        [
+          0,
+          14,
+          25
+        ]
+      ],
+      "CAVE": [
+        [
+          5,
+          2,
+          5
+        ],
+        [
+          5,
+          2,
+          6
+        ],
+        [
+          7,
+          2,
+          4
+        ],
+        [
+          6,
+          2,
+          6
+        ]
+      ]
+    },
+    "home": [
+      25,
+      7,
+      10
+    ],
+    "exploreStalls": 4,
+    "exploreFailures": 0,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 4082
+  },
+  "death": [
+    103,
+    17,
+    -104
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[03:06:06] [Server thread/INFO]: Kindred native_break COMPLETED [Pick up the furnace]",
+    "[03:06:07] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[03:06:09] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[03:06:10] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[03:06:11] [Server thread/INFO]: Kindred native_wait COMPLETED [Wait for daylight]",
+    "[03:06:11] [Server thread/INFO]: Kindred native_wait CANCELLED: A hostile mob is attacking; fight back first [Wait for daylight]",
+    "[03:06:12] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:06:13] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:06:14] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:06:15] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:06:15] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:06:16] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:06:17] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[03:06:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[03:06:18] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[03:06:19] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie]",
+    "[03:06:20] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:06:22] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from zombie the way it came]",
+    "[03:06:22] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from zombie]",
+    "[03:06:22] [Server thread/INFO]: Kindred died at 103, 17, -104: Kindred hit the ground too hard while trying to escape Zombie (tick 19372, night, under cover, hunger 14, armour 6, holding stone_sword, a shield; doing \"Back off from zombie\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

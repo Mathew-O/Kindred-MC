@@ -1,0 +1,131 @@
+{
+  "kind": "respawn",
+  "player": "Kindred",
+  "tick": 43720,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -13,
+    61,
+    -13
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 10.0,
+  "food": 11,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 19720,
+  "raining": true,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: wait for daylight before going up for logs - Gather logs for a wooden pickaxe",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "respawned after its death at 32, 25, -151 (Kindred was shot by Skeleton), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        2,
+        9,
+        19
+      ],
+      [
+        2,
+        8,
+        19
+      ]
+    ],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "CAVE": [
+        [
+          22,
+          1,
+          20
+        ],
+        [
+          24,
+          3,
+          18
+        ],
+        [
+          3,
+          4,
+          17
+        ],
+        [
+          25,
+          2,
+          17
+        ]
+      ]
+    },
+    "home": [
+      12,
+      8,
+      13
+    ],
+    "exploreStalls": 18,
+    "exploreFailures": 3,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 7095
+  },
+  "death": [
+    32,
+    25,
+    -151
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[03:11:41] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight cave_spider]",
+    "[03:11:42] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward 32, 26, -151 [Pick up string]",
+    "[03:11:43] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 83, 33, -97]",
+    "[03:11:43] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight cave_spider]",
+    "[03:11:43] [Server thread/INFO]: Kindred native_goto COMPLETED [Pick up string]",
+    "[03:11:45] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 83, 33, -97]",
+    "[03:11:45] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 83, 33, -97]",
+    "[03:11:46] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[03:11:46] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[03:11:47] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[03:11:47] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 83, 33, -97]",
+    "[03:11:47] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[03:11:48] [Server thread/INFO]: Kindred native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 83, 33, -97]",
+    "[03:11:49] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from skeleton]",
+    "[03:11:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from cave_spider]",
+    "[03:11:50] [Server thread/INFO]: Kindred native_goto COMPLETED [Back off from cave_spider the way it came]",
+    "[03:11:51] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[03:11:51] [Server thread/INFO]: Kindred native_place COMPLETED [Take cover from skeleton]",
+    "[03:11:51] [Server thread/INFO]: Kindred native_goto CANCELLED: The player died [Back off from cave_spider the way it came]",
+    "[03:11:51] [Server thread/INFO]: Kindred died at 32, 25, -151: Kindred was shot by Skeleton (tick 43700, night, under cover, hunger 10, armour 6, holding dirt, a shield; doing \"Back off from cave_spider the way it came\" in \"Iron: fight back - Back off from cave_spider\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

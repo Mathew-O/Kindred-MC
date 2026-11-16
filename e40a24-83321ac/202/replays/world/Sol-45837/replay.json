@@ -1,0 +1,110 @@
+{
+  "kind": "respawn",
+  "player": "Sol",
+  "tick": 45837,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -39,
+    58,
+    -58
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 18.641666,
+  "food": 20,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 7393,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Climb toward the surface for food: step up",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "respawned after its death at -92, -36, -150 (Sol was slain by Zombie), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "WATER": [
+        [
+          23,
+          4,
+          0
+        ],
+        [
+          24,
+          4,
+          0
+        ]
+      ]
+    },
+    "home": [
+      11,
+      10,
+      29
+    ],
+    "exploreStalls": 139,
+    "exploreFailures": 14,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 10448
+  },
+  "death": [
+    -92,
+    -36,
+    -150
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[02:13:34] [Server thread/INFO]: Sol native_stair COMPLETED [Climb to the cave toward lava: stairs up 3]",
+    "[02:13:34] [Server thread/INFO]: Sol native_goto BLOCKED: No walkable route toward -113, -30, -185 [Explore the cave toward lava]",
+    "[02:13:36] [Server thread/INFO]: Sol native_goto COMPLETED [Explore the cave toward lava]",
+    "[02:13:37] [Server thread/INFO]: Sol native_goto COMPLETED [Explore the cave toward lava]",
+    "[02:13:38] [Server thread/INFO]: Sol native_goto COMPLETED [Explore the cave toward lava]",
+    "[02:13:39] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]",
+    "[02:13:43] [Server thread/INFO]: Sol native_fight BLOCKED: The fight broke off [Fight zombie]",
+    "[02:13:43] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]",
+    "[02:13:48] [Server thread/INFO]: Sol native_fight BLOCKED: The fight broke off [Fight zombie]",
+    "[02:13:49] [Server thread/INFO]: Sol native_fight BLOCKED: Lost sight of the target [Fight zombie]",
+    "[02:13:49] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Explore the cave toward lava]",
+    "[02:13:50] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[02:13:51] [Server thread/INFO]: Sol native_swap COMPLETED [from evaluateEssentialSurvivalCandidates:3691]",
+    "[02:13:51] [Server thread/INFO]: Sol native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3701]",
+    "[02:13:52] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[02:13:52] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[02:13:54] [Server thread/INFO]: Sol native_fight COMPLETED [Fight zombie]",
+    "[02:13:54] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[02:13:55] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from zombie]",
+    "[02:13:55] [Server thread/INFO]: Sol died at -92, -36, -150: Sol was slain by Zombie (tick 45817, day, under cover, hunger 17, armour 6, holding stone_sword, a shield; doing \"Back off from zombie\" in \"Iron: fight back - Back off from zombie\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

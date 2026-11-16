@@ -1,0 +1,248 @@
+{
+  "kind": "respawn",
+  "player": "Sol",
+  "tick": 51739,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -21,
+    61,
+    -19
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 4.5,
+  "food": 7,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 3739,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Climb toward the surface for food: step up",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[TORCH_AS_YOU_GO]",
+  "cause": "respawned after its death at 17, 29, -185 (Sol was blown up by Creeper), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [
+      [
+        21,
+        3,
+        19
+      ],
+      [
+        25,
+        3,
+        19
+      ],
+      [
+        9,
+        3,
+        11
+      ],
+      [
+        13,
+        3,
+        11
+      ],
+      [
+        17,
+        3,
+        15
+      ]
+    ],
+    "setAside": [],
+    "known": {
+      "WATER": [
+        [
+          32,
+          1,
+          26
+        ],
+        [
+          32,
+          1,
+          27
+        ]
+      ],
+      "CAVE": [
+        [
+          28,
+          2,
+          24
+        ],
+        [
+          13,
+          0,
+          22
+        ],
+        [
+          30,
+          0,
+          23
+        ],
+        [
+          29,
+          1,
+          22
+        ],
+        [
+          32,
+          3,
+          24
+        ],
+        [
+          11,
+          3,
+          21
+        ],
+        [
+          9,
+          4,
+          23
+        ],
+        [
+          9,
+          5,
+          27
+        ],
+        [
+          5,
+          3,
+          19
+        ],
+        [
+          8,
+          4,
+          23
+        ],
+        [
+          4,
+          3,
+          19
+        ],
+        [
+          1,
+          8,
+          5
+        ],
+        [
+          1,
+          5,
+          9
+        ],
+        [
+          2,
+          4,
+          18
+        ],
+        [
+          1,
+          3,
+          14
+        ],
+        [
+          5,
+          3,
+          14
+        ],
+        [
+          5,
+          3,
+          15
+        ],
+        [
+          9,
+          3,
+          17
+        ],
+        [
+          25,
+          1,
+          14
+        ],
+        [
+          27,
+          1,
+          15
+        ],
+        [
+          23,
+          1,
+          14
+        ],
+        [
+          22,
+          1,
+          15
+        ]
+      ]
+    },
+    "home": [
+      25,
+      8,
+      22
+    ],
+    "exploreStalls": 1,
+    "exploreFailures": 5,
+    "stuckSpells": 1,
+    "stuckLevel": 0,
+    "leftOut": 6493
+  },
+  "death": [
+    17,
+    29,
+    -185
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[03:13:13] [Server thread/INFO]: Sol native_goto COMPLETED [Walk to logs at 35, 21, -163]",
+    "[03:13:14] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[03:13:15] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: back the way it came]",
+    "[03:13:15] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: to the wall]",
+    "[03:13:17] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 17, 29, -185 by hand]",
+    "[03:13:19] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 17, 30, -185 by hand]",
+    "[03:13:19] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:13:22] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 17, 31, -185 by hand]",
+    "[03:13:24] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 18, 30, -185 by hand]",
+    "[03:13:26] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 18, 31, -185 by hand]",
+    "[03:13:26] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:13:28] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 18, 32, -185 by hand]",
+    "[03:13:30] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 18, 31, -184 by hand]",
+    "[03:13:32] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 18, 32, -184 by hand]",
+    "[03:13:33] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:13:35] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 18, 33, -184 by hand]",
+    "[03:13:37] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 19, 32, -184 by hand]",
+    "[03:13:38] [Server thread/INFO]: Sol native_break CANCELLED: Hazard/threat detected: urgent retreat required [Climb toward the surface for food: clear 19, 33, -184 by hand]",
+    "[03:13:39] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Run from creeper]",
+    "[03:13:39] [Server thread/INFO]: Sol died at 17, 29, -185: Sol was blown up by Creeper (tick 51719, day, under cover, hunger 7, armour 0, holding nothing, no shield; doing \"Run from creeper\" in \"Wood: fight back - Run from creeper\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

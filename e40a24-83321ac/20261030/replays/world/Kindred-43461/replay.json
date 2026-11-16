@@ -1,0 +1,130 @@
+{
+  "kind": "respawn",
+  "player": "Kindred",
+  "tick": 43461,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -15,
+    95,
+    -6
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 17.975,
+  "food": 19,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 19461,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: wait for daylight before going up for logs - Gather logs for a table and a wooden pickaxe",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[SPARE_PICKAXE]",
+  "cause": "respawned after its death at 0, -46, 106 (Kindred was slain by Zombie), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "GRAVEL": [
+        [
+          18,
+          9,
+          21
+        ],
+        [
+          20,
+          9,
+          21
+        ],
+        [
+          20,
+          10,
+          21
+        ],
+        [
+          19,
+          9,
+          21
+        ],
+        [
+          22,
+          9,
+          21
+        ],
+        [
+          21,
+          9,
+          21
+        ],
+        [
+          23,
+          9,
+          21
+        ]
+      ]
+    },
+    "exploreStalls": 20,
+    "exploreFailures": 3,
+    "stuckSpells": 1,
+    "stuckLevel": 0,
+    "leftOut": 7815
+  },
+  "death": [
+    0,
+    -46,
+    106
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[01:45:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+    "[01:45:11] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear 0, -45, 105]",
+    "[01:45:11] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear 0, -46, 106]",
+    "[01:45:11] [Server thread/INFO]: Kindred native_break COMPLETED [Climb to find another way: clear 0, -45, 106]",
+    "[01:45:11] [Server thread/INFO]: Kindred native_goto COMPLETED [Climb to find another way: step up]",
+    "[01:45:12] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Climb to find another way: clear 0, -44, 106]",
+    "[01:45:12] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 0, -46, 105]",
+    "[01:45:12] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 0, -45, 105]",
+    "[01:45:12] [Server thread/INFO]: Kindred native_place COMPLETED [Hole up: seal 1, -45, 106]",
+    "[01:45:12] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Climb to find another way: clear 0, -44, 106]",
+    "[01:45:12] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -8, -46, 105 [Back off from zombie]",
+    "[01:45:12] [Server thread/INFO]: Kindred native_wait COMPLETED [Hold the passage against zombie]",
+    "[01:45:13] [Server thread/INFO]: Kindred native_fight COMPLETED [Fight zombie]",
+    "[01:45:13] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[01:45:13] [Server thread/INFO]: Kindred native_goto BLOCKED: No walkable route toward -9, -46, 109 [Back off from zombie]",
+    "[01:45:14] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[01:45:14] [Server thread/INFO]: Kindred native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[01:45:14] [Server thread/INFO]: Kindred native_break CANCELLED: A hostile mob is attacking; fight back first [Climb to find another way: clear 0, -44, 106]",
+    "[01:45:14] [Server thread/INFO]: Kindred native_fight CANCELLED: The player died [Fight zombie]",
+    "[01:45:14] [Server thread/INFO]: Kindred died at 0, -46, 106: Kindred was slain by Zombie (tick 43441, night, under cover, hunger 16, armour 6, holding stone_sword, a shield; doing \"Fight zombie\" in \"Iron: fight back - Fight zombie (tried elsewhere 1 time)\"; stance PRESS_ON, focus NONE, habits [SPARE_PICKAXE])"
+  ]
+}

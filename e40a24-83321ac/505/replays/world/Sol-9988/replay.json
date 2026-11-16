@@ -1,0 +1,660 @@
+{
+  "kind": "respawn",
+  "player": "Sol",
+  "tick": 9988,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -25,
+    65,
+    -12
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 4.532238,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 9988,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Climb toward the surface for food: step up",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "respawned after its death at 36, 29, 33 (Sol was blown up by Creeper), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "LOG": [
+        [
+          10,
+          12,
+          4
+        ],
+        [
+          10,
+          10,
+          0
+        ],
+        [
+          10,
+          9,
+          0
+        ],
+        [
+          10,
+          8,
+          0
+        ],
+        [
+          10,
+          7,
+          0
+        ],
+        [
+          9,
+          14,
+          0
+        ],
+        [
+          9,
+          13,
+          0
+        ],
+        [
+          9,
+          13,
+          4
+        ],
+        [
+          9,
+          12,
+          0
+        ],
+        [
+          9,
+          11,
+          0
+        ],
+        [
+          11,
+          11,
+          4
+        ],
+        [
+          11,
+          10,
+          4
+        ],
+        [
+          11,
+          9,
+          0
+        ],
+        [
+          11,
+          9,
+          4
+        ],
+        [
+          11,
+          14,
+          18
+        ],
+        [
+          11,
+          13,
+          18
+        ],
+        [
+          11,
+          12,
+          18
+        ],
+        [
+          11,
+          11,
+          18
+        ],
+        [
+          11,
+          10,
+          18
+        ],
+        [
+          11,
+          9,
+          18
+        ],
+        [
+          26,
+          14,
+          3
+        ]
+      ],
+      "COAL_ORE": [
+        [
+          26,
+          2,
+          32
+        ],
+        [
+          26,
+          1,
+          32
+        ]
+      ],
+      "LEAVES": [
+        [
+          13,
+          13,
+          18
+        ],
+        [
+          13,
+          13,
+          17
+        ],
+        [
+          13,
+          13,
+          19
+        ],
+        [
+          13,
+          12,
+          17
+        ],
+        [
+          13,
+          12,
+          19
+        ],
+        [
+          13,
+          12,
+          18
+        ],
+        [
+          11,
+          15,
+          18
+        ],
+        [
+          11,
+          15,
+          19
+        ],
+        [
+          11,
+          14,
+          19
+        ],
+        [
+          11,
+          13,
+          20
+        ],
+        [
+          11,
+          13,
+          17
+        ],
+        [
+          11,
+          13,
+          19
+        ],
+        [
+          11,
+          12,
+          17
+        ],
+        [
+          11,
+          12,
+          19
+        ],
+        [
+          11,
+          12,
+          20
+        ],
+        [
+          12,
+          15,
+          18
+        ],
+        [
+          12,
+          14,
+          17
+        ],
+        [
+          12,
+          14,
+          18
+        ],
+        [
+          12,
+          14,
+          19
+        ],
+        [
+          12,
+          13,
+          19
+        ],
+        [
+          12,
+          13,
+          20
+        ],
+        [
+          12,
+          13,
+          16
+        ],
+        [
+          12,
+          13,
+          18
+        ],
+        [
+          12,
+          13,
+          17
+        ],
+        [
+          12,
+          12,
+          16
+        ],
+        [
+          12,
+          12,
+          17
+        ],
+        [
+          12,
+          12,
+          19
+        ],
+        [
+          12,
+          12,
+          20
+        ],
+        [
+          12,
+          12,
+          18
+        ],
+        [
+          29,
+          14,
+          2
+        ],
+        [
+          29,
+          14,
+          1
+        ],
+        [
+          29,
+          14,
+          3
+        ],
+        [
+          29,
+          14,
+          4
+        ],
+        [
+          29,
+          14,
+          5
+        ],
+        [
+          27,
+          14,
+          1
+        ],
+        [
+          27,
+          14,
+          3
+        ],
+        [
+          27,
+          14,
+          0
+        ],
+        [
+          27,
+          14,
+          2
+        ],
+        [
+          27,
+          14,
+          4
+        ],
+        [
+          27,
+          14,
+          5
+        ],
+        [
+          27,
+          14,
+          6
+        ],
+        [
+          27,
+          15,
+          2
+        ],
+        [
+          27,
+          15,
+          3
+        ],
+        [
+          27,
+          15,
+          4
+        ],
+        [
+          28,
+          14,
+          1
+        ],
+        [
+          28,
+          14,
+          3
+        ],
+        [
+          28,
+          14,
+          0
+        ],
+        [
+          28,
+          14,
+          2
+        ],
+        [
+          28,
+          14,
+          4
+        ],
+        [
+          28,
+          14,
+          5
+        ],
+        [
+          28,
+          14,
+          6
+        ],
+        [
+          28,
+          15,
+          3
+        ],
+        [
+          25,
+          14,
+          1
+        ],
+        [
+          25,
+          14,
+          2
+        ],
+        [
+          25,
+          14,
+          0
+        ],
+        [
+          25,
+          14,
+          3
+        ],
+        [
+          25,
+          14,
+          4
+        ],
+        [
+          25,
+          14,
+          5
+        ],
+        [
+          25,
+          14,
+          6
+        ],
+        [
+          25,
+          15,
+          2
+        ],
+        [
+          25,
+          15,
+          3
+        ],
+        [
+          25,
+          15,
+          4
+        ],
+        [
+          24,
+          15,
+          3
+        ],
+        [
+          24,
+          14,
+          1
+        ],
+        [
+          24,
+          14,
+          3
+        ],
+        [
+          24,
+          14,
+          0
+        ],
+        [
+          24,
+          14,
+          2
+        ],
+        [
+          24,
+          14,
+          4
+        ],
+        [
+          24,
+          14,
+          5
+        ],
+        [
+          24,
+          14,
+          6
+        ],
+        [
+          26,
+          14,
+          1
+        ],
+        [
+          26,
+          14,
+          0
+        ],
+        [
+          26,
+          14,
+          2
+        ],
+        [
+          26,
+          14,
+          4
+        ],
+        [
+          26,
+          14,
+          5
+        ],
+        [
+          26,
+          14,
+          6
+        ],
+        [
+          26,
+          15,
+          1
+        ],
+        [
+          26,
+          15,
+          2
+        ],
+        [
+          26,
+          15,
+          3
+        ],
+        [
+          26,
+          15,
+          4
+        ],
+        [
+          26,
+          15,
+          5
+        ],
+        [
+          23,
+          14,
+          4
+        ],
+        [
+          23,
+          14,
+          1
+        ],
+        [
+          23,
+          14,
+          2
+        ],
+        [
+          23,
+          14,
+          3
+        ],
+        [
+          23,
+          14,
+          5
+        ]
+      ]
+    },
+    "home": [
+      29,
+      8,
+      15
+    ],
+    "exploreStalls": 2,
+    "exploreFailures": 0,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 5404
+  },
+  "death": [
+    36,
+    29,
+    33
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [
+    {
+      "item": "minecraft:cobblestone",
+      "count": 1,
+      "age": 5919,
+      "at": [
+        12.125,
+        0.0,
+        2.125
+      ]
+    }
+  ],
+  "log": [
+    "[02:42:07] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:08] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:09] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:10] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:11] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:12] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:13] [Server thread/INFO]: Sol native_wait COMPLETED [Hole up: recover behind the wall]",
+    "[02:42:14] [Server thread/INFO]: Sol native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3701]",
+    "[02:42:14] [Server thread/INFO]: Sol native_eat COMPLETED [from evaluateEssentialSurvivalCandidates:3701]",
+    "[02:42:15] [Server thread/INFO]: Sol native_wait COMPLETED [Rest to heal]",
+    "[02:42:16] [Server thread/INFO]: Sol native_wait COMPLETED [Rest to heal]",
+    "[02:42:18] [Server thread/INFO]: Sol native_goto CANCELLED: A hostile mob is attacking; fight back first [Back to where it saw iron ore at 38, 29, -10]",
+    "[02:42:21] [Server thread/INFO]: Sol native_fight CANCELLED: Badly hurt; break off the fight [Fight zombie]",
+    "[02:42:21] [Server thread/INFO]: Sol native_goto COMPLETED [Run from creeper]",
+    "[02:42:22] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[02:42:22] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[02:42:23] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from zombie]",
+    "[02:42:23] [Server thread/INFO]: Sol native_goto CANCELLED: Hazard/threat detected: urgent retreat required [Back off from zombie]",
+    "[02:42:23] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Run from creeper]",
+    "[02:42:23] [Server thread/INFO]: Sol died at 36, 29, 33: Sol was blown up by Creeper (tick 9968, day, under cover, hunger 16, armour 0, holding stone_sword, no shield; doing \"Run from creeper\" in \"Iron: fight back - Run from creeper\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

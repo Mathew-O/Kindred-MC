@@ -1,0 +1,137 @@
+{
+  "kind": "respawn",
+  "player": "Sol",
+  "tick": 26483,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -24,
+    64,
+    -16
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 1.0100017,
+  "food": 16,
+  "saturation": 0.0,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 2483,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: hurt and out of food - Climb toward the surface for food: step up",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "respawned after its death at 12, 9, 11 (Sol was shot by Skeleton), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          2,
+          2,
+          4
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          0,
+          1,
+          11
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [],
+    "tunnelled": [],
+    "visitedCaves": [],
+    "setAside": [],
+    "known": {
+      "CAVE": [
+        [
+          0,
+          1,
+          11
+        ],
+        [
+          1,
+          1,
+          12
+        ],
+        [
+          2,
+          2,
+          4
+        ],
+        [
+          4,
+          2,
+          6
+        ]
+      ]
+    },
+    "home": [
+      28,
+      5,
+      19
+    ],
+    "exploreStalls": 10,
+    "exploreFailures": 5,
+    "stuckSpells": 0,
+    "stuckLevel": 0,
+    "leftOut": 5108
+  },
+  "death": [
+    12,
+    9,
+    11
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[03:07:35] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 13, 10, 11]",
+    "[03:07:36] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 12, 9, 11]",
+    "[03:07:36] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 12, 10, 11]",
+    "[03:07:36] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:07:36] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 12, 11, 11]",
+    "[03:07:37] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 11, 10, 11]",
+    "[03:07:37] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 11, 11, 11]",
+    "[03:07:37] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:07:38] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 11, 12, 11]",
+    "[03:07:38] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 11, 11, 10]",
+    "[03:07:38] [Server thread/INFO]: Sol native_break COMPLETED [Climb toward the surface for food: clear 11, 12, 10]",
+    "[03:07:38] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:07:39] [Server thread/INFO]: Sol native_goto COMPLETED [Climb toward the surface for food: step up]",
+    "[03:07:39] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[03:07:39] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[03:07:39] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[03:07:39] [Server thread/INFO]: Sol native_place COMPLETED [Take cover from skeleton]",
+    "[03:07:40] [Server thread/INFO]: Sol native_goto COMPLETED [Back off from skeleton the way it came]",
+    "[03:07:41] [Server thread/INFO]: Sol native_goto CANCELLED: The player died [Back off from skeleton]",
+    "[03:07:41] [Server thread/INFO]: Sol died at 12, 9, 11: Sol was shot by Skeleton (tick 26463, day, under cover, hunger 15, armour 6, holding dirt, no shield; doing \"Back off from skeleton\" in \"Iron: fight back - Back off from skeleton the way it came\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}

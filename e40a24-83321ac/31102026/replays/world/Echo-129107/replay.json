@@ -1,0 +1,205 @@
+{
+  "kind": "respawn",
+  "player": "Echo",
+  "tick": 129107,
+  "dimension": "minecraft:overworld",
+  "origin": [
+    -23,
+    64,
+    38
+  ],
+  "size": [
+    33,
+    17,
+    33
+  ],
+  "at": [
+    16.5,
+    8.0,
+    16.5
+  ],
+  "yaw": 0.0,
+  "pitch": 0.0,
+  "health": 16.4,
+  "food": 20,
+  "saturation": 0.8000001,
+  "air": 300,
+  "absorption": 0.0,
+  "effects": [],
+  "inventory": [],
+  "selected": 0,
+  "timeOfDay": 9107,
+  "raining": false,
+  "thundering": false,
+  "difficulty": "easy",
+  "goal": "NETHER_PORTAL",
+  "stage": "Wood: Get out of the water: to dry ground",
+  "task": "waking",
+  "stance": "PRESS_ON",
+  "habits": "[]",
+  "cause": "respawned after its death at 22, 38, 171 (Echo discovered the floor was lava), the death outside its box",
+  "ticks": 2400,
+  "memory": {
+    "version": 1,
+    "blocked": [],
+    "failures": [
+      {
+        "at": [
+          11,
+          4,
+          32
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          4,
+          16,
+          21
+        ],
+        "n": 1
+      },
+      {
+        "at": [
+          6,
+          15,
+          21
+        ],
+        "n": 1
+      }
+    ],
+    "approaches": [],
+    "unreachable": [],
+    "coverHeld": [],
+    "treesGivenUp": [],
+    "dug": [
+      [
+        24,
+        9,
+        32
+      ],
+      [
+        22,
+        6,
+        18
+      ],
+      [
+        20,
+        6,
+        17
+      ],
+      [
+        32,
+        7,
+        20
+      ],
+      [
+        32,
+        7,
+        21
+      ],
+      [
+        32,
+        7,
+        22
+      ],
+      [
+        32,
+        7,
+        23
+      ],
+      [
+        11,
+        6,
+        32
+      ],
+      [
+        11,
+        5,
+        32
+      ],
+      [
+        10,
+        5,
+        32
+      ]
+    ],
+    "tunnelled": [
+      [
+        32,
+        7,
+        20
+      ],
+      [
+        32,
+        7,
+        21
+      ],
+      [
+        32,
+        7,
+        22
+      ],
+      [
+        32,
+        7,
+        23
+      ],
+      [
+        24,
+        9,
+        32
+      ]
+    ],
+    "visitedCaves": [
+      [
+        11,
+        0,
+        30
+      ]
+    ],
+    "setAside": [],
+    "known": {},
+    "home": [
+      28,
+      5,
+      16
+    ],
+    "exploreStalls": 1,
+    "exploreFailures": 12,
+    "stuckSpells": 4,
+    "stuckLevel": 0,
+    "leftOut": 7500
+  },
+  "death": [
+    22,
+    38,
+    171
+  ],
+  "deathInside": false,
+  "pass": "alive at the end of 2400 ticks",
+  "reported": "its armour back on (reported, not the pass)",
+  "drops": [],
+  "log": [
+    "[02:12:43] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[02:12:44] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for logs: clear 41, 63, 147]",
+    "[02:12:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for logs: advance]",
+    "[02:12:44] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for logs: clear 41, 63, 148]",
+    "[02:12:44] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for logs: advance]",
+    "[02:12:45] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for logs: clear 41, 64, 149]",
+    "[02:12:45] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for logs: clear 41, 63, 149]",
+    "[02:12:45] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for logs: advance]",
+    "[02:12:45] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for logs: clear 41, 64, 150]",
+    "[02:12:46] [Server thread/INFO]: Echo native_break COMPLETED [Cut through south for logs: clear 41, 63, 150]",
+    "[02:12:46] [Server thread/INFO]: Echo native_goto COMPLETED [Cut through south for logs: advance]",
+    "[02:12:49] [Server thread/INFO]: Echo native_goto COMPLETED [Climb toward the surface for logs: back the way it came]",
+    "[02:12:51] [Server thread/INFO]: Echo native_goto COMPLETED [Explore south for logs]",
+    "[02:12:52] [Server thread/INFO]: Echo native_goto COMPLETED [Get out of the water: to dry ground]",
+    "[02:12:53] [Server thread/INFO]: Echo native_goto BLOCKED: Route to -2, 63, 169 is blocked [Explore west for logs]",
+    "[02:12:53] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 21, 63, 171 is blocked [Get out of the water: to dry ground]",
+    "[02:12:54] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 21, 63, 172 is blocked [Get out of the water: to dry ground]",
+    "[02:12:54] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 20, 63, 171 is blocked [Get out of the water: to dry ground]",
+    "[02:12:58] [Server thread/INFO]: Echo native_goto BLOCKED: Route to 20, 63, 170 is blocked [Get out of the water: to dry ground]",
+    "[02:12:58] [Server thread/INFO]: Echo died at 22, 38, 171: Echo discovered the floor was lava (tick 129087, day, under cover, hunger 17, armour 0, holding rabbit, no shield; doing \"native_goto\" in \"Wood: Get out of the water: to dry ground (tried elsewhere 3 times)\"; stance PRESS_ON, focus NONE, habits [])"
+  ]
+}
