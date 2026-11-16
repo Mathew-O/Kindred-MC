@@ -1,1 +1,2 @@
 branch-1 (ab0dc8e1): 50 min, peak 3033 MB, 122 required tests failed, fence-top 32, disk 5.5G
+branch-2 (ab0dc8e1): 47 min, peak 2972 MB, 125 required tests failed, fence-top 29, disk 5.4G
