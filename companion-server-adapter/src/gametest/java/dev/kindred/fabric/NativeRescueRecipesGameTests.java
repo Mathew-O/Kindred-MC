@@ -47,6 +47,9 @@ public final class NativeRescueRecipesGameTests implements FabricGameTest {
     }
 
     private static void into(TestContext context, NativePaidSkillsGameTests.Fixture f, BlockPos b, boolean ceiling) {
+        // The pit, twenty over the plot and wider than it, and the glass its player sets in it, put back as the test ends,
+        // passed or failed (F-22c75b).
+        FixtureGround.keep(context, b.add(-4, -2, -4), b.add(4, 8, 4));
         pit(context.getWorld(), b, ceiling);
         context.getWorld().setTimeOfDay(1000);
         var player = f.player();

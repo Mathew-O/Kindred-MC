@@ -281,6 +281,8 @@ final class NativeBreakAction extends NativeRecordedAction {
                     for (ItemEntity drop : world.getEntitiesByClass(ItemEntity.class, new Box(target).expand(4.0), d -> true)) {
                         if (!preexistingDrops.contains(drop.getUuid())) drops.add(drop.getUuid());
                     }
+                    // Its own drops known to the player as a player knows where what it broke fell (F-22c94a).
+                    for (UUID own : drops) body.knowOwnDrop(own);
                     phase = collect && !drops.isEmpty() ? Phase.COLLECTING : Phase.DONE;
                     if (phase == Phase.DONE) settle("Native break observed", true);
                     return waiting();

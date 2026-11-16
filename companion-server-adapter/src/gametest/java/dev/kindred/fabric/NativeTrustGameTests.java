@@ -264,6 +264,8 @@ public final class NativeTrustGameTests implements FabricGameTest {
     private static BlockPos[] corridor(TestContext context, NativeVoiceGameTests.Talk t, Lure lure) {
         var world = context.getWorld();
         BlockPos b = t.f.player().getBlockPos().up(20).toImmutable();
+        // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+        FixtureGround.keep(context, b.add(-2, -12, -2), b.add(10, 4, 2));
         for (int x = -1; x <= 9; x++) for (int z = -1; z <= 1; z++) {
             for (int y = -11; y <= 3; y++) world.setBlockState(b.add(x, y, z), Blocks.AIR.getDefaultState());
             boolean wall = x == -1 || x == 9 || z != 0;
