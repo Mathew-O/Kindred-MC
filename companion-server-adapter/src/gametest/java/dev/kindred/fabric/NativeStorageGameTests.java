@@ -268,6 +268,8 @@ public final class NativeStorageGameTests implements FabricGameTest {
                     for (var status : statuses) if (!status.id().equals(f.id)) hal[0] = status.id();
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its field and the chests on it, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-2, 1, -2), o.add(12, 6, 36));
                     for (int x = -2; x <= 12; x++) for (int z = -2; z <= 36; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -375,6 +377,8 @@ public final class NativeStorageGameTests implements FabricGameTest {
                     for (var status : statuses) if (!status.id().equals(f.id)) hal[0] = status.id();
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its field and the chests on it, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-2, 1, -2), o.add(12, 6, 36));
                     for (int x = -2; x <= 12; x++) for (int z = -2; z <= 36; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
