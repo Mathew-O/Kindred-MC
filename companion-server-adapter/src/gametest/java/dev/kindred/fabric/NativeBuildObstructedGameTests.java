@@ -21,12 +21,11 @@ import java.util.TreeMap;
  * go in while the animal is there; once it steps out, the gate is set and the pen is whole. An animal that never leaves
  * does not hold the build up for good: the gate is given up in about 20 s, as before.
  *
- * Technical: #359's CI (run 43729280146): a pen's fence gate, its last block, was refused "Block placement produced no
- * effect or was obstructed" from six spots in one second, BuildRunner tried what it gave up on once more at once, and the
- * pen was given up at 23 of 24 (`NativeOwnRanchGameTests`' chickens). Building from where it stands (E-71b1) leaves the gate,
- * which is set only from outside, as the pen's last gap, where an animal can be. Here an animal with no AI stands in the gate
- * cell and is moved out of the pen 300 ticks (15 s) after the other 23 blocks are placed: the pen must end whole. A pig the same,
- * as #357's CI found on main's order.
+ * Technical: F-22c93. A pen's fence gate was refused "Block placement produced no effect or was obstructed" from every spot
+ * round it in about a second, BuildRunner tried what it gave up on once more at once, and the pen was given up at 23 of 24:
+ * #359's CI (run 43729280146, `NativeOwnRanchGameTests`' chickens) and #357's on main (run 43722834395, the pigs). Here an
+ * animal with no AI stands in the gate cell and is moved out of the pen 300 ticks (15 s) after the other 23 blocks are
+ * placed: the pen must end whole. A pig the same. A chicken that never leaves must not hold the build up for good.
  */
 public final class NativeBuildObstructedGameTests implements FabricGameTest {
     /** Ticks the animal stays in the gateway once the rest of the pen stands. */

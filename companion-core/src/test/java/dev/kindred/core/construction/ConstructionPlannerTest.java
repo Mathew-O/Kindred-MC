@@ -36,59 +36,16 @@ class ConstructionPlannerTest {
         return Math.sqrt(Math.pow(step.hit()[0] - ex, 2) + Math.pow(step.hit()[1] - ey, 2) + Math.pow(step.hit()[2] - ez, 2));
     }
 
-    /**
-     * From where it stands, the farthest block in reach first (E-71b1): x 5 is out of reach of the feet at x 0, so x 4. Before,
-     * the nearest, x 3; and from one spot a nearer block placed first stood in the sight line to the farther ones' faces.
-     */
     @Test
-    void aFloorGoesDownTheFarthestInReachFirstFromWhereItStands() {
+    void aFloorGoesDownTheNearestFirstFromWhereItStands() {
         var blocks = List.of(block(3, 1, 0, "minecraft:cobblestone"), block(4, 1, 0, "minecraft:cobblestone"), block(5, 1, 0, "minecraft:cobblestone"));
         var step = next(blocks, BuildTestSites.flat(), new Pos(0, 1, 0));
         assertEquals(ConstructionPlanner.Kind.PLACE, step.kind());
-        assertEquals(new Pos(4, 1, 0), step.target(), "the farthest in reach from the feet");
-        assertEquals(new Pos(4, 0, 0), step.support());
+        assertEquals(new Pos(3, 1, 0), step.target(), "the nearest");
+        assertEquals(new Pos(3, 0, 0), step.support());
         assertEquals(Face.UP, step.face());
         assertTrue(reach(step) <= ConstructionPlanner.REACH);
         assertEquals(new Pos(0, 1, 0), step.stance(), "from where it stands, when that reaches");
-    }
-
-    /**
-     * A row of nine in reach of one spot, the player ten off (E-71b1): one walk, and all nine from that spot. Nearest first,
-     * each block placed stood in the sight line to the next ones' faces, and it took three spots.
-     */
-    @Test
-    void aRowOfNineInReachOfOneSpotIsPlacedFromItFarthestFirst() {
-        var row = new ArrayList<Blueprint.Block>();
-        for (int x = 0; x <= 8; x++) row.add(block(x, 1, 0, "minecraft:cobblestone"));
-        var farthest = FromOneStanceTest.build(row, BuildTestSites.flat(), new Pos(4, 1, -10), ConstructionPlanner.Order.FARTHEST_FIRST);
-        var nearest = FromOneStanceTest.build(row, BuildTestSites.flat(), new Pos(4, 1, -10), ConstructionPlanner.Order.NEAREST_FIRST);
-        assertEquals(ConstructionPlanner.Kind.DONE, farthest.end());
-        assertEquals(9, farthest.placed());
-        assertEquals(1, farthest.walks(), "farthest first: " + farthest.stances());
-        assertEquals(1, new java.util.HashSet<>(farthest.stances()).size(), "all nine from one spot: " + farthest.stances());
-        assertEquals(ConstructionPlanner.Kind.DONE, nearest.end());
-        assertEquals(3, nearest.walks(), "nearest first, its own sight lines blocked: " + nearest.stances());
-    }
-
-    /**
-     * Three blocks nearer and five farther, no spot reaching both (E-71b1): the five first, the spot serving more, and one
-     * walk to each group. Nearest first, it took five.
-     */
-    @Test
-    void ofTwoGroupsTheSpotServingMoreGoesFirstAndEachIsOneWalk() {
-        var blocks = new ArrayList<Blueprint.Block>();
-        for (int x = 0; x <= 2; x++) blocks.add(block(x, 1, 0, "minecraft:cobblestone"));
-        for (int x = 9; x <= 13; x++) blocks.add(block(x, 1, 0, "minecraft:cobblestone"));
-        Pos feet = new Pos(1, 1, -8);
-        var first = next(blocks, BuildTestSites.flat(), feet);
-        assertEquals(ConstructionPlanner.Kind.PLACE, first.kind());
-        assertTrue(first.target().x() >= 9, "a block of the five first, not the nearest of the three: " + first.target());
-        var farthest = FromOneStanceTest.build(blocks, BuildTestSites.flat(), feet, ConstructionPlanner.Order.FARTHEST_FIRST);
-        var nearest = FromOneStanceTest.build(blocks, BuildTestSites.flat(), feet, ConstructionPlanner.Order.NEAREST_FIRST);
-        assertEquals(8, farthest.placed());
-        assertEquals(2, farthest.walks(), "farthest first, one walk to each group: " + farthest.stances());
-        assertEquals(8, nearest.placed());
-        assertEquals(5, nearest.walks(), "nearest first: " + nearest.stances());
     }
 
     /**

@@ -170,31 +170,19 @@ public final class ConstructionPlanner {
      */
     public static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
                             Set<Pos> shunned, int spare, List<Blueprint.Block> setAside) {
-        return next(blocks, clear, world, feet, items, scaffold, shunned, spare, setAside, Order.FARTHEST_FIRST);
-    }
-
-    /**
-     * The order a spot's blocks are placed in (E-71b1). The planner places the farthest in reach first; nearest first is
-     * kept for the tests that show the difference: from one spot, a nearer block placed first stands in the sight line to
-     * the farther ones' faces.
-     */
-    enum Order { FARTHEST_FIRST, NEAREST_FIRST }
-
-    static Step next(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
-                     Set<Pos> shunned, int spare, List<Blueprint.Block> setAside, Order order) {
         // Within one plan, what each search for a way out learned is kept for the next: a step inside a large build asks it
         // once per spot weighed, over the same blocks (E-08a1's cost). The answers are the same as without it.
         var outer = WAYS_OUT.get();
         WAYS_OUT.set(new WaysOut());
         try {
-            return plan(blocks, clear, world, feet, items, scaffold, shunned, spare, setAside, order);
+            return plan(blocks, clear, world, feet, items, scaffold, shunned, spare, setAside);
         } finally {
             WAYS_OUT.set(outer);
         }
     }
 
     private static Step plan(List<Blueprint.Block> blocks, List<Pos> clear, BuildSite world, Pos feet, Set<String> items, Set<Pos> scaffold,
-                             Set<Pos> shunned, int spare, List<Blueprint.Block> setAside, Order order) {
+                             Set<Pos> shunned, int spare, List<Blueprint.Block> setAside) {
         BuildSite site = steps(blocks, clear, world);
         Map<Pos, BlockSpec> wanted = new HashMap<>(Blueprint.byPosition(setAside));
         wanted.putAll(Blueprint.byPosition(blocks));
@@ -331,11 +319,16 @@ public final class ConstructionPlanner {
                 if (place.isPresent()) return place.get();
             }
         }
-        var next = fromFewestStances(site, todo, feet, wanted, box, walk, order);
-        if (next.isPresent()) return next.get();
+        int weighed = 0;
+        for (var b : todo) {
+            if (++weighed > CANDIDATES) break;
+            if (b.at().y() > todo.getFirst().at().y() + 1) break; // A layer at a time: never a block hung above an unfinished one.
+            var place = placement(site, b, feet, wanted, box, stances(b.at(), feet), walk);
+            if (place.isPresent()) return place.get();
+        }
         // Nothing in reach of a spot to stand: a scaffold to stand on, for the lowest block waiting that one serves.
         var lowest = todo.getFirst();
-        int weighed = 0;
+        weighed = 0;
         for (var b : todo) {
             if (++weighed > CANDIDATES || b.at().y() > lowest.at().y() + 1) break;
             var column = scaffold(site, b, feet, wanted, box, walk);
@@ -363,19 +356,6 @@ public final class ConstructionPlanner {
                 if (owed.contains(against)) return Step.blockedAt(against, WAITS_ON_SET_ASIDE + against + " for " + b.spec().block() + " at " + b.at());
             }
         }
-        // The layer's nearest blocks held none it could work, nor one a scaffold or a prop serves: the rest of the layer,
-        // nearest first, each from its own best spot, before the build is called out of reach (E-71b1). Working from where
-        // it stands, a builder can finish a course standing in the middle of a wide room, and the nearest of the next course
-        // are then the middle of a ceiling with nothing yet to be set against; the ones over the walls lie past the first
-        // CANDIDATES. In GeneratorsTest the spruce manor's ceiling was called out of reach so, from the middle of its upper
-        // floor. Only a plan that would otherwise be blocked looks this far.
-        weighed = 0;
-        for (var b : todo) {
-            if (b.at().y() > lowest.at().y() + 1) break;
-            if (++weighed <= CANDIDATES) continue;
-            var place = placement(site, b, feet, wanted, box, stances(b.at(), feet), walk);
-            if (place.isPresent()) return place.get();
-        }
         return Step.blockedAt(lowest.at(), "No way to reach " + lowest.spec().block() + " at " + lowest.at());
     }
 
@@ -388,195 +368,6 @@ public final class ConstructionPlanner {
                 .filter(p -> !scaffold.contains(p.up()) || site.cell(p.up()).map(c -> c.kind() != BuildSite.Kind.SOLID).orElse(true))
                 .sorted(Comparator.<Pos>comparingInt(p -> -p.y()).thenComparingLong(p -> p.distanceSquared(feet)).thenComparing(Comparator.naturalOrder()))
                 .toList();
-    }
-
-    /**
-     * The next block placed on foot, and where from (E-71b1): a layer at a time, as before, the lowest first. Within a layer,
-     * a block it can place from where it stands, inside the build or out, the farthest of them first. With none, the spot that
-     * serves the most of the layer: of every spot the layer's nearest blocks can be placed from, and
-     * where it stands. Ties go to today's cost (the walk, 3 more inside the build, a tenth of the reach), and from that spot
-     * the farthest block it serves is placed. Before, the nearest block went first and was placed from its own best spot, so
-     * a builder walked a step to each next block of a row it could have placed from one spot: the hideout took 1,873 walks
-     * for its 410 breaks after F-22c7.
-     *
-     * Inside the build, where it stands comes first too: a block placed from there that would leave no way out is refused
-     * by {@link #sealedIn}, which since E-08a1 takes the way out up only as a step onto footing, never over a wall.
-     *
-     * A spot is credited only with blocks that can be placed from it now: of the layer it would work next, with what they
-     * are set against standing. What is placed, the refusals and the layer order are unchanged.
-     */
-    private static Optional<Step> fromFewestStances(BuildSite site, List<Blueprint.Block> todo, Pos feet, Map<Pos, BlockSpec> wanted,
-                                                    Box box, Set<Pos> walk, Order order) {
-        int lowestY = todo.getFirst().at().y();
-        var window = new ArrayList<Blueprint.Block>();
-        for (var b : todo) {
-            // A layer at a time: never a block hung above an unfinished one.
-            if (window.size() >= CANDIDATES || b.at().y() > lowestY + 1) break;
-            window.add(b);
-        }
-        for (int y = lowestY; y <= lowestY + 1; y++) {
-            var course = new ArrayList<Blueprint.Block>();
-            for (var b : window) if (b.at().y() == y) course.add(b);
-            for (var b : inOrder(course, feet, order)) {
-                var here = placement(site, b, feet, wanted, box, List.of(feet), walk);
-                if (here.isPresent()) return here;
-            }
-            // Every spot a block of the course could be placed from is a candidate, and where it stands. Each is weighed
-            // only if the blocks in its reach could make it the best: what a spot serves is never more than the course's
-            // blocks within reach of its eyes, so the spots are taken in that bound's order and the weighing stops when no
-            // spot left could serve as many as the best so far (a step inside a large build had 100 to 150 spots, each
-            // weighed against the whole course: E-71b1's cost, which raised the keep's p99 from 36 to 70 ms).
-            var spots = new java.util.LinkedHashSet<Pos>();
-            spots.add(feet);
-            for (var b : course) for (Pos stance : stances(b.at(), feet)) if (walk.contains(stance)) spots.add(stance);
-            var bounded = new ArrayList<Bounded>();
-            for (Pos stance : spots) {
-                int bound = inReach(course, stance);
-                if (bound > 0) bounded.add(new Bounded(stance, bound));
-            }
-            bounded.sort(Comparator.comparingInt(Bounded::bound).reversed());
-            var weighed = new java.util.LinkedHashMap<Pos, Served>();
-            // A spot given up on once it could no longer serve as many as it had to: the count it fell short of.
-            var shortOf = new HashMap<Pos, Integer>();
-            var exactOf = new HashMap<Pos, Exact>();
-            int next = 0;
-            // First the spots that could serve as many as the most served so far.
-            while (next < bounded.size()) {
-                int most = 0;
-                for (var w : weighed.values()) most = Math.max(most, w.count());
-                if (!weighed.isEmpty() && bounded.get(next).bound() < most) break;
-                weigh(site, course, bounded.get(next++).stance(), most, weighed, shortOf, feet, wanted, box, walk, order);
-            }
-            Served best;
-            while (true) {
-                best = best(site, course, new ArrayList<>(weighed.values()), exactOf, feet, wanted, box, walk, order);
-                // The choice looks only at spots serving at least the best's count. A spot not weighed serves at most its
-                // bound, and one given up on less than the count it fell short of: below the best's count, neither can
-                // change the choice, which is then the same as with every spot weighed in full. With no usable spot yet,
-                // any could be.
-                int need = best != null ? best.count() : 1;
-                var again = new ArrayList<Pos>();
-                for (var e : shortOf.entrySet()) if (e.getValue() > need) again.add(e.getKey());
-                for (Pos at : again) {
-                    shortOf.remove(at);
-                    weigh(site, course, at, need, weighed, shortOf, feet, wanted, box, walk, order);
-                }
-                boolean more = !again.isEmpty();
-                while (next < bounded.size() && bounded.get(next).bound() >= need) {
-                    weigh(site, course, bounded.get(next++).stance(), need, weighed, shortOf, feet, wanted, box, walk, order);
-                    more = true;
-                }
-                if (!more) break;
-            }
-            if (best != null) return Optional.of(best.first());
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Of the spots weighed without the search for a way out, the most served first: each checked in full, in that order, until
-     * no spot left could serve more than the best checked, and a few more of the same count for a cheaper one (E-71b1).
-     */
-    private static Served best(BuildSite site, List<Blueprint.Block> course, List<Served> weighed, Map<Pos, Exact> exactOf, Pos feet,
-                               Map<Pos, BlockSpec> wanted, Box box, Set<Pos> walk, Order order) {
-        weighed.sort(Comparator.comparingInt(Served::count).reversed().thenComparingDouble(Served::cost));
-        Served best = null;
-        int checkedSince = 0;
-        for (var loose : weighed) {
-            if (best != null && (loose.count() < best.count() || ++checkedSince > RECHECKED)) break;
-            if (!box.inside(loose.first().stance())) {
-                // Outside the build there is no way out to search for: the weighing was exact.
-                if (best == null || loose.count() > best.count() || loose.count() == best.count() && loose.cost() < best.cost()) best = loose;
-                continue;
-            }
-            // Checked in full only as far as it could still match the best: short of that, it could not take its place.
-            int floor = best == null ? 1 : best.count();
-            Pos at = loose.first().stance();
-            var known = exactOf.get(at);
-            if (known == null || known.served() == null && known.floor() > floor) {
-                known = new Exact(served(site, course, at, feet, wanted, box, walk, true, order, floor), floor);
-                exactOf.put(at, known);
-            }
-            var exact = known.served();
-            if (exact != null && (best == null || exact.count() > best.count() || exact.count() == best.count() && exact.cost() < best.cost())) {
-                best = exact;
-            }
-        }
-        return best;
-    }
-
-    /** A spot checked in full: what it serves, or null when that fell short of {@code floor}. */
-    private record Exact(Served served, int floor) { }
-
-    /** A spot weighed without the search for a way out, as far as it could still serve {@code floor}: kept, or noted short of it. */
-    private static void weigh(BuildSite site, List<Blueprint.Block> course, Pos at, int floor, Map<Pos, Served> weighed, Map<Pos, Integer> shortOf,
-                              Pos feet, Map<Pos, BlockSpec> wanted, Box box, Set<Pos> walk, Order order) {
-        var served = served(site, course, at, feet, wanted, box, walk, false, order, floor);
-        if (served != null) weighed.put(at, served);
-        else shortOf.put(at, Math.max(floor, 1));
-    }
-
-    /** A spot, and the course's blocks within reach of its eyes: the most it could serve (E-71b1). */
-    private record Bounded(Pos stance, int bound) { }
-
-    /** The course's blocks a face of which could be within reach of the eyes at {@code stance}, as {@link #served} counts them. */
-    private static int inReach(List<Blueprint.Block> course, Pos stance) {
-        double ex = stance.x() + 0.5, ey = stance.y() + EYE, ez = stance.z() + 0.5;
-        int n = 0;
-        for (var b : course) {
-            double dx = b.at().x() + 0.5 - ex, dy = b.at().y() + 0.5 - ey, dz = b.at().z() + 0.5 - ez;
-            if (dx * dx + dy * dy + dz * dz <= (REACH + 1) * (REACH + 1)) n++;
-        }
-        return n;
-    }
-
-    /** Spots inside the build checked in full beyond the first, for one serving as many at a lower cost (E-71b1). */
-    static final int RECHECKED = 6;
-
-    /** How many of a course a spot serves, the farthest of them as a step from it, and the spot's cost: today's, by that step. */
-    private record Served(int count, Step first, double cost) { }
-
-    /**
-     * What {@code stance} serves of the course, or null when it serves none, or once it can no longer serve {@code floor}:
-     * a spot kept is always counted in full.
-     */
-    private static Served served(BuildSite site, List<Blueprint.Block> course, Pos stance, Pos feet, Map<Pos, BlockSpec> wanted, Box box,
-                                 Set<Pos> walk, boolean sealCheck, Order order, int floor) {
-        int count = 0;
-        Step first = null;
-        int left = inReach(course, stance);
-        double ex = stance.x() + 0.5, ey = stance.y() + EYE, ez = stance.z() + 0.5;
-        for (var b : inOrder(course, stance, order)) {
-            double dx = b.at().x() + 0.5 - ex, dy = b.at().y() + 0.5 - ey, dz = b.at().z() + 0.5 - ez;
-            if (dx * dx + dy * dy + dz * dz > (REACH + 1) * (REACH + 1)) continue; // A face of it is within a block of its middle.
-            left--;
-            var from = placement(site, b, feet, wanted, box, List.of(stance), walk, sealCheck);
-            if (from.isPresent()) {
-                count++;
-                if (first == null) first = from.get();
-            }
-            if (count + left < floor) return null; // It can no longer serve as many as it must.
-        }
-        if (first == null) return null;
-        return new Served(count, first, Math.sqrt(stance.distanceSquared(feet)) + (box.inside(stance) ? 3 : 0) + reach(first) * 0.1);
-    }
-
-    /**
-     * The course's blocks, the farthest from {@code stance} first (as {@link Order} says): from one spot, a nearer block placed first stands in the
-     * sight line to the farther ones' faces, and they could then be placed only from somewhere else. Placed from the far end
-     * in, each stands behind the next. A row of nine placed nearest first took three spots; from the far end, one.
-     */
-    private static List<Blueprint.Block> inOrder(List<Blueprint.Block> course, Pos stance, Order order) {
-        var out = new ArrayList<>(course);
-        Comparator<Blueprint.Block> nearest = Comparator.comparingLong(b -> b.at().distanceSquared(stance));
-        out.sort(order == Order.FARTHEST_FIRST ? nearest.reversed() : nearest);
-        return out;
-    }
-
-    /** From the step's eyes to where it clicks. */
-    private static double reach(Step step) {
-        double dx = step.hit()[0] - (step.stance().x() + 0.5), dy = step.hit()[1] - (step.stance().y() + EYE), dz = step.hit()[2] - (step.stance().z() + 0.5);
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 
     /** The first of {@code tops} it can break from a spot it can walk to, or from on top of it where it stands there. */
@@ -596,16 +387,6 @@ public final class ConstructionPlanner {
      */
     private static Optional<Step> placement(BuildSite site, Blueprint.Block b, Pos feet, Map<Pos, BlockSpec> wanted, Box box,
                                             List<Pos> stances, Set<Pos> walk) {
-        return placement(site, b, feet, wanted, box, stances, walk, true);
-    }
-
-    /**
-     * As {@link #placement(BuildSite, Blueprint.Block, Pos, Map, Box, List, Set)}; without {@code sealCheck}, a stance inside
-     * the build is not searched for a way out ({@link #sealedIn}), so the answer is an upper bound: a spot weighed this way
-     * is checked in full before it is used (E-71b1).
-     */
-    private static Optional<Step> placement(BuildSite site, Blueprint.Block b, Pos feet, Map<Pos, BlockSpec> wanted, Box box,
-                                            List<Pos> stances, Set<Pos> walk, boolean sealCheck) {
         BlockSpec spec = b.spec();
         // A door's upper half and a bed's head come with it: their cell must be clear for them.
         var partner = Placement.partner(spec, b.at());
@@ -633,7 +414,7 @@ public final class ConstructionPlanner {
                 // Well inside the facing's quarter, so a body a little off the middle of its spot still faces the same way.
                 if (mustFace != null && (Placement.facingOf(yaw) != mustFace || offQuarter(yaw) > FACING_MARGIN)) continue;
                 if (!clearSight(site, new double[] {ex, ey, ez}, hit, support, b.at(), false)) continue;
-                if (sealCheck && box.inside(stance) && sealedIn(site, stance, b.at(), wanted, box)) continue;
+                if (box.inside(stance) && sealedIn(site, stance, b.at(), wanted, box)) continue;
                 double cost = Math.sqrt(stance.distanceSquared(feet)) + (box.inside(stance) ? 3 : 0) + reach * 0.1;
                 if (cost < bestCost) {
                     bestCost = cost;
@@ -1102,20 +883,12 @@ public final class ConstructionPlanner {
 
     private static final ThreadLocal<WaysOut> WAYS_OUT = new ThreadLocal<>();
 
-    /** No cell: what {@link #sealedIn} places when the block placed is one it already searches over as wanted. */
-    private static final Pos AS_WANTED = new Pos(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
-
     private static boolean sealedIn(BuildSite site, Pos stance, Pos placing, Map<Pos, BlockSpec> wanted, Box box) {
         // Over the build as it will stand: every block still wanted in place (a door still to go a way through all the
         // same), and the one being placed. Sideways and down through open cells, as before: a drop of any height, or down
         // its own scaffold, is a way out. Up only as a player goes up on foot: a step of one onto something to stand on,
         // with head room for the jump. Before, up was any open cell, through the air over a wall; a ring's last gap, two
         // high, was filled from inside whenever no spot outside reached it, and the player shut in (E-08a1).
-        // A block still wanted, not a door, is already searched over as it will stand: placing it changes no cell of the
-        // search, so every such block of a spot shares one search (E-71b1's cost: a spot inside the keep checked in full
-        // searched once for each block in its reach, 22 to 41 ms). A door placed is a door shut, and is searched alone.
-        var spec = wanted.get(placing);
-        if (spec != null && !doorway(spec)) placing = AS_WANTED;
         var ways = WAYS_OUT.get();
         var key = ways == null ? null : new WaysOut.Key(site, wanted, placing);
         Set<Pos> knownOut = ways == null ? Set.of() : ways.out.getOrDefault(key, Set.of());

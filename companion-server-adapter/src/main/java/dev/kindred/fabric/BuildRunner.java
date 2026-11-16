@@ -71,9 +71,9 @@ final class BuildRunner {
     /** Cells whose placement was refused with an animal or another mob standing in them. */
     private final Set<Pos> obstructed = new HashSet<>();
     /**
-     * Rounds back to what it gave up on, all else built, a 2 s wait before each (each round about 4 s with its tries), when a cell given up on had an animal or
-     * another mob standing in it: about 20 s for it to move, as a player waits for an animal to step out of a gateway, before the
-     * build is given up as before. With nothing in the cell, one round, as before.
+     * Rounds back to what it gave up on, all else built, a 2 s wait before each (about 4 s a round with its tries), when a
+     * cell given up on had an animal or another mob standing in it: about 20 s for it to move, as a player waits for an
+     * animal to step out of a gateway, before the build is given up as before. With nothing in the cell, one round, as before.
      */
     static final int OBSTRUCTED_ROUNDS = 5;
     /** How often each given-up block has been tried again because another waited on it (E-70a1). */
@@ -1083,14 +1083,6 @@ final class BuildRunner {
         }
         boolean placing = "native_place".equals(task.skill()), breaking = "native_break".equals(task.skill());
         boolean pillar = "native_pillar".equals(task.skill());
-        // A walk to the spot a placement is to be made from, refused ("Route ... is blocked", no walkable route): that spot
-        // is shunned until a step gets done, as a refused placement's is, and the plan finds another. Not so, the plan chose
-        // the same spot again and its walk was refused again, until the build stopped "8 steps failed one after another":
-        // the compound's hall in the build classes, working from where it stands (E-71b1), 3 of 3 on #359's branch.
-        if ("native_goto".equals(task.skill()) && !completed && issuedFrom != null && task.label().contains(" to place ")) {
-            shunned.add(issuedFrom);
-            return;
-        }
         if (!placing && !breaking && !pillar) return;
         Pos at = new Pos(Integer.parseInt(task.args().get("x")), Integer.parseInt(task.args().get("y")), Integer.parseInt(task.args().get("z")));
         if (pillar) {
