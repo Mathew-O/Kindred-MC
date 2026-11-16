@@ -221,39 +221,55 @@ final class ChronicleKeeper {
     /** A faction's or the world's latest pages, oldest first ("faction:<id>", "world"). */
     List<Chronicle.Summary> pagesAbove(String scope) { return List.copyOf(above.getOrDefault(scope, List.of())); }
 
-    /** The pages for the span just ended, from the Record's events since the last page. */
+    /**
+     * The pages for the span just ended, from the Record's events since the last page: all of them, in batches of
+     * {@link #BATCH} read on the ordered writer until one comes back short (F-33f: a day passes 10,000 events, journal
+     * lines mostly, at 3 players already), each player's sorted out on this thread as its batch comes; then each page.
+     */
     CompletableFuture<Integer> writeDay(long from, long until) {
         var done = new CompletableFuture<Integer>();
         busy = true;
-        host.events(Chronicle.DAY_KINDS, through, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
+        var byPlayer = new LinkedHashMap<Player, List<Chronicle.Event>>();
+        for (Player p : host.players()) byPlayer.put(p, new ArrayList<>());
+        readDay(through, byPlayer, from, until, done);
+        return done;
+    }
+
+    private void readDay(long afterId, LinkedHashMap<Player, List<Chronicle.Event>> byPlayer, long from, long until, CompletableFuture<Integer> done) {
+        host.events(Chronicle.DAY_KINDS, afterId, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
             if (failure != null || events == null) {
                 busy = false;
                 KindredMod.LOGGER.warn("Chronicle: the Record could not be read: {}", String.valueOf(failure));
                 done.complete(0);
                 return;
             }
-            var byPlayer = new LinkedHashMap<Player, List<Chronicle.Event>>();
-            for (Player p : host.players()) byPlayer.put(p, new ArrayList<>());
-            long last = through;
+            long last = afterId;
             for (var e : events) {
                 last = Math.max(last, e.id());
                 for (var en : byPlayer.entrySet()) {
                     if (e.actor() != null && en.getKey().actors().contains(e.actor())) Chronicle.fromRecord(e).ifPresent(en.getValue()::add);
                 }
             }
-            long batchEnd = last;
-            var writes = new ArrayList<CompletableFuture<Void>>();
-            for (var en : byPlayer.entrySet()) {
-                if (en.getValue().isEmpty()) continue;
-                writes.add(page(en.getKey(), from, until, en.getValue(), batchEnd));
+            if (events.size() == BATCH) { // More of the day may follow: the next batch after the last read.
+                readDay(last, byPlayer, from, until, done);
+                return;
             }
-            CompletableFuture.allOf(writes.toArray(CompletableFuture[]::new)).whenComplete((v, f) -> host.server().execute(() -> {
-                through = batchEnd;
-                busy = false;
-                done.complete(writes.size());
-            }));
+            writePages(byPlayer, from, until, last, done);
         }));
-        return done;
+    }
+
+    /** Each player's page from all it did since the last page; then the next page starts after {@code last}. */
+    private void writePages(LinkedHashMap<Player, List<Chronicle.Event>> byPlayer, long from, long until, long last, CompletableFuture<Integer> done) {
+        var writes = new ArrayList<CompletableFuture<Void>>();
+        for (var en : byPlayer.entrySet()) {
+            if (en.getValue().isEmpty()) continue;
+            writes.add(page(en.getKey(), from, until, en.getValue(), last));
+        }
+        CompletableFuture.allOf(writes.toArray(CompletableFuture[]::new)).whenComplete((v, f) -> host.server().execute(() -> {
+            through = last;
+            busy = false;
+            done.complete(writes.size());
+        }));
     }
 
     private CompletableFuture<Void> page(Player player, long from, long until, List<Chronicle.Event> all, long batchEnd) {
