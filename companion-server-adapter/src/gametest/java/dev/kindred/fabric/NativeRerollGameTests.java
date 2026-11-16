@@ -93,6 +93,8 @@ public final class NativeRerollGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
                     FixtureGround.simulated(context, o, o.add(14, 0, 12));
+                    // Its field and pen, and the lecterns its player sets there, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(0, 1, 0), o.add(14, 6, 12));
                     for (int x = 0; x <= 14; x++) for (int z = 0; z <= 12; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());

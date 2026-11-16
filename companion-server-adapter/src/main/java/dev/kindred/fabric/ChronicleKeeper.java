@@ -68,23 +68,53 @@ final class ChronicleKeeper {
 
     ChronicleKeeper(Host host) { this.host = host; }
 
-    /** Reads back the pages the Record holds, and where the last one stopped. Call once the Record is open. */
+    /**
+     * Reads back the pages the Record holds, and where the last one stopped. Call once the Record is open. Every page,
+     * in batches of {@link #BATCH} in the Record's order (F-33e: a month at 8 players passes 10,000 pages, about day
+     * 17), each folded in as it comes, so only each scope's newest {@link #KEPT} and the highest {@code through} are
+     * held, never every page at once.
+     */
     void start() {
         busy = true;
-        host.events(Set.of(Chronicle.PAGE), 0, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
-            long last = 0;
+        readBack(0, 0, 0, System.nanoTime(), 0);
+    }
+
+    /**
+     * One batch read on the Record's ordered writer, never on the server thread; folded in on it ({@code folding}, the
+     * server thread's share, in nanoseconds), then the next.
+     */
+    private void readBack(long afterId, long last, int read, long started, long folding) {
+        host.events(Set.of(Chronicle.PAGE), afterId, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
+            long foldStarted = System.nanoTime();
+            long highest = last, nextAfter = afterId;
+            int count = read;
             if (failure == null && events != null) {
                 for (var e : events) {
                     Chronicle.fromPage(e).ifPresent(page -> {
                         if (page.tier() == Chronicle.Tier.PLAYER_DAY) keep(e.actor(), page);
                         else keepAbove(page);
                     });
-                    try { last = Math.max(last, Long.parseLong(e.data().getOrDefault("through", "0"))); } catch (NumberFormatException ignored) { }
+                    try { highest = Math.max(highest, Long.parseLong(e.data().getOrDefault("through", "0"))); } catch (NumberFormatException ignored) { }
+                    nextAfter = Math.max(nextAfter, e.id());
                 }
+                count += events.size();
+                long folded = folding + (System.nanoTime() - foldStarted);
+                if (events.size() == BATCH) { // More may follow: the next batch after the last one read.
+                    readBack(nextAfter, highest, count, started, folded);
+                    return;
+                }
+                through = highest;
+                busy = false;
+                KindredMod.LOGGER.info("Chronicle: {} page(s) read back of {} in the Record, through event {}, in {} ms ({} ms of it on the server thread)",
+                        pages.values().stream().mapToInt(List::size).sum(), count, through, (System.nanoTime() - started) / 1_000_000, folded / 1_000_000);
+                return;
+            } else {
+                // Where its pages stop is unknown: it writes nothing until the next start, rather than write a day again.
+                busy = false;
+                KindredMod.LOGGER.warn("Chronicle: the Record's pages could not be read past event {}; no pages written until the next start: {}",
+                        afterId, String.valueOf(failure));
+                return;
             }
-            through = last;
-            busy = false;
-            KindredMod.LOGGER.info("Chronicle: {} page(s) read back, through event {}", pages.values().stream().mapToInt(List::size).sum(), through);
         }));
     }
 
@@ -296,6 +326,9 @@ final class ChronicleKeeper {
 
     /** Pages written since start, and how many by the model. */
     int[] counts() { return new int[] {written, byModel}; }
+
+    /** The last Record event its pages have read, for fixtures (-1 before the read-back). */
+    long throughForFixtures() { return through; }
 
     /** Whether it has read back the Record and is not writing now. */
     boolean idle() { return through >= 0 && !busy; }

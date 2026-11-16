@@ -282,6 +282,35 @@ class KeepWorldTest(unittest.TestCase):
             self.assertFalse((folder / 'world-kept').exists())
             self.assertFalse((folder / 'world').exists())
 
+    def test_04_what_a_restart_needs_is_kept_too(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = self.seed(root)
+            world = folder / 'world'
+            (world / 'level.dat').write_bytes(b'level')
+            (world / 'data').mkdir()
+            (world / 'data' / 'raids.dat').write_bytes(b'raids')
+            (world / 'kindred' / 'memory').mkdir(parents=True)
+            (world / 'kindred' / 'memory' / 'Sol.json').write_text('{}', encoding='utf-8')
+            (world / 'kindred' / 'mode.properties').write_text('mode=factions\n', encoding='utf-8')
+            (world / 'kindred' / 'edits.properties').write_text('maxNativePlayers=8\n', encoding='utf-8')
+            run.finish(folder, self.Done(), 0, keep_world=True)
+            kept = folder / 'world-kept'
+            self.assertEqual(b'level', (kept / 'level.dat').read_bytes())
+            self.assertEqual(b'raids', (kept / 'data' / 'raids.dat').read_bytes())
+            self.assertEqual('{}', (kept / 'kindred' / 'memory' / 'Sol.json').read_text(encoding='utf-8'))
+            self.assertEqual('mode=factions\n', (kept / 'kindred' / 'mode.properties').read_text(encoding='utf-8'))
+            self.assertEqual('maxNativePlayers=8\n', (kept / 'kindred' / 'edits.properties').read_text(encoding='utf-8'))
+            self.assertFalse(world.exists())
+
+    def test_05_a_world_without_them_keeps_what_it_has(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = self.seed(root)
+            run.finish(folder, self.Done(), 0, keep_world=True)
+            kept = folder / 'world-kept'
+            self.assertFalse((kept / 'level.dat').exists())
+            self.assertFalse((kept / 'kindred').exists())
+            self.assertTrue((kept / 'region' / 'r.0.0.mca').is_file())
+
 
 class BridgeMeasureTest(unittest.TestCase):
     """E-71a: bridge blocks a second, per player and for the team, over every bridge run."""

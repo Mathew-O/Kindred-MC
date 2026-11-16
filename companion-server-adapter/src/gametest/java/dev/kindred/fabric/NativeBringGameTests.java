@@ -50,6 +50,15 @@ public final class NativeBringGameTests implements FabricGameTest {
         return total;
     }
 
+    /**
+     * The bring's last check needs Hal in play (F-22c99). Out of play as the test ends, it says so; {@code lastNotYet}, what
+     * the check last found not yet so, if anything.
+     */
+    static void inPlay(TestContext context, net.minecraft.server.network.ServerPlayerEntity hal, String lastNotYet) {
+        context.assertTrue(hal != null, lastNotYet == null ? "Hal still in play"
+                : "Hal out of play as the test ended; before that, not yet: " + lastNotYet);
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bring", tickLimit = 12000)
     public void aKeptLibrarianIsBroughtHomeByMinecartIntoItsCell(TestContext context) {
         scene(context, false);
@@ -260,6 +269,29 @@ public final class NativeBringGameTests implements FabricGameTest {
         scene(context, false, false, false, false, false, false, false, false, false, false, true);
     }
 
+    /**
+     * F-22c99, test-only. On #380's CI (run 43783885635) a bring's last check was retried for a minute after "Brought home",
+     * each time not yet so for want of a dirt ("… 3 dirt …"); then the runtime stopped as the test ran out, and its failure
+     * said only "Hal still in play", the minute's reason gone. Here, Hal out of play with a reason last found not yet so: the
+     * check's failure must name that reason. Anything else it throws is caught, so it cannot crash the server.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOutOfPlay", tickLimit = 40)
+    public void outOfPlayAsTheTestEndsTheBringCheckStillSaysWhatWasNotYetSo(TestContext context) {
+        String reason = "Rails (but the cell floor's), the cart and dirt all taken back, the lectern spent: 63 rails, 1 carts, 0 lecterns, 3 dirt";
+        String said;
+        try {
+            inPlay(context, null, reason);
+            said = null;
+        } catch (net.minecraft.test.GameTestException failing) {
+            said = failing.getMessage();
+        } catch (RuntimeException other) {
+            said = "threw " + other;
+        }
+        String message = said;
+        context.assertTrue(message != null && message.contains(reason), "The check out of play names what was last not yet so: " + message);
+        context.complete();
+    }
+
     private static void scene(TestContext context, boolean make) {
         scene(context, make, false);
     }
@@ -355,6 +387,8 @@ public final class NativeBringGameTests implements FabricGameTest {
         boolean[] tradeDay = {false};
         // F-22c64: the librarian in its front between the front rail coming up and the job block going in.
         String[] inFrontLoose = {null};
+        // F-22c99: what the last check last found not yet so, for its failure out of play as the test ends.
+        String[] lastNotYet = {null};
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         boolean[] damped = {false};
@@ -847,7 +881,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                         }
                     }
                     var hal = f.player();
-                    context.assertTrue(hal != null, "Hal still in play");
+                    inPlay(context, hal, lastNotYet[0]);
                     var inventory = hal.getInventory();
                     // All but the rail on the cell's floor, left to the cell.
                     int rails = make ? 31 : 63;
@@ -942,6 +976,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                   } catch (net.minecraft.test.GameTestException failing) {
                     // What is not yet so, now and then: the test server says only the last of it, when the test ends.
                     if (context.getWorld().getTime() % 100 == 0) KindredMod.LOGGER.info("Bring fixture, not yet: {}", failing.getMessage());
+                    // Kept for the failure out of play (F-22c99), never the out-of-play message itself.
+                    if (f.player() != null) lastNotYet[0] = failing.getMessage();
                     throw failing;
                   }
                 })
