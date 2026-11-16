@@ -46,6 +46,8 @@ public final class NativeTeamShareGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
                 .createAndAdd(() -> {
                     // A walled ring, so neither wanders off, and a crafting table in one corner.
+                    // Its ring's wall, partly outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(-1, 2, -1)), context.getAbsolutePos(new BlockPos(8, 4, 8)));
                     for (int x = -1; x <= 8; x++) for (int z = -1; z <= 8; z++) {
                         if (x > -1 && x < 8 && z > -1 && z < 8) continue;
                         for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.STONE);
@@ -147,6 +149,8 @@ public final class NativeTeamShareGameTests implements FabricGameTest {
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
                 .createAndAdd(() -> {
+                    // Its ring's wall, partly outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(-1, 2, -1)), context.getAbsolutePos(new BlockPos(8, 4, 8)));
                     for (int x = -1; x <= 8; x++) for (int z = -1; z <= 8; z++) {
                         if (x > -1 && x < 8 && z > -1 && z < 8) continue;
                         for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.STONE);
@@ -238,6 +242,8 @@ public final class NativeTeamShareGameTests implements FabricGameTest {
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
                 .createAndAdd(() -> {
+                    // Its ring's wall, partly outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(-1, 2, -1)), context.getAbsolutePos(new BlockPos(8, 4, 8)));
                     for (int x = -1; x <= 8; x++) for (int z = -1; z <= 8; z++) {
                         if (x > -1 && x < 8 && z > -1 && z < 8) continue;
                         for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.STONE);

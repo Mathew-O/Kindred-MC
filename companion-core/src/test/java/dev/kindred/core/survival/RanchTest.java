@@ -217,6 +217,48 @@ class RanchTest {
     }
 
     @Test
+    void oneOfTheHerdItBeganWithThatSlipsOutAsItGoesInIsBroughtBackBeforeItIsDone() {
+        // F-22c86: the pen built, the pair and their calf in it as the run begins; the calf walks out through the gate it
+        // opened to go in, before it shut them in. In CI on #344 such a calf was never counted, and the run said done.
+        var ranch = ranch();
+        var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(2, 64, 2), true, false, false);
+        var bess = new Ranch.Animal(BESS, Ranch.Kind.COW, new Pos(4, 64, 2), true, false, false);
+        var calf = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(3, 64, 2), false, false, false);
+        var calfOut = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(3, 64, 9), false, false, false);
+        assertEquals(new Ranch.Step.Gate(true, "Open the gate"),
+                ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, calf), 0)));
+        assertInstanceOf(Ranch.Step.Go.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, true, 8, List.of(daisy, bess, calfOut), 10)));
+        assertEquals(new Ranch.Step.Gate(false, "Shut the cows in"),
+                ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, calfOut), 20)));
+        // The pair not ready: it leaves, out through the gate and shuts it behind.
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, false, 8, List.of(daisy, bess, calfOut), 30));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, calfOut), 40));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, true, 8, List.of(daisy, bess, calfOut), 50));
+        var back = ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, calfOut), 60));
+        assertFalse(back instanceof Ranch.Step.Done, "not done with the calf it began with outside: " + back);
+        assertEquals("bringing a cow back into the pen", ranch.phase());
+    }
+
+    @Test
+    void anAnimalOfAnotherKindInThePenAsTheRunBeginsIsNotCountedItsOwn() {
+        // F-22c86: only its own kind join the herd it began with; a sheep that stood in the cow pen and wandered off is not
+        // fetched back as one of its cows.
+        var ranch = ranch();
+        var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(2, 64, 2), true, false, false);
+        var bess = new Ranch.Animal(BESS, Ranch.Kind.COW, new Pos(4, 64, 2), true, false, false);
+        UUID woolly = new UUID(0, 9);
+        var sheep = new Ranch.Animal(woolly, Ranch.Kind.SHEEP, new Pos(3, 64, 2), true, false, false);
+        var sheepOut = new Ranch.Animal(woolly, Ranch.Kind.SHEEP, new Pos(3, 64, 9), true, false, false);
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, sheep), 0));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, true, 8, List.of(daisy, bess, sheepOut), 10));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, sheepOut), 20));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, false, 8, List.of(daisy, bess, sheepOut), 30));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 8, List.of(daisy, bess, sheepOut), 40));
+        ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, true, 8, List.of(daisy, bess, sheepOut), 50));
+        assertInstanceOf(Ranch.Step.Done.class, ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 8, List.of(daisy, bess, sheepOut), 60)));
+    }
+
+    @Test
     void oneThatWalksBackInOnItsOwnWhileItIsOutsideIsShutInFromInsideThePen() {
         var ranch = ranch();
         var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(2, 64, 2), true, false, false);

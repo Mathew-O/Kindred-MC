@@ -1958,6 +1958,26 @@ public final class SqliteCompanionStore {
         }
     }
 
+    /**
+     * How SQLite answers the read of the knowledge web's kinds at every start (EXPLAIN QUERY PLAN), for a test: it must
+     * search the kind's index ({@code world_events_by_kind}) rather than walk every event of a month's Record (F-32c).
+     */
+    CompletableFuture<String> worldEventsPlanForTest(Set<String> kinds) {
+        Set<String> wanted = Set.copyOf(kinds);
+        return submit(() -> {
+            String filter = " AND kind IN (" + String.join(", ", Collections.nCopies(wanted.size(), "?")) + ")";
+            try (PreparedStatement query = database.prepareStatement("EXPLAIN QUERY PLAN SELECT * FROM world_events WHERE id > ?" + filter + " ORDER BY id LIMIT ?")) {
+                int index = 1;
+                query.setLong(index++, 0);
+                for (String kind : new java.util.TreeSet<>(wanted)) query.setString(index++, kind);
+                query.setInt(index, 5_000);
+                var plan = new StringBuilder();
+                try (ResultSet rows = query.executeQuery()) { while (rows.next()) plan.append(rows.getString("detail")).append('\n'); }
+                return plan.toString();
+            }
+        });
+    }
+
     /** What one fold did: the actions folded, the events they had, and how long the writer spent on it. */
     public record ActionFold(int actions, int eventsRemoved, long millis) { }
 

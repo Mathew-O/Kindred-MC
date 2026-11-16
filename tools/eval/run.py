@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -194,6 +195,17 @@ def finish(folder, process, started, keep_world=False):
         for db in sorted((folder / "world" / "kindred").glob("companions.sqlite*")) if (folder / "world" / "kindred").is_dir() else []:
             (folder / "world-kept" / "kindred").mkdir(parents=True, exist_ok=True)
             shutil.copy2(db, folder / "world-kept" / "kindred" / db.name)
+        # And what a restart of the world needs beside them (M-06k8): its level.dat (world time, gamerules, spawn), the
+        # world's saved data, and Kindred's memory files and its mode and edit settings, so a kept world can be started
+        # again as the server left it, not only read.
+        for name in ("level.dat", "data", "kindred/memory", "kindred/mode.properties", "kindred/edits.properties"):
+            source = folder / "world" / name
+            target = folder / "world-kept" / name
+            if source.is_dir():
+                shutil.copytree(source, target, dirs_exist_ok=True)
+            elif source.is_file():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
         # And the run's players' own saves (F-26d): inventory, health and place as the run left them, so a stuck place
         # can be staged with what its player really carried. Only the players the result names, by the ids the
         # server's usercache.json gives their names; every save there is, if either file is missing.
@@ -223,6 +235,41 @@ def recipes_for(given, seed):
         kept = path / str(seed) / "rescue-recipes.json"
         return kept if kept.is_file() else None
     return path if path.is_file() else None
+
+
+# A stopped run must stop its servers: a server left behind keeps playing, and with a model key keeps spending.
+STOP_WAIT = 60  # seconds a server is given to stop cleanly after SIGTERM before it is killed
+
+
+class Stopped(Exception):
+    """run.py was sent SIGTERM or SIGINT."""
+
+    def __init__(self, signum):
+        super().__init__(signal.Signals(signum).name)
+        self.signum = signum
+
+
+def on_signal(signum, frame):
+    raise Stopped(signum)
+
+
+def stop_servers(running, why, wait=None):
+    """Stops every server still running: SIGTERM, a wait of `wait` seconds (STOP_WAIT), then a kill. One line for each."""
+    wait = STOP_WAIT if wait is None else wait
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, signal.SIG_IGN)  # the stop is bounded; a second signal must not cut it short
+    for seed, folder, process, console, started in running:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(wait)
+                how = "stopped"
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                how = "killed after %d s" % wait
+            print("seed %s: server %s (pid %d) on %s" % (seed, how, process.pid, why), flush=True)
+        console.close()
 
 
 def main():
@@ -265,6 +312,21 @@ def main():
                                                        "loader": loader, "fabricApi": fabric, "launcher": start.name, "policy": args.policy}, indent=1) + "\n", encoding="utf-8")
     print("build %s, %d seeds, scenario: %s, parallel %d" % (name, len(seed_list), args.scenario, args.parallel), flush=True)
     pending, running = list(seed_list), []
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, on_signal)
+    why = "run.py's exit"
+    try:
+        run_seeds(args, out, name, jar, api, vanilla, start, pending, running)
+    except Stopped as stopped:
+        why = "run.py's " + str(stopped)
+        sys.exit(128 + stopped.signum)
+    finally:
+        stop_servers(running, why)
+    print("done: %s" % (out / name), flush=True)
+
+
+def run_seeds(args, out, name, jar, api, vanilla, start, pending, running):
+    """Starts the seeds' servers, parallel at a time, and finishes each as it ends; `running` holds those not ended."""
     while pending or running:
         while pending and len(running) < args.parallel:
             seed = pending.pop(0)
@@ -291,7 +353,6 @@ def main():
             print("seed %s ended: exit %s, result %s, ticks run %s, %d s" % (seed, process.returncode, "kept" if ok else "MISSING", ticks,
                                                                              time.time() - started), flush=True)
             running.remove(item)
-    print("done: %s" % (out / name), flush=True)
 
 
 if __name__ == "__main__":

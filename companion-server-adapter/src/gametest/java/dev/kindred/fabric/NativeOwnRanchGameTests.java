@@ -49,7 +49,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     f.runtime.createNative(f.source, "Drover");
                 })
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -158,7 +158,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Henwife"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -253,7 +253,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Granger"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -388,7 +388,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Swineherd"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -438,8 +438,8 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                         }
                     }
                     context.assertTrue(planted == 1, "Its one carrot planted: " + plot + ", " + planted + " / " + f.runtime.ranchNote(f.id) + " / "
-                            + (f.player() == null ? "-" : "hoe " + f.player().getInventory().count(Items.WOODEN_HOE) + ", carrots " + f.player().getInventory().count(Items.CARROT)));
-                    context.assertTrue(f.player().getInventory().count(Items.CARROT) == 0, "The one it had is in the ground");
+                            + (f.player() == null ? "-" : "hoe " + f.player().getInventory().count(Items.WOODEN_HOE) + ", carrots " + held(f, Items.CARROT)));
+                    context.assertTrue(held(f, Items.CARROT) == 0, "The one it had is in the ground");
                     context.assertTrue(f.runtime.ownRanch(f.id).isEmpty(), "No ranch before the carrots: " + f.runtime.ownRanch(f.id));
                 })
                 .createAndAdd(() -> {
@@ -458,25 +458,66 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     var pen = f.runtime.ownRanch(f.id);
                     context.assertTrue(pen.isPresent() && pen.get().kind().equals("PIG") && pen.get().complete(),
                             "A pig ranch of its own, run, after the harvest: " + pen + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.ranchStatus(f.id).orElse("")
-                            + " / carrots " + f.player().getInventory().count(Items.CARROT) + ", ripened " + ripened[0]);
+                            + " / carrots " + held(f, Items.CARROT) + ", ripened " + ripened[0]);
                 })
                 .createAndAdd(() -> {
-                    var world = context.getWorld();
-                    var pen = f.runtime.ownRanch(f.id).orElseThrow();
-                    BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
-                    var penned = world.getEntitiesByClass(net.minecraft.entity.passive.PigEntity.class, new Box(post).expand(8),
-                            c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
-                    long adults = penned.stream().filter(c -> !c.isBaby()).count(), young = penned.stream().filter(c -> c.isBaby()).count();
-                    KindredMod.LOGGER.info("Own ranch with grown carrots: {} pigs and {} piglets penned; ripened {} times; {} carrots left",
-                            adults, young, ripened[0], f.player().getInventory().count(Items.CARROT));
-                    context.assertTrue(adults == 2 && young == 1, "The pair penned and a piglet, fed carrots it grew: " + adults + " and " + young);
-                    // Planted only until it had the few it wanted (the first version farmed a fast-ripening plot 43 times).
-                    context.assertTrue(ripened[0] <= 6, "Planted only for what it wanted: ripened " + ripened[0] + " times, "
-                            + f.player().getInventory().count(Items.CARROT) + " carrots left");
+                    pigsPenned(context, f, f.runtime.ownRanch(f.id).orElseThrow(), ripened[0]);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /** The pig ranch's last check, retried till it holds: the pair penned and a piglet, and planted only for what it wanted. */
+    private static void pigsPenned(TestContext context, NativePaidSkillsGameTests.Fixture f, PlayerMemoryStore.Pen pen, int ripened) {
+        var world = context.getWorld();
+        BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
+        var penned = world.getEntitiesByClass(net.minecraft.entity.passive.PigEntity.class, new Box(post).expand(8),
+                c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
+        long adults = penned.stream().filter(c -> !c.isBaby()).count(), young = penned.stream().filter(c -> c.isBaby()).count();
+        KindredMod.LOGGER.info("Own ranch with grown carrots: {} pigs and {} piglets penned; ripened {} times; {} carrots left",
+                adults, young, ripened, held(f, Items.CARROT));
+        context.assertTrue(adults == 2 && young == 1, "The pair penned and a piglet, fed carrots it grew: " + adults + " and " + young);
+        // Planted only until it had the few it wanted (the first version farmed a fast-ripening plot 43 times).
+        context.assertTrue(ripened <= 6, "Planted only for what it wanted: ripened " + ripened + " times, "
+                + held(f, Items.CARROT) + " carrots left");
+    }
+
+    /**
+     * The pig ranch's last check with its player's body gone from the server (F-22c92): it fails as a test's assertion, never
+     * as an exception out of the step. On #357's CI (run 43722834395, attempt 2) the check's log line read the inventory of a
+     * player no longer there, the NullPointerException left the retried step and the game-test server crashed, taking every
+     * test after it. Staged: a player established, then the fixture's handle on it pointed at no body, a pig pen with no pigs.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "ownRanchNoBody", tickLimit = 400)
+    public void withItsPlayerGoneTheRanchCheckFailsAsAnAssertionNotACrash(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 300);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Gone"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    java.util.UUID body = f.nativeId;
+                    f.nativeId = java.util.UUID.randomUUID();
+                    String outcome;
+                    try {
+                        context.assertTrue(f.player() == null, "Staged: no body for the fixture's player");
+                        BlockPos at = context.getAbsolutePos(BlockPos.ORIGIN);
+                        pigsPenned(context, f, new PlayerMemoryStore.Pen("minecraft:overworld", at.getX(), at.getY(), at.getZ(), "PIG", true, 0), 0);
+                        outcome = "passed with no pigs";
+                    } catch (net.minecraft.test.GameTestException failed) {
+                        outcome = "failed: " + failed.getMessage();
+                    } catch (RuntimeException crash) {
+                        outcome = "threw " + crash;
+                    } finally {
+                        f.nativeId = body;
+                    }
+                    KindredMod.LOGGER.info("Ranch check with no body: {}", outcome);
+                    context.assertTrue(outcome.startsWith("failed: The pair penned"), "The check failed as an assertion, not by throwing: " + outcome);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
 
@@ -498,7 +539,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Shepherd"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -600,6 +641,21 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchHerd", tickLimit = 6000)
     public void itsCowPenRunOnceItBreedsThePairAgainAfterTheWait(TestContext context) {
+        herdAgain(context, false);
+    }
+
+    /**
+     * As the last, staged (F-22c86): as it steps into the pen through the open gate, the pen's calf is set once on the grass
+     * just outside the gate, as one slipped out in CI on #344 (`ad8e28a`, run 43688229639) and was left there, the run said
+     * done ("A young cow born in the pen") with the pair and one calf penned. Held: the calf it began with is brought back in
+     * before it is done, the pair and two calves penned.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchHerdCalfOut", tickLimit = 6000)
+    public void aCalfThatSlipsOutAsItGoesInIsBroughtBackBeforeItIsDone(TestContext context) {
+        herdAgain(context, true);
+    }
+
+    private static void herdAgain(TestContext context, boolean calfOut) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
@@ -607,11 +663,13 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
         BlockPos cabinAt = home.add(-3, 0, -3);
         BlockPos cowPen = o.add(22, 7, 27);
         long[] staged = {0}, doneAt = {-1};
+        CowEntity[] calf = new CowEntity[1];
+        String[] slipped = {null};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Herder"))
                 .createAndAdd(() -> f.established(context))
-                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     NativeBaseGameTests.ground(context, trunks);
@@ -635,7 +693,8 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     BlockPos inPen = cowPen.add(2, 0, 2).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
                     context.spawnEntity(EntityType.COW, inPen);
                     context.spawnEntity(EntityType.COW, inPen.add(2, 0, 2));
-                    context.spawnEntity(EntityType.COW, inPen.add(2, 0, 0)).setBaby(true);
+                    calf[0] = context.spawnEntity(EntityType.COW, inPen.add(2, 0, 0));
+                    calf[0].setBaby(true);
                     var player = f.player();
                     var inventory = player.getInventory();
                     inventory.clear();
@@ -665,6 +724,18 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.ranchStatus(f.id).isPresent(),
                         "Its cow pen taken up again: " + f.runtime.ownPens(f.id) + " / " + f.runtime.ranchNote(f.id) + " / " + f.runtime.baseNote(f.id)))
                 .createAndAdd(() -> {
+                    // Staged: the first tick it stands in the pen's interior with the gate open, the calf it began with set
+                    // on the grass two blocks outside the gate.
+                    var world = context.getWorld();
+                    var player = f.player();
+                    BlockPos gate = cowPen.add(3, 0, 6);
+                    if (calfOut && slipped[0] == null && player != null && inPen(cowPen, player.getBlockPos())
+                            && world.getBlockState(gate).getOrEmpty(net.minecraft.block.FenceGateBlock.OPEN).orElse(false)) {
+                        calf[0].refreshPositionAndAngles(gate.getX() + 0.5, gate.getY(), gate.getZ() + 2.5, 0, 0);
+                        calf[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        slipped[0] = "at " + calf[0].getBlockPos().toShortString() + ", tick " + world.getTime();
+                        KindredMod.LOGGER.info("Own herd: the calf set outside the gate as it went in, {}", slipped[0]);
+                    }
                     var pens = f.runtime.ownPens(f.id);
                     context.assertTrue(pens.size() == 1 && pens.get(0).ranAt() > staged[0] && f.runtime.ranchStatus(f.id).isEmpty(),
                             "Run again: " + f.runtime.ranchStatus(f.id).orElse("") + " / " + pens);
@@ -676,7 +747,13 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                             && c.getBlockX() < cowPen.getX() + 6 && c.getBlockZ() > cowPen.getZ() && c.getBlockZ() < cowPen.getZ() + 6);
                     long adults = penned.stream().filter(c -> !c.isBaby()).count(), calves = penned.stream().filter(CowEntity::isBaby).count();
                     KindredMod.LOGGER.info("Own herd: {}; {} cows and {} calves penned", f.runtime.ownPens(f.id), adults, calves);
-                    context.assertTrue(adults == 2 && calves == 2, "The pair and two calves penned: " + adults + " and " + calves);
+                    if (calfOut) context.assertTrue(slipped[0] != null, "The calf set outside the gate as it went in");
+                    // Every cow about, where, and whether in the pen's interior (F-22c86: #335's "1 and 2" had all four in at
+                    // its run's end).
+                    String herd = world.getEntitiesByClass(CowEntity.class, new Box(cowPen).expand(24), CowEntity::isAlive).stream()
+                            .map(c -> (c.isBaby() ? "calf " : "cow ") + c.getUuidAsString().substring(0, 8) + " at " + c.getBlockPos().toShortString()
+                                    + (inPen(cowPen, c.getBlockPos()) ? " in" : " OUT")).toList().toString();
+                    context.assertTrue(adults == 2 && calves == 2, "The pair and two calves penned: " + adults + " and " + calves + "; cows about " + herd);
                     context.assertTrue(held(f, Items.WHEAT) == 6, "Two wheat fed: " + held(f, Items.WHEAT));
                 })
                 // Ten seconds on, not bred again before the next wait.
@@ -689,6 +766,11 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
+    }
+
+    /** Within the pen's interior: its fences' cells excluded. */
+    private static boolean inPen(BlockPos pen, BlockPos at) {
+        return at.getX() > pen.getX() && at.getX() < pen.getX() + 6 && at.getZ() > pen.getZ() && at.getZ() < pen.getZ() + 6;
     }
 
     /**

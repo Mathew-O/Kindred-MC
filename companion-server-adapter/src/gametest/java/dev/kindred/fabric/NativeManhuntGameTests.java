@@ -45,6 +45,8 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                     // Open ground, and a wall between them with a way round its east end.
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its open ground and wall, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-4, 1, -4), o.add(20, 8, 22));
                     for (int x = -4; x <= 20; x++) for (int z = -4; z <= 22; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 8; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -147,6 +149,8 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its open ground and wall, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-4, 1, -4), o.add(20, 8, 22));
                     for (int x = -4; x <= 20; x++) for (int z = -4; z <= 22; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 8; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -525,6 +529,8 @@ public final class NativeManhuntGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its open ground and wall, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-4, 1, -4), o.add(20, 8, 22));
                     for (int x = -4; x <= 20; x++) for (int z = -4; z <= 22; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 8; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());

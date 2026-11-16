@@ -81,6 +81,8 @@ public final class NativeLootGameTests implements FabricGameTest {
                     BlockPos b = f.player().getBlockPos().toImmutable();
                     // Open ground from the player to the portal, a stone floor and air above it: the test's structure is
                     // walled round with barriers, which stand between the player and anything laid outside it.
+                    // Its open ground and the ruined portal on it, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, b.add(-16, -1, -5), b.add(7, 4, 5));
                     for (int x = -16; x <= 7; x++) for (int z = -5; z <= 5; z++) {
                         world.setBlockState(b.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 4; y++) world.setBlockState(b.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -151,6 +153,8 @@ public final class NativeLootGameTests implements FabricGameTest {
                     BlockPos b = f.player().getBlockPos().toImmutable();
                     // A mineshaft's tunnel running east, three wide and three high in stone, torches along it, rails down
                     // its middle, and a chest minecart on them eleven blocks along.
+                    // Its tunnel, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, b.add(-2, -1, -2), b.add(14, 3, 2));
                     for (int x = -2; x <= 14; x++) for (int z = -2; z <= 2; z++) for (int y = -1; y <= 3; y++) {
                         boolean inside = x >= -1 && x <= 13 && Math.abs(z) <= 1 && y >= 0 && y <= 2;
                         world.setBlockState(b.add(x, y, z), inside ? Blocks.AIR.getDefaultState() : Blocks.STONE.getDefaultState());

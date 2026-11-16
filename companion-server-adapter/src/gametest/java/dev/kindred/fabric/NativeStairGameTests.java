@@ -103,6 +103,9 @@ public final class NativeStairGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    // Its open air, pad, ledge and wall, twenty up and outside the plot, and the steps the player sets in it:
+                    // put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-3, -3, -5), o.add(height + 6, height + 4, 5));
                     for (int x = -3; x <= height + 6; x++) for (int z = -5; z <= 5; z++) for (int y = -3; y <= height + 4; y++) {
                         world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
