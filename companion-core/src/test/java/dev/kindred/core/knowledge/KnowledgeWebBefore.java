@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * In plain terms: the knowledge web's changes exactly as they were before F-32e's index, kept only so a test can make
+ * In plain terms: the knowledge web's changes exactly as they were before F-32d's index, kept only so a test can make
  * the same changes to both and compare what each holds.
  *
  * Technical: the bodies of {@code add}, {@code confirm}, {@code end}, {@code correct} and {@code bound} copied from

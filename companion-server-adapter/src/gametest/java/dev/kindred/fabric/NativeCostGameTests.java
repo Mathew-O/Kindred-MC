@@ -35,7 +35,7 @@ public final class NativeCostGameTests implements FabricGameTest {
                         WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "journal", null, "goal", "", Map.of("detail", "x".repeat(100))))))
                 .createAndAdd(() -> context.assertTrue(f.runtime.ledgers().claims().size() == 2, "Written"))
                 .createAndAdd(() -> {
-                    // F-32e: the player's web holds three facts it was told, one of them told again, which ends the first.
+                    // F-32d: the player's web holds three facts it was told, one of them told again, which ends the first.
                     f.established(context);
                     var web = f.runtime.webs().of(f.id);
                     long now = server.getTicks();

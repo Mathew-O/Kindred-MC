@@ -42,7 +42,7 @@ PRUNES = {
 P99_WATCH_MS = 50
 OVER50_WATCH_SHARE = 0.05
 HEAP_STOP_SHARE = 0.90
-# KnowledgeWeb.MAX_RELATIONS: a web's bound, which never drops a told fact still open (F-32e). Past it, the bound no longer
+# KnowledgeWeb.MAX_RELATIONS: a web's bound, which never drops a told fact still open (F-32d). Past it, the bound no longer
 # bounds that web.
 WEB_BOUND = 20000
 
@@ -183,7 +183,7 @@ def verdict(lines, errors, record, heap_max_mb):
             stop.append("day %d: heap high water %d MB, over %d%% of %d MB" % (line["day"], line["heapHighWaterMb"], HEAP_STOP_SHARE * 100, heap_max_mb))
         for name, web in sorted((line.get("websByPlayer") or {}).items()):
             if web["keptForGood"] > WEB_BOUND:
-                watch.append("day %d: %s's web keeps %d facts for good, past its bound of %d (F-32e)" % (line["day"], name, web["keptForGood"], WEB_BOUND))
+                watch.append("day %d: %s's web keeps %d facts for good, past its bound of %d (F-32d)" % (line["day"], name, web["keptForGood"], WEB_BOUND))
         tr = line.get("territoryRefusals")
         if tr and tr["overCap"]:
             watch.append("day %d: %d refused attempts over a faction's daily cap (a griefer?)" % (line["day"], tr["overCap"]))

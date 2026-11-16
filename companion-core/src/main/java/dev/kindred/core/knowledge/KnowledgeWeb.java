@@ -124,7 +124,7 @@ public final class KnowledgeWeb {
     private long nextId = 1;
     /**
      * The relations not closed, by subject, verb, object, visibility and group, then by when each lapses, then by id
-     * (F-32e): what {@link #add} replaces is looked up here, not by a scan of the whole web. Kept with every change.
+     * (F-32d): what {@link #add} replaces is looked up here, not by a scan of the whole web. Kept with every change.
      */
     private final Map<Key, TreeMap<Long, TreeSet<Long>>> open = new java.util.HashMap<>();
     /** The ids of the relations {@link #bound} may one day drop (not closed, lapsing at a tick), in the web's order. */
@@ -247,7 +247,7 @@ public final class KnowledgeWeb {
 
     /**
      * How many relations {@link #bound} can never drop: those still open with no lapse (a told or recorded fact until it
-     * is replaced or ended) and those closed by a correction. The month-long cost check's count (F-32e).
+     * is replaced or ended) and those closed by a correction. The month-long cost check's count (F-32d).
      */
     public int keptForGood() { return relations.size() - lapsing.size(); }
 

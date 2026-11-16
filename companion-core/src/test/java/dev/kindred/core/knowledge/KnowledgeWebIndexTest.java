@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * In plain terms: the knowledge web finds the fact a new one replaces without looking through every fact it holds, and
  * holds exactly what it held before that change, fact for fact, whatever it is told.
  *
- * Technical: F-32e. The same random changes (adds that replace and do not, confirmations, ends, corrections; ticks
+ * Technical: F-32d. The same random changes (adds that replace and do not, confirmations, ends, corrections; ticks
  * mostly rising, sometimes back) made to the indexed web and to {@link KnowledgeWebBefore}, main's code before the index,
  * compared relation for relation (every field) throughout, past the bound and below it; then 80,000 adds in time linear
  * in their number, where the code before took 176 s.
@@ -81,7 +81,7 @@ class KnowledgeWebIndexTest {
     void eightyThousandAddsTakeTimeLinearInTheirNumber() {
         added(20_000); // Warm: compiled before it is timed.
         long twenty = best(20_000), eighty = best(80_000);
-        System.out.printf("F-32e: 20,000 adds %d ms, 80,000 adds %d ms (best of three)%n", twenty / 1_000_000, eighty / 1_000_000);
+        System.out.printf("F-32d: 20,000 adds %d ms, 80,000 adds %d ms (best of three)%n", twenty / 1_000_000, eighty / 1_000_000);
         // Linear is four times as long; the code before took sixteen (7.7 s, then 176 s). Eight allows for noise.
         assertTrue(eighty < 8 * Math.max(twenty, 20_000_000L), "80,000 adds " + eighty / 1_000_000 + " ms, 20,000 " + twenty / 1_000_000 + " ms");
         var web = added(80_000);

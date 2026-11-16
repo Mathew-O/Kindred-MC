@@ -18894,7 +18894,7 @@ final class PlayerRuntime {
     private final dev.kindred.core.metrics.TickWindow tickWindow = new dev.kindred.core.metrics.TickWindow();
     private long heapHighWater;
 
-    /** A web's player by name for the cost line (F-32e): its own id or its body's; else the id's first eight characters. */
+    /** A web's player by name for the cost line (F-32d): its own id or its body's; else the id's first eight characters. */
     private String webName(UUID id) {
         for (Entry entry : entries.values()) {
             if (id.equals(entry.data.id()) || id.equals(entry.data.entityId())) return entry.data.displayName();
