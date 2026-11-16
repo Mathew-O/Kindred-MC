@@ -64,14 +64,16 @@ public final class NativeCastPoolGameTests implements FabricGameTest {
     }
 
     /**
-     * In plain terms: the same, with the pool a block further south, so that the lava it first sets out for lies on the
-     * south side of the alcove's line; it still digs its way down to it in time.
+     * In plain terms: the same, with the pool two blocks further south, so that the lava it sets out for lies south of the
+     * alcove's line; it still digs its way down to it in time, rather than tunnel to and fro along its own level.
      *
-     * Technical: F-25c4dj1. In this class's test above on #394's CI (run 43842018263), its dig set out for the pool's
-     * source at (+5, −15, +1) from the alcove, one of two as near, and tunnelled along its own level south and east over the
-     * cavern for 315 steps with no lava in 2,400 ticks; alone it set out for (−1) and filled its bucket in some 1,050. The
-     * tie is broken by where the suite places the test. STAGED as the test above, the pool moved one block south, so the
-     * source south of the line is the one it sets out for. Fails and passes as the test above.
+     * Technical: F-25c4dj1. In this class's test above on #394's CI (run 43842018263, job 133212759665), its dig set out for
+     * the pool's source at (+5, −15, +1) from the alcove; past the lava's line, along its own level, it advanced 295 times in
+     * a row with no break after its 20th and no lava in 2,400 ticks. Alone at the placements here it set out for (−1) each
+     * time and filled its bucket in some 1,050 ticks. STAGED as the test above, the pool moved two blocks south, so the
+     * source it sets out for is at (+5, −15, +1). On main (3ace71a) 3 of 3 fail, "No bucket of lava in 2400 ticks" with 348,
+     * 317 and 317 dig steps, its feet stepping between (+6, 0, +3) and (+7, 0, +3) every ten ticks; in the third of those
+     * runs the test above failed alone the same way. Fails and passes as the test above.
      */
     @GameTest(templateName = FixtureGround.FIELD, batchId = "castPoolSouth", tickLimit = BUDGET + 800)
     public void aPoolNoWalkReachesSouthOfItsLineIsDugTowardInTime(TestContext context) {
