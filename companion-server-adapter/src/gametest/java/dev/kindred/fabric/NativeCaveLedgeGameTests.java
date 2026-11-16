@@ -40,6 +40,8 @@ public final class NativeCaveLedgeGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos p = origin[0] = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, p.add(-5, -2, -5), p.add(9, 8, 7));
                     // A sealed block of stone, so no daylight reaches in.
                     for (int dx = -4; dx <= 8; dx++) for (int dz = -4; dz <= 6; dz++) for (int dy = -1; dy <= 7; dy++) {
                         world.setBlockState(p.add(dx, dy, dz), Blocks.STONE.getDefaultState());
