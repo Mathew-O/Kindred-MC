@@ -76,7 +76,7 @@ with the same jar, run.py and settings, into the same build folder.
   portal cast. The server logged "no replacement inventory will be created".
 - Sol completed no action after it, about 94,000 ticks to the run's end. A blocked player raises no stuck spell, so
   it does not count in the stuck total.
-- It is the same kind of block as e40c4's seed 101.
+- It is a reconciliation block, as on e40c4's seed 101, but from a different check: e40c4's was an attack's item conservation ("Attack item conservation check failed; reconcile", Kindred, about tick 223,500), this one a break's.
 
 ## The first same-commit noise band: the two 83321ac runs, side by side
 
