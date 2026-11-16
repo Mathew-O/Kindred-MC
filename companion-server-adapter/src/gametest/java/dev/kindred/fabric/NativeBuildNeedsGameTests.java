@@ -45,6 +45,9 @@ public final class NativeBuildNeedsGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
+                    // Its field and trees, and what its player builds and leaves there, outside the plot: put back as the test
+                    // ends (F-22c75b), as its built twin's are.
+                    FixtureGround.keep(context, o.add(-8, 1, -8), o.add(32, 16, 24));
                     for (int x = -8; x <= 32; x++) for (int z = -8; z <= 24; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
