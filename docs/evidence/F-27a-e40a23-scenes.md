@@ -38,13 +38,13 @@ earned; its [notes](eval/e40a23-3115b1c/notes.md)):
 | `e40a23-3115b1c-101-sol-133523` | death | death: witch | 0 | fail |
 | `e40a23-3115b1c-101-sol-135766` | death | death: zombie | 0 | fail |
 
-**Baseline:** `tools/corpus/baseline.json` keeps its entries as they were and gains these 10: 468 in all when filed, 469 with #381's waking scene merged in. Its
+**Baseline:** `tools/corpus/baseline.json` keeps its entries as they were and gains these 10: 468 in all when filed; 471 with #381's waking scene and #386's two merged in. Its
 `notes` say which runs made them.
 
 **Who works on them:** LOOPS has the loop. The console excerpts are on the data branch; there is no kept world, since iteration 23 ran without `--keep-world`.
 
 ## Validation
-- `python3 -m unittest discover -s tools/corpus`: OK, with the 469 scenes.
+- `python3 -m unittest discover -s tools/corpus`: OK, with the 471 scenes.
 - `support.py tracker`: in order.
 - No runtime claims beyond the six runs above.
 
