@@ -6036,6 +6036,16 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /**
+     * Its lava or obsidian still there, or its poured water still standing as a source (F-22c94): what the obsidian step
+     * itself keeps the site for. The last of the flow, draining once the source is back in the bucket, is not: held for
+     * it, one decision went exploring while the drop lay in it.
+     */
+    private static boolean siteInUse(ServerWorld world, ObsidianSite site) {
+        return world.getFluidState(site.lava()).isIn(FluidTags.LAVA) || world.getBlockState(site.lava()).isOf(Blocks.OBSIDIAN)
+                || world.getFluidState(site.water()).isIn(FluidTags.WATER) && world.getFluidState(site.water()).isStill();
+    }
+
     private static boolean siteStillUseful(ServerWorld world, ObsidianSite site) {
         return world.getFluidState(site.lava()).isIn(FluidTags.LAVA) || world.getBlockState(site.lava()).isOf(Blocks.OBSIDIAN)
                 || world.getFluidState(site.water()).isIn(FluidTags.WATER);
@@ -8153,13 +8163,15 @@ final class PortalRunCampaign {
         var holding = Valuables.holding(player, lootWanted(player));
         var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(LOOSE_REACH, 4, LOOSE_REACH),
                 drop -> (keep(drop.getStack(), saplings) && near.contains(drop.getPos()) || worthTheWay(player, drop, holding))
-                        && player.canSee(drop) && !blocked(drop.getBlockPos()) && !watched(world, drop)
+                        // In sight, or a drop of its own break out of sight where it fell (F-22c94a): in the hole its lava
+                        // left, under the shore, the obsidian it mined was never seen again and was left behind.
+                        && (player.canSee(drop) || body.ownDrop(drop.getUuid())) && !blocked(drop.getBlockPos()) && !watched(world, drop)
                         && (world.getFluidState(drop.getBlockPos()).isEmpty() || world.getFluidState(drop.getBlockPos()).isStill()));
         if (drops.isEmpty()) {
             // One still in the water, close by: a moment for the water to drain off it rather than walk away from it (a
             // fixture's obsidian was left behind once caving without a shield was allowed). Five seconds at most each,
             // and not while its own poured water is still to be taken back: the site is in use until then (F-25c4cs).
-            if (obsidianSite != null && siteStillUseful(world, obsidianSite)) return Optional.empty();
+            if (obsidianSite != null && siteInUse(world, obsidianSite)) return Optional.empty();
             if (dropWaits.size() > 256) dropWaits.clear();
             var settling = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(5, 3, 5),
                     drop -> keep(drop.getStack(), saplings) && !blocked(drop.getBlockPos()));
@@ -8177,7 +8189,7 @@ final class PortalRunCampaign {
         // through the cell the next block was coming down into, and was buried there (F-25c4cl).
         if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
         BlockPos at = nearest.getBlockPos();
-        Optional<Task> intoIt = intoTheDropsCell(body, at, label);
+        Optional<Task> intoIt = intoTheDropsCell(body, nearest, at, label);
         if (intoIt != null) return intoIt;
         return Optional.of(go(at, 0.6, false, label));
     }
@@ -8191,10 +8203,20 @@ final class PortalRunCampaign {
      * pocket is one it may break now; else the drop is set aside for a minute and the walk not asked, since every walk
      * there was refused after the whole search. Null when a walk can get into the drop's cell.
      */
-    private Optional<Task> intoTheDropsCell(NativePlayerBody body, BlockPos at, String label) {
+    private Optional<Task> intoTheDropsCell(NativePlayerBody body, ItemEntity drop, BlockPos at, String label) {
         var world = body.entity().getServerWorld();
         var navigator = new NativeNavigator(world).throughDoors();
         if (navigator.enterable(at, feet -> Math.sqrt(feet.getSquaredDistance(at)) <= 0.61)) return null;
+        // Not set aside for a minute while its obsidian site is in use, or while its cell is wet (F-22c94): the obsidian lies
+        // in the hole its lava left, where the poured water runs till it is taken back and drains, and set aside then,
+        // nothing went back for it after (CI on #355, #357 and #360). While the site is in use, the site's own steps first,
+        // as for a drop in the water (F-25c4cs); then, wet, the drop's own settle wait. Still no way in after, set aside.
+        if (obsidianSite != null && siteInUse(world, obsidianSite)) return Optional.empty();
+        if (!world.getFluidState(at).isEmpty()) {
+            if (dropWaits.size() > 256) dropWaits.clear();
+            long since = dropWaits.computeIfAbsent(drop.getUuid(), id -> lastTick);
+            if (lastTick - since < 100) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Wait for the drop to settle"));
+        }
         BlockPos pocket = at.up(), head = at.up(2);
         if (navigator.passable(pocket) && !navigator.passable(head) && breakableNow(body, head)
                 && world.getFluidState(head.up()).isEmpty() && !(world.getBlockState(head.up()).getBlock() instanceof net.minecraft.block.FallingBlock)) {
