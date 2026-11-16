@@ -65,3 +65,4 @@ wake-143252-4 (c14d1fee, only flagged): 0 min, peak 1473 MB, All 2 required test
 wake-61008-4 (c14d1fee, only flagged): 0 min, peak 1015 MB, All 2 required tests passed, fence-top 0, disk 5.9G
 wake-143252-5 (c14d1fee, only flagged): 0 min, peak 1144 MB, All 2 required tests passed, fence-top 0, disk 5.9G
 wake-61008-5 (c14d1fee, only flagged): 0 min, peak 1132 MB, All 2 required tests passed, fence-top 0, disk 5.9G
+wake-143252-6 (c14d1fee, only flagged): 0 min, peak 1013 MB, All 2 required tests passed, fence-top 0, disk 5.9G
