@@ -10333,6 +10333,7 @@ final class PlayerRuntime {
         if (!factionsWorld() || !ready || !running) return null;
         var player = body.entity();
         var play = entry.factionPlay;
+        play.saw(player);
         long tick = server.getTicks();
         if (play.move == null && tick - play.decidedAt >= FactionsPlayer.DECIDE_TICKS) {
             play.decidedAt = tick;
@@ -10385,6 +10386,22 @@ final class PlayerRuntime {
         // faction walk is asked and no way made out through its seal till daylight. On Factions seed 110 (0476ee5) Echo's
         // way made out dug the seal, its goal sealed it again, round and round, 52 times (F-35h2).
         if (entry.campaign != null && entry.campaign.dugInForTheNight(player)) return null;
+        // Deep below the surface (M-06i2c1): a walk other than to defend its land waits till it is up, as a player in its
+        // mine comes up before it sets off overland; its own goal and its climbs bring it up. Asked from a tunnel, a leg ends
+        // 48 blocks on at its own height, inside the rock, where no route ends: on Factions seed 20261030 (M-06i2a's
+        // comparison) 919 faction legs were refused for no route and 15 of them ended where it could stand; with bases on,
+        // Kindred's began below Y 50 215 times of 235, and it held no land. No walk is asked, so no refusal is counted and
+        // no way made. A hollow, a box or a notch dug in a wall is not deep: there the walk is asked, refused and backed off,
+        // and a way made out (F-35h, F-35i, #120), as before.
+        // Its move is settled, as on arrival, so that its faction play goes on below at the decision interval: held, its
+        // next decision waited on a walk never asked, and on seed 20261030 its founders sold nothing (32 and 14 sales on
+        // main). Below, a decision is what it can do where it stands, or a walk home to defend (factionChoose).
+        if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && play.deepBelow(player)) {
+            settledInFlight(entry, play, player, move);
+            play.move = null;
+            play.decidedAt = tick;
+            return null;
+        }
         // At night, not yet dug in, with a goal running: a walk other than to defend its land yields to the goal's dig-in
         // (F-35h2b). Asked first, a scout's walk took it at nightfall onto Blue's land, where it might dig nothing, and it
         // waited out the night unsheltered (CI GREEN, on main: about one run in ten).
@@ -10613,8 +10630,12 @@ final class PlayerRuntime {
     private dev.kindred.core.factions.FactionPlay.Choice factionChoose(Entry entry, ServerPlayerEntity player) {
         if (market.holds().held(player.getUuid())) return null;
         var choices = dev.kindred.core.factions.FactionPlay.decide(factionView(entry, player));
-        if (choices.isEmpty()) return null;
-        var choice = choices.getFirst();
+        // Deep below the surface (M-06i2c1): the first it can do where it stands, a sale or a claim of the chunk it is in,
+        // or a walk home to defend; a walk elsewhere is chosen from the surface.
+        boolean deep = entry.factionPlay.deepBelow(player);
+        var choice = choices.stream().filter(c -> !deep || c.kind() == dev.kindred.core.factions.FactionPlay.Kind.DEFEND
+                || !FactionsPlayer.moves(c, player)).findFirst().orElse(null);
+        if (choice == null) return null;
         entry.decided(server.getTicks(), "faction: " + choice.reason() + (choice.target().isEmpty() ? "" : " (" + choice.target() + ")"));
         return choice;
     }
@@ -10821,6 +10842,24 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         return entry == null ? null : goalOf(entry);
+    }
+
+    /** For fixtures (M-06i2c1): it sees where it stands, as at each faction decision; and whether it is deep below now. */
+    boolean factionSawForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected()) return false;
+        var body = entry.nativeBody.entity();
+        entry.factionPlay.saw(body);
+        return entry.factionPlay.deepBelow(body);
+    }
+
+    /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */
+    boolean factionWalkingForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry != null && "native_goto".equals(entry.skillId) && entry.dispatchSource != null
+                && entry.dispatchSource.startsWith("factionCandidates");
     }
 
     /** For fixtures: its bases' record read, as its play reads it (by the time its base or a villager it brings home asks); whether it is now. */
