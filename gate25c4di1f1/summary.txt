@@ -25,3 +25,4 @@ confirm-branch-3.7 (ab0dc8e1, only flagged): 0 min, peak 1265 MB, 1 required tes
 confirm-main-1.1 (7720a7fa, only flagged): 0 min, peak 1032 MB, 1 required tests failed, fence-top 3, disk 6.0G
 confirm-main-1.2 (7720a7fa, only flagged): 0 min, peak 1198 MB, All 2 required tests passed, fence-top 0, disk 6.0G
 confirm-main-1.3 (7720a7fa, only flagged): 0 min, peak 1307 MB, 1 required tests failed, fence-top 0, disk 6.0G
+confirm-main-1.4 (7720a7fa, only flagged): 0 min, peak 1033 MB, All 2 required tests passed, fence-top 0, disk 6.0G
