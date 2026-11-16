@@ -57,3 +57,4 @@ confirm-branch-9.2 (ab0dc8e1, only flagged): 0 min, peak 1301 MB, All 2 required
 confirm-main-9.2 (7720a7fa, only flagged): 0 min, peak 1293 MB, 1 required tests failed, fence-top 0, disk 6.0G
 wake-143252-1 (c14d1fee, only flagged): 0 min, peak 1023 MB, 1 required tests failed, fence-top 0, disk 5.9G
 wake-61008-1 (c14d1fee, only flagged): 0 min, peak 1067 MB, All 2 required tests passed, fence-top 0, disk 5.9G
+wake-143252-2 (c14d1fee, only flagged): 0 min, peak 1228 MB, 1 required tests failed, fence-top 0, disk 5.9G
