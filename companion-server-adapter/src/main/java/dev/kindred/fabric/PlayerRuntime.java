@@ -7495,6 +7495,8 @@ final class PlayerRuntime {
         entry.currentTaskId = null;
         body.stopInputs();
         boolean killedByMob = player.getAttacker() instanceof net.minecraft.entity.mob.HostileEntity;
+        entry.lastDeathTick = server.getTicks();
+        entry.lastDeathByMob = killedByMob;
         // What its lessons read of the death (E-46): when in the world's time, how high, by night, under the sky, its
         // food, and how it came.
         var world = player.getServerWorld();
@@ -16274,7 +16276,8 @@ final class PlayerRuntime {
         replays.captureWaking(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("respawn", String.valueOf(goalOf(entry)),
                 entry.campaign == null ? "no goal" : entry.campaign.progress(), "waking", entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
                 entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), cause,
-                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt);
+                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt,
+                entry.lastDeathTick < 0 ? -1 : server.getTicks() - entry.lastDeathTick, entry.lastDeathByMob);
     }
 
     /**
@@ -19549,6 +19552,9 @@ final class PlayerRuntime {
         /** Where it last died, in which dimension and how, for the scene cut as it wakes (F-27a4); null before any death. */
         private BlockPos lastDeathAt;
         private String lastDeathWorld, lastDeathCause;
+        /** The server tick of that death, and whether a hostile mob killed it, as its campaign's {@code died} heard them (F-27a5). */
+        private long lastDeathTick = -1;
+        private boolean lastDeathByMob;
         private boolean campaignFightInterrupt;
         private boolean endPortalAnnounced, dragonAnnounced;
         private UUID tacticalRetreatTaskId;

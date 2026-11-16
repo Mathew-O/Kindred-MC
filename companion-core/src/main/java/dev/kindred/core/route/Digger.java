@@ -398,7 +398,8 @@ public final class Digger {
      * the lava (F-25c4ad). The staircases turn where a cell is refused. The tunnel goes only the two ways that close on
      * the lava, and bridges a drop on the way with a block of its own: turned aside by a cave's drop at every step,
      * Kindred, in the live pair on 64c298d, tunnelled 81 blocks west at the lava's level, past the lava it saw across the
-     * cave (F-25c4ak). With neither way open it digs nothing.
+     * cave (F-25c4ak). With neither way open it digs nothing. Its staircase refused every way, it tunnels along its own level
+     * to ground it can stair down from (F-25c4dj).
      */
     public <T> Optional<T> toward(Body<T> body, Cell lava, String label) {
         Cell feet = body.feet();
@@ -409,7 +410,16 @@ public final class Digger {
         Side major = xFirst ? across : along;
         heading = major;
         if (rise > 0) return climb(body, label);
-        if (rise < 0) return digDown(body, lava.y() + 1, label);
+        if (rise < 0) {
+            Optional<T> down = digDown(body, lava.y() + 1, label);
+            if (down.isPresent()) return down;
+            // Its staircase refused every way, a drop under each step (it stands on a shelf over a cave): along its own level
+            // instead, turning where a way is refused, to ground it can stair down from; the next call stairs down there.
+            // Before, it dug nothing, and the cast's walk to the lava was offered every tick: in E-40's iteration 23
+            // (`e40a23-3115b1c`) 505 Sol was refused 1,346 walks to one pool's sources in 47 s (F-25c4dj).
+            heading = major;
+            return tunnel(body, label);
+        }
         List<Side> ways = (xFirst ? dz : dx) == 0 ? List.of(major) : List.of(major, xFirst ? along : across);
         int floor = tunnelFloor, turns = tunnelTurns;
         try {
