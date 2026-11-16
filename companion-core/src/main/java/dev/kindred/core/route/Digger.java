@@ -96,6 +96,12 @@ public final class Digger {
     private static final int MAX_SAFE_DROP = Navigator.MAX_SAFE_DROP;
 
     private Side heading = Side.NORTH;
+    /**
+     * The way {@link #toward} tunnels along its own level while its staircase is refused, and the lava it is for: kept from
+     * one call to the next, turns and all, until a staircase step opens or the lava changes (F-25c4dj1).
+     */
+    private Side alongLevel;
+    private Cell alongLevelFor;
     private int tunnelFloor = Integer.MIN_VALUE, tunnelTurns = 4;
     /** Whether a tunnel bridges any drop ahead with a block of its own, as one toward lava at its level does (F-25c4ak). */
     private boolean bridgeDrops;
@@ -179,8 +185,15 @@ public final class Digger {
     /** The cells its tunnels advanced into, read-only (F-27a). */
     public Set<Long> tunnelledCells() { return java.util.Collections.unmodifiableSet(tunnelled); }
 
-    /** The cells its tunnels advanced into, forgotten: a dead end paced once more is fine after a move elsewhere. */
-    public void forgetTunnelled() { tunnelled.clear(); }
+    /**
+     * The cells its tunnels advanced into, forgotten: a dead end paced once more is fine after a move elsewhere. So too the way
+     * {@link #toward} was tunnelling along its level: a new dig sets out afresh (F-25c4dj1).
+     */
+    public void forgetTunnelled() {
+        tunnelled.clear();
+        alongLevel = null;
+        alongLevelFor = null;
+    }
 
     /**
      * A branch mine's leg a block on: after a leg of {@link #BRANCH_LEG} blocks, a quarter turn to step {@link #BRANCH_STEP}
@@ -412,13 +425,26 @@ public final class Digger {
         if (rise > 0) return climb(body, label);
         if (rise < 0) {
             Optional<T> down = digDown(body, lava.y() + 1, label);
-            if (down.isPresent()) return down;
+            if (down.isPresent()) {
+                alongLevel = null;
+                return down;
+            }
             // Its staircase refused every way, a drop under each step (it stands on a shelf over a cave): along its own level
             // instead, turning where a way is refused, to ground it can stair down from; the next call stairs down there.
             // Before, it dug nothing, and the cast's walk to the lava was offered every tick: in E-40's iteration 23
             // (`e40a23-3115b1c`) 505 Sol was refused 1,346 walks to one pool's sources in 47 s (F-25c4dj).
-            heading = major;
-            return tunnel(body, label);
+            // The way along is kept from call to call, as the tunnel turned it, not set again from where the lava lies: past
+            // the lava's line the major way flipped back along the tunnel just dug, then over the drop and back, and the
+            // tunnel advanced to and fro for the rest of its time. On #394's CI (run 43842018263) the cast set out for the
+            // pool's source a block south of the alcove's line and advanced 295 times with no lava in 2,400 ticks (F-25c4dj1).
+            if (alongLevel == null || !lava.equals(alongLevelFor)) {
+                alongLevel = major;
+                alongLevelFor = lava;
+            }
+            heading = alongLevel;
+            Optional<T> onLevel = tunnel(body, label);
+            alongLevel = heading;
+            return onLevel;
         }
         List<Side> ways = (xFirst ? dz : dx) == 0 ? List.of(major) : List.of(major, xFirst ? along : across);
         int floor = tunnelFloor, turns = tunnelTurns;
