@@ -28,6 +28,9 @@ DEFAULT_OUT = ROOT / "companion-server-adapter/src/corpus/resources/data/kindred
 def classify(state):
     """A coarse class of the failure, for the report: what killed it, or what it was stuck at."""
     kind = state.get("kind", "death")
+    if kind == "respawn":
+        # A waking (F-27a4): kept as it respawned, its death in its box or not.
+        return "waking: " + ("its death in the box" if state.get("deathInside") else "its death outside the box")
     cause = (state.get("cause") or "").lower()
     task = (state.get("task") or "") + " " + (state.get("stage") or "")
     if kind in ("stuck", "spell"):

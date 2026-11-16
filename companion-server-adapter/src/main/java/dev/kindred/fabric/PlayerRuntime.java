@@ -7461,6 +7461,9 @@ final class PlayerRuntime {
         matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
         BlockPos deathPos = player.getBlockPos().toImmutable();
+        entry.lastDeathAt = deathPos;
+        entry.lastDeathWorld = player.getServerWorld().getRegistryKey().getValue().toString();
+        entry.lastDeathCause = player.getDamageTracker().getDeathMessage().getString();
         // What it died in, for a run's report to weigh deaths by (B7): read before its work is stopped below.
         String circumstances = deathCircumstances(entry, player);
         // The scene and its state kept for a replay, before its work stops and vanilla drops what it holds (F-27).
@@ -7580,6 +7583,7 @@ final class PlayerRuntime {
         entry.lastTacticalObservation = null;
         entry.blocker = "Respawned after dying.";
         KindredMod.LOGGER.info("{} respawned at {}", entry.data.displayName(), body.entity().getBlockPos().toShortString());
+        captureWaking(entry, body);
         persistNativeSaveReceipt(entry);
     }
 
@@ -16122,10 +16126,35 @@ final class PlayerRuntime {
 
     /** Its goal's memory of a replay's box, copied on the tick the replay is taken (F-27a); none with no goal. */
     private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry) {
+        return memoryOf(entry, DeathReplays.WIDTH, DeathReplays.HEIGHT);
+    }
+
+    /** As {@link #memoryOf(Entry)}, its goal's memory cut to a box {@code width} across and {@code height} high. */
+    private java.util.function.Function<net.minecraft.util.math.BlockPos, com.google.gson.JsonObject> memoryOf(Entry entry, int width, int height) {
         var campaign = entry.campaign;
         if (campaign == null) return null;
         long tick = server.getTicks();
-        return origin -> campaign.memoryIn(origin, DeathReplays.WIDTH, DeathReplays.HEIGHT, tick);
+        return origin -> campaign.memoryIn(origin, width, height, tick);
+    }
+
+    /**
+     * With replays on, the scene as it wakes from a death kept (F-27a4): a {@code "respawn"} scene round where it woke and,
+     * within reach, where it died and what it dropped there, for the corpus to play again from its waking. Its pass is to be
+     * alive at its budget's end; whether its armour is back on is reported beside it. Nothing here changes the player or the
+     * world.
+     */
+    private void captureWaking(Entry entry, NativePlayerBody body) {
+        if (replays == null) return;
+        var player = body.entity();
+        String here = player.getServerWorld().getRegistryKey().getValue().toString();
+        BlockPos death = entry.lastDeathAt != null && here.equals(entry.lastDeathWorld) ? entry.lastDeathAt : null;
+        var box = DeathReplays.wakeBox(player.getBlockPos(), death);
+        String cause = "respawned after its death at " + (entry.lastDeathAt == null ? "unknown" : entry.lastDeathAt.toShortString())
+                + (entry.lastDeathCause == null ? "" : " (" + entry.lastDeathCause + ")") + (box.deathInside() ? "" : ", the death outside its box");
+        replays.captureWaking(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("respawn", String.valueOf(goalOf(entry)),
+                entry.campaign == null ? "no goal" : entry.campaign.progress(), "waking", entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
+                entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), cause,
+                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt);
     }
 
     /**
@@ -19397,6 +19426,9 @@ final class PlayerRuntime {
         private long attendedAt = Long.MIN_VALUE / 2;
         private UUID attentionTaskId;
         private boolean awaitingRespawn;
+        /** Where it last died, in which dimension and how, for the scene cut as it wakes (F-27a4); null before any death. */
+        private BlockPos lastDeathAt;
+        private String lastDeathWorld, lastDeathCause;
         private boolean campaignFightInterrupt;
         private boolean endPortalAnnounced, dragonAnnounced;
         private UUID tacticalRetreatTaskId;
