@@ -185,6 +185,7 @@ public final class FixtureBounds {
         var byPlayers = BY_PLAYERS.remove(test);
         if (byPlayers != null) report(test, byPlayers, "its players");
         KEPT.remove(test);
+        FLUIDS_NOTED.remove(test);
         var outside = OUTSIDE.remove(test);
         if (outside == null) return;
         report(test, outside, "it");
@@ -236,6 +237,27 @@ public final class FixtureBounds {
         PLACING.get()[0] += placing ? 1 : -1;
     }
 
+    /** How many fluid writes outside its kept ground each test has had named, up to {@link #FLUIDS_NAMED}. */
+    private static final Map<GameTestState, int[]> FLUIDS_NOTED = Collections.synchronizedMap(new IdentityHashMap<>());
+    private static final int FLUIDS_NAMED = 3;
+
+    /**
+     * A fluid set above its floor, outside the ground a test keeps, by a test that keeps some: the first three a test,
+     * each named with the frames that set it (F-22c75b, log only). The build battle's kept field had water left just
+     * over its top in CI on #380 and #385, a sheet a block wide set in its own steps, from no write of its fixture's.
+     */
+    private static void fluidOutside(GameTestState test, BlockPos pos, BlockState state, boolean byPlayers) {
+        int[] noted = FLUIDS_NOTED.computeIfAbsent(test, t -> new int[1]);
+        if (noted[0]++ >= FLUIDS_NAMED) return;
+        String from = StackWalker.getInstance().walk(frames -> frames
+                .filter(f -> !f.getClassName().endsWith("FixtureBounds") && !f.getMethodName().contains("kindred$"))
+                .limit(14)
+                .map(f -> f.getClassName().substring(f.getClassName().lastIndexOf('.') + 1) + "." + f.getMethodName() + ":" + f.getLineNumber())
+                .collect(Collectors.joining(" < ")));
+        KindredMod.LOGGER.info("Fluid set outside kept ground: {}: {} at {} by {}{}; from {}", test.getTemplatePath(), state, pos.toShortString(),
+                byPlayers ? "its players" : "its own step", noted[0] == FLUIDS_NAMED ? " (the last named for this test)" : "", from);
+    }
+
     public static void wrote(BlockPos pos, BlockState state) {
         if (PLACING.get()[0] > 0) return;
         var test = CURRENT.get();
@@ -268,6 +290,7 @@ public final class FixtureBounds {
                 }
             }
         }
+        if (boxes != null && !state.getFluidState().isEmpty() && y > plot.minY) fluidOutside(test, pos, state, into == BY_PLAYERS);
         outside.kinds.merge(Registries.BLOCK.getId(state.getBlock()).getPath(), 1, Integer::sum);
         if (!state.isAir() && y > plot.minY) outside.above++;
         outside.minX = Math.min(outside.minX, x); outside.minY = Math.min(outside.minY, y); outside.minZ = Math.min(outside.minZ, z);
