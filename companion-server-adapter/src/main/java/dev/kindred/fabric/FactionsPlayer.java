@@ -347,10 +347,47 @@ final class FactionsPlayer {
             }
             // Room to stand is asked before the sight line only to spare it: a cell with none is no walk's end.
             var ground = looks.firstSeen(under, below -> standable(world, below.getX(), below.getY() + 1, below.getZ()));
-            if (ground.isPresent()) y = ground.get().getY() + 1;
-            else if (far > LEG && looks.rays() <= GROUND_LOOKS) y = looks.ground(x, z).map(top -> top.getY() + 1).orElse(y);
+            if (ground.isPresent()) return new BlockPos(x, ground.get().getY() + 1, z);
+            if (far > LEG && looks.rays() <= GROUND_LOOKS) {
+                var top = looks.ground(x, z);
+                if (top.isPresent()) return new BlockPos(x, top.get().getY() + 1, z);
+            }
+            // A leg's end it sees no ground at (M-06i2c2): the farthest ground it sees along the way and could stand on, as a
+            // player walks to the brink it can see rather than into the air past it. At its own height there a leg ended in
+            // mid-air over a valley or inside a hillside, where no route ends: on Factions seed 20261030, 211 of 919 legs
+            // refused for no route ended in mid-air. Where it sees none along the way, the leg is as before.
+            if (far > LEG) {
+                var back = backAlong(player, x, z);
+                if (back != null) return back;
+            }
         }
         return new BlockPos(x, y, z);
+    }
+
+    /** The steps back along a leg, from its end toward where it stands, at which it looks for ground (M-06i2c2). */
+    static final int BACK_STEP = 6, BACK_LOOKS = 6;
+
+    /**
+     * The farthest column along the line from where it stands to a leg's end at ({@code x}, {@code z}), stepped back from
+     * the end {@value #BACK_STEP} blocks at a time, whose top it sees and could stand on; null if none. At most
+     * {@value #BACK_LOOKS} sight lines, one a column; nothing of a column it does not see is read.
+     */
+    private static BlockPos backAlong(ServerPlayerEntity player, int x, int z) {
+        var world = player.getServerWorld();
+        double dx = x - player.getX(), dz = z - player.getZ();
+        double length = Math.hypot(dx, dz);
+        if (length < 1e-6) return null;
+        var looks = WorldKnowledge.looks(player, BACK_LOOKS);
+        for (int step = 1; step <= BACK_LOOKS; step++) {
+            double at = length - step * BACK_STEP;
+            if (at < BACK_STEP) break;
+            int cx = (int) Math.floor(player.getX() + dx * at / length);
+            int cz = (int) Math.floor(player.getZ() + dz * at / length);
+            if (!world.isChunkLoaded(cx >> 4, cz >> 4)) continue;
+            var top = looks.ground(cx, cz);
+            if (top.isPresent() && standable(world, cx, top.get().getY() + 1, cz)) return new BlockPos(cx, top.get().getY() + 1, cz);
+        }
+        return null;
     }
 
     /** Sight lines to ground near its own height at a walk's end; one more for the column's top (F-35m). */

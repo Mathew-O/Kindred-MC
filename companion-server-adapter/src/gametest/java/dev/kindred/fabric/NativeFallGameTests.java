@@ -29,6 +29,8 @@ public final class NativeFallGameTests implements FabricGameTest {
 
     private static void shaft(TestContext context) {
         var world = context.getWorld();
+        // Its shaft and the ledges set in it, outside the plot: put back as the test ends (F-22c75b).
+        FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(0, 1, 0)), context.getAbsolutePos(new BlockPos(7, 28, 7)));
         for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
             world.setBlockState(context.getAbsolutePos(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());
             for (int y = 2; y <= 28; y++) world.setBlockState(context.getAbsolutePos(new BlockPos(x, y, z)), Blocks.AIR.getDefaultState());
@@ -228,6 +230,8 @@ public final class NativeFallGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its field and pillar, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-8, 1, -8), o.add(12, 22, 12));
                     for (int x = -8; x <= 12; x++) for (int z = -8; z <= 12; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.END_STONE.getDefaultState());
                         for (int y = 2; y <= 22; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
