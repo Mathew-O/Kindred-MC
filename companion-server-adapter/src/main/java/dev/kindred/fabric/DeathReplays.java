@@ -147,12 +147,24 @@ final class DeathReplays implements AutoCloseable {
      * a minute, apart from the death's, which it follows by a second.
      */
     java.util.Optional<Capture> captureWaking(String player, ServerPlayerEntity body, long tick, Context context, WakeBox box, BlockPos death) {
+        return captureWaking(player, body, tick, context, box, death, -1, false);
+    }
+
+    /**
+     * As {@link #captureWaking(String, ServerPlayerEntity, long, Context, WakeBox, BlockPos)}, with how many ticks before
+     * the respawn it died ({@code deathAgo}, -1 when unknown) and whether a hostile mob killed it: what its campaign's own
+     * {@code died} heard of the death, for the replay to tell its campaign again (F-27a5).
+     */
+    java.util.Optional<Capture> captureWaking(String player, ServerPlayerEntity body, long tick, Context context, WakeBox box, BlockPos death,
+                                              long deathAgo, boolean deathByMob) {
         Long before = lastWake.get(player);
         if (before != null && tick - before < GAP) return java.util.Optional.empty();
         lastWake.put(player, tick);
         var extra = new java.util.LinkedHashMap<String, Object>();
         extra.put("death", death == null ? null : new int[] {death.getX(), death.getY(), death.getZ()});
         extra.put("deathInside", box.deathInside());
+        if (deathAgo >= 0) extra.put("deathAgo", deathAgo);
+        extra.put("deathByMob", deathByMob);
         extra.put("ticks", WAKE_TICKS);
         extra.put("pass", WAKE_PASS);
         extra.put("reported", WAKE_REPORTED);
