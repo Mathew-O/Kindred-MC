@@ -1,5 +1,6 @@
 package dev.kindred.fabric;
 
+import dev.kindred.core.Actor;
 import dev.kindred.core.record.ClaimLedger;
 import dev.kindred.core.record.WorldEvent;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
@@ -33,11 +34,24 @@ public final class NativeCostGameTests implements FabricGameTest {
                                 ClaimLedger.chunk("minecraft:overworld", 91, 90), Map.of()),
                         WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "journal", null, "goal", "", Map.of("detail", "x".repeat(100))))))
                 .createAndAdd(() -> context.assertTrue(f.runtime.ledgers().claims().size() == 2, "Written"))
-                .createAndAdd(() -> line[0] = f.runtime.logCost(1))
+                .createAndAdd(() -> {
+                    // F-32e: the player's web holds three facts it was told, one of them told again, which ends the first.
+                    f.established(context);
+                    var web = f.runtime.webs().of(f.id);
+                    long now = server.getTicks();
+                    for (String item : List.of("item:iron_ingot", "item:bread", "item:iron_ingot")) {
+                        web.add("faction:oak", dev.kindred.core.knowledge.KnowledgeWeb.Verb.HAS_SPARE, item, "4", dev.kindred.core.wire.HowKnown.TOLD,
+                                List.of(1L), now, dev.kindred.core.wire.Visibility.FACTION, "oak");
+                    }
+                    line[0] = f.runtime.logCost(1);
+                })
                 .createAndAdd(() -> {
                     context.assertTrue(line[0].isDone(), "Measured");
                     String s = line[0].join();
                     context.assertTrue(s.contains("claim=2/") && s.contains("journal=1/"), "Counted by kind: " + s);
+                    String name = f.runtime.nativeStatuses(Actor.console()).getFirst().name();
+                    // Three held; the iron told first ended at this tick, so the bound may drop it once it lapses: two kept for good.
+                    context.assertTrue(s.contains("; webs by player, held/kept for good {" + name + "=3/2};"), "Each AI's web by name: " + s);
                     var bytes = java.util.regex.Pattern.compile("the database (\\d+) bytes on disk").matcher(s);
                     context.assertTrue(bytes.find() && Long.parseLong(bytes.group(1)) > 0, "The database measured: " + s);
                     context.assertTrue(s.contains("the world's 2;") || s.contains("the world's 2 "), "The world's web holds the two claims: " + s);
