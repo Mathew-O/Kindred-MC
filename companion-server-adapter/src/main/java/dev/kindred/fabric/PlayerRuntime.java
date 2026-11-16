@@ -10860,6 +10860,14 @@ final class PlayerRuntime {
         return entry.factionPlay.deepBelow(body);
     }
 
+    /** For fixtures (M-06i2c2): where its faction walk now would end, as the walk is asked; null with no move. */
+    BlockPos factionDestinationForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected() || entry.factionPlay.move == null) return null;
+        return FactionsPlayer.destination(entry.factionPlay.move, entry.nativeBody.entity());
+    }
+
     /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */
     boolean factionWalkingForTest(UUID player) {
         requireThread();
