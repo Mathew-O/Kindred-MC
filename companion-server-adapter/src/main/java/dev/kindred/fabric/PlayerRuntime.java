@@ -12673,6 +12673,10 @@ final class PlayerRuntime {
                     entry.brought.add(b.villager);
                     return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back." + leftInCell(world, b), true);
                 }
+                // Its climb up to the door never spends what the bring takes home (F-22c84 cause #3): its line's rails, its
+                // cart, the dirt of its stops and bridge. Climbed out on a dirt of its stop's, the step was left standing and
+                // the bring came home a dirt short (CI on #380).
+                if (entry.build != null) entry.build.keep(Set.of(Items.RAIL, Items.MINECART, Items.DIRT));
                 return null;
             }
         }
