@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 7.412,
+  "items": {"windows": 7209, "gained": 8970, "paid": 8970, "lapsed": 357, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 88.0, "snapshotMicrosMax": 15314.1, "tagMicrosMean": 93.3, "tagMicrosMax": 2900.6, "bySource": {"container.take:furnace": 90, "pickup:class_2248.method_36993": 6770, "pickup:class_3222.method_7329": 1819, "pickup:class_52.method_331": 58, "screen:class_1707": 18, "screen:class_1714": 78, "screen:class_1723": 366, "use:item": 128}, "dropsByOrigin": {"class_1428.method_6007": 110, "class_2248.method_36993": 6785, "class_3222.method_7329": 177, "class_52.method_331": 94}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 10.07, "tickMsWorst": 1075.45, "tickMsWorstAt": 74783, "ticksOver50ms": 29, "ticksOver200ms": 6, "heapMbMax": 942, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 740, "stone_tools": 3240, "iron_ingot": 8640, "iron_pickaxe": 26120, "obsidian": 72570, "portal_lit": 74746},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 37960, "x": -388, "y": 53, "z": -48, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2378,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 7,
+      "bridgeSeconds": 3.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1600, "stone_tools": 3800, "iron_ingot": 8480, "iron_pickaxe": 17080, "obsidian": 64994},
+      "deaths": [
+        {"tick": 117746, "cause": "Sol was slain by Spider", "x": -384, "y": 29, "z": -131, "light": 0, "timeOfDay": 9180, "dimension": "minecraft:overworld", "hunger": 2, "underSky": false, "stage": "Wood: fight back - Back off from skeleton (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 89680, "x": -443, "y": -53, "z": -132, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5768,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3540, "stone_tools": 4420, "iron_ingot": 8340, "iron_pickaxe": 106840, "obsidian": 117720, "portal_lit": 119112},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52260, "x": -244, "y": 34, "z": -94, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3256,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
