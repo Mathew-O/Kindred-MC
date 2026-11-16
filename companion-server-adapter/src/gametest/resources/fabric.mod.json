@@ -152,6 +152,7 @@
       "dev.kindred.fabric.NativeDeepPortalGameTests",
       "dev.kindred.fabric.NativeAuctionScreenGameTests",
       "dev.kindred.fabric.NativeMarketScreenGameTests",
+      "dev.kindred.fabric.NativeMarketHistoryGameTests",
       "dev.kindred.fabric.NativeCaptureGameTests",
       "dev.kindred.fabric.NativeFirstDayGameTests",
       "dev.kindred.fabric.NativeFactionNoticesGameTests",

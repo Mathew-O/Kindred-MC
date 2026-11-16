@@ -18792,6 +18792,36 @@ final class PlayerRuntime {
      * {@code baseline <item> <cents> <mass|ordinary|scarce> [nobuy]}. Only in a faction world. The outcome of a sale or
      * purchase, settled a moment later, is told to {@code source} then.
      */
+    /** The trades read a page at a time for {@code /market history} (M-06g2), of which only an item's last few are kept. */
+    private static final int HISTORY_PAGE = 5_000, HISTORY_SHOWN = 10;
+
+    /**
+     * {@code /market history <item>}: its last {@value #HISTORY_SHOWN} trades, read through every trade in the World Record
+     * a page at a time on the writer, only that item's last few kept (M-06g2). The first 10,000 trades from the Record's
+     * start, read once, showed old trades as the latest past 10,000 of them, as a month at 8 players passes.
+     */
+    private void marketHistory(SqliteCompanionStore database, String item, long after, java.util.ArrayDeque<dev.kindred.core.record.WorldEvent> last,
+                               ServerCommandSource source) {
+        database.worldEvents(Set.of(dev.kindred.core.market.MarketLedger.SALE, dev.kindred.core.market.MarketLedger.BUY), after, HISTORY_PAGE)
+                .whenComplete((page, failure) -> handBack(() -> {
+                    if (failure != null) { reject(source, "The history could not be read."); return; }
+                    for (var e : page) {
+                        if (!e.subject().startsWith(item)) continue;
+                        last.addLast(e);
+                        if (last.size() > HISTORY_SHOWN) last.removeFirst();
+                    }
+                    if (page.size() == HISTORY_PAGE) {
+                        marketHistory(database, item, page.getLast().id(), last, source);
+                        return;
+                    }
+                    if (last.isEmpty()) { feedback(source, "No trades of " + item + " yet"); return; }
+                    for (var e : last) {
+                        feedback(source, (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE) ? "sold " : "bought ") + e.get("count", "?") + " for "
+                                + dev.kindred.core.factions.Coins.show(Long.parseLong(e.get("cents", "0"))) + " at " + java.time.Instant.ofEpochMilli(e.realTimeMs()));
+                    }
+                }));
+    }
+
     int marketRequest(ServerCommandSource source, UUID who, String verb, List<String> args) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
@@ -18833,17 +18863,7 @@ final class PlayerRuntime {
                 return 1;
             }
             case "history" -> {
-                SqliteCompanionStore database = store;
-                String item = dev.kindred.core.market.MarketTable.id(first);
-                database.worldEvents(Set.of(dev.kindred.core.market.MarketLedger.SALE, dev.kindred.core.market.MarketLedger.BUY), 0, 10_000).whenComplete((events, failure) -> handBack(() -> {
-                    if (failure != null) { reject(source, "The history could not be read."); return; }
-                    var lines = events.stream().filter(e -> e.subject().startsWith(item)).toList();
-                    if (lines.isEmpty()) { feedback(source, "No trades of " + item + " yet"); return; }
-                    for (var e : lines.subList(Math.max(0, lines.size() - 10), lines.size())) {
-                        feedback(source, (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE) ? "sold " : "bought ") + e.get("count", "?") + " for "
-                                + dev.kindred.core.factions.Coins.show(Long.parseLong(e.get("cents", "0"))) + " at " + java.time.Instant.ofEpochMilli(e.realTimeMs()));
-                    }
-                }));
+                marketHistory(store, dev.kindred.core.market.MarketTable.id(first), 0, new java.util.ArrayDeque<>(), source);
                 return 1;
             }
             case "baseline" -> {
