@@ -326,8 +326,10 @@ public final class NativeBringGameTests implements FabricGameTest {
         // F-22c98b: whether the librarian's boat was set off the line for the push under way; how many times it was.
         boolean[] offLineSet = {false};
         int[] offLineSets = {0};
-        // F-22c98b: the hall's doorway and what was said the tick the given-up bring ended.
+        // F-22c98b: the hall's doorway and what was said the tick the given-up bring said its end; how much had been said
+        // as the staging first set the boat off the line.
         String[] endedWith = {null};
+        int[] saidBefore = {-1};
         // Each cell's front: a rail on it the tick before; the tick its rail came up; whether Hal stood in it then.
         java.util.Map<BlockPos, Boolean> frontRail = new java.util.HashMap<>();
         java.util.Map<BlockPos, Long> railUp = new java.util.HashMap<>();
@@ -562,6 +564,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                             else if (!offLineSet[0]) {
                                 offLineSet[0] = true;
                                 offLineSets[0]++;
+                                if (saidBefore[0] < 0) saidBefore[0] = f.runtime.said(f.id).size();
                                 boolean alongX = Math.abs(cart.getVelocity().x) >= Math.abs(cart.getVelocity().z);
                                 double x = alongX ? boat.getX() : boat.getX() + 3, z = alongX ? boat.getZ() + 3 : boat.getZ();
                                 boat.refreshPositionAndAngles(x, boat.getY(), z, boat.getYaw(), 0);
@@ -571,7 +574,10 @@ public final class NativeBringGameTests implements FabricGameTest {
                             }
                         }
                     }
-                    if (onBed == 6 && offLineSets[0] > 0 && endedWith[0] == null && !String.valueOf(f.runtime.bringNote(f.id)).contains("[")) {
+                    // The tick the given-up bring says how it ended (its first line said since the staging), what the doorway is
+                    // then: a bring begun again after may open it again.
+                    if (onBed == 6 && saidBefore[0] >= 0 && endedWith[0] == null
+                            && f.runtime.said(f.id).subList(saidBefore[0], f.runtime.said(f.id).size()).stream().anyMatch(line -> !line.startsWith("the trading hall's"))) {
                         BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
                         var at = context.getWorld().getBlockState(door);
                         endedWith[0] = (at.getBlock() instanceof net.minecraft.block.DoorBlock ? "door" : String.valueOf(at)) + " / " + f.runtime.said(f.id);
