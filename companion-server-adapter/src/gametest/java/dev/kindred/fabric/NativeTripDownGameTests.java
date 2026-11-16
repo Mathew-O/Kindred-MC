@@ -510,6 +510,8 @@ public final class NativeTripDownGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     world.setTimeOfDay(18000);
                     BlockPos o = origin[0] = context.getAbsolutePos(new BlockPos(10, 6, 10)).toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-4, -4, -4), o.add(4, 7, 4));
                     for (BlockPos at : BlockPos.iterate(o.add(-3, -3, -3), o.add(3, 6, 3))) world.setBlockState(at, Blocks.STONE.getDefaultState());
                     world.setBlockState(o, Blocks.AIR.getDefaultState());
                     world.setBlockState(o.up(), Blocks.AIR.getDefaultState());

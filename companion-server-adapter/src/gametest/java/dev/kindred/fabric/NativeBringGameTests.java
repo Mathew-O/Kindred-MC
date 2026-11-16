@@ -50,6 +50,15 @@ public final class NativeBringGameTests implements FabricGameTest {
         return total;
     }
 
+    /**
+     * The bring's last check needs Hal in play (F-22c99). Out of play as the test ends, it says so; {@code lastNotYet}, what
+     * the check last found not yet so, if anything.
+     */
+    static void inPlay(TestContext context, net.minecraft.server.network.ServerPlayerEntity hal, String lastNotYet) {
+        context.assertTrue(hal != null, lastNotYet == null ? "Hal still in play"
+                : "Hal out of play as the test ended; before that, not yet: " + lastNotYet);
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bring", tickLimit = 12000)
     public void aKeptLibrarianIsBroughtHomeByMinecartIntoItsCell(TestContext context) {
         scene(context, false);
@@ -186,7 +195,8 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     /**
      * As the strolling bring, staged (F-22c84, cause #2): the tick the cart in the cell under the shut trapdoor is broken, its
-     * item lying on the cell's floor, Hal held until twenty ticks after the front's rail is up a third of a block
+     * item lying on the cell's floor, Hal held, nothing in the cell picked up, until eighty ticks after the front's rail is up
+     * a third of a block
      * east of the middle of its stand before the front, with the oak boat's item on the floor beside the cart's. In CI on
      * #354 (`c3d0cc4`, run 43719957093) and #355 (run 43720019149), Hal stood there walking to its stand 1,990 times while
      * both items lay, and they despawned at age 6000: the stand is asked for to within a quarter of a block, a walk to a
@@ -246,6 +256,29 @@ public final class NativeBringGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDoorAside", tickLimit = 12000)
     public void aDoorInReachButBehindTheHallsWallIsTakenOffFromItsFront(TestContext context) {
         scene(context, false, false, false, false, false, false, false, false, false, false, true);
+    }
+
+    /**
+     * F-22c99, test-only. On #380's CI (run 43783885635) a bring's last check was retried for a minute after "Brought home",
+     * each time not yet so for want of a dirt ("… 3 dirt …"); then the runtime stopped as the test ran out, and its failure
+     * said only "Hal still in play", the minute's reason gone. Here, Hal out of play with a reason last found not yet so: the
+     * check's failure must name that reason. Anything else it throws is caught, so it cannot crash the server.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOutOfPlay", tickLimit = 40)
+    public void outOfPlayAsTheTestEndsTheBringCheckStillSaysWhatWasNotYetSo(TestContext context) {
+        String reason = "Rails (but the cell floor's), the cart and dirt all taken back, the lectern spent: 63 rails, 1 carts, 0 lecterns, 3 dirt";
+        String said;
+        try {
+            inPlay(context, null, reason);
+            said = null;
+        } catch (net.minecraft.test.GameTestException failing) {
+            said = failing.getMessage();
+        } catch (RuntimeException other) {
+            said = "threw " + other;
+        }
+        String message = said;
+        context.assertTrue(message != null && message.contains(reason), "The check out of play names what was last not yet so: " + message);
+        context.complete();
     }
 
     private static void scene(TestContext context, boolean make) {
@@ -335,6 +368,8 @@ public final class NativeBringGameTests implements FabricGameTest {
         boolean[] tradeDay = {false};
         // F-22c64: the librarian in its front between the front rail coming up and the job block going in.
         String[] inFrontLoose = {null};
+        // F-22c99: what the last check last found not yet so, for its failure out of play as the test ends.
+        String[] lastNotYet = {null};
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, mine ? 29500 : lake ? 15500 : make || wander || river || strolling ? 13500 : 11500);
         boolean[] moved = {false};
         boolean[] damped = {false};
@@ -622,6 +657,20 @@ public final class NativeBringGameTests implements FabricGameTest {
                         if (cartThere) cartInCell.add(front);
                         // Or, if the cart was broken before the trapdoor was shut, the first tick the trapdoor is shut with the cart's
                         // item lying in the cell (so a bring that takes another order is still staged).
+                        // And if the cart's item went straight into Hal's hand as the cart was broken, before a tick here saw it lying
+                        // (in CI on #376, run 43776656762, the staging never fired), it is put back on the cell's floor from Hal's
+                        // hand (a move, not a copy), so the staging is the same either way.
+                        if (onBed == 3 && offFront[0] == null && cartBroken && shut && !jobIn && hal != null
+                                && world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, i -> i.isAlive() && i.getStack().isOf(Items.MINECART)).isEmpty()) {
+                            var inventory = hal.getInventory();
+                            for (int slot = 0; slot < inventory.size(); slot++) {
+                                if (!inventory.getStack(slot).isOf(Items.MINECART)) continue;
+                                world.spawnEntity(new net.minecraft.entity.ItemEntity(world, front.getX() + 0.5, front.getY() + 0.1, front.north().getZ() + 0.5,
+                                        inventory.getStack(slot).split(1), 0, 0, 0));
+                                KindredMod.LOGGER.info("Bring: the cart's item taken up as the cart was broken, set back on the cell's floor");
+                                break;
+                            }
+                        }
                         if (onBed == 3 && offFront[0] == null && (cartBroken || shut) && !jobIn && hal != null
                                 && !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, i -> i.isAlive() && i.getStack().isOf(Items.MINECART)).isEmpty()) {
                             offFront[0] = front;
@@ -640,19 +689,28 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, net.minecraft.entity.Entity::isAlive).stream()
                                             .map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList());
                         }
-                        // Held there until twenty ticks after the front's rail is up (a break's own collection had walked it back
-                        // on to its stand), then let go.
-                        if (front.equals(offFront[0]) && up != null && offFrom[0] < 0) offFrom[0] = Math.max(up, world.getTime()) + 20;
+                        // Held there until eighty ticks after the front's rail is up, then let go: past the bound of the rail's
+                        // break collecting its own drop (about 71 ticks), which, still under way as Hal was let go, walked it into
+                        // reach of the cell's items (a probe: Hal moving north from the tick it was let go).
+                        if (front.equals(offFront[0]) && up != null && offFrom[0] < 0) offFrom[0] = Math.max(up, world.getTime()) + 80;
                         if (hal != null && front.equals(offFront[0]) && (offFrom[0] < 0 || world.getTime() < offFrom[0])) {
                             BlockPos stand = front.south(2);
-                            hal.refreshPositionAndAngles(stand.getX() + 0.5 + 0.3, hal.getY(), stand.getZ() + 0.5, hal.getYaw(), hal.getPitch());
+                            // On the stand's floor, at rest: a walk to a block's middle ends at once only on the ground and at rest,
+                            // and one let go in the air had walked on into the quarter-block.
+                            hal.refreshPositionAndAngles(stand.getX() + 0.5 + 0.3, stand.getY(), stand.getZ() + 0.5, hal.getYaw(), hal.getPitch());
                             hal.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            // And nothing in the cell picked up while held (a break's collection had carried Hal to them between
+                            // two holds, within a tick), so all of it still lies there as Hal is let go.
+                            for (var item : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, net.minecraft.entity.Entity::isAlive)) item.setPickupDelay(2);
                         }
                         if (hal != null && front.equals(offFront[0]) && offFrom[0] >= 0 && offLeft[0] == null && world.getTime() - offFrom[0] >= 600) {
                             var left = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems,
                                     i -> i.isAlive() && (i.getStack().isOf(Items.MINECART) || i.getStack().isIn(net.minecraft.registry.tag.ItemTags.BOATS)));
                             if (!left.isEmpty()) offLeft[0] = left.stream().map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())
                                     + " age " + i.getItemAge()).toList() + ", Hal at " + hal.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ());
+                            else if (count(hal.getInventory(), Items.MINECART) < 1) offLeft[0] = "none in the cell, but Hal holds no minecart: "
+                                    + world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems.expand(4), net.minecraft.entity.Entity::isAlive).stream()
+                                            .map(i -> i.getStack() + " at " + i.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList();
                             else offLeft[0] = "";
                         }
                         // Staged (#318): the first tick, after its rail is up, that the cell holds no boat, cart, rail or cart
@@ -753,7 +811,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                         }
                     }
                     var hal = f.player();
-                    context.assertTrue(hal != null, "Hal still in play");
+                    inPlay(context, hal, lastNotYet[0]);
                     var inventory = hal.getInventory();
                     // All but the rail on the cell's floor, left to the cell.
                     int rails = make ? 31 : 63;
@@ -848,6 +906,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                   } catch (net.minecraft.test.GameTestException failing) {
                     // What is not yet so, now and then: the test server says only the last of it, when the test ends.
                     if (context.getWorld().getTime() % 100 == 0) KindredMod.LOGGER.info("Bring fixture, not yet: {}", failing.getMessage());
+                    // Kept for the failure out of play (F-22c99), never the out-of-play message itself.
+                    if (f.player() != null) lastNotYet[0] = failing.getMessage();
                     throw failing;
                   }
                 })

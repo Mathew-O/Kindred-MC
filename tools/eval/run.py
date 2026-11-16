@@ -195,6 +195,17 @@ def finish(folder, process, started, keep_world=False):
         for db in sorted((folder / "world" / "kindred").glob("companions.sqlite*")) if (folder / "world" / "kindred").is_dir() else []:
             (folder / "world-kept" / "kindred").mkdir(parents=True, exist_ok=True)
             shutil.copy2(db, folder / "world-kept" / "kindred" / db.name)
+        # And what a restart of the world needs beside them (M-06k8): its level.dat (world time, gamerules, spawn), the
+        # world's saved data, and Kindred's memory files and its mode and edit settings, so a kept world can be started
+        # again as the server left it, not only read.
+        for name in ("level.dat", "data", "kindred/memory", "kindred/mode.properties", "kindred/edits.properties"):
+            source = folder / "world" / name
+            target = folder / "world-kept" / name
+            if source.is_dir():
+                shutil.copytree(source, target, dirs_exist_ok=True)
+            elif source.is_file():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
         # And the run's players' own saves (F-26d): inventory, health and place as the run left them, so a stuck place
         # can be staged with what its player really carried. Only the players the result names, by the ids the
         # server's usercache.json gives their names; every save there is, if either file is missing.

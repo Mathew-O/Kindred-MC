@@ -37,6 +37,8 @@ public final class NativeFactionPowerGameTests implements FabricGameTest {
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
+                    // Its ring's wall, partly outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(-1, 2, -1)), context.getAbsolutePos(new BlockPos(8, 4, 8)));
                     for (int x = -1; x <= 8; x++) for (int z = -1; z <= 8; z++) {
                         if (x > -1 && x < 8 && z > -1 && z < 8) continue;
                         for (int y = 2; y <= 4; y++) context.setBlockState(x, y, z, Blocks.STONE);

@@ -90,7 +90,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             if (response.statusCode() == 429) return Outcome.failed("rate limited", millis);
             if (response.statusCode() / 100 != 2) return Outcome.failed("service error " + response.statusCode(), millis);
-            return outcome(JsonParser.parseString(response.body()).getAsJsonObject(), reported, millis);
+            return outcome(noted(response.body()), reported, millis);
         } catch (java.net.http.HttpTimeoutException late) {
             return Outcome.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
         } catch (InterruptedException interrupted) {
@@ -119,7 +119,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             if (response.statusCode() == 429) return Answer.failed("rate limited", millis);
             if (response.statusCode() / 100 != 2) return Answer.failed("service error " + response.statusCode(), millis);
-            return answer(question, JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+            return answer(question, noted(response.body()), millis);
         } catch (java.net.http.HttpTimeoutException late) {
             return Answer.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
         } catch (InterruptedException interrupted) {
@@ -227,7 +227,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             if (response.statusCode() == 429) return Rescue.failed("rate limited", millis);
             if (response.statusCode() / 100 != 2) return Rescue.failed("service error " + response.statusCode(), millis);
-            return rescueReply(JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+            return rescueReply(noted(response.body()), millis);
         } catch (java.net.http.HttpTimeoutException late) {
             return Rescue.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
         } catch (InterruptedException interrupted) {
@@ -304,7 +304,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             if (response.statusCode() == 429) return Page.failed("rate limited", millis);
             if (response.statusCode() / 100 != 2) return Page.failed("service error " + response.statusCode(), millis);
-            return pageReply(JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+            return pageReply(noted(response.body()), millis);
         } catch (java.net.http.HttpTimeoutException late) {
             return Page.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
         } catch (InterruptedException interrupted) {
@@ -467,7 +467,7 @@ public final class OpenAiCompatibleStrategist implements Strategist {
             long millis = (System.nanoTime() - started) / 1_000_000;
             if (response.statusCode() == 429) return Line.failed("rate limited", millis);
             if (response.statusCode() / 100 != 2) return Line.failed("service error " + response.statusCode(), millis);
-            return line(conversation, JsonParser.parseString(response.body()).getAsJsonObject(), millis);
+            return line(conversation, noted(response.body()), millis);
         } catch (java.net.http.HttpTimeoutException late) {
             return Line.failed("deadline passed", (System.nanoTime() - started) / 1_000_000);
         } catch (InterruptedException interrupted) {
@@ -768,6 +768,22 @@ public final class OpenAiCompatibleStrategist implements Strategist {
             if (start > 0 && end > start) c = c.substring(start + 1, end).trim();
         }
         return c;
+    }
+
+    /** Set once any reply has carried {@code cached_tokens}: until then the log says "cache read n/a" (F-19f). */
+    private volatile boolean cacheReadsReported;
+
+    @Override public boolean reportsCacheReads() { return cacheReadsReported; }
+
+    /** A reply's body as JSON, noting whether its usage reported a cache read ({@code prompt_tokens_details.cached_tokens}). */
+    private JsonObject noted(String body) {
+        JsonObject completion = JsonParser.parseString(body).getAsJsonObject();
+        if (completion.has("usage") && completion.get("usage").isJsonObject()) {
+            var usage = completion.getAsJsonObject("usage");
+            if (usage.has("prompt_tokens_details") && usage.get("prompt_tokens_details").isJsonObject()
+                    && usage.getAsJsonObject("prompt_tokens_details").has("cached_tokens")) cacheReadsReported = true;
+        }
+        return completion;
     }
 
     private static long number(JsonObject o, String name) {
