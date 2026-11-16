@@ -1,6 +1,5 @@
 package dev.kindred.fabric;
 
-import dev.kindred.core.Actor;
 import dev.kindred.core.record.ClaimLedger;
 import dev.kindred.core.record.WorldEvent;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
@@ -25,6 +24,8 @@ public final class NativeCostGameTests implements FabricGameTest {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 500);
         var server = context.getWorld().getServer();
         @SuppressWarnings("unchecked") CompletableFuture<String>[] line = new CompletableFuture[1];
+        // A web for an id no player of this runtime has (F-32d): named on the line by the id's first eight characters.
+        var someone = java.util.UUID.randomUUID();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.record(List.of(
@@ -35,9 +36,8 @@ public final class NativeCostGameTests implements FabricGameTest {
                         WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "journal", null, "goal", "", Map.of("detail", "x".repeat(100))))))
                 .createAndAdd(() -> context.assertTrue(f.runtime.ledgers().claims().size() == 2, "Written"))
                 .createAndAdd(() -> {
-                    // F-32d: the player's web holds three facts it was told, one of them told again, which ends the first.
-                    f.established(context);
-                    var web = f.runtime.webs().of(f.id);
+                    // F-32d: the web holds three facts it was told, one of them told again, which ends the first.
+                    var web = f.runtime.webs().of(someone);
                     long now = server.getTicks();
                     for (String item : List.of("item:iron_ingot", "item:bread", "item:iron_ingot")) {
                         web.add("faction:oak", dev.kindred.core.knowledge.KnowledgeWeb.Verb.HAS_SPARE, item, "4", dev.kindred.core.wire.HowKnown.TOLD,
@@ -49,7 +49,7 @@ public final class NativeCostGameTests implements FabricGameTest {
                     context.assertTrue(line[0].isDone(), "Measured");
                     String s = line[0].join();
                     context.assertTrue(s.contains("claim=2/") && s.contains("journal=1/"), "Counted by kind: " + s);
-                    String name = f.runtime.nativeStatuses(Actor.console()).getFirst().name();
+                    String name = someone.toString().substring(0, 8);
                     // Three held; the iron told first ended at this tick, so the bound may drop it once it lapses: two kept for good.
                     context.assertTrue(s.contains("; webs by player, held/kept for good {" + name + "=3/2};"), "Each AI's web by name: " + s);
                     var bytes = java.util.regex.Pattern.compile("the database (\\d+) bytes on disk").matcher(s);
