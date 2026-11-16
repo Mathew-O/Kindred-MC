@@ -51,3 +51,4 @@ confirm-branch-6.2 (ab0dc8e1, only flagged): 0 min, peak 1152 MB, All 2 required
 confirm-main-6.2 (7720a7fa, only flagged): 0 min, peak 1179 MB, All 2 required tests passed, fence-top 0, disk 6.0G
 confirm-branch-7.2 (ab0dc8e1, only flagged): 0 min, peak 1373 MB, All 2 required tests passed, fence-top 1, disk 6.0G
 confirm-main-7.2 (7720a7fa, only flagged): 0 min, peak 1377 MB, All 2 required tests passed, fence-top 0, disk 6.0G
+confirm-branch-8.2 (ab0dc8e1, only flagged): 0 min, peak 1351 MB, All 2 required tests passed, fence-top 0, disk 6.0G
