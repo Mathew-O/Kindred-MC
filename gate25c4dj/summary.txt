@@ -11,3 +11,4 @@ confirm-branch-3.1 (ff25b027, only flagged): 0 min, peak 1191 MB, All 2 required
 confirm-branch-3.2 (ff25b027, only flagged): 0 min, peak 1020 MB, 1 required tests failed, fence-top 0, disk 5.4G
 confirm-branch-3.3 (ff25b027, only flagged): 0 min, peak 1168 MB, 1 required tests failed, fence-top 0, disk 5.4G
 confirm-main-1.1 (3360ef28, only flagged): 0 min, peak 1189 MB, 1 required tests failed, fence-top 0, disk 4.8G
+confirm-main-1.2 (3360ef28, only flagged): 0 min, peak 1057 MB, All 2 required tests passed, fence-top 0, disk 4.8G
