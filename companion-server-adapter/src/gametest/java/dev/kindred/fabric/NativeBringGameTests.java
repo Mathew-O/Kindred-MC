@@ -623,6 +623,20 @@ public final class NativeBringGameTests implements FabricGameTest {
                         if (cartThere) cartInCell.add(front);
                         // Or, if the cart was broken before the trapdoor was shut, the first tick the trapdoor is shut with the cart's
                         // item lying in the cell (so a bring that takes another order is still staged).
+                        // And if the cart's item went straight into Hal's hand as the cart was broken, before a tick here saw it lying
+                        // (in CI on #376, run 43776656762, the staging never fired), it is put back on the cell's floor from Hal's
+                        // hand (a move, not a copy), so the staging is the same either way.
+                        if (onBed == 3 && offFront[0] == null && cartBroken && shut && !jobIn && hal != null
+                                && world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, i -> i.isAlive() && i.getStack().isOf(Items.MINECART)).isEmpty()) {
+                            var inventory = hal.getInventory();
+                            for (int slot = 0; slot < inventory.size(); slot++) {
+                                if (!inventory.getStack(slot).isOf(Items.MINECART)) continue;
+                                world.spawnEntity(new net.minecraft.entity.ItemEntity(world, front.getX() + 0.5, front.getY() + 0.1, front.north().getZ() + 0.5,
+                                        inventory.getStack(slot).split(1), 0, 0, 0));
+                                KindredMod.LOGGER.info("Bring: the cart's item taken up as the cart was broken, set back on the cell's floor");
+                                break;
+                            }
+                        }
                         if (onBed == 3 && offFront[0] == null && (cartBroken || shut) && !jobIn && hal != null
                                 && !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, cellItems, i -> i.isAlive() && i.getStack().isOf(Items.MINECART)).isEmpty()) {
                             offFront[0] = front;
