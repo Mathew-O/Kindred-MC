@@ -326,11 +326,15 @@ public final class ReplayGameTests implements FabricGameTest {
         // leaving the 8 blocks round where it was caught and staying out for the budget's second half. Moving alone was not
         // out: a loop walking between two places ("to the wall", "back the way it came") moved it 8 blocks and passed.
         boolean spell = "spell".equals(state.get("kind").getAsString());
+        // A waking kept as it respawned (F-27a4): it passes as a death's scene does, alive at its budget's end; whether its
+        // armour is back on by then is reported beside the pass, not part of it.
+        boolean waking = "respawn".equals(state.get("kind").getAsString());
         long[] outSince = {-1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> {
                     context.assertTrue(runtime.isReady(), "Ready");
-                    var box = new net.minecraft.util.math.Box(boxOrigin.down()).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
+                    var box = new net.minecraft.util.math.Box(boxOrigin.down()).stretch(sizeOf(state, 0, DeathReplays.WIDTH), sizeOf(state, 1, DeathReplays.HEIGHT),
+                            sizeOf(state, 2, DeathReplays.WIDTH));
                     for (var mob : world.getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, m -> !m.isAiDisabled())) {
                         mob.setAiDisabled(true);
                         held.add(mob);
@@ -341,7 +345,8 @@ public final class ReplayGameTests implements FabricGameTest {
                 // runtime as the player was made a few ticks on, no longer one to be made in by then, and the third
                 // run of echo-50149 was never made ("Creation area is no longer available", CI run 387) (F-22c6).
                 .createAndAdd(() -> {
-                    var box = new net.minecraft.util.math.Box(boxOrigin.down()).stretch(DeathReplays.WIDTH, DeathReplays.HEIGHT, DeathReplays.WIDTH);
+                    var box = new net.minecraft.util.math.Box(boxOrigin.down()).stretch(sizeOf(state, 0, DeathReplays.WIDTH), sizeOf(state, 1, DeathReplays.HEIGHT),
+                            sizeOf(state, 2, DeathReplays.WIDTH));
                     boolean falling = !world.getEntitiesByClass(net.minecraft.entity.FallingBlockEntity.class, box, e -> true).isEmpty();
                     Vec3d cell = standNear(testWorld, makeNear);
                     settled[0] = !falling && cell.equals(settling[0]) ? settled[0] + 1 : 0;
@@ -433,6 +438,14 @@ public final class ReplayGameTests implements FabricGameTest {
                     }
                     if (stuck) {
                         context.assertTrue(body.getPos().distanceTo(from[0]) > 8 || completed[0] > 0, "Replay " + run + ": stuck where it was");
+                    }
+                    if (waking) {
+                        int worn = 0;
+                        for (var slot : net.minecraft.entity.EquipmentSlot.values()) {
+                            if (slot.getType() == net.minecraft.entity.EquipmentSlot.Type.HUMANOID_ARMOR && !body.getEquippedStack(slot).isEmpty()) worn++;
+                        }
+                        KindredMod.LOGGER.info("Replay {} of {}: its armour back on: {} ({} of 4 armour slots; reported, not the pass)", run, name,
+                                worn > 0 ? "yes" : "no", worn);
                     }
                     runtime.stop();
                 })
