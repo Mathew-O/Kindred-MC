@@ -63,6 +63,8 @@ public final class NativeTerritoryGameTests implements FabricGameTest {
     /** The ground from {@code fromX} to {@code toX} cleared on stone, its chunks both sides of the border kept simulated. */
     private static void floor(TestContext context, int fromX, int toX, int fromZ, int toZ) {
         FixtureGround.simulated(context, context.getAbsolutePos(new BlockPos(fromX, 0, fromZ)), context.getAbsolutePos(new BlockPos(toX, 0, toZ)));
+        // That ground and what each test sets on it, outside the plot: put back as the test ends (F-22c75b).
+        FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(fromX, 1, fromZ)), context.getAbsolutePos(new BlockPos(toX, 5, toZ)));
         for (int x = fromX; x <= toX; x++) for (int z = fromZ; z <= toZ; z++) {
             context.setBlockState(x, 1, z, Blocks.STONE);
             for (int y = 2; y <= 5; y++) context.setBlockState(x, y, z, Blocks.AIR);
