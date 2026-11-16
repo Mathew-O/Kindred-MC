@@ -686,6 +686,7 @@ final class PortalRunCampaign {
 
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
+        bedTaskEnded(task, completed);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -966,6 +967,15 @@ final class PortalRunCampaign {
                     facts.food(), facts.how(), true);
         }
         deathCount++;
+        // Dead with its own bed standing where it set it down: it wakes there, and takes the bed up first (F-25c4di1).
+        seeCarriedBed(world);
+        if (carriedBedAt != null) {
+            wakeBedAt = carriedBedAt;
+            wakeBedDeath = pos.toImmutable();
+            wakeBedCause = cause;
+            wakeBedUntil = tick + WAKE_BED_WINDOW;
+            wakeBedSaid = false;
+        }
         if (deathsSeen.size() >= 8) deathsSeen.removeFirst();
         deathsSeen.addLast(new Death(pos.toImmutable(), cause, stage, facts));
         event("died at " + pos.toShortString().replace(",", "") + ": " + cause + " (stage " + stageLabel(stage) + ")");
@@ -6036,6 +6046,16 @@ final class PortalRunCampaign {
         return Optional.empty();
     }
 
+    /**
+     * Its lava or obsidian still there, or its poured water still standing as a source (F-22c94): what the obsidian step
+     * itself keeps the site for. The last of the flow, draining once the source is back in the bucket, is not: held for
+     * it, one decision went exploring while the drop lay in it.
+     */
+    private static boolean siteInUse(ServerWorld world, ObsidianSite site) {
+        return world.getFluidState(site.lava()).isIn(FluidTags.LAVA) || world.getBlockState(site.lava()).isOf(Blocks.OBSIDIAN)
+                || world.getFluidState(site.water()).isIn(FluidTags.WATER) && world.getFluidState(site.water()).isStill();
+    }
+
     private static boolean siteStillUseful(ServerWorld world, ObsidianSite site) {
         return world.getFluidState(site.lava()).isIn(FluidTags.LAVA) || world.getBlockState(site.lava()).isOf(Blocks.OBSIDIAN)
                 || world.getFluidState(site.water()).isIn(FluidTags.WATER);
@@ -6218,6 +6238,8 @@ final class PortalRunCampaign {
     private int lavaLegStalls;
     private static final int LAVA_LEG = 96;
     private static final String LAVA_LEG_LABEL = "Cast: walk toward the lava at ";
+    /** How long a pool no walk reaches and no dig gets nearer is set aside (F-25c4dj). */
+    private static final long POOL_ASIDE = 1200;
     /** Whether the frame is to be cast, as the last plan reckoned it. */
     private boolean castRoute;
     /** Lava it saw that no walk led to: the pool is dug toward, not walked for source by source (F-25c4ad). */
@@ -6254,6 +6276,24 @@ final class PortalRunCampaign {
         if (lavaNoWalk != null && castLava.getSquaredDistance(lavaNoWalk) <= 16 * 16 && eyeDistance(player, castLava) > 4.2) {
             Optional<Task> dig = digToward(body, castLava, "Cast: dig toward the lava at " + castLava.toShortString());
             if (dig.isPresent()) return dig;
+            // No walk reaches this pool and no dig gets it nearer from here: the pool is set aside a while, every source of it
+            // it knows, and the cast's own search takes over, never the walk again (F-25c4dj). Walked for again, each refusal
+            // set one source aside and the next was walked for at once: in E-40's iteration 23 (`e40a23-3115b1c`) 505 Sol was
+            // refused 1,346 walks in 47 s, 26 to 33 a second.
+            BlockPos pool = lavaNoWalk;
+            var world = player.getServerWorld();
+            int aside = 0;
+            for (BlockPos source : BlockPos.iterate(pool.add(-8, -4, -8), pool.add(8, 4, 8))) {
+                if (world.isChunkLoaded(source) && world.getFluidState(source).isIn(FluidTags.LAVA)) {
+                    cellsAside.put(source.asLong(), lastTick + POOL_ASIDE);
+                    aside++;
+                }
+            }
+            event("its lava's pool at " + pool.toShortString() + " set aside a while: no walk reaches it, no dig gets nearer (" + aside + " sources)");
+            castLava = null;
+            lavaNoWalk = null;
+            return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
+                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
         if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
@@ -7023,16 +7063,37 @@ final class PortalRunCampaign {
                 BlockPos.ofFloored(box.maxX - 1.0E-6, feet.getY(), box.maxZ - 1.0E-6))) {
             if (cell.equals(feet) || passable(world, cell) && passable(world, cell.up())) occupied.add(cell.toImmutable());
         }
-        var open = new java.util.LinkedHashSet<BlockPos>();
-        for (BlockPos cell : occupied) {
-            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down()) && !keep.contains(gap)) open.add(gap);
-        }
+        var open = waysIn(world, occupied, keep);
         if (open.isEmpty() || open.size() > 2 + 2 * occupied.size()) return Optional.empty();
         for (BlockPos cell : open) {
             Optional<Task> place = placeBlock(body, cell, "Seal the shelter at " + cell.toShortString());
             if (place.isPresent()) return place;
         }
         return Optional.empty();
+    }
+
+    /** The openings round the cells its body stands in, other than those cells and {@code keep}: the ways in left. */
+    private static java.util.LinkedHashSet<BlockPos> waysIn(ServerWorld world, List<BlockPos> occupied, java.util.Set<BlockPos> keep) {
+        var open = new java.util.LinkedHashSet<BlockPos>();
+        for (BlockPos cell : occupied) {
+            for (BlockPos gap : openings(world, cell)) if (!occupied.contains(gap) && !occupied.contains(gap.down()) && !keep.contains(gap)) open.add(gap);
+        }
+        return open;
+    }
+
+    /**
+     * The ways into its pocket and the room for its bed, other than the pocket and the room themselves (F-25c4di1): from the
+     * cell its feet are in and from each half of the bed's room, at foot and head and over the head.
+     */
+    private static java.util.Set<BlockPos> waysIntoBedPocket(ServerWorld world, BlockPos feet, List<BlockPos> room) {
+        var inside = new java.util.HashSet<BlockPos>(room);
+        inside.add(feet);
+        inside.add(feet.up());
+        var open = new java.util.LinkedHashSet<BlockPos>();
+        for (BlockPos cell : List.of(feet, room.get(0), room.get(2))) {
+            for (BlockPos gap : openings(world, cell)) if (!inside.contains(gap)) open.add(gap);
+        }
+        return open;
     }
 
     /** How far below the ground's top over it a night's shelter is: the night's dig-in goes three down (F-25c4bx). */
@@ -7063,8 +7124,50 @@ final class PortalRunCampaign {
     /** The two cells, beside its pocket, its bed goes in tonight: chosen before the pocket is sealed, so left open. */
     private List<BlockPos> bedRoomFor;
     private Direction bedRoomWay;
+    /**
+     * The bed it set down and was standing at its last death, the death's place and cause, and until when it may still be
+     * woken there: on waking within reach of it, it takes the bed up (F-25c4di1).
+     */
+    private BlockPos wakeBedAt, wakeBedDeath;
+    private String wakeBedCause;
+    private long wakeBedUntil = -1;
+    private boolean wakeBedSaid;
+    static final String WAKE_BED_LABEL = "Take its bed back up: woken at it after its death";
+
+    /** Its bed set down for the night: the step's label, as the runtime hears how it went. */
+    static final String BED_DOWN_LABEL = "Set its bed down in its pocket for the night";
+    /** Refusals of setting its bed down tonight, and until when it is not offered again (F-25c4di1c). */
+    private int bedDownRefusals;
+    private long bedDownAgainAt = -1;
+    /** A while between tries at setting its bed down after a refusal, and the refusals after which it gives the night up. */
+    static final long BED_DOWN_BACKOFF = 200;
+    static final int BED_DOWN_REFUSALS = 3;
+    /** Steps clear of its bed's room tonight, and the most a night (F-25c4di1d). */
+    private int bedClearTries;
+    static final int BED_CLEAR_TRIES = 3;
+
+    /**
+     * One of its bed's own steps has run, as the runtime saw it end. The one break of its bed on waking (F-25c4di1), however it
+     * went, is not offered again. A set-down that did not go is offered again only after {@value #BED_DOWN_BACKOFF} ticks,
+     * and after {@value #BED_DOWN_REFUSALS} in a night not again that night (F-25c4di1c): vanilla sets no bed down where an
+     * entity stands in its cells, and says nothing, so the spot refuses it again and again while nothing about it changes.
+     */
+    void bedTaskEnded(Task task, boolean completed) {
+        if (task == null) return;
+        if (WAKE_BED_LABEL.equals(task.label())) wakeBedAt = null;
+        if (BED_DOWN_LABEL.equals(task.label()) && !completed) {
+            bedDownRefusals++;
+            bedDownAgainAt = lastTick + BED_DOWN_BACKOFF;
+            event(bedDownRefusals >= BED_DOWN_REFUSALS ? "gives up setting its bed down tonight: refused " + bedDownRefusals + " times"
+                    : "its bed refused where it would set it down; tried again in a while");
+        }
+    }
+    /** How long after a death its waking at its bed counts as just after it: the respawn, and a few seconds. */
+    private static final long WAKE_BED_WINDOW = 600;
     /** A night spent holed up with no bed to sleep in: a bed is wanted first thing (E-70a). */
     private boolean bedUrgent;
+    /** What it last said of keeping its bed in its pack for want of a closed pocket, so it is said once. */
+    private String lastBedKept;
     /** What it last said of staying up for night work, so it is said once a night. */
     private String lastNightWork;
     /** Lying down in the bed it carries more often than this in a night, it gives the night up to its other work. */
@@ -7123,9 +7226,35 @@ final class PortalRunCampaign {
         seeCarriedBed(world);
         if (carriedBedAt != null && (!world.isChunkLoaded(carriedBedAt) || !world.getBlockState(carriedBedAt).isIn(BlockTags.BEDS))) carriedBedAt = null;
         if (bedSlot(player) >= 0) bedUrgent = false;
+        // Woken with nothing at its own bed just after a death (F-25c4di1): the bed taken up at once, from where it wakes,
+        // by one break of its own hand, and back in its pack by vanilla's drop and pickup; its next death wakes it
+        // elsewhere, by vanilla's own rule. Not put off for a mob about, as the morning chore is: in E-40 iteration 23
+        // (`e40a23-3115b1c`) 101 Sol died 12 times in the caves round its bed at −377, 31, −143, woke there each time with
+        // nothing, and a hostile was always within 16 of it. One break only: refused, the bed waits for the morning chore.
+        // Offered until that one break has run (the runtime's word: bedTaskEnded), its bed is gone, it is out of reach of
+        // it, or the window is past.
+        if (wakeBedAt != null && !player.isSleeping()) {
+            BlockPos bed = wakeBedAt;
+            boolean inReach = carriedBedAt != null && carriedBedAt.equals(bed)
+                    && player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(bed)) <= 4.5 * 4.5;
+            if (!inReach || lastTick > wakeBedUntil || !player.isAlive()) {
+                wakeBedAt = null;
+            } else {
+                if (!wakeBedSaid) {
+                    wakeBedSaid = true;
+                    event("takes up its bed at " + bed.toShortString() + ": woken at it after its death at " + wakeBedDeath.toShortString());
+                    KindredMod.LOGGER.info("{} takes up its bed at {}: woken at it after its death at {} ({})", player.getName().getString(),
+                            bed.toShortString(), wakeBedDeath.toShortString(), wakeBedCause);
+                }
+                return Optional.of(new Task("native_break", coords(bed, Map.of("carried_bed", "true")), WAKE_BED_LABEL));
+            }
+        }
         // Morning: its bed back up, unless it was left far behind.
         if (!sleepable) {
             bedTries = 0;
+            bedDownRefusals = 0;
+            bedDownAgainAt = -1;
+            bedClearTries = 0;
             bedGoingAt = null;
             bedRoomFor = null;
             if (carriedBedAt == null || player.isSleeping()) return Optional.empty();
@@ -7189,6 +7318,20 @@ final class PortalRunCampaign {
         var room = List.of(bedRoomFor.getFirst(), bedRoomFor.getFirst().up(), bedRoomFor.getLast(), bedRoomFor.getLast().up());
         Optional<Task> seal = seal(body, java.util.Set.copyOf(room));
         if (seal.isPresent()) return seal;
+        // Only in a pocket with no way in left (F-25c4di1). The seal gives nothing for a cave too open to seal, or when no
+        // block of its own will go in, as well as for a pocket closed: in E-40 rung c (`e40c4-b23acc0`) its seal's first
+        // block was refused and 303 Kindred's bed went down in a pocket still open, and on iteration 23 (`e40a23-3115b1c`)
+        // 101 Sol's went down in a cave it never sealed. Woken among the cave's mobs, each died there again and again, its
+        // spawn at that bed. With a way in left, the bed stays in its pack: the night as before, without it.
+        var waysIn = waysIntoBedPocket(world, feet, room);
+        if (!waysIn.isEmpty()) {
+            String note = "its bed kept in its pack: its pocket has a way in at " + waysIn.iterator().next().toShortString();
+            if (!note.equals(lastBedKept)) {
+                lastBedKept = note;
+                event(note);
+            }
+            return Optional.empty();
+        }
         // The cells over the bed too: the one over its foot puts its head's cell in sight to dig, and a bed with ground
         // over either half is one vanilla will not let it lie in.
         for (BlockPos cell : room) {
@@ -7201,9 +7344,19 @@ final class PortalRunCampaign {
             bedRoomFor = null;
             return Optional.empty();
         }
+        // Refused where it would set it down (F-25c4di1c): not again for a while, and after a few, not tonight.
+        if (bedDownRefusals >= BED_DOWN_REFUSALS || lastTick < bedDownAgainAt) return Optional.empty();
+        // Its own body over the bed's cells (F-25c4di1d): vanilla sets no bed down where an entity stands in them, and its
+        // body at the pocket's edge is one. It steps to its cell's middle first, a few times a night at most.
+        var bedCells = new Box(foot).union(new Box(bedRoomFor.getLast()));
+        if (player.getBoundingBox().intersects(bedCells) && bedClearTries < BED_CLEAR_TRIES) {
+            bedClearTries++;
+            return Optional.of(new Task("native_goto", Map.of("x", String.valueOf(feet.getX()), "y", String.valueOf(feet.getY()),
+                    "z", String.valueOf(feet.getZ()), "range", "0", "centre_within", "0.15"), "Step clear of its bed's room"));
+        }
         bedGoingAt = foot;
         return Optional.of(new Task("native_bed", Map.of("x", String.valueOf(foot.getX()), "y", String.valueOf(foot.getY() - 1),
-                "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), "Set its bed down in its pocket for the night"));
+                "z", String.valueOf(foot.getZ()), "slot", String.valueOf(slot), "facing", bedRoomWay.asString()), BED_DOWN_LABEL));
     }
 
     /**
@@ -8153,13 +8306,15 @@ final class PortalRunCampaign {
         var holding = Valuables.holding(player, lootWanted(player));
         var drops = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(LOOSE_REACH, 4, LOOSE_REACH),
                 drop -> (keep(drop.getStack(), saplings) && near.contains(drop.getPos()) || worthTheWay(player, drop, holding))
-                        && player.canSee(drop) && !blocked(drop.getBlockPos()) && !watched(world, drop)
+                        // In sight, or a drop of its own break out of sight where it fell (F-22c94a): in the hole its lava
+                        // left, under the shore, the obsidian it mined was never seen again and was left behind.
+                        && (player.canSee(drop) || body.ownDrop(drop.getUuid())) && !blocked(drop.getBlockPos()) && !watched(world, drop)
                         && (world.getFluidState(drop.getBlockPos()).isEmpty() || world.getFluidState(drop.getBlockPos()).isStill()));
         if (drops.isEmpty()) {
             // One still in the water, close by: a moment for the water to drain off it rather than walk away from it (a
             // fixture's obsidian was left behind once caving without a shield was allowed). Five seconds at most each,
             // and not while its own poured water is still to be taken back: the site is in use until then (F-25c4cs).
-            if (obsidianSite != null && siteStillUseful(world, obsidianSite)) return Optional.empty();
+            if (obsidianSite != null && siteInUse(world, obsidianSite)) return Optional.empty();
             if (dropWaits.size() > 256) dropWaits.clear();
             var settling = world.getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(5, 3, 5),
                     drop -> keep(drop.getStack(), saplings) && !blocked(drop.getBlockPos()));
@@ -8177,7 +8332,7 @@ final class PortalRunCampaign {
         // through the cell the next block was coming down into, and was buried there (F-25c4cl).
         if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
         BlockPos at = nearest.getBlockPos();
-        Optional<Task> intoIt = intoTheDropsCell(body, at, label);
+        Optional<Task> intoIt = intoTheDropsCell(body, nearest, at, label);
         if (intoIt != null) return intoIt;
         return Optional.of(go(at, 0.6, false, label));
     }
@@ -8191,10 +8346,20 @@ final class PortalRunCampaign {
      * pocket is one it may break now; else the drop is set aside for a minute and the walk not asked, since every walk
      * there was refused after the whole search. Null when a walk can get into the drop's cell.
      */
-    private Optional<Task> intoTheDropsCell(NativePlayerBody body, BlockPos at, String label) {
+    private Optional<Task> intoTheDropsCell(NativePlayerBody body, ItemEntity drop, BlockPos at, String label) {
         var world = body.entity().getServerWorld();
         var navigator = new NativeNavigator(world).throughDoors();
         if (navigator.enterable(at, feet -> Math.sqrt(feet.getSquaredDistance(at)) <= 0.61)) return null;
+        // Not set aside for a minute while its obsidian site is in use, or while its cell is wet (F-22c94): the obsidian lies
+        // in the hole its lava left, where the poured water runs till it is taken back and drains, and set aside then,
+        // nothing went back for it after (CI on #355, #357 and #360). While the site is in use, the site's own steps first,
+        // as for a drop in the water (F-25c4cs); then, wet, the drop's own settle wait. Still no way in after, set aside.
+        if (obsidianSite != null && siteInUse(world, obsidianSite)) return Optional.empty();
+        if (!world.getFluidState(at).isEmpty()) {
+            if (dropWaits.size() > 256) dropWaits.clear();
+            long since = dropWaits.computeIfAbsent(drop.getUuid(), id -> lastTick);
+            if (lastTick - since < 100) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Wait for the drop to settle"));
+        }
         BlockPos pocket = at.up(), head = at.up(2);
         if (navigator.passable(pocket) && !navigator.passable(head) && breakableNow(body, head)
                 && world.getFluidState(head.up()).isEmpty() && !(world.getBlockState(head.up()).getBlock() instanceof net.minecraft.block.FallingBlock)) {

@@ -7487,6 +7487,8 @@ final class PlayerRuntime {
         entry.currentTaskId = null;
         body.stopInputs();
         boolean killedByMob = player.getAttacker() instanceof net.minecraft.entity.mob.HostileEntity;
+        entry.lastDeathTick = server.getTicks();
+        entry.lastDeathByMob = killedByMob;
         // What its lessons read of the death (E-46): when in the world's time, how high, by night, under the sky, its
         // food, and how it came.
         var world = player.getServerWorld();
@@ -8769,6 +8771,7 @@ final class PlayerRuntime {
             } else if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
                 KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
+                if (entry.bring.phase == Bring.Phase.CLOSE && finishedTaskId.equals(bringTaskId(entry, "out"))) closeOutBlocked(entry);
             } else entry.bring.failed = 0;
             entry.routineRefreshPending = true;
         }
@@ -8787,6 +8790,9 @@ final class PlayerRuntime {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
             entry.lifeTask = null;
+            // Its bed's own steps heard: the one break of its bed on waking after a death (F-25c4di1), and a refused set-down
+            // (F-25c4di1c).
+            if (entry.campaign != null) entry.campaign.bedTaskEnded(life, state == SkillRunner.State.COMPLETED);
             // A bed it could not sleep in (mobs about, someone in it), or could not get to (in walls still going up), is
             // tried again in a while, not at once (F-25c9).
             if (("native_sleep".equals(life.skill()) || "native_goto".equals(life.skill()) && life.label().startsWith("To its bed"))
@@ -13145,6 +13151,34 @@ final class PlayerRuntime {
         KindredMod.LOGGER.info("{} bringing: {}", entry.data.displayName(), why);
     }
 
+    /** The id {@link #bringTask} gives a step of this kind in the bring's present phase. */
+    private static UUID bringTaskId(Entry entry, String kind) {
+        var b = entry.bring;
+        return UUID.nameUUIDFromBytes(("bring:" + entry.data.id() + ":" + b.villager + ":" + b.phase + ":" + kind).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Where the body stood as CLOSE's walk out of the front was refused (F-22c96, diagnostic only): its position, its box
+     * against the front's, the blocks at its feet and head, and what is over the front. One line for each refused walk.
+     */
+    private static void closeOutBlocked(Entry entry) {
+        var body = entry.nativeBody;
+        var b = entry.bring;
+        if (body == null || !body.connected() || b.slot == null) return;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var box = player.getBoundingBox();
+        var front = new net.minecraft.util.math.Box(b.slot);
+        BlockPos feet = player.getBlockPos();
+        KindredMod.LOGGER.info("{} bringing: the walk out of the front refused, the body at {} (box {} to {}, over the front {}), "
+                        + "feet {} {}, head {} {}, over the front {}, on the ground {}, the stand {}",
+                entry.data.displayName(), player.getPos(),
+                String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.minX, box.minY, box.minZ),
+                String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.maxX, box.maxY, box.maxZ), box.intersects(front),
+                feet.toShortString(), world.getBlockState(feet), feet.up().toShortString(), world.getBlockState(feet.up()),
+                world.getBlockState(b.slot.up()), player.isOnGround(), b.slot.south(2).toShortString());
+    }
+
     private static dev.kindred.core.TaskPreferences.Candidate bringTask(Entry entry, String kind) {
         var b = entry.bring;
         UUID id = UUID.nameUUIDFromBytes(("bring:" + entry.data.id() + ":" + b.villager + ":" + b.phase + ":" + kind).getBytes(StandardCharsets.UTF_8));
@@ -16193,7 +16227,8 @@ final class PlayerRuntime {
         replays.captureWaking(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("respawn", String.valueOf(goalOf(entry)),
                 entry.campaign == null ? "no goal" : entry.campaign.progress(), "waking", entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
                 entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), cause,
-                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt);
+                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt,
+                entry.lastDeathTick < 0 ? -1 : server.getTicks() - entry.lastDeathTick, entry.lastDeathByMob);
     }
 
     /**
@@ -19468,6 +19503,9 @@ final class PlayerRuntime {
         /** Where it last died, in which dimension and how, for the scene cut as it wakes (F-27a4); null before any death. */
         private BlockPos lastDeathAt;
         private String lastDeathWorld, lastDeathCause;
+        /** The server tick of that death, and whether a hostile mob killed it, as its campaign's {@code died} heard them (F-27a5). */
+        private long lastDeathTick = -1;
+        private boolean lastDeathByMob;
         private boolean campaignFightInterrupt;
         private boolean endPortalAnnounced, dragonAnnounced;
         private UUID tacticalRetreatTaskId;

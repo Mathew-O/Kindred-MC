@@ -110,6 +110,28 @@ class OpenAiCompatibleStrategistTest {
         }
     }
 
+    /**
+     * F-19f: Anthropic's compatible layer sends {@code prompt_tokens_details} always empty, so its call line says the
+     * read is not reported ("n/a"), not 0; once a reply carries {@code cached_tokens}, as OpenAI's do, it is a figure.
+     */
+    @Test
+    void aCacheReadTheRouteNeverReportsIsNotAZeroInTheCallLine() throws Exception {
+        try (var strategist = start(StrategistProvider.Provider.COMPATIBLE, "k")) {
+            String empty = completion(ADVICE, "stop").replace("\"prompt_tokens_details\":{\"cached_tokens\":1536}", "\"prompt_tokens_details\":{}");
+            assertFalse(empty.contains("cached_tokens"), empty);
+            replies.add(empty);
+            var outcome = strategist.advise("Player hungry at Y 20.", REPORTED).get(10, TimeUnit.SECONDS);
+            assertFalse(strategist.reportsCacheReads(), "an empty prompt_tokens_details reports no read");
+            assertEquals(0, outcome.cachedTokens(), "the budgets still count none");
+            assertEquals("in 1900, cache read n/a, cache write n/a, out 90 tokens, " + outcome.millis() + " ms", ModelUsage.of(outcome, strategist));
+
+            replies.add(completion(ADVICE, "stop"));
+            var reported = strategist.advise("Player hungry at Y 20.", REPORTED).get(10, TimeUnit.SECONDS);
+            assertTrue(strategist.reportsCacheReads(), "a reply with cached_tokens reports reads");
+            assertEquals("in 1900, cache read 1536, cache write n/a, out 90 tokens, " + reported.millis() + " ms", ModelUsage.of(reported, strategist));
+        }
+    }
+
     private static final Strategist.Question RAID = new Strategist.Question("You decide for a player in a match.",
             "You saw Steve, a runner, use a chest 20 blocks off. Raid it?", List.of("RAID", "LEAVE", "WATCH"), 0);
 

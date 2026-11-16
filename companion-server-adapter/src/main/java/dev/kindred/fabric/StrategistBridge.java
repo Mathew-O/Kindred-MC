@@ -273,7 +273,7 @@ final class StrategistBridge implements AutoCloseable {
             }
             long used = line.inputTokens() - line.cachedTokens() + (line.cachedTokens() + 9) / 10 + line.outputTokens();
             if (used > 0) charge(state, used - reserved, Use.VOICE);
-            KindredMod.LOGGER.info("{} voice call: {}", name, dev.kindred.model.ModelUsage.of(line)); // F-19g
+            KindredMod.LOGGER.info("{} voice call: {}", name, dev.kindred.model.ModelUsage.of(line, strategist)); // F-19g
             if (state.context != null) {
                 state.context.conversations++;
                 state.context.inputTokens += line.inputTokens();
@@ -328,7 +328,7 @@ final class StrategistBridge implements AutoCloseable {
             }
             long used = page.inputTokens() - page.cachedTokens() + (page.cachedTokens() + 9) / 10 + page.outputTokens();
             if (used > 0) charge(state, used - reserved, Use.PAGES);
-            KindredMod.LOGGER.info("{} chronicle call: {}", name, dev.kindred.model.ModelUsage.of(page)); // F-19g
+            KindredMod.LOGGER.info("{} chronicle call: {}", name, dev.kindred.model.ModelUsage.of(page, strategist)); // F-19g
             // F-33d: each sentence left out of the page for ordering events itself, so a run can count them and why.
             if (!page.dropped().isEmpty()) KindredMod.LOGGER.info("{} chronicle: {} sentence(s) left out, ordering events itself: {}", name,
                     page.dropped().size(), page.dropped());
@@ -477,7 +477,7 @@ final class StrategistBridge implements AutoCloseable {
             }
             long used = outcome.inputTokens() - outcome.cachedTokens() + (outcome.cachedTokens() + 9) / 10 + outcome.outputTokens();
             if (used > 0) charge(state, used - reserved, Use.ADVICE); // Settle the reservation to what was used; without usage it stands.
-            KindredMod.LOGGER.info("{} strategist call: {}", name, dev.kindred.model.ModelUsage.of(outcome)); // F-19g
+            KindredMod.LOGGER.info("{} strategist call: {}", name, dev.kindred.model.ModelUsage.of(outcome, strategist)); // F-19g
             state.context.consultations++;
             state.context.inputTokens += outcome.inputTokens();
             state.context.outputTokens += outcome.outputTokens();

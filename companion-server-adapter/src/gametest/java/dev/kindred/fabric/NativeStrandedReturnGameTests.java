@@ -43,6 +43,8 @@ public final class NativeStrandedReturnGameTests implements FabricGameTest {
                     BlockPos b = base[0] = f.player().getBlockPos().toImmutable();
                     // As in that fixture: a rock mass eight high on ground of its own, a staircase cut down into it, iron ore at the
                     // foot of its last step in sight from the top, open sky over it and a wall two high round the top.
+                    // Its rock mass and the sky cleared over it, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, b.add(-2, -1, -2), b.add(10, 24, 2));
                     for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = -1; y <= 7; y++) {
                         world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
