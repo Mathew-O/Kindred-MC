@@ -8769,6 +8769,7 @@ final class PlayerRuntime {
             } else if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
                 KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
+                if (entry.bring.phase == Bring.Phase.CLOSE && finishedTaskId.equals(bringTaskId(entry, "out"))) closeOutBlocked(entry);
             } else entry.bring.failed = 0;
             entry.routineRefreshPending = true;
         }
@@ -8787,6 +8788,9 @@ final class PlayerRuntime {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
             entry.lifeTask = null;
+            // Its bed's own steps heard: the one break of its bed on waking after a death (F-25c4di1), and a refused set-down
+            // (F-25c4di1c).
+            if (entry.campaign != null) entry.campaign.bedTaskEnded(life, state == SkillRunner.State.COMPLETED);
             // A bed it could not sleep in (mobs about, someone in it), or could not get to (in walls still going up), is
             // tried again in a while, not at once (F-25c9).
             if (("native_sleep".equals(life.skill()) || "native_goto".equals(life.skill()) && life.label().startsWith("To its bed"))
@@ -13143,6 +13147,34 @@ final class PlayerRuntime {
         if (why.equals(entry.bringNote)) return;
         entry.bringNote = why;
         KindredMod.LOGGER.info("{} bringing: {}", entry.data.displayName(), why);
+    }
+
+    /** The id {@link #bringTask} gives a step of this kind in the bring's present phase. */
+    private static UUID bringTaskId(Entry entry, String kind) {
+        var b = entry.bring;
+        return UUID.nameUUIDFromBytes(("bring:" + entry.data.id() + ":" + b.villager + ":" + b.phase + ":" + kind).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Where the body stood as CLOSE's walk out of the front was refused (F-22c96, diagnostic only): its position, its box
+     * against the front's, the blocks at its feet and head, and what is over the front. One line for each refused walk.
+     */
+    private static void closeOutBlocked(Entry entry) {
+        var body = entry.nativeBody;
+        var b = entry.bring;
+        if (body == null || !body.connected() || b.slot == null) return;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var box = player.getBoundingBox();
+        var front = new net.minecraft.util.math.Box(b.slot);
+        BlockPos feet = player.getBlockPos();
+        KindredMod.LOGGER.info("{} bringing: the walk out of the front refused, the body at {} (box {} to {}, over the front {}), "
+                        + "feet {} {}, head {} {}, over the front {}, on the ground {}, the stand {}",
+                entry.data.displayName(), player.getPos(),
+                String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.minX, box.minY, box.minZ),
+                String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.maxX, box.maxY, box.maxZ), box.intersects(front),
+                feet.toShortString(), world.getBlockState(feet), feet.up().toShortString(), world.getBlockState(feet.up()),
+                world.getBlockState(b.slot.up()), player.isOnGround(), b.slot.south(2).toShortString());
     }
 
     private static dev.kindred.core.TaskPreferences.Candidate bringTask(Entry entry, String kind) {
