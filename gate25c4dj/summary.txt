@@ -3,3 +3,4 @@ run2 (ff25b027): 45 min, peak 4025 MB, 124 required tests failed, fence-top 34, 
 run3 (ff25b027): 45 min, peak 3437 MB, 118 required tests failed, fence-top 26, disk 4.7G
 confirm-branch-1.1 (ff25b027, only flagged): 0 min, peak 1391 MB, All 2 required tests passed, fence-top 0, disk 5.4G
 confirm-branch-1.2 (ff25b027, only flagged): 0 min, peak 1175 MB, All 2 required tests passed, fence-top 0, disk 5.4G
+confirm-branch-1.3 (ff25b027, only flagged): 0 min, peak 1298 MB, 1 required tests failed, fence-top 0, disk 5.4G
