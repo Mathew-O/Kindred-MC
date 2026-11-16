@@ -378,6 +378,10 @@ public final class NativeFactionPlayGameTests implements FabricGameTest {
                         if (dx == 0 && dz == 0 && (dy == 0 || dy == 1)) continue;
                         context.getWorld().setBlockState(feet.add(dx, dy, dz), net.minecraft.block.Blocks.BEDROCK.getDefaultState());
                     }
+                    // Staged: daytime, as this test assumes (M-06i3). Its batch can fall at night (a narrowed run of six
+                    // Factions classes on `83321ac`: 0 of 3 and 0 of 1), and at night she waits for daylight, which is
+                    // right, so no walk is asked and none refused.
+                    context.getWorld().setTimeOfDay(1000);
                     context.assertTrue(f.runtime.socialSetting(f.source, ada[0], null, false, Personality.Trait.COMBATIVENESS, 70) == 1, "Ada made fierce");
                     context.assertTrue(f.runtime.setPlaystyleMode(f.source, ada[0], dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
                     f.runtime.factionsWorldForTest(WIDE);
