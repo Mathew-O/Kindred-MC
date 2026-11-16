@@ -55,7 +55,8 @@ public final class NativeBringGameTests implements FabricGameTest {
      * the check last found not yet so, if anything.
      */
     static void inPlay(TestContext context, net.minecraft.server.network.ServerPlayerEntity hal, String lastNotYet) {
-        context.assertTrue(hal != null, "Hal still in play");
+        context.assertTrue(hal != null, lastNotYet == null ? "Hal still in play"
+                : "Hal out of play as the test ended; before that, not yet: " + lastNotYet);
     }
 
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bring", tickLimit = 12000)
@@ -881,6 +882,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                   } catch (net.minecraft.test.GameTestException failing) {
                     // What is not yet so, now and then: the test server says only the last of it, when the test ends.
                     if (context.getWorld().getTime() % 100 == 0) KindredMod.LOGGER.info("Bring fixture, not yet: {}", failing.getMessage());
+                    // Kept for the failure out of play (F-22c99), never the out-of-play message itself.
+                    if (f.player() != null) lastNotYet[0] = failing.getMessage();
                     throw failing;
                   }
                 })
