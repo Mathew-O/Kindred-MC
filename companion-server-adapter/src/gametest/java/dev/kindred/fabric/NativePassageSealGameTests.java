@@ -59,6 +59,8 @@ public final class NativePassageSealGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var player = f.player();
                     context.assertTrue(player != null, "Its body");
+                    // Its tunnel, partly outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(0, 1, 0)), context.getAbsolutePos(new BlockPos(12, 5, 2)));
                     for (int x = 0; x <= 12; x++) for (int z = 0; z <= 2; z++) for (int y = 1; y <= 5; y++) {
                         boolean open = z == 1 && x >= 1 && x <= 11 && (y == 2 || y == 3);
                         context.setBlockState(x, y, z, open ? Blocks.AIR : Blocks.STONE);

@@ -43,6 +43,8 @@ public final class NativeCartGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     o[0] = context.getAbsolutePos(BlockPos.ORIGIN);
                     FixtureGround.simulated(context, o[0].add(-2, 0, -2), o[0].add(12, 0, 22));
+                    // Its field, line and cell, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o[0].add(-2, 1, -2), o[0].add(12, 6, 22));
                     for (int x = -2; x <= 12; x++) for (int z = -2; z <= 22; z++) {
                         world.setBlockState(o[0].add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 6; y++) world.setBlockState(o[0].add(x, y, z), Blocks.AIR.getDefaultState());
@@ -129,6 +131,8 @@ public final class NativeCartGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     o[0] = context.getAbsolutePos(BlockPos.ORIGIN);
                     FixtureGround.simulated(context, o[0].add(-2, 0, -2), o[0].add(12, 0, 22));
+                    // Its field, line and cell, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o[0].add(-2, 1, -2), o[0].add(12, 6, 22));
                     for (int x = -2; x <= 12; x++) for (int z = -2; z <= 22; z++) {
                         world.setBlockState(o[0].add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 6; y++) world.setBlockState(o[0].add(x, y, z), Blocks.AIR.getDefaultState());

@@ -163,6 +163,8 @@ public class NativeBucketGameTests implements FabricGameTest {
                     var player = f.player();
                     BlockPos well = player.getBlockPos().add(4, 0, 0);
                     // Obsidian floor and walls; water three deep inside, its surface level with the ground outside.
+                    // Its well, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, well.add(-2, -3, -2), well.add(2, 3, 2));
                     for (BlockPos at : BlockPos.iterate(well.add(-2, -3, -2), well.add(2, 3, 2))) {
                         boolean inside = Math.abs(at.getX() - well.getX()) <= 1 && Math.abs(at.getZ() - well.getZ()) <= 1 && at.getY() > well.getY() - 3;
                         if (!inside) world.setBlockState(at, Blocks.OBSIDIAN.getDefaultState());
