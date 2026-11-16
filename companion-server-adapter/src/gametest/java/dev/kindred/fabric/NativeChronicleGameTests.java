@@ -63,6 +63,63 @@ public final class NativeChronicleGameTests implements FabricGameTest {
         @Override public void close() { }
     }
 
+    /**
+     * F-33e: past 10,000 pages (a month at 8 players, about day 17), a restart reads every page back, not the first
+     * 10,000: it resumes after the last page's {@code through}, keeps each player's and the world's newest pages, and
+     * writes no day again.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "chronicleManyPages", tickLimit = 2400)
+    public void pastTenThousandPagesARestartResumesAfterTheLastAndKeepsTheNewest(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        var server = context.getWorld().getServer();
+        UUID[] ada = new UUID[1];
+        int days = 12_000, worldMonths = 3;
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.chronicleForFixtures().idle(), "Ready, the Chronicle read back"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 1 && statuses.getFirst().phase() == StoredNativePlayer.Phase.ESTABLISHED, "Ada established");
+                    ada[0] = statuses.getFirst().id();
+                    // Ada's pages, one a day, each having read through event 1,000,000 + its day; then the world's months.
+                    // Written on the ordered writer, which the stop below waits on.
+                    var batch = new ArrayList<WorldEvent>();
+                    for (int d = 0; d < days; d++) {
+                        var page = new Chronicle.Summary(Chronicle.Tier.PLAYER_DAY, ada[0].toString(), d * Chronicle.DAY, (d + 1) * Chronicle.DAY,
+                                "Ada's day " + (d + 1) + ".", List.of(), false);
+                        batch.add(new WorldEvent(0, server.getTicks(), System.currentTimeMillis(), "", Chronicle.PAGE, ada[0], ada[0].toString(), "",
+                                Chronicle.pageData(page, 1_000_000L + d), WorldEvent.HowKnown.RECORDED));
+                        if (batch.size() == 1_000) { f.runtime.record(List.copyOf(batch)); batch.clear(); }
+                    }
+                    for (int m = 0; m < worldMonths; m++) {
+                        long from = (long) m * Chronicle.Tier.WORLD_MONTH.span;
+                        var month = new Chronicle.Summary(Chronicle.Tier.WORLD_MONTH, "world", from, from + Chronicle.Tier.WORLD_MONTH.span, "The world's month " + (m + 1) + ".", List.of(), false);
+                        batch.add(new WorldEvent(0, server.getTicks(), System.currentTimeMillis(), "", Chronicle.PAGE, null, "world", "",
+                                Chronicle.pageData(month, 1_000_000L + days - 1), WorldEvent.HowKnown.RECORDED));
+                    }
+                    f.runtime.record(List.copyOf(batch));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.chronicleForFixtures().idle(), "Restarted, the Chronicle read back"))
+                .createAndAdd(() -> {
+                    var keeper = f.runtime.chronicleForFixtures();
+                    context.assertTrue(keeper.throughForFixtures() == 1_000_000L + days - 1,
+                            "Resumes after the last page: through " + keeper.throughForFixtures() + ", not an early page's");
+                    var pages = keeper.pages(ada[0]);
+                    context.assertTrue(pages.size() == ChronicleKeeper.KEPT && pages.getLast().text().equals("Ada's day " + days + ".")
+                            && pages.getFirst().text().equals("Ada's day " + (days - ChronicleKeeper.KEPT + 1) + "."),
+                            "Ada's newest " + ChronicleKeeper.KEPT + " pages kept: " + pages.stream().map(Chronicle.Summary::text).toList());
+                    var months = keeper.pagesAbove("world");
+                    context.assertTrue(months.size() == worldMonths && months.getLast().text().equals("The world's month " + worldMonths + "."),
+                            "The world's months past the 10,000th page kept: " + months.stream().map(Chronicle.Summary::text).toList());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped again"))
+                .completeIfSuccessful();
+    }
+
     /** Ada's day recorded and written as a page: the plain list without a model, read back after a restart, no event twice. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "chronicle", tickLimit = 1200)
     public void aPlayersDayBecomesItsPageAndNoEventIsToldTwice(TestContext context) {

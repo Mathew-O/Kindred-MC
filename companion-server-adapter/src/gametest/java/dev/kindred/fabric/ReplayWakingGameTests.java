@@ -141,4 +141,44 @@ public final class ReplayWakingGameTests implements FabricGameTest {
                 .createAndAdd(() -> FixtureGround.restore(context))
                 .completeIfSuccessful();
     }
+
+    /**
+     * In plain terms: a waking played again from the corpus knows where it died, as the player knew it in the run, and
+     * nothing more.
+     *
+     * Technical: F-27a5, {@link ReplayGameTests#tellOfItsDeath}. STAGED: a native player on the Nether portal goal; a
+     * waking's record made here, its death inside its box, 20 ticks before, by a zombie. Passes if its campaign's last death
+     * is that death at its place in the staged scene, with its cause; a record whose death lies outside its box tells it
+     * nothing; and the cause's words are read as a mob's kill or not.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "wakingDeath", tickLimit = 400)
+    public void aWakingsCampaignIsToldOfTheDeathItRecords(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Told"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted"))
+                .createAndAdd(() -> {
+                    var campaign = f.runtime.campaignForTest(f.id);
+                    context.assertTrue(campaign != null, "No campaign");
+                    BlockPos staged = context.getAbsolutePos(new BlockPos(2, 2, 2));
+                    var outside = JsonParser.parseString("{\"deathInside\":false,\"death\":[110,60,210],\"origin\":[100,50,200],"
+                            + "\"cause\":\"respawned after its death at 110, 60, 210 (Told was slain by Zombie), the death outside its box\"}").getAsJsonObject();
+                    ReplayGameTests.tellOfItsDeath(f.runtime, f.id, outside, staged, context.getWorld(), context.getWorld().getServer().getTicks(), 1, "Told");
+                    context.assertTrue(campaign.lastDeath().isEmpty(), "Told of a death outside its box: " + campaign.lastDeath());
+                    var inside = JsonParser.parseString("{\"deathInside\":true,\"death\":[110,60,210],\"origin\":[100,50,200],\"deathAgo\":20,"
+                            + "\"deathByMob\":true,\"cause\":\"respawned after its death at 110, 60, 210 (Told was slain by Zombie)\"}").getAsJsonObject();
+                    ReplayGameTests.tellOfItsDeath(f.runtime, f.id, inside, staged, context.getWorld(), context.getWorld().getServer().getTicks(), 1, "Told");
+                    var death = campaign.lastDeath();
+                    context.assertTrue(death.isPresent() && death.get().pos().equals(staged.add(10, 10, 10)), "Its death not where the scene put it: " + death);
+                    context.assertTrue(death.get().cause().equals("Told was slain by Zombie"), "Its cause: " + death.get().cause());
+                    context.assertTrue(ReplayGameTests.byAMob("Sol was slain by Zombie") && ReplayGameTests.byAMob("Sol was killed by Witch using magic")
+                            && !ReplayGameTests.byAMob("Sol fell from a high place") && !ReplayGameTests.byAMob("Sol drowned"), "A mob's kill misread");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
 }
