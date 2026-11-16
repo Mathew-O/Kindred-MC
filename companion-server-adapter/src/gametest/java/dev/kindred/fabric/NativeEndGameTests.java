@@ -164,6 +164,8 @@ public final class NativeEndGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-5, 0, -7), o.add(29, 25, 7));
                     forceChunks(world, o, true);
                     for (int x = -4; x <= 28; x++) for (int z = -6; z <= 6; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.END_STONE.getDefaultState());
@@ -282,6 +284,8 @@ public final class NativeEndGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-3, 0, -5), o.add(19, 17, 5));
                     forceChunks(world, o, true);
                     for (int x = -2; x <= 18; x++) for (int z = -4; z <= 4; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
@@ -379,6 +383,8 @@ public final class NativeEndGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-17, 0, -17), o.add(31, 23, 17));
                     forceChunks(world, o, true);
                     for (int x = -16; x <= 30; x++) for (int z = -16; z <= 16; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.END_STONE.getDefaultState());
@@ -479,6 +485,8 @@ public final class NativeEndGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-13, 0, -13), o.add(13, 23, 13));
                     tower(world, o, 3);
                     f.player().refreshPositionAndAngles(o.getX() + 0.5, o.getY() + 5, o.getZ() + 0.5, 0, 0);
                     body[0] = new net.minecraft.util.math.Vec3d(o.getX() - 2.5, o.getY() + 7, o.getZ() + 0.5);
@@ -519,6 +527,8 @@ public final class NativeEndGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-13, 0, -13), o.add(13, 23, 13));
                     forceChunks(world, o, true);
                     tower(world, o, 15);
                     var player = f.player();

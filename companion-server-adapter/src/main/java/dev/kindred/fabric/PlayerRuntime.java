@@ -8788,6 +8788,9 @@ final class PlayerRuntime {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
             entry.lifeTask = null;
+            // Its bed's own steps heard: the one break of its bed on waking after a death (F-25c4di1), and a refused set-down
+            // (F-25c4di1c).
+            if (entry.campaign != null) entry.campaign.bedTaskEnded(life, state == SkillRunner.State.COMPLETED);
             // A bed it could not sleep in (mobs about, someone in it), or could not get to (in walls still going up), is
             // tried again in a while, not at once (F-25c9).
             if (("native_sleep".equals(life.skill()) || "native_goto".equals(life.skill()) && life.label().startsWith("To its bed"))

@@ -26,4 +26,11 @@ class ModelUsageTest {
         assertEquals("in 900, cache read 0, cache write 0, out 20 tokens, 800 ms", ModelUsage.of(line));
         assertEquals(Strategist.Ask.NONE, line.ask(), "the rest kept");
     }
+
+    @Test
+    void aReadTheProviderDoesNotReportIsNotAZero() {
+        assertEquals("in 7051, cache read n/a, cache write n/a, out 154 tokens, 1066 ms", ModelUsage.line(7051, 0, false, Strategist.NOT_REPORTED, 154, 1066));
+        assertEquals("in 7051, cache read 0, cache write 0, out 154 tokens, 1066 ms", ModelUsage.line(7051, 0, true, 0, 154, 1066), "a reported zero stays 0");
+        assertEquals(ModelUsage.line(7051, 6500, true, 0, 154, 1066), ModelUsage.line(7051, 6500, 0, 154, 1066), "the old form reports the read");
+    }
 }
