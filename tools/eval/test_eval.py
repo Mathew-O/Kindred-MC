@@ -309,5 +309,82 @@ class BridgeMeasureTest(unittest.TestCase):
         self.assertNotIn('Bridge blocks', score.markdown(s))
 
 
+# A stand-in for run.py's main with the server replaced by a stub child: argv[1] is how the stub takes SIGTERM
+# ("term": it ends; "ignore": it must be killed), argv[2] what stops run.py ("signal" or "error"), argv[3] the folder.
+STOPPED_RUN = r"""
+import importlib.util, os, subprocess, sys, time
+from pathlib import Path
+spec = importlib.util.spec_from_file_location('run', sys.argv[4])
+run = importlib.util.module_from_spec(spec); spec.loader.exec_module(run)
+stub, how, root = sys.argv[1], sys.argv[2], Path(sys.argv[3])
+code = {'term': 'import os, time', 'ignore': 'import os, signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN)'}[stub]
+code += '; open("pid", "w").write(str(os.getpid())); time.sleep(600)'
+real = subprocess.Popen
+run.subprocess.Popen = lambda command, **kw: real([sys.executable, '-c', code], cwd=kw['cwd'], stdout=kw['stdout'], stderr=kw['stderr'])
+run.pinned = lambda: ('m', 'l', 'f')
+run.launcher = lambda cache, minecraft, loader: root / 'launcher.jar'
+run.fabric_api_jar = lambda fabric: None
+run.vanilla_server = lambda cache, minecraft: None
+run.prepare = lambda folder, *rest: folder.mkdir(parents=True, exist_ok=True)
+run.STOP_WAIT = 1
+if how == 'error':
+    real_sleep = time.sleep
+    def sleep(seconds):
+        while not (root / 'out' / 'stub' / '1' / 'pid').exists():
+            real_sleep(0.05)
+        run.time.sleep = real_sleep  # once: the stop's own waits sleep as usual
+        raise RuntimeError('a fault in the loop')
+    run.time.sleep = sleep
+(root / 'stub.jar').write_bytes(b'jar')
+sys.argv = ['run.py', '--jar', str(root / 'stub.jar'), '--name', 'stub', '--seeds', '1', '--out', str(root / 'out')]
+run.main()
+"""
+
+
+class StopTest(unittest.TestCase):
+    """A stopped run.py leaves no server behind (a server left running keeps playing and, with a key, spending)."""
+
+    def stopped(self, stub, how, sig=None):
+        import os, signal, subprocess, time
+        with tempfile.TemporaryDirectory() as root:
+            script = Path(root) / 'stopped_run.py'
+            script.write_text(STOPPED_RUN, encoding='utf-8')
+            wrapper = subprocess.Popen([sys.executable, str(script), stub, how, root, str(HERE / 'run.py')],
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            pid_file = Path(root) / 'out' / 'stub' / '1' / 'pid'
+            deadline = time.time() + 30
+            while not (pid_file.exists() and pid_file.read_text()) and time.time() < deadline and wrapper.poll() is None:
+                time.sleep(0.05)
+            pid = int(pid_file.read_text())
+            if sig is not None:
+                wrapper.send_signal(sig)
+            out, _ = wrapper.communicate(timeout=30)
+            time.sleep(0.2)
+            with self.assertRaises(ProcessLookupError, msg='the stub server is still running'):
+                os.kill(pid, 0)
+            return wrapper.returncode, out
+
+    def test_01_sigterm_stops_the_server_and_says_so(self):
+        import signal
+        code, out = self.stopped('term', 'signal', signal.SIGTERM)
+        self.assertEqual(128 + signal.SIGTERM, code)
+        self.assertIn("seed 1: server stopped (pid", out)
+        self.assertIn("on run.py's SIGTERM", out)
+
+    def test_02_sigint_kills_a_server_that_ignores_the_stop(self):
+        import signal
+        code, out = self.stopped('ignore', 'signal', signal.SIGINT)
+        self.assertEqual(128 + signal.SIGINT, code)
+        self.assertIn("seed 1: server killed after 1 s (pid", out)
+        self.assertIn("on run.py's SIGINT", out)
+
+    def test_03_a_fault_in_the_loop_stops_the_server_too(self):
+        code, out = self.stopped('term', 'error')
+        self.assertNotEqual(0, code)
+        self.assertIn('RuntimeError: a fault in the loop', out)
+        self.assertIn("seed 1: server stopped (pid", out)
+        self.assertIn("on run.py's exit", out)
+
+
 if __name__ == '__main__':
     unittest.main()
