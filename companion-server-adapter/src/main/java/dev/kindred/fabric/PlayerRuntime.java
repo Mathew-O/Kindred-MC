@@ -555,7 +555,7 @@ final class PlayerRuntime {
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
-        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now, (player, message) -> {
+        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::socialNow, (player, message) -> {
             player.sendMessage(message, false);
             if (heardForFixtures != null) heardForFixtures.accept(player, message);
         }, new HabitHooks(), this::aiPlayerOf);
@@ -573,8 +573,8 @@ final class PlayerRuntime {
             @Override public void sendState(PeerUpdate update) { wire.sendState(update); } // F-34c: the team path is the Wire's.
         });
         chatIntents = new ChatIntents(this, server);
-        initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
-        peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
+        initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::socialNow);
+        peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::socialNow, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         webs = new KnowledgeWebs(server::getTicks);
         // M-06e's notices in today's words after the channel's prefix (their line is the "what" fact).
         var wording = new dev.kindred.core.wire.Wording().with(dev.kindred.core.factions.Capture.VULNERABLE, "{what}")
@@ -601,7 +601,7 @@ final class PlayerRuntime {
             if (ai != null) dev.kindred.core.wire.MatchTitles.of(ai, title).ifPresent(wire::send);
         });
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
-        outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
+        outings = new Outings(new OutingSource(), socials, PlayerRuntime::socialNow); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
             @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
                 var offer = initiative.heard(speaker, player, message); // An answer to its last line; an offer's yes or no (E-53).
@@ -635,7 +635,7 @@ final class PlayerRuntime {
                 KindredMod.LOGGER.info("{} asked in chat by {}: {}: refused (wary of them)", entry.data.displayName(), speaker.getName().getString(), ask);
                 return Optional.of(NOT_AFTER_LAST_TIME);
             }
-        }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
+        }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::socialNow);
         socials.setVoice(voice);
         voice.setManner(socials::manner);
         voice.setSwearing(socials::maySwear); // E-18b: a rough player's reply may swear to someone who said yes.
@@ -657,6 +657,24 @@ final class PlayerRuntime {
     }
 
     private static long now() { return System.nanoTime() / 1_000_000; }
+
+    /**
+     * The social lane's clock, milliseconds (F-22c101): real time, as {@link #now()}, plus what a fixture has moved it on
+     * by. Its gaps (a player's seconds between direct replies, the typing delay, a lane's turn) are kept in real time
+     * while a test server runs faster than real time; a fixture moves this clock on past such a gap rather than park the
+     * server thread for it, which stalled every test running beside it. Nothing but a fixture moves it: in play it is
+     * real time.
+     */
+    static long socialNow() { return now() + socialAheadMillis; }
+
+    /** How far fixtures have moved the social lane's clock past real time (F-22c101); 0 in play. */
+    private static volatile long socialAheadMillis;
+
+    /** Moves the social lane's clock on by {@code millis}, for fixtures only (F-22c101): real time is not waited out. */
+    static void moveSocialClockForFixtures(long millis) {
+        if (millis < 0) throw new IllegalArgumentException("The social clock only moves on");
+        socialAheadMillis += millis;
+    }
     private static long nanos() { return System.nanoTime(); }
 
     /**
@@ -7713,7 +7731,7 @@ final class PlayerRuntime {
         }
         // Its social lane: what it sees and says, to the listeners its profile allows (SocialBrain).
         if (usable && body.entity() != null) {
-            socials.deliverDue(entry.data.id(), now());
+            socials.deliverDue(entry.data.id(), socialNow());
             CompanionSocials.Participant participant = socialParticipant(entry.data.id());
             if (participant != null) socials.tick(participant);
         }
@@ -8245,7 +8263,7 @@ final class PlayerRuntime {
             return;
         }
         tickPerception(entry, body);
-        socials.deliverDue(entry.data.id(), now());
+        socials.deliverDue(entry.data.id(), socialNow());
         switch (decision.action()) {
             case RUN_SKILL -> tickSkill(entry, body);
             case RUN_FOLLOW -> tickFollow(entry, body);
