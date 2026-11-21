@@ -231,6 +231,18 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * F-22c96a. In CI on #429 (run 44936497582) Hal stood in its librarian's front as the trapdoor was shut over it, the cart
+     * taken back: CLOSE's walk out (F-22c96's "CLOSE's walk out refused" line) had no walkable route from under its own shut
+     * trapdoor, three times in a second, and the bring was given up, "close went wrong three times over". Staged: the first tick
+     * the bring is at CLOSE with Hal out of the front and at rest, Hal set in the middle of the front, under the shut trapdoor. It walks out and the librarian is
+     * brought home.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringUnderTrapdoor", tickLimit = 14000)
+    public void inItsFrontUnderItsShutTrapdoorHalStillWalksOutAndBringsItHome(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 8);
+    }
+
+    /**
      * As the strolling bring, staged (F-22c84, the dirt): the librarian put where CI's strolled to, by the hall's south-west
      * corner (-3, 0, 9), and slowed until it sits in Hal's boat. Held there, at (-3, 0, 8), the line's stop goes down
      * beside the hall's west wall (-3, 0, 3); as its last pickup ends, Hal is set a block south of it, where it picked the
@@ -405,6 +417,7 @@ public final class NativeBringGameTests implements FabricGameTest {
         long[] offFrom = {-1};
         java.util.Set<BlockPos> cartInCell = new java.util.HashSet<>();
         BlockPos[] offFront = {null};
+        BlockPos[] underShut = {null};
         String[] offLeft = {null};
         // F-22c84 (the dirt): Hal set beside the line's stop's block as its last pickup ends, once.
         boolean[] climbOnce = {false};
@@ -747,6 +760,21 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     + (world.getTime() - up) + " ticks after its front's rail came up";
                         }
                         if (jobIn && up != null) jobBlockIn[0] = true;
+                        // Staged (F-22c96a): the first tick the bring is at CLOSE, Hal out of the front and at rest, its trapdoor shut over the front and the job
+                        // block not yet in, Hal set in the middle of the front, under its own shut trapdoor, as CI's on #429 stood.
+                        if (onBed == 8 && underShut[0] == null && hal != null && !jobIn
+                                && world.getBlockState(front.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS)
+                                && String.valueOf(f.runtime.bringNote(f.id)).contains("[CLOSE]")
+                                // Out of the front and at rest, its walk out of it done: set in mid-walk, the walk itself
+                                // went on and took it out again.
+                                && hal.isOnGround() && hal.getVelocity().horizontalLengthSquared() < 1.0E-4
+                                && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))) {
+                            hal.refreshPositionAndAngles(front.getX() + 0.5, front.getY(), front.getZ() + 0.5, hal.getYaw(), hal.getPitch());
+                            hal.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            underShut[0] = front;
+                            KindredMod.LOGGER.info("Bring: Hal set in its front under the shut trapdoor, at {}",
+                                    hal.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                        }
                         if (pressed && up != null && !jobIn && hal != null && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))) {
                             var v = librarian[0];
                             if (pressFrom[0] < 0 && v.getVehicle() == null) {
