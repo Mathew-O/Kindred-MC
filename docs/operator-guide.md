@@ -1145,12 +1145,15 @@ The factions themselves, from the console (an operator acts as a player):
 
 ### Stopping
 
-`stop` at the console. Kindred writes its records and the players' memory first, then vanilla saves the world: two
-seconds on the walk. Wait for `All dimensions are saved` before you take a backup.
+First `save-all flush` at the console, and wait for `Saved the game`; then `stop`. Kindred writes its records and the
+players' memory first, then vanilla saves the world: two seconds on the walk. Wait for `All dimensions are saved` before
+you take a backup.
 
-Once on the walk, the evaluation run's own stop (not a console `stop`) spun for 20 minutes in vanilla's chunk saving
-after Kindred had written everything, and was killed. That is reported (M-06k4's evidence) and not seen at a console
-stop. If a stop ever hangs past `Saving worlds`, kill it and treat the next start as after a crash.
+The save first is in place until a hang is understood (M-06k4a). Twice an evaluation run's own stop (not a console
+`stop`) logged `Saving worlds` and then never saved, vanilla waiting on a chunk that would not unload: 20 minutes on the
+walk (M-06k4's evidence), and until it was killed in one of 73 evaluation runs (M-06k4a's). Kindred had written
+everything both times. Saved just before, a stop that hangs loses nothing built since the last autosave. If a stop ever
+hangs past `Saving worlds`, kill it and treat the next start as after a crash.
 
 ## A month-long run: what grows on disk
 

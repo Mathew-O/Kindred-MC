@@ -55,7 +55,7 @@ public final class Navigator {
      * What one search has worked out, so each test is made once: a search asks the same few hundred cells about many
      * times over. A navigator lives for one search or one tick, so nothing here goes stale.
      */
-    private final CellMemo passables = new CellMemo(), standables = new CellMemo(), costs = new CellMemo();
+    private final CellMemo passables = new CellMemo(), standables = new CellMemo(), costs = new CellMemo(), leaves = new CellMemo();
     private final int maxDrop;
     private List<Danger> dangers = List.of();
     /** An extra cost for each block of the route at a place, as its atlas weighs a night's danger there (F-30); none by default. */
@@ -132,6 +132,7 @@ public final class Navigator {
     public void forgetPassage() {
         passables.clear();
         standables.clear();
+        leaves.clear();
     }
 
     /**
@@ -288,6 +289,8 @@ public final class Navigator {
         return path;
     }
 
+    private static final Side[] SIDES = Side.values();
+
     private static final int[][] HORIZONTAL = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     /** Every move a body standing at the given spot can make next, with what each costs. */
@@ -299,6 +302,11 @@ public final class Navigator {
             Cell flat = from.add(d[0], 0, d[1]);
             if (!loaded(flat)) continue;
             if (diagonal && (!clear(from.add(d[0], 0, 0)) || !clear(from.add(0, 0, d[1])))) continue;
+            // An open door's leaf along a side is not crossed (E-71b1a): round a corner, both ways past it, as with the
+            // corner cutting above; straight, at feet and head, and a step up's jump at the height above as well.
+            if (diagonal ? !crosses(from, d[0], 0, 0, 1) || !crosses(from.add(d[0], 0, 0), 0, d[1], 0, 1)
+                    || !crosses(from, 0, d[1], 0, 1) || !crosses(from.add(0, 0, d[1]), d[0], 0, 0, 1)
+                    : !crosses(from, d[0], d[1], 0, 1)) continue;
             double base = diagonal ? 1.414 : 1.0;
             if (clear(flat) && (standable(flat) || swimmable(flat))) {
                 moves.add(new Move(flat, base * terrainCost(flat)));
@@ -307,7 +315,7 @@ public final class Navigator {
             if (diagonal) continue;
             // Step up: the next block is an obstacle we can jump onto, with headroom above both positions.
             Cell up = flat.up();
-            if (clear(up) && (standable(up) || swimmable(up)) && passable(from.up(2)) && !hazard(flat)) {
+            if (clear(up) && (standable(up) || swimmable(up)) && passable(from.up(2)) && !hazard(flat) && crosses(from, d[0], d[1], 2, 2)) {
                 moves.add(new Move(up, 2.0 * terrainCost(up)));
                 continue;
             }
@@ -410,6 +418,32 @@ public final class Navigator {
             if (standable(landing)) return true;
         }
         return false;
+    }
+
+    /**
+     * Whether a body crosses from a cell to the one beside it (a block along x or along z), at each height from
+     * {@code lo} to {@code hi} above it: no leaf along the side between them, in the one it leaves or the one it enters.
+     * A cell's leaf is {@link Terrain#leaf}: an open door's, whose cell a body passes through but not across its leaf.
+     */
+    private boolean crosses(Cell from, int dx, int dz, int lo, int hi) {
+        Side out = dx > 0 ? Side.EAST : dx < 0 ? Side.WEST : dz > 0 ? Side.SOUTH : Side.NORTH;
+        Side in = out.clockwise().clockwise();
+        Cell to = from.add(dx, 0, dz);
+        for (int k = lo; k <= hi; k++) {
+            if (leaf(from.up(k)) == out || leaf(to.up(k)) == in) return false;
+        }
+        return true;
+    }
+
+    /** The side a leaf lies along in a cell, remembered as the passable cells are; none for a cell not loaded. */
+    private Side leaf(Cell pos) {
+        long key = pos.asLong();
+        double known = leaves.get(key, 0);
+        if (known == 0) {
+            Side side = loaded(pos) ? terrain.leaf(pos.x(), pos.y(), pos.z()) : null;
+            leaves.put(key, known = side == null ? 1 : side.ordinal() + 2);
+        }
+        return known == 1 ? null : SIDES[(int) known - 2];
     }
 
     /** Feet and head positions are both free of collision and hazards. */
