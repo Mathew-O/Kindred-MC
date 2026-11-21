@@ -2538,16 +2538,19 @@ final class PortalRunCampaign {
         // step back by a hit is no reason to turn and wall off, nor a skeleton stepping out of view one to walk back
         // into its fire (live run 58's three deaths came as the goal switched between them every second). Only a
         // fall below six health ends a fight early; a retreat turns to fight only when there is nowhere to back off to.
-        boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
-        boolean retreating = lastTick < retreatHeldUntil;
         // A back-off that ended with a mob on foot still in reach gained nothing: a zombie walks as fast as a player. Then
         // it neither backs off again nor holes up for a while, but fights it, as below; in e40a22 five players switched
         // between backing off and holing up every second or two while a zombie kept pace and struck, and died with food
         // or a pickaxe in hand, the sword never drawn (A1).
+        // Before the held choices are read (F-22c104): read after, the retreat it ends still held for this decision, and
+        // the fight it falls through to was turned back into a back-off below, which held the retreat again. Caught so as it
+        // backed off again, the player backed off with the zombie at its back until it was killed (CI on #385, #416, main).
         if (onFootInReach(player) != null && backOffEndedAt > Long.MIN_VALUE && lastTick - backOffEndedAt <= GAINLESS_CATCH) {
             backOffGainlessUntil = Math.max(backOffGainlessUntil, lastTick + GAINLESS_HOLD);
             retreatHeldUntil = Math.min(retreatHeldUntil, lastTick);
         }
+        boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
+        boolean retreating = lastTick < retreatHeldUntil;
         // Only while a mob on foot after it is still close: a passage sealed behind it (F-25c4dc) and a hole-up once it is
         // gone are as before.
         boolean gainless = lastTick < backOffGainlessUntil && huntedOnFootWithin(player, 8);
