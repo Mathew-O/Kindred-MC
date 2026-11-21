@@ -34,6 +34,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
         BlockPos cabinAt = home.add(-3, 0, -3);
         java.util.UUID[] cows = new java.util.UUID[2];
         long[] doneAt = {-1};
+        // The check of the pen last logged while it had not passed (F-22c109), and when: see below.
+        String[] lastShort = {null};
+        long[] lastShortAt = {-1};
         // Every task it ends says where it came from (M-01): its label, or the routine that proposed it.
         var unlabelled = new java.util.ArrayList<String>();
         int[] ended = {0};
@@ -123,6 +126,20 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     for (var cow : world.getEntitiesByClass(CowEntity.class, new Box(post).expand(48), c -> true)) {
                         where.append(cow.getUuid().equals(cows[0]) || cow.getUuid().equals(cows[1]) ? "pair " : "other ").append(cow.getBlockPos().subtract(post).toShortString())
                                 .append(cow.isBaby() ? " young" : "").append(cow.isInLove() ? " in love" : "").append("; ");
+                    }
+                    // Diagnostic (F-22c109): CI saw 30 s of "2 cows and 0 calves penned" after a calf was born in the pen, then
+                    // a second breeding, and the run failed on the wheat, the cows' places lost with the earlier message
+                    // (main run 44855124187). Each new count short of the pair and a calf is logged with where every cow
+                    // stands, and again every ten seconds while it lasts.
+                    long now = world.getTime();
+                    if (!(adults == 2 && calves == 1 && held(f, Items.WHEAT) == 6)) {
+                        String counts = adults + " cows, " + calves + " calves, " + held(f, Items.WHEAT) + " wheat";
+                        if (!counts.equals(lastShort[0]) || now - lastShortAt[0] >= 200) {
+                            lastShort[0] = counts;
+                            lastShortAt[0] = now;
+                            KindredMod.LOGGER.info("Own ranch not yet as it should be, {} ticks after its run: {}; the gate {}; cows from the pen's post: {}",
+                                    now - doneAt[0], counts, world.getBlockState(post.add(3, 0, 6)).get(net.minecraft.block.FenceGateBlock.OPEN) ? "open" : "shut", where);
+                        }
                     }
                     context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf: " + adults + " and " + calves + "; cows from the pen's post: " + where);
                     context.assertTrue(held(f, Items.WHEAT) == 6, "Two wheat fed: " + held(f, Items.WHEAT));
