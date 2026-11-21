@@ -18901,12 +18901,21 @@ final class PlayerRuntime {
     private final dev.kindred.core.metrics.TickWindow tickWindow = new dev.kindred.core.metrics.TickWindow();
     private long heapHighWater;
 
+    /** A web's player by name for the cost line (F-32d): its own id or its body's; else the id's first eight characters. */
+    private String webName(UUID id) {
+        for (Entry entry : entries.values()) {
+            if (id.equals(entry.data.id()) || id.equals(entry.data.entityId())) return entry.data.displayName();
+        }
+        return id.toString().substring(0, 8);
+    }
+
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
-        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
+        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.byPlayer(this::webName),
+                webs.world().size(), wire.inboxed(),
                 chronicle.kept(), wire.stateTold(), wire.refusals(), factions.refusalCounts(), tickWindow.describe(), heapHighWater / (1024 * 1024));
         tickWindow.reset();
         heapHighWater = 0;
