@@ -385,6 +385,7 @@ public final class NativeBringGameTests implements FabricGameTest {
         boolean[] asideOnce = {false};
         // F-22c98b: whether the librarian's boat was set off the line for the push under way; how many times it was.
         boolean[] offLineSet = {false};
+        double[] pitFloor = {Double.NaN};
         int[] offLineSets = {0};
         // F-22c98b: the hall's doorway and what was said the tick the given-up bring said its end; how much had been said
         // as the staging first set the boat off the line.
@@ -636,7 +637,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 double x = alongX ? boat.getX() : boat.getX() + 3, z = alongX ? boat.getZ() + 3 : boat.getZ();
                                 boat.refreshPositionAndAngles(x, boat.getY(), z, boat.getYaw(), 0);
                                 boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
-                                // F-22c103: and the ground under it and a block round dug out four deep, so that it drops into
+                                // F-22c103: and the ground under it and a block round dug out four deep, so that it lies in
                                 // a pit no walk goes into (deeper than a safe drop of three), as no walk reached CI's on #412,
                                 // dropped two blocks off the fixture's kept ground (run 44871475068). Two deep, inside the
                                 // kept ground, Hal walked down into it after the boat and was then shut in it.
@@ -644,6 +645,13 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     BlockPos under = BlockPos.ofFloored(x, boat.getY(), z);
                                     for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 1; dy <= 4; dy++)
                                         world.setBlockState(under.add(dx, -dy, dz), net.minecraft.block.Blocks.AIR.getDefaultState());
+                                    // Set down on the pit's floor with the librarian in it (STAGED), not left to fall there: a boat
+                                    // that falls more than three blocks onto land breaks, and on #427's CI (run 44934790203) it broke
+                                    // in the fall, the librarian out of it at the pit's edge, so no boat held it to be let be.
+                                    boat.refreshPositionAndAngles(x, boat.getY() - 4, z, boat.getYaw(), 0);
+                                    boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                    boat.fallDistance = 0;
+                                    pitFloor[0] = boat.getY();
                                 }
                                 KindredMod.LOGGER.info("Bring: the librarian's boat set off the line ({}), at {}", offLineSets[0],
                                         boat.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
@@ -877,6 +885,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                         context.assertTrue(endedWith[0].startsWith("door / ") && !endedWith[0].contains("couldn't put my hall's door back"),
                                 "The hall's door put back as it gave up: " + endedWith[0]);
                         // The boat in the pit let be, and said so, not walked to for ever.
+                        if (onBed == 7) context.assertTrue(!Double.isNaN(pitFloor[0]), "Staged: the librarian's boat set down on its pit's floor");
                         if (onBed == 7) context.assertTrue(endedWith[0].contains("I left the boat with the librarian in it where I couldn't get to it."),
                                 "The boat it couldn't get to let be, and said: " + endedWith[0]);
                         return;
