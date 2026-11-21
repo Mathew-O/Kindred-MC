@@ -96,6 +96,9 @@ public final class KindredMod implements ModInitializer {
                 if (receivingRuntime != null && runtime == receivingRuntime) receivingRuntime.chat(senderId, content);
             });
         });
+        // A server stall of seconds logged with what ran in it (F-22c101, a diagnostic).
+        TickPauseLog.register();
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_SERVER_TICK.register(TickPauseLog::tickStarted);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_SERVER_TICK.register(server -> {
             // Work handed back from other threads first, every runtime's, as each tick starts (F-26a).
             PlayerRuntime.runHandedBack(server);
@@ -116,6 +119,7 @@ public final class KindredMod implements ModInitializer {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (customs != null) customs.tick(server.getTicks());
         });
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(TickPauseLog::tickEnded);
         // F-38: core asks the server's own tags what things are, once they are bound and after each reload.
         ServerLifecycleEvents.SERVER_STARTED.register(KindredCapabilities::refresh);
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
