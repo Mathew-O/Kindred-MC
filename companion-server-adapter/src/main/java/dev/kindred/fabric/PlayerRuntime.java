@@ -11704,6 +11704,12 @@ final class PlayerRuntime {
         final java.util.ArrayDeque<String> pushTrail = new java.util.ArrayDeque<>();
         /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
         int cartPickWalks;
+        /**
+         * Given up, the held boat or the cart it could not walk to, let be where it is (F-22c103), and said as the bring ends.
+         * One out of reach ended the whole take-back, and the hall's door was left out.
+         */
+        boolean boatLetBe, cartLetBe;
+        String letBe = "";
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
@@ -11868,7 +11874,7 @@ final class PlayerRuntime {
         if (villager == null && b.failure == null) return giveUp(entry, body, "The " + b.noun + " I was bringing home is gone.");
         if (b.failed >= 3 && b.failure == null) return giveUp(entry, body, "I couldn't bring the " + b.noun + " home: "
                 + b.phase.name().toLowerCase(java.util.Locale.ROOT) + " went wrong three times over.");
-        if (b.failed >= 3) return endBring(entry, b.failure + " I couldn't take everything back.", false);
+        if (b.failed >= 3) return endBring(entry, b.failure + " I couldn't take everything back." + b.letBe, false);
         var task = bringTask(entry, "step");
         switch (b.phase) {
             case HOLD -> {
@@ -12663,14 +12669,27 @@ final class PlayerRuntime {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "undo out"), "native_boat", Map.of("mode", "land")));
                 }
                 // Given up with the villager still in its boat: the boat broken first, the villager set down where it sat.
-                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
-                    if (!player.canInteractWithEntity(boat, 0)) return List.of(goNear(task, boat.getBlockPos()));
+                if (!b.boatLetBe && heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    if (!player.canInteractWithEntity(boat, 0)) {
+                        // Two walks to it blocked: let be where it is, and the rest taken back (F-22c103). Set off the line
+                        // down a drop of two blocks, the boat had no walk to it three times, the bring ended there, and the
+                        // hall's door was left out (CI on #412, run 44871475068).
+                        if (b.failed >= 2) {
+                            b.boatLetBe = true;
+                            b.failed = 0;
+                            b.letBe += " I left the boat with the " + b.noun + " in it where I couldn't get to it.";
+                            KindredMod.LOGGER.info("{} bringing: the boat holding the {} at {} let be, two walks to it blocked", entry.data.displayName(), b.noun,
+                                    boat.getBlockPos().toShortString());
+                            return bringCandidates(entry, body);
+                        }
+                        return List.of(goNear(task, boat.getBlockPos()));
+                    }
                     return List.of(new NativeTaskCandidate(bringTask(entry, "undo boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
                 }
                 // Given up with the cart down: broken and taken back, whoever rides it set down where it is.
-                var cart = cartOf(world, b);
+                var cart = b.cartLetBe ? null : cartOf(world, b);
                 if (cart == null) {
-                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                    var lying = b.cartLetBe ? List.<net.minecraft.entity.ItemEntity>of() : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                             item -> item.getStack().isOf(Items.MINECART));
                     // Its own count of walks to the cart's item (F-22c98b): counted on the door's tries, a few walks here left
                     // DOOR_BACK past its three before it tried once, and the hall's door was left out.
@@ -12678,7 +12697,17 @@ final class PlayerRuntime {
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }
-                if (!player.canInteractWithEntity(cart, 0)) return List.of(goNear(task, cart.getBlockPos()));
+                if (!player.canInteractWithEntity(cart, 0)) {
+                    // As the boat: two walks to it blocked, let be, and the rest taken back (F-22c103).
+                    if (b.failed >= 2) {
+                        b.cartLetBe = true;
+                        b.failed = 0;
+                        b.letBe += " I left the cart where I couldn't get to it.";
+                        KindredMod.LOGGER.info("{} bringing: the cart at {} let be, two walks to it blocked", entry.data.displayName(), cart.getBlockPos().toShortString());
+                        return bringCandidates(entry, body);
+                    }
+                    return List.of(goNear(task, cart.getBlockPos()));
+                }
                 return List.of(new NativeTaskCandidate(bringTask(entry, "undo cart"), "native_cart", Map.of("mode", "break", "target", cart.getUuid().toString())));
             }
             case TIDY -> {
@@ -12801,7 +12830,7 @@ final class PlayerRuntime {
             case DOOR_BACK -> {
                 boolean open = b.opened.keySet().stream().anyMatch(at -> world.getBlockState(at).isAir());
                 if (world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock && !open) {
-                    if (b.failure != null) return endBring(entry, b.failure, false);
+                    if (b.failure != null) return endBring(entry, b.failure + b.letBe, false);
                     entry.brought.add(b.villager);
                     return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
@@ -12819,7 +12848,7 @@ final class PlayerRuntime {
                 }
                 var plan = new dev.kindred.core.construction.Blueprint("the trading hall's door", hall.source(), hall.creator(), hall.license(), door, List.of());
                 if (++b.doorTries > 3 || startBuild(server.getCommandSource(), entry.data.id(), plan, b.origin, 0) != 1) {
-                    if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back.", false);
+                    if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back." + b.letBe, false);
                     entry.brought.add(b.villager);
                     return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back." + leftInCell(world, b), true);
                 }

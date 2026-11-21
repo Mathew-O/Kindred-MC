@@ -148,6 +148,38 @@ final class BuildRunner {
     String progress() { return progress; }
     List<Blueprint.Block> blocks() { return blocks; }
 
+    /** The last give-up {@link #logCannotPlaceYet} reported, so that each is logged once while it lasts. */
+    private String cannotPlaceLogged;
+
+    /**
+     * Diagnostic, log only (F-22c107): when the planner gives up on the rest as "blocks it cannot place yet", each block
+     * not yet in its state, with what the site reads in its cell, what the world holds there, its placement rule and
+     * whether it was given up on, refused or came out wrong. CI saw a hideout's last two planks so (#397, #417); alone,
+     * the class passes. Logged once for each such set, not every tick it lasts.
+     */
+    private void logCannotPlaceYet(ConstructionPlanner.Step step, BuildSite site, net.minecraft.server.world.ServerWorld world) {
+        if (step.kind() != ConstructionPlanner.Kind.BLOCKED || !step.reason().equals("The rest are blocks it cannot place yet")) {
+            cannotPlaceLogged = null;
+            return;
+        }
+        var rest = new StringBuilder();
+        for (var b : blocks) {
+            var cell = site.cell(b.at());
+            if (cell.map(c -> c.state().sameAs(b.spec())).orElse(false)) continue;
+            if (!rest.isEmpty()) rest.append("; ");
+            rest.append(b.at()).append(" wants ").append(b.spec()).append(": site ")
+                    .append(cell.map(c -> c.kind() + " " + c.state() + (c.floor() ? " floor" : "")).orElse("unknown"))
+                    .append(", world ").append(world.getBlockState(blockPos(b.at())))
+                    .append(", rule ").append(Placement.rule(b.spec()))
+                    .append(givenUp.contains(b.at()) ? ", given up" : "").append(refused.containsKey(b.at()) ? ", refused" : "")
+                    .append(wrong.containsKey(b.at()) ? ", came out wrong" : "");
+        }
+        String line = rest.toString();
+        if (line.equals(cannotPlaceLogged)) return;
+        cannotPlaceLogged = line;
+        KindredMod.LOGGER.info("Build {}: the rest are blocks it cannot place yet: {}", blueprint.name(), line);
+    }
+
     /** Item counts in the inventory, by id. */
     static Map<String, Integer> counts(ServerPlayerEntity player) {
         var counts = new HashMap<String, Integer>();
@@ -539,6 +571,7 @@ final class BuildRunner {
         var setAside = blocks.stream().filter(b -> givenUp.contains(b.at())).toList();
         var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned,
                 spareScaffold(player, wanted, site), setAside);
+        logCannotPlaceYet(step, site, world);
         // A block with nothing to be set against but one it gave up on (a bed's foot over a floor plank an animal stood
         // in): that block is tried again now, a few times at most, rather than the bed left for good (E-70a1).
         if (step.kind() == ConstructionPlanner.Kind.BLOCKED && step.target() != null && step.reason().startsWith(ConstructionPlanner.WAITS_ON_SET_ASIDE)

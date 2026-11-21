@@ -181,6 +181,7 @@
       "dev.kindred.fabric.NativeFactionShelterGameTests",
       "dev.kindred.fabric.NativeFootingGameTests",
       "dev.kindred.fabric.NativeSeenColumnsGameTests",
+      "dev.kindred.fabric.NativeShelterWayGameTests",
       "dev.kindred.fabric.NativeSeenSiteGameTests",
       "dev.kindred.fabric.NativePlotGrassGameTests",
       "dev.kindred.fabric.NativeWaterBoxGameTests",

@@ -470,5 +470,93 @@ class BlockedTest(unittest.TestCase):
         self.assertEqual({}, score.blocked_of(None, 24000))
 
 
+
+# A stand-in server for the stall watcher (M-06k4a): it logs a stop that reaches "Saving worlds" and, with argv[1]
+# "hang", never saves; with "save", it saves and exits. The watcher's bounds are cut to seconds.
+STALLED_RUN = r"""
+import importlib.util, subprocess, sys, time
+from pathlib import Path
+spec = importlib.util.spec_from_file_location('run', sys.argv[3])
+run = importlib.util.module_from_spec(spec); spec.loader.exec_module(run)
+how, root = sys.argv[1], Path(sys.argv[2])
+code = 'import sys, time; print("Stopping server"); print("Saving worlds", flush=True); '
+code += {'hang': 'time.sleep(600)', 'save': 'time.sleep(1); print("ThreadedAnvilChunkStorage: All dimensions are saved", flush=True)'}[how]
+real = subprocess.Popen
+# The server's start only (it alone runs in the seed's folder); the dump's own jstack runs as it is.
+run.subprocess.Popen = lambda command, **kw: (real([sys.executable, '-c', code], cwd=kw['cwd'], stdout=kw['stdout'], stderr=kw['stderr'])
+                                              if 'cwd' in kw else real(command, **kw))
+run.pinned = lambda: ('m', 'l', 'f')
+run.launcher = lambda cache, minecraft, loader: root / 'launcher.jar'
+run.fabric_api_jar = lambda fabric: None
+run.vanilla_server = lambda cache, minecraft: None
+def prepare(folder, *rest):
+    (folder / 'world' / 'region').mkdir(parents=True, exist_ok=True)
+    (folder / 'world' / 'level.dat').write_bytes(b'l')
+    (folder / 'world' / 'region' / 'r.0.0.mca').write_bytes(b'r')
+run.prepare = prepare
+run.STALL, run.STALL_KILL = 2, 8
+real_dump = run.dump_stall
+run.dump_stall = lambda folder, process: real_dump(folder, process, dumps=2, apart=0)
+(root / 'stub.jar').write_bytes(b'jar')
+sys.argv = ['run.py', '--jar', str(root / 'stub.jar'), '--name', 'stub', '--seeds', '1', '--out', str(root / 'out')]
+run.main()
+"""
+
+
+class StallTest(unittest.TestCase):
+    """A stop that hangs at "Saving worlds" is dumped, then killed, before --timeout (M-06k4a)."""
+
+    def test_01_the_decision_from_the_console(self):
+        self.assertEqual(('none', None), run.stall_action('Starting\n', None, 100))
+        self.assertEqual(('watch', 100), run.stall_action('Stopping server\nSaving worlds\n', None, 100))
+        self.assertEqual(('watch', 100), run.stall_action('Saving worlds\n', 100, 100 + run.STALL - 1))
+        self.assertEqual(('dump', 100), run.stall_action('Saving worlds\n', 100, 100 + run.STALL))
+        self.assertEqual(('kill', 100), run.stall_action('Saving worlds\n', 100, 100 + run.STALL_KILL))
+        self.assertEqual(('none', None), run.stall_action('Saving worlds\nAll dimensions are saved\n', 100, 100 + run.STALL_KILL))
+
+    def stalled(self, how):
+        import subprocess
+        with tempfile.TemporaryDirectory() as root:
+            script = Path(root) / 'stalled_run.py'
+            script.write_text(STALLED_RUN, encoding='utf-8')
+            done = subprocess.run([sys.executable, str(script), how, root, str(HERE / 'run.py')], capture_output=True, text=True, timeout=90)
+            stall = Path(root) / 'out' / 'stub' / '1' / 'stall'
+            files = sorted(p.name for p in stall.iterdir()) if stall.is_dir() else []
+            world = (stall / 'world-files.txt').read_text(encoding='utf-8') if (stall / 'world-files.txt').is_file() else ''
+            info = json.loads((stall.parent / 'run.json').read_text(encoding='utf-8'))
+            return done.stdout + done.stderr, files, world, info
+
+    def test_02_a_hung_stop_is_dumped_then_killed(self):
+        out, files, world, info = self.stalled('hang')
+        self.assertIn('seed 1: its stop has stood at "Saving worlds"', out)
+        self.assertIn('seed 1: its stop hung', out)
+        self.assertIn('seed 1 ended: exit -9', out)
+        self.assertEqual(['threads-1.txt', 'threads-2.txt', 'world-files.txt'], files)
+        self.assertIn('level.dat', world)
+        self.assertIn('region/r.0.0.mca', world)
+        self.assertEqual('stall/', info['stopHung']['dumps'])  # counted in its own record, not silent
+        self.assertGreaterEqual(info['stopHung']['killedAfter'], 8)
+
+    def test_03_a_stop_that_saves_is_left_alone(self):
+        out, files, world, info = self.stalled('save')
+        self.assertNotIn('its stop', out)
+        self.assertIn('seed 1 ended: exit 0', out)
+        self.assertEqual([], files)
+        self.assertNotIn('stopHung', info)
+
+    def test_04_the_summary_says_so(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root) / 'b' / '109'
+            folder.mkdir(parents=True)
+            players = {n: {'stages': {}, 'deaths': [], 'deathsNotListed': 0, 'stuck': [], 'tokens': 0} for n in ('Sol', 'Echo', 'Kindred')}
+            result = {'scenario': 'goal=none; mode=factions; ticks=144000', 'kind': 'earned', 'build': 'x', 'seed': 109, 'ticks': 144000,
+                      'ticksRun': 144001, 'complete': True, 'policy': {}, 'players': players}
+            (folder / 'eval-result.json').write_text(json.dumps(result), encoding='utf-8')
+            (folder / 'run.json').write_text(json.dumps({'exit': -9, 'stopHung': {'killedAfter': 600, 'dumps': 'stall/'}}), encoding='utf-8')
+            s = score.score(folder.parent, use_metrics=False)
+        self.assertEqual({'109': {'killedAfter': 600, 'dumps': 'stall/'}}, s['stopHung'])
+        self.assertIn('Seed 109: stop hung past Saving worlds, killed at 600 s, dumps in stall/ (M-06k4a).', score.markdown(s))
+
+
 if __name__ == '__main__':
     unittest.main()

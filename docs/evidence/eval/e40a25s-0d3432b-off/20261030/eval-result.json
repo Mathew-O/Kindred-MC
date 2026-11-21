@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 12353, "paid": 12353, "lapsed": 293, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 122.2, "snapshotMicrosMax": 10683.2, "tagMicrosMean": 116.9, "tagMicrosMax": 26141.6, "bySource": {"container.take:furnace": 94, "pickup:class_2248.method_36993": 10655, "pickup:class_3222.method_7329": 1070, "pickup:class_52.method_331": 23, "screen:class_1714": 103, "screen:class_1723": 697, "use:item": 4}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 86, "class_1540.method_5773": 32, "class_1560.method_6099": 1, "class_2248.method_36993": 10347, "class_3222.method_7329": 282, "class_52.method_331": 176}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 20.13, "tickMsWorst": 5377.69, "tickMsWorstAt": 1, "ticksOver50ms": 2250, "ticksOver200ms": 21, "heapMbMax": 1160, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1900, "iron_ingot": 10980, "iron_pickaxe": 34760},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3178,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 460, "stone_tools": 2440, "iron_ingot": 15620, "iron_pickaxe": 58640},
+      "deaths": [
+        {"tick": 17215, "cause": "Sol was slain by Cave Spider", "x": 142, "y": 36, "z": -9, "light": 0, "timeOfDay": 17377, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Fight cave_spider", "stance": "PRESS_ON", "habits": "[]", "task": "Fight cave_spider"},
+        {"tick": 121476, "cause": "Sol was shot by Skeleton", "x": -33, "y": -12, "z": -31, "light": 0, "timeOfDay": 1638, "dimension": "minecraft:overworld", "hunger": 4, "underSky": false, "stage": "Wood: fight back - Fight skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 26920, "x": 3, "y": 143, "z": -8, "attempt": 1}, {"tick": 30700, "x": 3, "y": 143, "z": -8, "attempt": 2}, {"tick": 34340, "x": 3, "y": 145, "z": -11, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4619,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 2.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 960, "stone_tools": 2640, "iron_ingot": 16160, "iron_pickaxe": 32680},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3110,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

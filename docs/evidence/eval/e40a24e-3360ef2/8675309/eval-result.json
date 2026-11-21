@@ -1,0 +1,62 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 8794, "paid": 8794, "lapsed": 351, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 79.8, "snapshotMicrosMax": 4654.6, "tagMicrosMean": 77.6, "tagMicrosMax": 4196.0, "bySource": {"container.take:furnace": 94, "pickup:class_1308.method_6099": 3, "pickup:class_1428.method_6007": 3, "pickup:class_1540.method_5773": 1, "pickup:class_2248.method_36993": 7378, "pickup:class_3222.method_7329": 639, "pickup:class_52.method_331": 43, "screen:class_1714": 92, "screen:class_1723": 808, "use:item": 84}, "dropsByOrigin": {"class_1308.method_6099": 5, "class_1428.method_6007": 419, "class_1540.method_5773": 1, "class_2248.method_36993": 7382, "class_3222.method_7329": 159, "class_52.method_331": 95}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 12.46, "tickMsWorst": 1716.53, "tickMsWorstAt": 126406, "ticksOver50ms": 220, "ticksOver200ms": 6, "heapMbMax": 1412, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 3100, "stone_tools": 4660, "iron_ingot": 36320, "iron_pickaxe": 47480},
+      "deaths": [
+        {"tick": 14953, "cause": "Kindred was blown up by Creeper", "x": 26, "y": 33, "z": 65, "light": 0, "timeOfDay": 15115, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 87780, "cause": "Kindred was shot by Skeleton", "x": 59, "y": 0, "z": 21, "light": 1, "timeOfDay": 15942, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Cast the portal frame from lava and water - Cast: walk to the lava (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52360, "x": 30, "y": 22, "z": 20, "attempt": 1}, {"tick": 57300, "x": 32, "y": 23, "z": 21, "attempt": 2}, {"tick": 64620, "x": 15, "y": 15, "z": -12, "attempt": 1}, {"tick": 84400, "x": 31, "y": 23, "z": 20, "attempt": 2}, {"tick": 113540, "x": 21, "y": 49, "z": 0, "attempt": 1}, {"tick": 124360, "x": 29, "y": 47, "z": -2, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 12946,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 6,
+      "bridgeSeconds": 2.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 480, "stone_tools": 3720, "iron_ingot": 16240, "iron_pickaxe": 57840, "obsidian": 75460, "portal_lit": 126402},
+      "deaths": [
+        {"tick": 79456, "cause": "Sol tried to swim in lava", "x": 3, "y": -18, "z": 43, "light": 15, "timeOfDay": 7618, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 70440, "x": 7, "y": -17, "z": 41, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5187,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 3400, "iron_ingot": 12060, "iron_pickaxe": 26340, "obsidian": 131798, "portal_lit": 132607},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 38020, "x": -7, "y": 39, "z": 165, "attempt": 1}, {"tick": 63940, "x": -18, "y": 39, "z": 176, "attempt": 2}, {"tick": 73720, "x": -18, "y": 39, "z": 176, "attempt": 3}, {"tick": 86480, "x": -20, "y": 39, "z": 176, "attempt": 4}, {"tick": 100940, "x": -19, "y": 39, "z": 175, "attempt": 5}, {"tick": 104540, "x": -19, "y": 39, "z": 175, "attempt": 6}, {"tick": 111300, "x": -19, "y": 39, "z": 175, "attempt": 7}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2156,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
