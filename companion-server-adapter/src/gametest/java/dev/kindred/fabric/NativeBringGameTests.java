@@ -146,6 +146,17 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * F-22c98b. As the last, the bring given up (STAGED: the librarian's boat set three blocks off the line each time the cart
+     * rolls, until the bring gives up, as "kept wandering off the line", "no rail line" or "wouldn't take it up"), then all it put down taken back: the hall's door back in its
+     * doorway, never "I couldn't put my hall's door back". In CI on #367, #372 and #355, and twice in local bring runs,
+     * a give-up whose cart's item took several walks to pick up ended with the door left out.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringGivenUpDoorBack", tickLimit = 14000)
+    public void givenUpWithTheCartDownHalStillPutsItsHallsDoorBack(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 6);
+    }
+
+    /**
      * As the last, the front rail's drop set down at the front's north edge as it is born, where the boat over the front
      * from the cart has it inside its box (F-22c64). A block's drop is set down within a quarter of a block of its middle,
      * and the boat overhangs the front by about a fifth, so about one time in ten. Broken from the corridor with the boat
@@ -337,12 +348,20 @@ public final class NativeBringGameTests implements FabricGameTest {
 
     /**
      * {@code onBed}: 0 not staged; 1 Hal on the edge of the bed's foot, as CI's #318 left it; 2 Hal wholly on the bed's foot;
-     * 3 Hal a third of a block off its stand before the front, the cart's and boat's items on the cell's floor (F-22c84).
+     * 3 Hal a third of a block off its stand before the front, the cart's and boat's items on the cell's floor (F-22c84);
+     * 6 the librarian's boat set aside off the line each time the cart rolls, until the bring is given up (F-22c98b).
      */
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside, boolean bornInBoat, boolean pressed,
                               int onBed) {
         boolean[] asideOnce = {false};
+        // F-22c98b: whether the librarian's boat was set off the line for the push under way; how many times it was.
+        boolean[] offLineSet = {false};
+        int[] offLineSets = {0};
+        // F-22c98b: the hall's doorway and what was said the tick the given-up bring said its end; how much had been said
+        // as the staging first set the boat off the line.
+        String[] endedWith = {null};
+        int[] saidBefore = {-1};
         // Each cell's front: a rail on it the tick before; the tick its rail came up; whether Hal stood in it then.
         java.util.Map<BlockPos, Boolean> frontRail = new java.util.HashMap<>();
         java.util.Map<BlockPos, Long> railUp = new java.util.HashMap<>();
@@ -562,6 +581,42 @@ public final class NativeBringGameTests implements FabricGameTest {
                         KindredMod.LOGGER.info("Bring: the librarian sits in the boat behind its lectern, at {}",
                                 librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
                     }
+                    // Staged (F-22c98b), each push: the first tick the cart pushed at the librarian held in its boat rolls, the
+                    // boat, librarian and all, set three blocks off the line, crosswise, as one that strolls off might be: the
+                    // cart runs on past, the line is laid again from where it is, and after four of those the bring is given up
+                    // ("kept wandering off the line"). Then, as it takes back what it put down, the cart broken and its item walked
+                    // to; the hall's door is still to be put back. Never anything given.
+                    if (onBed == 6 && String.valueOf(f.runtime.bringNote(f.id)).contains("[PUSH]")
+                            && librarian[0].getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                        var world = context.getWorld();
+                        var carts = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, boat.getBoundingBox().expand(8),
+                                c -> c.isAlive() && !c.hasPassengers());
+                        if (!carts.isEmpty()) {
+                            var cart = carts.getFirst();
+                            double v = cart.getVelocity().horizontalLength();
+                            if (v <= 0.01) offLineSet[0] = false;
+                            else if (!offLineSet[0]) {
+                                offLineSet[0] = true;
+                                offLineSets[0]++;
+                                if (saidBefore[0] < 0) saidBefore[0] = f.runtime.said(f.id).size();
+                                boolean alongX = Math.abs(cart.getVelocity().x) >= Math.abs(cart.getVelocity().z);
+                                double x = alongX ? boat.getX() : boat.getX() + 3, z = alongX ? boat.getZ() + 3 : boat.getZ();
+                                boat.refreshPositionAndAngles(x, boat.getY(), z, boat.getYaw(), 0);
+                                boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                KindredMod.LOGGER.info("Bring: the librarian's boat set off the line ({}), at {}", offLineSets[0],
+                                        boat.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                            }
+                        }
+                    }
+                    // The tick the given-up bring says how it ended (its first line said since the staging), what the doorway is
+                    // then: a bring begun again after may open it again.
+                    if (onBed == 6 && saidBefore[0] >= 0 && endedWith[0] == null
+                            && f.runtime.said(f.id).subList(saidBefore[0], f.runtime.said(f.id).size()).stream().anyMatch(line -> !line.startsWith("the trading hall's"))) {
+                        BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
+                        var at = context.getWorld().getBlockState(door);
+                        endedWith[0] = (at.getBlock() instanceof net.minecraft.block.DoorBlock ? "door" : String.valueOf(at)) + " / " + f.runtime.said(f.id);
+                        KindredMod.LOGGER.info("Bring: given up and ended; the hall's doorway {}", endedWith[0]);
+                    }
                     // Staged, once, as Hal comes to take the hall's door off: its walk there ended beside the hall, at its east
                     // side a block back from its front (7, 0, 7), in reach of the door but with the hall's own wall between,
                     // and it looks again from there. Its walk under way is stopped and it is set going again where it stands.
@@ -756,10 +811,25 @@ public final class NativeBringGameTests implements FabricGameTest {
                     context.assertTrue(offLeft[0] == null || offLeft[0].isEmpty(),
                             "The cart's and boat's items taken up from the cell within 600 ticks of Hal let go off its stand: still lying " + offLeft[0]);
                     context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
+                    if (onBed == 6) {
+                        // Given up, the bring ends with what it put down taken back: the hall's door back in its doorway, as
+                        // it was the tick the bring ended (a new bring may begin after and open it again).
+                        context.assertTrue(offLineSets[0] > 0, "Staged: the librarian's boat set off the line as the cart rolled");
+                        context.assertTrue(endedWith[0] != null, "The bring given up and ended: " + f.runtime.bringNote(f.id));
+                        context.assertTrue(endedWith[0].startsWith("door / ") && !endedWith[0].contains("couldn't put my hall's door back"),
+                                "The hall's door put back as it gave up: " + endedWith[0]);
+                        return;
+                    }
                     context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
                 })
                 .createAndAdd(() -> {
+                  if (onBed == 6) {
+                      // Given up as staged: nothing brought home to check.
+                      librarian[0].discard();
+                      f.runtime.stop();
+                      return;
+                  }
                   try {
                     context.assertTrue(offLine[0] == null, "Kept on the rails, never rolled off the line's start: " + offLine[0]);
                     context.assertTrue(inFrontLoose[0] == null, "The librarian kept out of its front until the job block is in: " + inFrontLoose[0]);

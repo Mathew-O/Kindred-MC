@@ -11601,6 +11601,8 @@ final class PlayerRuntime {
         int pushes, failed, doorTries, pickups;
         /** The last six ticks of a push at the villager (diagnostic only, F-22c98a): the cart, the held boat and the body. */
         final java.util.ArrayDeque<String> pushTrail = new java.util.ArrayDeque<>();
+        /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
+        int cartPickWalks;
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
@@ -12569,7 +12571,9 @@ final class PlayerRuntime {
                 if (cart == null) {
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                             item -> item.getStack().isOf(Items.MINECART));
-                    if (!lying.isEmpty() && b.doorTries++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
+                    // Its own count of walks to the cart's item (F-22c98b): counted on the door's tries, a few walks here left
+                    // DOOR_BACK past its three before it tried once, and the hall's door was left out.
+                    if (!lying.isEmpty() && b.cartPickWalks++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }
@@ -18586,6 +18590,9 @@ final class PlayerRuntime {
                 if (entry.data == null) continue;
                 var actors = new java.util.HashSet<UUID>();
                 actors.add(entry.data.id());
+                // Its body's id as saved, connected or not (F-33g): after a restart the bodies wait offline until connected,
+                // and a day's page written then must still count what the body did before, or it is skipped for good.
+                if (entry.data.entityId() != null) actors.add(entry.data.entityId());
                 if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
                 out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors, factionOf.apply(entry.data.id())));
             }
