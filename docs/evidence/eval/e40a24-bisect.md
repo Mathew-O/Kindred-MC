@@ -236,3 +236,18 @@ The signature is hole or pit plus hemmed in, by score.py's own kinds.
 - **Not separated:** how the capture reaches players that have not died. In play, #375 adds only the three death fields
   (read by nobody but `captureWaking`) and `captureWaking`, run at another player's respawn on the shared server thread:
   6 to 24 ms, a box read, and `getOtherEntities` and `saveNbt` on the entities in the box.
+
+### The framing (the lead's, 2026-11-21)
+- **Replays run only under an evaluation** (`KindredMod`: `KINDRED_REPLAYS` is on by default only when an evaluation
+  runs), so this is an effect of the measuring instrument, not of production play.
+- The death, stuck-spell and waking captures share `Scene.copy` (`getOtherEntities` and `saveNbt` on the box's mobs),
+  and replays have been on in every ladder run. So the question widens: does replay capture as a whole inflate the
+  ladder's stuck numbers?
+- **Step 8** asks it on main 0d3432b, the same 10 seeds, two arms run alternately: (A) replays on, the default; (B)
+  `KINDRED_REPLAYS=off`. The read, stated before it ran:
+  - (B)'s hemmed in ≤7 and (A)'s ≥15: replay capture perturbs play; the ladder needs replays-off measuring runs, with
+    the corpus harvested in runs of its own (the design goes to the owner);
+  - both low or both high: only the waking capture matters; keep it out of measured runs, and F-27a6 stays open for its
+    mechanism;
+  - anything else: the lead decides.
+- The mechanism is filed as an Open row, F-27a6.
