@@ -211,6 +211,7 @@
       "dev.kindred.fabric.ReplayWorldStateGameTests",
       "dev.kindred.fabric.NativeStuckSpellReplayGameTests",
       "dev.kindred.fabric.NativeBuildNeedsGameTests",
+      "dev.kindred.fabric.NativeBuildObstructedGameTests",
       "dev.kindred.fabric.NativeHouseGameTests",
       "dev.kindred.fabric.NativeBaseGameTests",
       "dev.kindred.fabric.NativeCoopPaceGameTests",
