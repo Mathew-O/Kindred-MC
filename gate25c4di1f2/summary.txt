@@ -54,3 +54,4 @@ confirm-base-1.8 (c2207fc3, only flagged): 0 min, peak 1178 MB, All 2 required t
 confirm-base-1.9 (c2207fc3, only flagged): 0 min, peak 1264 MB, All 2 required tests passed, fence-top 0, disk 4.9G
 confirm-base-1.10 (c2207fc3, only flagged): 0 min, peak 1005 MB, 1 required tests failed, fence-top 0, disk 4.9G
 confirm-base-2.1 (c2207fc3, only flagged): 0 min, peak 1340 MB, All 2 required tests passed, fence-top 0, disk 4.9G
+confirm-base-2.2 (c2207fc3, only flagged): 0 min, peak 1226 MB, All 2 required tests passed, fence-top 0, disk 4.9G
