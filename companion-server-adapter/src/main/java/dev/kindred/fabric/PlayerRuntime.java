@@ -1488,6 +1488,7 @@ final class PlayerRuntime {
         attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
         attentionScheduler.invalidate(entry.data.id(), WorkKind.RESOURCE_DISCOVERY);
         attentionScheduler.invalidate(entry.data.id(), WorkKind.EQUIPMENT_READINESS);
+        expiredDropLost(entry, "lost its body");
         closeNativeActivity(entry);
     }
 
@@ -2328,6 +2329,7 @@ final class PlayerRuntime {
             try {
                 entry.activity = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
                         budgetWriter(), this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
+                long booked = System.nanoTime();
                 entry.activity.request(deadline).whenComplete((paid, error) -> {
                     entry.nativeWorkPending = false; // Session completion runs on the server thread.
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -2341,6 +2343,7 @@ final class PlayerRuntime {
                         entry.activity.stop(); admission.release(id);
                         if (running && generation == entry.generation) entry.blocker = entry.activity.blocker().isBlank()
                                 ? "Native request cancelled before paid dispatch." : entry.activity.blocker();
+                        if (running && EXPIRED_RESERVATION.equals(entry.activity.blocker())) expiredDrop(entry, skill, booked);
                         if (running) dispatchDropped(entry, skill, "paid=" + paid + "/" + entry.activity.paid() + " generation="
                                 + (entry.generation == generation) + " stop=" + entry.snapshot().stopLatched() + " cancelling="
                                 + entry.arbiter.cancellationPending() + " hazard=" + entry.hazardInterrupted + " connected="
@@ -2359,6 +2362,7 @@ final class PlayerRuntime {
                         if (own) entry.ownStarts++;
                         entry.lastRunnerState = SkillRunner.State.RUNNING;
                         entry.blocker = "Running " + skill + " under one acknowledged activity slice.";
+                        offeredAgain(entry, skill);
                         persist(entry);
                     } catch (RuntimeException denied) {
                         entry.activity.stop(); admission.release(id);
@@ -2509,6 +2513,43 @@ final class PlayerRuntime {
         entry.lastDropReportTick = server.getTicks();
         KindredMod.LOGGER.info("{} {} dropped before it ran: {}", entry.data.displayName(), skill, gates);
         if (watch != null) entry.decided(server.getTicks(), skill + " dropped before it ran: " + gates);
+    }
+
+    /** The blocker a paid session gives a slice that ended before its booking was acknowledged. */
+    private static final String EXPIRED_RESERVATION = "Reservation expired before acknowledgement";
+
+    /**
+     * A request dropped because its slice ended before the booking was acknowledged (F-22c101, a diagnostic): logged
+     * each time, with how long the acknowledgement took, and remembered until a skill next starts or the player stops.
+     */
+    private void expiredDrop(Entry entry, String skill, long booked) {
+        long now = System.nanoTime();
+        KindredMod.LOGGER.info("{} {} dropped, its reservation expired before acknowledgement (F-22c101): acknowledged {} ms after it"
+                        + " was booked, at tick {}, the last tick {} ms; {}", entry.data.displayName(), skill, (now - booked) / 1_000_000,
+                server.getTicks(), lastTickMillis(server), entry.expiredDrop == null ? "watching for it offered again"
+                        : "an earlier one (" + entry.expiredDrop + ") still not offered again");
+        if (entry.expiredDrop != null) return;
+        entry.expiredDrop = skill;
+        entry.expiredDropTick = server.getTicks();
+        entry.expiredDropNanos = now;
+    }
+
+    /** A skill started after an expired drop: said once, with how long after the drop and whether it was the same skill. */
+    private void offeredAgain(Entry entry, String skill) {
+        if (entry.expiredDrop == null) return;
+        KindredMod.LOGGER.info("{} {} started {} ticks ({} ms) after {} was dropped on an expired reservation (F-22c101): {}",
+                entry.data.displayName(), skill, server.getTicks() - entry.expiredDropTick, (System.nanoTime() - entry.expiredDropNanos) / 1_000_000,
+                entry.expiredDrop, skill.equals(entry.expiredDrop) ? "offered again" : "a different skill");
+        entry.expiredDrop = null;
+    }
+
+    /** The player stopped or lost its body with an expired drop never followed by a start: said once (F-22c101). */
+    private void expiredDropLost(Entry entry, String how) {
+        if (entry.expiredDrop == null) return;
+        KindredMod.LOGGER.info("{} {}, dropped on an expired reservation {} ticks ({} ms) before, never offered again before it {} (F-22c101)",
+                entry.data.displayName(), entry.expiredDrop, server.getTicks() - entry.expiredDropTick,
+                (System.nanoTime() - entry.expiredDropNanos) / 1_000_000, how);
+        entry.expiredDrop = null;
     }
 
     /** Game time with a goal and no skill started, after which a player says once what holds it (F-25c4m). */
@@ -3083,6 +3124,14 @@ final class PlayerRuntime {
         }
         return new SignalFrame(tick, entry.generation, operational, danger, threat, threatTick,
                 entry.lastAttributedAttackSequence, recovery);
+    }
+
+    /** How long the server's last tick took, in milliseconds (diagnostic lines only). */
+    private static String lastTickMillis(MinecraftServer server) {
+        long[] times = server.getTickTimes();
+        long tick = server.getTicks();
+        if (tick < 1 || times.length == 0) return "-";
+        return String.format(java.util.Locale.ROOT, "%.1f", times[(int) ((tick - 1) % times.length)] / 1_000_000.0);
     }
 
     void onServerTick(MinecraftServer server) {
@@ -7620,6 +7669,7 @@ final class PlayerRuntime {
         boolean usable = running && ready && !entry.metadataFault && !entry.reconciliationBlocked
                 && !entry.nativePending && entry.nativeState.phase() == StoredNativePlayer.Phase.ESTABLISHED;
         boolean busy = entry.runner != null && runnerBusy(entry);
+        if (entry.bring != null && entry.bring.phase == Bring.Phase.PUSH) pushTick(entry, server.getTicks());
         // A skill that runs on past its five-second slice (a long walk, obsidian, stone by hand) has the slice renewed
         // shortly before it lapses, while it is still admitted: the same cap, window and durable acknowledgement as
         // any slice. Without a renewal the permit lapses and the skill is halted, as before (F-11c).
@@ -7937,6 +7987,17 @@ final class PlayerRuntime {
             }
             body.stopInputs();
             if (busy && !holding) {
+                // Why the skill under way is stopped (diagnostic only): on CI a break was cancelled "Stopped or unavailable"
+                // mid-task with nothing else logged (tree in water, #368), and the known log was never tried again.
+                KindredMod.LOGGER.info("{} halted {} ({}): running={} ready={} metadataFault={} reconciliationBlocked={} nativePending={} phase={}"
+                                + " stopLatched={} admitted={} activity={} paid={} remaining={} renewing={} bookedUntil={} lastTick={}ms",
+                        entry.data.displayName(), entry.skillId, decision.reason(), running, ready, entry.metadataFault, entry.reconciliationBlocked,
+                        entry.nativePending, entry.nativeState.phase(), entry.snapshot().stopLatched(), admitted,
+                        entry.activity == null ? "none" : entry.activity.phase(), entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.ACTIVE
+                                && entry.activity.remaining().compareTo(java.time.Duration.ZERO) > 0,
+                        entry.activity == null ? "-" : entry.activity.remaining().toMillis() + "ms", entry.activity != null && entry.activity.renewing(),
+                        entry.activity == null ? "-" : entry.activity.bookedUntil().map(until -> java.time.Duration.between(java.time.Instant.now(), until).toMillis() + "ms").orElse("-"),
+                        lastTickMillis(server));
                 entry.runner.lease().ifPresent(entry.arbiter::cancel);
                 entry.runner.abort(decision.reason());
                 observeRunner(entry);
@@ -8770,8 +8831,16 @@ final class PlayerRuntime {
                 entry.bring.boatRefusals++;
             } else if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
-                KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
-                if (entry.bring.phase == Bring.Phase.CLOSE && finishedTaskId.equals(bringTaskId(entry, "out"))) closeOutBlocked(entry);
+                // The skill's own reason, not entry.blocker: that is still the status the skill was started with ("Running
+                // native_goto under one acknowledged activity slice."), which read as the reason in CI's logs.
+                KindredMod.LOGGER.info("{} bringing: a step blocked ({} {}), {} in a row", entry.data.displayName(), entry.skillId,
+                        entry.runner.reason().orElse(String.valueOf(entry.blocker)), entry.bring.failed);
+                // Where the body stood as a walk under the shut trapdoor was refused (F-22c96): CLOSE's walk out, and KEEP's
+                // walks to and from the front.
+                String walk = entry.bring.phase == Bring.Phase.CLOSE && finishedTaskId.equals(bringTaskId(entry, "out")) ? "out"
+                        : entry.bring.phase == Bring.Phase.KEEP ? java.util.stream.Stream.of("by the front", "into the front", "out of the front")
+                                .filter(kind -> finishedTaskId.equals(bringTaskId(entry, kind))).findFirst().orElse(null) : null;
+                if (walk != null) walkUnderTrapdoorBlocked(entry, walk);
             } else entry.bring.failed = 0;
             entry.routineRefreshPending = true;
         }
@@ -11571,6 +11640,8 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** The last six ticks of a push at the villager (diagnostic only, F-22c98a): the cart, the held boat and the body. */
+        final java.util.ArrayDeque<String> pushTrail = new java.util.ArrayDeque<>();
         /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
         int cartPickWalks;
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
@@ -12123,6 +12194,7 @@ final class PlayerRuntime {
                 if (!cart.getBlockPos().equals(b.cart) && cartAt >= 0 && cartAt < on) {
                     KindredMod.LOGGER.info("{} bringing: the cart at {} stopped short against the {} at {} ({} pushes); put down again", entry.data.displayName(),
                             cart.getPos(), b.noun, villager.getPos(), b.pushes);
+                    KindredMod.LOGGER.info("{} bringing: the push's last ticks (F-22c98a): {}", entry.data.displayName(), String.join(" | ", b.pushTrail));
                     b.phase = Bring.Phase.RECART;
                     return bringCandidates(entry, body);
                 }
@@ -13053,6 +13125,24 @@ final class PlayerRuntime {
         return trapdoor ? said + " A trapdoor of mine shuts the top of its front." : said;
     }
 
+    /** One tick of a push at the villager, kept for the stop-short line (diagnostic only, F-22c98a): six ticks at most. */
+    private static void pushTick(Entry entry, long tick) {
+        var body = entry.nativeBody;
+        var b = entry.bring;
+        if (body == null || !body.connected()) return;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var cart = cartOf(world, b);
+        var boat = heldBoat(world, b);
+        b.pushTrail.addLast(tick + ": cart " + (cart == null ? "none" : at(cart)) + "; boat " + (boat == null ? "none" : at(boat)) + "; body " + at(player));
+        while (b.pushTrail.size() > 6) b.pushTrail.removeFirst();
+    }
+
+    private static String at(net.minecraft.entity.Entity e) {
+        var v = e.getVelocity();
+        return String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f moving %.3f, %.3f, %.3f", e.getX(), e.getY(), e.getZ(), v.x, v.y, v.z);
+    }
+
     private static net.minecraft.entity.vehicle.AbstractMinecartEntity cartOf(net.minecraft.server.world.ServerWorld world, Bring b) {
         return b.cartId != null && world.getEntity(b.cartId) instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity c && c.isAlive() ? c : null;
     }
@@ -13177,7 +13267,7 @@ final class PlayerRuntime {
      * Where the body stood as CLOSE's walk out of the front was refused (F-22c96, diagnostic only): its position, its box
      * against the front's, the blocks at its feet and head, and what is over the front. One line for each refused walk.
      */
-    private static void closeOutBlocked(Entry entry) {
+    private static void walkUnderTrapdoorBlocked(Entry entry, String walk) {
         var body = entry.nativeBody;
         var b = entry.bring;
         if (body == null || !body.connected() || b.slot == null) return;
@@ -13186,9 +13276,9 @@ final class PlayerRuntime {
         var box = player.getBoundingBox();
         var front = new net.minecraft.util.math.Box(b.slot);
         BlockPos feet = player.getBlockPos();
-        KindredMod.LOGGER.info("{} bringing: the walk out of the front refused, the body at {} (box {} to {}, over the front {}), "
+        KindredMod.LOGGER.info("{} bringing: {}'s walk {} refused, the body at {} (box {} to {}, over the front {}), "
                         + "feet {} {}, head {} {}, over the front {}, on the ground {}, the stand {}",
-                entry.data.displayName(), player.getPos(),
+                entry.data.displayName(), b.phase, walk, player.getPos(),
                 String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.minX, box.minY, box.minZ),
                 String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.maxX, box.maxY, box.maxZ), box.intersects(front),
                 feet.toShortString(), world.getBlockState(feet), feet.up().toShortString(), world.getBlockState(feet.up()),
@@ -16064,6 +16154,7 @@ final class PlayerRuntime {
     }
 
     private void halt(Entry entry, Actor actor, String reason) {
+        expiredDropLost(entry, "was stopped (" + reason + ")");
         ++entry.generation;
         entry.pendingConnection = null;
         entry.nativePending = false;
@@ -19603,6 +19694,9 @@ final class PlayerRuntime {
         private long lastBusyTick = -1;
         private boolean stallReported;
         private long lastDropReportTick = Long.MIN_VALUE / 2;
+        /** The skill last dropped on an expired reservation and not yet followed by a start, and when (F-22c101). Not saved. */
+        private String expiredDrop;
+        private long expiredDropTick, expiredDropNanos;
         /** No accounting period opens before this instant, and why (F-11e); null when one may. */
         private java.time.Instant noPeriodUntil;
         private String noPeriodReason;
