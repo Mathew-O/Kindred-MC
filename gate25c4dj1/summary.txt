@@ -69,3 +69,4 @@ confirm-main-16.4 (039c8b92, only flagged): 0 min, peak 1299 MB, All 2 required 
 confirm-branch-17.4 (69241ca3, only flagged): 0 min, peak 1339 MB, All 2 required tests passed, fence-top 0, disk 5.0G
 confirm-main-17.4 (039c8b92, only flagged): 0 min, peak 1501 MB, 1 required tests failed, fence-top 0, disk 5.0G
 confirm-branch-18.4 (69241ca3, only flagged): 0 min, peak 1253 MB, 1 required tests failed, fence-top 0, disk 5.0G
+confirm-main-18.4 (039c8b92, only flagged): 0 min, peak 1311 MB, All 2 required tests passed, fence-top 0, disk 5.0G
