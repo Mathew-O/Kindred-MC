@@ -250,6 +250,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [M-06i2c5](evidence/M-06i2c5.md) (2026-11-21, factions): a leg it sees no ground along breaks the leaves its sight lines met, within reach, by the ordinary break; the staged fixture 0 of 3 before, 3 of 3 after; the gate's two confirmed scenes cleared by the rule; against M-06i2c4 on seeds 20261030 and 109, 20261030's claims 1 → 2 and 0 → 2, 66 leaves broken, none refused; 109's claims 14 → 6, sales 165 → 145 named; one run per arm; in review.
 - [M-06i2d](evidence/M-06i2d.md) (2026-11-21, test-only): the cabin test's check reads its land from its faction's recorded claims, not the nine staged chunks; CI's two failures its own tenth chunk east; the twin 0 of 3 on the old check, the class 4 of 4 ×3 on the new, a stray east still caught 3 of 3; no behaviour changed; in review.
 - [M-06i3](evidence/M-06i3.md) (2026-11-16, test-only): the bedrock-box no-way fixture stages the daytime it assumes; night staged 0 of 3; the narrowed six-class order 16 of 16 ×3 with it; Factions 49 of 49 ×3; in review.
+- [M-06k4a](evidence/M-06k4a.md) (2026-11-21, harness and docs): a stop that stands at "Saving worlds" 120 s is dumped (threads, the world's file times) and at 600 s killed by `run.py`; `StallTest` 4 of 4 with a stub server, the eval tests 45 of 45; a hung stop counted in `run.json` and the summary; the runbook saves before `stop`; no native or runtime test rerun; in review.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
