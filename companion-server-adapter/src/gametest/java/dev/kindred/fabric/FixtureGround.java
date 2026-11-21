@@ -33,7 +33,7 @@ final class FixtureGround {
      */
     static final String WIDE = "kindred_gametest:wide", FIELD = "kindred_gametest:field";
 
-    private record Kept(BlockPos min, BlockPos max, BlockState[] states) { }
+    private record Kept(net.minecraft.server.world.ServerWorld world, BlockPos min, BlockPos max, BlockState[] states) { }
 
     /** Every box each test keeps, in the order kept: a test that keeps two (a pad and a floor) gets both back. */
     private static final Map<TestContext, java.util.List<Kept>> KEPT = Collections.synchronizedMap(new IdentityHashMap<>());
@@ -90,7 +90,15 @@ final class FixtureGround {
 
     /** What lies from {@code min} to {@code max} now, to be put back by {@link #restore}. */
     static void keep(TestContext context, BlockPos min, BlockPos max) {
-        var world = context.getWorld();
+        keep(context, context.getWorld(), min, max);
+    }
+
+    /**
+     * What lies from {@code min} to {@code max} in {@code world} now, to be put back by {@link #restore}: the ground a
+     * test lays in another dimension than its own, its nether's, as much its own to put back as its overworld field
+     * (F-22c75b).
+     */
+    static void keep(TestContext context, net.minecraft.server.world.ServerWorld world, BlockPos min, BlockPos max) {
         int dx = max.getX() - min.getX() + 1, dy = max.getY() - min.getY() + 1, dz = max.getZ() - min.getZ() + 1;
         var states = new BlockState[dx * dy * dz];
         var at = new BlockPos.Mutable();
@@ -100,9 +108,10 @@ final class FixtureGround {
         }
         // A second box kept by the same test once replaced the first, which was then never put back (F-22c75b).
         var boxes = KEPT.computeIfAbsent(context, c -> Collections.synchronizedList(new java.util.ArrayList<>()));
-        boxes.add(new Kept(min.toImmutable(), max.toImmutable(), states));
+        boxes.add(new Kept(world, min.toImmutable(), max.toImmutable(), states));
         held(world, min, max, true);
-        FixtureBounds.kept(stateOf(context), min, max);
+        if (world == context.getWorld()) FixtureBounds.kept(stateOf(context), min, max);
+        else FixtureBounds.kept(stateOf(context), world.getRegistryKey(), min, max);
         if (boxes.size() == 1) whenDone(context, () -> restore(context));
     }
 
@@ -136,16 +145,20 @@ final class FixtureGround {
     static void restore(TestContext context) {
         var boxes = KEPT.remove(context);
         if (boxes == null) return;
-        var world = context.getWorld();
         var self = stateOf(context);
-        var others = FixtureBounds.othersPlots(self);
+        var plots = FixtureBounds.othersPlots(self);
         // The ground a live neighbour keeps is as much its own as its plot (F-22c75b): left as it is, and counted apart.
-        var othersKept = FixtureBounds.othersKept(self);
+        var keptHere = FixtureBounds.othersKept(self);
         int left = 0, spared = 0, leftKept = 0, sparedKept = 0;
         // The last kept first: a box kept after the fixture laid ground over an earlier one holds that ground, and the
         // earlier box what was there before it.
         for (int k = boxes.size() - 1; k >= 0; k--) {
             var kept = boxes.get(k);
+            var world = kept.world();
+            // In another world than the test's own: no plot of any test's there, only the ground live tests keep there.
+            boolean home = world == context.getWorld();
+            var others = home ? plots : java.util.List.<Box>of();
+            var othersKept = home ? keptHere : FixtureBounds.othersKept(self, world.getRegistryKey());
             var min = kept.min();
             var max = kept.max();
             int dx = max.getX() - min.getX() + 1, dy = max.getY() - min.getY() + 1, dz = max.getZ() - min.getZ() + 1;
