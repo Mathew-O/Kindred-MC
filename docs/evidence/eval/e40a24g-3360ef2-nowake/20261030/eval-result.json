@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 11630, "paid": 11630, "lapsed": 330, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 103.8, "snapshotMicrosMax": 9737.8, "tagMicrosMean": 95.7, "tagMicrosMax": 13274.8, "bySource": {"container.take:furnace": 107, "pickup:class_1308.method_6099": 1, "pickup:class_1428.method_6007": 1, "pickup:class_2248.method_36993": 10152, "pickup:class_3222.method_7329": 834, "pickup:class_52.method_331": 35, "screen:class_1714": 105, "screen:class_1723": 642, "use:item": 83}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 75, "class_1540.method_5773": 13, "class_2248.method_36993": 10095, "class_3222.method_7329": 221, "class_52.method_331": 157}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 16.65, "tickMsWorst": 5071.20, "tickMsWorstAt": 1, "ticksOver50ms": 1358, "ticksOver200ms": 15, "heapMbMax": 1113, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1920, "iron_ingot": 11840, "iron_pickaxe": 18000, "obsidian": 120253, "portal_lit": 121591},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 31700, "x": -8, "y": 67, "z": -135, "attempt": 1}, {"tick": 37540, "x": -13, "y": 86, "z": -126, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3719,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 600, "stone_tools": 1960, "iron_ingot": 19460, "iron_pickaxe": 96340},
+      "deaths": [
+        {"tick": 72384, "cause": "Sol hit the ground too hard", "x": 70, "y": 70, "z": 120, "light": 15, "timeOfDay": 546, "dimension": "minecraft:overworld", "hunger": 13, "underSky": true, "stage": "Iron: hurt and out of food - Explore east for animals", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 15880, "x": 10, "y": 50, "z": -98, "attempt": 1}, {"tick": 103820, "x": 77, "y": 111, "z": 12, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5794,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1240, "stone_tools": 2620, "iron_ingot": 8120, "iron_pickaxe": 16320, "obsidian": 135566, "portal_lit": 141738},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 45940, "x": -16, "y": -54, "z": 55, "attempt": 1}, {"tick": 65780, "x": -11, "y": -54, "z": 46, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3041,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
