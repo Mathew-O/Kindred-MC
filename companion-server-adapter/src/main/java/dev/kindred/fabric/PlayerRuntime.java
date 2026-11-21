@@ -8917,6 +8917,19 @@ final class PlayerRuntime {
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
                 } else if (state == SkillRunner.State.COMPLETED) entry.factionPlay.walked(factionMove.target());
             }
+            // A leaf broken in its sight line along a faction leg (M-06i2c5): one of its breaks toward the target; refused,
+            // the leaf is not asked again; cancelled, nothing is counted. Either way it decides again from where it stands.
+            var leafPlay = entry.factionPlay;
+            var leafTask = "native_break".equals(entry.skillId) && entry.currentTaskId != null ? leafPlay.leafTasks.remove(entry.currentTaskId) : null;
+            if (leafTask != null) {
+                if (state == SkillRunner.State.COMPLETED) leafPlay.leafBroken(leafTask.getKey());
+                else if (state == SkillRunner.State.BLOCKED) leafPlay.leafRefused(leafTask.getKey(), leafTask.getValue());
+                KindredMod.LOGGER.info("{} faction leaves at {} {} ({} broken, {} refused in all)", entry.data.displayName(),
+                        leafTask.getValue().toShortString(), state == SkillRunner.State.COMPLETED ? "broken" : "not broken",
+                        leafPlay.leavesBroken, leafPlay.leavesRefusedCount);
+                entry.cachedRoutineCandidates = List.of();
+                attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
             // Its label, or the routine that issued it: every outcome says where it came from (M-01).
@@ -10522,6 +10535,14 @@ final class PlayerRuntime {
             // set aside place by place, a search for each (F-35j1).
             return null;
         }
+        // Leaves in its sight line hide the ground along a leg it sees none on (M-06i2c5): it breaks the nearest within its
+        // reach, by hand through the ordinary break, the server's edit policy and the faction land's rules asked at the
+        // break, its drops kept; then decides again from where it stands. On Factions seed 20261030 leaves hid the ground
+        // on 885 and 337 of the legs M-06i2c2 left as they were (bases on and off), most within 4 blocks of it (M-06i2c3).
+        if (!play.waiting(move.target(), tick)) {
+            var leaves = factionLeaves(entry, play, player, move, to);
+            if (leaves != null) return leaves;
+        }
         // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
         // own put, as a player climbs out of a hollow, through the run's own route builder under the server's edit policy
         // and the faction land's rules; then the walk is asked again. On Factions seed 109 in RUNNER 2's trace the players'
@@ -10586,6 +10607,20 @@ final class PlayerRuntime {
      * put or the walk up to where that is needed, never a way that only walks (that was refused). Null when the server
      * allows no edits or the route builder finds none, and the walk waits as before.
      */
+    /** The break of the leaves in its sight line along a leg it sees no ground on (M-06i2c5), or null when there are none. */
+    private List<NativeTaskCandidate> factionLeaves(Entry entry, FactionsPlayer play, ServerPlayerEntity player,
+                                                    dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
+        if (!worldEditsEnabled()) return null;
+        BlockPos leaf = play.leavesInTheWay(move, player, to);
+        if (leaf == null) return null;
+        UUID id = UUID.nameUUIDFromBytes(("faction-leaves:" + entry.data.id() + ":" + leaf.asLong()).getBytes(StandardCharsets.UTF_8));
+        play.leafTasks.put(id, Map.entry(move.target(), leaf.toImmutable()));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, "native_break", Map.of("x", String.valueOf(leaf.getX()), "y", String.valueOf(leaf.getY()),
+                "z", String.valueOf(leaf.getZ()))));
+    }
+
     private List<NativeTaskCandidate> factionWay(Entry entry, NativePlayerBody body, dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
         if (!worldEditsEnabled()) return null;
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
@@ -10953,6 +10988,13 @@ final class PlayerRuntime {
         var entry = entries.get(player);
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected() || entry.factionPlay.move == null) return null;
         return FactionsPlayer.destination(entry.factionPlay.move, entry.nativeBody.entity());
+    }
+
+    /** For fixtures (M-06i2c5): the leaves it broke and was refused in its sight line along faction legs. */
+    int[] factionLeavesForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.leavesBroken, entry.factionPlay.leavesRefusedCount};
     }
 
     /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */

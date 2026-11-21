@@ -31,6 +31,7 @@ final class WorldDig implements DigTerrain {
     @Override public Fluid fluid(int x, int y, int z) { return walk.fluid(x, y, z); }
     @Override public boolean harms(int x, int y, int z) { return walk.harms(x, y, z); }
     @Override public boolean passThrough(int x, int y, int z) { return walk.passThrough(x, y, z); }
+    @Override public dev.kindred.core.route.Side leaf(int x, int y, int z) { return walk.leaf(x, y, z); }
     @Override public boolean supports(int x, int y, int z) { return walk.supports(x, y, z); }
     @Override public boolean bears(int x, int y, int z) { return walk.bears(x, y, z); }
     @Override public boolean scorches(int x, int y, int z) { return walk.scorches(x, y, z); }
