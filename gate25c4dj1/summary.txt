@@ -34,3 +34,4 @@ confirm-main-2.6 (039c8b92, only flagged): 0 min, peak 1137 MB, All 2 required t
 confirm-main-3.1 (039c8b92, only flagged): 0 min, peak 993 MB, All 2 required tests passed, fence-top 0, disk 5.0G
 confirm-main-3.2 (039c8b92, only flagged): 0 min, peak 1264 MB, All 2 required tests passed, fence-top 0, disk 5.0G
 confirm-main-3.3 (039c8b92, only flagged): 0 min, peak 963 MB, 1 required tests failed, fence-top 0, disk 5.0G
+confirm-main-3.4 (039c8b92, only flagged): 0 min, peak 1395 MB, All 2 required tests passed, fence-top 0, disk 5.0G
