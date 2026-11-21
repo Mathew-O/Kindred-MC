@@ -20,6 +20,16 @@ import net.minecraft.util.math.Vec3d;
 public final class NativeCastPoolGameTests implements FabricGameTest {
     /** How long it has to fill its bucket with lava; and the most refused walks to the lava allowed meanwhile. */
     private static final int BUDGET = 2400, MOST_REFUSED = 3;
+    /**
+     * The most of a failure's text kept. Vanilla writes a failed test's name and text onto one page of the lectern's book at
+     * its plot, and a page over 1,024 characters fails that chunk's save (#418's CI, 1,435). The head is kept: the cause, the
+     * dig steps and the feet's last moves come first.
+     */
+    private static final int MESSAGE_MOST = 900;
+
+    private static String within(String message) {
+        return message.length() <= MESSAGE_MOST ? message : message.substring(0, MESSAGE_MOST - 3) + "...";
+    }
 
     /**
      * Rock round {@code o} with no sky: its alcove (its feet's cell and the one over them), walled but for the east, where it
@@ -133,11 +143,11 @@ public final class NativeCastPoolGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(6000);
                     var player = f.player();
-                    context.assertTrue(player != null && player.isAlive(), "The player died; " + seen);
+                    context.assertTrue(player != null && player.isAlive(), within("The player died; " + seen));
                     String progress = f.runtime.panelBots(dev.kindred.core.Actor.console()).getFirst().goalProgress();
                     if (seen.length() < 1200 && !seen.toString().endsWith(progress + "; ")) seen.append(progress).append("; ");
                     if (refused[0] > MOST_REFUSED) {
-                        throw new net.minecraft.test.GameTestException("Its walk to the lava refused " + refused[0] + " times in " + watched[0] + " ticks: " + seen);
+                        throw new net.minecraft.test.GameTestException(within("Its walk to the lava refused " + refused[0] + " times in " + watched[0] + " ticks: " + seen));
                     }
                     String at = player.getBlockPos().subtract(o).toShortString() + " @" + watched[0];
                     if (moves.isEmpty() || !moves.peekLast().startsWith(player.getBlockPos().subtract(o).toShortString() + " @")) {
@@ -145,8 +155,8 @@ public final class NativeCastPoolGameTests implements FabricGameTest {
                         if (moves.size() > 40) moves.removeFirst();
                     }
                     boolean lava = player.getInventory().count(Items.LAVA_BUCKET) > 0;
-                    context.assertTrue(++watched[0] <= BUDGET || lava, "No bucket of lava in " + BUDGET + " ticks (" + dug[0] + " dig steps toward it); its feet's last moves "
-                            + moves + ": " + seen);
+                    context.assertTrue(++watched[0] <= BUDGET || lava, within("No bucket of lava in " + BUDGET + " ticks (" + dug[0] + " dig steps toward it); its feet's last moves "
+                            + moves + ": " + seen));
                     context.assertTrue(lava, "Not yet");
                 })
                 .createAndAdd(() -> {
