@@ -523,22 +523,39 @@ class StallTest(unittest.TestCase):
             stall = Path(root) / 'out' / 'stub' / '1' / 'stall'
             files = sorted(p.name for p in stall.iterdir()) if stall.is_dir() else []
             world = (stall / 'world-files.txt').read_text(encoding='utf-8') if (stall / 'world-files.txt').is_file() else ''
-            return done.stdout + done.stderr, files, world
+            info = json.loads((stall.parent / 'run.json').read_text(encoding='utf-8'))
+            return done.stdout + done.stderr, files, world, info
 
     def test_02_a_hung_stop_is_dumped_then_killed(self):
-        out, files, world = self.stalled('hang')
+        out, files, world, info = self.stalled('hang')
         self.assertIn('seed 1: its stop has stood at "Saving worlds"', out)
         self.assertIn('seed 1: its stop hung', out)
         self.assertIn('seed 1 ended: exit -9', out)
         self.assertEqual(['threads-1.txt', 'threads-2.txt', 'world-files.txt'], files)
         self.assertIn('level.dat', world)
         self.assertIn('region/r.0.0.mca', world)
+        self.assertEqual('stall/', info['stopHung']['dumps'])  # counted in its own record, not silent
+        self.assertGreaterEqual(info['stopHung']['killedAfter'], 8)
 
     def test_03_a_stop_that_saves_is_left_alone(self):
-        out, files, world = self.stalled('save')
+        out, files, world, info = self.stalled('save')
         self.assertNotIn('its stop', out)
         self.assertIn('seed 1 ended: exit 0', out)
         self.assertEqual([], files)
+        self.assertNotIn('stopHung', info)
+
+    def test_04_the_summary_says_so(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root) / 'b' / '109'
+            folder.mkdir(parents=True)
+            players = {n: {'stages': {}, 'deaths': [], 'deathsNotListed': 0, 'stuck': [], 'tokens': 0} for n in ('Sol', 'Echo', 'Kindred')}
+            result = {'scenario': 'goal=none; mode=factions; ticks=144000', 'kind': 'earned', 'build': 'x', 'seed': 109, 'ticks': 144000,
+                      'ticksRun': 144001, 'complete': True, 'policy': {}, 'players': players}
+            (folder / 'eval-result.json').write_text(json.dumps(result), encoding='utf-8')
+            (folder / 'run.json').write_text(json.dumps({'exit': -9, 'stopHung': {'killedAfter': 600, 'dumps': 'stall/'}}), encoding='utf-8')
+            s = score.score(folder.parent, use_metrics=False)
+        self.assertEqual({'109': {'killedAfter': 600, 'dumps': 'stall/'}}, s['stopHung'])
+        self.assertIn('Seed 109: stop hung past Saving worlds, killed at 600 s, dumps in stall/ (M-06k4a).', score.markdown(s))
 
 
 if __name__ == '__main__':

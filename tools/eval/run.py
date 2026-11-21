@@ -261,6 +261,15 @@ def stall_action(console_text, since, now):
     return "watch", since
 
 
+def note_stall(folder, killed_after):
+    """Adds to the seed's run.json that its stop stood at "Saving worlds" (`stopHung`): killed after `killed_after` seconds
+    there, or None where it saved in the end; the dumps in stall/."""
+    path = folder / "run.json"
+    info = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    info["stopHung"] = {"killedAfter": killed_after, "dumps": "stall/"}
+    path.write_text(json.dumps(info) + "\n", encoding="utf-8")
+
+
 def tail(path, size=65536):
     """The last `size` bytes of a file as text; empty if it cannot be read."""
     try:
@@ -395,7 +404,7 @@ def run_seeds(args, out, name, jar, api, vanilla, start, pending, running):
             process = subprocess.Popen(["java", "-Xmx" + args.memory, "-jar", str(start), "nogui"], cwd=folder, env=environment(args.scenario),
                                        stdin=subprocess.DEVNULL, stdout=console, stderr=subprocess.STDOUT)
             running.append((seed, folder, process, console, time.time()))
-            stalls[seed] = [None, False]
+            stalls[seed] = [None, False, None]
             print("seed %s started" % seed, flush=True)
         time.sleep(5)
         for item in list(running):
@@ -410,6 +419,7 @@ def run_seeds(args, out, name, jar, api, vanilla, start, pending, running):
                     dump_stall(folder, process)
                 if action == "kill":
                     print("seed %s: its stop hung %d s at \"%s\"; killed" % (seed, time.time() - stalls[seed][0], SAVING), flush=True)
+                    stalls[seed][2] = round(time.time() - stalls[seed][0])
                     process.kill()
                     process.wait()
             if process.poll() is None and time.time() - started > args.timeout:
@@ -422,6 +432,9 @@ def run_seeds(args, out, name, jar, api, vanilla, start, pending, running):
                 continue
             console.close()
             ok, ticks = finish(folder, process, started, args.keep_world)
+            if stalls[seed][1]:
+                # Counted, not silent: the run's own record says its stop hung, for the summary and the census (M-06k4a).
+                note_stall(folder, stalls[seed][2])
             print("seed %s ended: exit %s, result %s, ticks run %s, %d s" % (seed, process.returncode, "kept" if ok else "MISSING", ticks,
                                                                              time.time() - started), flush=True)
             running.remove(item)
