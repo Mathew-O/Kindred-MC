@@ -310,10 +310,12 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     var pen = f.runtime.ownRanch(f.id).orElseThrow();
                     BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
                     var tables = new StringBuilder();
-                    for (int x = 0; x <= 6; x++) for (int z = 0; z <= 6; z++) for (int y = -1; y <= 1; y++) {
+                    // In the pen, at its fence a block round, or in the gate's approach two out.
+                    for (int x = -1; x <= 7; x++) for (int z = -1; z <= 8; z++) for (int y = -1; y <= 1; y++) {
+                        if (z == 8 && (x < 2 || x > 4)) continue;
                         if (world.getBlockState(post.add(x, y, z)).isOf(Blocks.CRAFTING_TABLE)) tables.append(' ').append(new BlockPos(x, y, z).toShortString()).append(';');
                     }
-                    context.assertTrue(moved[0] && tables.isEmpty(), "No crafting table in its own pen; from the post:" + tables);
+                    context.assertTrue(moved[0] && tables.isEmpty(), "No crafting table in or at its own pen; from the post:" + tables);
                     var penned = world.getEntitiesByClass(ChickenEntity.class, new Box(post).expand(8),
                             c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
                     long adults = penned.stream().filter(c -> !c.isBaby()).count(), chicks = penned.stream().filter(ChickenEntity::isBaby).count();
