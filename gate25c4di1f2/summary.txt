@@ -33,3 +33,4 @@ confirm-branch-2.7 (dcfac752, only flagged): 0 min, peak 1154 MB, All 2 required
 confirm-branch-2.8 (dcfac752, only flagged): 0 min, peak 1046 MB, All 2 required tests passed, fence-top 0, disk 4.9G
 confirm-branch-2.9 (dcfac752, only flagged): 0 min, peak 1127 MB, All 2 required tests passed, fence-top 0, disk 4.9G
 confirm-branch-2.10 (dcfac752, only flagged): 0 min, peak 1098 MB, All 2 required tests passed, fence-top 0, disk 4.9G
+confirm-branch-3.1 (dcfac752, only flagged): 0 min, peak 1222 MB, All 2 required tests passed, fence-top 0, disk 4.8G
