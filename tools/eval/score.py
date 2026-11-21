@@ -338,13 +338,17 @@ def score(build_dir, use_metrics=True):
     seeds = sorted(p for p in build_dir.iterdir() if p.is_dir() and (p / "eval-result.json").is_file())
     missing = sorted(p.name for p in build_dir.iterdir() if p.is_dir() and p.name not in ("src", "cache") and not (p / "eval-result.json").is_file())
     metrics = metrics_for([log_of(p) for p in seeds if log_of(p)]) if use_metrics else {}
-    per_seed, kinds, scenarios, short, other_jars = {}, set(), set(), {}, {}
+    per_seed, kinds, scenarios, short, other_jars, hung = {}, set(), set(), {}, {}, {}
     build_info = build_dir / "build.json"
     build_jar = json.loads(build_info.read_text(encoding="utf-8")).get("jar") if build_info.is_file() else None
     free_runs = {}
     for folder in seeds:
         run_info = folder / "run.json"
-        jar = json.loads(run_info.read_text(encoding="utf-8")).get("jar") if run_info.is_file() else None
+        info = json.loads(run_info.read_text(encoding="utf-8")) if run_info.is_file() else {}
+        jar = info.get("jar")
+        # A stop that hung at "Saving worlds" (M-06k4a): counted, not silent, whatever the run scored.
+        if info.get("stopHung"):
+            hung[folder.name] = info["stopHung"]
         if jar and build_jar and jar != build_jar:
             other_jars[folder.name] = jar
         result = json.loads((folder / "eval-result.json").read_text(encoding="utf-8"))
@@ -487,7 +491,7 @@ def score(build_dir, use_metrics=True):
         for p in s["players"].values():
             for cause, n in p["causes"].items():
                 causes[cause] = causes.get(cause, 0) + n
-    return {"build": build_dir.name, "jar": build_jar, "otherJars": other_jars, "seeds": sorted(per_seed), "missing": missing, "short": short,
+    return {"build": build_dir.name, "jar": build_jar, "otherJars": other_jars, "stopHung": hung, "seeds": sorted(per_seed), "missing": missing, "short": short,
             "freeSwitches": free_runs, "kinds": sorted(kinds), "scenarios": sorted(scenarios),
             "team": team, "deathCauses": dict(sorted(causes.items(), key=lambda kv: -kv[1])),
             "stuckKinds": stuck_kinds, "deathKinds": death_kinds, "perSeed": per_seed}
@@ -533,6 +537,10 @@ def markdown(summary):
         lines.append("Not scored: seed %s, where not every starter came into the world (only %s did)." % (seed, came))
     for seed, jar in summary.get("otherJars", {}).items():
         lines.append("Seed %s ran on %s, the others on %s." % (seed, jar, summary["jar"]))
+    for seed, stop in summary.get("stopHung", {}).items():
+        killed = stop.get("killedAfter")
+        lines.append("Seed %s: stop hung past Saving worlds, %s, dumps in %s (M-06k4a)." % (
+            seed, "killed at %d s" % killed if killed is not None else "saved in the end", stop.get("dumps", "stall/")))
     if len(summary["seeds"]) < 10:
         lines.append("Fewer than ten seeds: too few to compare with another build.")
     lines += ["", "Medians, with the range across seeds in brackets.", "", "| Measure | Median [range] (seeds) |", "| --- | --- |"]

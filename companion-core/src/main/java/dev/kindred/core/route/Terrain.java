@@ -29,6 +29,13 @@ public interface Terrain {
      */
     boolean passThrough(int x, int y, int z);
 
+    /**
+     * The side of a cell a body passes through that a thin leaf lies along, which a body cannot cross: an open door's,
+     * when the terrain counts doors as a way through. None (null) for any other cell, a closed door's included, which
+     * the body opens. The leaf stands the cell's full height, so it blocks that side for feet and head alike.
+     */
+    default Side leaf(int x, int y, int z) { return null; }
+
     /** Whether the block's collision top is a full step's footing: between 0.8 and 1.0 of a block high. */
     boolean supports(int x, int y, int z);
 
