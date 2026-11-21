@@ -185,6 +185,21 @@ class SupportToolsTest(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(1, support.main(['--root', str(self.root), 'entrypoints']))
 
+    def test_28d_no_gametest_source_waits_out_real_time_on_the_server_thread(self):
+        # F-22c101: a fixture's real-time park stalled every test running beside it (6.2 s ticks on CI).
+        self.gametest_fixture(['dev.kindred.fabric.AGameTests'])
+        self.put(support.GAMETEST_SOURCES + '/dev/kindred/fabric/Waits.java',
+                 'package dev.kindred.fabric;\nclass Waits {\n  // LockSupport.parkNanos(1) in a comment\n  void w() { java.util.concurrent.locks.LockSupport.parkNanos(5); }\n'
+                 '  void s() throws Exception { Thread.sleep(3100); }\n}\n')
+        problems = support.entrypoints(self.root)['problems']
+        self.assertEqual(2, len([p for p in problems if 'sleeps or parks a thread' in p]), problems)
+        self.assertTrue(any('Waits.java:4' in p for p in problems) and any('Waits.java:5' in p for p in problems), problems)
+        # A tick's own pace, at most a live tick, is allowed where it is named.
+        (self.root / support.GAMETEST_SOURCES / 'dev/kindred/fabric/Waits.java').unlink()
+        self.put(support.GAMETEST_SOURCES + '/dev/kindred/fabric/GameTestPacing.java',
+                 'package dev.kindred.fabric;\nclass GameTestPacing { void t() { java.util.concurrent.locks.LockSupport.parkNanos(5); } }\n')
+        self.assertEqual([], support.entrypoints(self.root)['problems'])
+
     def test_29_manifest_matches_pinned_properties_and_checksum(self):
         self.manifest_fixture(); self.assertEqual([], support.manifest(self.root)['problems'])
 
