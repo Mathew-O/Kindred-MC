@@ -226,7 +226,99 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     KindredMod.LOGGER.info("Own ranch with earned seeds: {} chickens and {} chicks penned; {} seeds left", adults, chicks,
                             held(f, Items.WHEAT_SEEDS));
                     // Bred with two seeds, and it was given none: the seeds were earned.
-                    context.assertTrue(adults == 2 && chicks == 1, "The pair penned and a chick: " + adults + " and " + chicks);
+                    context.assertTrue(adults == 2 && chicks == 1, "The pair penned and a chick: " + adults + " and " + chicks + "; "
+                            + fromPost(world, ChickenEntity.class, pen));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Its crafting table never set down in its own pen (F-22c91): the chicken ranch as above, with Henwife set at the middle
+     * of its pen's site as it turns to the pen's gate, so that the table it sets down for the gate's craft goes down within
+     * reach of the pen's middle. Set inside, the table was a step a penned chicken hopped onto and over the fence by; the
+     * pair were found outside the shut pen (1 run in 6 of the class on main). Staged: the player's position at that moment
+     * only; nothing is given.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchTable", tickLimit = 12000)
+    public void itsCraftingTableIsNeverSetDownInItsOwnPen(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 11500);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
+        BlockPos home = o.add(16, 7, 16);
+        BlockPos cabinAt = home.add(-3, 0, -3);
+        boolean[] moved = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Henwife"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    NativeBaseGameTests.ground(context, trunks);
+                    walled(context);
+                    world.setTimeOfDay(1000);
+                    var cabin = Houses.of(Houses.Stage.CABIN, "oak", "cobblestone");
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) {
+                        try {
+                            world.setBlockState(BuildRunner.blockPos(b.at()),
+                                    BlockArgumentParser.block(Registries.BLOCK.getReadOnlyWrapper(), b.spec().toString(), false).blockState());
+                        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException failure) {
+                            throw new RuntimeException(failure);
+                        }
+                    }
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    // Stone tools, fourteen logs and seeds enough: no table near, none held.
+                    ItemStack[] held = {new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.STONE_AXE), new ItemStack(Items.OAK_LOG, 14),
+                            new ItemStack(Items.BREAD, 16), new ItemStack(Items.WHEAT_SEEDS, 4)};
+                    for (int slot = 0; slot < held.length; slot++) inventory.setStack(slot, held[slot]);
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    BlockPos stand = home.add(8, 0, 0);
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 0, 0);
+                    BlockPos rel = home.add(12, 0, 4).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
+                    context.spawnEntity(EntityType.CHICKEN, rel);
+                    context.spawnEntity(EntityType.CHICKEN, rel.add(1, 0, 2));
+                })
+                .createAndAdd(lookRound(context))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    f.runtime.fixBaseStyle(f.id, dev.kindred.core.construction.BuildStyle.CLASSIC);
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.stageBaseForTest(f.id,
+                        new PlayerMemoryStore.Base("cabin", "minecraft:overworld", cabinAt.getX(), cabinAt.getY(), cabinAt.getZ(), true)), "Its cabin recorded"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on"))
+                .createAndAdd(() -> {
+                    // Staged: the moment the ranch turns to its gate, Henwife at the middle of its pen's site.
+                    var pen = f.runtime.ownRanch(f.id);
+                    String status = f.runtime.ranchStatus(f.id).orElse("");
+                    context.assertTrue(pen.isPresent() && status.contains("pen's gate"), "Turned to the pen's gate: " + status + " / " + pen);
+                    BlockPos middle = new BlockPos(pen.get().x() + 3, pen.get().y(), pen.get().z() + 3);
+                    f.player().refreshPositionAndAngles(middle.getX() + 0.5, middle.getY(), middle.getZ() + 0.5, 0, 0);
+                    moved[0] = true;
+                })
+                .createAndAdd(() -> {
+                    var pen = f.runtime.ownRanch(f.id).orElseThrow();
+                    context.assertTrue(pen.complete() && f.runtime.ranchStatus(f.id).isEmpty(), "Ranch run: " + f.runtime.ranchStatus(f.id).orElse(""));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    var pen = f.runtime.ownRanch(f.id).orElseThrow();
+                    BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
+                    var tables = new StringBuilder();
+                    for (int x = 0; x <= 6; x++) for (int z = 0; z <= 6; z++) for (int y = -1; y <= 1; y++) {
+                        if (world.getBlockState(post.add(x, y, z)).isOf(Blocks.CRAFTING_TABLE)) tables.append(' ').append(new BlockPos(x, y, z).toShortString()).append(';');
+                    }
+                    context.assertTrue(moved[0] && tables.isEmpty(), "No crafting table in its own pen; from the post:" + tables);
+                    var penned = world.getEntitiesByClass(ChickenEntity.class, new Box(post).expand(8),
+                            c -> c.getBlockX() > post.getX() && c.getBlockX() < post.getX() + 6 && c.getBlockZ() > post.getZ() && c.getBlockZ() < post.getZ() + 6);
+                    long adults = penned.stream().filter(c -> !c.isBaby()).count(), chicks = penned.stream().filter(ChickenEntity::isBaby).count();
+                    context.assertTrue(adults == 2 && chicks == 1, "The pair penned and a chick: " + adults + " and " + chicks + "; "
+                            + fromPost(world, ChickenEntity.class, pen));
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
@@ -355,7 +447,8 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     int resown = 0;
                     for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) if (world.getBlockState(corner.add(dx, 1, dz)).isOf(Blocks.WHEAT)) resown++;
                     KindredMod.LOGGER.info("Own ranch with grown wheat: {} cows and {} calves penned; plot sown again {} of 4", adults, calves, resown);
-                    context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf, fed wheat it grew: " + adults + " and " + calves);
+                    context.assertTrue(adults == 2 && calves == 1, "The pair penned and a calf, fed wheat it grew: " + adults + " and " + calves + "; "
+                            + fromPost(world, CowEntity.class, pen));
                     var cells = new StringBuilder();
                     for (int dx = 0; dx < 2; dx++) for (int dz = 0; dz < 2; dz++) {
                         cells.append(Registries.BLOCK.getId(world.getBlockState(corner.add(dx, 0, dz)).getBlock()).getPath()).append('/')
@@ -469,6 +562,29 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * What a pen check found, for its failure message (F-22c91): the pen as its player records it (kind, post, complete),
+     * its fences and gate as they stand, and each animal of the kind within 48 blocks of its post, by its block's offset
+     * from the post (inside is 1 to 5 each way), young or not.
+     */
+    private static String fromPost(net.minecraft.server.world.ServerWorld world, Class<? extends net.minecraft.entity.passive.AnimalEntity> kind,
+                                   PlayerMemoryStore.Pen pen) {
+        BlockPos post = new BlockPos(pen.x(), pen.y(), pen.z());
+        int fences = 0;
+        for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) {
+            if (x != 0 && x != 6 && z != 0 && z != 6) continue;
+            if (world.getBlockState(post.add(x, 0, z)).isOf(Blocks.OAK_FENCE)) fences++;
+        }
+        var gate = world.getBlockState(post.add(3, 0, 6));
+        var where = new StringBuilder("the pen " + pen.kind() + " at " + post.toShortString() + (pen.complete() ? " complete" : " not complete")
+                + ", " + fences + " fences, the gate " + (gate.isOf(Blocks.OAK_FENCE_GATE)
+                        ? (gate.get(net.minecraft.block.FenceGateBlock.OPEN) ? "open" : "shut") : "not there") + "; from its post:");
+        for (var animal : world.getEntitiesByClass(kind, new Box(post).expand(48), a -> true)) {
+            where.append(' ').append(animal.getBlockPos().subtract(post).toShortString()).append(animal.isBaby() ? " young" : "").append(';');
+        }
+        return where.toString();
+    }
+
     /** The pig ranch's last check, retried till it holds: the pair penned and a piglet, and planted only for what it wanted. */
     private static void pigsPenned(TestContext context, NativePaidSkillsGameTests.Fixture f, PlayerMemoryStore.Pen pen, int ripened) {
         var world = context.getWorld();
@@ -478,7 +594,8 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
         long adults = penned.stream().filter(c -> !c.isBaby()).count(), young = penned.stream().filter(c -> c.isBaby()).count();
         KindredMod.LOGGER.info("Own ranch with grown carrots: {} pigs and {} piglets penned; ripened {} times; {} carrots left",
                 adults, young, ripened, held(f, Items.CARROT));
-        context.assertTrue(adults == 2 && young == 1, "The pair penned and a piglet, fed carrots it grew: " + adults + " and " + young);
+        context.assertTrue(adults == 2 && young == 1, "The pair penned and a piglet, fed carrots it grew: " + adults + " and " + young + "; "
+                + fromPost(world, net.minecraft.entity.passive.PigEntity.class, pen));
         // Planted only until it had the few it wanted (the first version farmed a fast-ripening plot 43 times).
         context.assertTrue(ripened <= 6, "Planted only for what it wanted: ripened " + ripened + " times, "
                 + held(f, Items.CARROT) + " carrots left");
