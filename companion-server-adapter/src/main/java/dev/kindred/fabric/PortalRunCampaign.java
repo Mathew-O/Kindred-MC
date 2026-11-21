@@ -5634,13 +5634,36 @@ final class PortalRunCampaign {
         return false;
     }
 
+    /**
+     * The swap that readies backpack {@code slot} on the hotbar. Its target is chosen as {@link #handSlot} chooses: an empty
+     * slot, else one holding nothing kept to hand, else a block while another stays. With every slot holding something kept
+     * to hand, slot 8, but not over a torch or a block, which another step has just readied (F-25c4dk): taking slot 8
+     * whatever it held, a block readied for the night's seal and a torch readied to light the way swapped each other out of
+     * it, neither placed (in step 8's consoles 303 off Sol 4,560 times, 505 on Echo 1,412).
+     */
     Task swapToHotbar(NativePlayerBody body, int slot, String label) {
         var inventory = body.entity().getInventory();
-        int target = 8;
-        for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { target = s; break; }
+        int target = handSlot(inventory);
+        if (target < 0) {
+            target = 8;
+            if (readied(inventory.getStack(8))) {
+                for (int s = 7; s >= 0; s--) {
+                    if (!readied(inventory.getStack(s)) && !onlyWeaponAt(inventory, s)) { target = s; break; }
+                }
+            }
+        }
         // Not the only sword or axe on the hotbar: swapped out for a block, it was only taken back to hand (F-25c4cv).
         if (onlyWeaponAt(inventory, target)) target = 7;
+        int before = 8;
+        for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { before = s; break; }
+        if (onlyWeaponAt(inventory, before)) before = 7;
+        if (target != before) KindredMod.LOGGER.info("{} F-25c4dk-marker: hotbar target {} not {} [{}]", body.entity().getName().getString(), target, before, label);
         return new Task("native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(target)), label);
+    }
+
+    /** A torch or a block: what a step readies on the hotbar to place next (F-25c4dk). */
+    private static boolean readied(ItemStack stack) {
+        return stack.isOf(Items.TORCH) || stack.isOf(Items.SOUL_TORCH) || stack.getItem() instanceof net.minecraft.item.BlockItem;
     }
 
     static final String WEAPON_TO_HAND = "Take its weapon to hand";
