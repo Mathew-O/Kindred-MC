@@ -332,6 +332,32 @@ class RanchTest {
     }
 
     @Test
+    void aYoungOneBornAndOutOfTheGateBeforeItIsCountedIsBroughtInNotLeftOut() {
+        // F-22c102 (#359's CI): the pair fed, their young one born, and out at the gate before the run counted it, the gate
+        // opened meanwhile to fetch one of the pair again. Counting only young inside the pen, the run took the pair for
+        // "not ready to breed again yet" and left, done with the lamb outside. Now it is counted as born, and brought in.
+        var ranch = ranch();
+        ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 4, 4)));
+        ranch.next(seen(3, 5, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 4, 4)));
+        ranch.next(seen(3, 5, false, 8, 20, cow(DAISY, 3, 1), cow(BESS, 5, 1)));
+        assertEquals(DAISY, assertInstanceOf(Ranch.Step.Feed.class, ranch.next(seen(3, 3, false, 8, 30, cow(DAISY, 3, 1), cow(BESS, 5, 1)))).animal());
+        var daisyInLove = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 1), true, false, true);
+        assertEquals(BESS, assertInstanceOf(Ranch.Step.Feed.class, ranch.next(seen(4, 2, false, 7, 40, daisyInLove, cow(BESS, 5, 1)))).animal());
+        // Bred: the pair cooling, and their calf already out past the gate.
+        var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 3), true, false, false);
+        var bess = new Ranch.Animal(BESS, Ranch.Kind.COW, new Pos(4, 64, 4), true, false, false);
+        var calfOut = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(3, 64, 8), false, false, false);
+        var steps = new ArrayList<Ranch.Step>();
+        steps.add(ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, false, 6, List.of(daisy, bess, calfOut), 60)));
+        steps.add(ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, true, 6, List.of(daisy, bess, calfOut), 70)));
+        steps.add(ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, true, 6, List.of(daisy, bess, calfOut), 80)));
+        var after = ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, false, 6, List.of(daisy, bess, calfOut), 90));
+        assertFalse(after instanceof Ranch.Step.Done, "not done with its calf outside: " + steps + " then " + after);
+        assertEquals("bringing a cow back into the pen", ranch.phase(), "after " + steps + " then " + after);
+        assertTrue(ranch.bred(), "the calf counted as born");
+    }
+
+    @Test
     void oneThatLeftThePenAsTheOtherWasFedIsFetchedAgainNotTakenForNotReady() {
         // The cattle fixture, once in ten: both in and the gate shut, one stood on the shut gate as the other was fed; with
         // one in the pen the pair was "not ready to breed again", and it left. Now that one is fetched in again.

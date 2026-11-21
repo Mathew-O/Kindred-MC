@@ -148,6 +148,8 @@ public final class Ranch {
     /** How far from the gate it goes looking for a stray: twice the range it fetches from, and no farther. */
     private static final int SEARCH = 2 * RANGE;
     private int youngBefore = -1;
+    /** The young of its kind it saw as it first began to breed them (F-22c102); null until then. */
+    private Set<UUID> youngAtBreed;
     private String outcome = "";
     private boolean bred;
     /** The animals it shut in, and the young born to them: those it checks are still in as it leaves. */
@@ -254,6 +256,20 @@ public final class Ranch {
         }
         var adultsIn = seen.animals().stream().filter(a -> a.kind() == kind && a.adult() && inside(a.at())).toList();
         boolean in = inside(seen.feet());
+        // Born since its breeding began, and out at the gate before it was counted (the gate opened meanwhile to fetch
+        // one of the pair again): bred all the same, and penned, so that it is brought in as one that slipped out is.
+        // Counting only young in the pen, the run took the pair for not ready to breed again and left with the lamb
+        // outside (#359's CI) (F-22c102).
+        if (youngAtBreed != null && !bred && phase != Phase.LEAVE && phase != Phase.RETURN) {
+            var born = seen.animals().stream().filter(a -> a.kind() == kind && !a.adult() && !youngAtBreed.contains(a.id())
+                    && a.at().distanceSquared(gate()) <= (long) RANGE * RANGE).toList();
+            if (!born.isEmpty()) {
+                bred = true;
+                born.forEach(a -> penned.add(a.id()));
+                seen.animals().stream().filter(a -> a.kind() == kind && inside(a.at())).forEach(a -> penned.add(a.id()));
+                return leave(seen, "A young " + kind.noun() + " born in the pen");
+            }
+        }
         if (phase == Phase.RETURN) {
             var out = escaped(seen);
             if (out.isEmpty()) {
@@ -296,6 +312,11 @@ public final class Ranch {
             }
             phase = Phase.BREED;
             youngBefore = (int) seen.animals().stream().filter(a -> a.kind() == kind && !a.adult() && inside(a.at())).count();
+            // The young of its kind it sees as it first begins to breed them, anywhere: any other later is born of it.
+            if (youngAtBreed == null) {
+                youngAtBreed = new HashSet<>();
+                seen.animals().stream().filter(a -> a.kind() == kind && !a.adult()).forEach(a -> youngAtBreed.add(a.id()));
+            }
             waitingSince = -1;
         }
         if (phase == Phase.BREED) {
