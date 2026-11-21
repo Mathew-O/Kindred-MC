@@ -267,6 +267,8 @@ final class WorldKnowledge {
         private final int cap;
         private final java.util.HashMap<Long, Optional<BlockPos>> tops = new java.util.HashMap<>();
         private final java.util.HashMap<Long, Optional<BlockPos>> ground = new java.util.HashMap<>();
+        /** For each column whose ground it looked at and did not see, the block its sight line met instead (M-06i2c5). */
+        private final java.util.HashMap<Long, BlockPos> met = new java.util.HashMap<>();
         /** Every decision's sight lines and time, for the evidence's cost per call (F-35m). */
         static long calls, raysCast, nanos;
 
@@ -282,6 +284,17 @@ final class WorldKnowledge {
             return top(ground, x, z, net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES);
         }
 
+        /**
+         * The block its sight line to the column's ground met, where {@link #ground} was asked and it did not see that
+         * ground: what stood in the way, already seen by that one sight line; empty otherwise. No sight line is cast.
+         */
+        Optional<BlockPos> metToward(int x, int z) {
+            return Optional.ofNullable(met.get(BlockPos.asLong(x, 0, z)));
+        }
+
+        /** Its eyes, for one decision. */
+        Vec3d eye() { return new Vec3d(eye[0], eye[1], eye[2]); }
+
         /** The top block of the column, leaves and fluids counted (the sea's surface), if it can see it. */
         Optional<BlockPos> top(int x, int z) {
             return top(tops, x, z, net.minecraft.world.Heightmap.Type.MOTION_BLOCKING);
@@ -294,7 +307,9 @@ final class WorldKnowledge {
             if (sight.rays >= cap) return Optional.empty();
             long start = System.nanoTime();
             int before = sight.rays;
+            sight.lastHit = null;
             Optional<BlockPos> seen = Sight.seenTop(sight, eye, x, z, (cx, cz) -> world.getTopY(type, cx, cz)).map(WorldKnowledge::pos);
+            if (seen.isEmpty() && cache == ground && sight.rays > before && sight.lastHit != null) met.put(key, pos(sight.lastHit));
             nanos += System.nanoTime() - start;
             calls++;
             raysCast += sight.rays - before;
@@ -336,6 +351,8 @@ final class WorldKnowledge {
         private int sectionX, sectionY, sectionZ;
         /** Sight lines cast through this view (F-35m's cap). */
         int rays;
+        /** The block the last sight line cast met, null if it met none (M-06i2c5). */
+        Cell lastHit;
 
         WorldSight(ServerWorld world, ServerPlayerEntity player) {
             this.world = world;
@@ -393,7 +410,8 @@ final class WorldKnowledge {
             rays++;
             BlockHitResult hit = world.raycast(new RaycastContext(new Vec3d(ax, ay, az), new Vec3d(bx, by, bz), RaycastContext.ShapeType.COLLIDER,
                     fluids ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE, player));
-            return hit.getType() == HitResult.Type.MISS ? null : cell(hit.getBlockPos());
+            lastHit = hit.getType() == HitResult.Type.MISS ? null : cell(hit.getBlockPos());
+            return lastHit;
         }
     }
 }

@@ -161,6 +161,7 @@
       "dev.kindred.fabric.NativeFactionUndergroundGameTests",
       "dev.kindred.fabric.NativeFactionPlateauGameTests",
       "dev.kindred.fabric.NativeFactionSummitGameTests",
+      "dev.kindred.fabric.NativeFactionLeavesGameTests",
       "dev.kindred.fabric.NativeFactionBaseSiteGameTests",
       "dev.kindred.fabric.NativeFactionBaseGameTests",
       "dev.kindred.fabric.NativeFactionSpawnClaimGameTests",
