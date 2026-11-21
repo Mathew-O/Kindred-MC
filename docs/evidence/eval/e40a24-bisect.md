@@ -194,5 +194,45 @@ The signature is hole or pit plus hemmed in, by score.py's own kinds.
 - **Checked in the logs:** in the 5 s after each "respawned at", step 4 had 0 WARN, 0 ERROR and 0 exception lines over
   8 respawns, and step 5 the same over 20. Step 4's 8 respawn captures took a median of 6.0 ms and at most 24.4 ms on
   the server thread. So nothing throws, and the respawn's handling after it runs.
-- **Not separated:** how a read-only capture at 8 respawns moves stuck spells. The lead's step 6 asks it directly:
-  3360ef2 with only the `captureWaking(entry, body);` call removed, a diagnostic jar not for merge.
+- **Checked offline, in step 4's kept worlds:** every chunk in the 8 capture boxes (83 chunks) had been near a player at
+  some point (`InhabitedTime` above 0), and none was missing. So no capture reached into chunks it alone loaded or
+  generated; the lead accepted this as ruling out cold loads.
+
+### Step 6: `e40a24g`, 3360ef2 without the respawn capture (a diagnostic, not for merge)
+- **The build:** 3360ef2 with only `captureWaking(entry, body);` removed from `respawnNative`
+  ([the diff](e40a24g-3360ef2-nowake/diagnostic.diff)), built and reverted; jar sha256 2a76aeb5…. Same harness.
+  10 of 10 exit 0, 144,000 ticks each. No "respawn replay" line in any console, so the edit took.
+- **Result:** signature **10** (hole or pit 6, hemmed in 4), total **201**. The lead's call: **Good** on the signature,
+  provisionally: the one call takes the signature from 30 to 10, and 201 sits in the good builds' spread.
+- **Its exit figures:** stuck under a tenth 2 of 10; deaths median 0.5 an hour; iron pickaxe 17.85 min; portal 6 of 10;
+  22 deaths.
+
+### Step 7: `e40a24h`, a replicate of 3360ef2 with the capture on
+- **The build:** step 4's own jar (sha256 797c6dd5…), the same harness. 10 of 10 exit 0, 144,000 ticks each; 23
+  respawn captures.
+- **Result:** signature **22** (hole or pit 4, hemmed in 18), total **207**: between the lines.
+- **The decision (the lead's), on hemmed in alone:** "With the capture on, hemmed-in is 18, 18, 15 and 19 (3360ef2 ×2,
+  83321ac ×2). In every capture-off run (the good builds and step 6) it's 4 to 7. That's complete separation, 4
+  against 6, about p ≈ 0.005. So the capture is tied to hemmed-in. Hole-or-pit is noise between runs."
+- **Its exit figures:** stuck under a tenth 4 of 10; deaths median 1.0 an hour; iron pickaxe 18.55 min; portal 10 of
+  10; 23 deaths.
+
+| Run | Capture | 101 | 202 | 20261030 | 303 | 31102026 | 404 | 505 | 606 | 707 | 8675309 | Total | Hole or pit | Hemmed in |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `e40a24e-3360ef2` (step 4) | on | 9 | 18 | 18 | 18 | 21 | 33 | 27 | 39 | 18 | 42 | 243 | 12 | 18 |
+| `e40a24h-3360ef2` (step 7) | on | 12 | 60 | 6 | 3 | 30 | 30 | 33 | 24 | 0 | 9 | 207 | 4 | 18 |
+| `e40a24g-3360ef2-nowake` (step 6) | off | 12 | 18 | 18 | 27 | 18 | 9 | 45 | 12 | 6 | 36 | 201 | 6 | 4 |
+
+### The mechanism, checked offline (steps 4, 6 and 7, with the 83321ac runs)
+- **Timing:** each hemmed-in spell's start (its watchdog tick less 3,600) against the same player's last death.
+  - 3360ef2 step 4: 18 hemmed in, only 3 after a death of that player (14.5, 18.5 and 27.5 game minutes after it).
+  - 3360ef2 step 7: 18, only 2 after its own death (8.4, 28.4).
+  - 83321ac: 15, 5 after its own death (41 to 93 min). Its replicate: 19, 7 after (62 to 104 min).
+  - In none of the four did a hemmed-in spell start within 5 minutes of its player waking.
+  - **So most hemmed-in spells with the capture on are by players that had not yet died**, whose own capture never ran.
+- **Accounting:** the hemmed-in bucket is score.py's `stuck_kind`, read from the player's console lines before its
+  watchdog line. No capture output matches its words (0 of step 7's "replay" lines). The spells are the game's
+  watchdog's, in `eval-result.json`; report.py does not feed it. **So it is not a measurement artifact.**
+- **Not separated:** how the capture reaches players that have not died. In play, #375 adds only the three death fields
+  (read by nobody but `captureWaking`) and `captureWaking`, run at another player's respawn on the shared server thread:
+  6 to 24 ms, a box read, and `getOtherEntities` and `saveNbt` on the entities in the box.
