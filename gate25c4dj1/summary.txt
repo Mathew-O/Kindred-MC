@@ -49,3 +49,4 @@ confirm-branch-8.4 (69241ca3, only flagged): 0 min, peak 1181 MB, All 2 required
 confirm-main-8.4 (039c8b92, only flagged): 0 min, peak 1095 MB, All 2 required tests passed, fence-top 0, disk 5.0G
 confirm-branch-9.4 (69241ca3, only flagged): 0 min, peak 1239 MB, All 2 required tests passed, fence-top 0, disk 5.0G
 confirm-main-9.4 (039c8b92, only flagged): 0 min, peak 1253 MB, All 2 required tests passed, fence-top 0, disk 5.0G
+trace606-1 (69241ca3, only flagged): 0 min, peak 1226 MB, All 2 required tests passed, fence-top 0, disk 5.0G
