@@ -2438,6 +2438,14 @@ final class PlayerRuntime {
      * does not: held mid-action its record could be left uncertain. Neither does a lapse at the cap or at the end of
      * the hours. False once the hold has failed or taken too long; the skill then stops as any lapsed skill does.
      */
+    private boolean endsItsPeriodWithin(Entry entry, java.time.Duration margin) {
+        var session = entry.activity;
+        if (!HELD_OVER_PERIOD_END.contains(entry.skillId) || entry.nativeTask instanceof NativeRecordedAction
+                || session.remaining().compareTo(margin) > 0) return false;
+        java.time.Instant end = session.snapshot().period().endExclusive();
+        return session.bookedUntil().filter(booked -> !booked.isBefore(end)).isPresent();
+    }
+
     private boolean holdOverPeriodEnd(Entry entry) {
         var session = entry.activity;
         java.time.Instant now = java.time.Instant.now();
@@ -7703,7 +7711,11 @@ final class PlayerRuntime {
             if (java.time.Instant.now().plus(entry.activity.remaining()).plus(RENEW_GAIN_MIN).isBefore(deadline)) entry.activity.renew(deadline);
         }
         boolean admitted = usable;
-        if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
+        // A walk or wait whose slice is booked to its period's end is not begun on its last RENEW_GAIN_MIN of it
+        // (F-22c103): its moves are rechecked against the slice as they are made, and a slice lapsing inside a long tick
+        // refused one, ending the walk ("Movement authority denied") where the period's hold below would have carried it.
+        // Left unused, that last of the slice is held over instead. A lapse at the hours' end or the cap is unchanged.
+        if (busy && (entry.activity == null || !entry.activity.paid() || endsItsPeriodWithin(entry, RENEW_GAIN_MIN))) usable = false;
         // A walk or wait whose slice lapsed at its period's end holds still for the next period's slice (F-11g).
         boolean holding = admitted && !usable && busy && holdOverPeriodEnd(entry);
         if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
@@ -7918,6 +7930,7 @@ final class PlayerRuntime {
         }
 
         if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.RUN_SKILL) {
+            holdSkillTick(entry);
             entry.runner.tick();
             observeRunner(entry);
         } else if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.PROPOSE_TASK) {
@@ -16640,6 +16653,23 @@ final class PlayerRuntime {
 
     /** Test seam: every activity budget write held this long before it goes to the store, as on a slow disk (F-22c2). */
     void delayBudgetWritesForTest(java.time.Duration delay) { budgetWriteDelay = delay; }
+
+    /**
+     * Test seam (F-22c103), off unless a fixture sets it: a skill's tick begun with less of its paid slice left than
+     * {@code hold} is held that long first, as a long tick on a loaded server is, so that its slice lapses inside the tick.
+     */
+    void holdSkillTicksForTest(java.time.Duration hold) { skillTickHold = hold; }
+
+    private volatile java.time.Duration skillTickHold = java.time.Duration.ZERO;
+
+    private void holdSkillTick(Entry entry) {
+        java.time.Duration hold = skillTickHold;
+        if (hold.isZero() || entry.activity == null || entry.activity.phase() != PaidActivitySession.Phase.ACTIVE
+                || entry.activity.remaining().compareTo(hold) >= 0) return;
+        // Held to its end: the server thread is often unparked early, so one park need not last.
+        long until = System.nanoTime() + hold.toNanos();
+        for (long left; (left = until - System.nanoTime()) > 0; ) java.util.concurrent.locks.LockSupport.parkNanos(left);
+    }
 
     /** Test seam: keep autonomous selection from replacing the state a fixture is inspecting. */
     void holdAutonomyForTest(UUID id, int ticks) {
