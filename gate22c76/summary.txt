@@ -1,2 +1,3 @@
 branch-1 (86483e6c): 54 min, peak 3168 MB, 135 required tests failed, fence-top 13, disk 3.8G
 branch-2 (86483e6c): 54 min, peak 3089 MB, 127 required tests failed, fence-top 27, disk 3.7G
+branch-3 (86483e6c): 54 min, peak 2987 MB, 135 required tests failed, fence-top 15, disk 3.7G
