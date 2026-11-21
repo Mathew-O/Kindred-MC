@@ -272,6 +272,11 @@ RUN_APART = {
 }
 
 
+# Sources whose parks hold one tick to a live server's pace, 50 ms at most, and no longer: the suite's own pacing
+# (GameTestPacing, F-22c5) and three fixtures that weigh a running skill against a live server's ticks (F-22c26).
+TICK_PACING = {'GameTestPacing.java', 'NativeAccountingGameTests.java', 'NativeNavigationGameTests.java'}
+
+
 def entrypoints(root: Path) -> dict:
     """Every GameTest class is registered for the suite, and nothing registered is missing: a narrowed list left
     over from a local run would otherwise run a fraction of the suite and pass (F-22c61)."""
@@ -280,8 +285,15 @@ def entrypoints(root: Path) -> dict:
     if not isinstance(listed, list) or not all(isinstance(name, str) for name in listed):
         raise ValueError('fabric-gametest entrypoints must be a list of class names')
     classes = {}
+    parks = []
     for path in sorted((root / GAMETEST_SOURCES).rglob('*.java')):
         text = read_bytes(path).decode()
+        # No GameTest source waits out real time: GameTests run on the server thread, and a sleep or park there stalls
+        # every test running beside it (F-22c101: a fixture's real-time wait made 6.2 s ticks on CI).
+        for number, line in enumerate(text.splitlines(), 1):
+            if path.name in TICK_PACING: break
+            if re.search(r'\bThread\.sleep\s*\(|\bLockSupport\.park', line) and not line.lstrip().startswith(('//', '*')):
+                parks.append(f'{path.relative_to(root)}:{number} sleeps or parks a thread: {line.strip()}')
         if not re.search(r'@(?:net\.minecraft\.test\.)?GameTest\b', text):
             continue
         package = re.search(r'^package ([\w.]+);', text, re.M)
@@ -294,8 +306,9 @@ def entrypoints(root: Path) -> dict:
     problems += [f'{name} is registered but has no GameTest source' for name in missing]
     problems += [f'{name} is registered twice' for name in duplicated]
     problems += [f'{name} runs apart from the suite but is registered' for name in apart_listed]
+    problems += parks
     return {'registered': len(listed), 'classes': len(classes), 'run_apart': sorted(RUN_APART), 'problems': problems,
-            'scope': 'Static: the GameTest classes under the gametest sources against fabric.mod.json; runs nothing.'}
+            'scope': 'Static: the GameTest classes under the gametest sources against fabric.mod.json, and no thread sleep or park in them; runs nothing.'}
 
 
 def manifest(root: Path) -> dict:

@@ -93,17 +93,18 @@ public final class NativeVoiceGameTests implements FabricGameTest {
             f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, edits);
         }
 
-        static long now() { return System.nanoTime() / 1_000_000; }
+        /** The social lane's clock, which {@link #waitFor} moves on (F-22c101). */
+        static long now() { return PlayerRuntime.socialNow(); }
 
         /**
-         * Waits {@code millis} of real time on the server thread. The social lane keeps real time (a player's three
-         * seconds between direct replies, the typing delay) while the test server runs up to ten times faster, so a
-         * gap in real time is waited out here rather than counted in ticks.
+         * Moves the social lane's clock on by {@code millis} (F-22c101). Its gaps (a player's three seconds between direct
+         * replies, the typing delay) are kept in real time while the test server runs up to ten times faster. This once
+         * parked the server thread for them in real time, and every test running beside it stalled with it: 6.2 s ticks
+         * on CI, a slice expiring under a running skill, a request's reservation expiring before it was acknowledged.
+         * Nothing is waited for now; the lane's clock alone is moved on.
          */
         static void waitFor(long millis) {
-            long until = System.nanoTime() + millis * 1_000_000;
-            long left;
-            while ((left = until - System.nanoTime()) > 0) java.util.concurrent.locks.LockSupport.parkNanos(left);
+            PlayerRuntime.moveSocialClockForFixtures(millis);
         }
 
         /** A mock player at {@code at} in the test's own coordinates, facing {@code yaw}. */
