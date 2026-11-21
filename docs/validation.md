@@ -3845,3 +3845,4 @@ After the block's first merge from main, CI on PR #25 found:
   - Side figure, 707 restored, 3 runs of `ReplayGameTests` on main: 7 of 9 before, 9 of 9 after.
 
 - **[E-71b1a](evidence/E-71b1a.md):** a walk out of a raised hall's open doorway no longer jumps into the door's leaf: the doorway-start and hinge-right cases 0 of 3 before, 3 of 3 after; class set ×3 119/119/118; corpus gate passes (3 flagged, all cleared).
+- **[F-22c76](evidence/F-22c76.md)** (2026-11-21, night shelter): dug in for the night, a walk of its work whose way crosses open ground waits for daylight. Its fixture `NativeShelterWayGameTests` 3 of 3 fail before, 3 of 3 pass after; 19 related classes 146 of 146; on main d340ca7 merged in, the fixture 3 of 3 and `NativeRaisedDoorwayGameTests` 7 of 7. Corpus gate: 3 flagged, 0 confirmed.
