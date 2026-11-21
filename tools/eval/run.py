@@ -237,6 +237,64 @@ def recipes_for(given, seed):
     return path if path.is_file() else None
 
 
+# A stop that hangs (M-06k4a): twice an evaluation run's own stop logged "Saving worlds" and never saved (M-06k4's walk,
+# 20 minutes, and M-06i2c5's comparison, until --timeout), vanilla's shutdown waiting on a chunk that never unloaded.
+# Where the console has stood at "Saving worlds" STALL seconds with no "All dimensions are saved", the server's threads
+# are dumped and the world's file times noted, in the seed's stall/ folder (kept with its log); at STALL_KILL it is
+# killed, its result already written.
+STALL = 120
+STALL_KILL = 600
+SAVING, SAVED = "Saving worlds", "All dimensions are saved"
+
+
+def stall_action(console_text, since, now):
+    """What a server's stop calls for, from its console so far: (action, since), action one of "none" (not stopping, or
+    saved), "watch" (stopping, not yet STALL), "dump" (STALL reached) or "kill" (STALL_KILL reached); `since` is when
+    "Saving worlds" was first seen (None before), carried from one call to the next."""
+    if SAVING not in console_text or SAVED in console_text:
+        return "none", None
+    since = now if since is None else since
+    if now - since >= STALL_KILL:
+        return "kill", since
+    if now - since >= STALL:
+        return "dump", since
+    return "watch", since
+
+
+def tail(path, size=65536):
+    """The last `size` bytes of a file as text; empty if it cannot be read."""
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - size))
+            return f.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def dump_stall(folder, process, dumps=3, apart=10):
+    """Three thread dumps of the stuck server, `apart` seconds apart, and the world's file times, into folder/stall/."""
+    stall = folder / "stall"
+    stall.mkdir(exist_ok=True)
+    tool = ["jstack", "-l", str(process.pid)] if shutil.which("jstack") else ["jcmd", str(process.pid), "Thread.print", "-l"]
+    for i in range(1, dumps + 1):
+        with open(stall / ("threads-%d.txt" % i), "w", encoding="utf-8") as out:
+            try:
+                subprocess.run(tool, stdout=out, stderr=subprocess.STDOUT, timeout=60)
+            except (OSError, subprocess.TimeoutExpired) as failure:
+                out.write("no dump: %s\n" % failure)
+        if i < dumps:
+            time.sleep(apart)
+    lines = []
+    world = folder / "world"
+    for pattern in ("level.dat", "level.dat_old", "session.lock", "region/*.mca", "DIM-1/region/*.mca", "DIM1/region/*.mca",
+                    "kindred/companions.sqlite*"):
+        for path in sorted(world.glob(pattern)):
+            st = path.stat()
+            lines.append("%s %d %s" % (time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(st.st_mtime)), st.st_size, path.relative_to(world)))
+    (stall / "world-files.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 # A stopped run must stop its servers: a server left behind keeps playing, and with a model key keeps spending.
 STOP_WAIT = 60  # seconds a server is given to stop cleanly after SIGTERM before it is killed
 
@@ -327,6 +385,7 @@ def main():
 
 def run_seeds(args, out, name, jar, api, vanilla, start, pending, running):
     """Starts the seeds' servers, parallel at a time, and finishes each as it ends; `running` holds those not ended."""
+    stalls = {}
     while pending or running:
         while pending and len(running) < args.parallel:
             seed = pending.pop(0)
@@ -336,10 +395,23 @@ def run_seeds(args, out, name, jar, api, vanilla, start, pending, running):
             process = subprocess.Popen(["java", "-Xmx" + args.memory, "-jar", str(start), "nogui"], cwd=folder, env=environment(args.scenario),
                                        stdin=subprocess.DEVNULL, stdout=console, stderr=subprocess.STDOUT)
             running.append((seed, folder, process, console, time.time()))
+            stalls[seed] = [None, False]
             print("seed %s started" % seed, flush=True)
         time.sleep(5)
         for item in list(running):
             seed, folder, process, console, started = item
+            if process.poll() is None:
+                console.flush()
+                action, stalls[seed][0] = stall_action(tail(folder / "console.txt"), stalls[seed][0], time.time())
+                if action in ("dump", "kill") and not stalls[seed][1]:
+                    stalls[seed][1] = True
+                    print("seed %s: its stop has stood at \"%s\" %d s; threads dumped to %s" % (seed, SAVING, time.time() - stalls[seed][0],
+                                                                                         folder / "stall"), flush=True)
+                    dump_stall(folder, process)
+                if action == "kill":
+                    print("seed %s: its stop hung %d s at \"%s\"; killed" % (seed, time.time() - stalls[seed][0], SAVING), flush=True)
+                    process.kill()
+                    process.wait()
             if process.poll() is None and time.time() - started > args.timeout:
                 process.terminate()
                 try:
