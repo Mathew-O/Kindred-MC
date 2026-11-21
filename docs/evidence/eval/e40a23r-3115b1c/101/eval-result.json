@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.937,
+  "items": {"windows": 7209, "gained": 6326, "paid": 6326, "lapsed": 172, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 89.1, "snapshotMicrosMax": 12195.6, "tagMicrosMean": 116.1, "tagMicrosMax": 21101.3, "bySource": {"container.take:furnace": 74, "pickup:class_2248.method_36993": 4918, "pickup:class_3222.method_7329": 959, "pickup:class_52.method_331": 100, "screen:class_1714": 65, "screen:class_1723": 299, "use:item": 83}, "dropsByOrigin": {"class_1428.method_6007": 159, "class_1540.method_5773": 2, "class_2248.method_36993": 4965, "class_3222.method_7329": 140, "class_52.method_331": 119}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 12.68, "tickMsWorst": 5758.19, "tickMsWorstAt": 5838, "ticksOver50ms": 475, "ticksOver200ms": 9, "heapMbMax": 1194, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 900, "stone_tools": 1640, "iron_ingot": 63040, "iron_pickaxe": 73000},
+      "deaths": [
+        {"tick": 22944, "cause": "Kindred was shot by Skeleton", "x": -330, "y": 37, "z": -129, "light": 0, "timeOfDay": 23106, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 37640, "cause": "Kindred was shot by Skeleton", "x": -377, "y": 35, "z": -110, "light": 0, "timeOfDay": 13802, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 86416, "cause": "Kindred was shot by Skeleton", "x": -270, "y": 10, "z": -289, "light": 0, "timeOfDay": 13058, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 7200, "x": -285, "y": 56, "z": -145, "attempt": 1}, {"tick": 14400, "x": -288, "y": 56, "z": -145, "attempt": 2}, {"tick": 77160, "x": -259, "y": 15, "z": -336, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5055,
+      "chunkMinutes": 34665.6,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 2.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 980, "stone_tools": 2820, "iron_ingot": 27640, "iron_pickaxe": 45960, "obsidian": 96885, "portal_lit": 98165},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 13100, "x": -347, "y": 55, "z": -66, "attempt": 1}, {"tick": 20300, "x": -347, "y": 53, "z": -66, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2533,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1580, "stone_tools": 3040, "iron_ingot": 23740, "iron_pickaxe": 60120, "diamond": 89600, "obsidian": 92780, "portal_lit": 95196},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 6960, "x": -345, "y": 58, "z": -69, "attempt": 1}, {"tick": 13540, "x": -348, "y": 59, "z": -70, "attempt": 1}, {"tick": 18000, "x": -348, "y": 59, "z": -69, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6397,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

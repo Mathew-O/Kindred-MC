@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 8.724,
+  "items": {"windows": 7209, "gained": 7106, "paid": 7106, "lapsed": 489, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 96.7, "snapshotMicrosMax": 15462.8, "tagMicrosMean": 104.8, "tagMicrosMax": 6085.7, "bySource": {"container.take:furnace": 75, "pickup:class_2248.method_36993": 5769, "pickup:class_3222.method_7329": 1132, "pickup:class_52.method_331": 49, "screen:class_1714": 66, "screen:class_1723": 422, "use:item": 83}, "dropsByOrigin": {"class_1428.method_6007": 103, "class_2248.method_36993": 5749, "class_3222.method_7329": 140, "class_52.method_331": 83}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 11.36, "tickMsWorst": 4184.67, "tickMsWorstAt": 1, "ticksOver50ms": 407, "ticksOver200ms": 8, "heapMbMax": 1024, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1200, "stone_tools": 2880, "iron_ingot": 7660, "iron_pickaxe": 24860, "obsidian": 40847, "portal_lit": 44252},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1223,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1000, "stone_tools": 1940, "iron_ingot": 13000, "iron_pickaxe": 75420},
+      "deaths": [
+        {"tick": 4933, "cause": "Sol was shot by Skeleton", "x": -381, "y": 30, "z": -136, "light": 0, "timeOfDay": 5095, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "Take cover from skeleton"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3987,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 6680, "stone_tools": 7600, "iron_ingot": 13840, "iron_pickaxe": 36420, "diamond": 59080, "obsidian": 70127, "portal_lit": 72278},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 69080, "x": -426, "y": -54, "z": -117, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3596,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

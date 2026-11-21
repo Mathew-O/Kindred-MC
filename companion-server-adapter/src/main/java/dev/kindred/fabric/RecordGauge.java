@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
  */
 final class RecordGauge {
     /** What the runtime holds in memory now. */
-    record Held(long recordThrough, int webs, long webRelations, int worldRelations, long inboxed, int chroniclePages, long teamStateTold,
+    record Held(long recordThrough, int webs, long webRelations, String websByPlayer, int worldRelations, long inboxed, int chroniclePages, long teamStateTold,
                 String wireRefused, long[] territoryRefused,
                 String ticks, long heapHighMb) { }
 
@@ -40,7 +40,8 @@ final class RecordGauge {
             long heap = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
             return "Kindred cost: day " + day + ": the Record through event " + held.recordThrough() + ", " + w + " written since start (" + c
                     + " characters of data); by kind events/characters " + counts + "; the database " + bytes + " bytes on disk; webs " + held.webs()
-                    + " holding " + held.webRelations() + " relations, the world's " + held.worldRelations() + "; Wire inboxes " + held.inboxed()
+                    + " holding " + held.webRelations() + " relations, the world's " + held.worldRelations() + "; webs by player, held/kept for good " + held.websByPlayer()
+                    + "; Wire inboxes " + held.inboxed()
                     + " messages; Wire " + held.wireRefused() + "; territory refusals " + held.territoryRefused()[0] + " written, "
                     + held.territoryRefused()[1] + " the same minute's and " + held.territoryRefused()[2] + " over a faction's daily cap, only counted"
                     + "; teammates' updates (team.state) " + held.teamStateTold() + " told since start, kept only in the peer ledgers"
