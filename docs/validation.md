@@ -3832,3 +3832,5 @@ After the block's first merge from main, CI on PR #25 found:
   - The new fixture (a zombie, a stone sword and a shield): 0 of 3 before (the shield up 0 of ~42 ticks); 3 of 3 after.
   - The fight classes (combat, encounter, edge fight, water fight, duel benchmark), 1 run: 12 of 12.
   - Side figure, 707 restored, 3 runs of `ReplayGameTests` on main: 7 of 9 before, 9 of 9 after.
+
+- **[E-71b1a](evidence/E-71b1a.md):** a walk out of a raised hall's open doorway no longer jumps into the door's leaf: the doorway-start and hinge-right cases 0 of 3 before, 3 of 3 after; class set ×3 119/119/118; corpus gate passes (3 flagged, all cleared).
