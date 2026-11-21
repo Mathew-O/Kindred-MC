@@ -210,6 +210,17 @@ final class NativeBreakAction extends NativeRecordedAction {
         return !now.isAir() && now.getFluidState().isEmpty()
                 && body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)).isEmpty();
     }
+    /**
+     * The target was a block that falls (gravel, sand and their kind) and is no longer as it was, with no break of this
+     * player's received at it since the action began: it fell from its cell, the world's doing, not this player's
+     * (F-25c4bp1).
+     */
+    private boolean fellFromItsCell() {
+        var world = body.entity().getWorld();
+        if (!world.isChunkLoaded(target) || !(state.getBlock() instanceof net.minecraft.block.FallingBlock)) return false;
+        return world.getBlockState(target) != state
+                && body.miningReceipt().filter(r -> r.sequence() > priorReceipt && r.position().equals(target)).isEmpty();
+    }
     private boolean ownsClaim() { return claim != null && claims.holdsAll(claim, System.currentTimeMillis()); }
     private boolean eligible() {
         return intact() && body.miningEligible(target) && RoamingEdits.breakDenial(body.entity(), target, policy.get(), guarded, underfoot, overLava, carriedBed) == null;
@@ -368,6 +379,15 @@ final class NativeBreakAction extends NativeRecordedAction {
             // reconciliation for the rest of the run, on 20261030 and on 404 (F-25c4bp).
             admission.noEffect(InventoryEvidence.capture(body).description() + "; target not broken, loose items picked up", reason);
             result = Step.blocked(reason + "; nothing was broken", true);
+        } else if (fellFromItsCell() && before.onlyGained(body)) {
+            // A block that falls, gone from its cell with no break of this player's received there, and nothing held is
+            // gone: it fell, as gravel and sand do when what holds them up goes, and what is new was picked up from the
+            // ground. In E-40's iteration 24 replica (`e40a24r-83321ac`) on 707, Sol dug down toward lava through a column
+            // of gravel over a cave; the gravel it was mining fell before its break landed as it picked up the drop of the
+            // break before, and it was stopped for reconciliation for the last 85,000 ticks of its run (F-25c4bp1). Where
+            // something held is gone, it still waits for reconciliation.
+            admission.noEffect(InventoryEvidence.capture(body).description() + "; target fell from its cell before any break, loose items picked up", reason);
+            result = Step.blocked(reason + "; nothing was broken: the block fell from its cell", true);
         } else {
             unknown = true;
             admission.uncertain(reason + "; inventory changed without an attributable break");

@@ -251,6 +251,9 @@ public final class NativeGoldGameTests implements FabricGameTest {
         // A piglin left about by a test that failed before taking it away would hold this one's gold back.
         nether.getEntitiesByClass(net.minecraft.entity.mob.PiglinEntity.class, new net.minecraft.util.math.Box(c).expand(32), e -> true)
                 .forEach(net.minecraft.entity.Entity::discard);
+        // The room, in the Nether: put back there as the test ends (F-22c75b). Left, its netherrack lay where the next test
+        // to go to the Nether at these coordinates comes out.
+        FixtureGround.keep(context, nether, c.add(-10, -1, -10), c.add(10, 6, 10));
         for (int x = -10; x <= 10; x++) for (int z = -10; z <= 10; z++) for (int y = -1; y <= 6; y++) {
             boolean inside = Math.abs(x) <= 5 && Math.abs(z) <= 5 && y >= 1 && y <= 5;
             nether.setBlockState(c.add(x, y, z), inside ? Blocks.AIR.getDefaultState() : Blocks.NETHERRACK.getDefaultState());

@@ -217,14 +217,23 @@ final class BuildRunner {
         // Its way up made of blocks the build does not take before those it does: climbing out of a pit beside a wall
         // with the wall's last cobblestone, it had to go off for more (E-08g).
         java.util.function.Predicate<Item> spare = item -> !buildItems().contains(item);
+        // Never one its owner has to keep (F-22c84 cause #3): a bring's door put back climbed out on a dirt of the bring's
+        // own, taken back from its line, and left it standing, the bring a dirt short.
+        java.util.function.Predicate<Item> never = kept::contains;
         var route = supply.campaign().buildRoute(body, toward, p -> {
             Pos at = pos(p);
             return p.getY() >= floor && !onSite(at) && nearSite(at);
-        }, false, "Back up to the build", spare);
-        return route.isPresent() ? route : supply.campaign().climbOut(body, spare);
+        }, false, "Back up to the build", spare, never);
+        return route.isPresent() ? route : supply.campaign().climbOut(body, spare, never);
     }
 
     private Set<Item> buildItems;
+
+    /** Items its owner has to keep, never spent on its way up to the build (F-22c84 cause #3); none unless set. */
+    private Set<Item> kept = Set.of();
+
+    /** The items its owner has to keep: never spent on its way up to the build. */
+    void keep(Set<Item> items) { kept = Set.copyOf(items); }
 
     /** The items the build's blocks are placed from. */
     private Set<Item> buildItems() {

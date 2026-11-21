@@ -1000,6 +1000,9 @@ It prints, per game day:
 - the Wire's refusals by reason and channel;
 - refused attempts on factions' land, written and over a faction's cap;
 - `native.disconnects`;
+- each AI player's knowledge web: the facts it holds, and how many of them it keeps for good (F-32d). A fact told on
+  the Wire stays until something replaces it, so those can grow past the web's bound of 20,000. Growth between day
+  lines is also shown, as facts kept for good a game day;
 - the WARN lines grouped by kind, and every ERROR line with its time, the player and the tick.
 
 A month's size is shown only as a projection, so labelled, from the last measured day. It ends with a verdict:
@@ -1014,6 +1017,7 @@ A month's size is shown only as a projection, so labelled, from the last measure
   - a day's p99 tick above 50 ms, or more than 5% of its ticks over 50 ms;
   - refused attempts over a faction's daily cap (someone hammering a border);
   - `native.disconnects` rising;
+  - a web keeping more than 20,000 facts for good (`KnowledgeWeb.MAX_RELATIONS`), past what its bound can trim;
   - any other ERROR line;
   - unresolved actions in a copy (settle them at the next start, below).
 
