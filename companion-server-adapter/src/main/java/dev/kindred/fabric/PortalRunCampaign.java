@@ -6018,12 +6018,6 @@ final class PortalRunCampaign {
         return seal.isPresent() ? seal : Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
     }
 
-    /**
-     * A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight
-     * (F-25c4cd). Where it can see the ground's top at the walk's end, on it or above it; where it cannot, at or above
-     * the ground's top over its own feet less one, as high as the surface it dug in under (F-35m: no far column's height it
-     * cannot see; its own column's is the read F-35m2 puts to the owner, as the climb's and the shelter's are).
-     */
     /** The most nodes the night's look at a walk's way searches: a walk from a shelter is a short one. */
     private static final int WAY_NODES = 4_000;
     /** How long the answer for one walk's way holds before it is asked again (F-22c76): a held walk is planned again each tick. */
@@ -6069,6 +6063,12 @@ final class PortalRunCampaign {
         return false;
     }
 
+    /**
+     * A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight
+     * (F-25c4cd). Where it can see the ground's top at the walk's end, on it or above it; where it cannot, at or above
+     * the ground's top over its own feet less one, as high as the surface it dug in under (F-35m: no far column's height it
+     * cannot see; its own column's is the read F-35m2 puts to the owner, as the climb's and the shelter's are).
+     */
     private static boolean outUnderTheSky(ServerPlayerEntity player, Task task) {
         if (!"native_goto".equals(task.skill())) return false;
         BlockPos to = position(task.args());
