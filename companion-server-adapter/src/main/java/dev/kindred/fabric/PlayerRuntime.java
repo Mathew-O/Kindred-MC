@@ -12654,6 +12654,14 @@ final class PlayerRuntime {
                 // Out of the front, and its job block put there behind the villager.
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
                     var out = b.slot.south(2);
+                    // Under its own shut trapdoor (F-22c96a): no walk is planned from a cell whose head is a shut trapdoor, so it
+                    // walks straight out south, as KEEP does from inside, the trapdoor left shut over the villager. Planned, the
+                    // walk out was refused three times in a second and the bring given up (F-22c96's line, CI on #429).
+                    if (world.getBlockState(b.slot.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS)) {
+                        long blocks = Math.max(1, Math.min(3, (long) Math.floor(Vec3d.ofBottomCenter(out).z - player.getZ() + 0.2)));
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "out from under the trapdoor"), "native_walk",
+                                Map.of("direction", "south", "blocks", String.valueOf(blocks))));
+                    }
                     return List.of(new NativeTaskCandidate(bringTask(entry, "out"), "native_goto", Map.of("x", String.valueOf(out.getX()),
                             "y", String.valueOf(out.getY()), "z", String.valueOf(out.getZ()), "range", "0", "centre", "true")));
                 }
