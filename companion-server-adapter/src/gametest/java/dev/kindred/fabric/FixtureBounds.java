@@ -43,6 +43,24 @@ public final class FixtureBounds {
         Outside(Box plot) { this.plot = plot; }
     }
 
+    /**
+     * What a test sets in another dimension than its own (the nether, from an overworld plot), and the ground it keeps
+     * there, by dimension (F-22c75b). Its plot is in its own world, so there is no floor or reach to measure against: what
+     * it sets there is counted against the ground it keeps there alone.
+     */
+    private static final class Elsewhere {
+        int count, kept, left;
+        final Map<String, Integer> kinds = new TreeMap<>();
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+    }
+
+    private record Away(GameTestState test, net.minecraft.registry.RegistryKey<net.minecraft.world.World> dimension, boolean byPlayers) { }
+
+    private static final Map<Away, Elsewhere> ELSEWHERE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<GameTestState, Map<net.minecraft.registry.RegistryKey<net.minecraft.world.World>, java.util.List<Box>>> KEPT_ELSEWHERE =
+            Collections.synchronizedMap(new IdentityHashMap<>());
+
     /** The tests placed and not yet ended: their plots are theirs, whatever a neighbour kept there. */
     private static final java.util.Set<GameTestState> LIVE = Collections.synchronizedSet(Collections.newSetFromMap(new IdentityHashMap<>()));
 
@@ -107,6 +125,28 @@ public final class FixtureBounds {
         if (test == null) return;
         KEPT.computeIfAbsent(test, t -> Collections.synchronizedList(new java.util.ArrayList<>()))
                 .add(new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 1, max.getZ() + 1));
+    }
+
+    /** {@code test} keeps the box from {@code min} to {@code max} in {@code dimension}, another world than its own. */
+    static void kept(GameTestState test, net.minecraft.registry.RegistryKey<net.minecraft.world.World> dimension, BlockPos min, BlockPos max) {
+        if (test == null) return;
+        KEPT_ELSEWHERE.computeIfAbsent(test, t -> new java.util.concurrent.ConcurrentHashMap<>())
+                .computeIfAbsent(dimension, d -> Collections.synchronizedList(new java.util.ArrayList<>()))
+                .add(new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 1, max.getZ() + 1));
+    }
+
+    /** The ground the live tests other than {@code self} keep in {@code dimension}, another world than theirs. */
+    static java.util.List<Box> othersKept(GameTestState self, net.minecraft.registry.RegistryKey<net.minecraft.world.World> dimension) {
+        java.util.List<Box> boxes = new java.util.ArrayList<>();
+        synchronized (LIVE) {
+            for (var test : LIVE) {
+                if (test == self || test.isCompleted()) continue;
+                var byDimension = KEPT_ELSEWHERE.get(test);
+                var kept = byDimension == null ? null : byDimension.get(dimension);
+                if (kept != null) synchronized (kept) { boxes.addAll(kept); }
+            }
+        }
+        return boxes;
     }
 
     /** The live test whose plot or kept ground holds the point, by its template path; null for none (F-22c84). */
@@ -186,6 +226,11 @@ public final class FixtureBounds {
         if (byPlayers != null) report(test, byPlayers, "its players");
         KEPT.remove(test);
         FLUIDS_NOTED.remove(test);
+        KEPT_ELSEWHERE.remove(test);
+        for (var away : java.util.List.copyOf(ELSEWHERE.keySet())) {
+            if (away.test() != test) continue;
+            reportElsewhere(test, away.dimension(), ELSEWHERE.remove(away), away.byPlayers() ? "its players" : "it");
+        }
         var outside = OUTSIDE.remove(test);
         if (outside == null) return;
         report(test, outside, "it");
@@ -228,6 +273,20 @@ public final class FixtureBounds {
                 (int) plot.minX, (int) plot.minY, (int) plot.minZ, (int) plot.maxX - 1, (int) plot.maxY - 1, (int) plot.maxZ - 1);
     }
 
+    private static void reportElsewhere(GameTestState test, net.minecraft.registry.RegistryKey<net.minecraft.world.World> dimension, Elsewhere away, String who) {
+        if (away == null) return;
+        String where = dimension.getValue().toString();
+        if (away.count == away.kept) {
+            KindredMod.LOGGER.info("Fixture ground in {}: {}: {} set {} blocks, all in ground it keeps", where, test.getTemplatePath(), who, away.count);
+            return;
+        }
+        String kinds = away.kinds.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(8)
+                .map(e -> e.getKey() + " " + e.getValue()).collect(Collectors.joining(", "));
+        KindredMod.LOGGER.warn("Fixture ground in {}: {}: {} set {} blocks, {} in ground it keeps; left: {} not air; {}; from {}, {}, {} to {}, {}, {}",
+                where, test.getTemplatePath(), who, away.count, away.kept, away.left, kinds,
+                away.minX, away.minY, away.minZ, away.maxX, away.maxY, away.maxZ);
+    }
+
     /**
      * While the test server places a test (its structure, the area cleared round it, its barriers) or marks one (its
      * beacon, glass and lectern): its own work, not the fixture's. The next batch is placed within the tick of the
@@ -258,7 +317,7 @@ public final class FixtureBounds {
                 byPlayers ? "its players" : "its own step", noted[0] == FLUIDS_NAMED ? " (the last named for this test)" : "", from);
     }
 
-    public static void wrote(BlockPos pos, BlockState state) {
+    public static void wrote(net.minecraft.world.World world, BlockPos pos, BlockState state) {
         if (PLACING.get()[0] > 0) return;
         var test = CURRENT.get();
         var into = OUTSIDE;
@@ -268,6 +327,13 @@ public final class FixtureBounds {
             test = OWNER.get(player.getUuid());
             if (test == null || test.isCompleted()) return;
             into = BY_PLAYERS;
+        }
+        // Set in another world than the test's own (its nether ground, from an overworld plot): counted against the ground
+        // it keeps there, as the plot and its floor are in its own world (F-22c75b). Measured against the plot, the nether's
+        // coordinates read as ground 8.8 million blocks off.
+        if (world != null && world != test.getWorld()) {
+            elsewhere(test, world.getRegistryKey(), pos, state, into == BY_PLAYERS);
+            return;
         }
         Box plot;
         try {
@@ -295,5 +361,28 @@ public final class FixtureBounds {
         if (!state.isAir() && y > plot.minY) outside.above++;
         outside.minX = Math.min(outside.minX, x); outside.minY = Math.min(outside.minY, y); outside.minZ = Math.min(outside.minZ, z);
         outside.maxX = Math.max(outside.maxX, x); outside.maxY = Math.max(outside.maxY, y); outside.maxZ = Math.max(outside.maxZ, z);
+    }
+
+    private static void elsewhere(GameTestState test, net.minecraft.registry.RegistryKey<net.minecraft.world.World> dimension, BlockPos pos, BlockState state,
+                                  boolean byPlayers) {
+        var away = ELSEWHERE.computeIfAbsent(new Away(test, dimension, byPlayers), a -> new Elsewhere());
+        away.count++;
+        int x = pos.getX(), y = pos.getY(), z = pos.getZ();
+        var byDimension = KEPT_ELSEWHERE.get(test);
+        var boxes = byDimension == null ? null : byDimension.get(dimension);
+        if (boxes != null) {
+            synchronized (boxes) {
+                for (var box : boxes) {
+                    if (box.contains(x + 0.5, y + 0.5, z + 0.5)) {
+                        away.kept++;
+                        return;
+                    }
+                }
+            }
+        }
+        away.kinds.merge(Registries.BLOCK.getId(state.getBlock()).getPath(), 1, Integer::sum);
+        if (!state.isAir()) away.left++;
+        away.minX = Math.min(away.minX, x); away.minY = Math.min(away.minY, y); away.minZ = Math.min(away.minZ, z);
+        away.maxX = Math.max(away.maxX, x); away.maxY = Math.max(away.maxY, y); away.maxZ = Math.max(away.maxZ, z);
     }
 }
