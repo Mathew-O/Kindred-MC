@@ -13,3 +13,4 @@ wake-base-6 (c2207fc3, only flagged): 0 min, peak 1306 MB, All 4 required tests 
 branch-1 (dcfac752): 51 min, peak 3046 MB, 133 required tests failed, fence-top 33, disk 4.3G
 branch-2 (dcfac752): 53 min, peak 3068 MB, 142 required tests failed, fence-top 23, disk 4.3G
 branch-3 (dcfac752): 52 min, peak 3096 MB, 138 required tests failed, fence-top 23, disk 4.2G
+confirm-branch-1.1 (dcfac752, only flagged): 0 min, peak 1320 MB, 1 required tests failed, fence-top 0, disk 4.8G
