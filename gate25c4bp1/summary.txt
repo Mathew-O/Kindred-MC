@@ -26,3 +26,4 @@ confirm-main-5.2 (9449d195, only flagged): 0 min, peak 1258 MB, All 2 required t
 confirm-branch-6.2 (eeaed98f, only flagged): 0 min, peak 1361 MB, All 2 required tests passed, fence-top 0, disk 5.1G
 confirm-main-6.2 (9449d195, only flagged): 0 min, peak 1375 MB, 1 required tests failed, fence-top 0, disk 5.1G
 confirm-branch-7.2 (eeaed98f, only flagged): 0 min, peak 971 MB, All 2 required tests passed, fence-top 0, disk 5.1G
+confirm-main-7.2 (9449d195, only flagged): 0 min, peak 1190 MB, All 2 required tests passed, fence-top 0, disk 5.1G
