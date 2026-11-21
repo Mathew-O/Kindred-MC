@@ -43,7 +43,8 @@
     "HuntCompassVanishMixin",
     "HuntCompassDropMixin",
     "HuntCompassVoidMixin",
-    "HuntCompassCraftMixin"
+    "HuntCompassCraftMixin",
+    "ServerSaveTimeMixin"
   ],
   "client": [
     "client.PlayerListEntrySkinMixin",
