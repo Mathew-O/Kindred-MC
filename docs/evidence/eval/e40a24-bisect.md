@@ -99,3 +99,59 @@ with the same jar, run.py and settings, into the same build folder.
   - total ≤160: the regression is real in total, and the bisect resumes at 569256e on totals;
   - total ≥200: 108 was a low draw, and the bisect closes;
   - anything between: the lead decides.
+
+## Addendum, 2026-11-21: `e40a23r`, the decision, and step 3
+
+### `e40a23r-3115b1c`, a replicate of iteration 23
+- **Harness:** 3115b1c's own jar, rebuilt from its source tree and passed by `--jar` (sha256 76f7d576…). run.py at
+  174e0b3, as above. Run in two calls of five seeds, three at a time, so neither nears the runner's 2-hour limit.
+  10 of 10 exit 0, 144,000 ticks each.
+- **Result:** a total of **171**, between the lead's pre-stated lines (≤160 real in total; ≥200 a low draw).
+- **Per seed against the first 3115b1c run:** median +7.5, range −12 to +21, median |Δ| 12.0. That is inside the
+  83321ac band.
+- **Its exit figures:** stuck under a tenth 3 of 10; deaths median **0.5** an hour [0 to 3.5]; iron pickaxe 23.7 min;
+  portal 9 of 10; 20 deaths; 0 blocks for reconciliation.
+  - The deaths median of 0.5 meets that criterion. It is **3115b1c's code**, not main's.
+
+### The decision on `e40a23r` (the lead's)
+**The regression is real; the bisect resumes at 569256e.** The reasons given:
+- Both 83321ac runs (249, 255) sit about 80 above even the higher 3115b1c run (171), and about 110 above its mean.
+  That is well outside 3115b1c's own spread of 63.
+- **The spell kinds carry a signature the totals hide:** hole or pit plus hemmed in is 11 and 10 in the 3115b1c runs,
+  and 39 and 34 in the 83321ac runs.
+- 8e05ec4 (141; signature 13) sits with 3115b1c, so the cause is in 8e05ec4..83321ac.
+
+From here each step is read on the signature first and the total second:
+- **Bad** (the cause at or before the step): signature ≥28 and total ≥200.
+- **Good** (the cause after it): signature ≤16 and total ≤180.
+- **Anything else:** the lead decides.
+
+### Step 3: `e40a24c-569256e` (#369's merge)
+- **Harness:** its own jar by `--jar` (sha256 68e139b0…), run.py at 174e0b3, two calls of five seeds, three at a time.
+  10 of 10 exit 0, 144,000 ticks each (2026-11-16, 10:43 to 12:54 UTC).
+- **Result:** total **123**, signature **18** (hole or pit 11, hemmed in 7). Neither line is met: the total is Good,
+  and the signature is 2 over Good and 10 under Bad.
+- **The decision (the lead's): Good.** In the lead's words, the total of 123 is "well inside the good line of 180, and
+  below even 3115b1c's 171"; the signature of 18 is "2 over the good line and 10 under the bad one", near the good
+  commits' 10 to 13 and far from the bad commits' 34 to 39.
+- **So the regression lies in the five merges after it:** #371, #374, #357, #375, #377. #371 (run.py's stop) and #374
+  (a corpus note) are harness and docs.
+- **Step 4** runs at 3360ef28 (#375's merge, before #377), by the same read; it splits #377 from #357 and #375. If it
+  is Good, the cause is #377; if it is Bad, step 5 runs at d9c7b13c to split #357 from #375. (A first start at
+  d9c7b13c was stopped after two minutes when the lead chose 3360ef28; run.py stopped its three servers cleanly, and
+  it is not scored.)
+- **Its exit figures:** stuck under a tenth 5 of 10; deaths median 0.5 an hour [0 to 2.0], on main's code at 569256e;
+  iron pickaxe 20.8 min; portal 8 of 10; 13 deaths; 41 spells; 0 blocks for reconciliation.
+
+### Every run so far, stuck minutes by seed
+
+| Run | 101 | 202 | 20261030 | 303 | 31102026 | 404 | 505 | 606 | 707 | 8675309 | Total | Signature |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `e40a23-3115b1c` | 9 | 21 | 0 | 6 | 21 | 12 | 9 | 12 | 3 | 15 | 108 | 11 |
+| `e40a23r-3115b1c` | 24 | 18 | 12 | 9 | 24 | 0 | 21 | 3 | 24 | 36 | 171 | 10 |
+| `e40a24b-8e05ec4` | 18 | 39 | 6 | 0 | 30 | 0 | 33 | 0 | 6 | 9 | 141 | 13 |
+| `e40a24c-569256e` | 3 | 6 | 3 | 18 | 27 | 6 | 12 | 21 | 6 | 21 | 123 | 18 |
+| `e40a24-83321ac` | 18 | 33 | 24 | 9 | 24 | 21 | 24 | 21 | 36 | 39 | 249 | 39 |
+| `e40a24r-83321ac` | 24 | 12 | 3 | 6 | 21 | 24 | 63 | 48 | 39 | 15 | 255 | 34 |
+
+The signature is hole or pit plus hemmed in, by score.py's own kinds.

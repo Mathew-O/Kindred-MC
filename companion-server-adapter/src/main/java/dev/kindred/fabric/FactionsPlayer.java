@@ -357,7 +357,12 @@ final class FactionsPlayer {
             // mid-air over a valley or inside a hillside, where no route ends: on Factions seed 20261030, 211 of 919 legs
             // refused for no route ended in mid-air. Where it sees none along the way, the leg is as before.
             if (far > LEG) {
-                var back = backAlong(player, x, z);
+                var back = backAlong(player, x, z, WorldKnowledge.looks(player, BACK_LOOKS));
+                // Not from where it stands: from the brink of what it stands on, toward the leg, as a player on a summit
+                // steps to its edge to look down (F-35m's look over the brink) (M-06i2c4). From a summit's middle its own
+                // edge hides the slope below: on Factions seed 20261030 the brink hid it on 443 and 321 of the legs M-06i2c2
+                // left as they were (M-06i2c3's trace, bases on and off).
+                if (back == null) back = backAlong(player, x, z, WorldKnowledge.looksOverTheBrink(player, x - player.getX(), z - player.getZ(), BACK_LOOKS));
                 if (back != null) return back;
             }
         }
@@ -369,15 +374,14 @@ final class FactionsPlayer {
 
     /**
      * The farthest column along the line from where it stands to a leg's end at ({@code x}, {@code z}), stepped back from
-     * the end {@value #BACK_STEP} blocks at a time, whose top it sees and could stand on; null if none. At most
-     * {@value #BACK_LOOKS} sight lines, one a column; nothing of a column it does not see is read.
+     * the end {@value #BACK_STEP} blocks at a time, whose top it sees with {@code looks} and could stand on; null if
+     * none. At most {@value #BACK_LOOKS} sight lines a look, one a column; nothing of a column it does not see is read.
      */
-    private static BlockPos backAlong(ServerPlayerEntity player, int x, int z) {
+    private static BlockPos backAlong(ServerPlayerEntity player, int x, int z, WorldKnowledge.Looks looks) {
         var world = player.getServerWorld();
         double dx = x - player.getX(), dz = z - player.getZ();
         double length = Math.hypot(dx, dz);
         if (length < 1e-6) return null;
-        var looks = WorldKnowledge.looks(player, BACK_LOOKS);
         for (int step = 1; step <= BACK_LOOKS; step++) {
             double at = length - step * BACK_STEP;
             if (at < BACK_STEP) break;

@@ -5612,7 +5612,7 @@ final class PortalRunCampaign {
             if (cell.getSquaredDistance(feet) < 4 || !world.getBlockState(cell).isReplaceable() || !world.getFluidState(cell).isEmpty() || blocked(cell)) continue;
             var floor = world.getBlockState(cell.down()).getCollisionShape(world, cell.down());
             if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)
-                    || !mayWork(player, cell)) continue;
+                    || keepOff.test(cell) || !mayWork(player, cell)) continue;
             for (Direction side : Direction.Type.HORIZONTAL) {
                 BlockPos stand = cell.offset(side);
                 if (stand.equals(feet) || !standable(world, stand) || blocked(stand) || unreachable(stand) || !ground && besideTheVoid(world, stand)) continue;
@@ -8032,12 +8032,21 @@ final class PortalRunCampaign {
      */
     private Predicate<Item> spendFirst = item -> true;
 
-    /** The slot of a block to make a way with: one {@link #spendFirst} allows if it holds any, else the first it holds. */
+    /**
+     * While a build makes its way back up to its site: the blocks it never spends on the way, ones its owner has to keep
+     * (F-22c84 cause #3). None otherwise.
+     */
+    private Predicate<Item> spendNever = item -> false;
+
+    /**
+     * The slot of a block to make a way with, never one {@link #spendNever} names: one {@link #spendFirst} allows if it
+     * holds any, else the first it holds.
+     */
     private int wayBlockSlot(net.minecraft.entity.player.PlayerInventory inventory) {
         int any = -1;
         for (int s = 0; s < 36; s++) {
             Item item = inventory.getStack(s).getItem();
-            if (!SEALING.contains(item)) continue;
+            if (!SEALING.contains(item) || spendNever.test(item)) continue;
             if (spendFirst.test(item)) return s;
             if (any < 0) any = s;
         }
@@ -8049,23 +8058,40 @@ final class PortalRunCampaign {
      * allows before the rest: a build climbing back up to its site keeps its own blocks for itself (E-08g).
      */
     Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, Predicate<BlockPos> goal, boolean needEdit, String label, Predicate<Item> first) {
+        return buildRoute(body, target, goal, needEdit, label, first, item -> false);
+    }
+
+    /** As the last, and never spending a block {@code never} names: one its owner has to keep (F-22c84 cause #3). */
+    Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, Predicate<BlockPos> goal, boolean needEdit, String label,
+            Predicate<Item> first, Predicate<Item> never) {
         var before = spendFirst;
+        var beforeNever = spendNever;
         spendFirst = first;
+        spendNever = never;
         try {
             return buildRoute(body, target, goal, needEdit, label);
         } finally {
             spendFirst = before;
+            spendNever = beforeNever;
         }
     }
 
     /** As {@link #climbOut(NativePlayerBody)}, spending blocks {@code first} allows before the rest (E-08g). */
     Optional<Task> climbOut(NativePlayerBody body, Predicate<Item> first) {
+        return climbOut(body, first, item -> false);
+    }
+
+    /** As the last, and never spending a block {@code never} names: one its owner has to keep (F-22c84 cause #3). */
+    Optional<Task> climbOut(NativePlayerBody body, Predicate<Item> first, Predicate<Item> never) {
         var before = spendFirst;
+        var beforeNever = spendNever;
         spendFirst = first;
+        spendNever = never;
         try {
             return climbOut(body);
         } finally {
             spendFirst = before;
+            spendNever = beforeNever;
         }
     }
 

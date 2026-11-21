@@ -135,7 +135,9 @@ public final class NativeTeamPortalGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
                     for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
-                    context.setBlockState(6, 61, 6, Blocks.STONE); // Wren's perch, 60 blocks up: out of the team's 48.
+                    // Wren's perch, 60 blocks up: out of the team's 48. Above the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(6, 61, 6)), context.getAbsolutePos(new BlockPos(6, 61, 6)));
+                    context.setBlockState(6, 61, 6, Blocks.STONE);
                     f.runtime.createNative(f.source, "Mason");
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Mason allocated"))
