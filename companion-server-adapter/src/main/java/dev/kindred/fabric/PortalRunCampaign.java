@@ -5566,7 +5566,7 @@ final class PortalRunCampaign {
             if (cell.getSquaredDistance(feet) < 4 || !world.getBlockState(cell).isReplaceable() || !world.getFluidState(cell).isEmpty() || blocked(cell)) continue;
             var floor = world.getBlockState(cell.down()).getCollisionShape(world, cell.down());
             if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)
-                    || !mayWork(player, cell)) continue;
+                    || keepOff.test(cell) || !mayWork(player, cell)) continue;
             for (Direction side : Direction.Type.HORIZONTAL) {
                 BlockPos stand = cell.offset(side);
                 if (stand.equals(feet) || !standable(world, stand) || blocked(stand) || unreachable(stand) || !ground && besideTheVoid(world, stand)) continue;
