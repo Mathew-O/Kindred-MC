@@ -157,6 +157,17 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * F-22c103. As the last, the boat set off the line once, into a pit four deep, dug under it as it is set there
+     * (STAGED), where no walk reaches it: in CI on #412 (run 44871475068) the boat set off the line dropped two blocks off
+     * the fixture's ground, the take-back's walk to it had no route three times, the take-back ended there, and the hall's
+     * door was left out ("I couldn't take everything back"). Held: the boat let be and said, the hall's door back.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringGivenUpBoatInPit", tickLimit = 14000)
+    public void givenUpWithItsBoatInAPitHalLetsItBeAndPutsItsHallsDoorBack(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 7);
+    }
+
+    /**
      * As the last, the front rail's drop set down at the front's north edge as it is born, where the boat over the front
      * from the cart has it inside its box (F-22c64). A block's drop is set down within a quarter of a block of its middle,
      * and the boat overhangs the front by about a fifth, so about one time in ten. Broken from the corridor with the boat
@@ -606,7 +617,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                     // cart runs on past, the line is laid again from where it is, and after four of those the bring is given up
                     // ("kept wandering off the line"). Then, as it takes back what it put down, the cart broken and its item walked
                     // to; the hall's door is still to be put back. Never anything given.
-                    if (onBed == 6 && String.valueOf(f.runtime.bringNote(f.id)).contains("[PUSH]")
+                    if ((onBed == 6 || onBed == 7) && String.valueOf(f.runtime.bringNote(f.id)).contains("[PUSH]")
                             && librarian[0].getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
                         var world = context.getWorld();
                         var carts = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class, boat.getBoundingBox().expand(8),
@@ -615,7 +626,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                             var cart = carts.getFirst();
                             double v = cart.getVelocity().horizontalLength();
                             if (v <= 0.01) offLineSet[0] = false;
-                            else if (!offLineSet[0]) {
+                            // Case 7 once only: set off again from down in its pit, it went into the pit's side and the
+                            // librarian was hurt in the wall.
+                            else if (!offLineSet[0] && !(onBed == 7 && offLineSets[0] > 0)) {
                                 offLineSet[0] = true;
                                 offLineSets[0]++;
                                 if (saidBefore[0] < 0) saidBefore[0] = f.runtime.said(f.id).size();
@@ -623,6 +636,15 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 double x = alongX ? boat.getX() : boat.getX() + 3, z = alongX ? boat.getZ() + 3 : boat.getZ();
                                 boat.refreshPositionAndAngles(x, boat.getY(), z, boat.getYaw(), 0);
                                 boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                // F-22c103: and the ground under it and a block round dug out four deep, so that it drops into
+                                // a pit no walk goes into (deeper than a safe drop of three), as no walk reached CI's on #412,
+                                // dropped two blocks off the fixture's kept ground (run 44871475068). Two deep, inside the
+                                // kept ground, Hal walked down into it after the boat and was then shut in it.
+                                if (onBed == 7) {
+                                    BlockPos under = BlockPos.ofFloored(x, boat.getY(), z);
+                                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 1; dy <= 4; dy++)
+                                        world.setBlockState(under.add(dx, -dy, dz), net.minecraft.block.Blocks.AIR.getDefaultState());
+                                }
                                 KindredMod.LOGGER.info("Bring: the librarian's boat set off the line ({}), at {}", offLineSets[0],
                                         boat.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
                             }
@@ -630,7 +652,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                     }
                     // The tick the given-up bring says how it ended (its first line said since the staging), what the doorway is
                     // then: a bring begun again after may open it again.
-                    if (onBed == 6 && saidBefore[0] >= 0 && endedWith[0] == null
+                    if ((onBed == 6 || onBed == 7) && saidBefore[0] >= 0 && endedWith[0] == null
                             && f.runtime.said(f.id).subList(saidBefore[0], f.runtime.said(f.id).size()).stream().anyMatch(line -> !line.startsWith("the trading hall's"))) {
                         BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
                         var at = context.getWorld().getBlockState(door);
@@ -847,20 +869,23 @@ public final class NativeBringGameTests implements FabricGameTest {
                     context.assertTrue(offLeft[0] == null || offLeft[0].isEmpty(),
                             "The cart's and boat's items taken up from the cell within 600 ticks of Hal let go off its stand: still lying " + offLeft[0]);
                     context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
-                    if (onBed == 6) {
+                    if (onBed == 6 || onBed == 7) {
                         // Given up, the bring ends with what it put down taken back: the hall's door back in its doorway, as
                         // it was the tick the bring ended (a new bring may begin after and open it again).
                         context.assertTrue(offLineSets[0] > 0, "Staged: the librarian's boat set off the line as the cart rolled");
                         context.assertTrue(endedWith[0] != null, "The bring given up and ended: " + f.runtime.bringNote(f.id));
                         context.assertTrue(endedWith[0].startsWith("door / ") && !endedWith[0].contains("couldn't put my hall's door back"),
                                 "The hall's door put back as it gave up: " + endedWith[0]);
+                        // The boat in the pit let be, and said so, not walked to for ever.
+                        if (onBed == 7) context.assertTrue(endedWith[0].contains("I left the boat with the librarian in it where I couldn't get to it."),
+                                "The boat it couldn't get to let be, and said: " + endedWith[0]);
                         return;
                     }
                     context.assertTrue(f.runtime.brought(f.id).contains(librarian[0].getUuid()),
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
                 })
                 .createAndAdd(() -> {
-                  if (onBed == 6) {
+                  if (onBed == 6 || onBed == 7) {
                       // Given up as staged: nothing brought home to check.
                       librarian[0].discard();
                       f.runtime.stop();
