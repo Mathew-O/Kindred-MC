@@ -46,6 +46,27 @@ public final class NativeFactionBaseGameTests implements FabricGameTest {
 
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "factionBase", tickLimit = 5200)
     public void withItsGoalRunningAFounderBeginsItsCabinOnItsOwnLandAndAWalkWaitsForIt(TestContext context) {
+        cabinAndWalk(context, 0, 0);
+    }
+
+    /**
+     * Its land grown a chunk further east as its cabin goes up, and it on that chunk as the walk is asked: on its own land,
+     * not set out toward the walk (M-06i2d). In CI (#391's run 43816972536, #405's run 43851384322) its faction claimed a
+     * tenth chunk, one further east, as the cabin began, and the cabin's stand was on it; a check that took its land to be
+     * the nine staged chunks read it as gone east. Staged: Red holds the chunk two east of the centre too, and it is set down
+     * there as the walk is staged.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "factionBaseGrownEast", tickLimit = 5200)
+    public void itsLandGrownEastItStandsOnItsOwnNewChunkAndAWalkStillWaits(TestContext context) {
+        cabinAndWalk(context, 2, 2);
+    }
+
+    /**
+     * The cabin begun and a faction walk east asked while it goes up; with {@code claimEast} above 0 its faction also holds
+     * the chunk that many east of the centre, and with {@code standEast} above 0 it is set down that many chunks east of the
+     * centre as the walk is asked.
+     */
+    private static void cabinAndWalk(TestContext context, int claimEast, int standEast) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5100);
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos home = o.add(16, 7, 16);
@@ -73,6 +94,10 @@ public final class NativeFactionBaseGameTests implements FabricGameTest {
                         f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, f.player().getUuid(), red[0],
                                 centre[0].offset(dx, dz).key(), Map.of()));
                     }
+                    if (claimEast > 0) {
+                        f.runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, f.player().getUuid(), red[0],
+                                centre[0].offset(claimEast, 0).key(), Map.of()));
+                    }
                     stood[0] = context.getWorld().getServer().getTicks();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.recordWritten(), "Its land written"))
@@ -98,11 +123,19 @@ public final class NativeFactionBaseGameTests implements FabricGameTest {
                     // A faction walk asked now, a scout four chunks east of its land: it waits while the cabin goes up.
                     f.runtime.factionMoveSetForTest(f.id, new FactionPlay.Choice(FactionPlay.Kind.SCOUT, centre[0].offset(5, 0).key(), 0,
                             "staged: a chunk east of its land"));
+                    if (standEast > 0) {
+                        var player = f.player();
+                        player.refreshPositionAndAngles(centre[0].offset(standEast, 0).x() * 16 + 8.5, player.getY(), player.getZ(), 0, 0);
+                        player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                    }
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    // Toward the walk's end: east of its land (a build's own stand may be a step off its edge, any side but the walk's).
-                    if (!leftLand[0] && Territory.Chunk.at(W, player.getBlockX(), player.getBlockZ()).x() > centre[0].x() + 1) {
+                    // Toward the walk's end: east of its land's centre, on a chunk its faction does not hold by its claims as recorded
+                    // now (a build's own stand may be a step off its edge, any side but the walk's). Its land is what its faction holds,
+                    // not the nine chunks staged: its faction play may claim more as it builds (M-06i2d).
+                    var here = Territory.Chunk.at(W, player.getBlockX(), player.getBlockZ());
+                    if (!leftLand[0] && here.x() > centre[0].x() && !red[0].equals(f.runtime.projected().claims().get(here.key()))) {
                         leftLand[0] = true;
                         left[0] = "at " + player.getBlockPos().toShortString() + ", " + (context.getWorld().getServer().getTicks() - begun[0]) + " ticks in, build "
                                 + f.runtime.buildStatus(f.id).orElse("none") + ", move " + f.runtime.factionMoveForTest(f.id) + ", step " + f.runtime.goalStepForTest(f.id)
