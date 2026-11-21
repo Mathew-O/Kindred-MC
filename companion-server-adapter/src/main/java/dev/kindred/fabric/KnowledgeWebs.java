@@ -48,6 +48,16 @@ final class KnowledgeWebs implements KindredWire.Knowledge {
         return n;
     }
 
+    /**
+     * Each AI player's web, by its name: the relations it holds and how many of them its bound can never drop (F-32d),
+     * as {@code {Name=held/kept, ...}} in name order, for the cost line, so a long run shows each web's growth.
+     */
+    String byPlayer(java.util.function.Function<UUID, String> name) {
+        var out = new java.util.TreeMap<String, String>();
+        for (var e : webs.entrySet()) out.put(name.apply(e.getKey()), e.getValue().size() + "/" + e.getValue().keptForGood());
+        return out.toString();
+    }
+
     /** The world's web. */
     KnowledgeWeb world() { return world; }
 

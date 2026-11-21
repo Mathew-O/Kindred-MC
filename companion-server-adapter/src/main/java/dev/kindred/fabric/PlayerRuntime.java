@@ -11571,6 +11571,8 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
+        int cartPickWalks;
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
@@ -12538,7 +12540,9 @@ final class PlayerRuntime {
                 if (cart == null) {
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                             item -> item.getStack().isOf(Items.MINECART));
-                    if (!lying.isEmpty() && b.doorTries++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
+                    // Its own count of walks to the cart's item (F-22c98b): counted on the door's tries, a few walks here left
+                    // DOOR_BACK past its three before it tried once, and the hall's door was left out.
+                    if (!lying.isEmpty() && b.cartPickWalks++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }
@@ -18537,6 +18541,9 @@ final class PlayerRuntime {
                 if (entry.data == null) continue;
                 var actors = new java.util.HashSet<UUID>();
                 actors.add(entry.data.id());
+                // Its body's id as saved, connected or not (F-33g): after a restart the bodies wait offline until connected,
+                // and a day's page written then must still count what the body did before, or it is skipped for good.
+                if (entry.data.entityId() != null) actors.add(entry.data.entityId());
                 if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
                 out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors, factionOf.apply(entry.data.id())));
             }
@@ -18894,18 +18901,46 @@ final class PlayerRuntime {
     private final dev.kindred.core.metrics.TickWindow tickWindow = new dev.kindred.core.metrics.TickWindow();
     private long heapHighWater;
 
+    /** A web's player by name for the cost line (F-32d): its own id or its body's; else the id's first eight characters. */
+    private String webName(UUID id) {
+        for (Entry entry : entries.values()) {
+            if (id.equals(entry.data.id()) || id.equals(entry.data.entityId())) return entry.data.displayName();
+        }
+        return id.toString().substring(0, 8);
+    }
+
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
-        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
+        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.byPlayer(this::webName),
+                webs.world().size(), wire.inboxed(),
                 chronicle.kept(), wire.stateTold(), wire.refusals(), factions.refusalCounts(), tickWindow.describe(), heapHighWater / (1024 * 1024));
         tickWindow.reset();
         heapHighWater = 0;
-        var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth);
+        // The body's position-keyed maps by player (F-31j), counted here on the server thread that changes them.
+        String maps = bodyMaps();
+        var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth)
+                .thenApply(text -> text + "; " + BODY_MAPS + " " + maps);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
+    }
+
+    /** The cost line's name for {@link #bodyMaps}, its sizes in this order (F-31j). */
+    static final String BODY_MAPS = "body maps by player, place refusals/set aside/chests used/seen at stores/untrusted stores/recently taken/raids";
+
+    /**
+     * Each player's position-keyed body maps, by size, for the month run's cost line (F-31j): what each holds now, so
+     * the run shows whether any grows without end. Read only; nothing here changes what they keep.
+     */
+    private String bodyMaps() {
+        var by = new java.util.TreeMap<String, String>();
+        for (Entry entry : entries.values()) {
+            by.put(entry.data.displayName(), entry.placeRefusals.size() + "/" + entry.placeSetAside.size() + "/" + entry.chestsUsed.size() + "/"
+                    + entry.seenAtStores.size() + "/" + entry.untrustedStores.size() + "/" + entry.recentlyTaken.size() + "/" + entry.raids.size());
+        }
+        return by.toString();
     }
 
     /** One event written to the World Record (F-31). */

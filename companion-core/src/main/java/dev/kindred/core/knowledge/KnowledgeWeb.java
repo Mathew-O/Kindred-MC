@@ -12,6 +12,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 
 /**
@@ -116,9 +118,21 @@ public final class KnowledgeWeb {
     }
 
     private final java.util.UUID owner;
+    private final int max;
     private final Map<String, Entity> entities = new LinkedHashMap<>();
     private final Map<Long, Relation> relations = new LinkedHashMap<>();
     private long nextId = 1;
+    /**
+     * The relations not closed, by subject, verb, object, visibility and group, then by when each lapses, then by id
+     * (F-32d): what {@link #add} replaces is looked up here, not by a scan of the whole web. Kept with every change.
+     */
+    private final Map<Key, TreeMap<Long, TreeSet<Long>>> open = new java.util.HashMap<>();
+    /** The ids of the relations {@link #bound} may one day drop (not closed, lapsing at a tick), in the web's order. */
+    private final TreeSet<Long> lapsing = new TreeSet<>();
+
+    private record Key(String subject, Verb verb, String object, Visibility visibility, String group) {
+        static Key of(Relation r) { return new Key(r.subject(), r.verb(), r.object(), r.visibility(), r.group()); }
+    }
 
     /** The world's web, kept by nobody: every viewer sees only what their relations allow. */
     public KnowledgeWeb() { this(null); }
@@ -127,7 +141,13 @@ public final class KnowledgeWeb {
      * One player's web: what it knows. It sees all of it; anyone it would tell sees only what their relation to each fact
      * allows (a runner's position told to a fellow runner is still the runners' side's, never a hunter's).
      */
-    public KnowledgeWeb(java.util.UUID owner) { this.owner = owner; }
+    public KnowledgeWeb(java.util.UUID owner) { this(owner, MAX_RELATIONS); }
+
+    /** The same, kept to at most {@code max} relations: for tests that reach the bound with a few hundred facts. */
+    KnowledgeWeb(java.util.UUID owner, int max) {
+        this.owner = owner;
+        this.max = max;
+    }
 
     public Optional<java.util.UUID> owner() { return Optional.ofNullable(owner); }
 
@@ -148,15 +168,20 @@ public final class KnowledgeWeb {
                         Visibility visibility, String group) {
         long until = verb == Verb.SAW_AT || how == HowKnown.CLAIMED ? tick + DAY : Long.MAX_VALUE;
         double weight = switch (how) { case RECORDED -> 1.0; case TOLD -> 0.8; case CLAIMED -> 0.3; };
-        for (var r : List.copyOf(relations.values())) {
-            if (r.closedBy() == null && r.subject().equals(subject) && r.verb() == verb && r.object().equals(object)
-                    && r.visibility() == visibility && r.group().equals(group == null ? "" : group) && r.until() > tick) {
-                relations.put(r.id(), new Relation(r.id(), r.subject(), r.verb(), r.object(), r.value(), r.provenance(), r.from(),
+        var rel = new Relation(nextId++, subject, verb, object, value, new Provenance(events, how), tick, until, null, visibility, group, weight);
+        // The same fact still open for the same group: only those lapsing after this tick, from the index. A fact with no
+        // object replaces nothing, as before the index (its object, kept as "", never equalled the null asked with).
+        var same = object == null ? null : open.get(Key.of(rel));
+        if (same != null) {
+            var ending = new ArrayList<Long>();
+            for (var ids : same.tailMap(tick, false).values()) ending.addAll(ids);
+            for (long id : ending) {
+                var r = relations.get(id);
+                put(new Relation(r.id(), r.subject(), r.verb(), r.object(), r.value(), r.provenance(), r.from(),
                         Math.min(r.until(), tick), null, r.visibility(), r.group(), r.weight()));
             }
         }
-        var rel = new Relation(nextId++, subject, verb, object, value, new Provenance(events, how), tick, until, null, visibility, group, weight);
-        relations.put(rel.id(), rel);
+        put(rel);
         bound(tick);
         return rel;
     }
@@ -172,7 +197,7 @@ public final class KnowledgeWeb {
         long until = r.verb() == Verb.SAW_AT ? r.until() : Long.MAX_VALUE;
         var c = new Relation(r.id(), r.subject(), r.verb(), r.object(), r.value(), new Provenance(events, HowKnown.RECORDED), r.from(), until,
                 null, r.visibility(), r.group(), 1.0);
-        relations.put(r.id(), c);
+        put(c);
         return Optional.of(c);
     }
 
@@ -181,7 +206,7 @@ public final class KnowledgeWeb {
         int n = 0;
         for (var r : List.copyOf(relations.values())) {
             if (r.closedBy() == null && r.until() > tick && which.test(r)) {
-                relations.put(r.id(), new Relation(r.id(), r.subject(), r.verb(), r.object(), r.value(), r.provenance(), r.from(),
+                put(new Relation(r.id(), r.subject(), r.verb(), r.object(), r.value(), r.provenance(), r.from(),
                         Math.max(r.from(), tick), null, r.visibility(), r.group(), r.weight()));
                 n++;
             }
@@ -194,7 +219,7 @@ public final class KnowledgeWeb {
         var r = relations.get(relationId);
         if (r == null || r.closedBy() != null) return Optional.empty();
         var c = r.closed(tick, correctionEvent);
-        relations.put(r.id(), c);
+        put(c);
         return Optional.of(c);
     }
 
@@ -220,18 +245,65 @@ public final class KnowledgeWeb {
 
     public int size() { return relations.size(); }
 
+    /**
+     * How many relations {@link #bound} can never drop: those still open with no lapse (a told or recorded fact until it
+     * is replaced or ended) and those closed by a correction. The month-long cost check's count (F-32d).
+     */
+    public int keptForGood() { return relations.size() - lapsing.size(); }
+
     /** Every relation held, open or closed, in the order added: for readers that need the whole web (F-32b's legacy reading). */
     public java.util.Collection<Relation> all() { return java.util.Collections.unmodifiableCollection(relations.values()); }
 
     public Optional<Relation> get(long id) { return Optional.ofNullable(relations.get(id)); }
 
-    /** Keeps at most {@link #MAX_RELATIONS}: lapsed facts go, oldest first; open facts and corrections are never dropped. */
+    /**
+     * Keeps at most {@link #MAX_RELATIONS}: lapsed facts go, oldest first; open facts and corrections are never dropped.
+     * Only those that lapse are looked at, in the web's order (ids rise as relations are added, and the map keeps that
+     * order), so what goes is what a walk of the whole web would drop.
+     */
     private void bound(long tick) {
-        if (relations.size() <= MAX_RELATIONS) return;
-        var it = relations.values().iterator();
-        while (relations.size() > MAX_RELATIONS && it.hasNext()) {
-            var r = it.next();
-            if (r.closedBy() == null && r.until() <= tick) it.remove();
+        if (relations.size() <= max) return;
+        if (tick == Long.MAX_VALUE) { // The last tick there is: then even a fact with no lapse has lapsed.
+            for (var r : List.copyOf(relations.values())) {
+                if (relations.size() <= max) return;
+                if (r.closedBy() == null) {
+                    unindex(r);
+                    relations.remove(r.id());
+                }
+            }
+            return;
+        }
+        var it = lapsing.iterator();
+        while (relations.size() > max && it.hasNext()) {
+            var r = relations.get(it.next());
+            if (r.until() <= tick) {
+                it.remove();
+                unindex(r);
+                relations.remove(r.id());
+            }
+        }
+    }
+
+    /** A relation stored, new or in place of the one with its id (its place in the web's order kept), and indexed. */
+    private void put(Relation r) {
+        var before = relations.put(r.id(), r);
+        if (before != null) unindex(before);
+        if (r.closedBy() == null) {
+            open.computeIfAbsent(Key.of(r), k -> new TreeMap<>()).computeIfAbsent(r.until(), u -> new TreeSet<>()).add(r.id());
+            if (r.until() != Long.MAX_VALUE) lapsing.add(r.id());
+        }
+    }
+
+    private void unindex(Relation r) {
+        lapsing.remove(r.id());
+        if (r.closedBy() != null) return;
+        var key = Key.of(r);
+        var byUntil = open.get(key);
+        if (byUntil == null) return;
+        var ids = byUntil.get(r.until());
+        if (ids != null && ids.remove(r.id()) && ids.isEmpty()) {
+            byUntil.remove(r.until());
+            if (byUntil.isEmpty()) open.remove(key);
         }
     }
 }

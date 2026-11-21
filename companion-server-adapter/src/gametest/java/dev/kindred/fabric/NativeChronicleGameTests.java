@@ -169,6 +169,127 @@ public final class NativeChronicleGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * The month run's scale (8 players, 30 real days at 72 game days a day): 2,149 game days of pages for 8 players, oak's
+     * 307 weeks and the world's 71 months (17,570 pages), then a restart, then 7 more days. The next week is written
+     * from those 7 days alone and the next month from the weeks inside its 30 days alone, and every scope keeps its
+     * newest 7: the read-back (F-33e) feeds the tiers above correctly at a month's size. The bodies are not connected after
+     * the restart, as in the month run until an operator connects each: what they did still makes their players' pages (F-33g).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "chronicleMonthScale", tickLimit = 3600)
+    public void atAMonthsScaleARestartsNextWeekAndMonthAreWrittenFromTheNewestPages(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3500);
+        var server = context.getWorld().getServer();
+        UUID[] bodies = new UUID[2], ids = new UUID[2];
+        int days = 2_149, weeks = days / 7, months = 71, others = 6, firstNew = days;
+        @SuppressWarnings("unchecked") CompletableFuture<Integer>[] step = new CompletableFuture[1];
+        var runner = context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.chronicleForFixtures().idle(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Dana"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeStatuses(Actor.console()).size() == 1, "Dana"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Egon"))
+                .createAndAdd(() -> {
+                    var statuses = f.runtime.nativeStatuses(Actor.console());
+                    context.assertTrue(statuses.size() == 2 && statuses.stream().allMatch(st -> st.phase() == StoredNativePlayer.Phase.ESTABLISHED), "Both established");
+                    for (int i = 0; i < 2; i++) { bodies[i] = statuses.get(i).nativeId(); ids[i] = statuses.get(i).id(); }
+                    // The month so far, as pages: Dana's, Egon's and six other players' days; oak's weeks; the world's months.
+                    var actors = new ArrayList<UUID>(List.of(ids));
+                    for (int o = 0; o < others; o++) actors.add(UUID.randomUUID());
+                    var batch = new ArrayList<WorldEvent>();
+                    java.util.function.Consumer<WorldEvent> add = e -> {
+                        batch.add(e);
+                        if (batch.size() == 1_000) { f.runtime.record(List.copyOf(batch)); batch.clear(); }
+                    };
+                    for (int d = 0; d < days; d++) {
+                        for (UUID a : actors) {
+                            var page = new Chronicle.Summary(Chronicle.Tier.PLAYER_DAY, a.toString(), d * Chronicle.DAY, (d + 1) * Chronicle.DAY,
+                                    "Day " + (d + 1) + " of " + a.toString().substring(0, 8) + ".", List.of(), false);
+                            add.accept(new WorldEvent(0, server.getTicks(), System.currentTimeMillis(), "", Chronicle.PAGE, a, a.toString(), "",
+                                    Chronicle.pageData(page, 0), WorldEvent.HowKnown.RECORDED));
+                        }
+                    }
+                    for (int w = 0; w < weeks; w++) {
+                        long from = w * Chronicle.Tier.FACTION_WEEK.span;
+                        var week = new Chronicle.Summary(Chronicle.Tier.FACTION_WEEK, "faction:oak", from, from + Chronicle.Tier.FACTION_WEEK.span,
+                                "Oak's week " + (w + 1) + ".", List.of(), false);
+                        add.accept(new WorldEvent(0, server.getTicks(), System.currentTimeMillis(), "", Chronicle.PAGE, null, "faction:oak", "",
+                                Chronicle.pageData(week, 0), WorldEvent.HowKnown.RECORDED));
+                    }
+                    for (int m = 0; m < months; m++) {
+                        long from = m * Chronicle.Tier.WORLD_MONTH.span;
+                        var month = new Chronicle.Summary(Chronicle.Tier.WORLD_MONTH, "world", from, from + Chronicle.Tier.WORLD_MONTH.span,
+                                "The world's month " + (m + 1) + ".", List.of(), false);
+                        add.accept(new WorldEvent(0, server.getTicks(), System.currentTimeMillis(), "", Chronicle.PAGE, null, "world", "",
+                                Chronicle.pageData(month, 0), WorldEvent.HowKnown.RECORDED));
+                    }
+                    if (!batch.isEmpty()) f.runtime.record(List.copyOf(batch));
+                    f.runtime.stop(); // The stop waits on the ordered writer: every page is written before the restart.
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .createAndAdd(() -> { f.runtime = new PlayerRuntime(server, f.directory, NativePlayerSaves::read, writer -> writer); f.runtime.start(); })
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady() && f.runtime.chronicleForFixtures().idle(), "Restarted, 17,570 pages read back"))
+                .createAndAdd(() -> {
+                    var keeper = f.runtime.chronicleForFixtures();
+                    context.assertTrue(keeper.pages(ids[0]).size() == ChronicleKeeper.KEPT && keeper.pages(ids[0]).getLast().text().startsWith("Day " + days + " "),
+                            "Dana's newest pages read back: " + keeper.pages(ids[0]).stream().map(Chronicle.Summary::text).toList());
+                    context.assertTrue(keeper.pagesAbove("faction:oak").getLast().text().equals("Oak's week " + weeks + ".")
+                            && keeper.pagesAbove("world").getLast().text().equals("The world's month " + months + "."), "The newest week and month read back");
+                    f.runtime.setFactionOf(id -> "oak");
+                });
+        for (int d = 0; d < 7; d++) {
+            final int day = firstNew + d, deathsBy = d + 1;
+            runner = runner
+                    .createAndAdd(() -> f.runtime.record(List.of(
+                            WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "death", bodies[0], "Dana", "", Map.of("cause", "lava " + day)),
+                            WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "journal", bodies[1], "goal", "", Map.of("detail", "day " + day + " work")))))
+                    .createAndAdd(() -> context.assertTrue(f.runtime.ledgers().deaths().getOrDefault(bodies[0], 0) == deathsBy, "Day " + day + " written"))
+                    .createAndAdd(() -> step[0] = f.runtime.chronicleForFixtures().writeDay(day * Chronicle.DAY, (day + 1) * Chronicle.DAY))
+                    .createAndAdd(() -> context.assertTrue(step[0].isDone() && step[0].join() == 2 && f.runtime.chronicleForFixtures().idle(), "Day " + day + "'s two pages: "
+                            + (step[0].isDone() ? step[0].join() : "not done") + ", through " + f.runtime.chronicleForFixtures().throughForFixtures()
+                            + ", idle " + f.runtime.chronicleForFixtures().idle()));
+        }
+        runner.createAndAdd(() -> {
+                    // No double paging: the saved id and a connected body's id are the same body, one actor; each of the
+                    // new days' events is cited once in each player's pages, and each day's death exactly once.
+                    var keeper = f.runtime.chronicleForFixtures();
+                    for (UUID id : ids) {
+                        var seen = new java.util.HashSet<Long>();
+                        for (var p : keeper.pages(id)) for (Long c : p.cites()) context.assertTrue(seen.add(c), "Event " + c + " cited twice in " + id + "'s pages");
+                    }
+                    long deathsCited = keeper.pages(ids[0]).stream().flatMap(p -> p.cites().stream()).distinct().count();
+                    context.assertTrue(keeper.pages(ids[0]).stream().filter(p -> p.text().contains("died: lava")).count() == 7, "Each new day's death on its own day's page");
+                    context.assertTrue(deathsCited >= 7, "Dana's 7 deaths cited: " + deathsCited);
+                })
+                .createAndAdd(() -> step[0] = f.runtime.chronicleForFixtures().writeWeeks(firstNew * Chronicle.DAY))
+                .createAndAdd(() -> {
+                    context.assertTrue(step[0].isDone() && step[0].join() == 1, "Oak's next week");
+                    var oak = f.runtime.chronicleForFixtures().pagesAbove("faction:oak");
+                    var week = oak.getLast();
+                    context.assertTrue(oak.size() == ChronicleKeeper.KEPT && week.from() == firstNew * Chronicle.DAY, "The newest of 7 kept: " + oak.stream().map(Chronicle.Summary::text).toList());
+                    // Each day a condensed line of the week ("day 2150 …" for the first new day); none of the pages before.
+                    context.assertTrue(week.text().contains("day " + (firstNew + 1) + " ") && week.text().contains("lava " + (firstNew + 6))
+                            && !week.text().contains("Day " + days + " "), "From the 7 new days alone, none before: " + week.text());
+                    context.assertTrue(!week.cites().isEmpty(), "The new week cites the new days' events: " + week.cites());
+                    step[0] = f.runtime.chronicleForFixtures().writeMonth(2_130 * Chronicle.DAY);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(step[0].isDone() && step[0].join() == 1, "The world's next month");
+                    var world = f.runtime.chronicleForFixtures().pagesAbove("world");
+                    var month = world.getLast();
+                    context.assertTrue(world.size() == ChronicleKeeper.KEPT && month.from() == 2_130 * Chronicle.DAY, "The newest of 7 kept: " + world.stream().map(Chronicle.Summary::text).toList());
+                    // Its 30 days, 2,130 to 2,160, hold the weeks from days 2,135 and 2,142 ("Oak's week 306" and "307") and the new
+                    // one from 2,149; "Oak's week 305" starts on day 2,128, before the month.
+                    var newWeek = f.runtime.chronicleForFixtures().pagesAbove("faction:oak").getLast();
+                    context.assertTrue(month.text().contains("Oak's week 306.") && month.text().contains("Oak's week 307.") && !month.text().contains("Oak's week 305."),
+                            "From the weeks inside its 30 days alone: " + month.text());
+                    context.assertTrue(!month.cites().isEmpty() && newWeek.cites().containsAll(month.cites()),
+                            "The new week's events cited, nothing else: " + month.cites() + " of " + newWeek.cites());
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped again"))
+                .completeIfSuccessful();
+    }
+
     /** Ada's day recorded and written as a page: the plain list without a model, read back after a restart, no event twice. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "chronicle", tickLimit = 1200)
     public void aPlayersDayBecomesItsPageAndNoEventIsToldTwice(TestContext context) {
