@@ -53,3 +53,4 @@ trace606-1 (69241ca3, only flagged): 0 min, peak 1226 MB, All 2 required tests p
 trace606-2 (69241ca3, only flagged): 0 min, peak 1272 MB, All 2 required tests passed, fence-top 0, disk 5.0G
 trace606-3 (69241ca3, only flagged): 0 min, peak 1311 MB, All 2 required tests passed, fence-top 0, disk 5.0G
 confirm-branch-10.4 (69241ca3, only flagged): 0 min, peak 1249 MB, All 2 required tests passed, fence-top 0, disk 5.0G
+confirm-main-10.4 (039c8b92, only flagged): 0 min, peak 1276 MB, All 2 required tests passed, fence-top 0, disk 5.0G
