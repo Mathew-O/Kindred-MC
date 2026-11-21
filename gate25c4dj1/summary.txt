@@ -7,3 +7,4 @@ confirm-branch-1.3 (69241ca3, only flagged): 0 min, peak 1279 MB, 1 required tes
 confirm-branch-1.4 (69241ca3, only flagged): 0 min, peak 1199 MB, 1 required tests failed, fence-top 0, disk 5.0G
 confirm-branch-1.5 (69241ca3, only flagged): 0 min, peak 1165 MB, 1 required tests failed, fence-top 0, disk 5.0G
 confirm-branch-1.6 (69241ca3, only flagged): 0 min, peak 1258 MB, All 2 required tests passed, fence-top 0, disk 5.0G
+confirm-branch-2.1 (69241ca3, only flagged): 0 min, peak 1493 MB, All 2 required tests passed, fence-top 0, disk 5.0G
