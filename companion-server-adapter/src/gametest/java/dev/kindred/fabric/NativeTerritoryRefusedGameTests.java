@@ -166,6 +166,8 @@ public final class NativeTerritoryRefusedGameTests implements FabricGameTest {
                     f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
                     b[0] = border(context);
                     FixtureGround.simulated(context, context.getAbsolutePos(new BlockPos(b[0] - 4, 0, 0)), context.getAbsolutePos(new BlockPos(b[0] + 6, 0, 8)));
+                    // Its ground across the border and what is set on it, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new BlockPos(b[0] - 4, 1, 0)), context.getAbsolutePos(new BlockPos(b[0] + 6, 8, 8)));
                     for (int x = b[0] - 4; x <= b[0] + 6; x++) for (int z = 0; z <= 8; z++) {
                         context.setBlockState(x, 1, z, Blocks.STONE);
                         for (int y = 2; y <= 8; y++) context.setBlockState(x, y, z, Blocks.AIR);

@@ -24,6 +24,8 @@ public final class NativeCostGameTests implements FabricGameTest {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 500);
         var server = context.getWorld().getServer();
         @SuppressWarnings("unchecked") CompletableFuture<String>[] line = new CompletableFuture[1];
+        // A web for an id no player of this runtime has (F-32d): named on the line by the id's first eight characters.
+        var someone = java.util.UUID.randomUUID();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.record(List.of(
@@ -33,11 +35,23 @@ public final class NativeCostGameTests implements FabricGameTest {
                                 ClaimLedger.chunk("minecraft:overworld", 91, 90), Map.of()),
                         WorldEvent.recorded(server.getTicks(), System.currentTimeMillis(), "", "journal", null, "goal", "", Map.of("detail", "x".repeat(100))))))
                 .createAndAdd(() -> context.assertTrue(f.runtime.ledgers().claims().size() == 2, "Written"))
-                .createAndAdd(() -> line[0] = f.runtime.logCost(1))
+                .createAndAdd(() -> {
+                    // F-32d: the web holds three facts it was told, one of them told again, which ends the first.
+                    var web = f.runtime.webs().of(someone);
+                    long now = server.getTicks();
+                    for (String item : List.of("item:iron_ingot", "item:bread", "item:iron_ingot")) {
+                        web.add("faction:oak", dev.kindred.core.knowledge.KnowledgeWeb.Verb.HAS_SPARE, item, "4", dev.kindred.core.wire.HowKnown.TOLD,
+                                List.of(1L), now, dev.kindred.core.wire.Visibility.FACTION, "oak");
+                    }
+                    line[0] = f.runtime.logCost(1);
+                })
                 .createAndAdd(() -> {
                     context.assertTrue(line[0].isDone(), "Measured");
                     String s = line[0].join();
                     context.assertTrue(s.contains("claim=2/") && s.contains("journal=1/"), "Counted by kind: " + s);
+                    String name = someone.toString().substring(0, 8);
+                    // Three held; the iron told first ended at this tick, so the bound may drop it once it lapses: two kept for good.
+                    context.assertTrue(s.contains("; webs by player, held/kept for good {" + name + "=3/2};"), "Each AI's web by name: " + s);
                     var bytes = java.util.regex.Pattern.compile("the database (\\d+) bytes on disk").matcher(s);
                     context.assertTrue(bytes.find() && Long.parseLong(bytes.group(1)) > 0, "The database measured: " + s);
                     context.assertTrue(s.contains("the world's 2;") || s.contains("the world's 2 "), "The world's web holds the two claims: " + s);
@@ -114,6 +128,29 @@ public final class NativeCostGameTests implements FabricGameTest {
                     context.assertTrue(ticks.find() && Long.parseLong(ticks.group(1)) >= 40 && Double.parseDouble(ticks.group(2)) > 0, "The ticks since the last line: " + s);
                     var heap = java.util.regex.Pattern.compile("high water (\\d+) MB since the last line").matcher(s);
                     context.assertTrue(heap.find() && Long.parseLong(heap.group(1)) > 0, "The heap's high water: " + s);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .completeIfSuccessful();
+    }
+
+    /**
+     * Each player's position-keyed body maps on the cost line (F-31j), by name and size: a fresh player holds none of
+     * them. The month run reads their growth off this; nothing here bounds them.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "costBodyMaps", tickLimit = 600)
+    public void theCostLineGivesEachPlayersBodyMapsBySize(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 500);
+        @SuppressWarnings("unchecked") CompletableFuture<String>[] line = new CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Counter"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> line[0] = f.runtime.logCost(1))
+                .createAndAdd(() -> {
+                    context.assertTrue(line[0].isDone(), "Measured");
+                    String s = line[0].join();
+                    context.assertTrue(s.endsWith("; " + PlayerRuntime.BODY_MAPS + " {Counter=0/0/0/0/0/0/0}"), "Its body maps, by player and size: " + s);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
