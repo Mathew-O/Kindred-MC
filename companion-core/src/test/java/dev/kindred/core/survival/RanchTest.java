@@ -358,6 +358,35 @@ class RanchTest {
     }
 
     @Test
+    void leavingAndPushedIntoTheGatewayAsTheGateOpensItWalksOutRatherThanShutTheGateOnItself() {
+        // F-22c105 (#417's CI): leaving, the pen crowded at its gate, the gate opened and the player stood in the gateway
+        // itself, pushed there by the cows: its cell is the fence's line, so not inside the pen, and the run took it for out
+        // and shut the gate behind. Shut on its cell, the gate put it back in the pen, and it opened the gate again, 15
+        // times, until its look back began from inside and found no walk to the gate's front. Now, in the gateway with the
+        // gate open, it walks on out.
+        var ranch = ranch();
+        ranch.next(seen(3, 1, true, 8, 0, cow(DAISY, 3, 3), cow(BESS, 4, 4)));
+        ranch.next(seen(3, 5, true, 8, 10, cow(DAISY, 3, 3), cow(BESS, 4, 4)));
+        ranch.next(seen(3, 5, false, 8, 20, cow(DAISY, 3, 1), cow(BESS, 5, 1)));
+        assertEquals(DAISY, assertInstanceOf(Ranch.Step.Feed.class, ranch.next(seen(3, 3, false, 8, 30, cow(DAISY, 3, 1), cow(BESS, 5, 1)))).animal());
+        var daisyInLove = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 1), true, false, true);
+        assertEquals(BESS, assertInstanceOf(Ranch.Step.Feed.class, ranch.next(seen(4, 2, false, 7, 40, daisyInLove, cow(BESS, 5, 1)))).animal());
+        // Bred: their calf born in the pen, and the run leaves.
+        var daisy = new Ranch.Animal(DAISY, Ranch.Kind.COW, new Pos(3, 64, 3), true, false, false);
+        var bess = new Ranch.Animal(BESS, Ranch.Kind.COW, new Pos(5, 64, 2), true, false, false);
+        var calfIn = new Ranch.Animal(CALF, Ranch.Kind.COW, new Pos(2, 64, 2), false, false, false);
+        var open = ranch.next(new Ranch.Observation(new Pos(3, 64, 5), true, false, 6, List.of(daisy, bess, calfIn), 60));
+        assertEquals(new Ranch.Step.Gate(true, "Open the gate to leave"), open);
+        // The gate open, the player in the gateway (the gate's own cell, on the fence's line).
+        var next = ranch.next(new Ranch.Observation(new Pos(3, 64, 6), true, true, 6, List.of(daisy, bess, calfIn), 70));
+        var out = assertInstanceOf(Ranch.Step.Go.class, next, "in the gateway, walked on out, not the gate shut on it: " + next);
+        assertEquals(new Pos(3, 64, 7), out.target());
+        // Out past the gateway, the gate is shut behind as before.
+        assertEquals(new Ranch.Step.Gate(false, "Shut the gate behind"),
+                ranch.next(new Ranch.Observation(new Pos(3, 64, 7), true, true, 6, List.of(daisy, bess, calfIn), 80)));
+    }
+
+    @Test
     void oneThatLeftThePenAsTheOtherWasFedIsFetchedAgainNotTakenForNotReady() {
         // The cattle fixture, once in ten: both in and the gate shut, one stood on the shut gate as the other was fed; with
         // one in the pen the pair was "not ready to breed again", and it left. Now that one is fetched in again.
