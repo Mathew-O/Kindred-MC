@@ -314,6 +314,33 @@ final class RanchRunner {
         return task;
     }
 
+    /**
+     * A spot no block of its own goes (F-22c91): its pen's footprint, fences and gate included, and a block round it, and
+     * the gate's approach two out, from the floor below to two above. Set down inside the pen, its crafting table was a
+     * step a penned chicken hopped the fence by; set down at the fence, at the gate's front, it would stand in the way
+     * the herd is led in and the player walks out.
+     */
+    boolean keepOff(BlockPos spot) {
+        if (spot.getY() < origin.getY() - 1 || spot.getY() > origin.getY() + 2) return false;
+        int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+        Pos gate = null;
+        for (var block : pen.placed(new Pos(origin.getX(), origin.getY(), origin.getZ()), 0)) {
+            minX = Math.min(minX, block.at().x()); maxX = Math.max(maxX, block.at().x());
+            minZ = Math.min(minZ, block.at().z()); maxZ = Math.max(maxZ, block.at().z());
+            if (block.spec().block().endsWith("_fence_gate")) gate = block.at();
+        }
+        int x = spot.getX(), z = spot.getZ();
+        if (x >= minX - 1 && x <= maxX + 1 && z >= minZ - 1 && z <= maxZ + 1) return true;
+        if (gate == null) return false;
+        // Two out from the gate, a block either side of its line.
+        int dx = gate.x() == minX ? -1 : gate.x() == maxX ? 1 : 0, dz = gate.z() == minZ ? -1 : gate.z() == maxZ ? 1 : 0;
+        for (int side = -1; side <= 1; side++) {
+            int ax = gate.x() + 2 * dx + (dx == 0 ? side : 0), az = gate.z() + 2 * dz + (dz == 0 ? side : 0);
+            if (x == ax && z == az) return true;
+        }
+        return false;
+    }
+
     /** Craft {@code item} from {@code planks} planks and {@code sticks} sticks: the sticks and planks first if short. */
     private Optional<PortalRunCampaign.Task> craft(NativePlayerBody body, PortalRunCampaign campaign, String item, int planks, int sticks) {
         var inventory = body.entity().getInventory();
@@ -333,7 +360,8 @@ final class RanchRunner {
         // At a crafting table: one close by, else one it carries set down, else one made from four planks.
         var made = campaign.craft(body, recipe);
         if (made.isPresent() || campaign.tableNear(body)) return made;
-        if (inventory.count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body);
+        // Never in or at its own pen (F-22c91): set down inside it, the table was a step a penned chicken hopped the fence by.
+        if (inventory.count(Items.CRAFTING_TABLE) > 0) return campaign.placeTable(body, this::keepOff);
         if (inventory.count(plank) < 4) {
             if (inventory.count(log) == 0) {
                 done = true;
