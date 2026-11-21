@@ -3,7 +3,7 @@
 Date: 2026-11-14 to 2026-11-15
 Agent / branch: Claude, MODES on MOVEMENT (`claude/movement-1114-backoffflip`)
 Build: ebdd8729 (main aa584be6 merged in); main's side at aa584be6
-Status: in progress. The fixture, the classes and the corpus gate (it passes; the corpus shows no change in deaths either way) are below; the PR's CI remains.
+Status: complete 2026-11-15. The fixture, the classes and the corpus gate (it passes; the corpus shows no change in deaths either way) are below; CI green on 3990bd21 (run 43686272468), merged in #342 as 7d5ec42. A known open check: #342 is among the first-half candidates of iteration 24's stuck-time bisect; if the bisect implicates it, this is reopened with that evidence.
 
 ## Scope and implementation
 
@@ -147,4 +147,4 @@ Flagged (passing on the baseline, failing in 2 or more of 3 runs here): 5. All w
 - F-25c4dh1, open: a rest to heal taken with a mob on foot after it, from the low-health "nothing after it" read.
 - The second-zombie case is one staging. The corpus's A1 scenes do not die as replayed, before or after, so the deaths
   criterion's effect is not yet shown outside the fixture: a live run, or the e40a22 seeds again, would show it.
-- Next dependency: the PR's CI and the lead's merge; then E-71b1.
+- Next dependency: none; F-25c4dh1 and F-25c4dh2 are open children.
