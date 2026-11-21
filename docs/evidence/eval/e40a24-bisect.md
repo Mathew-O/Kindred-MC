@@ -251,3 +251,35 @@ The signature is hole or pit plus hemmed in, by score.py's own kinds.
     mechanism;
   - anything else: the lead decides.
 - The mechanism is filed as an Open row, F-27a6.
+
+## Addendum, 2026-11-21: step 8 does not confirm the tie
+
+### Step 8: main 0d3432b, replays on against replays off
+- **Harness:** one jar for both arms, built from 0d3432b (sha256 286527a9…), by `--jar`. Arm A used run.py at 174e0b3;
+  arm B its uncommitted copy `run_replays_off.py`, which adds only `KINDRED_REPLAYS=off` to the server's environment
+  ([the diff](e40a25s-0d3432b-off/run-py.diff)); run.py otherwise drops every `KINDRED_` variable. The arms alternated by
+  half-batch (A, B, A, B), three at a time, `--keep-world`; 20 of 20 exit 0, 144,000 ticks each (13:16 to 19:08 UTC).
+- **The switch held:** arm A logged 74 replay captures, arm B none, and wrote no replays folder.
+
+| Arm | Replay captures | 101 | 202 | 20261030 | 303 | 31102026 | 404 | 505 | 606 | 707 | 8675309 | Total | Hemmed in | Hole or pit |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | 
+| A, replays on (`e40a25s-0d3432b-on`) | 74 | 3 | 27 | 3 | 24 | 3 | 9 | 45 | 12 | 21 | 15 | 162 | 9 | 5 |
+| B, `KINDRED_REPLAYS=off` (`e40a25s-0d3432b-off`) | 0 | 12 | 60 | 9 | 3 | 15 | 42 | 39 | 63 | 9 | 15 | 267 | 23 | 12 |
+
+- **Against the read stated before it ran:** (B) ≤7 and (A) ≥15 does not hold (B 23, A 9), nor both low or both high.
+  The result runs the other way: the arm with no capture of any kind has the higher hemmed-in count and stuck total.
+- **Exit figures:**
+  - Arm A: stuck under a tenth 4 of 10; deaths median 0.5 an hour; iron pickaxe 22.9 min; portal 10 of 10; 10 deaths.
+  - Arm B: stuck under a tenth 3 of 10; deaths median 0.5 an hour; iron pickaxe 22.65 min; portal 7 of 10; 11 deaths.
+  - Neither arm had a block for reconciliation.
+
+### The reading (the lead's ruling)
+- **Hemmed in is far noisier between batches than the 10 earlier runs suggested.** On one jar it was 9 with the capture
+  on and 23 with it off, and the stuck total 162 against 267. Per seed the swings are large: 606 went 12 → 63, 303
+  went 24 → 3.
+- **So the iteration-24 bisect does not establish a code cause, and #375's capture is not implicated.** The "complete
+  separation" of steps 6 and 7 (15 to 19 against 4 to 7) does not survive a same-jar comparison.
+- F-27a6 stays Open: "Step 8 (0d3432b, on 9 / off 23 hemmed-in) contradicts the premise. No code change. Revisit only if
+  a same-jar replicate shows capture-on above capture-off."
+- **Next (E-40 iteration 25):** "What are current main's exit figures, and how far apart are two identical batches of
+  it?" Two identical 10-seed batches of current main, back to back, replays on.

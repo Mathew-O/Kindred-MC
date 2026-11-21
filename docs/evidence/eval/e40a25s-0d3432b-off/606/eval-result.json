@@ -1,0 +1,57 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 6389, "paid": 6389, "lapsed": 302, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 117.9, "snapshotMicrosMax": 9767.6, "tagMicrosMean": 110.5, "tagMicrosMax": 16019.4, "bySource": {"container.take:furnace": 69, "pickup:class_1428.method_6007": 1, "pickup:class_1540.method_5773": 2, "pickup:class_2248.method_36993": 4877, "pickup:class_3222.method_7329": 1129, "pickup:class_52.method_331": 20, "screen:class_1714": 59, "screen:class_1723": 451, "use:item": 83}, "dropsByOrigin": {"class_1428.method_6007": 295, "class_1540.method_5773": 7, "class_2248.method_36993": 4933, "class_3222.method_7329": 96, "class_52.method_331": 175}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.38, "tickMsWorst": 2472.47, "tickMsWorstAt": 77717, "ticksOver50ms": 1450, "ticksOver200ms": 15, "heapMbMax": 1202, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 360, "stone_tools": 1960, "iron_ingot": 7060, "iron_pickaxe": 22860, "obsidian": 52538, "portal_lit": 53690},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1172,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 280, "stone_tools": 2680, "iron_ingot": 5960, "iron_pickaxe": 35180},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 63060, "x": 390, "y": -6, "z": -41, "attempt": 1}, {"tick": 70260, "x": 390, "y": -5, "z": -41, "attempt": 2}, {"tick": 77460, "x": 390, "y": -6, "z": -41, "attempt": 3}, {"tick": 81080, "x": 390, "y": -6, "z": -41, "attempt": 4}, {"tick": 84700, "x": 390, "y": -6, "z": -41, "attempt": 5}, {"tick": 88320, "x": 390, "y": -6, "z": -41, "attempt": 6}, {"tick": 91940, "x": 390, "y": -6, "z": -41, "attempt": 7}, {"tick": 95560, "x": 390, "y": -6, "z": -41, "attempt": 8}, {"tick": 99160, "x": 390, "y": -6, "z": -41, "attempt": 9}, {"tick": 102780, "x": 390, "y": -6, "z": -41, "attempt": 10}, {"tick": 106400, "x": 390, "y": -6, "z": -41, "attempt": 11}, {"tick": 110300, "x": 390, "y": -6, "z": -41, "attempt": 12}, {"tick": 113920, "x": 390, "y": -6, "z": -41, "attempt": 13}, {"tick": 117540, "x": 390, "y": -6, "z": -41, "attempt": 14}, {"tick": 121140, "x": 390, "y": -6, "z": -41, "attempt": 15}, {"tick": 124760, "x": 390, "y": -6, "z": -41, "attempt": 16}, {"tick": 128380, "x": 390, "y": -6, "z": -41, "attempt": 17}, {"tick": 132000, "x": 390, "y": -6, "z": -41, "attempt": 18}, {"tick": 135620, "x": 390, "y": -6, "z": -41, "attempt": 19}, {"tick": 139220, "x": 390, "y": -6, "z": -41, "attempt": 20}, {"tick": 142840, "x": 390, "y": -6, "z": -41, "attempt": 21}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2732,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 1.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1580, "stone_tools": 3140, "iron_ingot": 7460, "iron_pickaxe": 27680, "obsidian": 57025, "portal_lit": 59444},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1734,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.5
+    }
+  }
+}
