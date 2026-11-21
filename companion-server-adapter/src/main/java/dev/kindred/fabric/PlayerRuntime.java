@@ -11571,6 +11571,8 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
+        int cartPickWalks;
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
@@ -12538,7 +12540,9 @@ final class PlayerRuntime {
                 if (cart == null) {
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                             item -> item.getStack().isOf(Items.MINECART));
-                    if (!lying.isEmpty() && b.doorTries++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
+                    // Its own count of walks to the cart's item (F-22c98b): counted on the door's tries, a few walks here left
+                    // DOOR_BACK past its three before it tried once, and the hall's door was left out.
+                    if (!lying.isEmpty() && b.cartPickWalks++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }
