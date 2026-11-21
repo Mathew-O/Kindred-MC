@@ -35,3 +35,4 @@ confirm-branch-7.1 (86483e6c, only flagged): 0 min, peak 1148 MB, 1 required tes
 confirm-base-7.1 (0d3432bb, only flagged): 0 min, peak 1113 MB, All 2 required tests passed, fence-top 0, disk 4.3G
 confirm-branch-7.3 (86483e6c, only flagged): 0 min, peak 1130 MB, All 2 required tests passed, fence-top 0, disk 4.3G
 confirm-base-7.3 (0d3432bb, only flagged): 0 min, peak 1093 MB, All 2 required tests passed, fence-top 0, disk 4.3G
+confirm-branch-8.1 (86483e6c, only flagged): 0 min, peak 999 MB, All 2 required tests passed, fence-top 0, disk 4.3G
