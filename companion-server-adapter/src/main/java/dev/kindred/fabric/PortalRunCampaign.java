@@ -217,7 +217,7 @@ final class PortalRunCampaign {
      * ground (vanilla's despawn); the ticks a block a walk is reckoned at (a walk is some 4.3 blocks a second, so under 5);
      * and how many such walks must fit in what is left of the kit's life on the ground.
      */
-    static final int KIT_WALK_MOST = 24, KIT_HOSTILE_SIGHT = 24, DROP_LIFE = 6_000, KIT_TICKS_A_BLOCK = 5, KIT_WALKS_LEFT = 4;
+    static final int KIT_WALK_MOST = 40, KIT_HOSTILE_SIGHT = 24, DROP_LIFE = 6_000, KIT_TICKS_A_BLOCK = 5, KIT_WALKS_LEFT = 4;
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
     private long lastTick;
