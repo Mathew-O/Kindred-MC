@@ -9,3 +9,4 @@ wake-base-4 (c2207fc3, only flagged): 0 min, peak 1198 MB, All 4 required tests 
 wake-branch-5 (c2207fc3, only flagged): 0 min, peak 1041 MB, 1 required tests failed, fence-top 0, disk 5.0G
 wake-base-5 (c2207fc3, only flagged): 0 min, peak 1099 MB, 1 required tests failed, fence-top 0, disk 5.0G
 wake-branch-6 (c2207fc3, only flagged): 0 min, peak 1137 MB, All 4 required tests passed, fence-top 0, disk 5.0G
+wake-base-6 (c2207fc3, only flagged): 0 min, peak 1306 MB, All 4 required tests passed, fence-top 0, disk 5.0G
