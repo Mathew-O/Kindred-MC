@@ -301,6 +301,8 @@ public final class NativeAutonomyGameTests implements FabricGameTest {
                     context.getWorld().setTimeOfDay(1000);
                     BlockPos p = f.player().getBlockPos();
                     distantLog[0] = p.east(5);
+                    // Its strip of ground and the log on it, partly outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, p.down(), p.east(6).up(2));
                     for (int dx = 0; dx <= 6; dx++) {
                         context.getWorld().setBlockState(p.east(dx).down(), Blocks.STONE.getDefaultState());
                         for (int dy = 0; dy <= 2; dy++) {

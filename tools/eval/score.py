@@ -173,6 +173,63 @@ def stuck_kinds_of(log, players):
     return found
 
 
+BLOCKED = re.compile(r"Native player ([0-9a-f-]{36}) blocked: Native action outcome requires reconciliation")
+ALLOCATED = re.compile(r"Allocated (\w+) \(([0-9a-f-]{36})\)")
+
+
+def blocked_of(log, ticks_run):
+    """Each player's blocks for reconciliation, from the run's console: {name: [{"tick", "minutes", "reason"}]}. A
+    block's tick is its console time placed between the run's tick marks; it lasts until the player's next completed
+    action, or the run's end, in game minutes (1,200 ticks). The reason is the exception's first line. Kept apart from
+    stuck minutes, which stay as every iteration has counted them. {} when there is no console."""
+    if log is None:
+        return {}
+    clock, previous, marks, names, blocks, done = 0, None, [], {}, [], {}
+    lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    for i, raw in enumerate(lines):
+        stamp = CLOCK.match(raw)
+        if stamp:
+            now = int(stamp.group(1)) * 3600 + int(stamp.group(2)) * 60 + int(stamp.group(3))
+            if previous is not None and now < previous - 3600:
+                clock += 86400  # past midnight
+            previous = now
+        when = clock + (previous or 0)
+        body = raw.split("]: ", 1)[-1]
+        if "Evaluation run: /tick sprint" in body:
+            marks.append((when, 0))
+        mark = TICK_MARK.search(body)
+        if mark:
+            marks.append((when, int(mark.group(1))))
+        allocated = ALLOCATED.search(body)
+        if allocated:
+            names[allocated.group(2)] = allocated.group(1)
+        block = BLOCKED.search(body)
+        if block:
+            reason = lines[i + 1].strip() if i + 1 < len(lines) else ""
+            blocks.append((i, when, block.group(1), reason.split("Exception: ", 1)[-1][:160]))
+        name = body.split(" ", 1)[0]
+        if " native_" in body and " COMPLETED" in body:
+            done.setdefault(name, []).append((i, when))
+
+    def tick_at(when):
+        for (a, ta), (b, tb) in zip(marks, marks[1:]):
+            if a <= when <= b:
+                return ta + (tb - ta) * (when - a) / max(1, b - a)
+        return None
+
+    found = {}
+    for i, when, uuid, reason in blocks:
+        name = names.get(uuid, uuid)
+        start = tick_at(when)
+        if start is None:
+            continue
+        after = [w for j, w in done.get(name, []) if j > i]
+        end = tick_at(after[0]) if after else None
+        end = ticks_run if end is None else end
+        found.setdefault(name, []).append({"tick": round(start), "minutes": round(max(0, end - start) / 1200, 1), "reason": reason})
+    return found
+
+
 def tally(kinds, names):
     counts = {name: 0 for name in names}
     for k in kinds:
@@ -353,6 +410,13 @@ def score(build_dir, use_metrics=True):
             kinds_found = found.get(name, [])[:len(p["stuck"])]
             players[name]["stuckKinds"] = tally(kinds_found, STUCK_KINDS)
             players[name]["stuckKinds"]["unmatched"] = len(p["stuck"]) - len(kinds_found)
+        # Blocked for reconciliation (E-40): minutes and blocks, apart from stuck minutes.
+        blocked = blocked_of(log_of(folder), result["ticksRun"])
+        for name in players:
+            players[name]["blockedForReconciliation"] = len(blocked.get(name, []))
+            players[name]["blockedMinutes"] = round(sum(b["minutes"] for b in blocked.get(name, [])), 1)
+            if blocked.get(name):
+                players[name]["blocks"] = blocked[name]
         chatter = chatter_of(log_of(folder))
         minutes = max(result["ticksRun"], 1) / 1200
         chatter["linesPerMinute"] = round((chatter["talkLines"] + chatter["unaskedLines"]) / minutes, 3)
@@ -381,6 +445,8 @@ def score(build_dir, use_metrics=True):
         "teamDeathsPerHour": spread([s["teamDeathsPerHour"] for s in per_seed.values()]),
         "stuckSpells": spread([sum(p["stuckSpells"] for p in s["players"].values()) for s in per_seed.values()]),
         "stuckMinutes": spread([round(sum(p["stuckMinutes"] for p in s["players"].values()), 1) for s in per_seed.values()]),
+        "blockedForReconciliation": spread([sum(p.get("blockedForReconciliation", 0) for p in s["players"].values()) for s in per_seed.values()]),
+        "blockedMinutes": spread([round(sum(p.get("blockedMinutes", 0) for p in s["players"].values()), 1) for s in per_seed.values()]),
         "rescues": spread([sum(p["rescues"] for p in s["players"].values()) for s in per_seed.values()]),
         "rescuesUnstuck": spread([sum(p["rescuesUnstuck"] for p in s["players"].values()) for s in per_seed.values()]),
         "rescueAsks": spread([sum(p.get("rescueAsks", 0) for p in s["players"].values()) for s in per_seed.values()]),
@@ -484,6 +550,9 @@ def markdown(summary):
         lines.append("| Bridge blocks a second, the team | %s |" % fmt(t["teamBridgeBlocksPerSecond"]))
     lines.append("| Stuck spells, the team | %s |" % fmt(t["stuckSpells"]))
     lines.append("| Stuck game minutes, the team | %s |" % fmt(t["stuckMinutes"]))
+    if "blockedMinutes" in t:
+        lines.append("| Blocked for reconciliation, game minutes, the team (apart from stuck) | %s |" % fmt(t["blockedMinutes"]))
+        lines.append("| Blocks for reconciliation, the team | %s |" % fmt(t["blockedForReconciliation"]))
     lines.append("| Rescue plans, the team (of them, out) | %s (%s) |" % (fmt(t["rescues"]), fmt(t["rescuesUnstuck"])))
     if "rescueAsks" in t:
         lines.append("| Rescues asked (rounds), the team | %s |" % fmt(t["rescueAsks"]))

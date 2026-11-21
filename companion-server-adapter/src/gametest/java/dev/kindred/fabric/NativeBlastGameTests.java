@@ -35,6 +35,8 @@ public final class NativeBlastGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its floor and wall, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-2, 1, -2), o.add(14, 6, 6));
                     for (int x = -2; x <= 14; x++) for (int z = -2; z <= 6; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.BEDROCK.getDefaultState());
                         for (int y = 2; y <= 6; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());

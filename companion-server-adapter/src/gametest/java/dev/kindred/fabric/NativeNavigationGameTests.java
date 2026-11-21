@@ -125,6 +125,8 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-1, -2, -7), o.add(36, 6, 7));
                     for (int x = 0; x <= 35; x++) for (int z = -6; z <= 6; z++) {
                         world.setBlockState(o.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 4; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -189,6 +191,8 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-4, -3, -8), o.add(16, 6, 8));
                     // Clear well beyond the course: other fixtures' floating courses reach past their plots, and one
                     // left a way round the wall in a suite run.
                     for (int x = -3; x <= 15; x++) for (int z = -7; z <= 7; z++) for (int y = -2; y <= 5; y++) {
@@ -410,6 +414,8 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, o.add(-4, -3, -8), o.add(16, 6, 8));
                     for (int x = -3; x <= 15; x++) for (int z = -7; z <= 7; z++) for (int y = -2; y <= 5; y++) {
                         world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
@@ -475,6 +481,8 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                     // Absolute positions around wherever the player stood up, so the test's rotation does not matter.
                     var world = context.getWorld();
                     BlockPos base = f.player().getBlockPos().toImmutable();
+                    // Its ground, past its plot, and what its player sets in it, put back as the test ends, passed or failed (F-22c75b).
+                    FixtureGround.keep(context, base.add(-4, -1, -4), base.add(9, 7, 5));
                     for (int x = -3; x <= 8; x++) for (int z = -3; z <= 4; z++) {
                         world.setBlockState(base.add(x, -1, z), Blocks.STONE.getDefaultState());
                         for (int y = 0; y <= 6; y++) world.setBlockState(base.add(x, y, z), Blocks.AIR.getDefaultState());

@@ -282,6 +282,35 @@ class KeepWorldTest(unittest.TestCase):
             self.assertFalse((folder / 'world-kept').exists())
             self.assertFalse((folder / 'world').exists())
 
+    def test_04_what_a_restart_needs_is_kept_too(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = self.seed(root)
+            world = folder / 'world'
+            (world / 'level.dat').write_bytes(b'level')
+            (world / 'data').mkdir()
+            (world / 'data' / 'raids.dat').write_bytes(b'raids')
+            (world / 'kindred' / 'memory').mkdir(parents=True)
+            (world / 'kindred' / 'memory' / 'Sol.json').write_text('{}', encoding='utf-8')
+            (world / 'kindred' / 'mode.properties').write_text('mode=factions\n', encoding='utf-8')
+            (world / 'kindred' / 'edits.properties').write_text('maxNativePlayers=8\n', encoding='utf-8')
+            run.finish(folder, self.Done(), 0, keep_world=True)
+            kept = folder / 'world-kept'
+            self.assertEqual(b'level', (kept / 'level.dat').read_bytes())
+            self.assertEqual(b'raids', (kept / 'data' / 'raids.dat').read_bytes())
+            self.assertEqual('{}', (kept / 'kindred' / 'memory' / 'Sol.json').read_text(encoding='utf-8'))
+            self.assertEqual('mode=factions\n', (kept / 'kindred' / 'mode.properties').read_text(encoding='utf-8'))
+            self.assertEqual('maxNativePlayers=8\n', (kept / 'kindred' / 'edits.properties').read_text(encoding='utf-8'))
+            self.assertFalse(world.exists())
+
+    def test_05_a_world_without_them_keeps_what_it_has(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = self.seed(root)
+            run.finish(folder, self.Done(), 0, keep_world=True)
+            kept = folder / 'world-kept'
+            self.assertFalse((kept / 'level.dat').exists())
+            self.assertFalse((kept / 'kindred').exists())
+            self.assertTrue((kept / 'region' / 'r.0.0.mca').is_file())
+
 
 class BridgeMeasureTest(unittest.TestCase):
     """E-71a: bridge blocks a second, per player and for the team, over every bridge run."""
@@ -384,6 +413,61 @@ class StopTest(unittest.TestCase):
         self.assertIn('RuntimeError: a fault in the loop', out)
         self.assertIn("seed 1: server stopped (pid", out)
         self.assertIn("on run.py's exit", out)
+
+
+class BlockedTest(unittest.TestCase):
+    """E-40: blocks for reconciliation, scored apart from stuck minutes."""
+    SOL, ECHO = '9e26ad61-0d9a-4812-a5fc-67ec7ccf5078', 'df828ada-60b1-415f-8a3f-86a161d71c49'
+
+    def console(self, root, echo_comes_back):
+        lines = ['[10:00:00] [Server thread/INFO]: Allocated Sol (%s). Preparing its native body.' % self.SOL,
+                 '[10:00:00] [Server thread/INFO]: Allocated Echo (%s). Preparing its native body.' % self.ECHO,
+                 '[10:00:00] [Server thread/INFO]: Evaluation run: /tick sprint 24000',
+                 '[10:00:10] [Server thread/INFO]: Evaluation run: thinking at tick 12000: 1 slices',
+                 '[10:00:15] [Server thread/ERROR]: Native player %s blocked: Native action outcome requires reconciliation' % self.SOL,
+                 'java.lang.IllegalStateException: Native break outcome requires reconciliation (The block changed before an attributable break)',
+                 '[10:00:15] [Server thread/INFO]: Sol picked up 1 minecraft:gravel',
+                 '[10:00:16] [Server thread/ERROR]: Native player %s blocked: Native action outcome requires reconciliation' % self.ECHO,
+                 'java.lang.IllegalStateException: Attack item conservation check failed; reconcile']
+        if echo_comes_back:
+            lines.append('[10:00:18] [Server thread/INFO]: Echo native_goto COMPLETED [Explore north for animals]')
+        lines.append('[10:00:20] [Server thread/INFO]: Evaluation run: thinking at tick 24000: 1 slices')
+        path = Path(root) / 'console.txt'
+        path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        return path
+
+    def test_01_a_block_lasts_to_the_next_completed_action_or_the_run_end(self):
+        with tempfile.TemporaryDirectory() as root:
+            found = score.blocked_of(self.console(root, True), 24000)
+        self.assertEqual(18000, found['Sol'][0]['tick'])
+        self.assertEqual(5.0, found['Sol'][0]['minutes'])  # to the run's end: 6,000 ticks; its own pickup does not end it
+        self.assertTrue(found['Sol'][0]['reason'].startswith('Native break outcome requires reconciliation'))
+        self.assertEqual(19200, found['Echo'][0]['tick'])
+        self.assertEqual(2.0, found['Echo'][0]['minutes'])  # to its next completed action, 2,400 ticks on
+        self.assertEqual('Attack item conservation check failed; reconcile', found['Echo'][0]['reason'])
+
+    def test_02_scored_apart_from_stuck_minutes(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root) / 'b' / '101'
+            folder.mkdir(parents=True)
+            self.console(folder, False)
+            players = {n: {'stages': {}, 'deaths': [], 'deathsNotListed': 0, 'stuck': [{'tick': 6000, 'x': 0, 'y': 0, 'z': 0}], 'tokens': 0}
+                       for n in ('Sol', 'Echo', 'Kindred')}
+            result = {'scenario': 'goal=nether; ticks=24000', 'kind': 'earned', 'build': 'x', 'seed': 101, 'ticks': 24000,
+                      'ticksRun': 24000, 'complete': True, 'policy': {}, 'players': players}
+            (folder / 'eval-result.json').write_text(json.dumps(result), encoding='utf-8')
+            s = score.score(folder.parent, use_metrics=False)
+        seed = s['perSeed']['101']['players']
+        self.assertEqual((1, 5.0), (seed['Sol']['blockedForReconciliation'], seed['Sol']['blockedMinutes']))
+        self.assertEqual((1, 4.0), (seed['Echo']['blockedForReconciliation'], seed['Echo']['blockedMinutes']))
+        self.assertEqual((0, 0), (seed['Kindred']['blockedForReconciliation'], seed['Kindred']['blockedMinutes']))
+        self.assertNotIn('blocks', seed['Kindred'])
+        self.assertEqual([3, 3, 3], [seed[n]['stuckMinutes'] for n in ('Sol', 'Echo', 'Kindred')])  # unchanged by a block
+        self.assertEqual(9.0, s['team']['blockedMinutes']['median'])
+        self.assertIn('| Blocked for reconciliation, game minutes, the team (apart from stuck) | 9', score.markdown(s))
+
+    def test_03_no_console_no_blocks(self):
+        self.assertEqual({}, score.blocked_of(None, 24000))
 
 
 if __name__ == '__main__':

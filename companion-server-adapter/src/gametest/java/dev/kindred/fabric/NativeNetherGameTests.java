@@ -51,7 +51,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.runtime.createNative(f.source, "WartGatherer"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
-                    // A closed room of netherrack, so no lava runs in.
+                    // A closed room of netherrack, so no lava runs in; in the Nether, put back there as the test ends (F-22c75b).
+                    FixtureGround.keep(context, nether, wart.add(-4, -2, -4), wart.add(4, 4, 4));
                     for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -2; dy <= 4; dy++) {
                         boolean shell = Math.abs(dx) == 4 || Math.abs(dz) == 4 || dy == -2 || dy == 4;
                         nether.setBlockState(wart.add(dx, dy, dz), shell ? Blocks.NETHERRACK.getDefaultState() : dy == -1
@@ -323,7 +324,9 @@ public final class NativeNetherGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.runtime.createNative(f.source, "PortalRestart"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
-                    // The fixture provides prepared terrain; the body must enter through vanilla portal collision.
+                    // The fixture provides prepared terrain; the body must enter through vanilla portal collision. Lifted above
+                    // its plot, it and the frame lit in it are put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, at.apply(new BlockPos(0, 1, 0)), at.apply(new BlockPos(7, 7, 7)));
                     for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
                         context.getWorld().setBlockState(at.apply(new BlockPos(x, 1, z)), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 7; y++) context.getWorld().setBlockState(at.apply(new BlockPos(x, y, z)), Blocks.AIR.getDefaultState());
@@ -339,6 +342,8 @@ public final class NativeNetherGameTests implements FabricGameTest {
                         context.getWorld().setBlockState(at.apply(new BlockPos(2, y, 3)), Blocks.OBSIDIAN.getDefaultState());
                         context.getWorld().setBlockState(at.apply(new BlockPos(5, y, 3)), Blocks.OBSIDIAN.getDefaultState());
                     }
+                    // The Nether end's room and frame, put back there as the test ends (F-22c75b).
+                    FixtureGround.keep(context, nether, netherPortal.add(-4, -2, -4), netherPortal.add(5, 4, 4));
                     for (int dx = -4; dx <= 5; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = -2; dy <= 4; dy++) {
                         boolean shell = dx == -4 || dx == 5 || Math.abs(dz) == 4 || dy == -2 || dy == 4 || dy == -1;
                         nether.setBlockState(netherPortal.add(dx, dy, dz), (shell ? Blocks.NETHERRACK : Blocks.AIR).getDefaultState());

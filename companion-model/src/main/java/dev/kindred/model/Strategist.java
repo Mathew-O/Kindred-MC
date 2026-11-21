@@ -328,6 +328,13 @@ public interface Strategist extends AutoCloseable {
     /** The request settings, for the log. */
     String pace();
 
+    /**
+     * Whether this provider has reported how many input tokens it read from its prompt cache (F-19f). False where the
+     * route says nothing of it, as Anthropic's OpenAI-compatible layer, whose {@code prompt_tokens_details} is always
+     * empty: the log then says "cache read n/a", not 0. For the log only; the budgets count what is reported.
+     */
+    default boolean reportsCacheReads() { return true; }
+
     @Override
     void close();
 

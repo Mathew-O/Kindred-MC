@@ -68,23 +68,53 @@ final class ChronicleKeeper {
 
     ChronicleKeeper(Host host) { this.host = host; }
 
-    /** Reads back the pages the Record holds, and where the last one stopped. Call once the Record is open. */
+    /**
+     * Reads back the pages the Record holds, and where the last one stopped. Call once the Record is open. Every page,
+     * in batches of {@link #BATCH} in the Record's order (F-33e: a month at 8 players passes 10,000 pages, about day
+     * 17), each folded in as it comes, so only each scope's newest {@link #KEPT} and the highest {@code through} are
+     * held, never every page at once.
+     */
     void start() {
         busy = true;
-        host.events(Set.of(Chronicle.PAGE), 0, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
-            long last = 0;
+        readBack(0, 0, 0, System.nanoTime(), 0);
+    }
+
+    /**
+     * One batch read on the Record's ordered writer, never on the server thread; folded in on it ({@code folding}, the
+     * server thread's share, in nanoseconds), then the next.
+     */
+    private void readBack(long afterId, long last, int read, long started, long folding) {
+        host.events(Set.of(Chronicle.PAGE), afterId, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
+            long foldStarted = System.nanoTime();
+            long highest = last, nextAfter = afterId;
+            int count = read;
             if (failure == null && events != null) {
                 for (var e : events) {
                     Chronicle.fromPage(e).ifPresent(page -> {
                         if (page.tier() == Chronicle.Tier.PLAYER_DAY) keep(e.actor(), page);
                         else keepAbove(page);
                     });
-                    try { last = Math.max(last, Long.parseLong(e.data().getOrDefault("through", "0"))); } catch (NumberFormatException ignored) { }
+                    try { highest = Math.max(highest, Long.parseLong(e.data().getOrDefault("through", "0"))); } catch (NumberFormatException ignored) { }
+                    nextAfter = Math.max(nextAfter, e.id());
                 }
+                count += events.size();
+                long folded = folding + (System.nanoTime() - foldStarted);
+                if (events.size() == BATCH) { // More may follow: the next batch after the last one read.
+                    readBack(nextAfter, highest, count, started, folded);
+                    return;
+                }
+                through = highest;
+                busy = false;
+                KindredMod.LOGGER.info("Chronicle: {} page(s) read back of {} in the Record, through event {}, in {} ms ({} ms of it on the server thread)",
+                        pages.values().stream().mapToInt(List::size).sum(), count, through, (System.nanoTime() - started) / 1_000_000, folded / 1_000_000);
+                return;
+            } else {
+                // Where its pages stop is unknown: it writes nothing until the next start, rather than write a day again.
+                busy = false;
+                KindredMod.LOGGER.warn("Chronicle: the Record's pages could not be read past event {}; no pages written until the next start: {}",
+                        afterId, String.valueOf(failure));
+                return;
             }
-            through = last;
-            busy = false;
-            KindredMod.LOGGER.info("Chronicle: {} page(s) read back, through event {}", pages.values().stream().mapToInt(List::size).sum(), through);
         }));
     }
 
@@ -191,39 +221,55 @@ final class ChronicleKeeper {
     /** A faction's or the world's latest pages, oldest first ("faction:<id>", "world"). */
     List<Chronicle.Summary> pagesAbove(String scope) { return List.copyOf(above.getOrDefault(scope, List.of())); }
 
-    /** The pages for the span just ended, from the Record's events since the last page. */
+    /**
+     * The pages for the span just ended, from the Record's events since the last page: all of them, in batches of
+     * {@link #BATCH} read on the ordered writer until one comes back short (F-33f: a day passes 10,000 events, journal
+     * lines mostly, at 3 players already), each player's sorted out on this thread as its batch comes; then each page.
+     */
     CompletableFuture<Integer> writeDay(long from, long until) {
         var done = new CompletableFuture<Integer>();
         busy = true;
-        host.events(Chronicle.DAY_KINDS, through, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
+        var byPlayer = new LinkedHashMap<Player, List<Chronicle.Event>>();
+        for (Player p : host.players()) byPlayer.put(p, new ArrayList<>());
+        readDay(through, byPlayer, from, until, done);
+        return done;
+    }
+
+    private void readDay(long afterId, LinkedHashMap<Player, List<Chronicle.Event>> byPlayer, long from, long until, CompletableFuture<Integer> done) {
+        host.events(Chronicle.DAY_KINDS, afterId, BATCH).whenComplete((events, failure) -> host.server().execute(() -> {
             if (failure != null || events == null) {
                 busy = false;
                 KindredMod.LOGGER.warn("Chronicle: the Record could not be read: {}", String.valueOf(failure));
                 done.complete(0);
                 return;
             }
-            var byPlayer = new LinkedHashMap<Player, List<Chronicle.Event>>();
-            for (Player p : host.players()) byPlayer.put(p, new ArrayList<>());
-            long last = through;
+            long last = afterId;
             for (var e : events) {
                 last = Math.max(last, e.id());
                 for (var en : byPlayer.entrySet()) {
                     if (e.actor() != null && en.getKey().actors().contains(e.actor())) Chronicle.fromRecord(e).ifPresent(en.getValue()::add);
                 }
             }
-            long batchEnd = last;
-            var writes = new ArrayList<CompletableFuture<Void>>();
-            for (var en : byPlayer.entrySet()) {
-                if (en.getValue().isEmpty()) continue;
-                writes.add(page(en.getKey(), from, until, en.getValue(), batchEnd));
+            if (events.size() == BATCH) { // More of the day may follow: the next batch after the last read.
+                readDay(last, byPlayer, from, until, done);
+                return;
             }
-            CompletableFuture.allOf(writes.toArray(CompletableFuture[]::new)).whenComplete((v, f) -> host.server().execute(() -> {
-                through = batchEnd;
-                busy = false;
-                done.complete(writes.size());
-            }));
+            writePages(byPlayer, from, until, last, done);
         }));
-        return done;
+    }
+
+    /** Each player's page from all it did since the last page; then the next page starts after {@code last}. */
+    private void writePages(LinkedHashMap<Player, List<Chronicle.Event>> byPlayer, long from, long until, long last, CompletableFuture<Integer> done) {
+        var writes = new ArrayList<CompletableFuture<Void>>();
+        for (var en : byPlayer.entrySet()) {
+            if (en.getValue().isEmpty()) continue;
+            writes.add(page(en.getKey(), from, until, en.getValue(), last));
+        }
+        CompletableFuture.allOf(writes.toArray(CompletableFuture[]::new)).whenComplete((v, f) -> host.server().execute(() -> {
+            through = last;
+            busy = false;
+            done.complete(writes.size());
+        }));
     }
 
     private CompletableFuture<Void> page(Player player, long from, long until, List<Chronicle.Event> all, long batchEnd) {
@@ -296,6 +342,9 @@ final class ChronicleKeeper {
 
     /** Pages written since start, and how many by the model. */
     int[] counts() { return new int[] {written, byModel}; }
+
+    /** The last Record event its pages have read, for fixtures (-1 before the read-back). */
+    long throughForFixtures() { return through; }
 
     /** Whether it has read back the Record and is not writing now. */
     boolean idle() { return through >= 0 && !busy; }

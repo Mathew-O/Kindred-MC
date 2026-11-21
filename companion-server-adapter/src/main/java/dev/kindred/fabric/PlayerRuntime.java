@@ -7487,6 +7487,8 @@ final class PlayerRuntime {
         entry.currentTaskId = null;
         body.stopInputs();
         boolean killedByMob = player.getAttacker() instanceof net.minecraft.entity.mob.HostileEntity;
+        entry.lastDeathTick = server.getTicks();
+        entry.lastDeathByMob = killedByMob;
         // What its lessons read of the death (E-46): when in the world's time, how high, by night, under the sky, its
         // food, and how it came.
         var world = player.getServerWorld();
@@ -8769,6 +8771,7 @@ final class PlayerRuntime {
             } else if (state == SkillRunner.State.BLOCKED) {
                 entry.bring.failed++;
                 KindredMod.LOGGER.info("{} bringing: a step blocked ({}), {} in a row", entry.data.displayName(), entry.blocker, entry.bring.failed);
+                if (entry.bring.phase == Bring.Phase.CLOSE && finishedTaskId.equals(bringTaskId(entry, "out"))) closeOutBlocked(entry);
             } else entry.bring.failed = 0;
             entry.routineRefreshPending = true;
         }
@@ -8787,6 +8790,9 @@ final class PlayerRuntime {
             var life = entry.lifeTask;
             entry.lifeTaskId = null;
             entry.lifeTask = null;
+            // Its bed's own steps heard: the one break of its bed on waking after a death (F-25c4di1), and a refused set-down
+            // (F-25c4di1c).
+            if (entry.campaign != null) entry.campaign.bedTaskEnded(life, state == SkillRunner.State.COMPLETED);
             // A bed it could not sleep in (mobs about, someone in it), or could not get to (in walls still going up), is
             // tried again in a while, not at once (F-25c9).
             if (("native_sleep".equals(life.skill()) || "native_goto".equals(life.skill()) && life.label().startsWith("To its bed"))
@@ -10854,6 +10860,14 @@ final class PlayerRuntime {
         return entry.factionPlay.deepBelow(body);
     }
 
+    /** For fixtures (M-06i2c2): where its faction walk now would end, as the walk is asked; null with no move. */
+    BlockPos factionDestinationForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected() || entry.factionPlay.move == null) return null;
+        return FactionsPlayer.destination(entry.factionPlay.move, entry.nativeBody.entity());
+    }
+
     /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */
     boolean factionWalkingForTest(UUID player) {
         requireThread();
@@ -11557,6 +11571,8 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
+        int cartPickWalks;
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
@@ -12524,7 +12540,9 @@ final class PlayerRuntime {
                 if (cart == null) {
                     var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                             item -> item.getStack().isOf(Items.MINECART));
-                    if (!lying.isEmpty() && b.doorTries++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
+                    // Its own count of walks to the cart's item (F-22c98b): counted on the door's tries, a few walks here left
+                    // DOOR_BACK past its three before it tried once, and the hall's door was left out.
+                    if (!lying.isEmpty() && b.cartPickWalks++ < 40) return List.of(goNear(bringTask(entry, "pick up cart"), lying.getFirst().getBlockPos()));
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }
@@ -13147,6 +13165,34 @@ final class PlayerRuntime {
         if (why.equals(entry.bringNote)) return;
         entry.bringNote = why;
         KindredMod.LOGGER.info("{} bringing: {}", entry.data.displayName(), why);
+    }
+
+    /** The id {@link #bringTask} gives a step of this kind in the bring's present phase. */
+    private static UUID bringTaskId(Entry entry, String kind) {
+        var b = entry.bring;
+        return UUID.nameUUIDFromBytes(("bring:" + entry.data.id() + ":" + b.villager + ":" + b.phase + ":" + kind).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Where the body stood as CLOSE's walk out of the front was refused (F-22c96, diagnostic only): its position, its box
+     * against the front's, the blocks at its feet and head, and what is over the front. One line for each refused walk.
+     */
+    private static void closeOutBlocked(Entry entry) {
+        var body = entry.nativeBody;
+        var b = entry.bring;
+        if (body == null || !body.connected() || b.slot == null) return;
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var box = player.getBoundingBox();
+        var front = new net.minecraft.util.math.Box(b.slot);
+        BlockPos feet = player.getBlockPos();
+        KindredMod.LOGGER.info("{} bringing: the walk out of the front refused, the body at {} (box {} to {}, over the front {}), "
+                        + "feet {} {}, head {} {}, over the front {}, on the ground {}, the stand {}",
+                entry.data.displayName(), player.getPos(),
+                String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.minX, box.minY, box.minZ),
+                String.format(java.util.Locale.ROOT, "%.3f, %.3f, %.3f", box.maxX, box.maxY, box.maxZ), box.intersects(front),
+                feet.toShortString(), world.getBlockState(feet), feet.up().toShortString(), world.getBlockState(feet.up()),
+                world.getBlockState(b.slot.up()), player.isOnGround(), b.slot.south(2).toShortString());
     }
 
     private static dev.kindred.core.TaskPreferences.Candidate bringTask(Entry entry, String kind) {
@@ -16197,7 +16243,8 @@ final class PlayerRuntime {
         replays.captureWaking(entry.data.displayName(), player, server.getTicks(), new DeathReplays.Context("respawn", String.valueOf(goalOf(entry)),
                 entry.campaign == null ? "no goal" : entry.campaign.progress(), "waking", entry.campaign == null ? "" : String.valueOf(entry.campaign.stance()),
                 entry.campaign == null ? "" : String.valueOf(entry.campaign.preferences().habits()), cause,
-                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt);
+                memoryOf(entry, Math.max(box.size()[0], box.size()[2]), box.size()[1])), box, entry.lastDeathAt,
+                entry.lastDeathTick < 0 ? -1 : server.getTicks() - entry.lastDeathTick, entry.lastDeathByMob);
     }
 
     /**
@@ -18498,6 +18545,9 @@ final class PlayerRuntime {
                 if (entry.data == null) continue;
                 var actors = new java.util.HashSet<UUID>();
                 actors.add(entry.data.id());
+                // Its body's id as saved, connected or not (F-33g): after a restart the bodies wait offline until connected,
+                // and a day's page written then must still count what the body did before, or it is skipped for good.
+                if (entry.data.entityId() != null) actors.add(entry.data.entityId());
                 if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
                 out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors, factionOf.apply(entry.data.id())));
             }
@@ -18761,6 +18811,36 @@ final class PlayerRuntime {
      * {@code baseline <item> <cents> <mass|ordinary|scarce> [nobuy]}. Only in a faction world. The outcome of a sale or
      * purchase, settled a moment later, is told to {@code source} then.
      */
+    /** The trades read a page at a time for {@code /market history} (M-06g2), of which only an item's last few are kept. */
+    private static final int HISTORY_PAGE = 5_000, HISTORY_SHOWN = 10;
+
+    /**
+     * {@code /market history <item>}: its last {@value #HISTORY_SHOWN} trades, read through every trade in the World Record
+     * a page at a time on the writer, only that item's last few kept (M-06g2). The first 10,000 trades from the Record's
+     * start, read once, showed old trades as the latest past 10,000 of them, as a month at 8 players passes.
+     */
+    private void marketHistory(SqliteCompanionStore database, String item, long after, java.util.ArrayDeque<dev.kindred.core.record.WorldEvent> last,
+                               ServerCommandSource source) {
+        database.worldEvents(Set.of(dev.kindred.core.market.MarketLedger.SALE, dev.kindred.core.market.MarketLedger.BUY), after, HISTORY_PAGE)
+                .whenComplete((page, failure) -> handBack(() -> {
+                    if (failure != null) { reject(source, "The history could not be read."); return; }
+                    for (var e : page) {
+                        if (!e.subject().startsWith(item)) continue;
+                        last.addLast(e);
+                        if (last.size() > HISTORY_SHOWN) last.removeFirst();
+                    }
+                    if (page.size() == HISTORY_PAGE) {
+                        marketHistory(database, item, page.getLast().id(), last, source);
+                        return;
+                    }
+                    if (last.isEmpty()) { feedback(source, "No trades of " + item + " yet"); return; }
+                    for (var e : last) {
+                        feedback(source, (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE) ? "sold " : "bought ") + e.get("count", "?") + " for "
+                                + dev.kindred.core.factions.Coins.show(Long.parseLong(e.get("cents", "0"))) + " at " + java.time.Instant.ofEpochMilli(e.realTimeMs()));
+                    }
+                }));
+    }
+
     int marketRequest(ServerCommandSource source, UUID who, String verb, List<String> args) {
         requireThread();
         if (!ready || !running) return reject(source, "Kindred is loading saved records.");
@@ -18802,17 +18882,7 @@ final class PlayerRuntime {
                 return 1;
             }
             case "history" -> {
-                SqliteCompanionStore database = store;
-                String item = dev.kindred.core.market.MarketTable.id(first);
-                database.worldEvents(Set.of(dev.kindred.core.market.MarketLedger.SALE, dev.kindred.core.market.MarketLedger.BUY), 0, 10_000).whenComplete((events, failure) -> handBack(() -> {
-                    if (failure != null) { reject(source, "The history could not be read."); return; }
-                    var lines = events.stream().filter(e -> e.subject().startsWith(item)).toList();
-                    if (lines.isEmpty()) { feedback(source, "No trades of " + item + " yet"); return; }
-                    for (var e : lines.subList(Math.max(0, lines.size() - 10), lines.size())) {
-                        feedback(source, (e.kind().equals(dev.kindred.core.market.MarketLedger.SALE) ? "sold " : "bought ") + e.get("count", "?") + " for "
-                                + dev.kindred.core.factions.Coins.show(Long.parseLong(e.get("cents", "0"))) + " at " + java.time.Instant.ofEpochMilli(e.realTimeMs()));
-                    }
-                }));
+                marketHistory(store, dev.kindred.core.market.MarketTable.id(first), 0, new java.util.ArrayDeque<>(), source);
                 return 1;
             }
             case "baseline" -> {
@@ -18835,12 +18905,21 @@ final class PlayerRuntime {
     private final dev.kindred.core.metrics.TickWindow tickWindow = new dev.kindred.core.metrics.TickWindow();
     private long heapHighWater;
 
+    /** A web's player by name for the cost line (F-32d): its own id or its body's; else the id's first eight characters. */
+    private String webName(UUID id) {
+        for (Entry entry : entries.values()) {
+            if (id.equals(entry.data.id()) || id.equals(entry.data.entityId())) return entry.data.displayName();
+        }
+        return id.toString().substring(0, 8);
+    }
+
     /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
         var growth = database == null ? new SqliteCompanionStore.Growth(Map.of(), 0, 0, 0) : database.growth();
-        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.world().size(), wire.inboxed(),
+        var held = new RecordGauge.Held(Math.max(ledgersThrough, growth.through()), webs.count(), webs.relations(), webs.byPlayer(this::webName),
+                webs.world().size(), wire.inboxed(),
                 chronicle.kept(), wire.stateTold(), wire.refusals(), factions.refusalCounts(), tickWindow.describe(), heapHighWater / (1024 * 1024));
         tickWindow.reset();
         heapHighWater = 0;
@@ -19472,6 +19551,9 @@ final class PlayerRuntime {
         /** Where it last died, in which dimension and how, for the scene cut as it wakes (F-27a4); null before any death. */
         private BlockPos lastDeathAt;
         private String lastDeathWorld, lastDeathCause;
+        /** The server tick of that death, and whether a hostile mob killed it, as its campaign's {@code died} heard them (F-27a5). */
+        private long lastDeathTick = -1;
+        private boolean lastDeathByMob;
         private boolean campaignFightInterrupt;
         private boolean endPortalAnnounced, dragonAnnounced;
         private UUID tacticalRetreatTaskId;

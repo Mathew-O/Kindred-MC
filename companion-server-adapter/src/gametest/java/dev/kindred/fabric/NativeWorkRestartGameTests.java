@@ -58,6 +58,8 @@ public final class NativeWorkRestartGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    // Its field and the hut its player builds on it, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, o.add(-8, 1, -8), o.add(16, 16, 16));
                     for (int x = -8; x <= 16; x++) for (int z = -8; z <= 16; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());

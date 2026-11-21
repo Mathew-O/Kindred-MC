@@ -23,8 +23,15 @@ public final class NativeStrandedReturnGameTests implements FabricGameTest {
      * stair up by hand beside the staircase it had walked down: "Nothing dug on the way back up: 440 of 448 stone left".
      * Staged: that fixture's scene; those three refused walks are given to the goal as the runtime gives them, as it
      * starts on the ore at the foot.
+     * <p>
+     * In a batch of its own (F-22c100), so that no other test's plot is placed beside it. In the default batch, with a
+     * full suite's neighbours about it, logs in their own plots 15 to 41 blocks off were in sight of its start eight up on
+     * the rock. In CI on #385 (`cd7d2cd`, job 133077500456), it went for them instead of the ore: "Gather a log for spare
+     * sticks", then "Climb toward the surface for logs" through the top of its wall, and "Explore south for logs" until
+     * the test timed out, never down the staircase. Its own batch keeps the scene as written and takes only other
+     * tests' ground out of view. Whether wood should come before ore in sight is the goal's, not this fixture's.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, tickLimit = 1600)
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "strandedReturn", tickLimit = 1600)
     public void goalWalksBackUpTheWayItCameWhenStrandedByWalksElsewhere(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] base = new BlockPos[1];
@@ -43,6 +50,8 @@ public final class NativeStrandedReturnGameTests implements FabricGameTest {
                     BlockPos b = base[0] = f.player().getBlockPos().toImmutable();
                     // As in that fixture: a rock mass eight high on ground of its own, a staircase cut down into it, iron ore at the
                     // foot of its last step in sight from the top, open sky over it and a wall two high round the top.
+                    // Its rock mass and the sky cleared over it, outside the plot: put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, b.add(-2, -1, -2), b.add(10, 24, 2));
                     for (int x = -2; x <= 10; x++) for (int z = -2; z <= 2; z++) for (int y = -1; y <= 7; y++) {
                         world.setBlockState(b.add(x, y, z), Blocks.STONE.getDefaultState());
                     }
