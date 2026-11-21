@@ -155,3 +155,44 @@ From here each step is read on the signature first and the total second:
 | `e40a24r-83321ac` | 24 | 12 | 3 | 6 | 21 | 24 | 63 | 48 | 39 | 15 | 255 | 34 |
 
 The signature is hole or pit plus hemmed in, by score.py's own kinds.
+
+## Addendum, 2026-11-21: steps 4 and 5 name #375
+
+### Step 4: `e40a24e-3360ef2` (#375's merge, before #377)
+- **Harness:** its own jar by `--jar` (sha256 797c6dd5…), run.py at 174e0b3, two calls of five seeds, three at a time.
+  10 of 10 exit 0, 144,000 ticks each (02:25 to 04:56 UTC).
+- **Result: Bad.** Total **243** (≥200), signature **30** (≥28: hole or pit 12, hemmed in 18). So the cause is at or
+  before 3360ef2: #357 or #375 (#371 and #374 are harness and docs).
+- **Its exit figures:** stuck under a tenth 1 of 10; deaths median 0.25 an hour; iron pickaxe 19.3 min; portal lit
+  10 of 10; 8 deaths; 81 spells; 0 blocks for reconciliation.
+- A first start of step 4 at d9c7b13c was stopped after two minutes when the lead chose 3360ef28; it is not scored.
+
+### Step 5: `e40a24f-d9c7b13` (#357's merge)
+- **Harness:** its own jar by `--jar` (sha256 df4e1fce…), the same jar built for that stopped start, run.py at
+  174e0b3, two calls of five seeds. 10 of 10 exit 0, 144,000 ticks each (04:58 to 07:25 UTC).
+- **Result:** signature **13** (≤16: hole or pit 7, hemmed in 6), total **192** (over 180, under 200). Neither line
+  is met on both measures.
+- **The decision (the lead's): Good**, on the signature-first read: its 13 sits inside the good builds' 10 to 13, and
+  its total of 192 is close to 3115b1c's own spread (108 and 171).
+- **So the cause is #375** (F-27a4, the waking-scene cutter), the one merge between d9c7b13 and 3360ef2. The
+  signature goes from 13 to 30 across it.
+- **Its exit figures:** stuck under a tenth 2 of 10; deaths median 1.25 an hour; iron pickaxe 21.2 min; portal 9 of 10;
+  20 deaths; 64 spells; 0 blocks for reconciliation.
+
+| Run | 101 | 202 | 20261030 | 303 | 31102026 | 404 | 505 | 606 | 707 | 8675309 | Total | Signature |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `e40a24f-d9c7b13` (Good) | 18 | 30 | 0 | 18 | 6 | 27 | 39 | 15 | 18 | 21 | 192 | 13 |
+| `e40a24e-3360ef2` (Bad) | 9 | 18 | 18 | 18 | 21 | 33 | 27 | 39 | 18 | 42 | 243 | 30 |
+
+### What #375 runs in play, and what was checked
+- **In play, #375 adds:** three fields set at each death (place, dimension, the death message), and at each respawn,
+  with replays on, `captureWaking`. That reads the blocks and entities of a box round the waking (up to 64 × 34 × 64
+  when the death is within reach) and the campaign's memory of it, on the server thread.
+- **Read in the code:** nothing in it writes to the player, its memory or the world. `memoryIn` only reads and builds
+  JSON. The death-time capture keeps its box and order. One side effect stands: reading a block in a chunk that is not
+  loaded loads it, or generates it, synchronously.
+- **Checked in the logs:** in the 5 s after each "respawned at", step 4 had 0 WARN, 0 ERROR and 0 exception lines over
+  8 respawns, and step 5 the same over 20. Step 4's 8 respawn captures took a median of 6.0 ms and at most 24.4 ms on
+  the server thread. So nothing throws, and the respawn's handling after it runs.
+- **Not separated:** how a read-only capture at 8 respawns moves stuck spells. The lead's step 6 asks it directly:
+  3360ef2 with only the `captureWaking(entry, body);` call removed, a diagnostic jar not for merge.
