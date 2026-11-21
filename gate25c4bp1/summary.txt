@@ -3,3 +3,4 @@ branch-2 (eeaed98f): 46 min, peak 3095 MB, 133 required tests failed, fence-top 
 branch-3 (eeaed98f): 48 min, peak 3987 MB, 120 required tests failed, fence-top 19, disk 4.4G
 confirm-branch-1.1 (eeaed98f, only flagged): 0 min, peak 1253 MB, 1 required tests failed, fence-top 0, disk 5.1G
 confirm-branch-1.2 (eeaed98f, only flagged): 0 min, peak 1218 MB, All 2 required tests passed, fence-top 0, disk 5.1G
+confirm-branch-1.3 (eeaed98f, only flagged): 0 min, peak 1211 MB, 1 required tests failed, fence-top 0, disk 5.1G
