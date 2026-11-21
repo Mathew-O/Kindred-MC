@@ -131,11 +131,16 @@ public final class NativeFactionBaseGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    // Toward the walk's end: east of its land's centre, on a chunk its faction does not hold by its claims as recorded
-                    // now (a build's own stand may be a step off its edge, any side but the walk's). Its land is what its faction holds,
-                    // not the nine chunks staged: its faction play may claim more as it builds (M-06i2d).
+                    // Toward the walk's end: on a chunk its faction does not hold by its claims as recorded now, east of all the land it
+                    // holds. Its land is what its faction holds, not the nine chunks staged: its faction play may claim more as it builds
+                    // (M-06i2d). A build's own stand may be a step off its land, any side but the walk's: off a chunk on its land's east
+                    // edge to the north or south is not east of it (M-06i2d1; CI's #411, #416 and #417, and main here, each one block
+                    // into the row beside the chunk its land had grown by, on its build's way).
                     var here = Territory.Chunk.at(W, player.getBlockX(), player.getBlockZ());
-                    if (!leftLand[0] && here.x() > centre[0].x() && !red[0].equals(f.runtime.projected().claims().get(here.key()))) {
+                    var claims = f.runtime.projected().claims();
+                    int east = claims.entrySet().stream().filter(c -> red[0].equals(c.getValue())).map(c -> Territory.Chunk.of(c.getKey()))
+                            .filter(c -> c.dimension().equals(W)).mapToInt(Territory.Chunk::x).max().orElse(centre[0].x());
+                    if (!leftLand[0] && here.x() > east && !red[0].equals(claims.get(here.key()))) {
                         leftLand[0] = true;
                         left[0] = "at " + player.getBlockPos().toShortString() + ", " + (context.getWorld().getServer().getTicks() - begun[0]) + " ticks in, build "
                                 + f.runtime.buildStatus(f.id).orElse("none") + ", move " + f.runtime.factionMoveForTest(f.id) + ", step " + f.runtime.goalStepForTest(f.id)
