@@ -136,8 +136,10 @@ From here each step is read on the signature first and the total second:
   commits' 10 to 13 and far from the bad commits' 34 to 39.
 - **So the regression lies in the five merges after it:** #371, #374, #357, #375, #377. #371 (run.py's stop) and #374
   (a corpus note) are harness and docs.
-- **Step 4** runs at d9c7b13c (#357's merge) by the same read. If it is Good, step 5 runs at 3360ef28; if it is Bad,
-  at 26571882.
+- **Step 4** runs at 3360ef28 (#375's merge, before #377), by the same read; it splits #377 from #357 and #375. If it
+  is Good, the cause is #377; if it is Bad, step 5 runs at d9c7b13c to split #357 from #375. (A first start at
+  d9c7b13c was stopped after two minutes when the lead chose 3360ef28; run.py stopped its three servers cleanly, and
+  it is not scored.)
 - **Its exit figures:** stuck under a tenth 5 of 10; deaths median 0.5 an hour [0 to 2.0], on main's code at 569256e;
   iron pickaxe 20.8 min; portal 8 of 10; 13 deaths; 41 spells; 0 blocks for reconciliation.
 
