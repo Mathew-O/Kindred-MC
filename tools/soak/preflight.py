@@ -45,6 +45,10 @@ HEAP_STOP_SHARE = 0.90
 # KnowledgeWeb.MAX_RELATIONS: a web's bound, which never drops a told fact still open (F-32d). Past it, the bound no longer
 # bounds that web.
 WEB_BOUND = 20000
+# The body's position-keyed maps on the cost line (F-31j), in the line's order. PlayerRuntime's chestsUsed refuses a new
+# chest past 32 and never ages one: at 32 it notes no new chest, and decides no new raid, until a restart.
+BODY_MAPS = ("placeRefusals", "placeSetAside", "chestsUsed", "seenAtStores", "untrustedStores", "recentlyTaken", "raids")
+CHESTS_USED_CAP = 32
 
 
 def number(pattern, text, cast=int, default=None):
@@ -68,6 +72,12 @@ def cost_line(day, body):
             name, _, counts = part.rpartition("=")
             held, _, kept = counts.partition("/")
             out["websByPlayer"][name] = {"held": int(held), "keptForGood": int(kept)}
+    maps = re.search(r"body maps by player, place refusals/set aside/chests used/seen at stores/untrusted stores/recently taken/raids \{([^}]*)\}", body)
+    if maps:
+        out["bodyMapsByPlayer"] = {}
+        for part in filter(None, maps.group(1).split(", ")):
+            name, _, counts = part.rpartition("=")
+            out["bodyMapsByPlayer"][name] = dict(zip(BODY_MAPS, (int(n) for n in counts.split("/"))))
     refused = re.search(r"Wire (none refused since start|(\d+) refused since start \(([^)]*)\))", body)
     if refused:
         out["wireRefused"] = int(refused.group(2) or 0)
@@ -155,6 +165,10 @@ def growth(lines):
                     "webKeptPerGameDay": {name: (web["keptForGood"] - (a.get("websByPlayer") or {})[name]["keptForGood"]) / span
                                           for name, web in sorted((b.get("websByPlayer") or {}).items())
                                           if name in (a.get("websByPlayer") or {})}})
+        # Each body map's entries a game day (F-31j): only for a player in both lines (its maps are in memory, empty at a start).
+        if a.get("bodyMapsByPlayer") is not None and b.get("bodyMapsByPlayer") is not None:
+            out[-1]["bodyMapsPerGameDay"] = {name: {k: (maps[k] - a["bodyMapsByPlayer"][name][k]) / span for k in BODY_MAPS}
+                                             for name, maps in sorted(b["bodyMapsByPlayer"].items()) if name in a["bodyMapsByPlayer"]}
     return out
 
 
@@ -184,6 +198,10 @@ def verdict(lines, errors, record, heap_max_mb):
         for name, web in sorted((line.get("websByPlayer") or {}).items()):
             if web["keptForGood"] > WEB_BOUND:
                 watch.append("day %d: %s's web keeps %d facts for good, past its bound of %d (F-32d)" % (line["day"], name, web["keptForGood"], WEB_BOUND))
+        for name, maps in sorted((line.get("bodyMapsByPlayer") or {}).items()):
+            if maps["chestsUsed"] >= CHESTS_USED_CAP:
+                watch.append("day %d: %s's chests seen used at its cap of %d: it notes no new chest, and decides no new raid, until a restart (F-31j)"
+                             % (line["day"], name, CHESTS_USED_CAP))
         tr = line.get("territoryRefusals")
         if tr and tr["overCap"]:
             watch.append("day %d: %d refused attempts over a faction's daily cap (a griefer?)" % (line["day"], tr["overCap"]))
@@ -224,12 +242,18 @@ def text(out):
             "; territory %(written)d written, %(sameMinute)d same minute, %(overCap)d over cap" % tr if tr else "", line.get("nativeDisconnects")))
         if line.get("websByPlayer"):
             w.append("    webs, held/kept for good: " + ", ".join("%s %d/%d" % (n, v["held"], v["keptForGood"]) for n, v in sorted(line["websByPlayer"].items())))
+        if line.get("bodyMapsByPlayer"):
+            w.append("    body maps, " + "/".join(BODY_MAPS) + ": " + ", ".join("%s %s" % (n, "/".join(str(v[k]) for k in BODY_MAPS))
+                                                                            for n, v in sorted(line["bodyMapsByPlayer"].items())))
     w.append("")
     w.append("Growth a game day, measured between day lines:")
     for g in out["growth"] or [{"fromDay": "-", "toDay": "-", "bytesPerGameDay": 0, "eventsPerGameDay": 0}]:
         w.append("  days %s to %s: %.0f bytes, %.0f events a game day" % (g["fromDay"], g["toDay"], g["bytesPerGameDay"], g["eventsPerGameDay"]))
         if g.get("webKeptPerGameDay"):
             w.append("    webs' facts kept for good a game day: " + ", ".join("%s %.1f" % kv for kv in g["webKeptPerGameDay"].items()))
+        if g.get("bodyMapsPerGameDay"):
+            w.append("    body maps' entries a game day: " + ", ".join("%s %s" % (n, "/".join("%.1f" % v[k] for k in BODY_MAPS))
+                                                                     for n, v in g["bodyMapsPerGameDay"].items()))
     if "projectedMonth" in out:
         w.append("  A month (%s): %.0f MB on disk" % (out["projectedMonth"]["note"], out["projectedMonth"]["databaseBytes"] / 1e6))
     w.append("")

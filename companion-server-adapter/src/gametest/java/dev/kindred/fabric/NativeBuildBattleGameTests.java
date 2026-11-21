@@ -50,7 +50,11 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     // Its arena's field, wider than its plot, put back as the test ends, passed or failed (F-22c75b):
                     // left standing, its fences and blocks lay in or beside a later test's plot.
-                    FixtureGround.keep(context, o.add(-6, 1, -4), o.add(40, 20, 22));
+                    // Up to the battle's arena box's top (its plots and 34 over them, F-22c75b): the battle snapshots that box
+                    // as it starts and writes back whatever changed as it is put back, at the stop. Falling water caught in it
+                    // over this field was written back there, 21 to 24 up, above a box kept to 20 (CI on #408, its restore's
+                    // frames in "Fluid set outside kept ground").
+                    FixtureGround.keep(context, o.add(-6, 1, -4), o.add(40, 36, 22));
                     for (int x = -4; x <= 40; x++) for (int z = -4; z <= 22; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -206,7 +210,11 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     // Its arena's field, wider than its plot, put back as the test ends, passed or failed (F-22c75b):
                     // left standing, its fences and blocks lay in or beside a later test's plot.
-                    FixtureGround.keep(context, o.add(-10, 1, -4), o.add(40, 20, 26));
+                    // Up to the battle's arena box's top (its plots and 34 over them, F-22c75b): the battle snapshots that box
+                    // as it starts and writes back whatever changed as it is put back, at the stop. Falling water caught in it
+                    // over this field was written back there, 21 to 24 up, above a box kept to 20 (CI on #408, its restore's
+                    // frames in "Fluid set outside kept ground").
+                    FixtureGround.keep(context, o.add(-10, 1, -4), o.add(40, 36, 26));
                     for (int x = -10; x <= 40; x++) for (int z = -4; z <= 26; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
@@ -309,7 +317,11 @@ public final class NativeBuildBattleGameTests implements FabricGameTest {
                     var world = context.getWorld();
                     // Its arena's field, wider than its plot, put back as the test ends, passed or failed (F-22c75b):
                     // left standing, its fences and blocks lay in or beside a later test's plot.
-                    FixtureGround.keep(context, o.add(-10, 1, -4), o.add(40, 20, 26));
+                    // Up to the battle's arena box's top (its plots and 34 over them, F-22c75b): the battle snapshots that box
+                    // as it starts and writes back whatever changed as it is put back, at the stop. Falling water caught in it
+                    // over this field was written back there, 21 to 24 up, above a box kept to 20 (CI on #408, its restore's
+                    // frames in "Fluid set outside kept ground").
+                    FixtureGround.keep(context, o.add(-10, 1, -4), o.add(40, 36, 26));
                     for (int x = -10; x <= 40; x++) for (int z = -4; z <= 26; z++) {
                         world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
                         for (int y = 2; y <= 20; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
