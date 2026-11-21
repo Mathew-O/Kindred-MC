@@ -70,6 +70,18 @@ class PreflightTest(unittest.TestCase):
         self.assertNotIn("Bram's web", joined)
         self.assertIn("webs, held/kept for good: Ada 100/60, Bram 50/50", preflight.text(out))
 
+    def test_each_players_body_maps_are_read_and_a_full_chests_used_is_a_watch(self):
+        maps = "; body maps by player, place refusals/set aside/chests used/seen at stores/untrusted stores/recently taken/raids "
+        console = "\n".join([DAY1 + maps + "{Ada=1/0/5/2/0/3/1, Bram=0/0/0/0/0/0/0}",
+                              DAY3 + maps + "{Ada=3/2/32/1/1/4/9, Bram=0/0/1/0/0/0/0}"])
+        out = preflight.report(console)
+        self.assertEqual({"placeRefusals": 1, "placeSetAside": 0, "chestsUsed": 5, "seenAtStores": 2, "untrustedStores": 0,
+                          "recentlyTaken": 3, "raids": 1}, out["costLines"][0]["bodyMapsByPlayer"]["Ada"])
+        self.assertEqual({"placeRefusals": 1.0, "placeSetAside": 1.0, "chestsUsed": 13.5, "seenAtStores": -0.5, "untrustedStores": 0.5,
+                          "recentlyTaken": 0.5, "raids": 4.0}, out["growth"][0]["bodyMapsPerGameDay"]["Ada"])
+        self.assertTrue(any("Ada's chests seen used at its cap of 32" in w for w in out["watch"]), out["watch"])
+        self.assertFalse(any("Bram's chests seen used" in w for w in out["watch"]), out["watch"])
+
     def test_a_differing_check_or_a_heap_near_its_limit_is_a_stop(self):
         with tempfile.TemporaryDirectory() as directory:
             quiet = preflight.report(DAY1, self.record(directory), heap_max_mb=12288)
