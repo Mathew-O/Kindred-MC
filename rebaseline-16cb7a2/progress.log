@@ -1,0 +1,15 @@
+07:12:07 sha 16cb7a2e
+07:12:07 run 1 attempt 1: corpus world held 45 MB; emptied
+07:52:48 run 1 done: 40 min, peak VmHWM 2859 MB
+07:52:49 run 2 attempt 1: corpus world held 421 MB; emptied
+08:32:50 run 2 done: 40 min, peak VmHWM 3056 MB
+08:32:52 run 3 attempt 1: corpus world held 421 MB; emptied
+09:13:53 run 3 done: 41 min, peak VmHWM 3012 MB
+09:13:54 run 4 attempt 1: corpus world held 419 MB; emptied
+09:54:35 run 4 done: 40 min, peak VmHWM 3249 MB
+09:54:36 run 5 attempt 1: corpus world held 419 MB; emptied
+09:59:38 run 4: game JVM 19216 still alive 5 min after GAME TESTS COMPLETE; jstack x3
+10:35:17 run 5 done: 40 min, peak VmHWM 3964 MB
+10:35:19 run 6 attempt 1: corpus world held 423 MB; emptied
+11:15:40 run 6 done: 40 min, peak VmHWM 2805 MB
+11:15:40 ALL DONE
