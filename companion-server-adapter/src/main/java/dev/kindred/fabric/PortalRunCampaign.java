@@ -211,6 +211,13 @@ final class PortalRunCampaign {
     private final java.util.Set<Long> unreachedDrops = new java.util.HashSet<>();
     private int recoverMisses;
     private static final int RECOVER_TRIES = 3;
+    /**
+     * A walk back for its kit at night, before the night's shelter (F-25c4di1f1): the most its kit's nearest piece may lie
+     * from it; how far round it and its kit a hostile it sees, or one that sees the kit, keeps it in; an item's life on the
+     * ground (vanilla's despawn); the ticks a block a walk is reckoned at (a walk is some 4.3 blocks a second, so under 5);
+     * and how many such walks must fit in what is left of the kit's life on the ground.
+     */
+    static final int KIT_WALK_MOST = 24, KIT_HOSTILE_SIGHT = 24, DROP_LIFE = 6_000, KIT_TICKS_A_BLOCK = 5, KIT_WALKS_LEFT = 4;
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
     private long lastTick;
@@ -2688,6 +2695,14 @@ final class PortalRunCampaign {
         var here = player.getServerWorld();
         boolean night = night(here);
         if (!night) nightShelterAt = null;
+        // Woken at night just after a death, its kit lying near and nothing hostile about: back for the kit first, then
+        // the night's shelter. The shelter was decided before the walk back, and a night outlasts a drop: in E-40 iteration
+        // 24 (#384) 8675309 Sol died at night and, woken, dug in at once (F-25c4di1f1).
+        Optional<Task> kit = night ? kitBeforeNight(player, tick) : Optional.empty();
+        if (kit.isPresent()) {
+            progress = stageLabel(stage) + ": back for its kit before the night - " + kit.get().label();
+            return kit;
+        }
         if (night && !sheltered(player)) {
             Optional<Task> dig = digDown(body, player.getBlockY() - 3, "Dig in for the night");
             if (dig.isPresent()) {
@@ -3231,6 +3246,37 @@ final class PortalRunCampaign {
         ItemEntity nearest = drops.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
         if (watched(world, nearest)) return Optional.empty(); // It waits for the mob to go, the site kept meanwhile.
         return Optional.of(go(nearest.getBlockPos(), 0.8, true, "Recover dropped items near " + dropSite.toShortString()));
+    }
+
+    /**
+     * At night, a walk back to the nearest piece of its own kit (armour or a pickaxe) dropped at its last death, before the
+     * night's shelter, only when that piece lies within {@value #KIT_WALK_MOST} blocks of it, {@value #KIT_WALKS_LEFT} such
+     * walks fit in what is left of its life on the ground, and no hostile within {@value #KIT_HOSTILE_SIGHT} of it or of the
+     * kit is in its sight or has the kit in sight. Its own: what lies round the spot the campaign marked at its own death,
+     * as {@link #recoverDrops} goes back for. Otherwise empty, and the night goes on as before. Labelled "Recover", so a walk
+     * that ends short passes that drop over, as {@link #recoverDrops}'s do.
+     */
+    private Optional<Task> kitBeforeNight(ServerPlayerEntity player, long tick) {
+        if (dropSite == null || tick > dropSiteUntil) return Optional.empty();
+        var world = player.getServerWorld();
+        if (!world.isChunkLoaded(dropSite)) return Optional.empty();
+        var kit = world.getEntitiesByClass(ItemEntity.class, new Box(dropSite).expand(8), drop -> drop.isAlive() && !drop.isInLava()
+                && !unreachedDrops.contains(drop.getBlockPos().asLong()) && kitPiece(drop.getStack()));
+        if (kit.isEmpty()) return Optional.empty();
+        ItemEntity nearest = kit.stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElseThrow();
+        double blocks = Math.sqrt(player.squaredDistanceTo(nearest));
+        if (blocks > KIT_WALK_MOST) return Optional.empty();
+        if ((DROP_LIFE - nearest.getItemAge()) < KIT_WALKS_LEFT * KIT_TICKS_A_BLOCK * Math.max(1, blocks)) return Optional.empty();
+        Box round = player.getBoundingBox().union(nearest.getBoundingBox()).expand(KIT_HOSTILE_SIGHT, 8, KIT_HOSTILE_SIGHT);
+        if (!world.getEntitiesByClass(HostileEntity.class, round, mob -> mob.isAlive() && (player.canSee(mob) || mob.canSee(nearest))).isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(go(nearest.getBlockPos(), 0.8, true, "Recover its kit before the night near " + dropSite.toShortString()));
+    }
+
+    /** A piece of kit worth a walk at night: armour, or a pickaxe. */
+    static boolean kitPiece(ItemStack stack) {
+        return stack.getItem() instanceof net.minecraft.item.ArmorItem || stack.isIn(ItemTags.PICKAXES);
     }
 
     /**
@@ -5566,7 +5612,7 @@ final class PortalRunCampaign {
             if (cell.getSquaredDistance(feet) < 4 || !world.getBlockState(cell).isReplaceable() || !world.getFluidState(cell).isEmpty() || blocked(cell)) continue;
             var floor = world.getBlockState(cell.down()).getCollisionShape(world, cell.down());
             if (floor.isEmpty() || floor.getMax(Direction.Axis.Y) > 1.0 || nearGeneratorLava(cell) || !ground && besideTheVoid(world, cell)
-                    || !mayWork(player, cell)) continue;
+                    || keepOff.test(cell) || !mayWork(player, cell)) continue;
             for (Direction side : Direction.Type.HORIZONTAL) {
                 BlockPos stand = cell.offset(side);
                 if (stand.equals(feet) || !standable(world, stand) || blocked(stand) || unreachable(stand) || !ground && besideTheVoid(world, stand)) continue;
@@ -7986,12 +8032,21 @@ final class PortalRunCampaign {
      */
     private Predicate<Item> spendFirst = item -> true;
 
-    /** The slot of a block to make a way with: one {@link #spendFirst} allows if it holds any, else the first it holds. */
+    /**
+     * While a build makes its way back up to its site: the blocks it never spends on the way, ones its owner has to keep
+     * (F-22c84 cause #3). None otherwise.
+     */
+    private Predicate<Item> spendNever = item -> false;
+
+    /**
+     * The slot of a block to make a way with, never one {@link #spendNever} names: one {@link #spendFirst} allows if it
+     * holds any, else the first it holds.
+     */
     private int wayBlockSlot(net.minecraft.entity.player.PlayerInventory inventory) {
         int any = -1;
         for (int s = 0; s < 36; s++) {
             Item item = inventory.getStack(s).getItem();
-            if (!SEALING.contains(item)) continue;
+            if (!SEALING.contains(item) || spendNever.test(item)) continue;
             if (spendFirst.test(item)) return s;
             if (any < 0) any = s;
         }
@@ -8003,23 +8058,40 @@ final class PortalRunCampaign {
      * allows before the rest: a build climbing back up to its site keeps its own blocks for itself (E-08g).
      */
     Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, Predicate<BlockPos> goal, boolean needEdit, String label, Predicate<Item> first) {
+        return buildRoute(body, target, goal, needEdit, label, first, item -> false);
+    }
+
+    /** As the last, and never spending a block {@code never} names: one its owner has to keep (F-22c84 cause #3). */
+    Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, Predicate<BlockPos> goal, boolean needEdit, String label,
+            Predicate<Item> first, Predicate<Item> never) {
         var before = spendFirst;
+        var beforeNever = spendNever;
         spendFirst = first;
+        spendNever = never;
         try {
             return buildRoute(body, target, goal, needEdit, label);
         } finally {
             spendFirst = before;
+            spendNever = beforeNever;
         }
     }
 
     /** As {@link #climbOut(NativePlayerBody)}, spending blocks {@code first} allows before the rest (E-08g). */
     Optional<Task> climbOut(NativePlayerBody body, Predicate<Item> first) {
+        return climbOut(body, first, item -> false);
+    }
+
+    /** As the last, and never spending a block {@code never} names: one its owner has to keep (F-22c84 cause #3). */
+    Optional<Task> climbOut(NativePlayerBody body, Predicate<Item> first, Predicate<Item> never) {
         var before = spendFirst;
+        var beforeNever = spendNever;
         spendFirst = first;
+        spendNever = never;
         try {
             return climbOut(body);
         } finally {
             spendFirst = before;
+            spendNever = beforeNever;
         }
     }
 
