@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 10816, "paid": 10816, "lapsed": 242, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 101.3, "snapshotMicrosMax": 20715.4, "tagMicrosMean": 114.0, "tagMicrosMax": 8092.4, "bySource": {"container.take:furnace": 84, "pickup:class_2248.method_36993": 2748, "pickup:class_3222.method_7329": 7513, "pickup:class_52.method_331": 35, "screen:class_1707": 24, "screen:class_1714": 51, "screen:class_1723": 512, "use:item": 91}, "dropsByOrigin": {"class_1264.method_5449": 3, "class_1428.method_6007": 345, "class_1540.method_5773": 4, "class_2248.method_36993": 2816, "class_3222.method_7329": 439, "class_52.method_331": 66, "class_8836.method_54298": 1}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 15.72, "tickMsWorst": 1682.83, "tickMsWorstAt": 72135, "ticksOver50ms": 332, "ticksOver200ms": 6, "heapMbMax": 1155, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1740, "stone_tools": 3240, "iron_ingot": 8500, "iron_pickaxe": 37620, "obsidian": 49998, "portal_lit": 69573},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3225,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.6
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2280, "stone_tools": 3860, "iron_ingot": 8660, "iron_pickaxe": 26340, "obsidian": 104314, "portal_lit": 106235},
+      "deaths": [
+        {"tick": 63632, "cause": "Sol fell from a high place", "x": 33, "y": -43, "z": 64, "light": 4, "timeOfDay": 15794, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: no way on from here - Jump down from the ledge", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 24280, "x": 55, "y": 19, "z": 96, "attempt": 1}, {"tick": 34640, "x": 62, "y": 37, "z": 101, "attempt": 1}, {"tick": 97380, "x": 58, "y": 4, "z": 119, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3514,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 9,
+      "bridgeSeconds": 3.7
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2480, "stone_tools": 4140, "iron_ingot": 20920},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 9940, "x": 35, "y": 42, "z": 40, "attempt": 1}, {"tick": 17700, "x": 46, "y": 47, "z": 63, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1476,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
