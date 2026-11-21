@@ -19,3 +19,4 @@ confirm-main-2.3 (9449d195, only flagged): 0 min, peak 1094 MB, All 2 required t
 confirm-main-3.1 (9449d195, only flagged): 0 min, peak 1181 MB, All 2 required tests passed, fence-top 0, disk 5.1G
 confirm-main-3.2 (9449d195, only flagged): 0 min, peak 1185 MB, All 2 required tests passed, fence-top 0, disk 5.1G
 confirm-main-3.3 (9449d195, only flagged): 0 min, peak 1159 MB, 1 required tests failed, fence-top 0, disk 5.1G
+confirm-branch-4.2 (eeaed98f, only flagged): 0 min, peak 1347 MB, All 2 required tests passed, fence-top 0, disk 5.1G
