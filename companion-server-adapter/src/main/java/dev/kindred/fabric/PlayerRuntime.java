@@ -1488,6 +1488,7 @@ final class PlayerRuntime {
         attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
         attentionScheduler.invalidate(entry.data.id(), WorkKind.RESOURCE_DISCOVERY);
         attentionScheduler.invalidate(entry.data.id(), WorkKind.EQUIPMENT_READINESS);
+        expiredDropLost(entry, "lost its body");
         closeNativeActivity(entry);
     }
 
@@ -2328,6 +2329,7 @@ final class PlayerRuntime {
             try {
                 entry.activity = new PaidActivitySession(budget, Duration.ofMillis(prepared.limit().capMillis()),
                         budgetWriter(), this::handBack, java.time.Clock.systemUTC(), System::nanoTime);
+                long booked = System.nanoTime();
                 entry.activity.request(deadline).whenComplete((paid, error) -> {
                     entry.nativeWorkPending = false; // Session completion runs on the server thread.
                     if (error != null) { nativeActivityFailure(entry, "Activity acknowledgement is uncertain"); return; }
@@ -2341,6 +2343,7 @@ final class PlayerRuntime {
                         entry.activity.stop(); admission.release(id);
                         if (running && generation == entry.generation) entry.blocker = entry.activity.blocker().isBlank()
                                 ? "Native request cancelled before paid dispatch." : entry.activity.blocker();
+                        if (running && EXPIRED_RESERVATION.equals(entry.activity.blocker())) expiredDrop(entry, skill, booked);
                         if (running) dispatchDropped(entry, skill, "paid=" + paid + "/" + entry.activity.paid() + " generation="
                                 + (entry.generation == generation) + " stop=" + entry.snapshot().stopLatched() + " cancelling="
                                 + entry.arbiter.cancellationPending() + " hazard=" + entry.hazardInterrupted + " connected="
@@ -2359,6 +2362,7 @@ final class PlayerRuntime {
                         if (own) entry.ownStarts++;
                         entry.lastRunnerState = SkillRunner.State.RUNNING;
                         entry.blocker = "Running " + skill + " under one acknowledged activity slice.";
+                        offeredAgain(entry, skill);
                         persist(entry);
                     } catch (RuntimeException denied) {
                         entry.activity.stop(); admission.release(id);
@@ -2509,6 +2513,43 @@ final class PlayerRuntime {
         entry.lastDropReportTick = server.getTicks();
         KindredMod.LOGGER.info("{} {} dropped before it ran: {}", entry.data.displayName(), skill, gates);
         if (watch != null) entry.decided(server.getTicks(), skill + " dropped before it ran: " + gates);
+    }
+
+    /** The blocker a paid session gives a slice that ended before its booking was acknowledged. */
+    private static final String EXPIRED_RESERVATION = "Reservation expired before acknowledgement";
+
+    /**
+     * A request dropped because its slice ended before the booking was acknowledged (F-22c101, a diagnostic): logged
+     * each time, with how long the acknowledgement took, and remembered until a skill next starts or the player stops.
+     */
+    private void expiredDrop(Entry entry, String skill, long booked) {
+        long now = System.nanoTime();
+        KindredMod.LOGGER.info("{} {} dropped, its reservation expired before acknowledgement (F-22c101): acknowledged {} ms after it"
+                        + " was booked, at tick {}, the last tick {} ms; {}", entry.data.displayName(), skill, (now - booked) / 1_000_000,
+                server.getTicks(), lastTickMillis(server), entry.expiredDrop == null ? "watching for it offered again"
+                        : "an earlier one (" + entry.expiredDrop + ") still not offered again");
+        if (entry.expiredDrop != null) return;
+        entry.expiredDrop = skill;
+        entry.expiredDropTick = server.getTicks();
+        entry.expiredDropNanos = now;
+    }
+
+    /** A skill started after an expired drop: said once, with how long after the drop and whether it was the same skill. */
+    private void offeredAgain(Entry entry, String skill) {
+        if (entry.expiredDrop == null) return;
+        KindredMod.LOGGER.info("{} {} started {} ticks ({} ms) after {} was dropped on an expired reservation (F-22c101): {}",
+                entry.data.displayName(), skill, server.getTicks() - entry.expiredDropTick, (System.nanoTime() - entry.expiredDropNanos) / 1_000_000,
+                entry.expiredDrop, skill.equals(entry.expiredDrop) ? "offered again" : "a different skill");
+        entry.expiredDrop = null;
+    }
+
+    /** The player stopped or lost its body with an expired drop never followed by a start: said once (F-22c101). */
+    private void expiredDropLost(Entry entry, String how) {
+        if (entry.expiredDrop == null) return;
+        KindredMod.LOGGER.info("{} {}, dropped on an expired reservation {} ticks ({} ms) before, never offered again before it {} (F-22c101)",
+                entry.data.displayName(), entry.expiredDrop, server.getTicks() - entry.expiredDropTick,
+                (System.nanoTime() - entry.expiredDropNanos) / 1_000_000, how);
+        entry.expiredDrop = null;
     }
 
     /** Game time with a goal and no skill started, after which a player says once what holds it (F-25c4m). */
@@ -16109,6 +16150,7 @@ final class PlayerRuntime {
     }
 
     private void halt(Entry entry, Actor actor, String reason) {
+        expiredDropLost(entry, "was stopped (" + reason + ")");
         ++entry.generation;
         entry.pendingConnection = null;
         entry.nativePending = false;
@@ -19629,6 +19671,9 @@ final class PlayerRuntime {
         private long lastBusyTick = -1;
         private boolean stallReported;
         private long lastDropReportTick = Long.MIN_VALUE / 2;
+        /** The skill last dropped on an expired reservation and not yet followed by a start, and when (F-22c101). Not saved. */
+        private String expiredDrop;
+        private long expiredDropTick, expiredDropNanos;
         /** No accounting period opens before this instant, and why (F-11e); null when one may. */
         private java.time.Instant noPeriodUntil;
         private String noPeriodReason;
