@@ -18537,6 +18537,9 @@ final class PlayerRuntime {
                 if (entry.data == null) continue;
                 var actors = new java.util.HashSet<UUID>();
                 actors.add(entry.data.id());
+                // Its body's id as saved, connected or not (F-33g): after a restart the bodies wait offline until connected,
+                // and a day's page written then must still count what the body did before, or it is skipped for good.
+                if (entry.data.entityId() != null) actors.add(entry.data.entityId());
                 if (entry.nativeBody != null && entry.nativeBody.connected()) actors.add(entry.nativeBody.entity().getUuid());
                 out.add(new ChronicleKeeper.Player(entry.data.id(), entry.data.displayName(), actors, factionOf.apply(entry.data.id())));
             }
