@@ -66,6 +66,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - F-34 with M-06e, the Factions notices on the Wire, written once and each citing its events: [evidence](evidence/F-34.md)
 - F-34c's second keyed runs (2026-11-15, main 37adcdc): both join lines once with no DUPLICATE, the refusal tally in the cost line, and a person's own death told to the faction as "A member died"; the voice's 3 claim lines all refused by its check and said plain; Echo's death news not heard by a dead, unrespawned person; the voice's cache not measurable (no per-call token counts): [evidence](evidence/F-34.md#the-second-keyed-runs-on-main-37adcdc-f-34c-2026-11-15)
 - M-06d1, mobs' own griefing refused on claimed land: [evidence](evidence/M-06d1.md)
+- M-06d1a, mobs' own griefing refused in safe zones (test-only): [evidence](evidence/M-06d1a.md)
 - M-06j1, the Factions pack's admin checklist walked on a fresh server from the console: [evidence](evidence/M-06j1.md)
 - M-06g1, the market's chest screen: [evidence](evidence/M-06g1.md)
 
