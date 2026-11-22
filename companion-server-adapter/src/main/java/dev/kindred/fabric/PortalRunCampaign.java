@@ -7269,6 +7269,12 @@ final class PortalRunCampaign {
     void bedTaskEnded(Task task, boolean completed) {
         if (task == null) return;
         if (WAKE_BED_LABEL.equals(task.label())) wakeBedAt = null;
+        if (OPEN_BED_WAY_LABEL.equals(task.label()) && completed) bedOpenings++;
+        // A morning take-up, or a block opened toward it, that did not go: set aside with the walk (F-25c4di1g). Each time it
+        // was offered again on the next tick, refused again: 10,958 times in ten game minutes on iteration 26's 20261030 Echo.
+        if ((MORNING_BED_LABEL.equals(task.label()) || OPEN_BED_WAY_LABEL.equals(task.label())) && !completed && carriedBedAt != null) {
+            setBedAside("its take-up refused");
+        }
         if (BED_DOWN_LABEL.equals(task.label()) && !completed) {
             bedDownRefusals++;
             bedDownAgainAt = lastTick + BED_DOWN_BACKOFF;
@@ -7337,6 +7343,7 @@ final class PortalRunCampaign {
         // Called by the runtime for a player with no goal too, whose plan never runs: the server's tick, as the plan has it.
         lastTick = Math.max(lastTick, world.getServer().getTicks());
         boolean sleepable = dev.kindred.core.survival.Nights.sleepTime(world.getTimeOfDay(), world.isThundering());
+        bedOwner = player.getName().getString();
         seeCarriedBed(world);
         if (carriedBedAt != null && (!world.isChunkLoaded(carriedBedAt) || !world.getBlockState(carriedBedAt).isIn(BlockTags.BEDS))) carriedBedAt = null;
         if (bedSlot(player) >= 0) bedUrgent = false;
@@ -7380,9 +7387,19 @@ final class PortalRunCampaign {
             // hurt, in a zombie fight, walked for its bed and died). Danger only, not hunger: a hungry player takes up its
             // bed before it goes off after food, rather than leave an earned bed behind.
             if (!safeForChore(player)) return Optional.empty();
-            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 4.5 * 4.5) return Optional.of(new Task("native_break", coords(carriedBedAt, Map.of("carried_bed", "true")), "Take its bed back up in the morning"));
-            return toBedStand(player, "Back to its bed to take it up");
+            // A take-up refused is set aside with the walk, not offered again on the next tick (F-25c4di1g).
+            if (lastTick < bedWalkAsideUntil) return Optional.empty();
+            // The doorway it opened toward its bed finished before the take-up, so it can walk in after the bed's drop.
+            Optional<Task> doorway = openDoorway(player);
+            if (doorway.isPresent()) return doorway;
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 4.5 * 4.5) {
+                Optional<Task> up = takeUp(body);
+                if (up.isPresent()) return up;
+            }
+            return toBedStand(player, "Back to its bed to take it up", true);
         }
+        bedOpenings = 0;
+        bedDoorway = null;
         if (!bedNights || homeInReach || stronghold.spawnByPortal(player) || bedTries >= BED_TRIES) return Optional.empty();
         if (nightWork(player)) {
             if (!"Up tonight for work only the night gives: ender pearls".equals(lastNightWork)) {
@@ -7400,7 +7417,7 @@ final class PortalRunCampaign {
             }
             // Not while hurt or in a fight: the pocket's way to its bed is a step or two, but never ahead of fighting back.
             if (player.hurtTime > 0 || player.getAttacker() != null) return Optional.empty();
-            return toBedStand(player, "To the bed it carries");
+            return toBedStand(player, "To the bed it carries", false);
         }
         int slot = bedSlot(player);
         if (slot < 0) {
@@ -7493,17 +7510,22 @@ final class PortalRunCampaign {
     /**
      * To a cell it can stand in with its bed within reach, never at the bed itself, which no walk can stand on (seed 101
      * of the E-70a batch: 811 walks refused in 36 s toward a bed head). With no such cell, or walks that bring it no nearer,
-     * the chore is set aside a while; set aside {@value #BED_WALK_ASIDES} times, the bed is left where it stands.
+     * the chore is set aside a while; set aside {@value #BED_WALK_ASIDES} times, the bed is left where it stands. To take
+     * the bed up ({@code inSight}), only a cell from which a half of it can be seen, its own cells aside (F-25c4di1g): in
+     * iteration 26 the walk ended outside its sealed pocket, the pocket's wall between it and its bed, five times. With
+     * none, by day, the way to it is opened first, as {@link #openWay} allows.
      */
-    private Optional<Task> toBedStand(ServerPlayerEntity player, String label) {
+    private Optional<Task> toBedStand(ServerPlayerEntity player, String label, boolean inSight) {
         if (lastTick < bedWalkAsideUntil) return Optional.empty();
         var world = player.getServerWorld();
         BlockPos stand = null;
         double best = Double.MAX_VALUE;
         Vec3d bed = Vec3d.ofCenter(carriedBedAt);
+        BlockPos foot = carriedBedFoot(world);
         for (BlockPos cell : BlockPos.iterate(carriedBedAt.add(-3, -2, -3), carriedBedAt.add(3, 1, 3))) {
             if (!world.isChunkLoaded(cell) || !standable(world, cell)) continue;
             if (Vec3d.ofBottomCenter(cell).add(0, 1.62, 0).squaredDistanceTo(bed) > 4.0 * 4.0) continue;
+            if (inSight && (cell.equals(carriedBedAt) || cell.equals(foot) || !seesBedFrom(world, cell, foot))) continue;
             double d = cell.getSquaredDistance(player.getBlockPos());
             if (d < best) {
                 best = d;
@@ -7515,21 +7537,173 @@ final class PortalRunCampaign {
             bedWalkBest = now;
             bedWalkTries = 0;
         }
+        if (stand == null && inSight) {
+            Optional<Task> open = openWay(player);
+            if (open.isPresent()) return open;
+        }
         if (stand == null || ++bedWalkTries > BED_WALK_TRIES) {
             bedWalkTries = 0;
             bedWalkBest = Double.MAX_VALUE;
-            if (++bedWalkAsides >= BED_WALK_ASIDES) {
-                event("left its bed where it stands at " + carriedBedAt.toShortString() + ": no way to it");
-                carriedBedAt = null;
-                bedWalkAsides = 0;
-                return Optional.empty();
-            }
-            bedWalkAsideUntil = lastTick + BED_WALK_ASIDE;
-            event("its bed at " + carriedBedAt.toShortString() + " set aside a while: " + (stand == null ? "nowhere to stand by it" : "no nearer"));
+            setBedAside(stand == null ? (inSight ? "nowhere in sight of it to stand" : "nowhere to stand by it") : "no nearer");
             return Optional.empty();
         }
         bedWalks++;
         return Optional.of(go(stand, 0.5, false, label));
+    }
+
+    /**
+     * The chore of its bed set aside a while, for {@code why}; set aside {@value #BED_WALK_ASIDES} times, the bed is left
+     * where it stands: a bed it no longer carries.
+     */
+    private void setBedAside(String why) {
+        if (++bedWalkAsides >= BED_WALK_ASIDES) {
+            event("left its bed where it stands at " + carriedBedAt.toShortString() + ": " + why);
+            KindredMod.LOGGER.info("{} left its bed where it stands at {}: {}", bedOwner, carriedBedAt.toShortString(), why);
+            KindredMod.LOGGER.info("{} F-25c4di1g-marker: left where it stands, {}", bedOwner, why);
+            carriedBedAt = null;
+            bedWalkAsides = 0;
+            return;
+        }
+        bedWalkAsideUntil = lastTick + BED_WALK_ASIDE;
+        event("its bed at " + carriedBedAt.toShortString() + " set aside a while: " + why);
+        KindredMod.LOGGER.info("{} F-25c4di1g-marker: set aside, {}", bedOwner, why);
+    }
+
+    static final String MORNING_BED_LABEL = "Take its bed back up in the morning";
+    static final String OPEN_BED_WAY_LABEL = "Open the way to its bed";
+    /** Blocks it may open toward its bed in one morning (F-25c4di1g). */
+    static final int BED_OPENINGS = 2;
+    /** Its name, for the console's lines of its bed's chore. */
+    private String bedOwner = "";
+    /** Blocks it has opened toward its bed this morning. */
+    private int bedOpenings;
+    /**
+     * The other block of the doorway it is opening toward its bed, once the first is broken: the pocket's own cell is two
+     * high, and a one-high gap lets it see its bed but not walk in after the bed's drop.
+     */
+    private BlockPos bedDoorway;
+    /** The blocks it has said it opens toward its bed, once each. */
+    private final java.util.Set<BlockPos> bedOpeningsSaid = new java.util.HashSet<>();
+
+    /** The foot of the bed it carries, its head at {@code carriedBedAt}. */
+    private BlockPos carriedBedFoot(ServerWorld world) {
+        var state = world.getBlockState(carriedBedAt);
+        if (!state.isIn(BlockTags.BEDS)) return carriedBedAt;
+        return carriedBedAt.offset(state.get(net.minecraft.block.BedBlock.FACING).getOpposite()).toImmutable();
+    }
+
+    /** Whether from a cell's eyes either half of its bed is seen: the line to its middle meets nothing but that half. */
+    private boolean seesBedFrom(ServerWorld world, BlockPos cell, BlockPos foot) {
+        Vec3d eyes = Vec3d.ofBottomCenter(cell).add(0, 1.62, 0);
+        for (BlockPos half : List.of(carriedBedAt, foot)) {
+            var hit = world.raycast(new net.minecraft.world.RaycastContext(eyes, Vec3d.ofCenter(half), net.minecraft.world.RaycastContext.ShapeType.OUTLINE,
+                    net.minecraft.world.RaycastContext.FluidHandling.NONE, net.minecraft.block.ShapeContext.absent()));
+            if (hit.getType() != net.minecraft.util.hit.HitResult.Type.BLOCK || hit.getBlockPos().equals(half)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Its bed back up in the morning (F-25c4di1g), from a half the break will take: each half is offered only once
+     * {@link NativePlayerBody#miningEligible} (the break's own rule, read in one place) says it is in reach and in sight.
+     * Woken on top of one half, in a pocket with nowhere beside the bed to stand (iteration 26's 20261030 Echo: 10,958
+     * refusals of "Would remove the block the player stands on"), it takes the bed up from the other: vanilla's loot drops
+     * the bed from its head, and the head goes with the foot's break by neighbour update, drops and all. That other half is
+     * not the block under it, but its break takes the half it stands on with it; so it is allowed only where
+     * {@code RoamingEdits.breakDenial}'s rule against breaking the block underfoot is not what it stands to lose: the half
+     * under it is the bed it set down itself and lay in tonight, and under that half is a solid top with no fluid, so it
+     * drops only the bed's height onto ground. Empty when neither half will do.
+     */
+    private Optional<Task> takeUp(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos foot = carriedBedFoot(world);
+        BlockPos under = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
+        boolean onIt = under.equals(carriedBedAt) || under.equals(foot);
+        if (onIt) {
+            BlockPos floor = under.down();
+            boolean ground = world.getBlockState(floor).isSideSolidFullSquare(world, floor, Direction.UP)
+                    && world.getFluidState(floor).isEmpty() && world.getFluidState(under).isEmpty();
+            var spawn = player.getSpawnPointPosition();
+            boolean own = spawn != null && player.getSpawnPointDimension() == world.getRegistryKey() && (spawn.equals(carriedBedAt) || spawn.equals(foot));
+            if (!ground || !own) return Optional.empty();
+        }
+        for (BlockPos half : List.of(carriedBedAt, foot)) {
+            if (half.equals(under) || !body.miningEligible(half)) continue;
+            if (!half.equals(carriedBedAt) || onIt) {
+                KindredMod.LOGGER.info("{} F-25c4di1g-marker: takes its bed up from its {}{}", bedOwner, half.equals(carriedBedAt) ? "head" : "foot",
+                        onIt ? ", standing on the other half" : ", the head out of sight");
+            }
+            return Optional.of(new Task("native_break", coords(half, Map.of("carried_bed", "true")), MORNING_BED_LABEL));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * The doorway's other block, once the first is broken (F-25c4di1g): by day, within {@value #BED_OPENINGS} a morning,
+     * under all of the break's rules; asked for once, refused, the chore is set aside.
+     */
+    private Optional<Task> openDoorway(ServerPlayerEntity player) {
+        if (bedDoorway == null || bedOpenings == 0) return Optional.empty();
+        var world = player.getServerWorld();
+        BlockPos block = bedDoorway;
+        bedDoorway = null;
+        if (night(world) || bedOpenings >= BED_OPENINGS || world.getBlockState(block).isAir()) return Optional.empty();
+        if (bedOpeningsSaid.add(block)) {
+            KindredMod.LOGGER.info("{} opens the way to its bed at {}: {} at {}", bedOwner, carriedBedAt.toShortString(),
+                    net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(block).getBlock()).getPath(), block.toShortString());
+            KindredMod.LOGGER.info("{} F-25c4di1g-marker: open the way to its bed, {}", bedOwner, block.toShortString());
+        }
+        return Optional.of(new Task("native_break", coords(block, Map.of()), OPEN_BED_WAY_LABEL));
+    }
+
+    /**
+     * By day, with neither half of its bed in sight and nowhere in sight of it to stand (F-25c4di1g): the one block the
+     * line from its eyes to its bed's middle meets, broken, when that block's far side is its bed's own room: the block is
+     * beside a cell of the bed, or the air over one, and is plain ground (no block entity, no fluid, breakable); at most
+     * {@value #BED_OPENINGS} a morning, a second wall deeper in counted with the first, as is the doorway's other block
+     * ({@link #openDoorway}), broken next so it can walk in after the bed's drop. It opens the pocket it sealed for
+     * the night and never digs a fresh tunnel toward a bed it cannot otherwise reach. The break is a {@code native_break}
+     * under all of {@code RoamingEdits.breakDenial}'s rules (lava beside it, the block underfoot); refused, the chore is set
+     * aside. At night the pocket stays sealed (F-25c4dl): the chore is set aside instead.
+     */
+    private Optional<Task> openWay(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        if (night(world) || bedOpenings >= BED_OPENINGS) return Optional.empty();
+        BlockPos foot = carriedBedFoot(world);
+        var room = List.of(carriedBedAt, foot, carriedBedAt.up(), foot.up());
+        for (BlockPos half : List.of(carriedBedAt, foot)) {
+            var hit = world.raycast(new net.minecraft.world.RaycastContext(player.getEyePos(), Vec3d.ofCenter(half), net.minecraft.world.RaycastContext.ShapeType.OUTLINE,
+                    net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+            if (hit.getType() != net.minecraft.util.hit.HitResult.Type.BLOCK) continue;
+            BlockPos block = hit.getBlockPos().toImmutable();
+            if (room.contains(block)) continue;
+            var state = world.getBlockState(block);
+            if (state.isAir() || state.hasBlockEntity() || !state.getFluidState().isEmpty() || state.getHardness(world, block) < 0) continue;
+            boolean besideRoom = false;
+            for (Direction direction : Direction.values()) besideRoom |= room.contains(block.offset(direction));
+            if (!besideRoom) continue;
+            // The doorway's other block: below the one named, or above it, beside the bed's room too and plain ground.
+            bedDoorway = null;
+            for (BlockPos other : List.of(block.down(), block.up())) {
+                var otherState = world.getBlockState(other);
+                if (room.contains(other) || otherState.isAir() || otherState.hasBlockEntity() || !otherState.getFluidState().isEmpty()
+                        || otherState.getHardness(world, other) < 0) continue;
+                boolean beside = false;
+                for (Direction direction : Direction.values()) beside |= room.contains(other.offset(direction));
+                if (beside) {
+                    bedDoorway = other.toImmutable();
+                    break;
+                }
+            }
+            if (bedOpeningsSaid.add(block)) {
+                KindredMod.LOGGER.info("{} opens the way to its bed at {}: {} at {}", bedOwner, carriedBedAt.toShortString(),
+                        net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath(), block.toShortString());
+                KindredMod.LOGGER.info("{} F-25c4di1g-marker: open the way to its bed, {}", bedOwner, block.toShortString());
+            }
+            return Optional.of(new Task("native_break", coords(block, Map.of()), OPEN_BED_WAY_LABEL));
+        }
+        return Optional.empty();
     }
 
     /** The chore of its bed, for fixtures: walks given toward it, times set aside, and whether the bed still stands. */

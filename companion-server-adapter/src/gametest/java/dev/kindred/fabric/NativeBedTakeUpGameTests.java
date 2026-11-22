@@ -144,6 +144,8 @@ public final class NativeBedTakeUpGameTests implements FabricGameTest {
                         wall[1] = pocket.up();
                         wall[2] = stand;
                         if (at == Morning.WALLED_LAVA) world.setBlockState(pocket.up().offset(away.rotateYClockwise()), Blocks.LAVA.getDefaultState());
+                        // STAGED: a stone pickaxe in its pack, as one it made: iteration 26's players all had one by then.
+                        player.getInventory().setStack(1, new ItemStack(Items.STONE_PICKAXE));
                         player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, away.getOpposite().asRotation(), 20);
                     } else {
                         // STAGED: on top of one half of its bed, as vanilla leaves a player woken with nowhere beside the bed
