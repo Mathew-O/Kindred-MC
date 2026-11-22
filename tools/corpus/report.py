@@ -75,9 +75,11 @@ def leftover(log):
                 batch = m.group(1)
                 continue
             # The runtime's own stop, logged as the next batch starts, is not acting: its last action dropped unrun, a break
-            # in progress whose collection it ended, or a fight in progress it ended (F-27a3).
+            # in progress whose collection it ended, or a fight in progress it ended (F-27a3). Nor is the periodic cost line,
+            # whose "webs by player" names every player the Record holds a web for (F-27a3a).
             if batch is None or ("dropped before it ran" in line and "stop=true" in line) \
-                    or "its collection ended (authority ended)" in line or "The fight was interrupted" in line:
+                    or "its collection ended (authority ended)" in line or "The fight was interrupted" in line \
+                    or "Kindred cost: day " in line:
                 continue
             for name in set(re.findall(r"\bR[0-9a-f]{5,8}_\d\b", line)):
                 first.setdefault(name, batch)

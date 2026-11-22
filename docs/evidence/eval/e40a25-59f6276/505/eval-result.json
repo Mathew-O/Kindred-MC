@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 505,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 8457, "paid": 8457, "lapsed": 238, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 94.4, "snapshotMicrosMax": 16264.4, "tagMicrosMean": 99.6, "tagMicrosMax": 16939.8, "bySource": {"container.take:furnace": 90, "pickup:class_2248.method_36993": 5982, "pickup:class_3222.method_7329": 1817, "pickup:class_52.method_331": 41, "screen:class_1714": 70, "screen:class_1723": 563, "use:item": 132}, "dropsByOrigin": {"class_1428.method_6007": 409, "class_2248.method_36993": 6082, "class_3222.method_7329": 122, "class_52.method_331": 85, "class_9069.method_5958": 57}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 15.32, "tickMsWorst": 1643.53, "tickMsWorstAt": 59837, "ticksOver50ms": 858, "ticksOver200ms": 10, "heapMbMax": 1433, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 880, "stone_tools": 2780, "iron_ingot": 8920, "iron_pickaxe": 23300, "obsidian": 48087, "portal_lit": 49915},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2091,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.3
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1780, "stone_tools": 3280, "iron_ingot": 18520, "iron_pickaxe": 32780, "obsidian": 68867},
+      "deaths": [
+        {"tick": 7231, "cause": "Sol was slain by Spider", "x": 51, "y": 30, "z": 31, "light": 1, "timeOfDay": 7393, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 9698, "cause": "Sol tried to swim in lava", "x": 52, "y": 34, "z": -22, "light": 13, "timeOfDay": 9860, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Wood: heal before going on", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 92340, "x": 148, "y": 65, "z": 34, "attempt": 1}, {"tick": 99500, "x": 144, "y": 74, "z": 61, "attempt": 2}, {"tick": 107140, "x": 14, "y": 72, "z": -36, "attempt": 3}, {"tick": 132500, "x": -15, "y": 30, "z": 59, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6283,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 3,
+      "bridgeSeconds": 1.7
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 720, "stone_tools": 2240, "iron_ingot": 10920, "iron_pickaxe": 19640, "diamond": 36000, "obsidian": 49575, "portal_lit": 59157},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1530,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 1.1
+    }
+  }
+}

@@ -128,6 +128,15 @@ final class PortalRunCampaign {
      * by turns (the corpus's kindred-48005).
      */
     private boolean hungryOnTop;
+    /**
+     * The reserve turn's wood search (F-25c4cr1): daylight ticks spent on it with no wood gained, the tick last counted, and
+     * whether it is set aside for this descent. On a seed with no trees in reach (31102026's open sand) the search would
+     * otherwise go on while the last pickaxe could still be finding lava.
+     */
+    private long reserveSearchTicks, reserveCountedAt = Long.MIN_VALUE;
+    private boolean reserveAside;
+    /** Daylight ticks a reserve wood search runs with no wood gained before it is set aside, as the other set-asides. */
+    static final int RESERVE_SEARCH_TICKS = 2400;
     /** The steps of filling its bucket from the water over its head (F-35g), and the progress line's words for them. */
     private enum Overhead { OPEN, FILL, SEAL, DRAIN }
     static final String OVERHEAD = "Water over its head";
@@ -731,6 +740,7 @@ final class PortalRunCampaign {
             }
             if (toldTrees != null && toldTrees.isWithinDistance(cut, TREES_APART)) toldTrees = null;
         }
+        if (task != null) lavaTaskFinished(task, completed, why);
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
         // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
         // has failed for a minute, it is stranded no longer.
@@ -1293,6 +1303,17 @@ final class PortalRunCampaign {
                 && outUnderTheSky(dweller, planned.get(), tick)) {
             planned = daylightBelow(body);
             progress = stageLabel(stage) + ": nothing to do before daylight - " + planned.get().label();
+        }
+        // Its own shelter's seal from tonight is not its work's to break before daylight (F-25c4dl): it holds in it, its
+        // way in closed, as above. The night in the bed it carries seals its pocket first and hands the night back when
+        // the bed may not go down now (waiting to try again, given up tonight, or a way in left); below ground the iron's
+        // branch mine goes on through the night, and its next cell was the seal. In E-40 step 8 (`e40a25s-0d3432b`) on
+        // 303, four of the five "mining for a find" spells were one cell sealed and cleared by turns, no advance, and 101
+        // Echo's with it off. Not a safety step, and not its way out by its own seal when it has no other ("open its
+        // shelter"), which goes as before.
+        if (planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get()) && breaksTonightsSeal(dweller, planned.get(), tick)) {
+            planned = daylightBelow(body);
+            progress = stageLabel(stage) + ": its shelter sealed for the night - " + planned.get().label();
         }
         // New ground restarts the clock; only material progress ends a move elsewhere and the run of attempts.
         boolean newGround = seenCells.size() < 100_000
@@ -2444,6 +2465,7 @@ final class PortalRunCampaign {
         }
         noteHappenings(player);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences(), team));
+        boundReserve(player, snapshot, facts, steps);
         // On the way to the End the portal's plan has nothing left to say, in the Nether least of all: none of the
         // upkeep below that follows its steps (workstations carried along, waiting for daylight to cut logs) applies.
         boolean legActive = endGoal() && stronghold.active(player);
@@ -4722,6 +4744,133 @@ final class PortalRunCampaign {
         return setAside(walk) ? Optional.empty() : Optional.of(walk);
     }
 
+    /** Lava it filled its cast's bucket at and has told its team of, and the one not yet told of, taken once by the runtime (F-25c4dm). */
+    private final List<BlockPos> lavaTold = new java.util.ArrayList<>();
+    private BlockPos lavaFound;
+    /** Sites this close together are one: a pool is told of once, however many of its sources are filled at. */
+    static final int LAVA_APART = 16;
+    /** Lava a teammate told it it filled a bucket at: walked toward, short of lava with none seen, before the blind hunt (F-25c4dm). */
+    private BlockPos toldLava;
+    private String toldLavaBy = "";
+    private long toldLavaSince, toldLavaNear = -1;
+    private double toldLavaBest, toldLavaWalkFrom = -1;
+    private String toldLavaRefused;
+    private boolean toldLavaWalkEnded, toldLavaLogged;
+    /** Told sites set aside for the rest of the run, by the four-block column of each. */
+    private final Set<Long> toldLavaAside = new HashSet<>();
+    private String who = "";
+    private static final String TOLD_LAVA_WALK = "Cast: walk to the lava ";
+
+    /** Lava it filled its cast's bucket at and has not yet told its team of, taken once by the runtime, which tells them (F-25c4dm). */
+    Optional<BlockPos> takeLavaFound() {
+        BlockPos found = lavaFound;
+        lavaFound = null;
+        return Optional.ofNullable(found);
+    }
+
+    /**
+     * A teammate's word of lava it filled a bucket at, for a cast: the nearer of those it is told of is kept, never one it
+     * has set aside. A heading, not a sighting: nothing is known of the lava until it sees it for itself (F-25c4dm).
+     */
+    void toldOfLava(BlockPos at, String by, long tick) {
+        if (at == null || toldLavaAside.contains(BlockPos.asLong(at.getX() >> 2, 0, at.getZ() >> 2))) return;
+        if (toldLava != null && (toldLava.isWithinDistance(at, LAVA_APART)
+                || lastFeet != null && toldLava.getSquaredDistance(lastFeet) <= at.getSquaredDistance(lastFeet))) return;
+        toldLava = at.toImmutable();
+        toldLavaBy = by;
+        toldLavaSince = tick;
+        toldLavaBest = Double.MAX_VALUE;
+        toldLavaNear = -1;
+        toldLavaWalkFrom = -1;
+        toldLavaRefused = null;
+        toldLavaWalkEnded = false;
+        toldLavaLogged = false;
+        event("told of lava at " + at.toShortString() + " by " + by, false);
+    }
+
+    /** The lava a teammate told it of, for fixtures: none once it got there or set it aside. */
+    BlockPos toldLavaForTest() { return toldLava; }
+
+    /** Its own bucket filled at lava, told of once a pool; filled at lava it was told of, it got there; a walk there that ended, judged. */
+    private void lavaTaskFinished(Task task, boolean completed, String why) {
+        if (completed && "native_bucket".equals(task.skill()) && task.label().equals("Cast: fill a bucket with lava") && position(task.args()) != null) {
+            BlockPos filled = position(task.args()).toImmutable();
+            if (lavaTold.stream().noneMatch(told -> told.isWithinDistance(filled, LAVA_APART))) {
+                if (lavaTold.size() < 64) lavaTold.add(filled);
+                lavaFound = filled;
+            }
+            if (toldLava != null && toldLava.isWithinDistance(filled, LAVA_APART)) {
+                KindredMod.LOGGER.info("{} reached the lava {} told it of at {}: its bucket filled at {}", who, toldLavaBy, toldLava.toShortString(), filled.toShortString());
+                toldLava = null;
+            }
+        }
+        if (toldLava != null && "native_goto".equals(task.skill()) && task.label().startsWith(TOLD_LAVA_WALK)) {
+            if (completed) toldLavaWalkEnded = true;
+            else toldLavaRefused = why == null || why.isBlank() ? "its walk there did not go" : why;
+        }
+    }
+
+    private void setToldLavaAside(String reason) {
+        toldLavaAside.add(BlockPos.asLong(toldLava.getX() >> 2, 0, toldLava.getZ() >> 2));
+        KindredMod.LOGGER.info("{} sets aside the lava {} told it of at {}: {}", who, toldLavaBy, toldLava.toShortString(), reason);
+        event("set aside the lava " + toldLavaBy + " told of at " + toldLava.toShortString() + ": " + reason);
+        toldLava = null;
+    }
+
+    /**
+     * Short of lava for its cast with none seen and no cave to look in, to the lava a teammate told it it filled a bucket
+     * at, a walk at a time, as a player goes where a friend says the lava is, before it mines blind for its own. Walks only:
+     * no dig toward it. Set aside, and the hunt goes on as before, on a refused walk, a walk that got it no nearer, standing
+     * within six of it a while with no lava seen, or two minutes with no ground gained. Arrived, its own sight finds the pool
+     * and the cast's fill goes on from there; the told place is never read for lava. In E-40's iteration 25 (`e40a25s-0d3432b`)
+     * on 404 with the atlas off, Echo branch-mined for lava at Y=-54 for three stuck spells after Kindred had filled its
+     * bucket 138 to 158 blocks off; on 101 off and 606 on, the same (F-25c4dm).
+     */
+    private Optional<Task> toldLava(NativePlayerBody body) {
+        if (toldLava == null) return Optional.empty();
+        who = body.entity().getName().getString();
+        if (body.entity().getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) return Optional.empty();
+        double off = Math.sqrt(lastFeet.getSquaredDistance(toldLava));
+        if (toldLavaRefused != null) {
+            setToldLavaAside("its walk there was refused (" + toldLavaRefused + ")");
+            return Optional.empty();
+        }
+        // The walk it last took there ended; judged by where it stands now.
+        if (toldLavaWalkEnded) {
+            toldLavaWalkEnded = false;
+            if (toldLavaWalkFrom >= 0 && off > toldLavaWalkFrom - 2 && off > 6) {
+                setToldLavaAside("its walk there got it no nearer (" + Math.round(off) + " blocks off)");
+                return Optional.empty();
+            }
+            toldLavaWalkFrom = -1;
+        }
+        if (off < toldLavaBest - 2) {
+            toldLavaBest = off;
+            toldLavaSince = lastTick;
+        }
+        if (lastTick - toldLavaSince > 2400) {
+            setToldLavaAside("no ground gained toward it in two minutes");
+            return Optional.empty();
+        }
+        if (off <= 6) {
+            if (toldLavaNear < 0) toldLavaNear = lastTick;
+            if (lastTick - toldLavaNear > 200) setToldLavaAside("there, and no lava in sight");
+            return Optional.empty();
+        }
+        BlockPos to = off > LAVA_LEG ? legToward(lastFeet, toldLava, LAVA_LEG) : toldLava;
+        Task walk = go(to, 3, true, TOLD_LAVA_WALK + toldLavaBy + " found at " + toldLava.toShortString());
+        if (setAside(walk)) {
+            setToldLavaAside("its walk there was set aside");
+            return Optional.empty();
+        }
+        if (!toldLavaLogged) {
+            KindredMod.LOGGER.info("{} walks to the lava {} told it of at {}, {} blocks off", who, toldLavaBy, toldLava.toShortString(), Math.round(off));
+            toldLavaLogged = true;
+        }
+        if (toldLavaWalkFrom < 0) toldLavaWalkFrom = off;
+        return Optional.of(walk);
+    }
+
     /**
      * Trees seen on the skyline from open ground, beyond its sweep's reach, walked toward a leg at a time, as a player in a
      * desert makes for the trees it sees far off. Looked for every five seconds of game time; one it has not got to in a
@@ -6373,7 +6522,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         if (knownCastLava(player) == null) {
             return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
-                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
+                    .or(() -> toldLava(body)).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
         // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set aside,
@@ -6407,7 +6556,7 @@ final class PortalRunCampaign {
             castLava = null;
             lavaNoWalk = null;
             return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
-                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
+                    .or(() -> toldLava(body)).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
         if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
@@ -7571,6 +7720,21 @@ final class PortalRunCampaign {
         return true;
     }
 
+    /** How long a seal of its own counts as tonight's: a night is shorter. */
+    private static final long SEAL_TONIGHT = 12_000;
+
+    /**
+     * Whether {@code task} breaks a seal of its own shelter placed tonight, at night (F-25c4dl): a break of one of
+     * {@link #ownSeals} placed within {@value #SEAL_TONIGHT} ticks, other than its way out by it ("open its shelter").
+     */
+    private boolean breaksTonightsSeal(ServerPlayerEntity player, Task task, long tick) {
+        if (!"native_break".equals(task.skill()) || task.label().contains(": open its shelter at ") || !night(player.getServerWorld())) return false;
+        BlockPos cell = position(task.args());
+        if (cell == null) return false;
+        Long sealed = ownSeals.get(cell.asLong());
+        return sealed != null && tick - sealed <= SEAL_TONIGHT;
+    }
+
     private boolean inNightShelter(ServerPlayerEntity player) {
         BlockPos feet = player.getBlockPos();
         if (player.getServerWorld().getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - feet.getY() <= NIGHT_SHELTER_DEPTH) return true;
@@ -8177,6 +8341,33 @@ final class PortalRunCampaign {
         }
         foe = null;
         return null;
+    }
+
+    /**
+     * The reserve turn, bounded (F-25c4cr1): its wood search runs {@link #RESERVE_SEARCH_TICKS} daylight ticks at most with
+     * no wood gained (a walk refused or nothing left to explore gains none either), then is set aside for this descent and
+     * the cast goes on. The descent's reserve is over once the lava is found or the wood it wanted is in hand.
+     */
+    private void boundReserve(ServerPlayerEntity player, PortalRunSnapshot snapshot, WorldFacts facts, List<PortalRunPlanner.Step> steps) {
+        if (facts.knows(WorldFacts.Source.LAVA) || snapshot.lavaBuckets() > 0 || snapshot.woodUnits() >= 2 || snapshot.sticks() >= 2) {
+            reserveAside = false;
+            reserveSearchTicks = 0;
+            reserveCountedAt = Long.MIN_VALUE;
+        }
+        if (steps.isEmpty() || !PortalRunPlanner.RESERVE_WHY.equals(steps.getLast().why())) {
+            reserveCountedAt = Long.MIN_VALUE;
+            return;
+        }
+        if (!reserveAside) {
+            // By day only: a wait for daylight before going up is no search that failed.
+            if (player.getServerWorld().isDay() && reserveCountedAt != Long.MIN_VALUE) reserveSearchTicks += lastTick - reserveCountedAt;
+            reserveCountedAt = lastTick;
+            if (reserveSearchTicks < RESERVE_SEARCH_TICKS) return;
+            reserveAside = true;
+            KindredMod.LOGGER.info("{} found no wood for its reserve in {} ticks; set aside for this descent, on to the lava",
+                    player.getName().getString(), reserveSearchTicks);
+        }
+        steps.set(steps.size() - 1, PortalRunPlanner.castStep(snapshot));
     }
 
     private List<HostileEntity> threats(ServerPlayerEntity player) {
