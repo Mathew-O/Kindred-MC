@@ -190,6 +190,7 @@
       "dev.kindred.fabric.NativeWaterCutGameTests",
       "dev.kindred.fabric.NativeWaterHillGameTests",
       "dev.kindred.fabric.NativeFactionOpenWaterGameTests",
+      "dev.kindred.fabric.NativeFixtureGroundGameTests",
       "dev.kindred.fabric.NativeLimitGameTests",
       "dev.kindred.fabric.NativeHearingGameTests",
       "dev.kindred.fabric.NativeHudGameTests",
