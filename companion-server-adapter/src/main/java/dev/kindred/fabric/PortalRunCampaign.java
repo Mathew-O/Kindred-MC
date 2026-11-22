@@ -836,6 +836,14 @@ final class PortalRunCampaign {
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceDone = true;
             retraceFrom = lastFeet; // Where it stood when the walk was chosen.
+            // Ended lower than it began (F-25c4at1): the climb's own rule, that the way back up never leads down, applied to
+            // where the walk ended. Held from where it began, not only where it ended: in iteration 26 the walk back from the
+            // step ended a block lower, the stall there lifted as soon as the climb stepped it up again, and the walk back
+            // was offered again, three steps round, for 21 game minutes on batch 1's 31102026 Sol.
+            if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
+                retraceLowerFrom = retraceChosenAt;
+                retraceLowerUntil = tick + 600;
+            }
         }
         // Refused ("no walkable route"), the way it came is not asked for again from here for a while, so the climb has its
         // turn: sealed in for the night, every walk back along it was refused, another cell of it each time (F-25c4at).
@@ -5232,6 +5240,26 @@ final class PortalRunCampaign {
     }
 
     /**
+     * For fixtures only, a setter: sets where it stands now and its way in, as its plan's tick would record them
+     * (F-25c4at1). Package-private; called from no main source.
+     */
+    void wayInForTest(BlockPos feet, List<BlockPos> way) {
+        lastFeet = feet.toImmutable();
+        trail.clear();
+        for (BlockPos cell : way) trail.addLast(cell.toImmutable());
+    }
+
+    /**
+     * For fixtures only: moves its clock on to {@code tick} and asks for the walk back from where it stands, as the climb
+     * asks for it (F-25c4at1); the walk back it chooses is recorded as the climb's would be. Package-private; called from no
+     * main source.
+     */
+    Optional<Task> walkBackForTest(NativePlayerBody body, long tick) {
+        lastTick = Math.max(lastTick, tick);
+        return retrace(body, "Climb toward the surface for logs");
+    }
+
+    /**
      * Back along its own trail: each leg to the highest cell it stood in within a score of blocks, further back along
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
      */
@@ -5247,6 +5275,12 @@ final class PortalRunCampaign {
         // Only while it is still there: once it has climbed up or moved away, the way it came is worth a try again.
         if (lastTick < retraceStalledUntil && retraceFrom != null && retraceFrom.getManhattanDistance(lastFeet) <= 1
                 && lastFeet.getY() <= retraceFrom.getY()) return Optional.empty();
+        // A walk back that ended lower than it began (F-25c4at1) is held while it stands within three of where that walk
+        // began, horizontally, and no higher: the climb's step up and its cut through have their turn. Not a threshold or
+        // timeout loosened: the same while, the climb's own rule that the way back up never leads down, read from where
+        // the walk ended.
+        if (lastTick < retraceLowerUntil && retraceLowerFrom != null && lastFeet.getY() <= retraceLowerFrom.getY()
+                && horizontalSquared(retraceLowerFrom, lastFeet) <= 3 * 3) return Optional.empty();
         if (trail.size() < 2) return Optional.empty();
         int index = nearestOnTrail();
         var cells = new java.util.ArrayList<>(trail);
@@ -5265,7 +5299,19 @@ final class PortalRunCampaign {
             }
         }
         if (target == null || target.getSquaredDistance(lastFeet) < 2) return Optional.empty();
+        retraceChosenAt = lastFeet;
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
+    }
+
+    /** Where its last walk back was chosen, for the guard on one that ends lower (F-25c4at1). */
+    private BlockPos retraceChosenAt;
+    /** Where a walk back that ended lower than it began was chosen, and until when the way back is held from there. */
+    private BlockPos retraceLowerFrom;
+    private long retraceLowerUntil = -1;
+
+    private static int horizontalSquared(BlockPos a, BlockPos b) {
+        int dx = a.getX() - b.getX(), dz = a.getZ() - b.getZ();
+        return dx * dx + dz * dz;
     }
 
     /**
