@@ -96,13 +96,15 @@ final class FactionsPlayer {
 
     /**
      * Its own walk, any it chose, completed at {@code at} (F-35i2a): once its walks wait, a walk of its own that carried it
-     * more than {@value #WALKED_CLEAR} blocks from where the run of refusals began ends the wait. The refusals it waited
+     * more than {@value #WALKED_CLEAR} blocks from where the run of refusals began, to the surface, ends the wait. The refusals it waited
      * out were of moves asked from there; from where it has walked to by its own choice they are stale. On Factions seed
      * 109 with bases on, Kindred's walks while it waited at the spawn ended 0 to 1 block from where it waited, and the walk
-     * that took it out ended 20 blocks off (F-35i2's seed comparison).
+     * that took it out ended 20 blocks off (F-35i2's seed comparison). Only a walk that ends at the surface ({@code atSurface},
+     * the sky's light at its feet): one into the ground, as its goal's often are, would have it ask its places from below,
+     * refused again at once (on seeds 109 and 20261030 with bases off, 21 of 46 such releases ended 8 or more blocks below).
      */
-    void walkedTo(net.minecraft.util.math.BlockPos at) {
-        if (streakFrom != null && pauses > 0 && streakFrom.getSquaredDistance(at) > (double) WALKED_CLEAR * WALKED_CLEAR) endRun();
+    void walkedTo(net.minecraft.util.math.BlockPos at, boolean atSurface) {
+        if (streakFrom != null && pauses > 0 && atSurface && streakFrom.getSquaredDistance(at) > (double) WALKED_CLEAR * WALKED_CLEAR) endRun();
     }
 
     /** The run of refusals forgotten, and the wait with it. */

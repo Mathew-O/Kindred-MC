@@ -64,6 +64,21 @@ public final class NativeFactionSurfaceGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionSurfaceWalkedClear", tickLimit = 7000)
     public void walksWaitingUnderAnOverhangTheWaitEndsWhenItsOwnWalkCarriesItClear(TestContext context) {
+        walkedClear(context, false);
+    }
+
+    /**
+     * As above, its walk the same {@value #CLEAR} blocks, but along a tunnel roofed and walled to its end, where no light of
+     * the sky reaches its feet: the places it waited out would be asked from below the surface, refused again at once, and
+     * the wait holds (F-35i2a; on Factions seeds 109 and 20261030 such walks were its goal's into the ground).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionSurfaceWalkedDark", tickLimit = 7000)
+    public void walksWaitingUnderAnOverhangTheWaitHoldsWhenItsOwnWalkEndsInTheDark(TestContext context) {
+        walkedClear(context, true);
+    }
+
+    /** Its walks waiting under the overhang, its own walk {@value #CLEAR} blocks south, into the open or the dark. */
+    private static void walkedClear(TestContext context, boolean dark) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 6900);
         var server = context.getWorld().getServer();
         var world = context.getWorld();
@@ -82,25 +97,38 @@ public final class NativeFactionSurfaceGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.factionPausedForTest(f.id), "Its faction walks waiting after a run of refusals: "
                         + f.runtime.factionBlockedForTest(f.id)[0] + " refused"))
                 .createAndAdd(() -> {
-                    // A ledge out of its open side and south, in the open sky, its end CLEAR blocks from where it stood.
+                    // A ledge out of its open side and south, its end CLEAR blocks from where it stood: in the open sky, or
+                    // in a tunnel walled and roofed from the box's side to past its end.
+                    FixtureGround.keep(context, feet[0].add(-1, -1, 0), feet[0].add(3, 3, CLEAR + 3));
                     for (int dz = 2; dz <= CLEAR + 1; dz++) world.setBlockState(feet[0].add(1, -1, dz), Blocks.BEDROCK.getDefaultState());
-                    FixtureGround.keep(context, feet[0].add(0, -1, 0), feet[0].add(2, 3, CLEAR + 2));
+                    if (dark) for (int dz = 2; dz <= CLEAR + 2; dz++) for (int dy = -1; dy <= 2; dy++) for (int dx = 0; dx <= 2; dx++) {
+                        boolean inside = dx == 1 && (dy == 0 || dy == 1) && dz <= CLEAR + 1;
+                        if (!inside) world.setBlockState(feet[0].add(dx, dy, dz), Blocks.BEDROCK.getDefaultState());
+                    }
                     context.assertTrue(f.runtime.ownWalkForTest(f.id, feet[0].add(1, 0, CLEAR), 0.5) == 1, "Its walk south begun");
                 })
                 .createAndAdd(() -> {
                     var at = f.player().getBlockPos();
                     context.assertTrue(at.equals(feet[0].add(1, 0, CLEAR)) && f.player().isOnGround() && !f.runtime.nativeStatusLine(f.id).contains("runner=RUNNING"),
                             "Its walk done: at " + at.toShortString() + ", " + f.runtime.nativeStatusLine(f.id));
+                    int light = world.getLightLevel(net.minecraft.world.LightType.SKY, at);
+                    context.assertTrue(dark ? light == 0 : light > 0, "The sky's light at its walk's end: " + light);
                     done[0] = server.getTicks();
                 })
                 .createAndAdd(() -> {
                     long since = server.getTicks() - done[0];
                     boolean paused = f.runtime.factionPausedForTest(f.id);
-                    if (!paused && since <= WITHIN) ended[0] = true;
-                    if (!ended[0] && since > WITHIN && wrong[0] == null) wrong[0] = "still waiting " + since + " ticks after its walk, "
-                            + Math.round(Math.sqrt(feet[0].getSquaredDistance(f.player().getBlockPos()))) + " blocks from where it waited";
-                    context.assertTrue(wrong[0] == null, "Its wait ended within " + WITHIN + " ticks of its walk: " + wrong[0]);
-                    context.assertTrue(ended[0], "The wait ended");
+                    long off = Math.round(Math.sqrt(feet[0].getSquaredDistance(f.player().getBlockPos())));
+                    if (dark) {
+                        if (!paused && since <= WITHIN && wrong[0] == null) wrong[0] = "ended " + since + " ticks after its walk, " + off + " blocks from where it waited";
+                        context.assertTrue(wrong[0] == null, "Its wait held: " + wrong[0]);
+                        context.assertTrue(since >= WITHIN, "Watched " + WITHIN + " ticks");
+                    } else {
+                        if (!paused && since <= WITHIN) ended[0] = true;
+                        if (!ended[0] && since > WITHIN && wrong[0] == null) wrong[0] = "still waiting " + since + " ticks after its walk, " + off + " blocks from where it waited";
+                        context.assertTrue(wrong[0] == null, "Its wait ended within " + WITHIN + " ticks of its walk: " + wrong[0]);
+                        context.assertTrue(ended[0], "The wait ended");
+                    }
                 })
                 .completeIfSuccessful();
     }
