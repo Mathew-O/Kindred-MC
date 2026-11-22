@@ -2206,6 +2206,9 @@ final class PlayerRuntime {
                 var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
                 task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack, source, target);
             } else if (skill.equals("native_fight")) {
+                var fought = entry.nativeBody.entity() == null ? null : entry.nativeBody.entity().getServerWorld().getEntity(UUID.fromString(arguments.get("target")));
+                KindredMod.LOGGER.info("{} fight starts with {}: {}", entry.data.displayName(),
+                        fought == null ? "an unseen target" : Registries.ENTITY_TYPE.getId(fought.getType()).getPath(), fightState(entry.nativeBody.entity()));
                 task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
                         !"false".equals(arguments.get("tactics")),
@@ -3542,6 +3545,11 @@ final class PlayerRuntime {
      * or a drop it cannot take, where its path ends short of the player.
      */
     static boolean mobCanReachToEat(ServerPlayerEntity player, double range) {
+        return mobReachingToEat(player, range) != null;
+    }
+
+    /** As {@link #mobCanReachToEat}, the mob found, or null: what a meal held back is logged with (F-25c4dh4). */
+    static net.minecraft.entity.mob.HostileEntity mobReachingToEat(ServerPlayerEntity player, double range) {
         for (var mob : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class,
                 player.getBoundingBox().expand(range, 2, range), m -> m.isAlive() && m.getTarget() == player
                         && !(m instanceof net.minecraft.entity.ai.RangedAttackMob) && !(m instanceof net.minecraft.entity.mob.CreeperEntity))) {
@@ -3549,12 +3557,32 @@ final class PlayerRuntime {
             if (d2 > range * range) continue;
             // Within two it can get at the player only if it sees it or a path reaches it: not through a wall (F-25c4dh3).
             boolean sees = mob.canSee(player);
-            if (d2 <= 2.0 * 2.0 && sees) return true;
+            if (d2 <= 2.0 * 2.0 && sees) return mob;
             if (!sees && d2 > 2.0 * 2.0) continue;
             var path = mob.getNavigation().findPathTo(player, 1);
-            if (path != null && path.reachesTarget()) return true;
+            if (path != null && path.reachesTarget()) return mob;
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * In plain terms: a diagnostic line, at a fight's start and at its end, of how the player stood: its health and food,
+     * its armour and weapon, the mobs about it, and how dark it was (F-25c4dh4). E-40's iteration 27 had more zombie deaths
+     * than 26 in long fights before the first chestplate, with no meal in them, and its consoles could not say why: no
+     * health, no light but at a death, no mobs counted. Log only; nothing it decides reads it.
+     */
+    static String fightState(ServerPlayerEntity player) {
+        if (player == null) return "no body";
+        var world = player.getServerWorld();
+        var mobs = new java.util.TreeMap<String, Integer>();
+        for (var mob : world.getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class, player.getBoundingBox().expand(8, 4, 8),
+                m -> m.isAlive() && player.squaredDistanceTo(m) <= 8 * 8))
+            mobs.merge(Registries.ENTITY_TYPE.getId(mob.getType()).getPath(), 1, Integer::sum);
+        var hunger = player.getHungerManager();
+        BlockPos feet = player.getBlockPos();
+        return String.format(java.util.Locale.ROOT, "health %.1f, food %d, saturation %.1f, armour %d, weapon %s; mobs within 8 %s; light %d at Y %d",
+                player.getHealth(), hunger.getFoodLevel(), hunger.getSaturationLevel(), player.getArmor(),
+                Registries.ITEM.getId(player.getMainHandStack().getItem()).getPath(), mobs.isEmpty() ? "none" : mobs, world.getLightLevel(feet), feet.getY());
     }
 
     private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body, boolean admitted, boolean mayEdit) {
@@ -3699,7 +3727,8 @@ final class PlayerRuntime {
         // players died eating (505-kindred-33951 with cooked porkchop in hand) and the staged second zombie killed its player
         // mid-meal (F-25c4dh). Only one that can reach it: walled in for the night with a zombie outside, it eats as before.
         // And with the bar at six or below, where hunger is about to cost health, only one already in reach holds it back.
-        boolean pressedToEat = mobCanReachToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
+        var pressing = mobReachingToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
+        boolean pressedToEat = pressing != null;
         // With nothing better held, rotten flesh or raw chicken is eaten when hurt with too little in the bar to heal (under
         // 18) or too hungry to sprint, as a player does: their hunger costs less than going on unhealed. In E-40's iteration
         // 8 (`e40a8-aed3e82`) 20 of the 23 deaths came with the bar under 18, and Echo on 101 died at two health and two
@@ -3707,6 +3736,12 @@ final class PlayerRuntime {
         boolean lastResort = (needsHealth && foodLevel < 18 || foodLevel <= 6) && !holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
         java.util.function.Predicate<ItemStack> eligible = stack -> isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)
                 || lastResort && canEatVanilla && (stack.isOf(Items.ROTTEN_FLESH) || stack.isOf(Items.CHICKEN));
+        // A meal it would take held back by that mob, logged once a spell (F-25c4dh4): "refused, or never asked for".
+        boolean heldBack = pressedToEat && (canEatVanilla || needsHealth) && !outOfBreath && holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
+        if (heldBack && !entry.mealHeldBack) KindredMod.LOGGER.info("{} meal held back: {} {} blocks off can get at it ({})", entry.data.displayName(),
+                Registries.ENTITY_TYPE.getId(pressing.getType()).getPath(), String.format(java.util.Locale.ROOT, "%.1f", Math.sqrt(player.squaredDistanceTo(pressing))),
+                fightState(player));
+        entry.mealHeldBack = heldBack;
         if ((canEatVanilla || needsHealth) && !outOfBreath && !pressedToEat) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
@@ -8952,6 +8987,8 @@ final class PlayerRuntime {
             String label = outcomeLabel(entry, lifeLabel);
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
                     entry.runner.reason().map(r -> ": " + r).orElse(""), label.isEmpty() ? "" : " [" + label + "]");
+            if ("native_fight".equals(entry.skillId)) KindredMod.LOGGER.info("{} fight ends {}{}: {}", entry.data.displayName(), state,
+                    entry.runner.reason().map(r -> " (" + r + ")").orElse(""), fightState(entry.nativeBody == null ? null : entry.nativeBody.entity()));
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
                     + (label.isEmpty() ? "" : " [" + label + "]"));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
@@ -19701,6 +19738,8 @@ final class PlayerRuntime {
         private int walksFailed;
         /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
         private long fightStalledAt = Long.MIN_VALUE / 2;
+        /** Whether its last look found a meal held back by a mob that can get at it (F-25c4dh4's line, once a spell). */
+        private boolean mealHeldBack;
         /** When a walk last failed, and where and when a hunter last saw a runner (M-02a). */
         private long walkFailedAt = Long.MIN_VALUE / 2, preySeenAt = Long.MIN_VALUE / 2;
         private BlockPos preySeen;
