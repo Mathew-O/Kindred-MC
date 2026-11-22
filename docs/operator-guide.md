@@ -857,19 +857,20 @@ Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-0
    mode and the edits are kept across restarts.
 3. Pre-generate with Chunky (the README's commands); `spark tps` after should read 20. Use
    `spark heapsummary --save-to-file`, never the default, which uploads to spark's public paste site.
-4. AI players: `aiplayer native create <name>` puts one where the command stands, and only on dry, solid ground with a
-   free cell beside it ("Make room on solid ground in an already loaded area" otherwise). The console stands at world
-   spawn, inside the hub once it is built, and a spawn by water leaves no such cell near it (seed 101's, 2026-11-22: a
-   fixed offset of 20 blocks found water at every try). Let vanilla find dry land for each player instead, then create it
-   there:
+4. AI players: at the console, `aiplayer native create <name>` for each. It puts the player beside where the command
+   stands, on dry, solid ground with a free cell. When there is none right there (a spawn by water: seed 101's,
+   2026-11-22), it looks for dry ground round that spot the way a human joining the world is placed: within the
+   `spawnRadius` game rule (10 blocks unless changed), never on water, only in land already loaded (M-06i4a). The
+   console stands at the world spawn, so from the console that is round the spawn, as for a joining human. With no dry
+   ground in reach it refuses, "Make room on solid ground in an already loaded area". To choose another place, let
+   vanilla pick dry land further out and create the player there (walked 2026-11-22 for three):
    ```
    summon minecraft:marker ~ ~ ~ {Tags:["spot"]}
    spreadplayers ~ ~ 0 40 false @e[tag=spot]
    execute at @e[tag=spot,limit=1] run aiplayer native create <name>
    kill @e[tag=spot]
    ```
-   `spreadplayers` never puts the marker on a liquid. Repeat the four lines for each player (walked 2026-11-22 for
-   three). Act for one with
+   Act for one with
    `/faction as <player> <request>` (`create`, `invite`, `join`, `claim`, `coins`, `shop price <item>`, `ah list`, ...).
    The auction house works the same way: `/faction as <player> ah sell <start> [buyNow] [hours]` lists what the player
    holds (25 coins a listing, five at a time, 48 hours unless given), `ah buy <id>` pays the buy-now price, and the seller
