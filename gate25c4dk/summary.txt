@@ -15,3 +15,4 @@ confirm-branch-2.3 (18f63e4e, only flagged): 0 min, peak 1290 MB, 1 required tes
 confirm-base-2.3 (59f62762, only flagged): 0 min, peak 1087 MB, 1 required tests failed, fence-top 0, disk 4.3G
 confirm-branch-3.1 (18f63e4e, only flagged): 0 min, peak 1110 MB, All 2 required tests passed, fence-top 0, disk 4.3G
 confirm-base-3.1 (59f62762, only flagged): 0 min, peak 1131 MB, 1 required tests failed, fence-top 0, disk 4.3G
+confirm-branch-3.2 (18f63e4e, only flagged): 0 min, peak 1114 MB, All 2 required tests passed, fence-top 0, disk 4.3G
