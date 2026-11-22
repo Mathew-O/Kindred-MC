@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 6098, "paid": 6098, "lapsed": 193, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 101.7, "snapshotMicrosMax": 2757.1, "tagMicrosMean": 119.6, "tagMicrosMax": 8185.1, "bySource": {"container.take:furnace": 49, "pickup:class_2248.method_36993": 4969, "pickup:class_3222.method_7329": 888, "pickup:class_52.method_331": 59, "screen:class_1714": 47, "screen:class_1723": 197, "use:item": 82}, "dropsByOrigin": {"class_1540.method_5773": 15, "class_2248.method_36993": 4485, "class_3222.method_7329": 109, "class_52.method_331": 174}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.89, "tickMsWorst": 2654.11, "tickMsWorstAt": 1, "ticksOver50ms": 798, "ticksOver200ms": 16, "heapMbMax": 1203, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 33420, "stone_tools": 34820, "iron_ingot": 44840, "iron_pickaxe": 63300, "obsidian": 84963, "portal_lit": 89219},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7135,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 2.3
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 34020, "stone_tools": 35520, "iron_ingot": 47920},
+      "deaths": [
+        {"tick": 84241, "cause": "Sol suffocated in a wall", "x": 165, "y": 68, "z": 274, "light": 0, "timeOfDay": 12403, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Wood: no progress here for a while - make a way elsewhere: stairs up 2", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "make a way elsewhere: stairs up 2"},
+        {"tick": 125496, "cause": "Sol was slain by Zombie", "x": 140, "y": 20, "z": 277, "light": 0, "timeOfDay": 5658, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: fight back - Fight zombie (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 73500, "x": 159, "y": 15, "z": 238, "attempt": 1}, {"tick": 84060, "x": 165, "y": 65, "z": 274, "attempt": 2}, {"tick": 106600, "x": 147, "y": 56, "z": 255, "attempt": 1}, {"tick": 122920, "x": 155, "y": 26, "z": 272, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8824,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 25520, "stone_tools": 27000, "iron_ingot": 33260, "iron_pickaxe": 51560, "obsidian": 60354, "portal_lit": 63088},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 50400, "x": 104, "y": 22, "z": 329, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4599,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.6
+    }
+  }
+}

@@ -147,7 +147,20 @@ public final class PortalRunPlanner {
         static Step craft(String item, Stage stage, String why) { return new Step(Action.CRAFT, item, 1, stage, why); }
     }
 
+    /** Logs fetched when its last pickaxe is all it has below: sticks for two more pickaxes and a table's planks (F-25c4cr1). */
+    static final int RESERVE_LOGS = 2;
+    /** The reserve turn's reason, by which the campaign knows the step to bound (F-25c4cr1). */
+    public static final String RESERVE_WHY = "Up for wood while its last pickaxe still digs";
+
     private PortalRunPlanner() { }
+
+    /**
+     * The cast's own step, as the plan gives it once the frame's water and mould blocks are in hand; what the reserve turn
+     * gives way to when the campaign sets it aside, its wood search having gained nothing (F-25c4cr1).
+     */
+    public static Step castStep(PortalRunSnapshot s) {
+        return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
+    }
 
     /** {@link #plan(PortalRunSnapshot, WorldFacts)} in an ordinary world with nothing observed yet. */
     public static List<Step> plan(PortalRunSnapshot s) {
@@ -474,7 +487,21 @@ public final class PortalRunPlanner {
             if (s.waterBuckets() == 0) return Step.of(Action.FILL_WATER, Stage.OBSIDIAN, "Fill a bucket with water");
             int blocks = castBlocks(s);
             if (s.cobble() < blocks) return stone(s, facts, blocks - s.cobble(), Stage.OBSIDIAN, "Mine blocks for the casting mould");
-            return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
+            // Its last pickaxe, with no sticks and no wood for another, as it goes down for the cast's lava: up for wood
+            // while it still digs. In E-40's iteration 25 (second batch) the players on seeds 101 and 31102026 dug down and
+            // branch-mined for lava with their last pickaxe, wore it out at Y=-54 with no sticks or wood to make another,
+            // and climbed for logs by hand for the rest of the run; two of the iteration's six portals not lit (F-25c4cr1).
+            // Only on the cast's descent: at the iron stage, below with no sticks or wood, the pickaxe it has goes on (a
+            // spare fetched from the surface wore out the one it had up the staircase, from Y=8 and Y=18, F-25c4b to h).
+            // The reserve is a pickaxe and the sticks for another, not sized by depth or wear, which the plan does not see.
+            // Only while it has the lava still to find, with a stone pickaxe: with its lava seen or in a bucket, or an iron
+            // pickaxe in hand, the cast goes on now. On #455's CI the turn stood between the player and a cast at hand, and
+            // the wood search it began never ended (NativeSnowSiteGameTests, NativeSpireGameTests).
+            boolean seekingLava = !facts.knows(WorldFacts.Source.LAVA) && s.lavaBuckets() == 0 && s.pickaxeTier() < 3;
+            if (caves && seekingLava && s.pickaxes() <= 1 && s.sticks() < 2 && s.woodUnits() < 2) {
+                return logs(facts, RESERVE_LOGS, Stage.OBSIDIAN, RESERVE_WHY);
+            }
+            return castStep(s);
         }
 
         // Obsidian: water poured onto still lava, then mined with the diamond pickaxe.
