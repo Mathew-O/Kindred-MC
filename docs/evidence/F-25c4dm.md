@@ -3,7 +3,7 @@
 Date: 2026-11-22
 Agent / branch: REFACTOR, claude/f25c4dm-told-lava-1122, at the lead's word (stuck, "mining for a find", family B: the lava hunt)
 Build: afa9b77c (the change and its fixture), on F-25c4dl's head 67ef4422 (#450); main 8d4d30c2 merged in after the gate
-Status: Done. The mechanism is proved by its staged fixture; the corpus gate passed as a no-harm gate. The gain is measured in E-40 iteration 27, pre-stated below.
+Status: Done. The mechanism is proved by its staged fixture; the corpus gate passed as a no-harm gate. The gain is measured in E-40 iteration 28, pre-stated below (iteration 27 began at 12:35 on 772dee37, without this change).
 
 ## What this row claims
 - **The word:** a player that fills its cast's bucket at lava tells its team once a pool ("Lava here, if anyone needs it for the cast.").
@@ -73,9 +73,11 @@ Status: Done. The mechanism is proved by its staged fixture; the corpus gate pas
   - **Fails if:** once told, Walker mines blind ("Dig down toward lava", "Branch mine for lava") before its lava; Rival is ever told or walks there (checked sticky); or Walker has no lava in 2,400 ticks.
   - **Passes:** with Walker's lava, filled after its told walk.
 - **Second case,** `toldOfLavaNoWalkReachesThePlayerSetsItAsideAndHuntsAsBefore`: the passage walled 30 east of Walker, no Rival. It passes once the told lava is set aside and the hunt has begun after it.
-- **Before** (67ef4422, #450's head, without the change), one run:
-  - case 1 fails, "Walker mined blind for lava (1 steps) before its lava";
-  - case 2 fails, no set-aside: there is no told site to set aside.
+- **Before** (67ef4422, #450's head, without the change, the fixture alone): both cases fail in each of 3 runs.
+  - **Run 1:**
+    - case 1 fails, "Walker mined blind for lava (1 steps) before its lava";
+    - case 2 fails, with no set-aside: there is no told site to set aside.
+  - **Runs 2 and 3:** both cases fail, "Walker not told of Filler's lava in 1200 ticks: Filler Done: The Nether portal is built and lit". With nothing told on the base, the fixture's wait for the word runs out first.
 - **After,** 3 runs each:
   - **Case 1** passes in 322 to 328 ticks: "Cast: walk to the lava Filler found at …", then "Cast: walk to the lava" and "Cast: fill a bucket with lava" on its own sight. No blind step; Rival never told.
   - **Case 2** passes in 181 to 184 ticks: "Walker sets aside the lava Filler told it of at …: its walk there was refused (No walkable route toward …)", then "Dig down toward lava".
@@ -128,18 +130,18 @@ Status: Done. The mechanism is proved by its staged fixture; the corpus gate pas
 - **The other 6 had no teammate fill before them** (101 Echo and Kindred, 303 Sol, 707 Sol and Echo, 606 Echo). The lever cannot act there.
 - **Compared with iteration 25:** 26's told sites are farther, 155 to 339 against 82 to 205. Three of them are surface pools reached from −54. So a walk pays less often, and the realistic share of the 12 minutes is lower.
 
-## The gain, measured in E-40 (pre-stated for iteration 27)
+## The gain, measured in E-40 (pre-stated for iteration 28)
 - **The three named hunters' lava-spell minutes:** off-101 Kindred 6 (12 → 6, or → 3 with F-25c4dl), off-404 Echo 9 (42 → 33), on-606 Sol 3 (12 → 9).
   - The bound is 18 minutes in all; realistically 0 to 18.
   - Each told site was 82 to 205 blocks off underground, and only a walk that reaches it pays. A dig there would be no faster than the blind hunt, so the change never digs to one.
-- **Each seed will play differently by 27,** so the mechanism is read across every seed, per run:
+- **Each seed will play differently by 28,** so the mechanism is read across every seed, per run:
   - "Lava here" lines (once a site);
   - told walks, each one's distance, and how many reached lava;
   - set-asides, by reason.
 - **The cost:** told walks that ended short where the blind mine would have found lava.
 
 ## Remaining
-- None for F-25c4dm. Its gain is E-40 iteration 27's to read, as pre-stated above.
+- None for F-25c4dm. Its gain is E-40 iteration 28's to read, as pre-stated above.
 - **Its child,** the cast refusing at its own site (iteration 26, seed 707 batch 2: "Cast: step closer" with no route, "No reachable face to pour against"), is the next slice.
 - **Not done here:**
   - lava seen by a teammate but not filled at is not told of;
