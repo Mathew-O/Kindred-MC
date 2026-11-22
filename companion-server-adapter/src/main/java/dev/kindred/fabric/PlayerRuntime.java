@@ -5115,6 +5115,7 @@ final class PlayerRuntime {
         entry.campaign.nights(nightsOn && !ownNightRules(entry), entry.homeInReach);
         divideTheRun(entry, body);
         entry.campaign.takeTreesFound().ifPresent(at -> tellOfTrees(entry, body, at));
+        entry.campaign.takeLavaFound().ifPresent(at -> tellOfLava(entry, body, at));
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Through a portal only on purpose: while it is after the End portal (the operator's goal is what allows the
         // trip) and the step it is on or about to take goes through one. Never while it works beside one: a player
@@ -10041,6 +10042,27 @@ final class PlayerRuntime {
             told++;
         }
         if (told > 0) say(entry, "Trees here, if anyone needs wood.", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
+    }
+
+    /**
+     * Lava a player has filled its cast's bucket at, told to its teammates in the same world (F-25c4dm): where to go for the
+     * cast's lava when they have seen none. Told to exactly whom the trees are (F-25c4cc): its own players in co-op, with a
+     * goal, none in a match, so no opponent in a race or a fight hears it; told once a pool, and said aloud. A teammate takes
+     * the nearer of the sites it is told of, as a heading: it sees the lava for itself when it gets there.
+     */
+    private void tellOfLava(Entry entry, NativePlayerBody body, net.minecraft.util.math.BlockPos at) {
+        var player = body.entity();
+        if (matches.active(player.getUuid()).isPresent()) return;
+        int told = 0;
+        for (Entry other : entries.values()) {
+            if (other == entry || other.goal == dev.kindred.core.survival.SurvivalGoal.NONE || other.campaign == null) continue;
+            var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
+            if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || other.snapshot().stopLatched()
+                    || matches.active(mate.getUuid()).isPresent()) continue;
+            other.campaign.toldOfLava(at, entry.data.displayName(), server.getTicks());
+            told++;
+        }
+        if (told > 0) say(entry, "Lava here, if anyone needs it for the cast.", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
     }
 
     /** A player's personality as its profile holds it now, for fixtures (C13). */
