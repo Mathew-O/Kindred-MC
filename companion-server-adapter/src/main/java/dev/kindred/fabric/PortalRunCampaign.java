@@ -7559,14 +7559,12 @@ final class PortalRunCampaign {
         if (++bedWalkAsides >= BED_WALK_ASIDES) {
             event("left its bed where it stands at " + carriedBedAt.toShortString() + ": " + why);
             KindredMod.LOGGER.info("{} left its bed where it stands at {}: {}", bedOwner, carriedBedAt.toShortString(), why);
-            KindredMod.LOGGER.info("{} F-25c4di1g-marker: left where it stands, {}", bedOwner, why);
             carriedBedAt = null;
             bedWalkAsides = 0;
             return;
         }
         bedWalkAsideUntil = lastTick + BED_WALK_ASIDE;
         event("its bed at " + carriedBedAt.toShortString() + " set aside a while: " + why);
-        KindredMod.LOGGER.info("{} F-25c4di1g-marker: set aside, {}", bedOwner, why);
     }
 
     static final String MORNING_BED_LABEL = "Take its bed back up in the morning";
@@ -7630,10 +7628,6 @@ final class PortalRunCampaign {
         }
         for (BlockPos half : List.of(carriedBedAt, foot)) {
             if (half.equals(under) || !body.miningEligible(half)) continue;
-            if (!half.equals(carriedBedAt) || onIt) {
-                KindredMod.LOGGER.info("{} F-25c4di1g-marker: takes its bed up from its {}{}", bedOwner, half.equals(carriedBedAt) ? "head" : "foot",
-                        onIt ? ", standing on the other half" : ", the head out of sight");
-            }
             return Optional.of(new Task("native_break", coords(half, Map.of("carried_bed", "true")), MORNING_BED_LABEL));
         }
         return Optional.empty();
@@ -7654,7 +7648,6 @@ final class PortalRunCampaign {
         if (bedOpeningsSaid.add(block)) {
             KindredMod.LOGGER.info("{} opens the way to its bed at {}: {} at {}", bedOwner, carriedBedAt.toShortString(),
                     net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(block).getBlock()).getPath(), block.toShortString());
-            KindredMod.LOGGER.info("{} F-25c4di1g-marker: open the way to its bed, {}", bedOwner, block.toShortString());
         }
         return Optional.of(new Task("native_break", coords(block, Map.of()), OPEN_BED_WAY_LABEL));
     }
@@ -7701,7 +7694,6 @@ final class PortalRunCampaign {
             if (bedOpeningsSaid.add(block)) {
                 KindredMod.LOGGER.info("{} opens the way to its bed at {}: {} at {}", bedOwner, carriedBedAt.toShortString(),
                         net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath(), block.toShortString());
-                KindredMod.LOGGER.info("{} F-25c4di1g-marker: open the way to its bed, {}", bedOwner, block.toShortString());
             }
             return Optional.of(new Task("native_break", coords(block, Map.of()), OPEN_BED_WAY_LABEL));
         }
