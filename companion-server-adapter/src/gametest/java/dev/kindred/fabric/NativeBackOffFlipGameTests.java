@@ -363,9 +363,10 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
     }
 
     /**
-     * F-25c4dh1, STAGED: the zombie is held ten blocks off by the fixture, behind a wall so the player does not see it, its
-     * target the player. "Heal before going on", a four-second rest, read nothing after it from {@code threats()}, which
-     * wants sight (and is empty below six health by design), so the player stood still for the mob to walk up, and the
+     * F-25c4dh1, STAGED: the zombie is held ten blocks off the player by the fixture each tick, behind a wall at first so the
+     * player does not see it, its target the player. "Heal before going on", a four-second rest, read nothing after it from
+     * {@code threats()}, which wants sight (and is empty below six health by design), so the player stood still for the mob
+     * to walk up, and the
      * fight cut the rest short; in main's corpus gate a fifth of the rests were followed within five seconds by a fight
      * or a back-off. On open ground with a mob on foot after it within sixteen, it rests no more: for five seconds no
      * "heal before going on".
@@ -428,9 +429,9 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                     var player = f.player();
                     context.getWorld().setTimeOfDay(6000);
                     if (hunted) {
-                        // Staged: held ten off behind the wall, still after the player.
-                        var at = context.getAbsolute(new net.minecraft.util.math.Vec3d(MID + 0.5, 2, MID + 10.5));
-                        zombie[0].refreshPositionAndAngles(at.getX(), at.getY(), at.getZ(), 0, 0);
+                        // Staged: held ten off it each tick, behind the wall at first, still after the player: a zombie
+                        // keeps pace, and one left where it was would be outwalked past sixteen by the player's work.
+                        zombie[0].refreshPositionAndAngles(player.getX(), player.getY(), player.getZ() + 10, 0, 0);
                         zombie[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                         zombie[0].setTarget(player);
                         // On the first tick it is held, as the player decides from where it stands: its work then walks it off.
