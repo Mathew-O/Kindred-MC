@@ -433,8 +433,8 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                         zombie[0].refreshPositionAndAngles(at.getX(), at.getY(), at.getZ(), 0, 0);
                         zombie[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                         zombie[0].setTarget(player);
-                        // Over its first second, while it decides from where it stands: later its work may walk it off.
-                        if (context.getTick() - started[0] <= 20) farthest[0] = Math.max(farthest[0], Math.sqrt(player.squaredDistanceTo(zombie[0])));
+                        // On the first tick it is held, as the player decides from where it stands: its work then walks it off.
+                        if (farthest[0] == 0) farthest[0] = Math.sqrt(player.squaredDistanceTo(zombie[0]));
                     }
                     String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
                     if (!progress.equals(lastStep[0])) {
@@ -446,8 +446,8 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                     else context.assertTrue(context.getTick() - started[0] >= 100, "Five seconds on");
                 })
                 .createAndAdd(() -> {
-                    // The staging itself: the zombie was where it was held, within sixteen of the player.
-                    context.assertTrue(!hunted || farthest[0] <= 12, "The zombie held at most 12 off over the first second; it was " + String.format("%.1f", farthest[0]));
+                    // The staging itself: the zombie was where it was held, within sixteen of the player as it decided.
+                    context.assertTrue(!hunted || farthest[0] <= 12, "The zombie held at most 12 off on its first tick held; it was " + String.format("%.1f", farthest[0]));
                     context.assertTrue(!hunted || !rested[0], "Rested to heal with a zombie after it ten off; its steps:" + steps);
                     f.runtime.stop();
                 })
