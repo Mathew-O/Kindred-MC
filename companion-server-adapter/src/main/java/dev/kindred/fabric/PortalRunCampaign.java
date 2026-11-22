@@ -2841,15 +2841,8 @@ final class PortalRunCampaign {
             return wait;
         }
         // Underground with every way on refused (liquid below, holes all round): climb a step and look again.
-        if (underground(player)) {
-            Optional<Task> up = climb(body, "Climb to find another way");
-            if (up.isPresent()) {
-                paced(tick);
-                cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
-                progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
-                return up;
-            }
-        }
+        Optional<Task> anotherWay = climbToFindAnotherWay(body, tick, stageLabel(stage));
+        if (anotherWay.isPresent()) return anotherWay;
         // Stranded on a ledge or pillar with every way off a drop: take the shortest fall it can afford, as a player
         // jumps down rather than wait for ever.
         Optional<Task> drop = jumpDown(player);
@@ -2859,6 +2852,34 @@ final class PortalRunCampaign {
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         return Optional.empty();
+    }
+
+    /**
+     * Underground with every way on refused (liquid below, holes all round): a step of the climb, to look again from
+     * higher; the cell it leaves set aside, a dead end it does not step back down into.
+     */
+    private Optional<Task> climbToFindAnotherWay(NativePlayerBody body, long tick, String stageLabel) {
+        var player = body.entity();
+        if (!underground(player)) return Optional.empty();
+        Optional<Task> up = climb(body, "Climb to find another way");
+        if (up.isPresent()) {
+            paced(tick);
+            cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
+            progress = stageLabel + ": no way on from here - " + up.get().label();
+        }
+        return up;
+    }
+
+    /**
+     * For fixtures only, a setter: sets where it stands, its clock and the server's edit policy as its plan's tick would,
+     * then asks for the plan's fallback climb as the plan does with every step refused (F-25c4bx1). Package-private; called
+     * from no main source.
+     */
+    Optional<Task> anotherWayForTest(NativePlayerBody body, BlockPos feet, long tick, EditPolicy.ServerPolicy policy) {
+        this.policy = policy;
+        lastFeet = feet.toImmutable();
+        lastTick = Math.max(lastTick, tick);
+        return climbToFindAnotherWay(body, tick, "Iron");
     }
 
     /**
