@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 7367, "paid": 7367, "lapsed": 193, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 94.0, "snapshotMicrosMax": 16514.3, "tagMicrosMean": 100.4, "tagMicrosMax": 16221.1, "bySource": {"container.take:furnace": 69, "pickup:class_2248.method_36993": 5182, "pickup:class_3222.method_7329": 1658, "pickup:class_4019.method_18289": 1, "pickup:class_4019.method_18291": 1, "pickup:class_52.method_331": 30, "screen:class_1714": 54, "screen:class_1723": 482, "use:item": 83}, "dropsByOrigin": {"class_1428.method_6007": 54, "class_1540.method_5773": 27, "class_2248.method_36993": 5173, "class_3222.method_7329": 176, "class_4019.method_18289": 6, "class_4019.method_18291": 3, "class_52.method_331": 112, "class_9817.method_60959": 2}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 16.09, "tickMsWorst": 3960.75, "tickMsWorstAt": 1, "ticksOver50ms": 1233, "ticksOver200ms": 16, "heapMbMax": 1172, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1880, "iron_ingot": 16700, "iron_pickaxe": 40060, "obsidian": 81958, "portal_lit": 85620},
+      "deaths": [
+        {"tick": 96128, "cause": "Kindred was slain by Zombie", "x": 14, "y": -53, "z": 119, "light": 9, "timeOfDay": 290, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Done: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4058,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1980, "iron_ingot": 17800, "iron_pickaxe": 24280, "obsidian": 36713, "portal_lit": 44161},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 12860, "x": 32, "y": 29, "z": -74, "attempt": 1}, {"tick": 16480, "x": 33, "y": 27, "z": -73, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1885,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.6
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1060, "stone_tools": 2680, "iron_ingot": 8320, "iron_pickaxe": 19760},
+      "deaths": [
+        {"tick": 83230, "cause": "Echo fell from a high place", "x": -74, "y": 74, "z": -113, "light": 15, "timeOfDay": 11392, "dimension": "minecraft:overworld", "hunger": 10, "underSky": true, "stage": "Done: hurt and out of food - Land, then back to where it saw game", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4452,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.6
+    }
+  }
+}

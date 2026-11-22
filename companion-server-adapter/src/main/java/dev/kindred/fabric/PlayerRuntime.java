@@ -3547,8 +3547,10 @@ final class PlayerRuntime {
                         && !(m instanceof net.minecraft.entity.ai.RangedAttackMob) && !(m instanceof net.minecraft.entity.mob.CreeperEntity))) {
             double d2 = player.squaredDistanceTo(mob);
             if (d2 > range * range) continue;
-            if (d2 <= 2.0 * 2.0) return true;
-            if (!mob.canSee(player)) continue;
+            // Within two it can get at the player only if it sees it or a path reaches it: not through a wall (F-25c4dh3).
+            boolean sees = mob.canSee(player);
+            if (d2 <= 2.0 * 2.0 && sees) return true;
+            if (!sees && d2 > 2.0 * 2.0) continue;
             var path = mob.getNavigation().findPathTo(player, 1);
             if (path != null && path.reachesTarget()) return true;
         }
@@ -10528,6 +10530,7 @@ final class PlayerRuntime {
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
+            if (to != null) play.arrivedForTest(tick);
             settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
@@ -10935,8 +10938,9 @@ final class PlayerRuntime {
     List<List<Long>> factionCompletedAndOverWaterForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
-        return entry == null ? List.of(List.of(), List.of())
-                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest));
+        return entry == null ? List.of(List.of(), List.of(), List.of())
+                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest),
+                        List.copyOf(entry.factionPlay.arrivedForTest));
     }
 
     List<Long> factionDecisionsForTest(UUID player) {
@@ -11713,6 +11717,8 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** Pushes given gently from here on: a push stopped short against the boat it holds the villager in (F-22c98c). */
+        boolean gentle;
         /** The last six ticks of a push at the villager (diagnostic only, F-22c98a): the cart, the held boat and the body. */
         final java.util.ArrayDeque<String> pushTrail = new java.util.ArrayDeque<>();
         /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
@@ -12274,6 +12280,12 @@ final class PlayerRuntime {
                     KindredMod.LOGGER.info("{} bringing: the cart at {} stopped short against the {} at {} ({} pushes); put down again", entry.data.displayName(),
                             cart.getPos(), b.noun, villager.getPos(), b.pushes);
                     KindredMod.LOGGER.info("{} bringing: the push's last ticks (F-22c98a): {}", entry.data.displayName(), String.join(" | ", b.pushTrail));
+                    // Against the boat it holds the villager in: the pushes after given gently, never fast enough to step past
+                    // the fifth of a block a cart takes up within into touching the boat, which stopped it dead (F-22c98c).
+                    if (!b.gentle && heldBoat(world, b) != null) {
+                        b.gentle = true;
+                        KindredMod.LOGGER.info("{} bringing: stopped short against the held boat; the pushes after given gently", entry.data.displayName());
+                    }
                     b.phase = Bring.Phase.RECART;
                     return bringCandidates(entry, body);
                 }
@@ -12288,8 +12300,9 @@ final class PlayerRuntime {
                             "y", String.valueOf(b.push.getY()), "z", String.valueOf(b.push.getZ()), "range", "0", "centre", "true")));
                 }
                 KindredMod.LOGGER.info("{} bringing: pushing the cart at {} into the {} at {}", entry.data.displayName(), cart.getPos(), b.noun, villager.getPos());
-                return List.of(new NativeTaskCandidate(bringTask(entry, "push:" + b.pushes), "native_push",
-                        Map.of("target", cart.getUuid().toString(), "seconds", "10")));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "push:" + b.pushes), "native_push", b.gentle
+                        ? Map.of("target", cart.getUuid().toString(), "seconds", "10", "gentle", "true")
+                        : Map.of("target", cart.getUuid().toString(), "seconds", "10")));
             }
             case RECART -> {
                 // The cart taken back, to be put down again where the line now starts.
