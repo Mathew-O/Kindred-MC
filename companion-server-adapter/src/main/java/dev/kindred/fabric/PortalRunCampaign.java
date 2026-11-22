@@ -128,6 +128,15 @@ final class PortalRunCampaign {
      * by turns (the corpus's kindred-48005).
      */
     private boolean hungryOnTop;
+    /**
+     * The reserve turn's wood search (F-25c4cr1): daylight ticks spent on it with no wood gained, the tick last counted, and
+     * whether it is set aside for this descent. On a seed with no trees in reach (31102026's open sand) the search would
+     * otherwise go on while the last pickaxe could still be finding lava.
+     */
+    private long reserveSearchTicks, reserveCountedAt = Long.MIN_VALUE;
+    private boolean reserveAside;
+    /** Daylight ticks a reserve wood search runs with no wood gained before it is set aside, as the other set-asides. */
+    static final int RESERVE_SEARCH_TICKS = 2400;
     /** The steps of filling its bucket from the water over its head (F-35g), and the progress line's words for them. */
     private enum Overhead { OPEN, FILL, SEAL, DRAIN }
     static final String OVERHEAD = "Water over its head";
@@ -2455,6 +2464,7 @@ final class PortalRunCampaign {
         }
         noteHappenings(player);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences(), team));
+        boundReserve(player, snapshot, facts, steps);
         // On the way to the End the portal's plan has nothing left to say, in the Nether least of all: none of the
         // upkeep below that follows its steps (workstations carried along, waiting for daylight to cut logs) applies.
         boolean legActive = endGoal() && stronghold.active(player);
@@ -8203,6 +8213,33 @@ final class PortalRunCampaign {
         }
         foe = null;
         return null;
+    }
+
+    /**
+     * The reserve turn, bounded (F-25c4cr1): its wood search runs {@link #RESERVE_SEARCH_TICKS} daylight ticks at most with
+     * no wood gained (a walk refused or nothing left to explore gains none either), then is set aside for this descent and
+     * the cast goes on. The descent's reserve is over once the lava is found or the wood it wanted is in hand.
+     */
+    private void boundReserve(ServerPlayerEntity player, PortalRunSnapshot snapshot, WorldFacts facts, List<PortalRunPlanner.Step> steps) {
+        if (facts.knows(WorldFacts.Source.LAVA) || snapshot.lavaBuckets() > 0 || snapshot.woodUnits() >= 2 || snapshot.sticks() >= 2) {
+            reserveAside = false;
+            reserveSearchTicks = 0;
+            reserveCountedAt = Long.MIN_VALUE;
+        }
+        if (steps.isEmpty() || !PortalRunPlanner.RESERVE_WHY.equals(steps.getLast().why())) {
+            reserveCountedAt = Long.MIN_VALUE;
+            return;
+        }
+        if (!reserveAside) {
+            // By day only: a wait for daylight before going up is no search that failed.
+            if (player.getServerWorld().isDay() && reserveCountedAt != Long.MIN_VALUE) reserveSearchTicks += lastTick - reserveCountedAt;
+            reserveCountedAt = lastTick;
+            if (reserveSearchTicks < RESERVE_SEARCH_TICKS) return;
+            reserveAside = true;
+            KindredMod.LOGGER.info("{} found no wood for its reserve in {} ticks; set aside for this descent, on to the lava",
+                    player.getName().getString(), reserveSearchTicks);
+        }
+        steps.set(steps.size() - 1, PortalRunPlanner.castStep(snapshot));
     }
 
     private List<HostileEntity> threats(ServerPlayerEntity player) {
