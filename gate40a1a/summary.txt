@@ -1,1 +1,2 @@
 branch-1 (8050acb9): 55 min, peak 3146 MB, 127 required tests failed, fence-top 17, disk 3.2G
+branch-2 (8050acb9): 62 min, peak 3074 MB, 121 required tests failed, fence-top 24, disk 3.2G
