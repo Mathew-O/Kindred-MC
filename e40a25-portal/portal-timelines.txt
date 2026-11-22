@@ -1,0 +1,79 @@
+== e40a25-59f6276 seed 202  console: run/eval/e40a25-59f6276/202/console.txt
+  portal lit: no
+  Kindred: obsidian 33.9 min, portal_lit no; deaths 0; stuck 36 min {'no walkable route': 9, 'hole or pit': 3}
+    last 3 goal steps: [(119.6, 'Wood: Gather logs for sticks - Climb toward the surface for logs: back the way it came (tried elsewhere 12 times)'), (119.6, 'Wood: Gather logs for sticks - Head back up toward home (tried elsewhere 12 times)'), (119.7, 'Wood: waiting for a feasible step (tried elsewhere 12 times)')]
+    cast/light failures: 2, last: (35.0, 'Kindred native_goto BLOCKED: No walkable route toward -37, -55, -51 [Cast: walk up to the lava]')
+  Sol: obsidian 91.3 min, portal_lit no; deaths [(34.4, 'tried to swim in lava', 'Iron: no way on from here - Climb to find another way: step up')]; stuck 6 min {'mining for a find': 2}
+    last 3 goal steps: [(119.9, 'Iron: Cast the portal frame from lava and water - Branch mine for lava: advance'), (119.9, 'Iron: Cast the portal frame from lava and water - Branch mine for lava'), (120.0, 'Iron: Cast the portal frame from lava and water - Branch mine for lava: advance')]
+    cast/light failures: 8, last: (109.8, 'Sol native_goto BLOCKED: No walkable route toward -36, -56, -50 [Cast: walk to the lava]')
+  Echo: obsidian 43.7 min, portal_lit no; deaths 0; stuck 18 min {'hemmed in': 4, 'busy-work loop': 2}
+    last 3 goal steps: [(119.7, 'Iron: no way on from here - Climb to find another way: step up'), (119.7, 'Iron: no way on from here - Climb to find another way'), (119.7, 'Iron: waiting for a feasible step')]
+    cast/light failures: 36, last: (112.9, 'Echo native_goto BLOCKED: Route to 19, 63, 39 is blocked [Cast: step closer]')
+== e40a25-59f6276 seed 101  console: run/eval/e40a25-59f6276/101/console.txt
+  portal lit: 43.1
+  Kindred: obsidian 42.2 min, portal_lit 43.1; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(114.3, 'Done: The Nether portal is built and lit'), (115.5, 'Done: fight back - Fight zombie'), (115.6, 'Done: The Nether portal is built and lit')]
+    cast/light failures: 1, last: (42.8, 'Kindred native_place BLOCKED: Block placement produced no effect or was obstructed [Set down gravel to dig for flint]')
+  Sol: obsidian never min, portal_lit no; deaths [(110.6, 'was shot by Skeleton', 'Iron: fight back - Take cover from skeleton')]; stuck 0 min {}
+    last 3 goal steps: [(119.9, 'Wood: Gather logs for a table and a wooden pickaxe - Walk toward the trees seen at x,y,z'), (119.9, 'Wood: Gather logs for a table and a wooden pickaxe - Walk to logs at x,y,z'), (120.0, 'Wood: Gather logs for a table and a wooden pickaxe - Walk toward the trees seen at x,y,z')]
+  Echo: obsidian never min, portal_lit no; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(119.9, 'Wood: on the way, for what comes later - Approach sheep for wool'), (120.0, 'Wood: on the way, for what comes later - Hunt sheep for wool'), (120.0, 'Wood: on the way, for what comes later - Approach sheep for wool')]
+    cast/light failures: 1, last: (38.0, 'Echo native_goto BLOCKED: No walkable route toward -401, -55, -30 [Cast: walk to the lava]')
+== e40a25-59f6276 seed 31102026  console: run/eval/e40a25-59f6276/31102026/console.txt
+  portal lit: 63.4
+  Kindred: obsidian never min, portal_lit no; deaths [(30.1, 'was shot by Skeleton', 'Iron: fight back - Take cover from skeleton')]; stuck 9 min {'water loop': 2, 'hemmed in': 1}
+    last 3 goal steps: [(119.9, 'Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came (tried elsewhere 3 times)'), (119.9, 'Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: to the wall (tried elsewhere 3 times)'), (119.9, 'Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs')]
+  Sol: obsidian never min, portal_lit no; deaths 0; stuck 3 min {'busy-work loop': 1}
+    last 3 goal steps: [(119.8, 'Wood: Gather logs for sticks - Cut through west for logs: advance (tried elsewhere 1 time)'), (119.8, 'Wood: Gather logs for sticks - Cut through west for logs'), (119.8, 'Wood: Gather logs for sticks - Explore west for logs (tried elsewhere 1 time)')]
+  Echo: obsidian 54.1 min, portal_lit 63.4; deaths [(7.9, 'was shot by Skeleton', 'Iron: fight back - Take cover from skeleton')]; stuck 3 min {'hole or pit': 1}
+    last 3 goal steps: [(63.3, 'Portal: Light the portal with flint and steel - Portal: light it'), (63.3, 'Done: the Nether portal is built and lit'), (63.3, 'Done: The Nether portal is built and lit')]
+    cast/light failures: 2, last: (60.6, 'Echo native_goto BLOCKED: No walkable route toward -30, -55, 302 [Cast: walk to the lava]')
+== e40a25-59f6276 seed 707  console: run/eval/e40a25-59f6276/707/console.txt
+  portal lit: 69.4
+  Kindred: obsidian 90.2 min, portal_lit 92.8; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(93.8, 'Done: The Nether portal is built and lit'), (94.0, 'Done: inventory full - Drop surplus cobbled deepslate'), (94.0, 'Done: The Nether portal is built and lit')]
+    cast/light failures: 2, last: (91.1, 'Kindred native_goto BLOCKED: No walkable route toward 370, -55, 112 [Cast: walk to the lava]')
+  Sol: obsidian 78.6 min, portal_lit 80.7; deaths [(17.8, 'was slain by Zombie', 'Iron: fight back - Back off from zombie the way it came'), (18.7, 'was slain by Zombie', 'Wood: fight back - Fight spider')]; stuck 0 min {}
+    last 3 goal steps: [(80.6, 'Done: The Nether portal is built and lit'), (80.6, 'Done: fight back - Fight zombie'), (80.7, 'Done: The Nether portal is built and lit')]
+    cast/light failures: 9, last: (78.8, 'Sol native_goto BLOCKED: No walkable route toward -30, -55, 34 [Cast: walk to the lava]')
+  Echo: obsidian 68.8 min, portal_lit 69.4; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(78.7, 'Done: shelter for the night - Dig in for the night'), (78.7, 'Done: shelter for the night - Dig in for the night: step down'), (78.7, 'Done: The Nether portal is built and lit')]
+    cast/light failures: 6, last: (68.7, 'Echo native_goto BLOCKED: Route to 153, 63, 40 is blocked [Cast: walk toward the lava at 172, 63, 36]')
+== e40a25r-59f6276 seed 202  console: run/eval/e40a25r-59f6276/202/console.txt
+  portal lit: no
+  Kindred: obsidian never min, portal_lit no; deaths [(10.4, 'was shot by Skeleton', 'Iron: fight back - Take cover from skeleton'), (70.9, 'fell from a high place', 'Iron: inventory full - Drop surplus cobblestone')]; stuck 3 min {'mining for a find': 1}
+    last 3 goal steps: [(120.0, 'Iron: light the way - Place a torch at x,y,z'), (120.0, 'Iron: Mine iron ore (5/18) - Branch mine for iron'), (120.0, 'Iron: Mine iron ore (5/18) - Branch mine for iron: advance')]
+  Sol: obsidian 88.7 min, portal_lit no; deaths 0; stuck 3 min {'hemmed in': 1}
+    last 3 goal steps: [(119.9, 'Wood: Gather logs for sticks - Climb toward the surface for logs: step up (tried elsewhere 1 time)'), (119.9, 'Wood: Gather logs for sticks - Climb toward the surface for logs: back the way it came (tried elsewhere 1 time)'), (120.0, 'Wood: Gather logs for sticks - Climb toward the surface for logs')]
+    cast/light failures: 24, last: (103.7, 'Sol native_goto BLOCKED: No walkable route toward -6, -51, -38 [Cast: step closer]')
+  Echo: obsidian never min, portal_lit no; deaths [(83.8, 'tried to swim in lava', 'Iron: heal before going on')]; stuck 12 min {'mining for a find': 4}
+    last 3 goal steps: [(119.9, 'Iron: Mine iron ore (1/4) - Branch mine for iron'), (120.0, 'Iron: Mine iron ore (1/4) - Branch mine for iron: advance'), (120.0, 'Iron: Mine iron ore (1/4) - Branch mine for iron')]
+    cast/light failures: 2, last: (20.3, 'Echo native_goto BLOCKED: No walkable route toward 134, 20, -165 [Pick up flint]')
+== e40a25r-59f6276 seed 101  console: run/eval/e40a25r-59f6276/101/console.txt
+  portal lit: no
+  Kindred: obsidian never min, portal_lit no; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(119.5, 'Wood: Gather logs for sticks - Climb toward the surface for logs'), (119.8, 'Wood: Gather logs for sticks - Climb toward the surface for logs: pillar up'), (119.8, 'Wood: Gather logs for sticks - Climb toward the surface for logs')]
+  Sol: obsidian never min, portal_lit no; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(119.3, 'Wood: Gather logs for sticks - Climb toward the surface for logs'), (119.8, 'Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water'), (120.0, 'Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance')]
+  Echo: obsidian never min, portal_lit no; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(119.3, 'Wood: Gather logs for sticks - Climb toward the surface for logs: open its shelter at x,y,z by hand'), (119.8, 'Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water'), (120.0, 'Wood: Gather logs for sticks - Climb toward the surface for logs: out from under the water: advance')]
+    cast/light failures: 3, last: (43.4, 'Echo native_goto BLOCKED: No walkable route toward -344, 45, -21 [Pick up flint]')
+== e40a25r-59f6276 seed 31102026  console: run/eval/e40a25r-59f6276/31102026/console.txt
+  portal lit: no
+  Kindred: obsidian never min, portal_lit no; deaths 0; stuck 0 min {}
+    last 3 goal steps: [(119.4, 'Wood: Gather logs for sticks - Climb toward the surface for logs'), (119.8, 'Wood: Gather logs for sticks - Climb toward the surface for logs: pillar up'), (119.8, 'Wood: Gather logs for sticks - Climb toward the surface for logs')]
+  Sol: obsidian never min, portal_lit no; deaths [(56.5, 'was slain by Husk', 'Iron: fight back - Fight husk')]; stuck 0 min {}
+    last 3 goal steps: [(119.7, 'Wood: fight back - Back off from skeleton'), (119.7, 'Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs: back the way it came'), (119.8, 'Wood: Gather logs for a table and a wooden pickaxe - Climb toward the surface for logs')]
+    cast/light failures: 1, last: (13.4, 'Sol native_goto BLOCKED: No walkable route toward -39, 20, 215 [Pick up flint]')
+  Echo: obsidian never min, portal_lit no; deaths 0; stuck 12 min {'water loop': 1, 'hole or pit': 3}
+    last 3 goal steps: [(119.9, 'Wood: Gather logs for sticks - Climb toward the surface for logs'), (120.0, 'Wood: Gather logs for sticks - Climb toward the surface for logs: let what falls settle (tried elsewhere 3 times)'), (120.0, 'Wood: Gather logs for sticks - Climb toward the surface for logs')]
+== e40a25r-59f6276 seed 707  console: run/eval/e40a25r-59f6276/707/console.txt
+  portal lit: no
+  Kindred: obsidian never min, portal_lit no; deaths 0; stuck 3 min {'no walkable route': 1}
+    last 3 goal steps: [(119.5, 'Wood: hurt and out of food - Climb toward the surface for food'), (119.5, 'Wood: fight back - Fight zombie'), (119.7, 'Wood: hurt and out of food - Climb toward the surface for food')]
+    cast/light failures: 1, last: (50.1, 'Kindred native_goto BLOCKED: No walkable route toward 39, -53, 110 [Pick up flint]')
+  Sol: obsidian never min, portal_lit no; deaths [(24.2, 'was shot by Skeleton', 'Iron: fight back - Back off from skeleton the way it came')]; stuck 3 min {'mining for a find': 1}
+    last 3 goal steps: [(119.7, 'Wood: Gather logs for sticks - Climb toward the surface for logs: step up'), (119.7, 'Wood: Gather logs for sticks - Climb toward the surface for logs: back the way it came'), (119.9, 'Wood: Gather logs for sticks - Climb toward the surface for logs')]
+  Echo: obsidian 92.3 min, portal_lit no; deaths 0; stuck 9 min {'no walkable route': 1, 'hole or pit': 1, 'mining for a find': 1}
+    last 3 goal steps: [(119.5, 'Iron: no way on from here - Climb to find another way: step up'), (119.5, 'Iron: no way on from here - Climb to find another way'), (119.5, 'Iron: waiting for a feasible step')]
+    cast/light failures: 22, last: (109.8, 'Echo native_goto BLOCKED: No walkable route toward -155, -51, 107 [Cast: step closer]')
