@@ -357,7 +357,11 @@ public final class Ranch {
             return new Step.Feed(next.id(), "Feed a " + kind.noun() + " " + foodName());
         }
         // Leaving: out through the gate and shut it behind, the food put away so nothing follows.
-        if (in) return out(seen, "Open the gate to leave", "Out of the pen");
+        // In the gateway itself, with the gate open, it is not out yet: walked on out (F-22c105). Pushed into the gateway by
+        // the cows as the gate opened, it was taken for out and the gate shut on it, which put it back in the pen; it opened
+        // the gate again, 15 times, and looked back for the calf outside from within the shut pen (#417's CI).
+        boolean inGateway = seen.gateOpen() && seen.feet().x() == gate().x() && seen.feet().z() == gate().z();
+        if (in || inGateway) return out(seen, "Open the gate to leave", "Out of the pen");
         if (seen.gateOpen()) return gate(seen, false, outside(), false, "Shut the gate behind");
         // The gate shut, it looks back: one that slipped out as it left is brought back in, a few times at most.
         var out = escaped(seen);
