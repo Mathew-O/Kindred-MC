@@ -820,7 +820,6 @@ final class PortalRunCampaign {
             if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
                 retraceLowerFrom = retraceChosenAt;
                 retraceLowerUntil = tick + 600;
-                retraceLowerSaid = false;
             }
         }
         // Refused ("no walkable route"), the way it came is not asked for again from here for a while, so the climb has its
@@ -5115,14 +5114,7 @@ final class PortalRunCampaign {
         // timeout loosened: the same while, the climb's own rule that the way back up never leads down, read from where
         // the walk ended.
         if (lastTick < retraceLowerUntil && retraceLowerFrom != null && lastFeet.getY() <= retraceLowerFrom.getY()
-                && horizontalSquared(retraceLowerFrom, lastFeet) <= 3 * 3) {
-            if (!retraceLowerSaid) {
-                retraceLowerSaid = true;
-                KindredMod.LOGGER.info("{} F-25c4at1-marker: walk back held at {}, ended lower than it began at {}", retraceOwner,
-                        lastFeet.toShortString(), retraceLowerFrom.toShortString());
-            }
-            return Optional.empty();
-        }
+                && horizontalSquared(retraceLowerFrom, lastFeet) <= 3 * 3) return Optional.empty();
         if (trail.size() < 2) return Optional.empty();
         int index = nearestOnTrail();
         var cells = new java.util.ArrayList<>(trail);
@@ -5142,7 +5134,6 @@ final class PortalRunCampaign {
         }
         if (target == null || target.getSquaredDistance(lastFeet) < 2) return Optional.empty();
         retraceChosenAt = lastFeet;
-        retraceOwner = body.entity().getName().getString();
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
     }
 
@@ -5151,9 +5142,6 @@ final class PortalRunCampaign {
     /** Where a walk back that ended lower than it began was chosen, and until when the way back is held from there. */
     private BlockPos retraceLowerFrom;
     private long retraceLowerUntil = -1;
-    /** Whether the gate's marker has been logged for the hold now standing. */
-    private boolean retraceLowerSaid;
-    private String retraceOwner = "";
 
     private static int horizontalSquared(BlockPos a, BlockPos b) {
         int dx = a.getX() - b.getX(), dz = a.getZ() - b.getZ();
