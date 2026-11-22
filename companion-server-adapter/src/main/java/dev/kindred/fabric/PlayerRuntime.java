@@ -3547,8 +3547,10 @@ final class PlayerRuntime {
                         && !(m instanceof net.minecraft.entity.ai.RangedAttackMob) && !(m instanceof net.minecraft.entity.mob.CreeperEntity))) {
             double d2 = player.squaredDistanceTo(mob);
             if (d2 > range * range) continue;
-            if (d2 <= 2.0 * 2.0) return true;
-            if (!mob.canSee(player)) continue;
+            // Within two it can get at the player only if it sees it or a path reaches it: not through a wall (F-25c4dh3).
+            boolean sees = mob.canSee(player);
+            if (d2 <= 2.0 * 2.0 && sees) return true;
+            if (!sees && d2 > 2.0 * 2.0) continue;
             var path = mob.getNavigation().findPathTo(player, 1);
             if (path != null && path.reachesTarget()) return true;
         }
@@ -10603,6 +10605,7 @@ final class PlayerRuntime {
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
+            if (to != null) play.arrivedForTest(tick);
             settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
@@ -11010,8 +11013,9 @@ final class PlayerRuntime {
     List<List<Long>> factionCompletedAndOverWaterForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
-        return entry == null ? List.of(List.of(), List.of())
-                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest));
+        return entry == null ? List.of(List.of(), List.of(), List.of())
+                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest),
+                        List.copyOf(entry.factionPlay.arrivedForTest));
     }
 
     List<Long> factionDecisionsForTest(UUID player) {

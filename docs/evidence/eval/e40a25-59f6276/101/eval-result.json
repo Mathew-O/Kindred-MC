@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 3810, "paid": 3810, "lapsed": 145, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 102.8, "snapshotMicrosMax": 12978.8, "tagMicrosMean": 112.4, "tagMicrosMax": 7361.7, "bySource": {"container.take:furnace": 81, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 3217, "pickup:class_3222.method_7329": 186, "pickup:class_52.method_331": 65, "screen:class_1714": 48, "screen:class_1723": 314, "use:item": 43}, "dropsByOrigin": {"class_1308.method_6099": 2, "class_1428.method_6007": 125, "class_1540.method_5773": 2, "class_2248.method_36993": 3245, "class_3222.method_7329": 59, "class_52.method_331": 94}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.47, "tickMsWorst": 8990.79, "tickMsWorstAt": 1, "ticksOver50ms": 1055, "ticksOver200ms": 19, "heapMbMax": 1386, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1400, "stone_tools": 2060, "iron_ingot": 5920, "iron_pickaxe": 12140, "diamond": 40700, "obsidian": 50643, "portal_lit": 51772},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4191,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 740, "stone_tools": 1700, "iron_ingot": 6540, "iron_pickaxe": 116440},
+      "deaths": [
+        {"tick": 132748, "cause": "Sol was shot by Skeleton", "x": -392, "y": -18, "z": -104, "light": 0, "timeOfDay": 12910, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3391,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1500, "stone_tools": 2240, "iron_ingot": 5940, "iron_pickaxe": 33080},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4268,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.6
+    }
+  }
+}
