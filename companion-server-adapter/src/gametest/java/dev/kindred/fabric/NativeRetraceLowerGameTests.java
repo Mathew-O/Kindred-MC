@@ -20,8 +20,10 @@ import java.util.List;
  * 5 of them with most walks back ending lower than they began.
  *
  * Staged at the walk back itself: three whole-run scenes did not reproduce the cycle (the climb's choice between its
- * steps turns on more than the console shows), so the fixture stages the world, the body, its way in and the moment the
- * walk back ended, and asks the campaign for the walk back as the climb does.
+ * steps turns on more than the console shows), so the fixture stages the world and the body, sets where it stands and
+ * its way in through the campaign's fixture setters, sets the moment the walk back ended, and asks the campaign for the
+ * walk back as the climb does. It does not cover the climb's own choice of step: the gate's marker and E-40 iteration
+ * 28's five spells are what test that in play.
  */
 public final class NativeRetraceLowerGameTests implements FabricGameTest {
     /**
@@ -30,8 +32,8 @@ public final class NativeRetraceLowerGameTests implements FabricGameTest {
      *
      * Technical: F-25c4at1, as iteration 26's 31102026 Sol (above). STAGED: stone round it, no sky; a floor at o with a
      * step one high east of it and, west, a ledge one high three off, its way in come down from the ledge along the floor
-     * to o and up the step; its body put at each cell as the staging needs; the campaign told where it stands and its way
-     * in. Then, as the climb asks: from the step its walk back, toward the ledge; the walk ended at o, a block lower, and
+     * to o and up the step; its body put at each cell as the staging needs; the fixture sets where it stands and its way
+     * in (the campaign's fixture setters). Then, as the climb asks: from the step its walk back, toward the ledge; the walk ended at o, a block lower, and
      * done; from o its walk back is held, as it was before the change; up the step again 40 ticks later, its walk back.
      * Fails if that last walk back is offered (the cycle), or if, 700 ticks after the walk ended, the walk back from the
      * step is still held.

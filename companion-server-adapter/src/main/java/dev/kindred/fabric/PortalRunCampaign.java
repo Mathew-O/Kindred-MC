@@ -5074,14 +5074,21 @@ final class PortalRunCampaign {
         return index;
     }
 
-    /** For fixtures: where it stands now and its way in, as its plan's tick records them (F-25c4at1). */
+    /**
+     * For fixtures only, a setter: sets where it stands now and its way in, as its plan's tick would record them
+     * (F-25c4at1). Package-private; called from no main source.
+     */
     void wayInForTest(BlockPos feet, List<BlockPos> way) {
         lastFeet = feet.toImmutable();
         trail.clear();
         for (BlockPos cell : way) trail.addLast(cell.toImmutable());
     }
 
-    /** For fixtures: the walk back it would take from where it stands at {@code tick}, as the climb asks for it (F-25c4at1). */
+    /**
+     * For fixtures only: moves its clock on to {@code tick} and asks for the walk back from where it stands, as the climb
+     * asks for it (F-25c4at1); the walk back it chooses is recorded as the climb's would be. Package-private; called from no
+     * main source.
+     */
     Optional<Task> walkBackForTest(NativePlayerBody body, long tick) {
         lastTick = Math.max(lastTick, tick);
         return retrace(body, "Climb toward the surface for logs");
