@@ -40,13 +40,16 @@ public final class NativeHemmedClimbGameTests implements FabricGameTest {
     /**
      * The fallback asked for at each height from {@code o} up, a pocket one by two in the stone round its feet at each,
      * staged a few ticks before it is asked, so that the light has settled and the stone over it reads as cover;
-     * {@code target}, when not null, a step refused just before, as the cast's "step closer" was. Fails unless a climb is
-     * offered where it was hemmed in, and none at {@code bound} or more above it.
+     * {@code withTarget}, a step refused just before for want of a route, as the cast's "step closer" was; {@code
+     * cancelled}, instead a step cancelled just before a block below its feet, as iteration 27's 404 Echo's "Dig down toward
+     * lava" was ("authority lost") before its climb went on up to its crafting table. Fails unless a climb is offered where
+     * it was hemmed in, and none at {@code bound} or more above it; with the step cancelled, unless one is offered up to
+     * seven above, as with none.
      */
-    private static void run(TestContext context, String name, boolean withTarget) {
+    private static void run(TestContext context, String name, boolean withTarget, boolean cancelled) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 600);
         BlockPos o = context.getAbsolutePos(new BlockPos(30, 6, 40));
-        BlockPos target = withTarget ? o.up(3).east() : null;
+        BlockPos target = withTarget ? o.up(3).east() : cancelled ? o.down().east() : null;
         int bound = withTarget ? 3 + 2 : 8;
         int[] step = new int[1];
         int[] highest = {-1};
@@ -74,9 +77,12 @@ public final class NativeHemmedClimbGameTests implements FabricGameTest {
                     BlockPos feet = o.up(h);
                     long now = world.getServer().getTicks();
                     if (t == 0 && target != null) {
-                        campaign.taskFinished(new PortalRunCampaign.Task("native_goto",
-                                Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()), "z", String.valueOf(target.getZ())),
-                                "Cast: step closer"), false, now);
+                        var at = Map.of("x", String.valueOf(target.getX()), "y", String.valueOf(target.getY()), "z", String.valueOf(target.getZ()));
+                        // As the runtime ends them, with the runner's own word for why.
+                        if (cancelled) campaign.taskFinished(new PortalRunCampaign.Task("native_break", at, "Dig down toward lava: clear "
+                                + target.toShortString()), false, now, "authority lost");
+                        else campaign.taskFinished(new PortalRunCampaign.Task("native_goto", at, "Cast: step closer"), false, now,
+                                "No walkable route toward " + target.toShortString());
                     }
                     if (phase == 0) {
                         // STAGED: its pocket at this height, as the climb would have dug it; the one below closed again.
@@ -96,6 +102,8 @@ public final class NativeHemmedClimbGameTests implements FabricGameTest {
                     context.assertTrue(highest[0] >= 0, "No climb offered at all where it was hemmed in");
                     context.assertTrue(highest[0] < bound, "The climb to find another way offered " + highest[0] + " above where it was hemmed in, past "
                             + (withTarget ? "the refused step's target, 3 above, and two" : "eight above") + ": up and away from its work");
+                    if (cancelled) context.assertTrue(highest[0] >= bound - 1, "The climb to find another way offered only up to " + highest[0]
+                            + " above where it was hemmed in: bounded by a step cancelled below it, not refused");
                     KindredMod.LOGGER.info("Hemmed climb ({}): offered up to {} above where it was hemmed in, bound {}", name, highest[0], bound);
                     f.runtime.stop();
                 })
@@ -115,7 +123,7 @@ public final class NativeHemmedClimbGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, batchId = "hemmedClimbNoTarget", tickLimit = 900)
     public void hemmedInItsClimbGoesNoHigherThanEightAbove(TestContext context) {
-        run(context, "Hemmed", false);
+        run(context, "Hemmed", false, false);
     }
 
     /**
@@ -126,6 +134,19 @@ public final class NativeHemmedClimbGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, batchId = "hemmedClimbTarget", tickLimit = 900)
     public void hemmedInItsClimbGoesNoHigherThanTheRefusedStepAndTwo(TestContext context) {
-        run(context, "Caster", true);
+        run(context, "Caster", true, false);
+    }
+
+    /**
+     * In plain terms: a step it was only interrupted in, below it, does not stop its climb; only a step it could not take does.
+     *
+     * Technical: F-25c4bx1. STAGED as above, with a "Dig down toward lava" break a block below and one east cancelled just
+     * before ("authority lost"), as on iteration 27's batch 1 404 Echo (`claude/corpus-data-e40a27-consoles-1122` at
+     * `7b930d48`, 14:37:10), whose climb then went on up toward its crafting table. Fails unless a climb is offered up to
+     * seven above where it was hemmed in, and none at eight or more.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "hemmedClimbCancelled", tickLimit = 900)
+    public void hemmedInAStepCancelledBelowDoesNotBoundItsClimb(TestContext context) {
+        run(context, "Digger", false, true);
     }
 }
