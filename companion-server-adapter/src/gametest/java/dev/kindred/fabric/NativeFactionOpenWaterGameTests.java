@@ -82,31 +82,58 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
         BlockPos o = new BlockPos((up.getX() & ~15) + 4, up.getY(), (up.getZ() & ~15) + 8);
         long[] laid = {-1};
         var server = context.getWorld().getServer();
+        var world = context.getWorld();
+        // Water there before the island is laid is not the sea's: another test's ground, left standing where its plot was
+        // (on #442's CI, run 44985181724, a replay scene's water, in its plot two blocks past this box, was counted as the
+        // sea's). Staged here too: a source in a stone cup in the ground read, that cannot run.
+        BlockPos cup = o.add(-SEA - 3, -20, 0);
+        java.util.Set<Long> before = new java.util.HashSet<>();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> {
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                        world.setBlockState(cup.add(dx, -1, dz), Blocks.STONE.getDefaultState());
+                        if (dx != 0 || dz != 0) world.setBlockState(cup.add(dx, 0, dz), Blocks.STONE.getDefaultState());
+                    }
+                    world.setBlockState(cup, Blocks.WATER.getDefaultState());
+                })
+                .createAndAdd(() -> {
+                    // The sea's chunks and those round it simulated: with no player near, a chunk the test server does not
+                    // tick runs no fluid, and a sea in one never spills, rimmed or not.
+                    FixtureGround.simulated(context, o.add(-SEA - 3, 0, -SEA - 3), o.add(SEA + 3, 0, SEA + 3));
+                    rimWater(world, o, before::add);
+                    context.assertTrue(before.contains(cup.asLong()), "Staged: the water in its cup read before the island is laid");
                     island(context, o, false, false);
                     laid[0] = server.getTicks();
                 })
                 .createAndAdd(() -> {
                     // Water spreads a block in five ticks and falls at once: two hundred ticks is past its spread on a floor.
                     context.assertTrue(server.getTicks() - laid[0] >= 200, "Two hundred ticks on");
-                    var world = context.getWorld();
-                    int out = 0;
-                    BlockPos first = null;
-                    var at = new BlockPos.Mutable();
-                    // Round the box kept (±(SEA + 1), from 7 below to 8 above) and twenty below it, two blocks out.
-                    for (int x = -SEA - 3; x <= SEA + 3; x++) for (int z = -SEA - 3; z <= SEA + 3; z++) for (int y = -27; y <= 8; y++) {
-                        boolean kept = Math.abs(x) <= SEA + 1 && Math.abs(z) <= SEA + 1 && y >= -7;
-                        if (kept) continue;
-                        at.set(o.getX() + x, o.getY() + y, o.getZ() + z);
-                        if (world.getFluidState(at).isEmpty()) continue;
-                        out++;
-                        if (first == null) first = at.toImmutable();
+                    int[] out = {0};
+                    BlockPos[] first = {null};
+                    rimWater(world, o, pos -> {
+                        if (before.contains(pos)) return;
+                        out[0]++;
+                        if (first[0] == null) first[0] = BlockPos.fromLong(pos);
+                    });
+                    context.assertTrue(out[0] == 0, "No water outside the ground it keeps that was not there before: " + out[0]
+                            + " cells, the first at " + (first[0] == null ? "none" : first[0].subtract(o).toShortString() + " from the island's middle"));
+                    context.assertTrue(world.getFluidState(cup).isStill(), "The water there before still stands in its cup");
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = -1; dy <= 0; dy++) {
+                        world.setBlockState(cup.add(dx, dy, dz), Blocks.AIR.getDefaultState());
                     }
-                    context.assertTrue(out == 0, "No water outside the ground it keeps: " + out + " cells, the first at "
-                            + (first == null ? "none" : first.subtract(o).toShortString() + " from the island's middle"));
                 })
                 .completeIfSuccessful();
+    }
+
+    /** Every cell holding a fluid round the island's kept box (±(SEA + 1), 7 below to 8 above) and 20 below it, two out. */
+    private static void rimWater(net.minecraft.server.world.ServerWorld world, BlockPos o, java.util.function.LongConsumer out) {
+        var at = new BlockPos.Mutable();
+        for (int x = -SEA - 3; x <= SEA + 3; x++) for (int z = -SEA - 3; z <= SEA + 3; z++) for (int y = -27; y <= 8; y++) {
+            boolean kept = Math.abs(x) <= SEA + 1 && Math.abs(z) <= SEA + 1 && y >= -7;
+            if (kept) continue;
+            at.set(o.getX() + x, o.getY() + y, o.getZ() + z);
+            if (!world.getFluidState(at).isEmpty()) out.accept(at.asLong());
+        }
     }
 
     /**
