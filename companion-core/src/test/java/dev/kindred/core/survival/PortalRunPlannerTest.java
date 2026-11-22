@@ -667,6 +667,37 @@ class PortalRunPlannerTest {
     }
 
     @Test
+    void onTheCastRouteWithItsLastPickaxeAndNoSticksItGoesUpForWoodFirst() {
+        // E-40's iteration 25, seed 101 (second batch): all three players went down for the cast's lava with picks and
+        // wood used up on the way, wore out their last pickaxe at Y=-54 with no sticks or wood to make another, and spent
+        // the rest of the run climbing for logs by hand (Kindred from Y=-54 to Y=-7). Staged: on the cast route, the last
+        // pickaxe still in hand, no sticks, no planks or logs, no tree in sight. Up for wood while it still digs.
+        Sim sim = new Sim();
+        sim.pick = 2; sim.pickaxes = 1; sim.sword = 2; sim.cobble = 30; sim.sticks = 0; sim.shields = 1; sim.chest = 3;
+        sim.tableNearby = true; sim.iron = 2; sim.buckets = 1; sim.water = 1; sim.food = 20;
+        assertEquals(WorldFacts.Method.CAST_OBSIDIAN, PortalRunPlanner.frameMethod(sim.snapshot(), BOTH));
+        var next = PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast();
+        assertEquals(Action.GATHER_LOGS, next.action(), "up for wood while its last pickaxe still digs: " + next);
+        // The wood in hand, back to the cast, not up again: no loop of down, the reserve met, up and down with the same kit.
+        sim.logs = next.count();
+        List<String> steps = new ArrayList<>();
+        for (int i = 0; i < 40 && !sim.lit; i++) {
+            var step = PortalRunPlanner.plan(sim.snapshot(), BOTH).getLast();
+            steps.add(step.action() + (step.item().isEmpty() ? "" : " " + step.item()));
+            sim.apply(step);
+        }
+        assertTrue(sim.lit, "lit: " + steps);
+        assertTrue(steps.stream().noneMatch(s -> s.startsWith("GATHER_LOGS")), "no second trip up for wood: " + steps);
+        // With sticks for another pickaxe, or a second pickaxe, it goes on to the cast as before.
+        Sim kit = new Sim();
+        kit.pick = 2; kit.pickaxes = 1; kit.sword = 2; kit.cobble = 30; kit.sticks = 2; kit.shields = 1; kit.chest = 3;
+        kit.tableNearby = true; kit.iron = 2; kit.buckets = 1; kit.water = 1; kit.food = 20;
+        assertNotEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(kit.snapshot(), BOTH).getLast().action(), "sticks for another: no trip up");
+        kit.sticks = 0; kit.pickaxes = 2;
+        assertEquals(Action.CAST_PORTAL, PortalRunPlanner.plan(kit.snapshot(), BOTH).getLast().action(), "a second pickaxe: on to the cast");
+    }
+
+    @Test
     void onTheCastRouteAnIronPickaxeLostOnceTheBucketsAreMadeIsNotMadeAgain() {
         // The live runs on 10a60d5: Kindred's iron pickaxe wore out by Y=-55 on its way to the lava; the iron for another,
         // and the coal to smelt it, took it back up sixty blocks.

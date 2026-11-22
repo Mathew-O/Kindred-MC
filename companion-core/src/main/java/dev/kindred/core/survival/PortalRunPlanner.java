@@ -147,6 +147,9 @@ public final class PortalRunPlanner {
         static Step craft(String item, Stage stage, String why) { return new Step(Action.CRAFT, item, 1, stage, why); }
     }
 
+    /** Logs fetched when its last pickaxe is all it has below: sticks for two more pickaxes and a table's planks (F-25c4cr1). */
+    static final int RESERVE_LOGS = 2;
+
     private PortalRunPlanner() { }
 
     /** {@link #plan(PortalRunSnapshot, WorldFacts)} in an ordinary world with nothing observed yet. */
@@ -474,6 +477,16 @@ public final class PortalRunPlanner {
             if (s.waterBuckets() == 0) return Step.of(Action.FILL_WATER, Stage.OBSIDIAN, "Fill a bucket with water");
             int blocks = castBlocks(s);
             if (s.cobble() < blocks) return stone(s, facts, blocks - s.cobble(), Stage.OBSIDIAN, "Mine blocks for the casting mould");
+            // Its last pickaxe, with no sticks and no wood for another, as it goes down for the cast's lava: up for wood
+            // while it still digs. In E-40's iteration 25 (second batch) the players on seeds 101 and 31102026 dug down and
+            // branch-mined for lava with their last pickaxe, wore it out at Y=-54 with no sticks or wood to make another,
+            // and climbed for logs by hand for the rest of the run; two of the iteration's six portals not lit (F-25c4cr1).
+            // Only on the cast's descent: at the iron stage, below with no sticks or wood, the pickaxe it has goes on (a
+            // spare fetched from the surface wore out the one it had up the staircase, from Y=8 and Y=18, F-25c4b to h).
+            // The reserve is a pickaxe and the sticks for another, not sized by depth or wear, which the plan does not see.
+            if (caves && s.pickaxes() <= 1 && s.sticks() < 2 && s.woodUnits() < 2) {
+                return logs(facts, RESERVE_LOGS, Stage.OBSIDIAN, "Up for wood while its last pickaxe still digs");
+            }
             return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
         }
 
