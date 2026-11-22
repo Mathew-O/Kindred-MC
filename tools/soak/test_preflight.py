@@ -52,7 +52,7 @@ class PreflightTest(unittest.TestCase):
                           "longestAtTick": 18000}, day1["ticks"])
         self.assertEqual(4100, day1["heapHighWaterMb"])
         self.assertEqual({"Ada": {"held": 100, "keptForGood": 60}, "Bram": {"held": 50, "keptForGood": 50}}, day1["websByPlayer"])
-        self.assertEqual([{"fromDay": 1, "toDay": 3, "bytesPerGameDay": 1500000.0, "eventsPerGameDay": 1000.0,
+        self.assertEqual([{"fromDay": 1, "toDay": 3, "dayCounted": "start", "bytesPerGameDay": 1500000.0, "eventsPerGameDay": 1000.0,
                            "webKeptPerGameDay": {"Ada": 10470.0, "Bram": 10.0}}], out["growth"])
         self.assertIn("projected, not measured", out["projectedMonth"]["note"])
         self.assertEqual(5000000 + 1500000 * 2160, out["projectedMonth"]["databaseBytes"])
@@ -95,6 +95,36 @@ class PreflightTest(unittest.TestCase):
             self.assertIn("day 3: heap high water 11500 MB", joined)
             self.assertNotIn("day 1: heap", joined)
             self.assertIn("STOP: ", preflight.text(out))
+
+
+    def test_world_days_go_on_over_a_restart_and_an_older_logs_days_stay_within_their_start(self):
+        """M-06i4: the line is numbered by the world's day, so a restart goes on with the count; an older log's lines
+        counted each start's days from 1, and are measured only within their own start."""
+        def at(form, n, through, size):
+            return (DAY1.replace("Kindred cost: day 1:", "Kindred cost: %s %d:" % (form, n))
+                    .replace("through event 1000", "through event %d" % through).replace("2000000 bytes", "%d bytes" % size))
+        # The new form: world days 2 and 3 before a stop, 3 (the stop's own line, later, replaces the periodic one) and 4
+        # after the start.
+        world = "\n".join([at("world day", 2, 1000, 2000000), at("world day", 3, 2000, 3000000),
+                            at("world day", 3, 2100, 3100000), at("world day", 4, 3100, 4100000)])
+        out = preflight.report(world)
+        self.assertEqual(["world"] * 4, [line["dayCounted"] for line in out["costLines"]])
+        self.assertEqual([(2, 3, 1100000.0), (3, 4, 1000000.0)],
+                         [(g["fromDay"], g["toDay"], g["bytesPerGameDay"]) for g in out["growth"]])
+        self.assertIn("world day 4: db 4100000 bytes", preflight.text(out))
+        # The older form, a restart between: days 1 and 2, then days 1 and 2 again. Each start is measured alone, never its
+        # day 1 against the other start's.
+        old = "\n".join([at("day", 1, 1000, 2000000), at("day", 2, 2000, 3000000),
+                          at("day", 1, 3000, 5000000), at("day", 2, 4000, 7000000)])
+        out = preflight.report(old)
+        self.assertEqual(["start"] * 4, [line["dayCounted"] for line in out["costLines"]])
+        self.assertEqual([(1, 2, 1000000.0), (1, 2, 2000000.0)],
+                         [(g["fromDay"], g["toDay"], g["bytesPerGameDay"]) for g in out["growth"]])
+        # A log that runs from the older build to the new: the two counts are never measured against each other.
+        mixed = "\n".join([at("day", 1, 1000, 2000000), at("day", 2, 2000, 3000000),
+                            at("world day", 3, 3000, 4000000), at("world day", 4, 4000, 5000000)])
+        out = preflight.report(mixed)
+        self.assertEqual([("start", 1, 2), ("world", 3, 4)], [(g["dayCounted"], g["fromDay"], g["toDay"]) for g in out["growth"]])
 
 
 if __name__ == "__main__":
