@@ -11044,6 +11044,21 @@ final class PlayerRuntime {
      * For fixtures (M-06m1): {@code target} recorded as set aside as open water it saw at {@code tick}, as the open-water
      * look records it, or ({@code water} false) refused once at {@code tick}, as a refused walk is.
      */
+    /**
+     * For fixtures (M-06m1): the open-water look toward its live move's end from where it stands now, as its faction play
+     * makes it (F-35j): "all water seen", or the first column it has not seen as water.
+     */
+    String factionWaterLookForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.campaign == null || entry.nativeBody == null || entry.factionPlay.move == null) return "no look (no move)";
+        var body = entry.nativeBody.entity();
+        BlockPos to = FactionsPlayer.destination(entry.factionPlay.move, body);
+        if (to == null) return "no look (no destination)";
+        int[] at = entry.campaign.knowledge().waterLookBreak(body.getBlockPos(), to, FactionsPlayer.OPEN_WATER);
+        return at == null ? "all water seen toward " + to.toShortString() : "the first column not seen as water toward " + to.toShortString() + ": " + at[0] + ", " + at[1];
+    }
+
     void factionTargetRecordForTest(UUID player, String target, long tick, boolean water) {
         requireThread();
         var entry = entries.get(player);

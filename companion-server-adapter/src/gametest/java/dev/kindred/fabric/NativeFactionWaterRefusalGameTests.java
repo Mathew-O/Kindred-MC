@@ -77,6 +77,8 @@ public final class NativeFactionWaterRefusalGameTests implements FabricGameTest 
                     context.assertTrue(f.runtime.factionWalksEndedForTest(f.id).stream().noneMatch(e -> e.getKey().equals(target[0])),
                             "The place three east not chosen by itself before");
                     f.runtime.factionMoveSetForTest(f.id, new FactionPlay.Choice(FactionPlay.Kind.SCOUT, target[0], 0, "the fixture's move east"));
+                    KindredMod.LOGGER.info("Water-refusal fixture ({}): its open-water look as the walk is asked: {}", water ? "water" : "dry",
+                            f.runtime.factionWaterLookForTest(f.id));
                     // Its east side opened: the sky's light at its feet, rock still over it; the wait ends, and the walk is asked.
                     for (int dz = -1; dz <= 1; dz++) for (int dy = 0; dy <= 1; dy++) world.setBlockState(feet[0].add(1, dy, dz), Blocks.AIR.getDefaultState());
                 })
