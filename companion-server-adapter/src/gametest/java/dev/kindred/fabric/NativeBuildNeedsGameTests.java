@@ -142,6 +142,80 @@ public final class NativeBuildNeedsGameTests implements FabricGameTest {
     }
 
     /**
+     * A walk to a drop that ends short of it does not spend the drop (F-22c112). STAGED: a two-plank wall, no plank held, no
+     * storage and no trees, so the planks can only be the two drops lying in sight. As its walk for the first (A) sets out, a
+     * second (B) is laid at its feet, picked up on the way, and A moves four blocks on, so the walk ends short of it, out of
+     * reach, as walks to drops were seen to (1.8 to 4.2 blocks short on the trading hall's wool). Before, that walk counted
+     * as A's one walk and A was never gone for again: the wall stood a plank short, as a pasture doorway's shut did on CI.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildNeedsShortWalk", tickLimit = 2400)
+    public void aWalkThatEndsShortOfADropDoesNotSpendIt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos origin = o.add(4, 2, 4);
+        var plank = dev.kindred.core.construction.BlockSpec.of("minecraft:oak_planks");
+        var wall = new dev.kindred.core.construction.Blueprint("two-plank wall", "test", "Kindred", "Kindred's own", java.util.List.of(
+                new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(0, 0, 0), plank),
+                new dev.kindred.core.construction.Blueprint.Block(new dev.kindred.core.construction.Pos(1, 0, 0), plank)));
+        net.minecraft.entity.ItemEntity[] a = {null};
+        boolean[] staged = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-8, 1, -8), o.add(32, 16, 24));
+                    for (int x = -8; x <= 32; x++) for (int z = -8; z <= 24; z++) {
+                        world.setBlockState(o.add(x, 1, z), Blocks.STONE.getDefaultState());
+                        for (int y = 2; y <= 16; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
+                    var player = f.player();
+                    player.getInventory().clear();
+                    player.getInventory().setStack(0, new ItemStack(Items.BREAD, 8));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(o.getX() + 2.5, o.getY() + 2, o.getZ() + 12.5, 0, 0);
+                    a[0] = new net.minecraft.entity.ItemEntity(world, o.getX() + 9.5, o.getY() + 2, o.getZ() + 12.5, new ItemStack(Items.OAK_PLANKS));
+                    a[0].setVelocity(0, 0, 0);
+                    world.spawnEntity(a[0]);
+                })
+                // Started once the drop has landed, so its pick-up is a walk to it, not a moment for it to land.
+                .createAndAdd(() -> context.assertTrue(a[0].isOnGround(), "The first drop landed"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startBuild(f.source, f.id, wall, origin, 0) == 1, "Build started"))
+                .createAndAdd(() -> {
+                    if (!staged[0] && f.runtime.buildStatus(f.id).orElse("").contains("Picking up oak planks")) {
+                        // STAGED: B at its feet, taken on the way; A on four blocks, so the walk set out for it ends short.
+                        var world = context.getWorld();
+                        var player = f.player();
+                        var b = new net.minecraft.entity.ItemEntity(world, player.getX(), player.getY(), player.getZ(), new ItemStack(Items.OAK_PLANKS));
+                        b.setVelocity(0, 0, 0);
+                        b.setPickupDelay(0);
+                        world.spawnEntity(b);
+                        a[0].setPosition(a[0].getX() + 4, a[0].getY(), a[0].getZ());
+                        a[0].setVelocity(0, 0, 0);
+                        staged[0] = true;
+                    }
+                    context.assertTrue(staged[0], "The walk for the first drop set out: " + f.runtime.buildStatus(f.id).orElse(""));
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(),
+                        "Built: " + f.runtime.buildStatus(f.id).orElse("") + " / " + f.runtime.nativeLastResult(f.id)))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    int placed = 0;
+                    for (var b : wall.placed(BuildRunner.pos(origin), 0)) {
+                        if (BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at()))).sameAs(b.spec())) placed++;
+                    }
+                    context.assertTrue(placed == 2, "Both planks placed, the second from the drop the walk ended short of: " + placed + " of 2");
+                    context.assertTrue(!a[0].isAlive(), "The first drop picked up");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A hut standing a few blocks off, its corner posts of oak log the nearest logs there are, and four trees further
      * east. The player holds all its new hut takes but eight of its logs and the roof's stairs and slabs. It cuts the
      * trees for them and leaves the standing hut as it was. The standing hut is staged, put up block by block as
