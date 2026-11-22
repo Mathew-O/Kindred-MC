@@ -27,7 +27,8 @@ public final class NativeCraftRoomGameTests implements FabricGameTest {
      *
      * Technical: F-25c4dn, as 404 Kindred (above). STAGED: stone round it, no sky; a corridor two high and nine long, lit by
      * torches set in its walls, a crafting table at its far end six blocks off (in sight of the plan, which counts a table
-     * within sixteen, and out of the craft's reach, 4.4 from its eyes); the player at its near end with no pickaxe, four
+     * within sixteen, and out of the craft's reach, 4.4 from its eyes), its own, set down and known as the runtime records
+     * one it places; the player at its near end with no pickaxe, four
      * sticks, sixteen cobblestone and twenty-four cobbled deepslate (the makings, and stone to spare beyond what the
      * stone crafts take), eight bread, and every other slot of its pack a full stack of bricks, which nothing uses or drops
      * as surplus; the portal goal; daylight held. Fails unless, within 600 ticks, a slot of its pack is freed and then it
@@ -74,7 +75,13 @@ public final class NativeCraftRoomGameTests implements FabricGameTest {
                     player.getHungerManager().setFoodLevel(20);
                 })
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o), "In place"))
-                .createAndAdd(() -> context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    // STAGED: the table its own, set down and known as the runtime records one it places.
+                    var campaign = f.runtime.campaignForTest(f.id);
+                    campaign.placedWorkstation(table);
+                    campaign.knowledge().remember(WorldKnowledge.Kind.CRAFTING_TABLE, table);
+                })
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(1000);
                     var player = f.player();
