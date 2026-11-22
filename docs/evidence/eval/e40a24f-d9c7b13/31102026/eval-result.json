@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 4100, "paid": 4100, "lapsed": 120, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 68.3, "snapshotMicrosMax": 6162.0, "tagMicrosMean": 96.2, "tagMicrosMax": 29255.6, "bySource": {"container.take:furnace": 55, "pickup:class_2248.method_36993": 3213, "pickup:class_3222.method_7329": 564, "pickup:class_52.method_331": 60, "screen:class_1707": 26, "screen:class_1714": 42, "screen:class_1723": 218, "use:item": 42}, "dropsByOrigin": {"class_1540.method_5773": 8, "class_1560.method_6099": 1, "class_2248.method_36993": 3220, "class_3222.method_7329": 48, "class_52.method_331": 349}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 12.83, "tickMsWorst": 1635.57, "tickMsWorstAt": 1, "ticksOver50ms": 715, "ticksOver200ms": 10, "heapMbMax": 1096, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 10080, "stone_tools": 12160, "iron_ingot": 14080, "iron_pickaxe": 30720, "obsidian": 42511, "portal_lit": 44305},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2744,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 28960, "stone_tools": 29400, "iron_ingot": 110380, "iron_pickaxe": 129900},
+      "deaths": [
+        {"tick": 40991, "cause": "Sol was blown up by Creeper", "x": -35, "y": 23, "z": 189, "light": 0, "timeOfDay": 17153, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Run from creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 9374,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 105840, "stone_tools": 107220, "iron_ingot": 9240},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 105060, "x": 111, "y": 67, "z": 340, "attempt": 1}, {"tick": 126860, "x": 115, "y": 60, "z": 427, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6195,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

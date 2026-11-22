@@ -54,6 +54,24 @@ public final class NativeBringGameTests implements FabricGameTest {
      * The bring's last check needs Hal in play (F-22c99). Out of play as the test ends, it says so; {@code lastNotYet}, what
      * the check last found not yet so, if anything.
      */
+    /**
+     * F-22c84b, test-only: with the bring's dirt short at its last check, where the rest may be. It names every dirt block
+     * standing in the fixture's kept ground, its field being stone, so any dirt there was put there, relative to the hall's
+     * origin, the first eight and how many; and what Hal holds in each hand. Three CI runs came home "3 dirt" with no dirt
+     * lying about, and nothing said where the fourth was. It changes nothing the check asks.
+     */
+    static String dirtWhere(net.minecraft.server.world.ServerWorld world, BlockPos o, BlockPos hall,
+                            net.minecraft.server.network.ServerPlayerEntity hal) {
+        java.util.List<String> at = new java.util.ArrayList<>();
+        int n = 0;
+        for (BlockPos p : BlockPos.iterate(o.add(-9, 0, -8), o.add(25, 16, 34))) {
+            if (!world.getBlockState(p).isOf(Blocks.DIRT)) continue;
+            if (n++ < 8) at.add(p.subtract(hall).toShortString());
+        }
+        return "; dirt blocks in its ground: " + n + (n == 0 ? "" : " " + at)
+                + (hal == null ? "; Hal out of play" : "; in hand " + hal.getMainHandStack() + ", off hand " + hal.getOffHandStack());
+    }
+
     static void inPlay(TestContext context, net.minecraft.server.network.ServerPlayerEntity hal, String lastNotYet) {
         context.assertTrue(hal != null, lastNotYet == null ? "Hal still in play"
                 : "Hal out of play as the test ended; before that, not yet: " + lastNotYet);
@@ -181,6 +199,18 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * As the last, the librarian held in its boat where CI had it on #429 (run 44936497582, F-22c98c): the boat's middle
+     * 2.678 from the cart's along the line and 0.243 off it. Pushed from there, the cart's last move before it touched the
+     * boat ended 0.207 short, past the fifth of a block a cart takes up within, so it stopped dead against the boat, and
+     * three pushes from the same spot did the same: the bring was given up. Staged (the boat set there while the cart stands
+     * for each push); the bring carries on to the cell and all of the line comes home.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringShortOfBoat", tickLimit = 14000)
+    public void aCartStoppedShortOfTheHeldBoatIsPushedSoItTakesItUp(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 8);
+    }
+
+    /**
      * As the strolling bring, staged (F-22c64): from the first moment its front's rail is up with Hal out of the front,
      * until the job block is in, the librarian set against the front's open side and pressing out at a walk. It is never
      * out of its cell, and the job block goes in across the front.
@@ -228,6 +258,18 @@ public final class NativeBringGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOffStand", tickLimit = 14000)
     public void aThirdOffItsStandHalStillTakesUpTheCartAndBoatFromTheCell(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 3);
+    }
+
+    /**
+     * F-22c96a. In CI on #429 (run 44936497582) Hal stood in its librarian's front as the trapdoor was shut over it, the cart
+     * taken back: CLOSE's walk out (F-22c96's "CLOSE's walk out refused" line) had no walkable route from under its own shut
+     * trapdoor, three times in a second, and the bring was given up, "close went wrong three times over". Staged: the first tick
+     * the bring is at CLOSE with Hal out of the front and at rest, Hal set in the middle of the front, under the shut trapdoor. It walks out and the librarian is
+     * brought home.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringUnderTrapdoor", tickLimit = 14000)
+    public void inItsFrontUnderItsShutTrapdoorHalStillWalksOutAndBringsItHome(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 8);
     }
 
     /**
@@ -301,6 +343,23 @@ public final class NativeBringGameTests implements FabricGameTest {
      * said only "Hal still in play", the minute's reason gone. Here, Hal out of play with a reason last found not yet so: the
      * check's failure must name that reason. Anything else it throws is caught, so it cannot crash the server.
      */
+    /**
+     * F-22c84b, test-only. The bring's last check, short of dirt, says where dirt stands in its ground: a dirt block put
+     * in the fixture's stone field is named, relative to the hall, and the text stays inside a lectern page's 900.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDirtWhere", tickLimit = 40)
+    public void shortOfDirtTheBringCheckSaysWhereDirtStandsInItsGround(TestContext context) {
+        var world = context.getWorld();
+        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos hall = o.add(4, 2, 4);
+        FixtureGround.keep(context, o.add(-9, 0, -8), o.add(25, 16, 34));
+        for (BlockPos p : BlockPos.iterate(o.add(-9, 0, -8), o.add(25, 16, 34))) world.setBlockState(p, Blocks.AIR.getDefaultState());
+        world.setBlockState(hall.add(-1, 0, 1), Blocks.DIRT.getDefaultState());
+        String said = dirtWhere(world, o, hall, null);
+        context.assertTrue(said.contains("dirt blocks in its ground: 1 [-1, 0, 1]") && said.length() < 900, "Where its dirt stands: " + said);
+        context.complete();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOutOfPlay", tickLimit = 40)
     public void outOfPlayAsTheTestEndsTheBringCheckStillSaysWhatWasNotYetSo(TestContext context) {
         String reason = "Rails (but the cell floor's), the cart and dirt all taken back, the lectern spent: 63 rails, 1 carts, 0 lecterns, 3 dirt";
@@ -385,6 +444,7 @@ public final class NativeBringGameTests implements FabricGameTest {
         boolean[] asideOnce = {false};
         // F-22c98b: whether the librarian's boat was set off the line for the push under way; how many times it was.
         boolean[] offLineSet = {false};
+        double[] pitFloor = {Double.NaN};
         int[] offLineSets = {0};
         // F-22c98b: the hall's doorway and what was said the tick the given-up bring said its end; how much had been said
         // as the staging first set the boat off the line.
@@ -396,6 +456,10 @@ public final class NativeBringGameTests implements FabricGameTest {
         java.util.Set<BlockPos> heldWhenUp = new java.util.HashSet<>();
         java.util.Set<java.util.UUID> movedDrops = new java.util.HashSet<>();
         String[] stagedDrop = {null};
+        // F-22c98c: the held boat set for this push yet; the cart's speed the tick before; how many pushes were so staged.
+        boolean[] shortStaged = {false};
+        double[] shortSpeed = {0};
+        int[] shortSets = {0};
         long[] pressFrom = {-1};
         // #318: Hal staged up on the cell's bed, the tick and front; Hal shut in its cell by the job block, in any bring.
         long[] bedFrom = {-1};
@@ -405,6 +469,7 @@ public final class NativeBringGameTests implements FabricGameTest {
         long[] offFrom = {-1};
         java.util.Set<BlockPos> cartInCell = new java.util.HashSet<>();
         BlockPos[] offFront = {null};
+        BlockPos[] underShut = {null};
         String[] offLeft = {null};
         // F-22c84 (the dirt): Hal set beside the line's stop's block as its last pickup ends, once.
         boolean[] climbOnce = {false};
@@ -612,6 +677,41 @@ public final class NativeBringGameTests implements FabricGameTest {
                         KindredMod.LOGGER.info("Bring: the librarian sits in the boat behind its lectern, at {}",
                                 librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
                     }
+                    // Staged (F-22c98c), each push fast enough to miss: CI on #429 (run 44936497582) had the cart's last move
+                    // before it touched the librarian's boat begin 0.207 short of it, more than the fifth of a block a cart
+                    // takes up within, at about 0.23 a tick, so it closed the gap into touching and stopped dead, three pushes
+                    // alike, and the bring was given up ("The cart wouldn't take the librarian up"). Here, the first tick of a
+                    // push the cart slows, Hal's push done, it moves its speed each tick, that falling 0.01 a tick: if its next
+                    // move but one is longer than a fifth, the boat, librarian and all, is set on the line so that move begins
+                    // midway between a fifth and its length short of touching, and 0.243 off the line as CI had it. A push
+                    // slower than that meets the boat inside the fifth whatever the gap. Never anything given.
+                    if (onBed == 8 && String.valueOf(f.runtime.bringNote(f.id)).contains("[PUSH]")
+                            && librarian[0].getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat && !boat.hasVehicle()) {
+                        var carts = context.getWorld().getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class,
+                                boat.getBoundingBox().expand(8), c -> c.isAlive() && !c.hasPassengers());
+                        if (!carts.isEmpty()) {
+                            var cart = carts.getFirst();
+                            double speed = cart.getVelocity().horizontalLength();
+                            double dx = boat.getX() - cart.getX(), dz = boat.getZ() - cart.getZ();
+                            boolean alongX = Math.abs(dx) >= Math.abs(dz);
+                            double toward = alongX ? Math.signum(dx) * cart.getVelocity().x : Math.signum(dz) * cart.getVelocity().z;
+                            if (speed <= 0.01) {
+                                shortStaged[0] = false;
+                            } else if (!shortStaged[0] && toward > 0 && speed < shortSpeed[0] && speed - 0.01 > 0.2) {
+                                shortStaged[0] = true;
+                                double gap = (0.2 + speed - 0.01) / 2;
+                                double along = speed + gap + 0.6875 + 0.49;
+                                double x = alongX ? cart.getX() + Math.signum(dx) * along : cart.getX() - 0.243;
+                                double z = alongX ? cart.getZ() - 0.243 : cart.getZ() + Math.signum(dz) * along;
+                                boat.refreshPositionAndAngles(x, boat.getY(), z, boat.getYaw(), 0);
+                                boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                shortSets[0]++;
+                                KindredMod.LOGGER.info("Bring: the held boat set for the push at {} a tick: its last move to begin {} short", String.format("%.3f", speed),
+                                        String.format("%.3f", gap));
+                            }
+                            shortSpeed[0] = speed;
+                        }
+                    }
                     // Staged (F-22c98b), each push: the first tick the cart pushed at the librarian held in its boat rolls, the
                     // boat, librarian and all, set three blocks off the line, crosswise, as one that strolls off might be: the
                     // cart runs on past, the line is laid again from where it is, and after four of those the bring is given up
@@ -636,7 +736,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 double x = alongX ? boat.getX() : boat.getX() + 3, z = alongX ? boat.getZ() + 3 : boat.getZ();
                                 boat.refreshPositionAndAngles(x, boat.getY(), z, boat.getYaw(), 0);
                                 boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
-                                // F-22c103: and the ground under it and a block round dug out four deep, so that it drops into
+                                // F-22c103: and the ground under it and a block round dug out four deep, so that it lies in
                                 // a pit no walk goes into (deeper than a safe drop of three), as no walk reached CI's on #412,
                                 // dropped two blocks off the fixture's kept ground (run 44871475068). Two deep, inside the
                                 // kept ground, Hal walked down into it after the boat and was then shut in it.
@@ -644,6 +744,13 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     BlockPos under = BlockPos.ofFloored(x, boat.getY(), z);
                                     for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 1; dy <= 4; dy++)
                                         world.setBlockState(under.add(dx, -dy, dz), net.minecraft.block.Blocks.AIR.getDefaultState());
+                                    // Set down on the pit's floor with the librarian in it (STAGED), not left to fall there: a boat
+                                    // that falls more than three blocks onto land breaks, and on #427's CI (run 44934790203) it broke
+                                    // in the fall, the librarian out of it at the pit's edge, so no boat held it to be let be.
+                                    boat.refreshPositionAndAngles(x, boat.getY() - 4, z, boat.getYaw(), 0);
+                                    boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                    boat.fallDistance = 0;
+                                    pitFloor[0] = boat.getY();
                                 }
                                 KindredMod.LOGGER.info("Bring: the librarian's boat set off the line ({}), at {}", offLineSets[0],
                                         boat.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
@@ -747,6 +854,21 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     + (world.getTime() - up) + " ticks after its front's rail came up";
                         }
                         if (jobIn && up != null) jobBlockIn[0] = true;
+                        // Staged (F-22c96a): the first tick the bring is at CLOSE, Hal out of the front and at rest, its trapdoor shut over the front and the job
+                        // block not yet in, Hal set in the middle of the front, under its own shut trapdoor, as CI's on #429 stood.
+                        if (onBed == 8 && underShut[0] == null && hal != null && !jobIn
+                                && world.getBlockState(front.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS)
+                                && String.valueOf(f.runtime.bringNote(f.id)).contains("[CLOSE]")
+                                // Out of the front and at rest, its walk out of it done: set in mid-walk, the walk itself
+                                // went on and took it out again.
+                                && hal.isOnGround() && hal.getVelocity().horizontalLengthSquared() < 1.0E-4
+                                && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))) {
+                            hal.refreshPositionAndAngles(front.getX() + 0.5, front.getY(), front.getZ() + 0.5, hal.getYaw(), hal.getPitch());
+                            hal.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            underShut[0] = front;
+                            KindredMod.LOGGER.info("Bring: Hal set in its front under the shut trapdoor, at {}",
+                                    hal.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                        }
                         if (pressed && up != null && !jobIn && hal != null && !hal.getBoundingBox().intersects(new net.minecraft.util.math.Box(front))) {
                             var v = librarian[0];
                             if (pressFrom[0] < 0 && v.getVehicle() == null) {
@@ -877,6 +999,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                         context.assertTrue(endedWith[0].startsWith("door / ") && !endedWith[0].contains("couldn't put my hall's door back"),
                                 "The hall's door put back as it gave up: " + endedWith[0]);
                         // The boat in the pit let be, and said so, not walked to for ever.
+                        if (onBed == 7) context.assertTrue(!Double.isNaN(pitFloor[0]), "Staged: the librarian's boat set down on its pit's floor");
                         if (onBed == 7) context.assertTrue(endedWith[0].contains("I left the boat with the librarian in it where I couldn't get to it."),
                                 "The boat it couldn't get to let be, and said: " + endedWith[0]);
                         return;
@@ -892,6 +1015,15 @@ public final class NativeBringGameTests implements FabricGameTest {
                       return;
                   }
                   try {
+                    // F-22c98c: its pushes met the boat at the gap CI's did, and the first bring was never given up for it
+                    // (a second bring begun after a give-up got there with a push that never slowed, so the scene's end alone
+                    // could not tell).
+                    if (onBed == 8) {
+                        context.assertTrue(shortSets[0] > 0, "A push met the held boat as CI's did");
+                        var gaveUp = f.runtime.said(f.id).stream().filter(line -> line.contains("wouldn't take")).toList();
+                        context.assertTrue(gaveUp.isEmpty(), "The bring never given up for a cart that would not take the librarian up: " + gaveUp
+                                + "; pushes staged " + shortSets[0]);
+                    }
                     context.assertTrue(offLine[0] == null, "Kept on the rails, never rolled off the line's start: " + offLine[0]);
                     context.assertTrue(inFrontLoose[0] == null, "The librarian kept out of its front until the job block is in: " + inFrontLoose[0]);
                     context.assertTrue(boatOverFront[0] == null, "No boat over a cell's front as its rail comes up: " + boatOverFront[0]);
@@ -958,7 +1090,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     + world.getEntitiesByClass(net.minecraft.entity.Entity.class, hal.getBoundingBox().expand(64), e -> e.isAlive()
                                             && (e instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity || e instanceof net.minecraft.entity.ItemEntity item
                                                     && (item.getStack().isOf(Items.MINECART) || item.getStack().isOf(Items.DIRT))))
-                                            .stream().map(e -> e.getType().getUntranslatedName() + " at " + e.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList()));
+                                            .stream().map(e -> e.getType().getUntranslatedName() + " at " + e.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList()
+                                    + (count(inventory, Items.DIRT) < (river ? 8 : 4) ? dirtWhere(world, context.getAbsolutePos(BlockPos.ORIGIN), origin[0], hal) : "")));
                     if (mine) {
                         BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
                         int mined = 0;

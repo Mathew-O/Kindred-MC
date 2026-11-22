@@ -3,7 +3,7 @@
 Date: 2026-11-11
 Agent / branch: Claude, LOOPS (claude/f25c4de-swimup-1111)
 Build: bae60a6 (main acb8a73 merged in)
-Status: in progress (checked when merged)
+Status: complete (2026-11-11, merged as #181; the row closed 2026-11-21)
 
 ## Scope and implementation
 

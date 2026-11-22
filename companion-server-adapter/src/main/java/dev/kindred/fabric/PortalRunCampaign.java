@@ -1290,7 +1290,7 @@ final class PortalRunCampaign {
         boolean nightIn = dugInForTheNight(dweller);
         // Its work only: a walk up for air, a back-off, a run from a creeper or any other safety step goes as before.
         if (nightIn && planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get())
-                && outUnderTheSky(dweller, planned.get())) {
+                && outUnderTheSky(dweller, planned.get(), tick)) {
             planned = daylightBelow(body);
             progress = stageLabel(stage) + ": nothing to do before daylight - " + planned.get().label();
         }
@@ -1673,7 +1673,8 @@ final class PortalRunCampaign {
 
     /** Whether a walk to {@code to} would take it out under the sky, by the night's rule (F-35m's fixtures). */
     static boolean outUnderTheSkyForTest(ServerPlayerEntity player, BlockPos to) {
-        return outUnderTheSky(player, go(to, 1, true, "a fixture"));
+        Task walk = go(to, 1, true, "a fixture");
+        return outUnderTheSky(player, walk) || wayOutUnderTheSky(player, to);
     }
 
     /** The cell the goal's gather would go for first (its first {@code nearest}, with the one rule {@link #gatherable}). */
@@ -2538,16 +2539,19 @@ final class PortalRunCampaign {
         // step back by a hit is no reason to turn and wall off, nor a skeleton stepping out of view one to walk back
         // into its fire (live run 58's three deaths came as the goal switched between them every second). Only a
         // fall below six health ends a fight early; a retreat turns to fight only when there is nowhere to back off to.
-        boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
-        boolean retreating = lastTick < retreatHeldUntil;
         // A back-off that ended with a mob on foot still in reach gained nothing: a zombie walks as fast as a player. Then
         // it neither backs off again nor holes up for a while, but fights it, as below; in e40a22 five players switched
         // between backing off and holing up every second or two while a zombie kept pace and struck, and died with food
         // or a pickaxe in hand, the sword never drawn (A1).
+        // Before the held choices are read (F-22c104): read after, the retreat it ends still held for this decision, and
+        // the fight it falls through to was turned back into a back-off below, which held the retreat again. Caught so as it
+        // backed off again, the player backed off with the zombie at its back until it was killed (CI on #385, #416, main).
         if (onFootInReach(player) != null && backOffEndedAt > Long.MIN_VALUE && lastTick - backOffEndedAt <= GAINLESS_CATCH) {
             backOffGainlessUntil = Math.max(backOffGainlessUntil, lastTick + GAINLESS_HOLD);
             retreatHeldUntil = Math.min(retreatHeldUntil, lastTick);
         }
+        boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
+        boolean retreating = lastTick < retreatHeldUntil;
         // Only while a mob on foot after it is still close: a passage sealed behind it (F-25c4dc) and a hole-up once it is
         // gone are as before.
         boolean gainless = lastTick < backOffGainlessUntil && huntedOnFootWithin(player, 8);
@@ -6015,6 +6019,51 @@ final class PortalRunCampaign {
     private Optional<Task> daylightBelow(NativePlayerBody body) {
         Optional<Task> seal = body.entity().isOnGround() ? seal(body) : Optional.empty();
         return seal.isPresent() ? seal : Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
+    }
+
+    /** The most nodes the night's look at a walk's way searches: a walk from a shelter is a short one. */
+    private static final int WAY_NODES = 4_000;
+    /** How long the answer for one walk's way holds before it is asked again (F-22c76): a held walk is planned again each tick. */
+    private static final int WAY_ASKED_FOR = 200;
+    private BlockPos wayAskedTo;
+    private long wayAskedUntil;
+    private boolean wayAskedOut;
+
+    /**
+     * Dug in for the night, whether a walk of its work takes it out under the sky: where it ends ({@link
+     * #outUnderTheSky(ServerPlayerEntity, Task)}), or, ending below ground, the way it would go there (F-22c76). The way's
+     * answer is kept for {@value #WAY_ASKED_FOR} ticks for the same walk's end, so a walk held and planned again each tick
+     * is not searched again each tick.
+     */
+    private boolean outUnderTheSky(ServerPlayerEntity player, Task task, long tick) {
+        if (outUnderTheSky(player, task)) return true;
+        if (!"native_goto".equals(task.skill())) return false;
+        BlockPos to = position(task.args());
+        if (to == null || !player.getServerWorld().isChunkLoaded(to)) return false;
+        if (to.equals(wayAskedTo) && tick <= wayAskedUntil) return wayAskedOut;
+        wayAskedTo = to.toImmutable();
+        wayAskedUntil = tick + WAY_ASKED_FOR;
+        wayAskedOut = wayOutUnderTheSky(player, to);
+        return wayAskedOut;
+    }
+
+    /**
+     * Whether the way a walk would go to {@code to}, searched as {@code NativeGoToSkill} searches its route, passes a cell
+     * open to the sky (F-22c76). In ci259's NativeFactionShelterGameTests a player dug in four down by a stair was sent to a
+     * cell below the ground twelve off; its way went up the stair and over the ground, and it dug in again. Only the cells of
+     * the way it would walk are asked, as the walk itself goes by them; a way not found says nothing, and the walk goes on
+     * as before.
+     */
+    private static boolean wayOutUnderTheSky(ServerPlayerEntity player, BlockPos to) {
+        var world = player.getServerWorld();
+        var navigator = new NativeNavigator(world).throughDoors();
+        BlockPos start = NativeGoToSkill.restingOn(player, navigator);
+        var found = navigator.find(start, to, cell -> cell.getSquaredDistance(to) <= 1, WAY_NODES, 96);
+        if (!found.complete()) return false;
+        // Not the cell it stands in: under an open shaft, a shelter not yet sealed, that is where it already is, not where the
+        // walk takes it.
+        for (BlockPos cell : found.nodes()) if (!cell.equals(start) && world.isSkyVisible(cell)) return true;
+        return false;
     }
 
     /**

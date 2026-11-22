@@ -123,6 +123,94 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * F-22c104, staged after CI's second-zombie failures (#385, #416, main): a back-off has just ended and the player is
+     * backing off again, its retreat still held, when a zombie comes into reach. In those runs it went on backing off with
+     * the zombie striking its back, never drew its sword, and was killed. Staged: hurt, one zombie after it held still while
+     * the player backs off past the end of its first back-off, then set a step and a half behind it and let go. Within three
+     * seconds of that, it fights with its sword in hand.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipCaught", tickLimit = 1200)
+    public void caughtAsItBacksOffAgainItTurnsAndFightsRatherThanBackOffOnce(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        var difficulty = server.getSaveProperties().getDifficulty();
+        FixtureGround.whenDone(context, () -> server.setDifficulty(difficulty, true));
+        server.setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        net.minecraft.util.math.Vec3d[] from = new net.minecraft.util.math.Vec3d[1];
+        long[] caughtAt = {-1};
+        boolean[] fought = {false};
+        String[] after = {null};
+        StringBuilder trail = new StringBuilder();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    arena(context);
+                    f.runtime.createNative(f.source, "Pacecaught");
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var at = context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID));
+                    f.player().refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+                    f.player().setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround()
+                        && f.player().getBlockPos().equals(context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID))), "Standing in the arena"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.COOKED_PORKCHOP, 3));
+                    player.getInventory().setStack(1, new ItemStack(Items.IRON_SWORD));
+                    player.getInventory().selectedSlot = 0;
+                    player.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+                    player.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.LEATHER_CHESTPLATE));
+                    player.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.LEATHER_LEGGINGS));
+                    player.setHealth(5);
+                    player.getHungerManager().setFoodLevel(16);
+                    player.getHungerManager().setSaturationLevel(0);
+                    zombie[0] = zombie(context, player, context.getRelative(new net.minecraft.util.math.Vec3d(player.getX(), player.getY(), player.getZ() + 2.3)));
+                    zombie[0].setAiDisabled(true); // Held still: the player's first back-off ends with it far behind.
+                    from[0] = player.getPos();
+                    context.getWorld().setTimeOfDay(14000);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.getWorld().setTimeOfDay(14000);
+                    var bot = f.runtime.panelBots(Actor.console()).getFirst();
+                    String progress = bot.goalProgress();
+                    if (caughtAt[0] < 0) {
+                        // Past ten blocks and a half from where it stood, its first back-off (ten blocks off, within three)
+                        // has ended, and it is backing off again.
+                        boolean again = "native_goto".equals(bot.task()) && progress.contains("Back off")
+                                && player.getPos().squaredDistanceTo(from[0]) > 13.0 * 13.0;
+                        context.assertTrue(again, "Backing off past its first back-off's end: " + progress + " ("
+                                + String.format("%.1f", Math.sqrt(player.getPos().squaredDistanceTo(from[0]))) + " from where it stood)");
+                        // A step and a half behind it, from where it started, and let go: in reach as it backs off.
+                        var back = from[0].subtract(player.getPos()).normalize().multiply(1.5);
+                        zombie[0].refreshPositionAndAngles(player.getX() + back.x, player.getY(), player.getZ() + back.z, 0, 0);
+                        zombie[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        zombie[0].setAiDisabled(false);
+                        zombie[0].setTarget(player);
+                        caughtAt[0] = context.getTick();
+                        trail.append("caught @").append(caughtAt[0]).append(", ");
+                    }
+                    if (!progress.isEmpty() && (trail.isEmpty() || !trail.toString().endsWith(progress + ", "))) trail.append(progress).append(", ");
+                    fought[0] |= "native_fight".equals(bot.task()) && player.getMainHandStack().isOf(Items.IRON_SWORD);
+                    if (after[0] == null && (fought[0] || !player.isAlive() || context.getTick() - caughtAt[0] >= 60)) {
+                        after[0] = "health " + player.getHealth() + ", the zombie " + String.format("%.1f", player.distanceTo(zombie[0])) + " off";
+                    }
+                    context.assertTrue(after[0] != null, "Three seconds after it was caught");
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(fought[0], "Caught as it backed off again, it fought with its sword within three seconds ("
+                            + after[0] + "; " + trail + ")");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     private static void run(TestContext context, String name, boolean second) {
         run(context, name, second, false);
     }
