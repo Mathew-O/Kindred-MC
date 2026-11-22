@@ -484,7 +484,11 @@ public final class PortalRunPlanner {
             // Only on the cast's descent: at the iron stage, below with no sticks or wood, the pickaxe it has goes on (a
             // spare fetched from the surface wore out the one it had up the staircase, from Y=8 and Y=18, F-25c4b to h).
             // The reserve is a pickaxe and the sticks for another, not sized by depth or wear, which the plan does not see.
-            if (caves && s.pickaxes() <= 1 && s.sticks() < 2 && s.woodUnits() < 2) {
+            // Only while it has the lava still to find, with a stone pickaxe: with its lava seen or in a bucket, or an iron
+            // pickaxe in hand, the cast goes on now. On #455's CI the turn stood between the player and a cast at hand, and
+            // the wood search it began never ended (NativeSnowSiteGameTests, NativeSpireGameTests).
+            boolean seekingLava = !facts.knows(WorldFacts.Source.LAVA) && s.lavaBuckets() == 0 && s.pickaxeTier() < 3;
+            if (caves && seekingLava && s.pickaxes() <= 1 && s.sticks() < 2 && s.woodUnits() < 2) {
                 return logs(facts, RESERVE_LOGS, Stage.OBSIDIAN, "Up for wood while its last pickaxe still digs");
             }
             return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");

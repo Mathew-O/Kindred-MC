@@ -695,6 +695,16 @@ class PortalRunPlannerTest {
         assertNotEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(kit.snapshot(), BOTH).getLast().action(), "sticks for another: no trip up");
         kit.sticks = 0; kit.pickaxes = 2;
         assertEquals(Action.CAST_PORTAL, PortalRunPlanner.plan(kit.snapshot(), BOTH).getLast().action(), "a second pickaxe: on to the cast");
+        // Not where the cast can go on now (CI on #455: NativeSnowSiteGameTests, NativeSpireGameTests): its lava seen, or in a
+        // bucket, or an iron pickaxe in hand, the turn stood between the player and its cast with a wood search that never
+        // ended. Only the search for lava wears out a stone pickaxe at depth.
+        kit.pickaxes = 1;
+        var lavaSeen = new WorldFacts(java.util.Map.of(WorldFacts.Source.LAVA, 12), BOTH.methods());
+        assertNotEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(kit.snapshot(), lavaSeen).getLast().action(), "its lava seen: on to the cast");
+        kit.buckets = 2; kit.lava = 1;
+        assertNotEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(kit.snapshot(), BOTH).getLast().action(), "lava in a bucket: on to the cast");
+        kit.buckets = 1; kit.lava = 0; kit.pick = 3;
+        assertNotEquals(Action.GATHER_LOGS, PortalRunPlanner.plan(kit.snapshot(), BOTH).getLast().action(), "an iron pickaxe: on to the cast");
     }
 
     @Test
