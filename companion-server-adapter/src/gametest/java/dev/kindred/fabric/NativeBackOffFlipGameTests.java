@@ -70,6 +70,20 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipSealedEat", tickLimit = 800)
     public void walledInWithAZombieOutsideAndHungryItStillEats(TestContext context) {
+        walledIn(context, "Walledin", false);
+    }
+
+    /**
+     * F-25c4dh3, staged: the same pocket, the zombie held 2.0 off just outside the wall each tick, its target the player. Within
+     * two it was read as able to get at it before sight or a path was asked, so the meal waited out the test (CI on #359,
+     * b2d75bcb, "the zombie 2.0 off"). Through stone it neither sees nor reaches the player, so it eats within twenty seconds.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipSealedEatHeld", tickLimit = 800)
+    public void walledInWithAZombieHeldJustOutsideTheWallItStillEats(TestContext context) {
+        walledIn(context, "Walledheld", true);
+    }
+
+    private static void walledIn(TestContext context, String name, boolean held) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         var server = context.getWorld().getServer();
         var difficulty = server.getSaveProperties().getDifficulty();
@@ -86,7 +100,7 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                         boolean inside = dx == 0 && dz == 0 && y <= 3;
                         context.setBlockState(MID + dx, y, MID + dz, inside ? Blocks.AIR : Blocks.STONE);
                     }
-                    f.runtime.createNative(f.source, "Walledin");
+                    f.runtime.createNative(f.source, name);
                 })
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
@@ -111,6 +125,12 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var player = f.player();
                     context.getWorld().setTimeOfDay(14000);
+                    if (held) {
+                        // Staged: held 2.0 off, against the wall's far side, still after the player.
+                        zombie[0].refreshPositionAndAngles(player.getX() + 2, player.getY(), player.getZ(), 0, 0);
+                        zombie[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        zombie[0].setTarget(player);
+                    }
                     context.assertTrue(player.getHungerManager().getFoodLevel() > 6, "It ate behind its wall within "
                             + (context.getTick() - started[0]) + " ticks; the zombie " + String.format("%.1f", Math.sqrt(player.squaredDistanceTo(zombie[0])))
                             + " off; doing " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());

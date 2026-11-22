@@ -266,6 +266,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [M-06i2d1](evidence/M-06i2d1.md) (2026-11-21, test-only): the cabin test's "gone east" is east of all the land its faction holds; CI's three twin failures and one on main each one block into the row beside its land's east chunk; the twin set down there 0 of 3 on the old check, 3 of 3 on the new; the negative still caught 3 of 3; the class 20 of 20; done (#424, `77cba86`).
 - [M-06i3](evidence/M-06i3.md) (2026-11-16, test-only): the bedrock-box no-way fixture stages the daytime it assumes; night staged 0 of 3; the narrowed six-class order 16 of 16 ×3 with it; Factions 49 of 49 ×3; in review.
 - [M-06k4a](evidence/M-06k4a.md) (2026-11-21, harness and docs): a stop that stands at "Saving worlds" 120 s is dumped (threads, the world's file times) and at 600 s killed by `run.py`; `StallTest` 4 of 4 with a stub server, the eval tests 45 of 45; a hung stop counted in `run.json` and the summary; the runbook saves before `stop`; no native or runtime test rerun; done (#423, `355bd50`).
+- [M-06m](evidence/M-06m.md) (2026-11-22, test hook and message only): the paced open-water test names the moves settled by arrival in its failure, its assertion unchanged; the cause of #427's early choice not reproduced (two diagnostics, 3 runs each); the class 4 of 4 ×3; open.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 
@@ -3862,4 +3863,5 @@ After the block's first merge from main, CI on PR #25 found:
 
 - **[E-71b1a](evidence/E-71b1a.md):** a walk out of a raised hall's open doorway no longer jumps into the door's leaf: the doorway-start and hinge-right cases 0 of 3 before, 3 of 3 after; class set ×3 119/119/118; corpus gate passes (3 flagged, all cleared).
 - **[F-22c76](evidence/F-22c76.md)** (2026-11-21, night shelter): dug in for the night, a walk of its work whose way crosses open ground waits for daylight. Its fixture `NativeShelterWayGameTests` 3 of 3 fail before, 3 of 3 pass after; 19 related classes 146 of 146; on main d340ca7 merged in, the fixture 3 of 3 and `NativeRaisedDoorwayGameTests` 7 of 7. Corpus gate: 3 flagged, 0 confirmed.
+- **[F-25c4dh3](evidence/F-25c4dh3.md)** (2026-11-22, combat): walled in and hungry, a zombie within 2 on the far side of the wall no longer holds back the meal; the staged fixture 0 of 3 before, 3 of 3 after; the class 5 of 5 ×3; corpus gate passes, death-scene failures 263 vs 261 of 1038 (one-sided Fisher p = 0.48).
 - [F-22c104a1](evidence/F-22c104a1.md) (2026-11-22, test-only diagnostic): the second-zombie back-off test names each goal step with its health, food and the zombies' distances in its failure message; the class ×30 on main with it, 30 of 30 each.
