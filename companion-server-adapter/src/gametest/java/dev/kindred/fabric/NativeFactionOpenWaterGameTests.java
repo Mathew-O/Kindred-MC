@@ -117,20 +117,25 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                     var events = f.runtime.factionCompletedAndOverWaterForTest(f.id);
                     var completed = events.get(0);
                     var overWater = events.get(1);
+                    var arrived = events.get(2);
                     int checked = 0;
                     var exempt = new java.util.ArrayList<String>();
                     for (int i = 1; i < decided.size(); i++) {
                         long from = decided.get(i - 1), to = decided.get(i);
                         boolean walkCompleted = completed.stream().anyMatch(t -> t > from && t <= to);
+                        // Or its move settled because it got there, with no walk to complete: in its chunk by its own goal's
+                        // work or a swim that drifted it in, it weighs again at once, as it should (M-06m: #427's CI, run
+                        // 44934790203 attempt 2, Ada in the sea in Blue's chunk east, her choice 240 ticks after the last).
+                        boolean gotThere = arrived.stream().anyMatch(t -> t > from && t <= to);
                         boolean setAsideAsWater = overWater.stream().anyMatch(t -> t > from && t <= to);
-                        if (walkCompleted && !setAsideAsWater) {
+                        if ((walkCompleted || gotThere) && !setAsideAsWater) {
                             exempt.add(from + ".." + to);
                             continue;
                         }
                         checked++;
                         context.assertTrue(to - from >= FactionsPlayer.DECIDE_TICKS,
                                 "Its next choice " + (to - from) + " ticks after the last, before the decision interval: " + decided
-                                        + "; walks completed at " + completed + ", places set aside as water at " + overWater);
+                                        + "; walks completed at " + completed + ", moves settled there at " + arrived + ", places set aside as water at " + overWater);
                     }
                     KindredMod.LOGGER.info("Paced fixture: {} intervals checked, let be after a walk that completed: {}", checked, exempt);
                     context.assertTrue(checked >= CHECKED, "At least " + CHECKED + " intervals between its choices checked: " + checked + " (let be: " + exempt + ")");
