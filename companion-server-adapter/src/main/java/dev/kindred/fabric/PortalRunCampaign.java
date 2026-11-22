@@ -2865,20 +2865,11 @@ final class PortalRunCampaign {
         // Hemmed in again after a while out of it: where this spell of it began.
         if (hemmedFrom == null || lastTick - hemmedLast > HEMMED_GAP) {
             hemmedFrom = lastFeet;
-            hemmedSaid = false;
         }
         hemmedLast = lastTick;
         BlockPos target = refusedTarget != null && lastTick - refusedAt <= HEMMED_TARGET_AGE ? refusedTarget : null;
         int ceiling = target != null ? target.getY() + 2 : hemmedFrom.getY() + HEMMED_CLIMB;
-        if (lastFeet.getY() >= ceiling) {
-            if (!hemmedSaid) {
-                hemmedSaid = true;
-                KindredMod.LOGGER.info("{} F-25c4bx1-marker: climb to find another way bounded at {}, {}", player.getName().getString(),
-                        lastFeet.toShortString(), target != null ? "the refused step's target " + target.toShortString() + " and two"
-                                : HEMMED_CLIMB + " above where it was hemmed in at " + hemmedFrom.toShortString());
-            }
-            return Optional.empty();
-        }
+        if (lastFeet.getY() >= ceiling) return Optional.empty();
         Optional<Task> up = climb(body, "Climb to find another way");
         if (up.isPresent()) {
             paced(tick);
@@ -2906,8 +2897,6 @@ final class PortalRunCampaign {
     /** The target of the last step refused, and when. */
     private BlockPos refusedTarget;
     private long refusedAt = Long.MIN_VALUE / 2;
-    /** Whether the gate's marker has been logged for this spell of being hemmed in. */
-    private boolean hemmedSaid;
 
     /**
      * A walk refused for want of a route: its target remembered for the bound on the climb (F-25c4bx1). Only that: a step
