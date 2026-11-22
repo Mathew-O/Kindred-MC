@@ -121,6 +121,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
 
+## The hitches in the shipped configuration, and code against container (M-06k) — 22 November 2026 (`claude/m06k-shipped-read-1122`)
+
+- [M-06k: the hitches in the shipped configuration](evidence/M-06k.md#the-hitches-in-the-shipped-configuration-and-code-against-container-2026-11-22-claudem06k-shipped-read-1122): main `8d4d30c2`, 8 players, bases off, sprint off, seed 101. Over 200 ms the swimmer's dry-ground search is 67.7% of the band; over 50 ms the navigator is 25.7% and the sight sweep 14.9%. Two controls with no sampler: main beats `783c9159` (18.9 against 17.7 ticks a second), so this container is the cause, not code since 2026-11-12. This container holds 20 ticks a second on neither commit; the owner's host soak (M-06k7) is the measure. Two fixes proposed for the owner, no code.
+
 ## The rules on the eval engine (M-06k) — 12 November 2026 (`claude/m06k-rules-1112`)
 
 - [M-06k: the rules on the eval engine](evidence/M-06k.md#the-rules-on-the-eval-engine-2026-11-12-claudem06k-rules-1112).
