@@ -253,6 +253,10 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
         // The body it started the fight in: a native player respawns within the tick it dies, as another entity.
         net.minecraft.server.network.ServerPlayerEntity[] body = new net.minecraft.server.network.ServerPlayerEntity[1];
         StringBuilder trail = new StringBuilder();
+        // Each change of its goal step, with its health, hunger and the zombies' distances then (F-22c104a): CI's second-zombie
+        // failures came on a step this test did not name, so its failure names them.
+        StringBuilder steps = new StringBuilder();
+        String[] lastStep = {""};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
@@ -303,6 +307,15 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                     }
                     var bot = f.runtime.panelBots(Actor.console()).getFirst();
                     String progress = bot.goalProgress();
+                    String step = progress + " / " + bot.task();
+                    if (!died[0] && !step.equals(lastStep[0])) { // Its first life only: a respawned body starts afresh.
+                        lastStep[0] = step;
+                        steps.append("@").append(context.getTick() - started[0]).append(' ').append(progress.replaceFirst("^Wood: ", ""))
+                                .append(" [").append(bot.task()).append(String.format("; health %.1f, food %d", player.getHealth(),
+                                        player.getHungerManager().getFoodLevel()));
+                        for (var z : zombies) if (z != null) steps.append(z.isAlive() ? String.format(", a zombie %.1f", Math.sqrt(z.squaredDistanceTo(player))) : ", a zombie dead");
+                        steps.append("], ");
+                    }
                     String kind = progress.contains("Back off") ? "back off" : progress.contains("Hole up") ? "hole up" : "";
                     if (!kind.isEmpty() && !kind.equals(last[0])) {
                         if (!last[0].isEmpty()) switches[0]++;
@@ -333,10 +346,10 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     var player = f.player();
-                    KindredMod.LOGGER.info("Back-off flip ({}): gainless back-offs {}, switches {}, killed {}, a sword fight {}; {}", name,
-                            gainless[0], switches[0], died[0], swordFight[0], trail);
+                    KindredMod.LOGGER.info("Back-off flip ({}): gainless back-offs {}, switches {}, killed {}, a sword fight {}; {}; its steps {}", name,
+                            gainless[0], switches[0], died[0], swordFight[0], trail, steps);
                     context.assertTrue(gainless[0] <= 2, "At most two back-offs that left a mob in reach: " + gainless[0] + " (" + trail + ")");
-                    context.assertTrue(!died[0] && player.isAlive(), "Alive, never killed (switches " + switches[0] + ": " + trail + ")");
+                    context.assertTrue(!died[0] && player.isAlive(), "Alive, never killed (switches " + switches[0] + ": " + trail + "; its steps " + steps + ")");
                     // With a zombie and a spider, holing up and staying holed up passes as well (the lead's guard): no sword
                     // fight is asked of it, only that it lives and holds its choice.
                     context.assertTrue(spider || swordFight[0], "It fought with its sword in hand (" + trail + ")");
