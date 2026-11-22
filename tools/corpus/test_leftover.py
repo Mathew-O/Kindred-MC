@@ -54,6 +54,9 @@ class Leftover(unittest.TestCase):
     def test_the_periodic_cost_line_naming_every_player_is_not_acting(self):
         # F-27a3a: its "webs by player" names every player the Record holds a web for (F-32d), long after their batches.
         self.assertEqual(0, self.count(BATCH.format(15), BREAK, BATCH.format(0), COST, BATCH.format(3), COST))
+        # M-06i4: the same line numbered by the world's day.
+        world = COST.replace("Kindred cost: day 1:", "Kindred cost: world day 3:")
+        self.assertEqual(0, self.count(BATCH.format(15), BREAK, BATCH.format(0), world, BATCH.format(3), world))
 
     def test_an_action_after_its_batch_still_counts_beside_the_cost_line(self):
         self.assertEqual(1, self.count(BATCH.format(15), BREAK, BATCH.format(0), COST, ACTS))

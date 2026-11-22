@@ -3184,7 +3184,7 @@ final class PlayerRuntime {
         chronicle.tick();
         if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
             checkLedgers();
-            logCost(tick / LEDGER_CHECK_TICKS + 1);
+            logCostNow();
         }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
@@ -16525,7 +16525,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
-        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
+        logCostNow(); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -19278,7 +19278,16 @@ final class PlayerRuntime {
         return id.toString().substring(0, 8);
     }
 
-    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    /**
+     * The cost line now, numbered by the world's day (the overworld's game time, {@link RecordGauge#worldDay}), so a
+     * restart goes on with the world's count, not a count of its own from 1 (M-06i4: after a restart at world time 61,286
+     * the line read "day 1" again). Still written every {@link #LEDGER_CHECK_TICKS} server ticks and at a stop.
+     */
+    CompletableFuture<String> logCostNow() {
+        return logCost(RecordGauge.worldDay(server.getOverworld().getTime()));
+    }
+
+    /** The cost line for world day {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
