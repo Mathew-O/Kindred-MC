@@ -55,6 +55,9 @@ public final class NativeFightLogGameTests implements FabricGameTest {
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> {
+                    // Its field, past its plot: kept, and put back as the test ends (F-22c75b).
+                    FixtureGround.keep(context, context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID - 12, 0, MID - 12)),
+                            context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID + 12, 8, MID + 12)));
                     for (int x = MID - 12; x <= MID + 12; x++) for (int z = MID - 12; z <= MID + 12; z++) {
                         context.setBlockState(x, 0, z, Blocks.STONE);
                         context.setBlockState(x, 1, z, Blocks.STONE);
