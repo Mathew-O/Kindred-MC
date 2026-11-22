@@ -33,7 +33,20 @@ final class FixtureGround {
      */
     static final String WIDE = "kindred_gametest:wide", FIELD = "kindred_gametest:field";
 
-    private record Kept(net.minecraft.server.world.ServerWorld world, BlockPos min, BlockPos max, BlockState[] states) { }
+    private record Kept(net.minecraft.server.world.ServerWorld world, BlockPos min, BlockPos max, BlockState[] states, Shell shell) { }
+
+    /**
+     * How far round a kept box, each way, its fluid shell runs (F-22c111): still water spreads seven blocks on flat
+     * ground, so a fluid that ran out past a box's edge, or fell from it and spread where it landed, lies within eight.
+     */
+    static final int SHELL = 8;
+
+    /**
+     * The fluid round a kept box as it was when kept (F-22c111): from {@link #SHELL} out each way and from the box's top
+     * down to the world's floor, the cells outside the box that held a fluid, and the chunks loaded then (a chunk not
+     * loaded is not known, and nothing in it is cleared).
+     */
+    private record Shell(BlockPos min, BlockPos max, java.util.Set<Long> fluid, java.util.Set<Long> chunks) { }
 
     /** Every box each test keeps, in the order kept: a test that keeps two (a pad and a floor) gets both back. */
     private static final Map<TestContext, java.util.List<Kept>> KEPT = Collections.synchronizedMap(new IdentityHashMap<>());
@@ -108,7 +121,8 @@ final class FixtureGround {
         }
         // A second box kept by the same test once replaced the first, which was then never put back (F-22c75b).
         var boxes = KEPT.computeIfAbsent(context, c -> Collections.synchronizedList(new java.util.ArrayList<>()));
-        boxes.add(new Kept(world, min.toImmutable(), max.toImmutable(), states));
+        var shellNow = shell(world, min, max);
+        boxes.add(new Kept(world, min.toImmutable(), max.toImmutable(), states, shellNow));
         held(world, min, max, true);
         if (world == context.getWorld()) FixtureBounds.kept(stateOf(context), min, max);
         else FixtureBounds.kept(stateOf(context), world.getRegistryKey(), min, max);
@@ -178,6 +192,10 @@ final class FixtureGround {
                 }
                 world.setBlockState(at, state, Block.NOTIFY_LISTENERS | Block.FORCE_STATE | Block.SKIP_DROPS);
             }
+            // The fluid that ran out of the box while the test ran, cleared (F-22c111): put back without updates, the box
+            // never tells the fluid outside it to drain, and the open-water test's sea, run out past its edge and fallen
+            // below it, lay on BuildBattle's walkway in the next batch ("Nobody voted", CI runs 44918551355, 43782657628).
+            clearSpilled(context, self, boxes, kept, others, othersKept);
             var box = new Box(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 8, max.getZ() + 1);
             for (Entity entity : world.getEntitiesByClass(Entity.class, box, e -> !(e instanceof PlayerEntity))) {
                 if (within(others, entity.getX(), entity.getY(), entity.getZ())) spared++;
@@ -193,6 +211,94 @@ final class FixtureGround {
         if (leftKept > 0 || sparedKept > 0) {
             KindredMod.LOGGER.info("{}: its ground put back but {} blocks and {} entities within ground a live test keeps left as they are",
                     self == null ? "A fixture" : self.getTemplatePath(), leftKept, sparedKept);
+        }
+    }
+
+    /** The shell round a box kept from {@code min} to {@code max}: its fluid cells now, outside the box. */
+    private static Shell shell(net.minecraft.server.world.ServerWorld world, BlockPos min, BlockPos max) {
+        var smin = new BlockPos(min.getX() - SHELL, world.getBottomY(), min.getZ() - SHELL);
+        var smax = new BlockPos(max.getX() + SHELL, max.getY(), max.getZ() + SHELL);
+        var fluid = new java.util.HashSet<Long>();
+        var chunks = new java.util.HashSet<Long>();
+        fluidIn(world, smin, smax, min, max, null, chunks, fluid::add);
+        return new Shell(smin, smax, fluid, chunks);
+    }
+
+    /**
+     * Every cell from {@code smin} to {@code smax}, but those from {@code min} to {@code max}, holding a fluid, given to
+     * {@code out}; in loaded chunks only (those in {@code known}, when given; each loaded one added to {@code loaded},
+     * when given). A section with no fluid in its palette is passed over without reading its cells.
+     */
+    private static void fluidIn(net.minecraft.server.world.ServerWorld world, BlockPos smin, BlockPos smax, BlockPos min, BlockPos max,
+                                java.util.Set<Long> known, java.util.Set<Long> loaded, java.util.function.LongConsumer out) {
+        var manager = world.getChunkManager();
+        for (int cx = smin.getX() >> 4; cx <= smax.getX() >> 4; cx++) for (int cz = smin.getZ() >> 4; cz <= smax.getZ() >> 4; cz++) {
+            long key = net.minecraft.util.math.ChunkPos.toLong(cx, cz);
+            if (known != null && !known.contains(key)) continue;
+            if (!manager.isChunkLoaded(cx, cz)) continue;
+            var chunk = manager.getWorldChunk(cx, cz);
+            if (chunk == null) continue;
+            if (loaded != null) loaded.add(key);
+            for (int sy = smin.getY() >> 4; sy <= smax.getY() >> 4; sy++) {
+                int index = world.sectionCoordToIndex(sy);
+                if (index < 0 || index >= chunk.getSectionArray().length) continue;
+                var section = chunk.getSection(index);
+                if (section.isEmpty() || !section.hasAny(state -> !state.getFluidState().isEmpty())) continue;
+                int x0 = Math.max(smin.getX(), cx << 4), x1 = Math.min(smax.getX(), (cx << 4) + 15);
+                int z0 = Math.max(smin.getZ(), cz << 4), z1 = Math.min(smax.getZ(), (cz << 4) + 15);
+                int y0 = Math.max(smin.getY(), sy << 4), y1 = Math.min(smax.getY(), (sy << 4) + 15);
+                for (int x = x0; x <= x1; x++) for (int y = y0; y <= y1; y++) for (int z = z0; z <= z1; z++) {
+                    if (x >= min.getX() && x <= max.getX() && y >= min.getY() && y <= max.getY() && z >= min.getZ() && z <= max.getZ()) continue;
+                    if (section.getFluidState(x & 15, y & 15, z & 15).isEmpty()) continue;
+                    out.accept(BlockPos.asLong(x, y, z));
+                }
+            }
+        }
+    }
+
+    /**
+     * The fluid in {@code kept}'s shell that was not there when it was kept, cleared without updates, but in another
+     * test's plot, in ground a live test keeps, or in another box this test keeps (put back already). Logged, so a
+     * fixture that lets its fluid out is named in every run it does; its test's pass or failure is not touched.
+     */
+    private static void clearSpilled(TestContext context, net.minecraft.test.GameTestState self, java.util.List<Kept> boxes, Kept kept,
+                                     java.util.List<Box> others, java.util.List<Box> othersKept) {
+        var shell = kept.shell();
+        if (shell == null) return;
+        var world = kept.world();
+        long start = System.nanoTime();
+        var spilled = new java.util.ArrayList<Long>();
+        fluidIn(world, shell.min(), shell.max(), kept.min(), kept.max(), shell.chunks(), null, pos -> {
+            if (!shell.fluid().contains(pos)) spilled.add(pos);
+        });
+        int cleared = 0;
+        BlockPos first = null;
+        var at = new BlockPos.Mutable();
+        for (long pos : spilled) {
+            at.set(pos);
+            double x = at.getX() + 0.5, y = at.getY() + 0.5, z = at.getZ() + 0.5;
+            if (within(others, x, y, z) || within(othersKept, x, y, z)) continue;
+            boolean ours = false;
+            for (var box : boxes) {
+                if (box != kept && box.world() == world && at.getX() >= box.min().getX() && at.getX() <= box.max().getX()
+                        && at.getY() >= box.min().getY() && at.getY() <= box.max().getY() && at.getZ() >= box.min().getZ() && at.getZ() <= box.max().getZ()) {
+                    ours = true;
+                    break;
+                }
+            }
+            if (ours) continue;
+            var state = world.getBlockState(at);
+            BlockState dry = state.contains(net.minecraft.state.property.Properties.WATERLOGGED)
+                    ? state.with(net.minecraft.state.property.Properties.WATERLOGGED, false)
+                    : net.minecraft.block.Blocks.AIR.getDefaultState();
+            world.setBlockState(at, dry, Block.NOTIFY_LISTENERS | Block.FORCE_STATE | Block.SKIP_DROPS);
+            if (first == null) first = at.toImmutable();
+            cleared++;
+        }
+        if (cleared > 0) {
+            KindredMod.LOGGER.info("{}: {} fluid cells outside its kept ground cleared, the first at {} (its box {} to {}; {} ms)",
+                    self == null ? "A fixture" : self.getTemplatePath(), cleared, first.toShortString(), kept.min().toShortString(),
+                    kept.max().toShortString(), (System.nanoTime() - start) / 1_000_000);
         }
     }
 

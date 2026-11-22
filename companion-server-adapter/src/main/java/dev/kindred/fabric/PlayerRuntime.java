@@ -10110,9 +10110,15 @@ final class PlayerRuntime {
         var player = body.entity();
         UUID self = entry.data.id();
         for (var task : teamCoordinator.listProjects().stream().flatMap(p -> p.tasks().values().stream()).toList()) {
-            if (HandOvers.givenBy(task, self) && (task.state() == SharedTask.TaskState.OPEN || task.state() == SharedTask.TaskState.REVOKED)) {
-                teamCoordinator.claimTask(task.id(), self, server.getTicks(), HAND_OVER_LEASE);
+            if (!HandOvers.givenBy(task, self)) continue;
+            boolean open = task.state() == SharedTask.TaskState.OPEN || task.state() == SharedTask.TaskState.REVOKED;
+            if (!open) {
+                entry.handOversLetGo.remove(task.id());
+                continue;
             }
+            // One it let go itself waits until something changes (E-40a1a); one let go by a stop or a lapsed hold does not.
+            if (stillLetGo(entry, task, player)) continue;
+            teamCoordinator.claimTask(task.id(), self, server.getTicks(), HAND_OVER_LEASE);
         }
         for (var material : SHARED_FINDS) {
             String item = HandOvers.materialItem(material);
@@ -10135,6 +10141,9 @@ final class PlayerRuntime {
                 members.add(member(other.data.id(), other.data.displayName(), mate));
             }
             var grants = members.size() < 2 ? List.<ShareOut.Grant>of() : ShareOut.share(members, material, free);
+            // Not the piece it let go to that teammate, which waits for something to change (E-40a1a).
+            var leftOut = grants.stream().filter(g -> letGoTo(entry, g.to(), HandOvers.pieceItem(g.slot(), g.material()))).toList();
+            if (!leftOut.isEmpty()) grants = grants.stream().filter(g -> !leftOut.contains(g)).toList();
             KindredMod.LOGGER.info("{} found {}: holds {}, {} unpromised; {} teammates by; share-out {}", entry.data.displayName(), item, held, free,
                     members.size() - 1, grants);
             if (grants.stream().allMatch(g -> g.to().equals(self))) continue; // Nobody else is better for it: its own to use.
@@ -10258,6 +10267,7 @@ final class PlayerRuntime {
                     entry.handOverFailures = 0;
                     entry.handOverLastDistance = Double.MAX_VALUE;
                     teamCoordinator.revokeTask(task.id(), "Its teammate stayed out of the team's range");
+                    letGo(entry, task);
                     KindredMod.LOGGER.info("{} lets go of handing over {}: {} stayed {} blocks off", entry.data.displayName(), task.title(),
                             mateEntry.data.displayName(), farOff);
                 } else {
@@ -10328,9 +10338,74 @@ final class PlayerRuntime {
             entry.handOverFailures = 0;
             entry.handOverLastDistance = Double.MAX_VALUE;
             teamCoordinator.revokeTask(taskId, "Six steps of the hand-over failed");
+            letGo(entry, task);
             KindredMod.LOGGER.info("{} lets go of handing over {}: six of its steps failed", entry.data.displayName(), task.title());
             entry.handOversWaitUntil = server.getTicks() + 1200;
         }
+    }
+
+    /**
+     * What stood when it let a hand-over go itself (E-40a1a): how far its teammate was (MAX_VALUE out of its world), the
+     * teammate's kit, and how much of the material it held. Until one of these changes the hand-over waits, and a find
+     * grants that teammate no piece like it: in step 8, 505 on Echo let go of an iron sword it had made for Sol 24 times,
+     * each new find of iron enough to promise it again and walk for Sol again, six blocked walks at a time.
+     */
+    private record LetGo(UUID to, String piece, double distance, Map<ShareOut.Slot, ShareOut.Material> kit, int held) { }
+
+    /** How many blocks nearer its teammate must come than when it let go, if not back in the team's range or within reach. */
+    static final double LET_GO_NEARER = 8;
+
+    /** Records what stood as it let {@code task} go itself. */
+    private void letGo(Entry entry, SharedTask task) {
+        var piece = HandOvers.Piece.of(task);
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        if (piece == null || self == null) return;
+        var mate = mateOf(piece.to());
+        double away = mate != null && mate.getWorld() == self.getWorld() ? self.distanceTo(mate) : Double.MAX_VALUE;
+        var kit = mate != null ? member(piece.to(), piece.to().toString(), mate).kit() : Map.<ShareOut.Slot, ShareOut.Material>of();
+        int held = self.getInventory().count(Registries.ITEM.get(net.minecraft.util.Identifier.of(piece.material())));
+        entry.handOversLetGo.put(task.id(), new LetGo(piece.to(), piece.piece(), away, kit, held));
+    }
+
+    /** The body in the world of the player {@code id}, connected and alive, or null. */
+    private ServerPlayerEntity mateOf(UUID id) {
+        Entry mateEntry = entries.get(id);
+        var mate = mateEntry != null && mateEntry.nativeBody != null && mateEntry.nativeBody.connected() ? mateEntry.nativeBody.entity() : null;
+        return mate != null && mate.isAlive() ? mate : null;
+    }
+
+    /** Whether it let a hand-over of {@code piece} to {@code to} go itself, and it still waits. */
+    private static boolean letGoTo(Entry entry, UUID to, String piece) {
+        return entry.handOversLetGo.values().stream().anyMatch(l -> l.to().equals(to) && l.piece().equals(piece));
+    }
+
+    /**
+     * Whether a hand-over it let go itself still waits (E-40a1a). It is taken up again once its teammate comes nearer
+     * (back in the team's range, {@value #LET_GO_NEARER} blocks nearer, or within reach and in sight), once the teammate's
+     * kit changes, or, the piece not yet made, once it holds more of the material; the record is then dropped.
+     */
+    private boolean stillLetGo(Entry entry, SharedTask task, ServerPlayerEntity self) {
+        var was = entry.handOversLetGo.get(task.id());
+        if (was == null) return false;
+        var mate = mateOf(was.to());
+        String why = null;
+        Item made = Registries.ITEM.get(net.minecraft.util.Identifier.of(was.piece()));
+        var piece = HandOvers.Piece.of(task);
+        int held = self.getInventory().count(Registries.ITEM.get(net.minecraft.util.Identifier.of(piece.material())));
+        if (self.getInventory().count(made) == 0 && held > was.held()) why = "it holds more " + piece.material();
+        if (why == null && mate != null && mate.getWorld() == self.getWorld()) {
+            double away = self.distanceTo(mate);
+            if (away <= TEAM_RANGE && (was.distance() > TEAM_RANGE || away <= was.distance() - LET_GO_NEARER || (away <= 3 && self.canSee(mate)))) {
+                why = "its teammate " + Math.round(away) + " blocks off, " + (was.distance() == Double.MAX_VALUE ? "out of its world" : Math.round(was.distance()))
+                        + " when it let go";
+            } else if (!member(was.to(), was.to().toString(), mate).kit().equals(was.kit())) {
+                why = "its teammate's kit changed";
+            }
+        }
+        if (why == null) return true;
+        entry.handOversLetGo.remove(task.id());
+        KindredMod.LOGGER.info("{} takes up handing over {} again: {}", entry.data.displayName(), task.title(), why);
+        return false;
     }
 
     // ------------------------------------------------------------------ raids in a match (E-44)
@@ -19649,6 +19724,8 @@ final class PlayerRuntime {
         private int handOverFailures;
         /** How far its teammate was when its last walk to it ended, short of tossing reach (E-40a1). */
         private double handOverLastDistance = Double.MAX_VALUE;
+        /** The hand-overs it let go itself, and what stood then: each waits until something changes (E-40a1a). */
+        private final Map<TaskId, LetGo> handOversLetGo = new java.util.HashMap<>();
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;
