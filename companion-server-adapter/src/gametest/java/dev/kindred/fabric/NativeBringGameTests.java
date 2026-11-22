@@ -199,6 +199,18 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * As the last, the librarian held in its boat where CI had it on #429 (run 44936497582, F-22c98c): the boat's middle
+     * 2.678 from the cart's along the line and 0.243 off it. Pushed from there, the cart's last move before it touched the
+     * boat ended 0.207 short, past the fifth of a block a cart takes up within, so it stopped dead against the boat, and
+     * three pushes from the same spot did the same: the bring was given up. Staged (the boat set there while the cart stands
+     * for each push); the bring carries on to the cell and all of the line comes home.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringShortOfBoat", tickLimit = 14000)
+    public void aCartStoppedShortOfTheHeldBoatIsPushedSoItTakesItUp(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 8);
+    }
+
+    /**
      * As the strolling bring, staged (F-22c64): from the first moment its front's rail is up with Hal out of the front,
      * until the job block is in, the librarian set against the front's open side and pressing out at a walk. It is never
      * out of its cell, and the job block goes in across the front.
@@ -444,6 +456,10 @@ public final class NativeBringGameTests implements FabricGameTest {
         java.util.Set<BlockPos> heldWhenUp = new java.util.HashSet<>();
         java.util.Set<java.util.UUID> movedDrops = new java.util.HashSet<>();
         String[] stagedDrop = {null};
+        // F-22c98c: the held boat set for this push yet; the cart's speed the tick before; how many pushes were so staged.
+        boolean[] shortStaged = {false};
+        double[] shortSpeed = {0};
+        int[] shortSets = {0};
         long[] pressFrom = {-1};
         // #318: Hal staged up on the cell's bed, the tick and front; Hal shut in its cell by the job block, in any bring.
         long[] bedFrom = {-1};
@@ -660,6 +676,41 @@ public final class NativeBringGameTests implements FabricGameTest {
                         librarian[0].removeStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOWNESS);
                         KindredMod.LOGGER.info("Bring: the librarian sits in the boat behind its lectern, at {}",
                                 librarian[0].getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                    }
+                    // Staged (F-22c98c), each push fast enough to miss: CI on #429 (run 44936497582) had the cart's last move
+                    // before it touched the librarian's boat begin 0.207 short of it, more than the fifth of a block a cart
+                    // takes up within, at about 0.23 a tick, so it closed the gap into touching and stopped dead, three pushes
+                    // alike, and the bring was given up ("The cart wouldn't take the librarian up"). Here, the first tick of a
+                    // push the cart slows, Hal's push done, it moves its speed each tick, that falling 0.01 a tick: if its next
+                    // move but one is longer than a fifth, the boat, librarian and all, is set on the line so that move begins
+                    // midway between a fifth and its length short of touching, and 0.243 off the line as CI had it. A push
+                    // slower than that meets the boat inside the fifth whatever the gap. Never anything given.
+                    if (onBed == 8 && String.valueOf(f.runtime.bringNote(f.id)).contains("[PUSH]")
+                            && librarian[0].getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat && !boat.hasVehicle()) {
+                        var carts = context.getWorld().getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class,
+                                boat.getBoundingBox().expand(8), c -> c.isAlive() && !c.hasPassengers());
+                        if (!carts.isEmpty()) {
+                            var cart = carts.getFirst();
+                            double speed = cart.getVelocity().horizontalLength();
+                            double dx = boat.getX() - cart.getX(), dz = boat.getZ() - cart.getZ();
+                            boolean alongX = Math.abs(dx) >= Math.abs(dz);
+                            double toward = alongX ? Math.signum(dx) * cart.getVelocity().x : Math.signum(dz) * cart.getVelocity().z;
+                            if (speed <= 0.01) {
+                                shortStaged[0] = false;
+                            } else if (!shortStaged[0] && toward > 0 && speed < shortSpeed[0] && speed - 0.01 > 0.2) {
+                                shortStaged[0] = true;
+                                double gap = (0.2 + speed - 0.01) / 2;
+                                double along = speed + gap + 0.6875 + 0.49;
+                                double x = alongX ? cart.getX() + Math.signum(dx) * along : cart.getX() - 0.243;
+                                double z = alongX ? cart.getZ() - 0.243 : cart.getZ() + Math.signum(dz) * along;
+                                boat.refreshPositionAndAngles(x, boat.getY(), z, boat.getYaw(), 0);
+                                boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                shortSets[0]++;
+                                KindredMod.LOGGER.info("Bring: the held boat set for the push at {} a tick: its last move to begin {} short", String.format("%.3f", speed),
+                                        String.format("%.3f", gap));
+                            }
+                            shortSpeed[0] = speed;
+                        }
                     }
                     // Staged (F-22c98b), each push: the first tick the cart pushed at the librarian held in its boat rolls, the
                     // boat, librarian and all, set three blocks off the line, crosswise, as one that strolls off might be: the
@@ -964,6 +1015,15 @@ public final class NativeBringGameTests implements FabricGameTest {
                       return;
                   }
                   try {
+                    // F-22c98c: its pushes met the boat at the gap CI's did, and the first bring was never given up for it
+                    // (a second bring begun after a give-up got there with a push that never slowed, so the scene's end alone
+                    // could not tell).
+                    if (onBed == 8) {
+                        context.assertTrue(shortSets[0] > 0, "A push met the held boat as CI's did");
+                        var gaveUp = f.runtime.said(f.id).stream().filter(line -> line.contains("wouldn't take")).toList();
+                        context.assertTrue(gaveUp.isEmpty(), "The bring never given up for a cart that would not take the librarian up: " + gaveUp
+                                + "; pushes staged " + shortSets[0]);
+                    }
                     context.assertTrue(offLine[0] == null, "Kept on the rails, never rolled off the line's start: " + offLine[0]);
                     context.assertTrue(inFrontLoose[0] == null, "The librarian kept out of its front until the job block is in: " + inFrontLoose[0]);
                     context.assertTrue(boatOverFront[0] == null, "No boat over a cell's front as its rail comes up: " + boatOverFront[0]);
