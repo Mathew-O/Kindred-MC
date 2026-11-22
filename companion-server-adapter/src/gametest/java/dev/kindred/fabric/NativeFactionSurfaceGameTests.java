@@ -56,6 +56,58 @@ public final class NativeFactionSurfaceGameTests implements FabricGameTest {
         run(context, true, false, false, true);
     }
 
+    /**
+     * Begun under an overhang (its east side open, rock over it), it walks by its own choice {@value #CLEAR} blocks south
+     * along a ledge into the open sky, less than the run's {@value FactionsPlayer#STREAK_MOVED}: the refusals it waited out
+     * were of places seen from where it stood, and the wait ends (F-35i2a). The height map ended it by reading the walk's end
+     * as coming up; read by the sky's light, it was at the surface all along and the wait held.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionSurfaceWalkedClear", tickLimit = 7000)
+    public void walksWaitingUnderAnOverhangTheWaitEndsWhenItsOwnWalkCarriesItClear(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 6900);
+        var server = context.getWorld().getServer();
+        var world = context.getWorld();
+        ServerPlayerEntity[] ben = new ServerPlayerEntity[1];
+        BlockPos[] feet = new BlockPos[1];
+        long[] done = {-1};
+        String[] wrong = {null};
+        boolean[] ended = {false};
+        FixtureGround.whenDone(context, () -> { if (ben[0] != null && server.getPlayerManager().getPlayer(ben[0].getUuid()) != null) server.getPlayerManager().remove(ben[0]); });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> feet[0] = staged(context, f, ben, true, false))
+                .createAndAdd(() -> context.assertTrue(f.runtime.factionPausedForTest(f.id), "Its faction walks waiting after a run of refusals: "
+                        + f.runtime.factionBlockedForTest(f.id)[0] + " refused"))
+                .createAndAdd(() -> {
+                    // A ledge out of its open side and south, in the open sky, its end CLEAR blocks from where it stood.
+                    for (int dz = 2; dz <= CLEAR + 1; dz++) world.setBlockState(feet[0].add(1, -1, dz), Blocks.BEDROCK.getDefaultState());
+                    FixtureGround.keep(context, feet[0].add(0, -1, 0), feet[0].add(2, 3, CLEAR + 2));
+                    context.assertTrue(f.runtime.ownWalkForTest(f.id, feet[0].add(1, 0, CLEAR), 0.5) == 1, "Its walk south begun");
+                })
+                .createAndAdd(() -> {
+                    var at = f.player().getBlockPos();
+                    context.assertTrue(at.equals(feet[0].add(1, 0, CLEAR)) && f.player().isOnGround() && !f.runtime.nativeStatusLine(f.id).contains("runner=RUNNING"),
+                            "Its walk done: at " + at.toShortString() + ", " + f.runtime.nativeStatusLine(f.id));
+                    done[0] = server.getTicks();
+                })
+                .createAndAdd(() -> {
+                    long since = server.getTicks() - done[0];
+                    boolean paused = f.runtime.factionPausedForTest(f.id);
+                    if (!paused && since <= WITHIN) ended[0] = true;
+                    if (!ended[0] && since > WITHIN && wrong[0] == null) wrong[0] = "still waiting " + since + " ticks after its walk, "
+                            + Math.round(Math.sqrt(feet[0].getSquaredDistance(f.player().getBlockPos()))) + " blocks from where it waited";
+                    context.assertTrue(wrong[0] == null, "Its wait ended within " + WITHIN + " ticks of its walk: " + wrong[0]);
+                    context.assertTrue(ended[0], "The wait ended");
+                })
+                .completeIfSuccessful();
+    }
+
+    /** How far its own walk carries it in {@link #walksWaitingUnderAnOverhangTheWaitEndsWhenItsOwnWalkCarriesItClear}. */
+    private static final int CLEAR = 21;
+
     private static void run(TestContext context, boolean openSide, boolean thenOpenSide, boolean thenOffRoof) {
         run(context, openSide, thenOpenSide, thenOffRoof, false);
     }

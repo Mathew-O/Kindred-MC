@@ -8930,6 +8930,9 @@ final class PlayerRuntime {
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
                 } else if (state == SkillRunner.State.COMPLETED) entry.factionPlay.walked(factionMove.target());
             }
+            // Any walk of its own completed: one that carried it clear of where its faction walks began waiting ends the wait (F-35i2a).
+            if (state == SkillRunner.State.COMPLETED && "native_goto".equals(entry.skillId) && entry.nativeBody != null && entry.nativeBody.connected())
+                entry.factionPlay.walkedTo(entry.nativeBody.entity().getBlockPos());
             // A leaf broken in its sight line along a faction leg (M-06i2c5): one of its breaks toward the target; refused,
             // the leaf is not asked again; cancelled, nothing is counted. Either way it decides again from where it stands.
             var leafPlay = entry.factionPlay;

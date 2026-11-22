@@ -88,13 +88,29 @@ final class FactionsPlayer {
     boolean paused(long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
         if (streakFrom != null && at != null && (streakFrom.getSquaredDistance(at) > (double) STREAK_MOVED * STREAK_MOVED
                 || atSurface && !streakAtSurface)) {
-            streak = 0;
-            pauses = 0;
-            pausedUntil = Long.MIN_VALUE / 2;
-            streakFrom = null;
+            endRun();
             return false;
         }
         return pausedUntil > tick;
+    }
+
+    /**
+     * Its own walk, any it chose, completed at {@code at} (F-35i2a): once its walks wait, a walk of its own that carried it
+     * more than {@value #WALKED_CLEAR} blocks from where the run of refusals began ends the wait. The refusals it waited
+     * out were of moves asked from there; from where it has walked to by its own choice they are stale. On Factions seed
+     * 109 with bases on, Kindred's walks while it waited at the spawn ended 0 to 1 block from where it waited, and the walk
+     * that took it out ended 20 blocks off (F-35i2's seed comparison).
+     */
+    void walkedTo(net.minecraft.util.math.BlockPos at) {
+        if (streakFrom != null && pauses > 0 && streakFrom.getSquaredDistance(at) > (double) WALKED_CLEAR * WALKED_CLEAR) endRun();
+    }
+
+    /** The run of refusals forgotten, and the wait with it. */
+    private void endRun() {
+        streak = 0;
+        pauses = 0;
+        pausedUntil = Long.MIN_VALUE / 2;
+        streakFrom = null;
     }
 
     /**
@@ -134,6 +150,8 @@ final class FactionsPlayer {
 
     /** Places set aside in a row, with no walk between, before every faction walk waits; and how far a move ends the wait early. */
     static final int STREAK = 2, STREAK_MOVED = 32;
+    /** How far a completed walk of its own carries it from where the run began before the wait ends (F-35i2a). */
+    static final int WALKED_CLEAR = 16;
     /** Every faction walk's first wait, in ticks (half a minute); it doubles with each, to a game day at most. */
     static final long PAUSE = 600;
     private int streak, pauses;
