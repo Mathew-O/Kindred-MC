@@ -237,6 +237,7 @@
       "dev.kindred.fabric.NativeAggressionGameTests",
       "dev.kindred.fabric.NativeTradeGameTests",
       "dev.kindred.fabric.NativeRerollGameTests",
+      "dev.kindred.fabric.NativeRerollStepOffGameTests",
       "dev.kindred.fabric.NativeTradingHallGameTests",
       "dev.kindred.fabric.NativeBringGameTests",
       "dev.kindred.fabric.NativeCartGameTests",
