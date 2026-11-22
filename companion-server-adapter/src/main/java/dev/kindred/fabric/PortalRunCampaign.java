@@ -7280,7 +7280,14 @@ final class PortalRunCampaign {
     void bedTaskEnded(Task task, boolean completed) {
         if (task == null) return;
         if (WAKE_BED_LABEL.equals(task.label())) wakeBedAt = null;
-        if (OPEN_BED_WAY_LABEL.equals(task.label()) && completed) bedOpenings++;
+        if (OPEN_BED_WAY_LABEL.equals(task.label())) {
+            if (completed) bedOpenings++;
+            // The doorway's other block is pending until its own break has ended, so that no take-up is offered through a
+            // gap one high in the meantime (the walled fixture, 1 of 3 on main 8d4d30c2 merged in: its bed broken from
+            // outside, the drop out of reach).
+            BlockPos at = position(task.args());
+            if (!completed || at != null && at.equals(bedDoorway)) bedDoorway = null;
+        }
         // A morning take-up, or a block opened toward it, that did not go: set aside with the walk (F-25c4di1g). Each time it
         // was offered again on the next tick, refused again: 10,958 times in ten game minutes on iteration 26's 20261030 Echo.
         if ((MORNING_BED_LABEL.equals(task.label()) || OPEN_BED_WAY_LABEL.equals(task.label())) && !completed && carriedBedAt != null) {
@@ -7647,15 +7654,18 @@ final class PortalRunCampaign {
     /**
      * The doorway's other block, once the first is broken (F-25c4di1g): the other half of the same two-high cell, not a
      * block {@code miningRefusal} named, beside the bed's room and plain ground, by day, within {@value #BED_OPENINGS} a
-     * morning, under all of the break's rules; asked for once, refused, the chore is set aside. With only the named block
-     * open it saw its bed and broke it, but could not walk in after the drop through a gap one high.
+     * morning, under all of the break's rules; refused, the chore is set aside. Pending until its own break has ended, so
+     * that the take-up waits for it: with only the named block open it saw its bed and broke it, but could not walk in
+     * after the drop through a gap one high.
      */
     private Optional<Task> openDoorway(ServerPlayerEntity player) {
         if (bedDoorway == null || bedOpenings == 0) return Optional.empty();
         var world = player.getServerWorld();
         BlockPos block = bedDoorway;
-        bedDoorway = null;
-        if (night(world) || bedOpenings >= BED_OPENINGS || world.getBlockState(block).isAir()) return Optional.empty();
+        if (night(world) || bedOpenings >= BED_OPENINGS || world.getBlockState(block).isAir()) {
+            bedDoorway = null;
+            return Optional.empty();
+        }
         if (bedOpeningsSaid.add(block)) {
             KindredMod.LOGGER.info("{} opens the way to its bed at {}: {} at {}", bedOwner, carriedBedAt.toShortString(),
                     net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(block).getBlock()).getPath(), block.toShortString());
