@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 9543, "paid": 9543, "lapsed": 390, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 128.2, "snapshotMicrosMax": 6824.7, "tagMicrosMean": 127.7, "tagMicrosMax": 5777.3, "bySource": {"container.take:furnace": 68, "pickup:class_1536.method_6957": 37, "pickup:class_2248.method_36993": 7124, "pickup:class_3222.method_7329": 1903, "pickup:class_52.method_331": 21, "screen:class_1707": 21, "screen:class_1714": 82, "screen:class_1723": 594, "use:item": 83}, "dropsByOrigin": {"class_1428.method_6007": 396, "class_1536.method_6957": 37, "class_1540.method_5773": 2, "class_2248.method_36993": 7209, "class_3222.method_7329": 164, "class_52.method_331": 52}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 18.67, "tickMsWorst": 1355.35, "tickMsWorstAt": 95777, "ticksOver50ms": 576, "ticksOver200ms": 10, "heapMbMax": 943, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 2320, "stone_tools": 4100, "iron_ingot": 8840, "iron_pickaxe": 89640, "obsidian": 92422, "portal_lit": 94070},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 26720, "x": 47, "y": 19, "z": 117, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1884,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 3,
+      "bridgeSeconds": 1.4
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2500, "stone_tools": 5100, "iron_ingot": 16420, "iron_pickaxe": 43020, "obsidian": 90994, "portal_lit": 95775},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2259,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2300, "stone_tools": 3960, "iron_ingot": 15000, "iron_pickaxe": 67340},
+      "deaths": [
+        {"tick": 6505, "cause": "Echo was blown up by Creeper", "x": 43, "y": 39, "z": 64, "light": 0, "timeOfDay": 6667, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: outmatched - Hole up: back into the passage", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 7841, "cause": "Echo was shot by Skeleton", "x": 51, "y": 27, "z": 28, "light": 0, "timeOfDay": 8003, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 59160, "x": -56, "y": 62, "z": 31, "attempt": 1}, {"tick": 128220, "x": -78, "y": -54, "z": -29, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4399,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
