@@ -716,6 +716,7 @@ final class PortalRunCampaign {
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
+        roomDropEnded(task, completed);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -3222,9 +3223,24 @@ final class PortalRunCampaign {
      * {@link #makeRoom(ServerPlayerEntity)} chooses it, with one slot wanted rather than three and stone kept down to
      * {@value #ROOM_STONE_KEEP}, enough for the stone crafts; the drop that came straight back is not thrown again, as
      * there. Nothing to drop, nothing offered: the plan's next step has its turn, and the craft is not offered meanwhile.
+     * Its drop is remembered as thrown once it is done, not when it is offered: offered and not yet dispatched, it was
+     * marked thrown, the next stack too on the next look, and with nothing left to offer the plan fell to its next step
+     * and climbed (the fixture, 1 run of 3 before this). The inventory-full drop keeps its own rule.
      */
     private Optional<Task> makeRoomFor(ServerPlayerEntity player, String item) {
         return makeRoom(player, 1, ROOM_STONE_KEEP, " to make room for " + item.replace('_', ' '));
+    }
+
+    /** The room drop offered last, and what it records as thrown once done (F-25c4dn): its task, its item, its record. */
+    private Task roomDrop;
+    private Item roomDropItem;
+    private long[] roomDropRecord;
+
+    /** A room drop done: thrown now, for the rule against throwing again what came straight back. */
+    private void roomDropEnded(Task task, boolean completed) {
+        if (task == null || !task.equals(roomDrop)) return;
+        if (completed) droppedSurplus.put(roomDropItem, new long[] {lastTick, roomDropRecord[1], roomDropRecord[2]});
+        roomDrop = null;
     }
 
     private Optional<Task> makeRoom(ServerPlayerEntity player, int wantFree, int stoneKeep, String forWhat) {
@@ -3256,9 +3272,16 @@ final class PortalRunCampaign {
         }
         if (bestSlot < 0) return Optional.empty();
         Item item = inventory.getStack(bestSlot).getItem();
-        droppedSurplus.put(item, new long[] {lastTick, feet.asLong(), ItemMoves.count(inventory, item) - bestCount});
-        return Optional.of(new Task("native_discard", Map.of("slot", String.valueOf(bestSlot), "count", String.valueOf(bestCount)),
-                "Drop surplus " + Registries.ITEM.getId(inventory.getStack(bestSlot).getItem()).getPath().replace('_', ' ') + forWhat));
+        long[] record = {lastTick, feet.asLong(), ItemMoves.count(inventory, item) - bestCount};
+        var drop = new Task("native_discard", Map.of("slot", String.valueOf(bestSlot), "count", String.valueOf(bestCount)),
+                "Drop surplus " + Registries.ITEM.getId(inventory.getStack(bestSlot).getItem()).getPath().replace('_', ' ') + forWhat);
+        if (forWhat.isEmpty()) droppedSurplus.put(item, record);
+        else {
+            roomDrop = drop;
+            roomDropItem = item;
+            roomDropRecord = record;
+        }
+        return Optional.of(drop);
     }
 
     private static boolean stoneLike(ItemStack stack) {
