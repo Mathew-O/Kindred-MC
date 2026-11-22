@@ -694,6 +694,7 @@ final class PortalRunCampaign {
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
+        refusedStep(task, completed, tick);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -2861,6 +2862,23 @@ final class PortalRunCampaign {
     private Optional<Task> climbToFindAnotherWay(NativePlayerBody body, long tick, String stageLabel) {
         var player = body.entity();
         if (!underground(player)) return Optional.empty();
+        // Hemmed in again after a while out of it: where this spell of it began.
+        if (hemmedFrom == null || lastTick - hemmedLast > HEMMED_GAP) {
+            hemmedFrom = lastFeet;
+            hemmedSaid = false;
+        }
+        hemmedLast = lastTick;
+        BlockPos target = refusedTarget != null && lastTick - refusedAt <= HEMMED_TARGET_AGE ? refusedTarget : null;
+        int ceiling = target != null ? target.getY() + 2 : hemmedFrom.getY() + HEMMED_CLIMB;
+        if (lastFeet.getY() >= ceiling) {
+            if (!hemmedSaid) {
+                hemmedSaid = true;
+                KindredMod.LOGGER.info("{} F-25c4bx1-marker: climb to find another way bounded at {}, {}", player.getName().getString(),
+                        lastFeet.toShortString(), target != null ? "the refused step's target " + target.toShortString() + " and two"
+                                : HEMMED_CLIMB + " above where it was hemmed in at " + hemmedFrom.toShortString());
+            }
+            return Optional.empty();
+        }
         Optional<Task> up = climb(body, "Climb to find another way");
         if (up.isPresent()) {
             paced(tick);
@@ -2868,6 +2886,36 @@ final class PortalRunCampaign {
             progress = stageLabel + ": no way on from here - " + up.get().label();
         }
         return up;
+    }
+
+    /**
+     * The bound on the climb to find another way (F-25c4bx1): with every step still refused it goes no higher than the
+     * refused step's own target and two, or, with none known, {@value #HEMMED_CLIMB} above where it was first hemmed in;
+     * then the fallback offers nothing, and the spell is the watchdog's and rescue's, as any other with no way on. A
+     * tightening: no timeout is changed, and rescue stays once a spell. In iteration 26, batch 2's 707 Sol climbed from its
+     * own cast site at y −49 to y 66, 120 blocks over its work, its two stuck spells at the top.
+     */
+    static final int HEMMED_CLIMB = 8;
+    /** A gap in being hemmed in, in ticks, after which the next time is a new spell of it. */
+    private static final long HEMMED_GAP = 200;
+    /** How recent a refused step must be, in ticks, for its target to bound the climb. */
+    private static final long HEMMED_TARGET_AGE = 1200;
+    /** Where this spell of being hemmed in began, and when the fallback last ran. */
+    private BlockPos hemmedFrom;
+    private long hemmedLast = Long.MIN_VALUE / 2;
+    /** The target of the last step refused, and when. */
+    private BlockPos refusedTarget;
+    private long refusedAt = Long.MIN_VALUE / 2;
+    /** Whether the gate's marker has been logged for this spell of being hemmed in. */
+    private boolean hemmedSaid;
+
+    /** A step that did not go: its target remembered for the bound on the climb (F-25c4bx1). */
+    private void refusedStep(Task task, boolean completed, long tick) {
+        if (task == null || completed) return;
+        BlockPos at = position(task.args());
+        if (at == null) return;
+        refusedTarget = at;
+        refusedAt = tick;
     }
 
     /**
