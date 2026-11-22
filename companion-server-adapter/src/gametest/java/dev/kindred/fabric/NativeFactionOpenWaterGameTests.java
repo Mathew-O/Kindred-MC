@@ -72,6 +72,63 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
     }
 
     /**
+     * Under a roof over its island, open at the sides (the sky's light at its feet, rock over its head), its places set
+     * aside as water it saw, every faction walk waiting; then its roof taken off (F-35i2's open-water case, staged). It
+     * was at the surface all along by what it saw, and the wait holds; the height map, its roof over it, had it below,
+     * and read the roof's going as its coming up, ending the wait. The run is begun by places set aside as water, none
+     * refused: {@code openWater}'s own record of where the run began, and at the surface or not.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionOpenWaterRoofed", tickLimit = 4400)
+    public void roofedItsPlacesSetAsideAsWaterTheWaitHoldsWhenItsRoofGoes(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 4300);
+        var server = context.getWorld().getServer();
+        var world = context.getWorld();
+        ServerPlayerEntity[] ben = new ServerPlayerEntity[1];
+        BlockPos[] isle = new BlockPos[1];
+        long[] opened = {-1};
+        String[] wrong = {null};
+        FixtureGround.whenDone(context, () -> { if (ben[0] != null && server.getPlayerManager().getPlayer(ben[0].getUuid()) != null) server.getPlayerManager().remove(ben[0]); });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    isle[0] = staged(context, f, false, false);
+                    // Its island's ground bedrock, so that its goal's work digs no pit in it (a pit changed where it stood and the
+                    // sky's light at its feet from run to run; two of three runs on main never came to the wait).
+                    for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) for (int y = -5; y <= -1; y++) world.setBlockState(isle[0].add(x, y, z), Blocks.BEDROCK.getDefaultState());
+                    // Its roof: stone over the whole island, six above it (over its trees' crowns), open at the sides.
+                    for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) world.setBlockState(isle[0].add(x, 6, z), Blocks.STONE.getDefaultState());
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.sweepsForTest(f.id) >= 1, "Looked all round: " + f.runtime.sweepsForTest(f.id));
+                    factions(context, f, ben, isle[0]);
+                })
+                .createAndAdd(() -> {
+                    int[] counts = f.runtime.factionOverWaterForTest(f.id);
+                    context.assertTrue(f.runtime.factionPausedForTest(f.id), "Its faction walks waiting after places set aside as water: " + counts[0]
+                            + " set aside, sky light at its feet " + world.getLightLevel(net.minecraft.world.LightType.SKY, f.player().getBlockPos()));
+                    context.assertTrue(counts[0] >= 2, "Two places set aside as water: " + counts[0]);
+                    context.assertTrue(f.runtime.factionBlockedForTest(f.id)[0] == 0, "None refused: the run begun by water set aside, "
+                            + f.runtime.factionBlockedForTest(f.id)[0] + " refused");
+                    for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) world.setBlockState(isle[0].add(x, 6, z), Blocks.AIR.getDefaultState());
+                    opened[0] = server.getTicks();
+                })
+                .createAndAdd(() -> {
+                    long since = server.getTicks() - opened[0];
+                    int light = world.getLightLevel(net.minecraft.world.LightType.SKY, f.player().getBlockPos());
+                    // Latched: a wait that ended and was built again by new set-asides must not pass later.
+                    if (!f.runtime.factionPausedForTest(f.id) && since <= 40 && wrong[0] == null) {
+                        wrong[0] = "ended " + since + " ticks on, at " + f.player().getBlockPos().toShortString() + ", the sky's light at its feet " + light;
+                    }
+                    context.assertTrue(wrong[0] == null, "Its wait held: " + wrong[0]);
+                    context.assertTrue(since >= 40, "Watched 40 ticks");
+                })
+                .completeIfSuccessful();
+    }
+
+    /**
      * The fewest intervals between its choices the paced test must check, those not following a faction walk that completed
      * (set from main's runs, F-22c83's evidence), so the check never passes with nothing to check.
      */
