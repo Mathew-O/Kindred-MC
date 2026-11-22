@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 7975, "paid": 7975, "lapsed": 272, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 100.0, "snapshotMicrosMax": 12417.2, "tagMicrosMean": 97.9, "tagMicrosMax": 8972.2, "bySource": {"container.take:furnace": 79, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 6416, "pickup:class_3222.method_7329": 936, "pickup:class_52.method_331": 65, "screen:class_1714": 79, "screen:class_1723": 548, "use:item": 123}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 8, "class_1540.method_5773": 5, "class_2248.method_36993": 6465, "class_3222.method_7329": 113, "class_52.method_331": 241}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.27, "tickMsWorst": 1444.61, "tickMsWorstAt": 112498, "ticksOver50ms": 584, "ticksOver200ms": 13, "heapMbMax": 969, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1240, "stone_tools": 5440, "iron_ingot": 16820, "iron_pickaxe": 25920, "obsidian": 108297, "portal_lit": 111386},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3987,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1860, "stone_tools": 3680, "iron_ingot": 9580, "iron_pickaxe": 46960, "obsidian": 94326, "portal_lit": 96810},
+      "deaths": [
+        {"tick": 21405, "cause": "Sol was slain by Zombie", "x": 127, "y": 19, "z": -94, "light": 10, "timeOfDay": 21567, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 22485, "cause": "Sol was slain by Zombie", "x": -35, "y": 71, "z": 8, "light": 0, "timeOfDay": 22647, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Wood: fight back - Fight spider", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 10129,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 10,
+      "bridgeSeconds": 5.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 2600, "iron_ingot": 21660, "iron_pickaxe": 59480, "obsidian": 82521, "portal_lit": 83272},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3228,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 8.015,
+  "items": {"windows": 7209, "gained": 7797, "paid": 7797, "lapsed": 1023, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 133.7, "snapshotMicrosMax": 8234.6, "tagMicrosMean": 113.5, "tagMicrosMax": 5099.1, "bySource": {"container.take:furnace": 108, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 6644, "pickup:class_3222.method_7329": 1460, "pickup:class_52.method_331": 60, "screen:class_1714": 73, "screen:class_1723": 409, "use:item": 65}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 195, "class_1540.method_5773": 5, "class_2248.method_36993": 6657, "class_3222.method_7329": 135, "class_52.method_331": 125}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 20.68, "tickMsWorst": 962.81, "tickMsWorstAt": 5838, "ticksOver50ms": 2343, "ticksOver200ms": 19, "heapMbMax": 1304, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 960, "stone_tools": 2220, "iron_ingot": 5060, "iron_pickaxe": 12000, "obsidian": 40677},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 71620, "x": -24, "y": -54, "z": -58, "attempt": 1}, {"tick": 81340, "x": -23, "y": -45, "z": -62, "attempt": 2}, {"tick": 103340, "x": -22, "y": -10, "z": -38, "attempt": 3}, {"tick": 106960, "x": -22, "y": -10, "z": -38, "attempt": 4}, {"tick": 110560, "x": -22, "y": -10, "z": -38, "attempt": 5}, {"tick": 118100, "x": -22, "y": -10, "z": -38, "attempt": 6}, {"tick": 121700, "x": -22, "y": -10, "z": -38, "attempt": 7}, {"tick": 125300, "x": -22, "y": -10, "z": -38, "attempt": 8}, {"tick": 129080, "x": -22, "y": -10, "z": -38, "attempt": 9}, {"tick": 132680, "x": -22, "y": -10, "z": -38, "attempt": 10}, {"tick": 136280, "x": -22, "y": -10, "z": -38, "attempt": 11}, {"tick": 139880, "x": -22, "y": -10, "z": -38, "attempt": 12}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2718,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2340, "stone_tools": 4400, "iron_ingot": 12480, "iron_pickaxe": 20960, "obsidian": 109597},
+      "deaths": [
+        {"tick": 41223, "cause": "Sol tried to swim in lava", "x": -69, "y": -51, "z": -132, "light": 15, "timeOfDay": 17385, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: no way on from here - Climb to find another way: step up", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 64740, "x": -148, "y": 19, "z": 72, "attempt": 1}, {"tick": 95260, "x": -60, "y": -51, "z": -134, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 9150,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 6.3
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2780, "stone_tools": 3380, "iron_ingot": 10820, "iron_pickaxe": 33600, "obsidian": 52463},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 15160, "x": -44, "y": 19, "z": 72, "attempt": 1}, {"tick": 90520, "x": -46, "y": 59, "z": 75, "attempt": 1}, {"tick": 95000, "x": -68, "y": 60, "z": 75, "attempt": 2}, {"tick": 105900, "x": -49, "y": 21, "z": 49, "attempt": 1}, {"tick": 120360, "x": -50, "y": 61, "z": 47, "attempt": 1}, {"tick": 124100, "x": -46, "y": 63, "z": 47, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2985,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.6
+    }
+  }
+}
