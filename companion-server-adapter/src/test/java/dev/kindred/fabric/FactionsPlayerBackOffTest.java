@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
  * fixture);
  * the wait ends early once it walks somewhere, moves 32 blocks off, or comes up to the surface having begun below. The
  * surface case is the one that matters in a tunnel (Factions seed 109: Kindred branch mining at Y 19); "at the surface"
- * itself, leaves not counted, is the adapter's {@code FactionsPlayer.atSurface}, read from the world's heightmap.
+ * itself is the adapter's {@code FactionsPlayer.atSurface}, the sky's light at its feet (F-35i2).
  */
 class FactionsPlayerBackOffTest {
     private static final BlockPos TUNNEL = new BlockPos(105, 19, 64);
