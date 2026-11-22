@@ -1,1 +1,2 @@
 branch-1 (b56c59ca): 58 min, peak 3080 MB, 126 required tests failed, fence-top 5, disk 2.0G
+branch-2 (b56c59ca): 61 min, peak 3073 MB, 128 required tests failed, fence-top 15, disk 7.3G
