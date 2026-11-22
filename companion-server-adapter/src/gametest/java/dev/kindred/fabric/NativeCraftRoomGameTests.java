@@ -30,7 +30,9 @@ public final class NativeCraftRoomGameTests implements FabricGameTest {
      * within sixteen, and out of the craft's reach, 4.4 from its eyes); the player at its near end with no pickaxe, four
      * sticks, sixteen cobblestone and twenty-four cobbled deepslate (the makings, and stone to spare beyond what the
      * stone crafts take), eight bread, and every other slot of its pack a full stack of bricks, which nothing uses or drops
-     * as surplus; the portal goal; daylight held. Fails unless it holds a stone pickaxe within 600 ticks.
+     * as surplus; the portal goal; daylight held. Fails unless, within 600 ticks, a slot of its pack is freed and then it
+     * holds a stone pickaxe: the drop makes room, and the craft follows (the drop step is MODES's, and in iteration 27 it
+     * already alternated with the climb; this fix asks for it, so the fixture checks it does what it is asked for).
      */
     @GameTest(templateName = FixtureGround.FIELD, batchId = "craftRoom", tickLimit = 1200)
     public void withItsPackFullItMakesRoomThenMakesTheStonePickaxe(TestContext context) {
@@ -38,6 +40,7 @@ public final class NativeCraftRoomGameTests implements FabricGameTest {
         BlockPos o = context.getAbsolutePos(new BlockPos(30, 8, 40));
         BlockPos table = o.add(6, 0, 0);
         int[] watched = new int[1];
+        int[] freedAt = {-1};
         StringBuilder seen = new StringBuilder();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
@@ -83,10 +86,14 @@ public final class NativeCraftRoomGameTests implements FabricGameTest {
                     var inventory = player.getInventory();
                     boolean pickaxe = false;
                     for (int i = 0; i < inventory.size(); i++) pickaxe |= inventory.getStack(i).isOf(Items.STONE_PICKAXE);
+                    if (freedAt[0] < 0 && !pickaxe) {
+                        for (int i = 0; i < 36; i++) if (inventory.getStack(i).isEmpty()) { freedAt[0] = watched[0]; break; }
+                    }
                     context.assertTrue(pickaxe, "No stone pickaxe yet");
+                    if (freedAt[0] < 0) throw new AssertionError("A stone pickaxe with no slot of its pack seen freed first: " + seen);
                 })
                 .createAndAdd(() -> {
-                    KindredMod.LOGGER.info("Craft room: a stone pickaxe after {} ticks; {}", watched[0], seen);
+                    KindredMod.LOGGER.info("Craft room: a slot freed after {} ticks, a stone pickaxe after {}; {}", freedAt[0], watched[0], seen);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
