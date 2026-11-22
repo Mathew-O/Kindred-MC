@@ -104,7 +104,12 @@ final class FactionsPlayer {
      * column was world data it had not perceived: a roof over its head kept it below at a tunnel's mouth it stood in.
      */
     static boolean atSurface(ServerPlayerEntity player) {
-        return player.getServerWorld().getLightLevel(net.minecraft.world.LightType.SKY, player.getBlockPos()) > 0;
+        return atSurface(player.getServerWorld().getLightLevel(net.minecraft.world.LightType.SKY, player.getBlockPos()));
+    }
+
+    /** At the surface by the sky's light at its feet, {@code skyLightAtFeet}: any light of the sky reaches it there. */
+    static boolean atSurface(int skyLightAtFeet) {
+        return skyLightAtFeet > 0;
     }
 
     /** How far below where it last saw the sky it stands, at most, and is not deep below the surface (M-06i2c1). */
