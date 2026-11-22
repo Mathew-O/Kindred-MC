@@ -163,6 +163,7 @@ final class FactionsPlayer {
     void walked(String target) {
         refused.remove(target);
         ways.remove(target);
+        leafBreaks.remove(target);
         streak = 0;
         pauses = 0;
         pausedUntil = Long.MIN_VALUE / 2;
@@ -324,16 +325,9 @@ final class FactionsPlayer {
         if (move.target().isEmpty()) return null;
         var chunk = Territory.Chunk.of(move.target());
         if (!chunk.dimension().equals(world.getRegistryKey().getValue().toString())) return null;
-        // The nearest spot three blocks inside the chunk: standing in it is all a claim or capture asks, and a walk that
-        // ends within a block of it is in it.
-        int x = Math.clamp(player.getBlockX(), chunk.x() * 16 + INSET, chunk.x() * 16 + 15 - INSET);
-        int z = Math.clamp(player.getBlockZ(), chunk.z() * 16 + INSET, chunk.z() * 16 + 15 - INSET);
-        // A long walk goes in legs: the next 48 blocks toward the chunk, each leg a walk of its own.
-        double far = Math.hypot(x - player.getX(), z - player.getZ());
-        if (far > LEG) {
-            x = (int) Math.floor(player.getX() + (x - player.getX()) * LEG / far);
-            z = (int) Math.floor(player.getZ() + (z - player.getZ()) * LEG / far);
-        }
+        int[] end = legEnd(chunk, player);
+        int x = end[0], z = end[1];
+        boolean far = end[2] == 1;
         int y = player.getBlockY();
         if (world.isChunkLoaded(x >> 4, z >> 4)) {
             // Ground to stand on there that it can see, nearest its own height first (a trunk or a roof above is not the
@@ -348,7 +342,7 @@ final class FactionsPlayer {
             // Room to stand is asked before the sight line only to spare it: a cell with none is no walk's end.
             var ground = looks.firstSeen(under, below -> standable(world, below.getX(), below.getY() + 1, below.getZ()));
             if (ground.isPresent()) return new BlockPos(x, ground.get().getY() + 1, z);
-            if (far > LEG && looks.rays() <= GROUND_LOOKS) {
+            if (far && looks.rays() <= GROUND_LOOKS) {
                 var top = looks.ground(x, z);
                 if (top.isPresent()) return new BlockPos(x, top.get().getY() + 1, z);
             }
@@ -356,7 +350,7 @@ final class FactionsPlayer {
             // player walks to the brink it can see rather than into the air past it. At its own height there a leg ended in
             // mid-air over a valley or inside a hillside, where no route ends: on Factions seed 20261030, 211 of 919 legs
             // refused for no route ended in mid-air. Where it sees none along the way, the leg is as before.
-            if (far > LEG) {
+            if (far) {
                 var back = backAlong(player, x, z, WorldKnowledge.looks(player, BACK_LOOKS));
                 // Not from where it stands: from the brink of what it stands on, toward the leg, as a player on a summit
                 // steps to its edge to look down (F-35m's look over the brink) (M-06i2c4). From a summit's middle its own
@@ -367,6 +361,92 @@ final class FactionsPlayer {
             }
         }
         return new BlockPos(x, y, z);
+    }
+
+    /**
+     * A move's end in its chunk, as {@link #destination} has it before it looks for ground: x, z, and 1 if that is a
+     * leg's end, short of the chunk, else 0.
+     */
+    private static int[] legEnd(Territory.Chunk chunk, ServerPlayerEntity player) {
+        // The nearest spot three blocks inside the chunk: standing in it is all a claim or capture asks, and a walk that
+        // ends within a block of it is in it.
+        int x = Math.clamp(player.getBlockX(), chunk.x() * 16 + INSET, chunk.x() * 16 + 15 - INSET);
+        int z = Math.clamp(player.getBlockZ(), chunk.z() * 16 + INSET, chunk.z() * 16 + 15 - INSET);
+        // A long walk goes in legs: the next 48 blocks toward the chunk, each leg a walk of its own.
+        double far = Math.hypot(x - player.getX(), z - player.getZ());
+        if (far > LEG) {
+            x = (int) Math.floor(player.getX() + (x - player.getX()) * LEG / far);
+            z = (int) Math.floor(player.getZ() + (z - player.getZ()) * LEG / far);
+        }
+        return new int[] {x, z, far > LEG ? 1 : 0};
+    }
+
+    /** Leaves broken toward one target before its walk gets somewhere (M-06i2c5). */
+    static final int LEAF_BREAKS = 3;
+    /** How far from its eyes a leaf it breaks may be: a player's reach (M-06i2c5). */
+    static final double LEAF_REACH = 4.5;
+
+    /**
+     * The leaves nearest its eyes, within its reach, that stand in its sight line to the ground along a leg it sees no
+     * ground on (M-06i2c5), as a player pushes through a spruce's lower branches to see the slope past them; null when
+     * none, when the leg is not such a leg, or when it has broken {@value #LEAF_BREAKS} toward this target already. Only
+     * the blocks its sight lines met are asked: one look along the leg's end and the columns {@link #backAlong} looks at,
+     * nothing of the world past what stopped its eyes. A leaf it was refused (someone's claim, the server's edit policy)
+     * is not asked again.
+     */
+    BlockPos leavesInTheWay(FactionPlay.Choice move, ServerPlayerEntity player, BlockPos to) {
+        if (move.kind() == FactionPlay.Kind.DEFEND || move.target().isEmpty()) return null;
+        if (leafBreaks.getOrDefault(move.target(), 0) >= LEAF_BREAKS) return null;
+        var world = player.getServerWorld();
+        var chunk = Territory.Chunk.of(move.target());
+        if (!chunk.dimension().equals(world.getRegistryKey().getValue().toString())) return null;
+        int[] end = legEnd(chunk, player);
+        // Only a leg left as it was: at its own height, at the leg's end, no ground seen along the way.
+        if (end[2] != 1 || to.getX() != end[0] || to.getZ() != end[1] || to.getY() != player.getBlockY()) return null;
+        var looks = WorldKnowledge.looks(player, BACK_LOOKS + 1);
+        var columns = new java.util.ArrayList<int[]>();
+        columns.add(new int[] {end[0], end[1]});
+        double dx = end[0] - player.getX(), dz = end[1] - player.getZ(), length = Math.hypot(dx, dz);
+        for (int step = 1; step <= BACK_LOOKS; step++) {
+            double at = length - step * BACK_STEP;
+            if (at < BACK_STEP) break;
+            columns.add(new int[] {(int) Math.floor(player.getX() + dx * at / length), (int) Math.floor(player.getZ() + dz * at / length)});
+        }
+        var eye = looks.eye();
+        BlockPos nearest = null;
+        double best = LEAF_REACH * LEAF_REACH;
+        for (int[] c : columns) {
+            if (!world.isChunkLoaded(c[0] >> 4, c[1] >> 4)) continue;
+            if (looks.ground(c[0], c[1]).isPresent()) continue;
+            var met = looks.metToward(c[0], c[1]).orElse(null);
+            if (met == null || leafRefused.contains(met.asLong()) || !world.getBlockState(met).isIn(net.minecraft.registry.tag.BlockTags.LEAVES)) continue;
+            double d = eye.squaredDistanceTo(net.minecraft.util.math.Vec3d.ofCenter(met));
+            if (d <= best) { best = d; nearest = met; }
+        }
+        return nearest;
+    }
+
+    /** Leaves broken toward each target since its walk last got somewhere, and leaves it was refused (M-06i2c5). */
+    private final Map<String, Integer> leafBreaks = new LinkedHashMap<>();
+    private final java.util.Set<Long> leafRefused = new java.util.HashSet<>();
+    /** For the evidence: leaves it broke and was refused on its faction legs, in all (M-06i2c5). */
+    int leavesBroken, leavesRefusedCount;
+    /** The leaf breaks it proposed, by task: the target each was toward and the leaf (M-06i2c5); the last 16. */
+    final Map<UUID, Map.Entry<String, BlockPos>> leafTasks = new LinkedHashMap<>() {
+        @Override protected boolean removeEldestEntry(Map.Entry<UUID, Map.Entry<String, BlockPos>> eldest) { return size() > 16; }
+    };
+
+    /** A leaf broken toward {@code target}: one of its {@value #LEAF_BREAKS}. */
+    void leafBroken(String target) {
+        leafBreaks.merge(target, 1, Integer::sum);
+        leavesBroken++;
+    }
+
+    /** A leaf at {@code at} it was refused or could not break: not asked again; it counts toward the target's breaks. */
+    void leafRefused(String target, BlockPos at) {
+        leafBreaks.merge(target, 1, Integer::sum);
+        if (leafRefused.size() < SEEN_MAX) leafRefused.add(at.asLong());
+        leavesRefusedCount++;
     }
 
     /** The steps back along a leg, from its end toward where it stands, at which it looks for ground (M-06i2c2). */

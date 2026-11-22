@@ -2438,6 +2438,14 @@ final class PlayerRuntime {
      * does not: held mid-action its record could be left uncertain. Neither does a lapse at the cap or at the end of
      * the hours. False once the hold has failed or taken too long; the skill then stops as any lapsed skill does.
      */
+    private boolean endsItsPeriodWithin(Entry entry, java.time.Duration margin) {
+        var session = entry.activity;
+        if (!HELD_OVER_PERIOD_END.contains(entry.skillId) || entry.nativeTask instanceof NativeRecordedAction
+                || session.remaining().compareTo(margin) > 0) return false;
+        java.time.Instant end = session.snapshot().period().endExclusive();
+        return session.bookedUntil().filter(booked -> !booked.isBefore(end)).isPresent();
+    }
+
     private boolean holdOverPeriodEnd(Entry entry) {
         var session = entry.activity;
         java.time.Instant now = java.time.Instant.now();
@@ -7705,7 +7713,11 @@ final class PlayerRuntime {
             if (java.time.Instant.now().plus(entry.activity.remaining()).plus(RENEW_GAIN_MIN).isBefore(deadline)) entry.activity.renew(deadline);
         }
         boolean admitted = usable;
-        if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
+        // A walk or wait whose slice is booked to its period's end is not begun on its last RENEW_GAIN_MIN of it
+        // (F-22c103): its moves are rechecked against the slice as they are made, and a slice lapsing inside a long tick
+        // refused one, ending the walk ("Movement authority denied") where the period's hold below would have carried it.
+        // Left unused, that last of the slice is held over instead. A lapse at the hours' end or the cap is unchanged.
+        if (busy && (entry.activity == null || !entry.activity.paid() || endsItsPeriodWithin(entry, RENEW_GAIN_MIN))) usable = false;
         // A walk or wait whose slice lapsed at its period's end holds still for the next period's slice (F-11g).
         boolean holding = admitted && !usable && busy && holdOverPeriodEnd(entry);
         if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
@@ -7920,6 +7932,7 @@ final class PlayerRuntime {
         }
 
         if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.RUN_SKILL) {
+            holdSkillTick(entry);
             entry.runner.tick();
             observeRunner(entry);
         } else if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.PROPOSE_TASK) {
@@ -8918,6 +8931,19 @@ final class PlayerRuntime {
                     entry.cachedRoutineCandidates = List.of();
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
                 } else if (state == SkillRunner.State.COMPLETED) entry.factionPlay.walked(factionMove.target());
+            }
+            // A leaf broken in its sight line along a faction leg (M-06i2c5): one of its breaks toward the target; refused,
+            // the leaf is not asked again; cancelled, nothing is counted. Either way it decides again from where it stands.
+            var leafPlay = entry.factionPlay;
+            var leafTask = "native_break".equals(entry.skillId) && entry.currentTaskId != null ? leafPlay.leafTasks.remove(entry.currentTaskId) : null;
+            if (leafTask != null) {
+                if (state == SkillRunner.State.COMPLETED) leafPlay.leafBroken(leafTask.getKey());
+                else if (state == SkillRunner.State.BLOCKED) leafPlay.leafRefused(leafTask.getKey(), leafTask.getValue());
+                KindredMod.LOGGER.info("{} faction leaves at {} {} ({} broken, {} refused in all)", entry.data.displayName(),
+                        leafTask.getValue().toShortString(), state == SkillRunner.State.COMPLETED ? "broken" : "not broken",
+                        leafPlay.leavesBroken, leafPlay.leavesRefusedCount);
+                entry.cachedRoutineCandidates = List.of();
+                attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
             }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
@@ -10524,6 +10550,14 @@ final class PlayerRuntime {
             // set aside place by place, a search for each (F-35j1).
             return null;
         }
+        // Leaves in its sight line hide the ground along a leg it sees none on (M-06i2c5): it breaks the nearest within its
+        // reach, by hand through the ordinary break, the server's edit policy and the faction land's rules asked at the
+        // break, its drops kept; then decides again from where it stands. On Factions seed 20261030 leaves hid the ground
+        // on 885 and 337 of the legs M-06i2c2 left as they were (bases on and off), most within 4 blocks of it (M-06i2c3).
+        if (!play.waiting(move.target(), tick)) {
+            var leaves = factionLeaves(entry, play, player, move, to);
+            if (leaves != null) return leaves;
+        }
         // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
         // own put, as a player climbs out of a hollow, through the run's own route builder under the server's edit policy
         // and the faction land's rules; then the walk is asked again. On Factions seed 109 in RUNNER 2's trace the players'
@@ -10588,6 +10622,20 @@ final class PlayerRuntime {
      * put or the walk up to where that is needed, never a way that only walks (that was refused). Null when the server
      * allows no edits or the route builder finds none, and the walk waits as before.
      */
+    /** The break of the leaves in its sight line along a leg it sees no ground on (M-06i2c5), or null when there are none. */
+    private List<NativeTaskCandidate> factionLeaves(Entry entry, FactionsPlayer play, ServerPlayerEntity player,
+                                                    dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
+        if (!worldEditsEnabled()) return null;
+        BlockPos leaf = play.leavesInTheWay(move, player, to);
+        if (leaf == null) return null;
+        UUID id = UUID.nameUUIDFromBytes(("faction-leaves:" + entry.data.id() + ":" + leaf.asLong()).getBytes(StandardCharsets.UTF_8));
+        play.leafTasks.put(id, Map.entry(move.target(), leaf.toImmutable()));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, "native_break", Map.of("x", String.valueOf(leaf.getX()), "y", String.valueOf(leaf.getY()),
+                "z", String.valueOf(leaf.getZ()))));
+    }
+
     private List<NativeTaskCandidate> factionWay(Entry entry, NativePlayerBody body, dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
         if (!worldEditsEnabled()) return null;
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
@@ -10955,6 +11003,13 @@ final class PlayerRuntime {
         var entry = entries.get(player);
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected() || entry.factionPlay.move == null) return null;
         return FactionsPlayer.destination(entry.factionPlay.move, entry.nativeBody.entity());
+    }
+
+    /** For fixtures (M-06i2c5): the leaves it broke and was refused in its sight line along faction legs. */
+    int[] factionLeavesForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.leavesBroken, entry.factionPlay.leavesRefusedCount};
     }
 
     /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */
@@ -11664,6 +11719,12 @@ final class PlayerRuntime {
         final java.util.ArrayDeque<String> pushTrail = new java.util.ArrayDeque<>();
         /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
         int cartPickWalks;
+        /**
+         * Given up, the held boat or the cart it could not walk to, let be where it is (F-22c103), and said as the bring ends.
+         * One out of reach ended the whole take-back, and the hall's door was left out.
+         */
+        boolean boatLetBe, cartLetBe;
+        String letBe = "";
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
@@ -11828,7 +11889,7 @@ final class PlayerRuntime {
         if (villager == null && b.failure == null) return giveUp(entry, body, "The " + b.noun + " I was bringing home is gone.");
         if (b.failed >= 3 && b.failure == null) return giveUp(entry, body, "I couldn't bring the " + b.noun + " home: "
                 + b.phase.name().toLowerCase(java.util.Locale.ROOT) + " went wrong three times over.");
-        if (b.failed >= 3) return endBring(entry, b.failure + " I couldn't take everything back.", false);
+        if (b.failed >= 3) return endBring(entry, b.failure + " I couldn't take everything back." + b.letBe, false);
         var task = bringTask(entry, "step");
         switch (b.phase) {
             case HOLD -> {
@@ -12608,6 +12669,14 @@ final class PlayerRuntime {
                 // Out of the front, and its job block put there behind the villager.
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
                     var out = b.slot.south(2);
+                    // Under its own shut trapdoor (F-22c96a): no walk is planned from a cell whose head is a shut trapdoor, so it
+                    // walks straight out south, as KEEP does from inside, the trapdoor left shut over the villager. Planned, the
+                    // walk out was refused three times in a second and the bring given up (F-22c96's line, CI on #429).
+                    if (world.getBlockState(b.slot.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS)) {
+                        long blocks = Math.max(1, Math.min(3, (long) Math.floor(Vec3d.ofBottomCenter(out).z - player.getZ() + 0.2)));
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "out from under the trapdoor"), "native_walk",
+                                Map.of("direction", "south", "blocks", String.valueOf(blocks))));
+                    }
                     return List.of(new NativeTaskCandidate(bringTask(entry, "out"), "native_goto", Map.of("x", String.valueOf(out.getX()),
                             "y", String.valueOf(out.getY()), "z", String.valueOf(out.getZ()), "range", "0", "centre", "true")));
                 }
@@ -12623,14 +12692,27 @@ final class PlayerRuntime {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "undo out"), "native_boat", Map.of("mode", "land")));
                 }
                 // Given up with the villager still in its boat: the boat broken first, the villager set down where it sat.
-                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
-                    if (!player.canInteractWithEntity(boat, 0)) return List.of(goNear(task, boat.getBlockPos()));
+                if (!b.boatLetBe && heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    if (!player.canInteractWithEntity(boat, 0)) {
+                        // Two walks to it blocked: let be where it is, and the rest taken back (F-22c103). Set off the line
+                        // down a drop of two blocks, the boat had no walk to it three times, the bring ended there, and the
+                        // hall's door was left out (CI on #412, run 44871475068).
+                        if (b.failed >= 2) {
+                            b.boatLetBe = true;
+                            b.failed = 0;
+                            b.letBe += " I left the boat with the " + b.noun + " in it where I couldn't get to it.";
+                            KindredMod.LOGGER.info("{} bringing: the boat holding the {} at {} let be, two walks to it blocked", entry.data.displayName(), b.noun,
+                                    boat.getBlockPos().toShortString());
+                            return bringCandidates(entry, body);
+                        }
+                        return List.of(goNear(task, boat.getBlockPos()));
+                    }
                     return List.of(new NativeTaskCandidate(bringTask(entry, "undo boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
                 }
                 // Given up with the cart down: broken and taken back, whoever rides it set down where it is.
-                var cart = cartOf(world, b);
+                var cart = b.cartLetBe ? null : cartOf(world, b);
                 if (cart == null) {
-                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                    var lying = b.cartLetBe ? List.<net.minecraft.entity.ItemEntity>of() : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                             item -> item.getStack().isOf(Items.MINECART));
                     // Its own count of walks to the cart's item (F-22c98b): counted on the door's tries, a few walks here left
                     // DOOR_BACK past its three before it tried once, and the hall's door was left out.
@@ -12638,7 +12720,17 @@ final class PlayerRuntime {
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }
-                if (!player.canInteractWithEntity(cart, 0)) return List.of(goNear(task, cart.getBlockPos()));
+                if (!player.canInteractWithEntity(cart, 0)) {
+                    // As the boat: two walks to it blocked, let be, and the rest taken back (F-22c103).
+                    if (b.failed >= 2) {
+                        b.cartLetBe = true;
+                        b.failed = 0;
+                        b.letBe += " I left the cart where I couldn't get to it.";
+                        KindredMod.LOGGER.info("{} bringing: the cart at {} let be, two walks to it blocked", entry.data.displayName(), cart.getBlockPos().toShortString());
+                        return bringCandidates(entry, body);
+                    }
+                    return List.of(goNear(task, cart.getBlockPos()));
+                }
                 return List.of(new NativeTaskCandidate(bringTask(entry, "undo cart"), "native_cart", Map.of("mode", "break", "target", cart.getUuid().toString())));
             }
             case TIDY -> {
@@ -12761,7 +12853,7 @@ final class PlayerRuntime {
             case DOOR_BACK -> {
                 boolean open = b.opened.keySet().stream().anyMatch(at -> world.getBlockState(at).isAir());
                 if (world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock && !open) {
-                    if (b.failure != null) return endBring(entry, b.failure, false);
+                    if (b.failure != null) return endBring(entry, b.failure + b.letBe, false);
                     entry.brought.add(b.villager);
                     return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
@@ -12779,7 +12871,7 @@ final class PlayerRuntime {
                 }
                 var plan = new dev.kindred.core.construction.Blueprint("the trading hall's door", hall.source(), hall.creator(), hall.license(), door, List.of());
                 if (++b.doorTries > 3 || startBuild(server.getCommandSource(), entry.data.id(), plan, b.origin, 0) != 1) {
-                    if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back.", false);
+                    if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back." + b.letBe, false);
                     entry.brought.add(b.villager);
                     return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back." + leftInCell(world, b), true);
                 }
@@ -16571,6 +16663,23 @@ final class PlayerRuntime {
 
     /** Test seam: every activity budget write held this long before it goes to the store, as on a slow disk (F-22c2). */
     void delayBudgetWritesForTest(java.time.Duration delay) { budgetWriteDelay = delay; }
+
+    /**
+     * Test seam (F-22c103), off unless a fixture sets it: a skill's tick begun with less of its paid slice left than
+     * {@code hold} is held that long first, as a long tick on a loaded server is, so that its slice lapses inside the tick.
+     */
+    void holdSkillTicksForTest(java.time.Duration hold) { skillTickHold = hold; }
+
+    private volatile java.time.Duration skillTickHold = java.time.Duration.ZERO;
+
+    private void holdSkillTick(Entry entry) {
+        java.time.Duration hold = skillTickHold;
+        if (hold.isZero() || entry.activity == null || entry.activity.phase() != PaidActivitySession.Phase.ACTIVE
+                || entry.activity.remaining().compareTo(hold) >= 0) return;
+        // Held to its end: the server thread is often unparked early, so one park need not last.
+        long until = System.nanoTime() + hold.toNanos();
+        for (long left; (left = until - System.nanoTime()) > 0; ) java.util.concurrent.locks.LockSupport.parkNanos(left);
+    }
 
     /** Test seam: keep autonomous selection from replacing the state a fixture is inspecting. */
     void holdAutonomyForTest(UUID id, int ticks) {
