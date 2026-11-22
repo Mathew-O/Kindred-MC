@@ -1,0 +1,62 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 9339, "paid": 9339, "lapsed": 303, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 129.9, "snapshotMicrosMax": 15486.6, "tagMicrosMean": 135.8, "tagMicrosMax": 18905.8, "bySource": {"container.take:furnace": 92, "pickup:class_2248.method_36993": 7419, "pickup:class_3222.method_7329": 1276, "pickup:class_52.method_331": 35, "screen:class_1707": 26, "screen:class_1714": 87, "screen:class_1723": 663, "use:item": 44}, "dropsByOrigin": {"class_1428.method_6007": 133, "class_1540.method_5773": 37, "class_2248.method_36993": 7401, "class_3222.method_7329": 227, "class_4019.method_18289": 1, "class_52.method_331": 204}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 20.61, "tickMsWorst": 5690.52, "tickMsWorstAt": 1, "ticksOver50ms": 2642, "ticksOver200ms": 27, "heapMbMax": 990, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2100, "iron_ingot": 13740, "iron_pickaxe": 29320, "obsidian": 70943, "portal_lit": 80594},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1802,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 460, "stone_tools": 2100, "iron_ingot": 12420, "iron_pickaxe": 21680, "diamond": 22700},
+      "deaths": [
+        {"tick": 111426, "cause": "Sol was shot by Skeleton", "x": 11, "y": 80, "z": -29, "light": 0, "timeOfDay": 15588, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Iron: Take the coal in view - Walk to coal ore at 3, 70, -42 (tried elsewhere 10 times)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 29220, "x": -85, "y": -54, "z": 74, "attempt": 1}, {"tick": 36420, "x": -86, "y": -43, "z": 49, "attempt": 2}, {"tick": 41020, "x": -87, "y": -45, "z": 27, "attempt": 3}, {"tick": 48220, "x": -52, "y": -24, "z": 26, "attempt": 4}, {"tick": 53520, "x": -31, "y": -24, "z": 26, "attempt": 5}, {"tick": 58120, "x": -31, "y": -24, "z": 47, "attempt": 6}, {"tick": 65320, "x": 4, "y": 39, "z": 2, "attempt": 7}, {"tick": 73520, "x": 9, "y": 43, "z": -3, "attempt": 8}, {"tick": 94820, "x": 5, "y": 64, "z": 0, "attempt": 9}, {"tick": 101820, "x": 3, "y": 76, "z": 1, "attempt": 10}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3788,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 1.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 960, "stone_tools": 2720, "iron_ingot": 9860, "iron_pickaxe": 16960, "diamond": 33240},
+      "deaths": [
+        {"tick": 104921, "cause": "Echo was slain by Zombie", "x": 137, "y": -53, "z": -85, "light": 5, "timeOfDay": 9083, "dimension": "minecraft:overworld", "hunger": 13, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "Fight zombie"},
+        {"tick": 129161, "cause": "Echo was slain by Zombie", "x": 144, "y": 26, "z": -7, "light": 13, "timeOfDay": 9323, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4791,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

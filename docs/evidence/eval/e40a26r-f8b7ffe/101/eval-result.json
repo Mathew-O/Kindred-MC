@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 7.621,
+  "items": {"windows": 7209, "gained": 10294, "paid": 10294, "lapsed": 714, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 136.5, "snapshotMicrosMax": 21661.8, "tagMicrosMean": 128.2, "tagMicrosMax": 12815.2, "bySource": {"container.take:furnace": 106, "pickup:class_1308.method_6099": 2, "pickup:class_1428.method_6007": 2, "pickup:class_2248.method_36993": 7711, "pickup:class_3222.method_7329": 2415, "pickup:class_52.method_331": 100, "screen:class_1707": 23, "screen:class_1714": 99, "screen:class_1723": 467, "use:item": 83}, "dropsByOrigin": {"class_1308.method_6099": 3, "class_1428.method_6007": 60, "class_1540.method_5773": 2, "class_2248.method_36993": 7719, "class_3222.method_7329": 246, "class_52.method_331": 152}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.48, "tickMsWorst": 2842.76, "tickMsWorstAt": 1, "ticksOver50ms": 1319, "ticksOver200ms": 20, "heapMbMax": 1046, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 840, "stone_tools": 1960, "iron_ingot": 6080, "iron_pickaxe": 63980},
+      "deaths": [
+        {"tick": 65339, "cause": "Kindred was shot by Skeleton", "x": -420, "y": 27, "z": -132, "light": 0, "timeOfDay": 3789, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 140894, "cause": "Kindred was slain by Zombie", "x": -408, "y": 35, "z": -199, "light": 0, "timeOfDay": 11963, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Obsidian: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 91520, "x": -461, "y": 36, "z": -282, "attempt": 1}, {"tick": 104760, "x": -439, "y": 19, "z": -244, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7598,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1220, "stone_tools": 2200, "iron_ingot": 6960, "iron_pickaxe": 85540, "obsidian": 117007, "portal_lit": 119682},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 102220, "x": -268, "y": -54, "z": -202, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4986,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1360, "stone_tools": 2380, "iron_ingot": 9280, "iron_pickaxe": 31920, "obsidian": 80401, "portal_lit": 86657},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3448,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
