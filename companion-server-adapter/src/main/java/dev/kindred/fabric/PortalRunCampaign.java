@@ -5065,6 +5065,19 @@ final class PortalRunCampaign {
         return index;
     }
 
+    /** For fixtures: where it stands now and its way in, as its plan's tick records them (F-25c4at1). */
+    void wayInForTest(BlockPos feet, List<BlockPos> way) {
+        lastFeet = feet.toImmutable();
+        trail.clear();
+        for (BlockPos cell : way) trail.addLast(cell.toImmutable());
+    }
+
+    /** For fixtures: the walk back it would take from where it stands at {@code tick}, as the climb asks for it (F-25c4at1). */
+    Optional<Task> walkBackForTest(NativePlayerBody body, long tick) {
+        lastTick = Math.max(lastTick, tick);
+        return retrace(body, "Climb toward the surface for logs");
+    }
+
     /**
      * Back along its own trail: each leg to the highest cell it stood in within a score of blocks, further back along
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
