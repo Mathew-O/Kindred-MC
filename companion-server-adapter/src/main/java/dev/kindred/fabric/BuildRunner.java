@@ -957,6 +957,17 @@ final class BuildRunner {
     /** The drop of wool its last pick-up went for, and that pick-up's label: counted in {@link #woolWalks} once it ends. */
     private java.util.UUID woolFor;
     private String woolLabel;
+    /**
+     * Whose walk the last pick-up was, and how often a walk for each block's drop ended short of it, out of the player's
+     * reach, with the drop still lying (F-22c112): such a walk is not counted against the drop, up to {@link #SHORT_ENDS}
+     * times. Wool keeps its six walks as they were.
+     */
+    private java.util.UUID woolBy;
+    /** The walks the last pick-up allowed its drop: one for a block's drop, six for wool's, which is left as it was. */
+    private int woolTimes;
+    private final Map<java.util.UUID, Integer> shortEnds = new HashMap<>();
+    /** How many walks for one drop may end short of it, the drop still lying out of reach, before they count against it. */
+    static final int SHORT_ENDS = 3;
 
     /**
      * Wool for the build (a trading hall's beds, E-45d), as players get it: what has dropped picked up first; a sheep of
@@ -979,6 +990,8 @@ final class BuildRunner {
         // one runs, and a count kept here passed six in a wait for a drop to land, which was then let lie (on CI on
         // #12, short of the beds' wool after all nine sheep were shorn).
         woolFor = drop.getUuid();
+        woolBy = player.getUuid();
+        woolTimes = times;
         woolLabel = "Pick up " + name;
         // Beside it already: a moment for it, as a drop is not picked up in its first half second. Still falling: a
         // moment for it to land, a walk to a block in the air being no walk at all.
@@ -1062,7 +1075,20 @@ final class BuildRunner {
      */
     void finished(PortalRunCampaign.Task task, boolean completed, String reason, ServerWorld world) {
         if (woolFor != null && task.label().equals(woolLabel)) {
-            woolWalks.merge(woolFor, 1, Integer::sum);
+            // A walk counts against the drop it went for when it failed, or ended with the drop gone or within the player's
+            // reach. One that completed short of it, the drop still lying out of reach, does not, up to SHORT_ENDS times
+            // (F-22c112): the navigator ends a walk to a drop's block well short of it (1.8 to 4.2 blocks on the trading
+            // hall's wool), and a block's drop, allowed one walk, was then never gone for again, its build a block short.
+            var lying = world.getEntity(woolFor) instanceof net.minecraft.entity.ItemEntity drop && drop.isAlive() ? drop : null;
+            var by = woolBy == null ? null : world.getPlayerByUuid(woolBy);
+            boolean outOfReach = woolTimes == 1 && completed && lying != null && by != null && !by.getBoundingBox().expand(1, 0.5, 1).intersects(lying.getBoundingBox());
+            int shorts = outOfReach ? shortEnds.merge(woolFor, 1, Integer::sum) : 0;
+            if (outOfReach && shorts <= SHORT_ENDS) {
+                KindredMod.LOGGER.info("Build {}: {} ended {} short of the drop it went for, out of reach; not counted against it ({} of {}) (F-22c112)",
+                        blueprint.name(), woolLabel, String.format(java.util.Locale.ROOT, "%.2f", Math.sqrt(by.squaredDistanceTo(lying))), shorts, SHORT_ENDS);
+            } else {
+                woolWalks.merge(woolFor, 1, Integer::sum);
+            }
             woolFor = null;
         }
         // A step for the build's needs is no placement: the run's own gathering keeps account of those that fail.

@@ -1,6 +1,8 @@
 package dev.kindred.fabric;
 
 import dev.kindred.core.Actor;
+import dev.kindred.core.construction.Generators;
+import dev.kindred.core.construction.Pos;
 import dev.kindred.core.survival.Ranch;
 import dev.kindred.persistence.StoredNativePlayer;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
@@ -10,6 +12,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.test.GameTest;
 import net.minecraft.test.TestContext;
@@ -177,12 +180,24 @@ public final class NativeRanchGameTests implements FabricGameTest {
                     cows[0] = daisy.getUuid();
                     cows[1] = context.spawnEntity(EntityType.COW, new BlockPos(4 + 29, -1, 4 + 11)).getUuid();
                     context.assertTrue(f.runtime.startRanch(f.source, id[0], pen, Ranch.Kind.COW) == 1, "Ranch started");
+                    // The ranch as the runtime shows it before its first step, which its scheduler can put off a while
+                    // (F-22c113): Daisy is not let go on it, the pen not yet standing.
+                    var first = f.runtime.ranchStatus(id[0]).orElse("");
+                    context.assertTrue(!daisyMayGo(context.getWorld(), pen, first), "Daisy held as the ranch starts, the ranch " + first
+                            + ", " + penStanding(context.getWorld(), pen) + " of the pen's " + PEN_BLOCKS + " blocks standing");
                 })
                 .createAndAdd(() -> {
                     var wren = player(f, player[0]);
                     var progress = f.runtime.ranchStatus(id[0]).orElse("");
-                    if (!progress.startsWith("Crafting") && !progress.startsWith("Building")
-                            && context.getWorld().getEntity(cows[0]) instanceof CowEntity daisy && daisy.isAiDisabled()) daisy.setAiDisabled(false);
+                    if (daisyMayGo(context.getWorld(), pen, progress)
+                            && context.getWorld().getEntity(cows[0]) instanceof CowEntity daisy && daisy.isAiDisabled()) {
+                        // The staging holds until the pen stands, as above (F-22c113): in CI she was let go on the ranch's
+                        // first "Starting", grazed through the build and walked off into the patch.
+                        int standing = penStanding(context.getWorld(), pen);
+                        context.assertTrue(standing == PEN_BLOCKS, "The pen stands as Daisy is let go: " + standing + " of " + PEN_BLOCKS
+                                + " of its blocks, the ranch " + progress);
+                        daisy.setAiDisabled(false);
+                    }
                     if (wren != null) lowest[0] = Math.min(lowest[0], wren.getBlockY());
                     context.assertTrue(lowest[0] >= o.getY() + 2, "Never down off the field: " + (lowest[0] - o.getY() - 2) + " below it, at "
                             + (wren == null ? "-" : wren.getBlockPos().subtract(pen).toShortString()) + " from the pen's post");
@@ -192,6 +207,9 @@ public final class NativeRanchGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     var wren = player(f, player[0]);
+                    // Daisy is held until the pen stands (F-22c113): a pen that never stood is its own failure, not "penned alone".
+                    int standing = penStanding(world, pen);
+                    context.assertTrue(standing == PEN_BLOCKS, "The pen stood: " + standing + " of its " + PEN_BLOCKS + " blocks");
                     var gateState = world.getBlockState(pen.add(3, 0, 6));
                     context.assertTrue(gateState.isOf(Blocks.OAK_FENCE_GATE) && !gateState.get(FenceGateBlock.OPEN), "The gate shut: " + gateState);
                     context.assertTrue(!inside(pen, wren.getBlockPos()) && wren.getBlockY() >= o.getY() + 2, "Wren out of the pen, on the field: "
@@ -272,6 +290,29 @@ public final class NativeRanchGameTests implements FabricGameTest {
         for (int x = o.getX() - 16; x <= o.getX() + 48; x += 16) for (int z = o.getZ() - 16; z <= o.getZ() + 32; z += 16) {
             world.setChunkForced(x >> 4, z >> 4, forced);
         }
+    }
+
+    /**
+     * Whether the staging lets Daisy go: once the pen stands, read from the world, whatever the ranch shows. Read from its
+     * status (not "Crafting" or "Building") she was let go on its first, "Starting", shown until the runtime takes the
+     * ranch's first step (F-22c113).
+     */
+    private static boolean daisyMayGo(net.minecraft.server.world.ServerWorld world, BlockPos pen, String progress) {
+        return penStanding(world, pen) == PEN_BLOCKS;
+    }
+
+    /** The blocks of the ranch's 7 by 7 oak pen, its gate among them. */
+    private static final int PEN_BLOCKS = Generators.pen(7, 7, "oak").placed(new Pos(0, 0, 0), 0).size();
+
+    /** How many of the pen's blocks stand at {@code pen}, read as the ranch reads its own: a gate where its gate goes, a fence elsewhere. */
+    private static int penStanding(net.minecraft.server.world.ServerWorld world, BlockPos pen) {
+        int n = 0;
+        for (var block : Generators.pen(7, 7, "oak").placed(new Pos(pen.getX(), pen.getY(), pen.getZ()), 0)) {
+            var state = world.getBlockState(new BlockPos(block.at().x(), block.at().y(), block.at().z()));
+            boolean gate = block.spec().block().endsWith("_fence_gate");
+            if (gate ? state.getBlock() instanceof FenceGateBlock : state.isIn(BlockTags.FENCES)) n++;
+        }
+        return n;
     }
 
     private static boolean inside(BlockPos pen, BlockPos at) {
