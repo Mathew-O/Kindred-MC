@@ -10590,11 +10590,15 @@ final class PlayerRuntime {
         // Its base's stage being built (M-06i2): a walk other than to defend its land waits till the stage is done, and
         // is kept. A walk under way when a stage falls due goes on to its end first; the stage begins after it.
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && factionBaseBegun(entry)) return null;
-        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
+        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without, at
+        // once. A place it once set aside as open water it saw, chosen again after its wait and set aside again by a
+        // refusal (asked from where it could not see the water), is weighed as water is: the next choice at the decision
+        // interval (M-06m1; F-35j1). On #465's CI (run 45056595996, attempt 2) such a place was chosen again, refused once
+        // and re-chosen 5 ticks later, and the paced open-water test failed on it.
         if (play.setAside(tick).contains(move.target())) {
             settledInFlight(entry, play, player, move);
             play.move = null;
-            play.decidedAt = Long.MIN_VALUE / 2;
+            play.decidedAt = play.setAsideAsWater(move.target()) ? tick : Long.MIN_VALUE / 2;
             return null;
         }
         // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
