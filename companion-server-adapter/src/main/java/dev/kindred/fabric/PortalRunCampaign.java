@@ -7640,8 +7640,10 @@ final class PortalRunCampaign {
     }
 
     /**
-     * The doorway's other block, once the first is broken (F-25c4di1g): by day, within {@value #BED_OPENINGS} a morning,
-     * under all of the break's rules; asked for once, refused, the chore is set aside.
+     * The doorway's other block, once the first is broken (F-25c4di1g): the other half of the same two-high cell, not a
+     * block {@code miningRefusal} named, beside the bed's room and plain ground, by day, within {@value #BED_OPENINGS} a
+     * morning, under all of the break's rules; asked for once, refused, the chore is set aside. With only the named block
+     * open it saw its bed and broke it, but could not walk in after the drop through a gap one high.
      */
     private Optional<Task> openDoorway(ServerPlayerEntity player) {
         if (bedDoorway == null || bedOpenings == 0) return Optional.empty();

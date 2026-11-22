@@ -237,7 +237,7 @@ public final class NativeBedTakeUpGameTests implements FabricGameTest {
      *
      * Technical: F-25c4di1g, as iteration 26's 202 Kindred and Sol, 101 Kindred and Echo, and 20261030r Kindred: "out of
      * sight from ... the line to its middle meets Block{minecraft:stone}". STAGED as above to the morning; then, on the tick
-     * it wakes, the pocket's own cell beyond its bed's foot walled up with stone (two blocks), a cell dug beyond that, and it
+     * it wakes, the pocket's own cell beyond its bed's foot walled up with stone (two blocks), a cell dug beyond that, a stone pickaxe in its pack (as one it made: iteration 26's players all had one by then; a bare hand harvests no stone), and it
      * put there, within reach of its bed but with no sight of it. Fails unless, within {@value #MORNING} ticks, the bed is
      * back in its pack with no bed block left and at most two blocks broken besides the bed, unhurt and in no liquid.
      */
