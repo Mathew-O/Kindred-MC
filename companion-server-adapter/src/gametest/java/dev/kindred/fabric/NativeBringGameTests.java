@@ -54,6 +54,24 @@ public final class NativeBringGameTests implements FabricGameTest {
      * The bring's last check needs Hal in play (F-22c99). Out of play as the test ends, it says so; {@code lastNotYet}, what
      * the check last found not yet so, if anything.
      */
+    /**
+     * F-22c84b, test-only: with the bring's dirt short at its last check, where the rest may be. It names every dirt block
+     * standing in the fixture's kept ground, its field being stone, so any dirt there was put there, relative to the hall's
+     * origin, the first eight and how many; and what Hal holds in each hand. Three CI runs came home "3 dirt" with no dirt
+     * lying about, and nothing said where the fourth was. It changes nothing the check asks.
+     */
+    static String dirtWhere(net.minecraft.server.world.ServerWorld world, BlockPos o, BlockPos hall,
+                            net.minecraft.server.network.ServerPlayerEntity hal) {
+        java.util.List<String> at = new java.util.ArrayList<>();
+        int n = 0;
+        for (BlockPos p : BlockPos.iterate(o.add(-9, 0, -8), o.add(25, 16, 34))) {
+            if (!world.getBlockState(p).isOf(Blocks.DIRT)) continue;
+            if (n++ < 8) at.add(p.subtract(hall).toShortString());
+        }
+        return "; dirt blocks in its ground: " + n + (n == 0 ? "" : " " + at)
+                + (hal == null ? "; Hal out of play" : "; in hand " + hal.getMainHandStack() + ", off hand " + hal.getOffHandStack());
+    }
+
     static void inPlay(TestContext context, net.minecraft.server.network.ServerPlayerEntity hal, String lastNotYet) {
         context.assertTrue(hal != null, lastNotYet == null ? "Hal still in play"
                 : "Hal out of play as the test ended; before that, not yet: " + lastNotYet);
@@ -313,6 +331,23 @@ public final class NativeBringGameTests implements FabricGameTest {
      * said only "Hal still in play", the minute's reason gone. Here, Hal out of play with a reason last found not yet so: the
      * check's failure must name that reason. Anything else it throws is caught, so it cannot crash the server.
      */
+    /**
+     * F-22c84b, test-only. The bring's last check, short of dirt, says where dirt stands in its ground: a dirt block put
+     * in the fixture's stone field is named, relative to the hall, and the text stays inside a lectern page's 900.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDirtWhere", tickLimit = 40)
+    public void shortOfDirtTheBringCheckSaysWhereDirtStandsInItsGround(TestContext context) {
+        var world = context.getWorld();
+        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos hall = o.add(4, 2, 4);
+        FixtureGround.keep(context, o.add(-9, 0, -8), o.add(25, 16, 34));
+        for (BlockPos p : BlockPos.iterate(o.add(-9, 0, -8), o.add(25, 16, 34))) world.setBlockState(p, Blocks.AIR.getDefaultState());
+        world.setBlockState(hall.add(-1, 0, 1), Blocks.DIRT.getDefaultState());
+        String said = dirtWhere(world, o, hall, null);
+        context.assertTrue(said.contains("dirt blocks in its ground: 1 [-1, 0, 1]") && said.length() < 900, "Where its dirt stands: " + said);
+        context.complete();
+    }
+
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOutOfPlay", tickLimit = 40)
     public void outOfPlayAsTheTestEndsTheBringCheckStillSaysWhatWasNotYetSo(TestContext context) {
         String reason = "Rails (but the cell floor's), the cart and dirt all taken back, the lectern spent: 63 rails, 1 carts, 0 lecterns, 3 dirt";
@@ -995,7 +1030,8 @@ public final class NativeBringGameTests implements FabricGameTest {
                                     + world.getEntitiesByClass(net.minecraft.entity.Entity.class, hal.getBoundingBox().expand(64), e -> e.isAlive()
                                             && (e instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity || e instanceof net.minecraft.entity.ItemEntity item
                                                     && (item.getStack().isOf(Items.MINECART) || item.getStack().isOf(Items.DIRT))))
-                                            .stream().map(e -> e.getType().getUntranslatedName() + " at " + e.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList()));
+                                            .stream().map(e -> e.getType().getUntranslatedName() + " at " + e.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList()
+                                    + (count(inventory, Items.DIRT) < (river ? 8 : 4) ? dirtWhere(world, context.getAbsolutePos(BlockPos.ORIGIN), origin[0], hal) : "")));
                     if (mine) {
                         BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
                         int mined = 0;
