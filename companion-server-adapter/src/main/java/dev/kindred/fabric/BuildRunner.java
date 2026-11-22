@@ -835,6 +835,7 @@ final class BuildRunner {
             if (item.endsWith("_wool")) continue;
             var lying = pickUp(player, Registries.ITEM.get(Identifier.of(item)), 1);
             if (lying.isPresent()) return lying;
+            noteNoDrop(player, item, bill.missing().get(item));
         }
         boolean placeable = step.kind() == ConstructionPlanner.Kind.PLACE || step.kind() == ConstructionPlanner.Kind.SUPPORT
                 || step.kind() == ConstructionPlanner.Kind.BREAK || step.kind() == ConstructionPlanner.Kind.SCAFFOLD;
@@ -957,6 +958,32 @@ final class BuildRunner {
     /** The drop of wool its last pick-up went for, and that pick-up's label: counted in {@link #woolWalks} once it ends. */
     private java.util.UUID woolFor;
     private String woolLabel;
+    /** The walks a pick-up allows its drop ({@code times}), and where that drop lay, for the diagnostic line (F-22c112). */
+    private int woolTimes;
+    /** The items it has said it found no drop of to pick up, once each (F-22c112). */
+    private final java.util.Set<String> noDropNoted = new java.util.HashSet<>();
+
+    /**
+     * F-22c112, a diagnostic only: the first time it is short of {@code item} and finds no drop to go for, every drop of it
+     * within 24 blocks in one line: where, how far, in sight or not, and how often it was walked to, against the one walk a
+     * block's drop is allowed. On CI a pasture doorway's shut stopped a plank short with no plank it would go for.
+     */
+    private void noteNoDrop(ServerPlayerEntity player, String item, int short_) {
+        if (!noDropNoted.add(item)) return;
+        Item it = Registries.ITEM.get(Identifier.of(item));
+        var drops = player.getServerWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(24, 8, 24),
+                drop -> drop.getStack().isOf(it));
+        var line = new StringBuilder();
+        for (var drop : drops) {
+            if (!line.isEmpty()) line.append("; ");
+            line.append(String.format(java.util.Locale.ROOT, "%d at %.2f, %.2f, %.2f, %.1f away, %s, %s, walked to %d", drop.getStack().getCount(),
+                    drop.getX(), drop.getY(), drop.getZ(), Math.sqrt(player.squaredDistanceTo(drop)), drop.isAlive() ? "alive" : "removed",
+                    player.canSee(drop) ? "in sight" : "out of sight", woolWalks.getOrDefault(drop.getUuid(), 0)));
+        }
+        KindredMod.LOGGER.info("Build {}: short {} {}, no drop of it to pick up; within 24 blocks: {}; the body at {}, {}, {}", blueprint.name(), short_,
+                shortName(item), line.isEmpty() ? "none" : line, String.format(java.util.Locale.ROOT, "%.2f", player.getX()),
+                String.format(java.util.Locale.ROOT, "%.2f", player.getY()), String.format(java.util.Locale.ROOT, "%.2f", player.getZ()));
+    }
 
     /**
      * Wool for the build (a trading hall's beds, E-45d), as players get it: what has dropped picked up first; a sheep of
@@ -979,6 +1006,7 @@ final class BuildRunner {
         // one runs, and a count kept here passed six in a wait for a drop to land, which was then let lie (on CI on
         // #12, short of the beds' wool after all nine sheep were shorn).
         woolFor = drop.getUuid();
+        woolTimes = times;
         woolLabel = "Pick up " + name;
         // Beside it already: a moment for it, as a drop is not picked up in its first half second. Still falling: a
         // moment for it to land, a walk to a block in the air being no walk at all.
@@ -1062,7 +1090,14 @@ final class BuildRunner {
      */
     void finished(PortalRunCampaign.Task task, boolean completed, String reason, ServerWorld world) {
         if (woolFor != null && task.label().equals(woolLabel)) {
-            woolWalks.merge(woolFor, 1, Integer::sum);
+            int walks = woolWalks.merge(woolFor, 1, Integer::sum);
+            // F-22c112, a diagnostic only: the drop it went for still lying once its walk has ended, which counts against it
+            // all the same (another drop may have been taken on the way), and after its last walk is never gone for again.
+            if (world.getEntity(woolFor) instanceof net.minecraft.entity.ItemEntity drop && drop.isAlive()) {
+                KindredMod.LOGGER.info("Build {}: {} ended ({}) with the drop it went for still lying, {} at {}, walked to {} of {}", blueprint.name(),
+                        woolLabel, completed ? "completed" : reason, drop.getStack().getCount(), String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f",
+                                drop.getX(), drop.getY(), drop.getZ()), walks, woolTimes);
+            }
             woolFor = null;
         }
         // A step for the build's needs is no placement: the run's own gathering keeps account of those that fail.
