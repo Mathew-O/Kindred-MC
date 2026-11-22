@@ -195,6 +195,8 @@ final class PortalRunCampaign {
     private long backOffFailedUntil;
     /** When a back-off last ended as walked; and until when one that ended with a mob on foot still in reach holds (e40a22's A1). */
     private long backOffEndedAt = Long.MIN_VALUE, backOffGainlessUntil = Long.MIN_VALUE;
+    /** Until when, badly hurt, a fight is fought behind the shield once two were on it close (F-22c104a). */
+    private long turtleUntil = Long.MIN_VALUE;
     /** How long a back-off that opened no distance keeps the player from backing off or holing up again, in ticks. */
     static final int GAINLESS_HOLD = 200;
     /**
@@ -6933,7 +6935,25 @@ final class PortalRunCampaign {
             holdingSince = -1;
         }
         Task strike = strike(player, nearest, "Fight " + name);
+        // Badly hurt with two or more on foot close (F-22c104a): the shield kept up but for each full swing, as a player
+        // turtles against a pair it cannot outrun. Swinging whenever in reach, hurt to five with two zombies on it, the
+        // player that turned to fight lost (F-22c104's residual).
+        // Held for five seconds once taken, as the fight and the retreat are: with the first of the pair killed, back to
+        // swinging whenever in reach at a fifth of its health, the second killed it (the fixture, once in six).
+        if (player.getHealth() < 6 && player.getOffHandStack().isOf(Items.SHIELD) && huntersOnFootWithin(player, 4) >= 2) turtleUntil = lastTick + 100;
+        if (player.getHealth() < 6 && player.getOffHandStack().isOf(Items.SHIELD) && lastTick < turtleUntil) {
+            var args = new LinkedHashMap<>(strike.args());
+            args.put("style", "turtle");
+            return Optional.of(new Task("native_fight", Map.copyOf(args), strike.label() + " behind the shield"));
+        }
         return Optional.of(new Task("native_fight", strike.args(), strike.label()));
+    }
+
+    /** How many mobs on foot, not creepers or shooters, are after the player within {@code range} blocks (F-22c104a). */
+    private static int huntersOnFootWithin(ServerPlayerEntity player, double range) {
+        return player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(range, 3, range),
+                mob -> mob.isAlive() && mob.getTarget() == player && !(mob instanceof CreeperEntity)
+                        && !(mob instanceof net.minecraft.entity.ai.RangedAttackMob)).size();
     }
 
     /** A mob on foot in reach and no way off from it: what {@link #defend} fights however hurt the player is. */
