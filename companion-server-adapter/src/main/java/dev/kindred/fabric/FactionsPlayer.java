@@ -98,13 +98,18 @@ final class FactionsPlayer {
     }
 
     /**
-     * Whether it stands at the surface: no more than a block below the topmost solid block of its column, leaves not
-     * counted (under a tree's crown it is still at the surface; in a tunnel under a hill it is not).
+     * Whether it stands at the surface, by what it sees where it stands (F-35i2): the sky's light at its feet, as
+     * {@link #saw} takes it. Under a tree's crown, by an open side under rock (a tunnel's mouth, an overhang) it is;
+     * in a tunnel or a cave with no light of the sky it is not. Read from the world's height map before, the top of its
+     * column was world data it had not perceived: a roof over its head kept it below at a tunnel's mouth it stood in.
      */
     static boolean atSurface(ServerPlayerEntity player) {
-        var pos = player.getBlockPos();
-        int top = player.getServerWorld().getTopY(net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
-        return pos.getY() >= top - 1;
+        return atSurface(player.getServerWorld().getLightLevel(net.minecraft.world.LightType.SKY, player.getBlockPos()));
+    }
+
+    /** At the surface by the sky's light at its feet, {@code skyLightAtFeet}: any light of the sky reaches it there. */
+    static boolean atSurface(int skyLightAtFeet) {
+        return skyLightAtFeet > 0;
     }
 
     /** How far below where it last saw the sky it stands, at most, and is not deep below the surface (M-06i2c1). */
