@@ -1094,9 +1094,15 @@ final class BuildRunner {
             // F-22c112, a diagnostic only: the drop it went for still lying once its walk has ended, which counts against it
             // all the same (another drop may have been taken on the way), and after its last walk is never gone for again.
             if (world.getEntity(woolFor) instanceof net.minecraft.entity.ItemEntity drop && drop.isAlive()) {
-                KindredMod.LOGGER.info("Build {}: {} ended ({}) with the drop it went for still lying, {} at {}, walked to {} of {}", blueprint.name(),
+                var body = world.getPlayers().stream().filter(p -> p.getBoundingBox().expand(16).intersects(drop.getBoundingBox()))
+                        .min(java.util.Comparator.comparingDouble(p -> p.squaredDistanceTo(drop)));
+                String where = body.map(p -> String.format(java.util.Locale.ROOT, "; the nearest player %s at %.2f, %.2f, %.2f, %.2f away, %s, the drop %s",
+                        p.getName().getString(), p.getX(), p.getY(), p.getZ(), Math.sqrt(p.squaredDistanceTo(drop)),
+                        p.getBoundingBox().expand(1, 0.5, 1).intersects(drop.getBoundingBox()) ? "within reach" : "out of reach",
+                        drop.cannotPickup() ? "not yet to be picked up" : "to be picked up")).orElse("; no player near");
+                KindredMod.LOGGER.info("Build {}: {} ended ({}) with the drop it went for still lying, {} at {}, walked to {} of {}{}", blueprint.name(),
                         woolLabel, completed ? "completed" : reason, drop.getStack().getCount(), String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f",
-                                drop.getX(), drop.getY(), drop.getZ()), walks, woolTimes);
+                                drop.getX(), drop.getY(), drop.getZ()), walks, woolTimes, where);
             }
             woolFor = null;
         }
