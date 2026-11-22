@@ -117,6 +117,10 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                     var events = f.runtime.factionCompletedAndOverWaterForTest(f.id);
                     var completed = events.get(0);
                     var overWater = events.get(1);
+                    // Each move settled because it got there (M-06m), named in the failure only: on #427's CI (run 44934790203
+                    // attempt 2) a choice came 240 ticks after the last with no walk completed, Ada in the sea in Blue's
+                    // chunk east, her move's target; whether it was an arrival, the next such failure will say.
+                    var arrived = events.get(2);
                     int checked = 0;
                     var exempt = new java.util.ArrayList<String>();
                     for (int i = 1; i < decided.size(); i++) {
@@ -130,7 +134,7 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                         checked++;
                         context.assertTrue(to - from >= FactionsPlayer.DECIDE_TICKS,
                                 "Its next choice " + (to - from) + " ticks after the last, before the decision interval: " + decided
-                                        + "; walks completed at " + completed + ", places set aside as water at " + overWater);
+                                        + "; walks completed at " + completed + ", moves settled there at " + arrived + ", places set aside as water at " + overWater);
                     }
                     KindredMod.LOGGER.info("Paced fixture: {} intervals checked, let be after a walk that completed: {}", checked, exempt);
                     context.assertTrue(checked >= CHECKED, "At least " + CHECKED + " intervals between its choices checked: " + checked + " (let be: " + exempt + ")");
