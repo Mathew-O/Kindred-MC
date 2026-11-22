@@ -180,8 +180,10 @@ public final class NativeBuildNeedsGameTests implements FabricGameTest {
                     a[0] = new net.minecraft.entity.ItemEntity(world, o.getX() + 9.5, o.getY() + 2, o.getZ() + 12.5, new ItemStack(Items.OAK_PLANKS));
                     a[0].setVelocity(0, 0, 0);
                     world.spawnEntity(a[0]);
-                    context.assertTrue(f.runtime.startBuild(f.source, f.id, wall, origin, 0) == 1, "Build started");
                 })
+                // Started once the drop has landed, so its pick-up is a walk to it, not a moment for it to land.
+                .createAndAdd(() -> context.assertTrue(a[0].isOnGround(), "The first drop landed"))
+                .createAndAdd(() -> context.assertTrue(f.runtime.startBuild(f.source, f.id, wall, origin, 0) == 1, "Build started"))
                 .createAndAdd(() -> {
                     if (!staged[0] && f.runtime.buildStatus(f.id).orElse("").contains("Picking up oak planks")) {
                         // STAGED: B at its feet, taken on the way; A on four blocks, so the walk set out for it ends short.
