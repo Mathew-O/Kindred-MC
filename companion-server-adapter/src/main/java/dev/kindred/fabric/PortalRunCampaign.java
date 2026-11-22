@@ -694,7 +694,7 @@ final class PortalRunCampaign {
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
-        refusedStep(task, completed, tick);
+        refusedStep(task, completed, tick, why);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -2909,9 +2909,16 @@ final class PortalRunCampaign {
     /** Whether the gate's marker has been logged for this spell of being hemmed in. */
     private boolean hemmedSaid;
 
-    /** A step that did not go: its target remembered for the bound on the climb (F-25c4bx1). */
-    private void refusedStep(Task task, boolean completed, long tick) {
-        if (task == null || completed) return;
+    /**
+     * A walk refused for want of a route: its target remembered for the bound on the climb (F-25c4bx1). Only that: a step
+     * cancelled ("authority lost") or blocked for another reason is no place it could not reach. In iteration 27 a "Dig down
+     * toward lava" cancelled a block below batch 1's 404 Echo came just before a climb that went on up to its crafting
+     * table. Nor the climb's own steps: its breaks are refused for now, not here, and a step up of its own refused is no
+     * target of its work.
+     */
+    private void refusedStep(Task task, boolean completed, long tick, String why) {
+        if (task == null || completed || !"native_goto".equals(task.skill()) || why == null || !why.startsWith("No walkable route")
+                || task.label().startsWith("Climb to find another way")) return; // Nor its own step up.
         BlockPos at = position(task.args());
         if (at == null) return;
         refusedTarget = at;
