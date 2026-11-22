@@ -5654,10 +5654,6 @@ final class PortalRunCampaign {
         }
         // Not the only sword or axe on the hotbar: swapped out for a block, it was only taken back to hand (F-25c4cv).
         if (onlyWeaponAt(inventory, target)) target = 7;
-        int before = 8;
-        for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { before = s; break; }
-        if (onlyWeaponAt(inventory, before)) before = 7;
-        if (target != before) KindredMod.LOGGER.info("{} F-25c4dk-marker: hotbar target {} not {} [{}]", body.entity().getName().getString(), target, before, label);
         return new Task("native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(target)), label);
     }
 
