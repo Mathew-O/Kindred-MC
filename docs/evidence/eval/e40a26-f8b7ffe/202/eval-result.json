@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 8.280,
+  "items": {"windows": 7209, "gained": 11283, "paid": 11283, "lapsed": 1378, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 104.0, "snapshotMicrosMax": 16249.6, "tagMicrosMean": 89.5, "tagMicrosMax": 15132.0, "bySource": {"container.take:furnace": 144, "pickup:class_1428.method_6007": 1, "pickup:class_1540.method_5773": 2, "pickup:class_2248.method_36993": 9304, "pickup:class_3222.method_7329": 2245, "pickup:class_52.method_331": 100, "screen:class_1707": 22, "screen:class_1714": 112, "screen:class_1723": 682, "use:item": 49}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 390, "class_1540.method_5773": 22, "class_2248.method_36993": 9248, "class_3222.method_7329": 286, "class_52.method_331": 178}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 16.23, "tickMsWorst": 1883.38, "tickMsWorstAt": 114041, "ticksOver50ms": 1413, "ticksOver200ms": 10, "heapMbMax": 980, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1800, "stone_tools": 4220, "iron_ingot": 9620, "iron_pickaxe": 38920},
+      "deaths": [
+        {"tick": 62744, "cause": "Kindred tried to swim in lava to escape Zombie", "x": -92, "y": -35, "z": -147, "light": 15, "timeOfDay": 5596, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "Fight zombie"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 33180, "x": -160, "y": 16, "z": -8, "attempt": 1}, {"tick": 141220, "x": -174, "y": 61, "z": -87, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7506,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 2.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3180, "stone_tools": 4920, "iron_ingot": 10840, "iron_pickaxe": 70840, "obsidian": 110252, "portal_lit": 113425},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28180, "x": -13, "y": -22, "z": -24, "attempt": 1}, {"tick": 53420, "x": -29, "y": -27, "z": -36, "attempt": 2}, {"tick": 60620, "x": -28, "y": -27, "z": -36, "attempt": 3}, {"tick": 74460, "x": -15, "y": 2, "z": -42, "attempt": 1}, {"tick": 82340, "x": -22, "y": 1, "z": -34, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2888,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.5
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3860, "stone_tools": 5220, "iron_ingot": 11500, "iron_pickaxe": 28400},
+      "deaths": [
+        {"tick": 37093, "cause": "Echo tried to swim in lava to escape Zombie", "x": -92, "y": -36, "z": -149, "light": 14, "timeOfDay": 530, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "Fight zombie"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 110560, "x": -199, "y": 4, "z": -93, "attempt": 1}, {"tick": 114340, "x": -201, "y": 5, "z": -71, "attempt": 2}, {"tick": 118480, "x": -223, "y": 8, "z": -73, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7743,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

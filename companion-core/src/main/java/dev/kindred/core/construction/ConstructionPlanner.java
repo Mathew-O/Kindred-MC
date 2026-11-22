@@ -34,6 +34,8 @@ public final class ConstructionPlanner {
     /** How far from the eyes a face can be clicked: vanilla's block interaction range. */
     public static final double REACH = 4.5;
     public static final double EYE = 1.62;
+    /** Two faces a break's look crosses this near the same point, as a share of the line, are a tie (F-22c107). */
+    static final double TIE = 1e-6;
     /** Targets weighed for a spot to stand each pass, in build order; the rest wait their turn. */
     static final int CANDIDATES = 48;
     /** How far round a target a spot to stand is looked for. */
@@ -825,6 +827,15 @@ public final class ConstructionPlanner {
      * The cells the segment from {@code from} to {@code to} passes through, from the first cell after {@code from}'s own to
      * {@code to}'s, one cell face at a time, in the order and with the ties of vanilla's block raycast (BlockView.raycast):
      * the server's look at a block meets them so.
+     *
+     * <p>Where the segment passes through a cell edge or corner, two or three faces crossed at the same point to within
+     * {@link #TIE}, which cell the server's look enters first is decided by its floating point (its raycast starts from a
+     * point a ten-millionth back along the line, at the world's own coordinates), not by the line. Both are taken then:
+     * every cell either order would pass through, and the cell past the edge. A break's look is then clear only where the
+     * server's is, whichever way it breaks the tie. A hideout's dirt in the way was planned from a spot whose line crossed
+     * the x and z faces at exactly the same point; the planner stepped z first, through cleared cells, and the server x
+     * first, into dirt beside them, and refused the break as out of sight three times. Set aside, the dirt was walled in by
+     * the rest of the build, and the hideout was left one block short (#457's CI, run 45025077528) (F-22c107).
      */
     static List<Pos> cellsOnLine(double[] from, double[] to) {
         var cells = new ArrayList<Pos>();
@@ -838,6 +849,26 @@ public final class ConstructionPlanner {
         double nextZ = stepZ * (sz > 0 ? 1 - (from[2] - Math.floor(from[2])) : from[2] - Math.floor(from[2]));
         int guard = Math.abs(ex - x) + Math.abs(ey - y) + Math.abs(ez - z) + 3;
         while ((nextX <= 1 || nextY <= 1 || nextZ <= 1) && guard-- > 0) {
+            double first = Math.min(nextX, Math.min(nextY, nextZ));
+            boolean tx = sx != 0 && nextX - first <= TIE, ty = sy != 0 && nextY - first <= TIE, tz = sz != 0 && nextZ - first <= TIE;
+            if ((tx ? 1 : 0) + (ty ? 1 : 0) + (tz ? 1 : 0) > 1) {
+                // A tie: each cell some order of the tied faces passes through on its way past the edge, then the cell beyond.
+                boolean ended = false;
+                for (int mask = 1; mask < 7; mask++) {
+                    boolean mx = (mask & 1) != 0, my = (mask & 2) != 0, mz = (mask & 4) != 0;
+                    if (mx && !tx || my && !ty || mz && !tz || (mx == tx && my == ty && mz == tz)) continue;
+                    Pos side = new Pos(x + (mx ? sx : 0), y + (my ? sy : 0), z + (mz ? sz : 0));
+                    cells.add(side);
+                    if (side.x() == ex && side.y() == ey && side.z() == ez) ended = true;
+                }
+                if (ended) break;
+                if (tx) { x += sx; nextX += stepX; }
+                if (ty) { y += sy; nextY += stepY; }
+                if (tz) { z += sz; nextZ += stepZ; }
+                cells.add(new Pos(x, y, z));
+                if (x == ex && y == ey && z == ez) break;
+                continue;
+            }
             if (nextX < nextY) {
                 if (nextX < nextZ) { x += sx; nextX += stepX; } else { z += sz; nextZ += stepZ; }
             } else if (nextY < nextZ) {
