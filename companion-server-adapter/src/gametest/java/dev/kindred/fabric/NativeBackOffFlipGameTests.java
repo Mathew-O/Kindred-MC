@@ -390,6 +390,7 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
         net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
         long[] started = {-1};
         boolean[] rested = {false};
+        double[] farthest = {0};
         StringBuilder steps = new StringBuilder();
         String[] lastStep = {""};
         context.createTimedTaskRunner()
@@ -428,10 +429,12 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                     context.getWorld().setTimeOfDay(6000);
                     if (hunted) {
                         // Staged: held ten off behind the wall, still after the player.
-                        var at = context.getRelative(new net.minecraft.util.math.Vec3d(MID + 0.5, 2, MID + 10.5));
+                        var at = context.getAbsolute(new net.minecraft.util.math.Vec3d(MID + 0.5, 2, MID + 10.5));
                         zombie[0].refreshPositionAndAngles(at.getX(), at.getY(), at.getZ(), 0, 0);
                         zombie[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                         zombie[0].setTarget(player);
+                        // Over its first second, while it decides from where it stands: later its work may walk it off.
+                        if (context.getTick() - started[0] <= 20) farthest[0] = Math.max(farthest[0], Math.sqrt(player.squaredDistanceTo(zombie[0])));
                     }
                     String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
                     if (!progress.equals(lastStep[0])) {
@@ -443,6 +446,8 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                     else context.assertTrue(context.getTick() - started[0] >= 100, "Five seconds on");
                 })
                 .createAndAdd(() -> {
+                    // The staging itself: the zombie was where it was held, within sixteen of the player.
+                    context.assertTrue(!hunted || farthest[0] <= 12, "The zombie held at most 12 off over the first second; it was " + String.format("%.1f", farthest[0]));
                     context.assertTrue(!hunted || !rested[0], "Rested to heal with a zombie after it ten off; its steps:" + steps);
                     f.runtime.stop();
                 })
