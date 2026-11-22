@@ -4,3 +4,4 @@ branch-3 (18f63e4e): 58 min, peak 3109 MB, 120 required tests failed, fence-top 
 confirm-branch-1.1 (18f63e4e, only flagged): 0 min, peak 1096 MB, 1 required tests failed, fence-top 0, disk 4.3G
 confirm-base-1.1 (59f62762, only flagged): 0 min, peak 1251 MB, 1 required tests failed, fence-top 0, disk 4.3G
 confirm-branch-1.2 (18f63e4e, only flagged): 0 min, peak 1162 MB, 1 required tests failed, fence-top 0, disk 4.3G
+confirm-base-1.2 (59f62762, only flagged): 0 min, peak 1385 MB, All 2 required tests passed, fence-top 0, disk 4.3G
