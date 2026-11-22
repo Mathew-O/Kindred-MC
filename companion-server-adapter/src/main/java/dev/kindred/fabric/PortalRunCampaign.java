@@ -682,6 +682,19 @@ final class PortalRunCampaign {
      * and carried out by the run's own steps: ore in sight, then the caves it knows, then down to where iron is; fuel,
      * a furnace and the smelt. Empty once it holds them, or where it cannot from here.
      */
+    /**
+     * Where the player stands and the server's tick, kept as {@code plan()} keeps them, for a caller that asks the run's
+     * steps of it with no goal of its own (a build's gather, look, route or climb), whose plan never runs (F-22c115).
+     * Left at the world's origin, every refused walk was counted as from one place, and its stranding never lapsed as
+     * the player moved: a cabin's three refused walks to stone in its pit kept the field's twelve logs out as "stranded
+     * from 0, 0, 0", its build turning between a walk out to look for logs and its way back up to the build.
+     */
+    private void standing(NativePlayerBody body) {
+        var player = body.entity();
+        lastFeet = player.getBlockPos().toImmutable();
+        lastTick = Math.max(lastTick, player.getServerWorld().getServer().getTicks());
+    }
+
     Optional<Task> ironFor(NativePlayerBody body, EditPolicy.ServerPolicy policy, int wanted) {
         this.policy = policy;
         lastFeet = body.entity().getBlockPos().toImmutable();
@@ -4195,6 +4208,7 @@ final class PortalRunCampaign {
 
     private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,
                                   Predicate<BlockPos> also) {
+        standing(body);
         Optional<Task> task = gatherFrom(body, kind, radius, what, guarded, also);
         if (task.isEmpty() && kind == WorldKnowledge.Kind.LOG && stuckSpells > 0 && lastTick - spellStart >= stuckTicks && logsSpell != stuckSpells) {
             logsSpell = stuckSpells;
@@ -4306,6 +4320,7 @@ final class PortalRunCampaign {
      * nothing said why the build's gather had passed it over. The caller logs it once a trip.
      */
     boolean knownLogsKeptOut(NativePlayerBody body, int radius, java.util.function.Function<BlockPos, String> filtered, String prefix) {
+        standing(body);
         BlockPos feet = body.entity().getBlockPos();
         var known = new java.util.ArrayList<>(knowledge.all(WorldKnowledge.Kind.LOG));
         if (known.isEmpty()) return false;
@@ -4616,6 +4631,7 @@ final class PortalRunCampaign {
 
     /** A walk out over the surface to look for {@code what}, as the goal looks for a tree it has not seen (E-08c). */
     Optional<Task> lookFor(NativePlayerBody body, String what) {
+        standing(body);
         return groundBelow(body.entity()) && !underground(body.entity()) ? explore(body.entity(), what) : Optional.empty();
     }
 
@@ -5058,6 +5074,7 @@ final class PortalRunCampaign {
      * does not make a way up it.
      */
     Optional<Task> climbOut(NativePlayerBody body) {
+        standing(body);
         return wayUp(body, "Climb out to the build");
     }
 
@@ -5404,6 +5421,7 @@ final class PortalRunCampaign {
      * caller whose walk there has just failed.
      */
     Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, java.util.function.Predicate<BlockPos> goal, boolean needEdit, String label) {
+        standing(body);
         var player = body.entity();
         if (!player.isOnGround() && !player.isTouchingWater()) return Optional.empty(); // Mid-jump: plan on landing.
         var world = player.getServerWorld();
@@ -5556,6 +5574,7 @@ final class PortalRunCampaign {
 
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
     Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
+        standing(body);
         return digger.tunnelAlong(dig(body), side(heading), label);
     }
 
