@@ -11040,6 +11040,18 @@ final class PlayerRuntime {
                         List.copyOf(entry.factionPlay.arrivedForTest));
     }
 
+    /**
+     * For fixtures (M-06m1): {@code target} recorded as set aside as open water it saw at {@code tick}, as the open-water
+     * look records it, or ({@code water} false) refused once at {@code tick}, as a refused walk is.
+     */
+    void factionTargetRecordForTest(UUID player, String target, long tick, boolean water) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return;
+        if (water) entry.factionPlay.openWater(target, tick);
+        else entry.factionPlay.refused(target, tick);
+    }
+
     List<Long> factionDecisionsForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
