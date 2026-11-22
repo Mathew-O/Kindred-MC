@@ -106,6 +106,7 @@
       "dev.kindred.fabric.NativeBedRetryGameTests",
       "dev.kindred.fabric.NativeKitBeforeNightGameTests",
       "dev.kindred.fabric.NativeTripWoodGameTests",
+      "dev.kindred.fabric.NativeReserveBoundGameTests",
       "dev.kindred.fabric.NativeCastWaterLostGameTests",
       "dev.kindred.fabric.NativeBarrierGameTests",
       "dev.kindred.fabric.NativeCoverClimbGameTests",

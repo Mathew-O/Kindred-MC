@@ -149,8 +149,18 @@ public final class PortalRunPlanner {
 
     /** Logs fetched when its last pickaxe is all it has below: sticks for two more pickaxes and a table's planks (F-25c4cr1). */
     static final int RESERVE_LOGS = 2;
+    /** The reserve turn's reason, by which the campaign knows the step to bound (F-25c4cr1). */
+    public static final String RESERVE_WHY = "Up for wood while its last pickaxe still digs";
 
     private PortalRunPlanner() { }
+
+    /**
+     * The cast's own step, as the plan gives it once the frame's water and mould blocks are in hand; what the reserve turn
+     * gives way to when the campaign sets it aside, its wood search having gained nothing (F-25c4cr1).
+     */
+    public static Step castStep(PortalRunSnapshot s) {
+        return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
+    }
 
     /** {@link #plan(PortalRunSnapshot, WorldFacts)} in an ordinary world with nothing observed yet. */
     public static List<Step> plan(PortalRunSnapshot s) {
@@ -489,9 +499,9 @@ public final class PortalRunPlanner {
             // the wood search it began never ended (NativeSnowSiteGameTests, NativeSpireGameTests).
             boolean seekingLava = !facts.knows(WorldFacts.Source.LAVA) && s.lavaBuckets() == 0 && s.pickaxeTier() < 3;
             if (caves && seekingLava && s.pickaxes() <= 1 && s.sticks() < 2 && s.woodUnits() < 2) {
-                return logs(facts, RESERVE_LOGS, Stage.OBSIDIAN, "Up for wood while its last pickaxe still digs");
+                return logs(facts, RESERVE_LOGS, Stage.OBSIDIAN, RESERVE_WHY);
             }
-            return new Step(Action.CAST_PORTAL, "", PORTAL_OBSIDIAN - s.obsidian(), Stage.OBSIDIAN, "Cast the portal frame from lava and water");
+            return castStep(s);
         }
 
         // Obsidian: water poured onto still lava, then mined with the diamond pickaxe.
