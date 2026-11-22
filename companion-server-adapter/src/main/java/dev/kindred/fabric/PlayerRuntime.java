@@ -10090,7 +10090,6 @@ final class PlayerRuntime {
             boolean open = task.state() == SharedTask.TaskState.OPEN || task.state() == SharedTask.TaskState.REVOKED;
             if (!open) {
                 entry.handOversLetGo.remove(task.id());
-                entry.handOversLetGoSaid.remove(task.id());
                 continue;
             }
             // One it let go itself waits until something changes (E-40a1a); one let go by a stop or a lapsed hold does not.
@@ -10120,10 +10119,7 @@ final class PlayerRuntime {
             var grants = members.size() < 2 ? List.<ShareOut.Grant>of() : ShareOut.share(members, material, free);
             // Not the piece it let go to that teammate, which waits for something to change (E-40a1a).
             var leftOut = grants.stream().filter(g -> letGoTo(entry, g.to(), HandOvers.pieceItem(g.slot(), g.material()))).toList();
-            if (!leftOut.isEmpty()) {
-                grants = grants.stream().filter(g -> !leftOut.contains(g)).toList();
-                KindredMod.LOGGER.info("{} E-40a1a-marker: share-out leaves out {}, let go", entry.data.displayName(), leftOut);
-            }
+            if (!leftOut.isEmpty()) grants = grants.stream().filter(g -> !leftOut.contains(g)).toList();
             KindredMod.LOGGER.info("{} found {}: holds {}, {} unpromised; {} teammates by; share-out {}", entry.data.displayName(), item, held, free,
                     members.size() - 1, grants);
             if (grants.stream().allMatch(g -> g.to().equals(self))) continue; // Nobody else is better for it: its own to use.
@@ -10382,14 +10378,8 @@ final class PlayerRuntime {
                 why = "its teammate's kit changed";
             }
         }
-        if (why == null) {
-            if (entry.handOversLetGoSaid.add(task.id())) {
-                KindredMod.LOGGER.info("{} E-40a1a-marker: holds {} let go, nothing changed", entry.data.displayName(), task.title());
-            }
-            return true;
-        }
+        if (why == null) return true;
         entry.handOversLetGo.remove(task.id());
-        entry.handOversLetGoSaid.remove(task.id());
         KindredMod.LOGGER.info("{} takes up handing over {} again: {}", entry.data.displayName(), task.title(), why);
         return false;
     }
@@ -19710,8 +19700,6 @@ final class PlayerRuntime {
         private double handOverLastDistance = Double.MAX_VALUE;
         /** The hand-overs it let go itself, and what stood then: each waits until something changes (E-40a1a). */
         private final Map<TaskId, LetGo> handOversLetGo = new java.util.HashMap<>();
-        /** The let-go hand-overs it has logged as held, once each, for the gate's marker. */
-        private final java.util.Set<TaskId> handOversLetGoSaid = new java.util.HashSet<>();
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;
