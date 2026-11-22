@@ -1,0 +1,62 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 5634, "paid": 5634, "lapsed": 146, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 79.9, "snapshotMicrosMax": 5298.8, "tagMicrosMean": 94.3, "tagMicrosMax": 6065.8, "bySource": {"container.take:furnace": 61, "pickup:class_1560.method_6099": 1, "pickup:class_2248.method_36993": 3856, "pickup:class_3222.method_7329": 1288, "pickup:class_52.method_331": 89, "screen:class_1714": 55, "screen:class_1723": 388, "use:item": 42}, "dropsByOrigin": {"class_1428.method_6007": 1, "class_1540.method_5773": 5, "class_1560.method_6099": 1, "class_2248.method_36993": 3872, "class_3222.method_7329": 144, "class_52.method_331": 222}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 12.87, "tickMsWorst": 1577.73, "tickMsWorstAt": 47476, "ticksOver50ms": 1602, "ticksOver200ms": 11, "heapMbMax": 1181, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 660, "stone_tools": 1660, "iron_ingot": 7680},
+      "deaths": [
+        {"tick": 19122, "cause": "Kindred was slain by Cave Spider", "x": 46, "y": 20, "z": -150, "light": 0, "timeOfDay": 19284, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Iron: fight back - Back off from cave_spider the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 109991, "cause": "Kindred was shot by Stray", "x": -16, "y": 73, "z": 129, "light": 4, "timeOfDay": 14153, "dimension": "minecraft:overworld", "hunger": 5, "underSky": true, "stage": "Done: fight back - Take cover from stray", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 36920, "x": 76, "y": 39, "z": -7, "attempt": 1}, {"tick": 43800, "x": 76, "y": 39, "z": -6, "attempt": 1}, {"tick": 49960, "x": 76, "y": 40, "z": -6, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8303,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1740, "stone_tools": 4140, "iron_ingot": 13880, "iron_pickaxe": 27240, "obsidian": 45673, "portal_lit": 47474},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 39560, "x": 43, "y": 35, "z": -91, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5603,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 9,
+      "bridgeSeconds": 3.4
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2160, "stone_tools": 5220, "iron_ingot": 12800, "iron_pickaxe": 24100},
+      "deaths": [
+        {"tick": 95449, "cause": "Echo was slain by Zombie", "x": 54, "y": 25, "z": -174, "light": 6, "timeOfDay": 23611, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Done: fight back - Back off from cave_spider the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 34500, "x": 61, "y": 29, "z": -98, "attempt": 1}, {"tick": 39820, "x": 90, "y": 32, "z": -92, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5630,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
