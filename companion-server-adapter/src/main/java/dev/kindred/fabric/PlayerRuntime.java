@@ -10528,6 +10528,7 @@ final class PlayerRuntime {
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
+            if (to != null) play.arrivedForTest(tick);
             settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
@@ -10935,8 +10936,9 @@ final class PlayerRuntime {
     List<List<Long>> factionCompletedAndOverWaterForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
-        return entry == null ? List.of(List.of(), List.of())
-                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest));
+        return entry == null ? List.of(List.of(), List.of(), List.of())
+                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest),
+                        List.copyOf(entry.factionPlay.arrivedForTest));
     }
 
     List<Long> factionDecisionsForTest(UUID player) {

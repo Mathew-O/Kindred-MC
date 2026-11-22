@@ -158,6 +158,12 @@ final class FactionsPlayer {
     final java.util.ArrayDeque<Long> completedForTest = new java.util.ArrayDeque<>();
     final java.util.ArrayDeque<Long> overWaterForTest = new java.util.ArrayDeque<>();
     void completedForTest(long tick) { completedForTest.addLast(tick); if (completedForTest.size() > 64) completedForTest.removeFirst(); }
+    /**
+     * For the fixtures (M-06m): the tick of each move settled because it got there, a walk asked or none (in its chunk, as
+     * a swim drifts it there), after which it weighs again at once; the last 64.
+     */
+    final java.util.ArrayDeque<Long> arrivedForTest = new java.util.ArrayDeque<>();
+    void arrivedForTest(long tick) { arrivedForTest.addLast(tick); if (arrivedForTest.size() > 64) arrivedForTest.removeFirst(); }
 
     /** A walk toward {@code target} got somewhere: its refusals and ways forgotten, and the run of refusals with them. */
     void walked(String target) {
