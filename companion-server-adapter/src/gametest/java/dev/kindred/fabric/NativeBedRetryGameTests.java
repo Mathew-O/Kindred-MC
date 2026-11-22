@@ -174,4 +174,116 @@ public final class NativeBedRetryGameTests implements FabricGameTest {
             return false;
         });
     }
+
+    /**
+     * In plain terms: an AI player dug into a pocket for the night with its bed, whose bed will not go down, does not
+     * open the shelter it just sealed to mine on and seal it again, over and over, all night.
+     *
+     * Technical: F-25c4dl. In E-40 step 8 (`e40a25s-0d3432b`, RUNNER 2's consoles at `fe0be8cd`) on 303 with the change on,
+     * four of the five "mining for a find" spells were one cell by turns: "Seal the shelter at C" from the night in the bed
+     * it carries, then its branch mine's "clear C", then the seal again, with no advance (Kindred at -1, 20, -78; Sol at
+     * 176, 20, 10, at 196, 37, 49 and at -93, -54, 158), and 101 Echo's with it off: 15 of the run's stuck minutes. Sol's
+     * at 176, 20, 10 came after its bed was refused three times ("Owned inventory changed before the bed was set down"):
+     * the bed's night seals its pocket before it asks whether its bed may go down now, and with it not to go down (waiting
+     * to try again, given up tonight, or a way in left) hands the night back, and the iron's branch mine, which below
+     * ground goes on through the night, opens the seal. STAGED: a slab of stone, the pocket and its bed's room as above,
+     * a sheep with its AI off in the bed's foot cell (vanilla sets no bed down there), its kit as though made by the
+     * iron stage and its bed, night held, the portal's goal. Fails when one cell is sealed and cleared by turns more than
+     * {@value #FLIPS_MOST} times; passes after {@value #WATCH_MINE} ticks of night with its pocket sealed at least once
+     * and none so.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, batchId = "bedSealMine", tickLimit = WATCH_MINE + 800)
+    public void aSealedPocketWhoseBedWillNotGoDownIsNotOpenedByItsOwnMineAndSealedAgain(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, WATCH_MINE + 700);
+        BlockPos o = context.getAbsolutePos(new BlockPos(60, 8, 60));
+        java.util.Map<BlockPos, Integer> flips = new java.util.HashMap<>();
+        java.util.Map<BlockPos, String> lastKind = new java.util.HashMap<>();
+        java.util.regex.Pattern sealAt = java.util.regex.Pattern.compile("Seal the shelter at (-?\\d+), (-?\\d+), (-?\\d+)");
+        java.util.regex.Pattern clearAt = java.util.regex.Pattern.compile(": clear (-?\\d+), (-?\\d+), (-?\\d+)");
+        int[] watched = {0}, seals = {0}, clears = {0};
+        String[] last = {""}, failed = {null};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Sleeper"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player() != null && f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    FixtureGround.keep(context, o.add(-MINE_FIELD, -2, -MINE_FIELD), o.add(MINE_FIELD, 6, MINE_FIELD));
+                    for (BlockPos cell : BlockPos.iterate(o.add(-MINE_FIELD, -2, -MINE_FIELD), o.add(MINE_FIELD, 6, MINE_FIELD))) {
+                        world.setBlockState(cell, Blocks.STONE.getDefaultState());
+                    }
+                    for (BlockPos cell : BlockPos.iterate(o.add(0, 0, -2), o.add(0, 1, 0))) world.setBlockState(cell, Blocks.AIR.getDefaultState());
+                    var sheep = net.minecraft.entity.EntityType.SHEEP.create(world);
+                    sheep.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() - 0.5, 0, 0);
+                    sheep.setAiDisabled(true);
+                    sheep.setPersistent();
+                    world.spawnEntity(sheep);
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    for (var slot : EquipmentSlot.values()) if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR || slot == EquipmentSlot.OFFHAND) player.equipStack(slot, ItemStack.EMPTY);
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_SWORD));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 16));
+                    inventory.setStack(3, new ItemStack(Items.TORCH, 32));
+                    inventory.setStack(4, new ItemStack(Items.COBBLESTONE, 32));
+                    inventory.setStack(5, new ItemStack(Items.CRAFTING_TABLE));
+                    inventory.setStack(6, new ItemStack(Items.FURNACE));
+                    inventory.setStack(7, new ItemStack(Items.COAL, 8));
+                    inventory.setStack(8, new ItemStack(Items.WHITE_BED));
+                    inventory.setStack(9, new ItemStack(Items.STICK, 8));
+                    inventory.setStack(10, new ItemStack(Items.STONE_PICKAXE));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    world.setWeather(12_000, 0, false, false);
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, 180, 10);
+                    player.setVelocity(Vec3d.ZERO);
+                    world.setTimeOfDay(14_000);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround() && f.player().getBlockPos().equals(o), "In its pocket"))
+                .createAndAdd(() -> {
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    // The first failure is the one reported, every tick after, until the test's time runs out.
+                    context.assertTrue(failed[0] == null, failed[0]);
+                    context.getWorld().setTimeOfDay(14_000);
+                    var player = f.player();
+                    context.assertTrue(player != null && player.isAlive(), "The player died: " + last[0]);
+                    var bots = f.runtime.panelBots(dev.kindred.core.Actor.console());
+                    String progress = bots.isEmpty() ? "" : String.valueOf(bots.getFirst().goalProgress());
+                    if (!progress.equals(last[0])) {
+                        last[0] = progress;
+                        var seal = sealAt.matcher(progress);
+                        var clear = clearAt.matcher(progress);
+                        String kind = seal.find() ? "seal" : clear.find() ? "clear" : null;
+                        if (kind != null) {
+                            var m = "seal".equals(kind) ? seal : clear;
+                            BlockPos cell = new BlockPos(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)));
+                            if ("seal".equals(kind)) seals[0]++; else clears[0]++;
+                            String before = lastKind.put(cell, kind);
+                            if (before != null && !before.equals(kind)) {
+                                int n = flips.merge(cell, 1, Integer::sum);
+                                if (n > FLIPS_MOST && failed[0] == null) failed[0] = "Its pocket's cell " + cell.subtract(o).toShortString()
+                                        + " sealed and cleared by turns " + n + " times: " + progress + " / " + f.runtime.lifeNote(f.id);
+                                context.assertTrue(failed[0] == null, failed[0]);
+                            }
+                        }
+                    }
+                    if (++watched[0] <= WATCH_MINE) throw new net.minecraft.test.GameTestException("Watching the night");
+                    context.assertTrue(seals[0] > 0, "Its pocket never sealed: " + last[0] + " / " + f.runtime.lifeNote(f.id));
+                })
+                .createAndAdd(() -> {
+                    KindredMod.LOGGER.info("Bed seal and mine: {} seals, {} clears, flips by cell {}; {}", seals[0], clears[0], flips, last[0]);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
+    /** How long a night its pocket is watched, the stone round it, and the most a cell may be sealed and cleared by turns. */
+    private static final int WATCH_MINE = 2400, MINE_FIELD = 20, FLIPS_MOST = 6;
 }

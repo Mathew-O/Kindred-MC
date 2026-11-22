@@ -1294,6 +1294,17 @@ final class PortalRunCampaign {
             planned = daylightBelow(body);
             progress = stageLabel(stage) + ": nothing to do before daylight - " + planned.get().label();
         }
+        // Its own shelter's seal from tonight is not its work's to break before daylight (F-25c4dl): it holds in it, its
+        // way in closed, as above. The night in the bed it carries seals its pocket first and hands the night back when
+        // the bed may not go down now (waiting to try again, given up tonight, or a way in left); below ground the iron's
+        // branch mine goes on through the night, and its next cell was the seal. In E-40 step 8 (`e40a25s-0d3432b`) on
+        // 303, four of the five "mining for a find" spells were one cell sealed and cleared by turns, no advance, and 101
+        // Echo's with it off. Not a safety step, and not its way out by its own seal when it has no other ("open its
+        // shelter"), which goes as before.
+        if (planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get()) && breaksTonightsSeal(dweller, planned.get(), tick)) {
+            planned = daylightBelow(body);
+            progress = stageLabel(stage) + ": its shelter sealed for the night - " + planned.get().label();
+        }
         // New ground restarts the clock; only material progress ends a move elsewhere and the run of attempts.
         boolean newGround = seenCells.size() < 100_000
                 && seenCells.add(BlockPos.asLong(lastFeet.getX() >> 3, lastFeet.getY() >> 3, lastFeet.getZ() >> 3));
@@ -7550,6 +7561,21 @@ final class PortalRunCampaign {
             }
         }
         return true;
+    }
+
+    /** How long a seal of its own counts as tonight's: a night is shorter. */
+    private static final long SEAL_TONIGHT = 12_000;
+
+    /**
+     * Whether {@code task} breaks a seal of its own shelter placed tonight, at night (F-25c4dl): a break of one of
+     * {@link #ownSeals} placed within {@value #SEAL_TONIGHT} ticks, other than its way out by it ("open its shelter").
+     */
+    private boolean breaksTonightsSeal(ServerPlayerEntity player, Task task, long tick) {
+        if (!"native_break".equals(task.skill()) || task.label().contains(": open its shelter at ") || !night(player.getServerWorld())) return false;
+        BlockPos cell = position(task.args());
+        if (cell == null) return false;
+        Long sealed = ownSeals.get(cell.asLong());
+        return sealed != null && tick - sealed <= SEAL_TONIGHT;
     }
 
     private boolean inNightShelter(ServerPlayerEntity player) {
