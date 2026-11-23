@@ -828,9 +828,10 @@ public final class NativeBringGameTests implements FabricGameTest {
                     if ((onBed == 6 || onBed == 7 || onBed == 10) && offLineSets[0] == 0) {
                         var said = f.runtime.said(f.id);
                         for (int i = saidRead[0]; i < said.size(); i++) {
-                            // Not a give-up: its build's lines, its word on the librarian's trades, and a bring that came home.
+                            // A give-up, positively: a bring that ends says its line and notes the same line, with no phase (it
+                            // is over), where one brought home notes "Brought home"; any other line said is not one.
                             String line = said.get(i);
-                            if (line.startsWith("the trading hall's") || line.contains(" sells ") || line.startsWith("I've brought")) continue;
+                            if (!line.equals(f.runtime.bringNote(f.id))) continue;
                             BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
                             var at = context.getWorld().getBlockState(door);
                             String entry = "'" + said.get(i) + "' / " + (at.getBlock() instanceof net.minecraft.block.DoorBlock ? "door" : String.valueOf(at));
