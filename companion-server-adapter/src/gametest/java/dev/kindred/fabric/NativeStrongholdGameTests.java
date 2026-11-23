@@ -233,6 +233,19 @@ public final class NativeStrongholdGameTests implements FabricGameTest {
                             "Through to the Nether: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                     // STAGED: the rods, given once over there (given at home, it would hunt its pearls at home and never go).
                     f.player().getInventory().insertStack(new net.minecraft.item.ItemStack(net.minecraft.item.Items.BLAZE_ROD, 7));
+                    // STAGED, the Nether end: a closed netherrack room laid round the portal it arrived by, the portal and
+                    // its frame kept, so no run's ground differs (vanilla's own there, once, had it gather gold far off and
+                    // find no walk back to the portal) and nothing in it but the room. Put back as the test ends.
+                    var nether = f.player().getServerWorld();
+                    BlockPos feet = f.player().getBlockPos();
+                    FixtureGround.keep(context, nether, feet.add(-6, -2, -6), feet.add(6, 5, 6));
+                    for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) for (int dy = -2; dy <= 5; dy++) {
+                        BlockPos cell = feet.add(dx, dy, dz);
+                        var state = nether.getBlockState(cell);
+                        if (state.isOf(Blocks.NETHER_PORTAL) || state.isOf(Blocks.OBSIDIAN)) continue;
+                        boolean shell = Math.abs(dx) == 6 || Math.abs(dz) == 6 || dy <= -1 || dy == 5;
+                        nether.setBlockState(cell, (shell ? Blocks.NETHERRACK : Blocks.AIR).getDefaultState());
+                    }
                 })
                 .createAndAdd(() -> {
                     var leg = f.runtime.campaignForTest(f.id).stronghold();
