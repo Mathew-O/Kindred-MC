@@ -5400,6 +5400,7 @@ final class PortalRunCampaign {
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
      */
     private Optional<Task> retrace(NativePlayerBody body, String label) {
+        who = body.entity().getName().getString(); // For the line at the walk back's end (F-25c4at2).
         if (retraceBarred) return Optional.empty();
         var world = body.entity().getServerWorld();
         // A walk back that cannot start completes at once without moving; asked for again it only loops (the
