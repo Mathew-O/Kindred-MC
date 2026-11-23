@@ -11079,6 +11079,14 @@ final class PlayerRuntime {
                         List.copyOf(entry.factionPlay.arrivedForTest));
     }
 
+    /** For fixtures (M-06k9): its plans out of the water and the dry-ground searches they asked, since it was made. */
+    int[] drySearchForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.campaign == null) return new int[] {0, 0};
+        return new int[] {entry.campaign.surfacePlansForTest, entry.campaign.drySearchesForTest};
+    }
+
     List<Long> factionDecisionsForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);

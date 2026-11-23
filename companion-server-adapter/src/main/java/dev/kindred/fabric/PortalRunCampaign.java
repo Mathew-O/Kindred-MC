@@ -2975,9 +2975,19 @@ final class PortalRunCampaign {
      * must. Live run 69 drowned twice holed up in a flooded passage, sinking while it waited behind its wall, and each
      * wait was cut short by the runtime's drowning check without anything taking it up.
      */
+    /**
+     * How long a search for dry ground that found nothing, from one cell, is not asked again from it (M-06k9): dry ground
+     * that comes within reach is found within this many ticks where it stands, and at once from another cell.
+     */
+    static final int DRY_MISS_TICKS = 20;
+
+    /** For fixtures (M-06k9): the plans its way out of the water was weighed on, and the dry-ground searches they asked. */
+    int surfacePlansForTest, drySearchesForTest;
+
     private Optional<Task> surface(NativePlayerBody body) {
         var player = body.entity();
         if (!PlayerRuntime.inDeepWater(player) && !wadingTwoDeep(player)) return Optional.empty();
+        surfacePlansForTest++;
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
         // staged End run was turned back to the shore on every pass across a bay).
         if (!player.isSubmergedInWater() && player.getAir() >= player.getMaxAir() / 2 && endGoal()
@@ -3000,7 +3010,7 @@ final class PortalRunCampaign {
             // Its face at the surface already, a block below it at most, and dry ground a few steps off: it climbs out.
             // Bobbing under on the way out and sent up for air again, it cut short each climb out of a flooded shaft's
             // top, and drowned there.
-            var ashore = above.getY() - feet.getY() <= 1 ? navigator.nearestReachableDryStand(feet, 400, 3, p -> !blocked(p)) : Optional.<BlockPos>empty();
+            var ashore = above.getY() - feet.getY() <= 1 ? drySearch(navigator, feet, 400, 3, p -> !blocked(p)) : Optional.<BlockPos>empty();
             if (ashore.isPresent()) return Optional.of(go(ashore.get(), 0.8, true, "Get out of the water: to dry ground"));
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
@@ -3031,8 +3041,8 @@ final class PortalRunCampaign {
         // leaves the body over the water, and the current carries it back in. On 606 in E-40's iteration 11
         // (`e40a11-744c636`) Kindred, walked to the stand beside a flowing channel two deep, was carried back in each time
         // and sent out again 3,789 times, its dig toward lava stopped "In deep water" 1,782 times (F-25c4cf).
-        var dry = navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
-                .or(() -> navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p)));
+        var dry = drySearch(navigator, feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
+                .or(() -> drySearch(navigator, feet, 4000, 16, p -> !blocked(p)));
         if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
@@ -3040,6 +3050,12 @@ final class PortalRunCampaign {
         // No dry ground it can swim to, as in a flooded pit, and its head above water: a step dug out of the side and
         // climbed onto, as a player gets out, before anything else is dug from the water (F-25c4t).
         return climb(body, "Climb out of the water");
+    }
+
+    /** One of {@link #surface}'s searches for dry ground, counted for the fixtures (M-06k9). */
+    private Optional<BlockPos> drySearch(NativeNavigator navigator, BlockPos feet, int maxNodes, int radius, java.util.function.Predicate<BlockPos> allowed) {
+        drySearchesForTest++;
+        return navigator.nearestReachableDryStand(feet, maxNodes, radius, allowed);
     }
 
     /**
