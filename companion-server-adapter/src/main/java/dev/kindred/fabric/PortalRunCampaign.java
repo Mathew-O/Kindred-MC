@@ -1756,6 +1756,19 @@ final class PortalRunCampaign {
     void stuckTicksForTest(long ticks) { stuckTicks = ticks; }
 
     /**
+     * For fixtures only, a setter: a stuck spell caught at {@code at}, as the watchdog's count of one leaves it (its level
+     * one), and the heading its digs go along (F-25c4dq). Package-private; called from no main source.
+     */
+    void spellCaughtForTest(BlockPos at, Direction heading) {
+        stuckLevel = Math.max(stuckLevel, 1);
+        caughtAt = at.toImmutable();
+        digDirection(heading);
+    }
+
+    /** Where the stuck spell it is in was caught: where the watchdog counted it, or where a replay of one began (F-25c4dq). */
+    private BlockPos caughtAt;
+
+    /**
      * What a rescue's adviser is told (F-29, F-29b), about a thousand tokens: where it is and how it is; the light, the time
      * and the hostile mobs it can see; the blocks round it nine by nine and five high as it sees them, each kind of block a
      * letter and what it cannot see a question mark; where it can walk each way and what stops it, how far it could climb
