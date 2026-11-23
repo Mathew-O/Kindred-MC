@@ -47,7 +47,8 @@ final class FactionsPlayer {
     /** What it chose to ask for, waiting for its turn to act. */
     FactionPlay.Choice chosen;
     /** A walk's target refused (no route) this many times in a row, and until when it is not asked again. */
-    record Refusals(int times, long until) { }
+    /** A target's refusals: how many, until when it waits, and whether it was ever set aside as open water it saw (M-06m1). */
+    record Refusals(int times, long until, boolean water) { }
     private final Map<String, Refusals> refused = new LinkedHashMap<>();
     /** After this many refusals in a row a target is set aside, and the faction world's choice is made without it. */
     static final int SET_ASIDE = 3;
@@ -69,7 +70,7 @@ final class FactionsPlayer {
         refusalsCounted++;
         var before = refused.get(target);
         int times = before == null ? 1 : before.times() + 1;
-        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
+        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10)), before != null && before.water()));
         if (streakFrom == null && at != null) {
             streakFrom = at.toImmutable();
             streakAtSurface = atSurface;
@@ -213,7 +214,7 @@ final class FactionsPlayer {
     void openWater(String target, long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
         var before = refused.get(target);
         int times = Math.max(SET_ASIDE, before == null ? 0 : before.times() + 1);
-        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
+        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10)), true));
         overWater++;
         overWaterForTest.addLast(tick);
         if (overWaterForTest.size() > 64) overWaterForTest.removeFirst();
@@ -243,6 +244,12 @@ final class FactionsPlayer {
     long dryAtTick = Long.MIN_VALUE / 2;
 
     /** Whether a walk toward {@code target} waits now. */
+    /**
+     * Whether {@code target} was ever set aside as open water it saw (M-06m1): its record keeps that through later
+     * refusals, so that the place, set aside again by a refusal, is weighed as water is, at the decision interval.
+     */
+    boolean setAsideAsWater(String target) { var r = refused.get(target); return r != null && r.water(); }
+
     boolean waiting(String target, long tick) { var r = refused.get(target); return r != null && r.until() > tick; }
 
     /** The targets set aside now: refused {@value #SET_ASIDE} times in a row, their wait not over. */

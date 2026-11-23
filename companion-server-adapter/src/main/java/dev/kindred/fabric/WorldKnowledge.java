@@ -212,6 +212,11 @@ final class WorldKnowledge {
         return sight.seenOpenWaterToward(cell(from), cell(to), run);
     }
 
+    /** Where {@link #seenOpenWaterToward} first meets a column not seen as water, {x, z}, or null (M-06m1, fixtures' logs). */
+    int[] waterLookBreak(BlockPos from, BlockPos to, int run) {
+        return sight.waterLookBreak(cell(from), cell(to), run);
+    }
+
     /** Lowest-scoring remembered block of a kind that still matches the world and the caller's filter. */
     Optional<BlockPos> best(ServerWorld world, Kind kind, java.util.function.ToDoubleFunction<BlockPos> score, Predicate<BlockPos> filter) {
         return sight.best(new WorldSight(world, null), sight(kind), c -> score.applyAsDouble(pos(c)), c -> filter.test(pos(c))).map(WorldKnowledge::pos);
