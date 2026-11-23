@@ -4334,6 +4334,21 @@ final class PortalRunCampaign {
     }
 
     /** Rock a player with no pickaxe at all can still punch through: no drop, but a way out. */
+    /**
+     * As {@link #handClearable}, less the reach and the line of sight, which hold only once it is beside the block: a cell it
+     * may punch through when it gets there (F-25c4dp).
+     */
+    private boolean handClearableLater(NativePlayerBody body, BlockPos pos) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isIn(ItemTags.PICKAXES)) return false;
+        BlockState state = world.getBlockState(pos);
+        float hardness = state.getHardness(world, pos);
+        if (state.isAir() || hardness < 0 || hardness > HAND_HARDNESS || blocked(pos)) return false;
+        return RoamingEdits.breakDenial(player, pos, policy, false) == null;
+    }
+
     private boolean handClearable(NativePlayerBody body, BlockPos pos) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -5633,7 +5648,12 @@ final class PortalRunCampaign {
         @Override public DigTerrain world() { return world; }
         @Override public Cell feet() { return cell(player.getBlockPos()); }
         @Override public long now() { return lastTick; }
-        @Override public void event(String line) { PortalRunCampaign.this.event(line); }
+        // The dig's own lines, few and said once a place, to the console too, with its name (F-25c4dp): how often a way aside
+        // from under a block it may not dig is begun, read from a run's console.
+        @Override public void event(String line) {
+            PortalRunCampaign.this.event(line);
+            KindredMod.LOGGER.info("{} digs: {}", player.getName().getString(), line);
+        }
         @Override public boolean onGround() { return player.isOnGround(); }
         @Override public boolean swimming() { return PlayerRuntime.inDeepWater(player); }
         @Override public boolean groundBelow() { return PortalRunCampaign.groundBelow(player); }
@@ -5641,6 +5661,7 @@ final class PortalRunCampaign {
         @Override public void setAside(Cell cell, long until) { cellsAside.until(cell.asLong(), until); }
         @Override public boolean breakableNow(Cell cell) { return PortalRunCampaign.this.breakableNow(body, pos(cell)); }
         @Override public boolean handClearable(Cell cell) { return PortalRunCampaign.this.handClearable(body, pos(cell)); }
+        @Override public boolean handClearableLater(Cell cell) { return PortalRunCampaign.this.handClearableLater(body, pos(cell)); }
         @Override public boolean snareClearable(Cell cell) { return PortalRunCampaign.this.snareClearable(body, pos(cell)); }
         @Override public boolean opensOverLava(Cell cell) {
             BlockPos at = pos(cell);
