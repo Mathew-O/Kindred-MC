@@ -7552,10 +7552,13 @@ final class PortalRunCampaign {
                     "Back off from " + name + " the way it came"));
         }
         // Along ground it can walk: straight away into rock or over a drop was refused, or ended a step out (F-25c4dh5).
-        away = wayOff(player, away, "back off from " + name).multiply(10);
+        away = wayOff(player, away, "back off from " + name);
+        // A turned way off is kept short: off the wall, not across the cave with the mob keeping pace and striking.
+        boolean turned = wayOffTurned;
+        away = away.multiply(turned ? TURNED_REACH : 10);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
         // At a sprint: walking, a zombie keeps pace and strikes the player's back all the way.
-        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Back off from " + name));
+        return Optional.of(new Task("native_goto", coords(target, Map.of("range", turned ? "1" : "3", "partial", "true", "sprint", "true")), "Back off from " + name));
     }
 
     /**
@@ -7632,6 +7635,14 @@ final class PortalRunCampaign {
     private long wayOffAt = Long.MIN_VALUE;
     /** Whether this spell's turn for ground has been told. */
     private boolean wayOffTold;
+    /** Whether the last way off was turned for ground rather than straight away. */
+    private boolean wayOffTurned;
+    /**
+     * How far a turned back-off aims: in f29e-on-505-echo-43893 a turned back-off at ten carried the player sixteen to
+     * twenty blocks across a cave with the zombie keeping pace and striking, where straight away ended at the wall in three
+     * or four and it dug in. At six it gets off the wall, near the straight one's own few blocks.
+     */
+    static final int TURNED_REACH = 6;
 
     /**
      * The direction to get away along, {@code away} straight from the threat (F-25c4dh5): {@code away} itself where the
@@ -7640,6 +7651,7 @@ final class PortalRunCampaign {
      * shooter after it: {@code away}, as before, and the walk is refused as it was.
      */
     private Vec3d wayOff(ServerPlayerEntity player, Vec3d away, String what) {
+        wayOffTurned = false;
         // With a shooter after it, no turn: a walk along the turned heading kept it in the line of fire, where main's straight
         // back-off was refused and cover taken (e40c1-eed2dc5-8675309-echo-173225, twice shot in dh5's first gate).
         if (shooterAfter(player)) {
@@ -7663,6 +7675,7 @@ final class PortalRunCampaign {
         }
         wayOffHeading = heading;
         wayOffAt = lastTick;
+        wayOffTurned = true;
         if (!wayOffTold) {
             wayOffTold = true;
             KindredMod.LOGGER.info("{} heading turned for ground: {} straight away is {} degrees, not walkable; takes {} degrees", player.getName().getString(),
