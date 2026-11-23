@@ -74,6 +74,17 @@ class RoutePlannerTest {
 
     private static Cell at(int x, int y, int z) { return new Cell(x, y, z); }
 
+    /** A dry-stand search's positions expanded, kept for the cost line's count (M-06k9): none before one, its own after. */
+    @Test
+    void aDryStandSearchKeepsHowManyPositionsItExpanded() {
+        var navigator = new Navigator(corridor(0, 6));
+        assertEquals(0, navigator.lastDryStandExpanded());
+        assertTrue(navigator.nearestReachableDryStand(at(0, 0, 0), 3, 16, cell -> false).isEmpty());
+        assertEquals(3, navigator.lastDryStandExpanded(), "a search that found nothing, stopped at its bound");
+        assertEquals(java.util.Optional.of(at(0, 0, 0)), navigator.nearestReachableDryStand(at(0, 0, 0), 3, 16, cell -> true));
+        assertEquals(1, navigator.lastDryStandExpanded(), "a search that found the stand it started on");
+    }
+
     @Test
     void aFlatWalkGoesStraightThere() {
         var path = new Navigator(corridor(0, 6)).find(at(0, 0, 0), at(4, 0, 0), at(4, 0, 0)::equals, Navigator.DEFAULT_MAX_NODES, 48);

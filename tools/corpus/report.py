@@ -15,6 +15,8 @@ fails in two or more of the runs given, or in the one run when only one is given
 given (each flagged scene run alone on the branch and on main's tip, three times each), a flagged scene blocks (exit 1)
 only when the branch fails it two or more times of three and main passes it two or more times of three: it is then
 confirmed. Otherwise it is cleared (noise, or main's own failure). Without confirming runs every flagged scene blocks.
+The confirm files may hold every flagged scene a round (gate.sh's) or one scene's run each: a scene counts only the
+files that hold it, and a scene found in fewer than three a side is not confirmed, and blocks.
 A flagged scene listed in tools/corpus/known-intermittent.txt is marked expected; the rule is the same for it.
 """
 import argparse
@@ -25,6 +27,8 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+# Each flagged scene is confirmed alone this many times a side.
+CONFIRM_RUNS = 3
 SCENES = ROOT / "companion-server-adapter/src/corpus/resources/data/kindred_corpus/gametest/corpus"
 
 
@@ -165,14 +169,24 @@ def main():
     if gate and (args.confirm_branch or args.confirm_main):
         branch = [outcomes(r) for r in args.confirm_branch if r.is_file()]
         main_runs = [outcomes(r) for r in args.confirm_main if r.is_file()]
-        confirmed, cleared = [], []
+        confirmed, cleared, unconfirmed = [], [], []
         for sid in gate:
-            b_fail = sum(1 for run in branch if not run.get(sid, False))
-            m_pass = sum(1 for run in main_runs if run.get(sid, False))
-            (confirmed if b_fail >= 2 and m_pass >= 2 else cleared).append(f"{sid} (branch failed {b_fail} of {len(branch)}, main passed {m_pass} of {len(main_runs)})")
+            # Only the confirm files that hold the scene count for it: one file a round holding every flagged scene
+            # (gate.sh's) and one file a scene's run both read the same. A scene with fewer than three runs a side
+            # was not confirmed, and blocks: a missing run never reads as a failure on one side or a pass on the other.
+            b_runs = [run[sid] for run in branch if sid in run]
+            m_runs = [run[sid] for run in main_runs if sid in run]
+            if len(b_runs) < CONFIRM_RUNS or len(m_runs) < CONFIRM_RUNS:
+                unconfirmed.append(f"{sid} ({len(b_runs)} run(s) on the branch, {len(m_runs)} on main; {CONFIRM_RUNS} each wanted)")
+                continue
+            b_fail = sum(1 for ok in b_runs if not ok)
+            m_pass = sum(1 for ok in m_runs if ok)
+            (confirmed if b_fail >= 2 and m_pass >= 2 else cleared).append(f"{sid} (branch failed {b_fail} of {len(b_runs)}, main passed {m_pass} of {len(m_runs)})")
         lines.append(f"Confirmed (blocks): {len(confirmed)}" + (" — " + "; ".join(confirmed) if confirmed else ""))
         lines.append(f"Cleared: {len(cleared)}" + (" — " + "; ".join(cleared) if cleared else ""))
-        blocking = confirmed
+        if unconfirmed:
+            lines.append(f"Not confirmed, too few confirm runs (blocks): {len(unconfirmed)} — " + "; ".join(unconfirmed))
+        blocking = confirmed + unconfirmed
     lines.append(f"Gate: {'fails' if blocking else 'passes'}")
     lines.append(f"Newly passing against the baseline: {len(newly_passing)}" + (" — " + ", ".join(newly_passing) if newly_passing else ""))
     if not base:
