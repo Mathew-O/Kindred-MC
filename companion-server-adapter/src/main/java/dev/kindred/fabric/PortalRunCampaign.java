@@ -2905,8 +2905,9 @@ final class PortalRunCampaign {
         for (PortalRunPlanner.Step step : steps) {
             if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) { refused(refusedSteps, step, "night, food in hand"); continue; }
             if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) { refused(refusedSteps, step, "night"); continue; } // Looking about for animals is daylight work.
+            digger.forgetLastEmpty();
             Optional<Task> task = realize(step, snapshot, body, policy);
-            if (task.isEmpty()) refused(refusedSteps, step, "no task");
+            if (task.isEmpty()) refused(refusedSteps, step, digger.lastEmpty().isEmpty() ? "no task" : "no task, " + digger.lastEmpty());
             if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) {
                 refused(refusedSteps, step, "set aside until " + setAside.get(task.get()) + " [" + task.get().label() + "]");
                 continue;
@@ -2953,10 +2954,10 @@ final class PortalRunCampaign {
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         long spellStart = tick - stuckClock;
-        if (spellStart != waitingLoggedFor) {
-            waitingLoggedFor = spellStart;
-            KindredMod.LOGGER.info("WAITING {} at {} tick {}, spell from {}, {}, tried elsewhere {}, tasks set aside {}, cells blocked {}, unreachable {}; buckets lava {} water {} empty {}, obsidian {}, site {}, chosen lava {}; steps: {}",
-                    player.getName().getString(), lastFeet.toShortString(), tick, spellStart, stageLabel(stage), stuckLevel,
+        if (stuckSpells != waitingLoggedFor) {
+            waitingLoggedFor = stuckSpells; // Once a watchdog spell: the clock restarts on every small gain within one.
+            KindredMod.LOGGER.info("WAITING {} at {} tick {}, spell {} (its clock from {}), {}, tried elsewhere {}, tasks set aside {}, cells blocked {}, unreachable {}; buckets lava {} water {} empty {}, obsidian {}, site {}, chosen lava {}; steps: {}",
+                    player.getName().getString(), lastFeet.toShortString(), tick, stuckSpells, spellStart, stageLabel(stage), stuckLevel,
                     setAside.values().stream().filter(until -> until > tick).count(),
                     cellsAside.blockedUntil().values().stream().filter(until -> until > tick).count(),
                     cellsAside.unreachableUntil().values().stream().filter(until -> until > tick).count(),
