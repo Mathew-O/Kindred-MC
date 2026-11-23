@@ -106,6 +106,9 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         // water back. Armed by the goal line, whether its water was back before the next goal: "" if so, else what was not.
         String[] armedBy = {null};
         boolean[] bucketCompleted = {false};
+        // Its water in the bucket and the source gone as the next goal began, the bucket's COMPLETED not yet reported:
+        // the tick it began (F-22c118a, #509's CI, where the goal went on one line before the runner reported the step).
+        long[] reportDue = {-1};
         String[] notTaken = {null};
         String[] asked = {null};
         String[] lostSite = {null};
@@ -116,6 +119,10 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         Runnable watch = () -> {
             var bots = f.runtime.panelBots(Actor.console());
             String progress = bots.isEmpty() ? "" : bots.getFirst().goalProgress();
+            if (reportDue[0] >= 0 && notTaken[0] == null && context.getWorld().getTime() > reportDue[0]) {
+                notTaken[0] = "no native_bucket COMPLETED within the tick the next goal began; ";
+                KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line: {}", notTaken[0]);
+            }
             if (progress != null && !progress.equals(last[0])) {
                 last[0] = progress;
                 if (seen.length() < 3000) seen.append(progress.replaceAll("^.* - ", "")).append("; ");
@@ -142,10 +149,17 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     var held = f.player().getInventory();
                     boolean inBucket = ItemMoves.count(held, Items.WATER_BUCKET) == 1;
                     boolean sourceGone = !(lookWorld.getFluidState(shore).isStill() && lookWorld.getFluidState(shore).isIn(FluidTags.WATER));
-                    notTaken[0] = (bucketCompleted[0] ? "" : "no native_bucket COMPLETED; ") + (inBucket ? "" : "no water bucket in hand; ")
-                            + (sourceGone ? "" : "its poured source still on the shore; ");
-                    KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: {}", progress.replaceAll("^.* - ", ""),
-                            notTaken[0].isEmpty() ? "its water back before it" : notTaken[0]);
+                    if (!bucketCompleted[0] && inBucket && sourceGone) {
+                        // The step's own report, due within the tick the next goal began, before any other task ends.
+                        reportDue[0] = lookWorld.getTime();
+                        KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: its water back, its native_bucket COMPLETED due this tick",
+                                progress.replaceAll("^.* - ", ""));
+                    } else {
+                        notTaken[0] = (bucketCompleted[0] ? "" : "no native_bucket COMPLETED; ") + (inBucket ? "" : "no water bucket in hand; ")
+                                + (sourceGone ? "" : "its poured source still on the shore; ");
+                        KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: {}", progress.replaceAll("^.* - ", ""),
+                                notTaken[0].isEmpty() ? "its water back before it" : notTaken[0]);
+                    }
                 }
                 // Staged (F-22c118): the lava's cover taken away once it has looked for lava.
                 if (hidden && progress.contains("Explore") && lookWorld.getBlockState(lava.up()).isOf(Blocks.STONE)) {
@@ -231,7 +245,15 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     f.runtime.observeRun(new RunObserver() {
                         @Override
                         public void ended(String p, String skill, String state, String label) {
-                            if ("native_bucket".equals(skill) && "COMPLETED".equals(state) && label != null && label.contains("recover the water")) bucketCompleted[0] = true;
+                            boolean recovered = "native_bucket".equals(skill) && "COMPLETED".equals(state) && label != null && label.contains("recover the water");
+                            if (recovered) bucketCompleted[0] = true;
+                            // Due as the next goal began: this tick, and the first task to end since (F-22c118a).
+                            if (reportDue[0] >= 0 && notTaken[0] == null) {
+                                notTaken[0] = recovered && context.getWorld().getTime() == reportDue[0] ? ""
+                                        : "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label + "]; ";
+                                KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line: {}", notTaken[0].isEmpty()
+                                        ? "its native_bucket COMPLETED in the tick the next goal began, before any other task ended" : notTaken[0]);
+                            }
                         }
                     });
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
