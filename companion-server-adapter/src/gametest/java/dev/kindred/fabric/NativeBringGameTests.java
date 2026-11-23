@@ -29,6 +29,16 @@ import java.nio.file.Files;
  * that it stands where it was put, but in the test where it strolls, and is held in a boat while the line is laid.
  */
 public final class NativeBringGameTests implements FabricGameTest {
+    /**
+     * Where its ground is laid from (F-22c119): in from its structure's corner as far as its ground runs the other way, its
+     * field kept from 9 west and 8 north of here to 25 east and 34 south, so that all of it lies in its own structure. On
+     * a structure as small as its plot, its ground ran into the plots of the tests placed round it, and on #475's CI its
+     * tests left 11,360 blocks in other tests' running plots (21 restores "left as they are"), its own neighbours' among them.
+     */
+    private static BlockPos origin(TestContext context) {
+        return context.getAbsolutePos(new BlockPos(9, 0, 8));
+    }
+
     private static net.minecraft.block.BlockState state(dev.kindred.core.construction.BlockSpec spec) {
         var block = Registries.BLOCK.get(Identifier.of(spec.block()));
         var state = block.getDefaultState();
@@ -77,7 +87,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                 : "Hal out of play as the test ended; before that, not yet: " + lastNotYet);
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bring", tickLimit = 12000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bring", tickLimit = 12000)
     public void aKeptLibrarianIsBroughtHomeByMinecartIntoItsCell(TestContext context) {
         scene(context, false);
     }
@@ -87,7 +97,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * two stacks of sixteen rails the line takes and a minecart, from 17 of the iron and both sticks, and brings the
      * librarian home with them, every rail and the cart taken back.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringMade", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringMade", tickLimit = 14000)
     public void theRailsAndTheCartAreMadeFromItsOwnIron(TestContext context) {
         scene(context, true);
     }
@@ -97,7 +107,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * laid to where it stood: Hal lays the line again from where it now is, takes the cart up and puts it down again
      * behind it, and brings it home; every rail of both lines taken up.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringWandered", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringWandered", tickLimit = 14000)
     public void aLibrarianOffTheLineIsBroughtHomeFromWhereItStands(TestContext context) {
         scene(context, false, true);
     }
@@ -109,7 +119,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * and rolled back to the line's start, where Hal waited for it; every push from there was as short, and Hal gave up
      * with the librarian aboard (F-22c25). Staged: the cart's speed cut to three tenths once, four or more blocks along.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringSlowed", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringSlowed", tickLimit = 14000)
     public void aLoadedCartThatLosesItsWayIsSentOnFromNearWhereItRolledBack(TestContext context) {
         scene(context, false, true, false, false, false, false, true);
     }
@@ -123,7 +133,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * open end, off the rails; pushed from there it ran off over the field and Hal gave up (F-22c30). Staged: the cart's
      * roll turned back once, short of the climb, at half a block a tick.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDerailed", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringDerailed", tickLimit = 14000)
     public void aLoadedCartRollingBackAtTheLinesStartIsMetOnItsFirstRail(TestContext context) {
         scene(context, false, true, false, false, false, false, false, true);
     }
@@ -133,7 +143,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * with dirt from the bank it is on, lays the line over the bridge, brings the librarian home, and takes the bridge
      * back after its rails, the river running as it did.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringRiver", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringRiver", tickLimit = 14000)
     public void aLibrarianOverARiverIsBroughtHomeOnABridgeOfItsOwn(TestContext context) {
         scene(context, false, false, true);
     }
@@ -143,7 +153,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * on the ground beside it, as a cave's wall shows it: Hal mines the ore it needs, puts the furnace down and smelts
      * it, then makes the rails and the minecart and brings the librarian home.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringMined", tickLimit = 30000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringMined", tickLimit = 30000)
     public void theIronForTheRailsIsMinedAndSmeltedFirst(TestContext context) {
         scene(context, true, false, false, true);
     }
@@ -158,7 +168,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * boat is broken over the cart, which is left in the cell with the boat's item; and the stone over the door goes back
      * with the door. The librarian unhurt.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringStrolling", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringStrolling", tickLimit = 14000)
     public void aLibrarianThatStrollsIsHeldInABoatWhileTheLineIsLaid(TestContext context) {
         scene(context, false, false, false, false, true);
     }
@@ -169,7 +179,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * doorway, never "I couldn't put my hall's door back". In CI on #367, #372 and #355, and twice in local bring runs,
      * a give-up whose cart's item took several walks to pick up ended with the door left out.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringGivenUpDoorBack", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringGivenUpDoorBack", tickLimit = 14000)
     public void givenUpWithTheCartDownHalStillPutsItsHallsDoorBack(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 6);
     }
@@ -180,7 +190,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * the fixture's ground, the take-back's walk to it had no route three times, the take-back ended there, and the hall's
      * door was left out ("I couldn't take everything back"). Held: the boat let be and said, the hall's door back.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringGivenUpBoatInPit", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringGivenUpBoatInPit", tickLimit = 14000)
     public void givenUpWithItsBoatInAPitHalLetsItBeAndPutsItsHallsDoorBack(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 7);
     }
@@ -193,7 +203,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * (in CI on #236 and #261, and 1 in 20 here with a probe). Held: the boat broken first from the front, and the rail
      * under Hal's feet, its drop is picked up and all 63 come home.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringBornInBoat", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringBornInBoat", tickLimit = 14000)
     public void aFrontRailsDropBornInsideTheBoatsBoxIsStillPickedUp(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, true, false);
     }
@@ -205,7 +215,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * three pushes from the same spot did the same: the bring was given up. Staged (the boat set there while the cart stands
      * for each push); the bring carries on to the cell and all of the line comes home.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringShortOfBoat", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringShortOfBoat", tickLimit = 14000)
     public void aCartStoppedShortOfTheHeldBoatIsPushedSoItTakesItUp(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 8);
     }
@@ -215,7 +225,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * until the job block is in, the librarian set against the front's open side and pressing out at a walk. It is never
      * out of its cell, and the job block goes in across the front.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringPressed", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringPressed", tickLimit = 14000)
     public void aLibrarianPressingAtTheFrontAsHalStepsOutIsHeld(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, true);
     }
@@ -229,7 +239,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * does not show how it came to be there, and the librarian staged in its way alone did not put it there (3 of 3 passed on
      * `e924161a`), so the state it gave up from is staged. Held: down on to the floor, out, and the librarian brought home.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOnBedEdge", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringOnBedEdge", tickLimit = 14000)
     public void upOnTheEdgeOfTheBedsFootHalStepsDownAndOut(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 1);
     }
@@ -240,7 +250,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * out, and the job block went in across the front with Hal shut in behind it. Held: the job block never goes in with any
      * part of Hal's box in the cell.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOnBed", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringOnBed", tickLimit = 14000)
     public void whollyOnTheBedsFootHalIsNotShutInByTheJobBlock(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 2);
     }
@@ -255,7 +265,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * block's middle ends within 0.4 of it, and the while given under the trapdoor counts only from the step in. Held: both
      * items taken up within 600 ticks of Hal being let go, long before an item's lifetime.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOffStand", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringOffStand", tickLimit = 14000)
     public void aThirdOffItsStandHalStillTakesUpTheCartAndBoatFromTheCell(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 3);
     }
@@ -267,7 +277,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * the bring is at CLOSE with Hal out of the front and at rest, Hal set in the middle of the front, under the shut trapdoor. It walks out and the librarian is
      * brought home.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringUnderTrapdoor", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringUnderTrapdoor", tickLimit = 14000)
     public void inItsFrontUnderItsShutTrapdoorHalStillWalksOutAndBringsItHome(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 8);
     }
@@ -282,7 +292,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * step left standing and 3 dirt of 4 home, but only that once: its fourteen other climbs out walked on, and unstaged
      * here the climb took a stair in 3 of 6 runs. Held: every dirt Hal set down along the way comes home.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringClimbOut", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringClimbOut", tickLimit = 14000)
     public void climbingOutToPutTheDoorBackHalTakesItsStepHomeToo(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 4);
     }
@@ -294,7 +304,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * the water (let go of, it would wade back to its lectern); lays the line along the bank past it, and the cart, rolling
      * by, takes the boat up from the water and carries it home as the last.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringAcross", tickLimit = 16000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringAcross", tickLimit = 16000)
     public void aLibrarianAcrossALakeIsRowedOverAndBroughtHome(TestContext context) {
         scene(context, false, false, false, false, true, true);
     }
@@ -305,7 +315,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * planned while it stood empty, was still under way when the librarian stepped in; it broke the boat under it and let
      * it go (F-22c32). Staged: the librarian seated in the boat, once, when it has stood empty past Hal's wait.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringSeated", tickLimit = 16000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringSeated", tickLimit = 16000)
     public void aLibrarianThatStepsIntoTheBoatLateIsHeldInIt(TestContext context) {
         scene(context, false, false, false, false, true, true, false, false, true);
     }
@@ -320,7 +330,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * until it sits in a boat, first on the bank, where the crossing is planned from, and moved behind its lectern as
      * Hal sets about holding it in a boat.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringBehind", tickLimit = 16000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringBehind", tickLimit = 16000)
     public void aLibrarianHeldBehindItsLecternIsRowedRoundIt(TestContext context) {
         scene(context, false, false, false, false, true, true, false, false, false, true);
     }
@@ -332,7 +342,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * hall's own cobblestone stood in the way; refused three times as out of sight, the bring was given up, "door went
      * wrong three times over" (F-22c62). Staged: Hal's walk to the door ended there, once.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDoorAside", tickLimit = 12000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringDoorAside", tickLimit = 12000)
     public void aDoorInReachButBehindTheHallsWallIsTakenOffFromItsFront(TestContext context) {
         scene(context, false, false, false, false, false, false, false, false, false, false, true);
     }
@@ -347,10 +357,10 @@ public final class NativeBringGameTests implements FabricGameTest {
      * F-22c84b, test-only. The bring's last check, short of dirt, says where dirt stands in its ground: a dirt block put
      * in the fixture's stone field is named, relative to the hall, and the text stays inside a lectern page's 900.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringDirtWhere", tickLimit = 40)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringDirtWhere", tickLimit = 40)
     public void shortOfDirtTheBringCheckSaysWhereDirtStandsInItsGround(TestContext context) {
         var world = context.getWorld();
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = origin(context);
         BlockPos hall = o.add(4, 2, 4);
         FixtureGround.keep(context, o.add(-9, 0, -8), o.add(25, 16, 34));
         for (BlockPos p : BlockPos.iterate(o.add(-9, 0, -8), o.add(25, 16, 34))) world.setBlockState(p, Blocks.AIR.getDefaultState());
@@ -360,7 +370,7 @@ public final class NativeBringGameTests implements FabricGameTest {
         context.complete();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOutOfPlay", tickLimit = 40)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringOutOfPlay", tickLimit = 40)
     public void outOfPlayAsTheTestEndsTheBringCheckStillSaysWhatWasNotYetSo(TestContext context) {
         String reason = "Rails (but the cell floor's), the cart and dirt all taken back, the lectern spent: 63 rails, 1 carts, 0 lecterns, 3 dirt";
         String said;
@@ -503,7 +513,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field is wider than its structure: put back as the test ends, passed or failed, so the tests
                     // placed beside it after are not laid on its hall and line.
                     FixtureGround.keep(context, o.add(-9, 0, -8), o.add(25, 16, 34));
@@ -1060,14 +1070,14 @@ public final class NativeBringGameTests implements FabricGameTest {
                     context.assertTrue(world.getBlockState(door).getBlock() instanceof net.minecraft.block.DoorBlock, "The hall's door back: " + world.getBlockState(door));
                     if (lake) {
                         // Across it by boat: no bridge put down, the water as it was.
-                        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                        BlockPos o = origin(context);
                         for (int rz = 15; rz <= 22; rz++) {
                             context.assertTrue(world.getBlockState(o.add(7, 1, rz)).isOf(Blocks.WATER), "The lake as it was: " + world.getBlockState(o.add(7, 1, rz)));
                         }
                         context.assertTrue(f.runtime.said(f.id).stream().noneMatch(line -> line.contains("plain blocks")), "Not stopped for want of a bridge");
                     }
                     if (river) {
-                        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                        BlockPos o = origin(context);
                         for (int rz = 15; rz <= 17; rz++) {
                             context.assertTrue(world.getBlockState(o.add(7, 1, rz)).isOf(Blocks.WATER), "The bridge taken back, the river as it was: "
                                     + world.getBlockState(o.add(7, 1, rz)) + " at " + o.add(7, 1, rz).subtract(origin[0]).toShortString());
@@ -1091,9 +1101,9 @@ public final class NativeBringGameTests implements FabricGameTest {
                                             && (e instanceof net.minecraft.entity.vehicle.AbstractMinecartEntity || e instanceof net.minecraft.entity.ItemEntity item
                                                     && (item.getStack().isOf(Items.MINECART) || item.getStack().isOf(Items.DIRT))))
                                             .stream().map(e -> e.getType().getUntranslatedName() + " at " + e.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ())).toList()
-                                    + (count(inventory, Items.DIRT) < (river ? 8 : 4) ? dirtWhere(world, context.getAbsolutePos(BlockPos.ORIGIN), origin[0], hal) : "")));
+                                    + (count(inventory, Items.DIRT) < (river ? 8 : 4) ? dirtWhere(world, origin(context), origin[0], hal) : "")));
                     if (mine) {
-                        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                        BlockPos o = origin(context);
                         int mined = 0;
                         for (int ox = 13; ox <= 20; ox++) for (int oy = 2; oy <= 4; oy++) if (!world.getBlockState(o.add(ox, oy, 27)).isOf(Blocks.IRON_ORE)) mined++;
                         context.assertTrue(mined >= 17 && count(inventory, Items.RAW_IRON) + count(inventory, Items.IRON_INGOT) <= mined - 17,
