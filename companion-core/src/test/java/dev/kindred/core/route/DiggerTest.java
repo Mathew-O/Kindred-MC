@@ -190,6 +190,35 @@ class DiggerTest {
         assertEquals(Side.EAST, digger.heading(), "its heading kept");
     }
 
+    /**
+     * On a shelf over a drop, the cast's staircase refused every way, so it tunnels along its own level; water stands in the
+     * way it set out, so it turns, and keeps the way it turned to on the next call, wherever the lava's major way now lies,
+     * until a new dig forgets it. Re-set from the lava's major way on every call, past the lava's line the way flipped back
+     * along the tunnel just dug and the tunnel went to and fro for good: #394's CI, run 43842018263 (F-25c4dj1).
+     */
+    @Test
+    void alongItsLevelTheCastKeepsTheWayItTurnedToUntilANewDig() {
+        var digger = new Digger();
+        // Its pocket on a shelf one block thick, a drop of seven under the shelf all round; water east of it, feet and head.
+        var scene = pocket().set(1, 0, 0, Block.WATER).set(1, 1, 0, Block.WATER);
+        for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) for (int y = -8; y <= -2; y++) scene.set(x, y, z, Block.AIR);
+        Cell lava = new Cell(6, -9, 1);
+        // East is the lava's major way; the water there turns the tunnel south (clockwise), and south is cleared.
+        assertEquals(Optional.of("break Cast: clear 0, 1, 1"), digger.toward(new Body(scene, new Cell(0, 0, 0)), lava, "Cast"));
+        assertEquals(Side.SOUTH, digger.heading());
+        // A block on, south of the lava's line, east of it: the lava's major way is now west, back along its own tunnel, and
+        // the way kept is south.
+        // Still on the shelf, the drop under it on every side.
+        var on = new Scene();
+        on.set(7, 0, 2, Block.AIR).set(7, 1, 2, Block.AIR);
+        for (int x = 4; x <= 10; x++) for (int z = -1; z <= 6; z++) for (int y = -8; y <= -2; y++) on.set(x, y, z, Block.AIR);
+        assertEquals(Optional.of("break Cast: clear 7, 1, 3"), digger.toward(new Body(on, new Cell(7, 0, 2)), lava, "Cast"), "the way it turned to, kept");
+        assertEquals(Side.SOUTH, digger.heading());
+        // A new dig: the way forgotten, and set again from the lava's major way, west.
+        digger.forgetTunnelled();
+        assertEquals(Optional.of("break Cast: clear 6, 1, 2"), digger.toward(new Body(on, new Cell(7, 0, 2)), lava, "Cast"), "set again from the lava, west");
+    }
+
     @Test
     void aTargetNoWalkReachedIsSkippedWithItsColumnUntilItsBackOffEndsAndThePlayerHasMovedOff() {
         var ledger = new SetAside();
