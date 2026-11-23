@@ -392,9 +392,16 @@ public final class Navigator {
      * ground {@code allowed} refuses: the search follows routes, so dry ground behind a ceiling or across a wall, however
      * close, is passed over.
      */
+    /** The positions the last {@link #nearestReachableDryStand} search expanded, for the cost line's count (M-06k9). */
+    private int lastDryStandExpanded;
+
+    /** The positions the last {@link #nearestReachableDryStand} search expanded; 0 before any. */
+    public int lastDryStandExpanded() { return lastDryStandExpanded; }
+
     public Optional<Cell> nearestReachableDryStand(Cell from, int maxNodes, int maxHorizontalRadius, Predicate<Cell> allowed) {
         Path path = find(from, from, feet -> standable(feet) && dry(feet) && dry(feet.down()) && allowed.test(feet),
                 maxNodes, maxHorizontalRadius);
+        lastDryStandExpanded = path.expanded();
         return path.complete() && !path.nodes().isEmpty() ? Optional.of(path.nodes().getLast()) : Optional.empty();
     }
 

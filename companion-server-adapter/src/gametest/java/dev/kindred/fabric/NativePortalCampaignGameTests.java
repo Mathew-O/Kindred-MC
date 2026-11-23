@@ -3079,7 +3079,48 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "nightWater", tickLimit = 2400)
     public void atNightBelowGroundTheWaterAtTheSurfaceWaitsForDaylight(TestContext context) {
+        nightWater(context, NightWater.AS_IS);
+    }
+
+    /**
+     * As above, the chamber's shaft open to the sky at its first look and closed once it digs in (F-22c120): its first
+     * step is then the night's shelter, a dig one down, before the water's wait. On CI (a branch suite's run, and
+     * REFACTOR's class runs: 1 in 10) its first look was the shelter's, "Dig in for the night: clear …, -59, …" from its
+     * feet at -58, the chamber's sky not yet dark to it, and the check counted any dig-in as a climb ("It stayed below,
+     * the water left for the morning"), though it went one down and waited for daylight all night. Passes as above.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "nightWaterDugIn", tickLimit = 2400)
+    public void atNightBelowGroundADigInDownwardIsNotAClimbForTheWater(TestContext context) {
+        nightWater(context, NightWater.ROOF_LATE);
+    }
+
+    /**
+     * The check still catches what it is for (F-22c120): set up at the top in the night, as though it had climbed out for
+     * the water, it digs in again there, above where it began, as Sol did live on 10a60d5. Passes only once that is
+     * counted as a climb.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "nightWaterUp", tickLimit = 2400)
+    public void atNightUpAtTheTopAndDugInThereIsStillCaughtAsAClimb(TestContext context) {
+        nightWater(context, NightWater.CLIMBED);
+    }
+
+    private enum NightWater { AS_IS, ROOF_LATE, CLIMBED }
+
+    /**
+     * A dig-in for the night whose cell is at or above {@code startY}, read from its label: a climb (F-22c120). Its first
+     * cleared cell is its feet minus one, so a dig-in where it began clears {@code startY - 1} and is not counted; one after
+     * a rise of a block clears {@code startY}, below the height clause's start + 2, and is.
+     */
+    private static boolean dugInAbove(String goal, int startY) {
+        var cell = java.util.regex.Pattern.compile("Dig in for the night[^:]*: clear (-?\\d+), (-?\\d+), (-?\\d+)").matcher(goal);
+        return cell.find() && Integer.parseInt(cell.group(2)) >= startY;
+    }
+
+    private static void nightWater(TestContext context, NightWater mode) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        boolean[] moved = new boolean[1];
+        BlockPos[] origin = new BlockPos[1];
+        boolean[] dugUp = new boolean[1];
         int[] start = new int[1];
         int[] waited = new int[1];
         boolean[] climbed = new boolean[1];
@@ -3093,7 +3134,8 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     BlockPos p = f.player().getBlockPos();
                     FixtureGround.keep(context, p.add(-6, -3, -6), p.add(6, 11, 6));
                     for (int x = -6; x <= 6; x++) for (int z = -6; z <= 6; z++) for (int y = -3; y <= 11; y++) {
-                        boolean chamber = Math.abs(x) <= 1 && Math.abs(z) <= 1 && y >= 0 && y <= 1;
+                        // Staged (F-22c120): with ROOF_LATE, the chamber's shaft open to the sky until it digs in.
+                        boolean chamber = Math.abs(x) <= 1 && Math.abs(z) <= 1 && y >= 0 && (y <= 1 || mode == NightWater.ROOF_LATE);
                         world.setBlockState(p.add(x, y, z), (y <= 8 && !chamber ? Blocks.STONE : Blocks.AIR).getDefaultState());
                     }
                     // A torch, so nothing spawns in the dark beside it.
@@ -3110,21 +3152,46 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
                     f.player().equipStack(net.minecraft.entity.EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
                     world.setTimeOfDay(14000);
                     start[0] = p.getY();
+                    origin[0] = p.toImmutable();
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
                     String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
-                    climbed[0] |= goal.contains("Climb toward the surface for water") || goal.contains("Dig in for the night")
+                    var world = context.getWorld();
+                    if (mode == NightWater.ROOF_LATE && !moved[0] && goal.contains("Dig in for the night")) {
+                        // The shaft closed once it has dug in: below ground again, its sky dark.
+                        moved[0] = true;
+                        for (BlockPos at : BlockPos.iterate(origin[0].add(-1, 2, -1), origin[0].add(1, 8, 1))) world.setBlockState(at, Blocks.STONE.getDefaultState());
+                        KindredMod.LOGGER.info("Night water: the shaft closed as it digs in: {}", goal);
+                    }
+                    if (mode == NightWater.CLIMBED && !moved[0]) {
+                        // As though it had climbed out for the water: at the top, in the night.
+                        moved[0] = true;
+                        BlockPos top = origin[0].add(0, 9, 0);
+                        f.player().refreshPositionAndAngles(top.getX() + 0.5, top.getY(), top.getZ() + 0.5, 0, 0);
+                    }
+                    // A climb for the water: its walk up, a dig-in above where it began, or its feet up. A dig-in down is
+                    // the night's shelter, not a climb (F-22c120).
+                    dugUp[0] |= dugInAbove(goal, start[0]);
+                    climbed[0] |= goal.contains("Climb toward the surface for water") || dugUp[0]
                             || f.player().getBlockY() > start[0] + 1;
+                    if (mode == NightWater.CLIMBED) {
+                        // Its dig-in at the top counted as a climb by the dig-in's own rule, not only by its feet being up.
+                        context.assertTrue(dugUp[0], "Up at the top and dug in there, caught as a climb: " + goal);
+                        KindredMod.LOGGER.info("Night water: up at the top, caught: {}", goal);
+                        return;
+                    }
                     context.assertTrue(++waited[0] >= 600, "Through the night: " + goal);
                 })
                 .createAndAdd(() -> {
+                    if (mode == NightWater.CLIMBED) return;
                     String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
                     context.assertTrue(!climbed[0], "It stayed below, the water left for the morning");
                     context.assertTrue(goal.contains("Wait for daylight"), "Waiting for daylight: " + goal);
                     context.getWorld().setTimeOfDay(1000);
                 })
                 .createAndAdd(() -> {
+                    if (mode == NightWater.CLIMBED) return;
                     String goal = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
                     context.assertTrue(goal.contains("Climb toward the surface for water"), "Morning: up for the water: " + goal);
                 })
