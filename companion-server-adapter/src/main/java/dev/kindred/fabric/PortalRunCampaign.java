@@ -840,20 +840,27 @@ final class PortalRunCampaign {
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceDone = true;
             retraceFrom = lastFeet; // Where it stood when the walk was chosen.
-            // Ended lower than it began (F-25c4at1): the climb's own rule, that the way back up never leads down, applied to
-            // where the walk ended. Held from where it began, not only where it ended: in iteration 26 the walk back from the
-            // step ended a block lower, the stall there lifted as soon as the climb stepped it up again, and the walk back
-            // was offered again, three steps round, for 21 game minutes on batch 1's 31102026 Sol.
-            if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
-                retraceLowerFrom = retraceChosenAt;
-                retraceLowerUntil = tick + 600;
-            }
         }
         // Refused ("no walkable route"), the way it came is not asked for again from here for a while, so the climb has its
         // turn: sealed in for the night, every walk back along it was refused, another cell of it each time (F-25c4at).
         if (task != null && !completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceFrom = lastFeet;
             retraceStalledUntil = tick + 600;
+        }
+        // Ended lower than its run of offers began, done or not (F-25c4at1, F-25c4at2): the climb's own rule, that the way back
+        // up never leads down, applied to where the walk ended. Held from where it began, not only where it ended.
+        // - F-25c4at1: in iteration 26 the walk back from the step ended a block lower, the stall there lifted as soon as the
+        //   climb stepped it up again, and the walk back was offered again, three steps round, for 21 game minutes on batch
+        //   1's 31102026 Sol.
+        // - F-25c4at2: in iteration 29, batch 2's 31102026 Echo was offered the walk back at y 26 and again two lower, and it
+        //   ended refused at y 7; its climb took it back up and the walk back was offered again, about every seven seconds
+        //   (707 Sol so from y 65 to 43). A refused walk armed no hold, and the offer again moved where it began.
+        if (task != null && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
+            if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
+                retraceLowerFrom = retraceChosenAt;
+                retraceLowerUntil = tick + 600;
+            }
+            retraceChosenAt = null; // The run of offers ends with the walk.
         }
         if (task != null && completed && "native_place".equals(task.skill()) && task.label().startsWith("Seal the shelter at")
                 && position(task.args()) != null) {
@@ -5478,12 +5485,21 @@ final class PortalRunCampaign {
             }
         }
         if (target == null || target.getSquaredDistance(lastFeet) < 2) return Optional.empty();
-        retraceChosenAt = lastFeet;
+        // Where its run of offers began (F-25c4at2): an offer again before the walk ends, as the plan looks again while it
+        // walks, is the same walk, and does not move where it began.
+        if (retraceChosenAt == null || lastTick - retraceOfferedAt > RETRACE_RUN_GAP) retraceChosenAt = lastFeet;
+        retraceOfferedAt = lastTick;
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
     }
 
-    /** Where its last walk back was chosen, for the guard on one that ends lower (F-25c4at1). */
+    /**
+     * Where its run of walk-back offers began, for the guard on one that ends lower (F-25c4at1); kept through offers again
+     * until the walk ends (F-25c4at2).
+     */
     private BlockPos retraceChosenAt;
+    /** When the walk back was last offered; a run with no offer for {@link #RETRACE_RUN_GAP} ticks is over (F-25c4at2). */
+    private long retraceOfferedAt = -1;
+    private static final long RETRACE_RUN_GAP = 200;
     /** Where a walk back that ended lower than it began was chosen, and until when the way back is held from there. */
     private BlockPos retraceLowerFrom;
     private long retraceLowerUntil = -1;
