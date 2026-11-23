@@ -856,6 +856,15 @@ final class PortalRunCampaign {
         //   ended refused at y 7; its climb took it back up and the walk back was offered again, about every seven seconds
         //   (707 Sol so from y 65 to 43). A refused walk armed no hold, and the offer again moved where it began.
         if (task != null && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
+            // TEMPORARY gate marker (F-25c4at2): where this rule and F-25c4at1's decide differently. Removed after the gate.
+            boolean at1 = completed && retraceLastOffer != null && lastFeet.getY() < retraceLastOffer.getY();
+            boolean at2 = retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY();
+            if (at1 != at2 || at2 && !retraceChosenAt.equals(retraceLastOffer)) {
+                KindredMod.LOGGER.info("F-25c4at2-marker: {} walk back ended {} at {}, its run began at {}, its last offer at {}: F-25c4at1 {}, F-25c4at2 {}",
+                        who, completed ? "done" : "refused", lastFeet.toShortString(), retraceChosenAt == null ? "-" : retraceChosenAt.toShortString(),
+                        retraceLastOffer == null ? "-" : retraceLastOffer.toShortString(), at1 ? "hold" : "none", at2 ? "hold" : "none");
+            }
+            retraceLastOffer = null;
             if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
                 retraceLowerFrom = retraceChosenAt;
                 retraceLowerUntil = tick + 600;
@@ -5489,6 +5498,7 @@ final class PortalRunCampaign {
         // walks, is the same walk, and does not move where it began.
         if (retraceChosenAt == null || lastTick - retraceOfferedAt > RETRACE_RUN_GAP) retraceChosenAt = lastFeet;
         retraceOfferedAt = lastTick;
+        retraceLastOffer = lastFeet; // TEMPORARY gate marker (F-25c4at2).
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
     }
 
@@ -5500,6 +5510,8 @@ final class PortalRunCampaign {
     /** When the walk back was last offered; a run with no offer for {@link #RETRACE_RUN_GAP} ticks is over (F-25c4at2). */
     private long retraceOfferedAt = -1;
     private static final long RETRACE_RUN_GAP = 200;
+    /** TEMPORARY gate marker (F-25c4at2): where the walk back was last offered, F-25c4at1's "chosen at". */
+    private BlockPos retraceLastOffer;
     /** Where a walk back that ended lower than it began was chosen, and until when the way back is held from there. */
     private BlockPos retraceLowerFrom;
     private long retraceLowerUntil = -1;
