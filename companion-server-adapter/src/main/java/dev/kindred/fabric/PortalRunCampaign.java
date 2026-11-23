@@ -1046,6 +1046,7 @@ final class PortalRunCampaign {
         best.clear();
         stuckClock = 0;
         stuckLevel = 0;
+        caughtAt = null;
         relocate = null;
         obsidianSite = null;
         exploreHeading = null;
@@ -1319,6 +1320,8 @@ final class PortalRunCampaign {
 
     private Optional<Task> nextTask(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         if (spellStart == 0) spellStart = tick;
+        // Begun inside a run of spells with none caught here, as a replay of one begins: caught where it stands (F-25c4dq).
+        if (stuckLevel > 0 && caughtAt == null) caughtAt = body.entity().getBlockPos().toImmutable();
         // An opening under the water whose fill or reseal did not go as planned: nothing more until it is reconciled (F-35g).
         if (reconcile != null) {
             progress = stageLabel(stage) + ": held for reconciliation - " + reconcile;
@@ -1369,6 +1372,7 @@ final class PortalRunCampaign {
             paced = 0;
             stuckClock = 0;
             stuckLevel = 0;
+            caughtAt = null;
             relocate = null;
             relocateEarly = false;
             progressMade(tick);
@@ -1496,6 +1500,7 @@ final class PortalRunCampaign {
         stuckSpells++;
         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
         stuckLevel++;
+        caughtAt = lastFeet.toImmutable(); // Where this spell was caught (F-25c4dq).
         stuckClock = 0;
         digger.forgetTunnelled();
         if (!elsewhere) {
@@ -1529,6 +1534,7 @@ final class PortalRunCampaign {
         stuckSpells++;
         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
         stuckLevel++;
+        caughtAt = lastFeet.toImmutable(); // Where this spell was caught (F-25c4dq).
         stuckClock = 0;
         relocateEarly = false;
         digger.forgetTunnelled();
@@ -2193,6 +2199,7 @@ final class PortalRunCampaign {
         if (outcome.equals("unstuck")) {
             stuckClock = 0;
             stuckLevel = 0;
+            caughtAt = null;
             relocate = null;
             relocateEarly = false;
         }
@@ -5241,7 +5248,17 @@ final class PortalRunCampaign {
     }
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
-        return digger.descendOrTunnel(dig(body), top, target, what);
+        // Inside a stuck spell, a branch mine begun near where the spell was caught lays its legs away from there (F-25c4dq).
+        digger.branchAwayFrom(stuckLevel > 0 && caughtAt != null ? cell(caughtAt) : null);
+        var task = digger.descendOrTunnel(dig(body), top, target, what);
+        Cell laid = digger.takeBranchLaid();
+        if (laid != null) {
+            KindredMod.LOGGER.info("F-25c4dq-marker: {} branch mine for {} begun at {}, {} across from where its spell was caught at {}: its legs laid {}",
+                    body.entity().getName().getString(), what, pos(laid).toShortString(),
+                    Math.max(Math.abs(laid.x() - caughtAt.getX()), Math.abs(laid.z() - caughtAt.getZ())), caughtAt.toShortString(),
+                    digger.heading().name().toLowerCase(java.util.Locale.ROOT));
+        }
+        return task;
     }
 
     /**

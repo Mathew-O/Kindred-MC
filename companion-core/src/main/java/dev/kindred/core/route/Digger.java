@@ -139,6 +139,11 @@ public final class Digger {
     private final Map<Long, Long> pillarMissesUntil = new HashMap<>();
     private int branchRun;
     private boolean branchSide, branchStepping;
+    /** When it last went on with a branch mine; one not gone on with for {@link #BRANCH_BEGINS_AFTER} ticks begins afresh. */
+    private long lastBranchTick = -1;
+    private static final long BRANCH_BEGINS_AFTER = 600;
+    /** A stuck spell's place its branch mine lays its legs away from (F-25c4dq), and where one was last so laid. */
+    private Cell awayFrom, branchLaid;
 
     // ------------------------------------------------------------------ state the campaign shares
 
@@ -302,7 +307,49 @@ public final class Digger {
             return digDown(body, target, "Dig down toward " + what).or(() -> tunnel(body, "Tunnel past liquid toward " + what, lava));
         }
         // At the richest depth with no ore or cave in view: branch mine, legs zigzagging through fresh stone.
+        branchBegins(body);
         return tunnel(body, "Branch mine for " + what, lava);
+    }
+
+    /**
+     * A branch mine begun inside a stuck spell, within reach of where the spell was caught: its first leg laid along the
+     * axis it is farther off on, away from that place, and its steps between legs away on the other (F-25c4dq). Its legs
+     * alternate back and forth from where the mine began and its steps go one way, so the whole zigzag then lies beyond where
+     * it began from the spell's place, never nearer. Leg length, step and alternation are as they were.
+     *
+     * In main's holepit scene (`diag-holepit-079bdc2-8675309-kindred-111140`), a mine begun within about ten of where the
+     * spell was caught laid its legs across that place: leg after leg swept back through the eight blocks round it, every
+     * step fresh rock and no iron found, and near starts failed 7 of 16 runs against 10 of 62 for far ones. In E-40 iteration
+     * 29, 8 of 112 stuck spells were such a working mine.
+     */
+    private <T> void branchBegins(Body<T> body) {
+        long now = body.now();
+        boolean begins = lastBranchTick < 0 || now - lastBranchTick > BRANCH_BEGINS_AFTER;
+        lastBranchTick = now;
+        if (!begins || awayFrom == null) return;
+        Cell feet = body.feet();
+        int dx = feet.x() - awayFrom.x(), dz = feet.z() - awayFrom.z();
+        if (Math.max(Math.abs(dx), Math.abs(dz)) > BRANCH_LEG + 8) return; // Too far for its legs to come back to it.
+        boolean alongX = Math.abs(dx) >= Math.abs(dz);
+        Side leg = alongX ? (dx >= 0 ? Side.EAST : Side.WEST) : (dz >= 0 ? Side.SOUTH : Side.NORTH);
+        Side step = alongX ? (dz >= 0 ? Side.SOUTH : Side.NORTH) : (dx >= 0 ? Side.EAST : Side.WEST);
+        heading = leg;
+        branchSide = leg.counterclockwise() == step;
+        branchRun = 0;
+        branchStepping = false;
+        branchLaid = feet;
+    }
+
+    /** Where a branch mine inside a stuck spell should lay its legs away from, or null for none (F-25c4dq). */
+    public void branchAwayFrom(Cell from) {
+        awayFrom = from;
+    }
+
+    /** Where a branch mine was last begun with its legs laid away from a stuck spell's place, once; then null (F-25c4dq). */
+    public Cell takeBranchLaid() {
+        Cell laid = branchLaid;
+        branchLaid = null;
+        return laid;
     }
 
     /**
