@@ -82,6 +82,12 @@ public final class NativeBringGameTests implements FabricGameTest {
                 + (hal == null ? "; Hal out of play" : "; in hand " + hal.getMainHandStack() + ", off hand " + hal.getOffHandStack());
     }
 
+    /** F-22c123: the staged case's message, naming each bring given up before any push. */
+    private static String stagedOffLine(java.util.List<String> beforeAnyPush) {
+        return "Staged: the librarian's boat set off the line as the cart rolled"
+                + (beforeAnyPush.isEmpty() ? "" : "; no push was ever reached: given up " + String.join(", then ", beforeAnyPush));
+    }
+
     static void inPlay(TestContext context, net.minecraft.server.network.ServerPlayerEntity hal, String lastNotYet) {
         context.assertTrue(hal != null, lastNotYet == null ? "Hal still in play"
                 : "Hal out of play as the test ended; before that, not yet: " + lastNotYet);
@@ -182,6 +188,18 @@ public final class NativeBringGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringGivenUpDoorBack", tickLimit = 14000)
     public void givenUpWithTheCartDownHalStillPutsItsHallsDoorBack(TestContext context) {
         scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 6);
+    }
+
+    /**
+     * F-22c123. As the last, the librarian walking off each line before any push (STAGED: its boat, the librarian in it, set
+     * three blocks off the line each time the cart is put down on it, until the bring gives up, "kept wandering off the
+     * line" or no line from where it sits), as CI's did on #492 (run 45132709566): given up before any push, all it put down taken back, the hall's door
+     * back. A bring given up before any push is real bring behaviour; this case holds what it leaves, and shows the
+     * staged case's message for one that never came to a push.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringGivenUpBeforeAnyPush", tickLimit = 14000)
+    public void givenUpBeforeAnyPushHalStillPutsItsHallsDoorBack(TestContext context) {
+        scene(context, false, false, false, false, true, false, false, false, false, false, false, false, false, 10);
     }
 
     /**
@@ -307,6 +325,19 @@ public final class NativeBringGameTests implements FabricGameTest {
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringAcross", tickLimit = 16000)
     public void aLibrarianAcrossALakeIsRowedOverAndBroughtHome(TestContext context) {
         scene(context, false, false, false, false, true, true);
+    }
+
+    /**
+     * F-22c122. As the last, and the night after: once the librarian is brought home, night falls (STAGED: the time of day
+     * set to 12,500, the start of a villager's rest, then to 1,000 once it has slept or 2,400 ticks on), the hall's other
+     * cells' beds free, and the librarian left to claim a bed and sleep as vanilla does. By morning it is still in the
+     * cell it was brought to. In CI on #465 (run 45056595996, attempt 1) the librarian brought home to cell 0 was on cell
+     * 1's bed ten ticks later, block-centred on it as a villager waking there is set, across the one-block wall between: a
+     * villager sleeps in the bed it has claimed from anywhere within 2.0 of it, walls or no.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringOvernight", tickLimit = 20000)
+    public void aLibrarianBroughtHomeIsStillInItsCellTheMorningAfter(TestContext context) {
+        scene(context, false, false, false, false, true, true, false, false, false, false, false, false, false, 9);
     }
 
     /**
@@ -447,11 +478,21 @@ public final class NativeBringGameTests implements FabricGameTest {
      * 4 the librarian by the hall's south-west corner and Hal set by the line's stop, so that it climbs out to put the door back
      * by a stair (F-22c84, the dirt).
      * 6 the librarian's boat set aside off the line each time the cart rolls, until the bring is given up (F-22c98b).
+     * 9 the night after it is brought home, and the morning (F-22c122).
+     * 10 the librarian's boat set off each line as the cart is put down on it, before any push, until the bring is given
+     * up (F-22c123).
      */
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside, boolean bornInBoat, boolean pressed,
                               int onBed) {
         boolean[] asideOnce = {false};
+        // F-22c122: the tick night was set and morning; the column it was brought home to; the first sight of it slept or out
+        // of that column.
+        long[] nightAt = {-1}, morningAt = {-1}, sleptAt = {-1};
+        int[] homeColumn = {Integer.MIN_VALUE};
+        String[] outOfCell = {null};
+        BlockPos[] sleptIn = {null};
+        boolean[] morningLogged = {false};
         // F-22c98b: whether the librarian's boat was set off the line for the push under way; how many times it was.
         boolean[] offLineSet = {false};
         double[] pitFloor = {Double.NaN};
@@ -460,6 +501,14 @@ public final class NativeBringGameTests implements FabricGameTest {
         // as the staging first set the boat off the line.
         String[] endedWith = {null};
         int[] saidBefore = {-1};
+        // F-22c123: each bring given up before any push was staged, its line and the hall's doorway the tick it was said; how
+        // much of what was said has been read for them.
+        java.util.List<String> beforeAnyPush = new java.util.ArrayList<>();
+        int[] saidRead = {0};
+        // F-22c123, case 10: the bring's phase the tick before; whether the boat was set off the line it is on; how often.
+        String[] lastPhase = {""};
+        boolean[] wanderedOff = {false};
+        int[] wanderings = {0};
         // Each cell's front: a rail on it the tick before; the tick its rail came up; whether Hal stood in it then.
         java.util.Map<BlockPos, Boolean> frontRail = new java.util.HashMap<>();
         java.util.Map<BlockPos, Long> railUp = new java.util.HashMap<>();
@@ -767,6 +816,51 @@ public final class NativeBringGameTests implements FabricGameTest {
                             }
                         }
                     }
+                    // F-22c123: a bring given up before any push (so before the staging could set the boat off the line), its
+                    // line and the doorway as it was said: the staging waits for the first push of whichever bring comes to one.
+                    // Staged (F-22c123, case 10): as the cart is put down on a line, the boat with the librarian in it set three
+                    // blocks off it, crosswise, once for each line laid, before any push.
+                    if (onBed == 10) {
+                        var note = String.valueOf(f.runtime.bringNote(f.id));
+                        var tag = java.util.regex.Pattern.compile("\\[(\\w+)\\]$").matcher(note);
+                        String phase = tag.find() ? tag.group(1) : "";
+                        // Each line laid again after the boat was set off the last: the boat set off the new one too.
+                        if (wanderedOff[0] && (phase.equals("LAY") || phase.equals("RECART"))) wanderedOff[0] = false;
+                        var world = context.getWorld();
+                        boolean cartStill = world.getEntitiesByClass(net.minecraft.entity.vehicle.AbstractMinecartEntity.class,
+                                new net.minecraft.util.math.Box(origin[0]).expand(64), c -> c.isAlive() && c.getVelocity().horizontalLength() > 0.01).isEmpty();
+                        if ((phase.equals("CART") || phase.equals("PUSH") && cartStill) && !wanderedOff[0]
+                                && librarian[0].getVehicle() instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                            for (var d : new int[][] {{3, 0}, {-3, 0}, {0, 3}, {0, -3}}) {
+                                BlockPos to = BlockPos.ofFloored(boat.getX() + d[0], boat.getY(), boat.getZ() + d[1]);
+                                if (!world.getBlockState(to).isAir() || !world.getBlockState(to.up()).isAir() || world.getBlockState(to.down()).isAir()
+                                        || world.getBlockState(to.down()).isIn(net.minecraft.registry.tag.BlockTags.RAILS) || world.getBlockState(to).isIn(net.minecraft.registry.tag.BlockTags.RAILS)) continue;
+                                boat.refreshPositionAndAngles(boat.getX() + d[0], boat.getY(), boat.getZ() + d[1], boat.getYaw(), 0);
+                                boat.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                wanderedOff[0] = true;
+                                wanderings[0]++;
+                                KindredMod.LOGGER.info("Bring: STAGED, the librarian's boat set off the line before any push ({}), at {}", wanderings[0],
+                                        boat.getPos().subtract(origin[0].getX(), origin[0].getY(), origin[0].getZ()));
+                                break;
+                            }
+                        }
+                        lastPhase[0] = phase;
+                    }
+                    if ((onBed == 6 || onBed == 7 || onBed == 10) && offLineSets[0] == 0) {
+                        var said = f.runtime.said(f.id);
+                        for (int i = saidRead[0]; i < said.size(); i++) {
+                            // A give-up, positively: a bring that ends says its line and notes the same line, with no phase (it
+                            // is over), where one brought home notes "Brought home"; any other line said is not one.
+                            String line = said.get(i);
+                            if (!line.equals(f.runtime.bringNote(f.id))) continue;
+                            BlockPos door = origin[0].add(TradingHall.width(3) / 2, 1, 7);
+                            var at = context.getWorld().getBlockState(door);
+                            String entry = "'" + said.get(i) + "' / " + (at.getBlock() instanceof net.minecraft.block.DoorBlock ? "door" : String.valueOf(at));
+                            beforeAnyPush.add(entry);
+                            KindredMod.LOGGER.info("Bring: given up before any push: {}", entry);
+                        }
+                        saidRead[0] = said.size();
+                    }
                     // The tick the given-up bring says how it ended (its first line said since the staging), what the doorway is
                     // then: a bring begun again after may open it again.
                     if ((onBed == 6 || onBed == 7) && saidBefore[0] >= 0 && endedWith[0] == null
@@ -1001,13 +1095,27 @@ public final class NativeBringGameTests implements FabricGameTest {
                     context.assertTrue(offLeft[0] == null || offLeft[0].isEmpty(),
                             "The cart's and boat's items taken up from the cell within 600 ticks of Hal let go off its stand: still lying " + offLeft[0]);
                     context.assertTrue(shutIn[0] == null, "The job block never put in with Hal in the cell: " + shutIn[0]);
+                    if (onBed == 10) {
+                        // F-22c123: given up before any push, the door back; the staged case's message as it would read.
+                        context.assertTrue(wanderings[0] > 0, "Staged: the librarian's boat set off the line before any push");
+                        context.assertTrue(!beforeAnyPush.isEmpty(), "Given up before any push, the librarian off each line: " + beforeAnyPush + " / " + f.runtime.bringNote(f.id));
+                        context.assertTrue(beforeAnyPush.stream().allMatch(e -> e.endsWith(" / door") && !e.contains("couldn't put my hall's door back")),
+                                "The hall's door put back as each bring before any push gave up: " + beforeAnyPush);
+                        String message = stagedOffLine(beforeAnyPush);
+                        KindredMod.LOGGER.info("Bring: the staged case's message for a bring that never came to a push: {}", message);
+                        context.assertTrue(message.contains("no push was ever reached: given up '"), message);
+                        return;
+                    }
                     if (onBed == 6 || onBed == 7) {
                         // Given up, the bring ends with what it put down taken back: the hall's door back in its doorway, as
                         // it was the tick the bring ended (a new bring may begin after and open it again).
-                        context.assertTrue(offLineSets[0] > 0, "Staged: the librarian's boat set off the line as the cart rolled");
+                        context.assertTrue(offLineSets[0] > 0, stagedOffLine(beforeAnyPush));
                         context.assertTrue(endedWith[0] != null, "The bring given up and ended: " + f.runtime.bringNote(f.id));
                         context.assertTrue(endedWith[0].startsWith("door / ") && !endedWith[0].contains("couldn't put my hall's door back"),
                                 "The hall's door put back as it gave up: " + endedWith[0]);
+                        // F-22c123: and a bring given up before any push put the door back too.
+                        context.assertTrue(beforeAnyPush.stream().allMatch(e -> e.endsWith(" / door") && !e.contains("couldn't put my hall's door back")),
+                                "The hall's door put back as each bring before any push gave up: " + beforeAnyPush);
                         // The boat in the pit let be, and said so, not walked to for ever.
                         if (onBed == 7) context.assertTrue(!Double.isNaN(pitFloor[0]), "Staged: the librarian's boat set down on its pit's floor");
                         if (onBed == 7) context.assertTrue(endedWith[0].contains("I left the boat with the librarian in it where I couldn't get to it."),
@@ -1018,7 +1126,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                             "Brought home: " + f.runtime.bringNote(f.id) + " / " + f.runtime.nativeLastResult(f.id));
                 })
                 .createAndAdd(() -> {
-                  if (onBed == 6 || onBed == 7) {
+                  if (onBed == 6 || onBed == 7 || onBed == 10) {
                       // Given up as staged: nothing brought home to check.
                       librarian[0].discard();
                       f.runtime.stop();
@@ -1175,6 +1283,11 @@ public final class NativeBringGameTests implements FabricGameTest {
                         hal.closeHandledScreen();
                         context.assertTrue(trades, "Its trades open from the corridor: " + hal.currentScreenHandler);
                     }
+                    if (onBed == 9) {
+                        homeColumn[0] = librarian[0].getBlockX() - origin[0].getX();
+                        KindredMod.LOGGER.info("Bring overnight: brought home, {}", overnight(world, librarian[0], origin[0]));
+                        return;
+                    }
                     librarian[0].discard();
                     f.runtime.stop();
                   } catch (net.minecraft.test.GameTestException failing) {
@@ -1185,7 +1298,61 @@ public final class NativeBringGameTests implements FabricGameTest {
                     throw failing;
                   }
                 })
+                .createAndAdd(() -> {
+                    // F-22c122: the night after, and the morning; the librarian left to itself as vanilla leaves it.
+                    if (onBed != 9) return;
+                    var world = context.getWorld();
+                    long now = world.getTime();
+                    var librarianNow = librarian[0];
+                    if (nightAt[0] < 0) {
+                        nightAt[0] = now;
+                        world.setTimeOfDay(12500);
+                        KindredMod.LOGGER.info("Bring overnight: STAGED, night: the time of day set to 12500; {}", overnight(world, librarianNow, origin[0]));
+                    }
+                    if (sleptAt[0] < 0 && librarianNow.isSleeping()) {
+                        sleptAt[0] = now;
+                        sleptIn[0] = librarianNow.getSleepingPosition().map(p -> p.subtract(origin[0])).orElse(null);
+                        KindredMod.LOGGER.info("Bring overnight: asleep, {}", overnight(world, librarianNow, origin[0]));
+                    }
+                    int column = librarianNow.getBlockX() - origin[0].getX();
+                    if (outOfCell[0] == null && column != homeColumn[0]) {
+                        outOfCell[0] = "+" + (now - nightAt[0]) + " ticks into the night, " + overnight(world, librarianNow, origin[0]);
+                        KindredMod.LOGGER.info("Bring overnight: out of the cell it was brought to (column {}): {}", homeColumn[0], outOfCell[0]);
+                    }
+                    if (world.getTime() % 100 == 0) KindredMod.LOGGER.info("Bring overnight: +{} ticks, {}", now - nightAt[0], overnight(world, librarianNow, origin[0]));
+                    if (morningAt[0] < 0 && (sleptAt[0] >= 0 && now - sleptAt[0] >= 100 || now - nightAt[0] >= 2400)) {
+                        morningAt[0] = now;
+                        world.setTimeOfDay(1000);
+                        KindredMod.LOGGER.info("Bring overnight: STAGED, morning: the time of day set to 1000; {}", overnight(world, librarianNow, origin[0]));
+                    }
+                    context.assertTrue(morningAt[0] >= 0 && now - morningAt[0] >= 200, "The night and the morning after");
+                    if (!morningLogged[0]) {
+                        morningLogged[0] = true;
+                        KindredMod.LOGGER.info("Bring overnight: the morning after, {}{}", overnight(world, librarianNow, origin[0]),
+                                sleptAt[0] < 0 ? "; it never slept" : "; asleep at +" + (sleptAt[0] - nightAt[0]) + " ticks");
+                    }
+                    context.assertTrue(outOfCell[0] == null, "Still in the cell it was brought to (column " + homeColumn[0] + ") the morning after: left it " + outOfCell[0]);
+                    // Asleep in its own cell's bed, the bed's head (its claimed home), and awake again beside it.
+                    // Its own bed's head, where the hall's plan puts it.
+                    BlockPos ownHead = hall.blocks().stream().filter(b -> b.at().x() == homeColumn[0] && b.at().y() == 1
+                                    && b.spec().block().endsWith("_bed") && "head".equals(b.spec().properties().get("part")))
+                            .map(b -> new BlockPos(b.at().x(), b.at().y(), b.at().z())).findFirst().orElse(null);
+                    context.assertTrue(sleptIn[0] != null && sleptIn[0].equals(ownHead),
+                            "Asleep in its own cell's bed in the night, its head at " + (ownHead == null ? "?" : ownHead.toShortString()) + ": "
+                                    + (sleptIn[0] == null ? "it never slept" : "in " + sleptIn[0].toShortString()));
+                    context.assertTrue(!librarianNow.isSleeping(), "Awake again in the morning: " + overnight(world, librarianNow, origin[0]));
+                    librarianNow.discard();
+                    f.runtime.stop();
+                })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** F-22c122: the time of day, and the villager's claimed bed (its HOME), sleeping, and place, from the hall's corner. */
+    private static String overnight(net.minecraft.server.world.ServerWorld world, net.minecraft.entity.passive.VillagerEntity villager, BlockPos hall) {
+        var home = villager.getBrain().getOptionalRegisteredMemory(net.minecraft.entity.ai.brain.MemoryModuleType.HOME);
+        return "time of day " + (world.getTimeOfDay() % 24000) + ", its bed " + home.map(g -> g.pos().subtract(hall).toShortString()).orElse("none")
+                + (villager.isSleeping() ? ", asleep in " + villager.getSleepingPosition().map(p -> p.subtract(hall).toShortString()).orElse("?") : ", awake")
+                + ", at " + villager.getPos().subtract(hall.getX(), hall.getY(), hall.getZ());
     }
 }

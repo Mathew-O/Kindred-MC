@@ -79,7 +79,12 @@ public final class RailRoute {
      * it), the corridor's south row to the cell's column, and north through the cell's front onto its floor.
      */
     public static List<Pos> inside(int cells, TradingHall.Cell cell) {
-        return insideRails(cells, cell);
+        return inside(cells, TradingHall.Layout.CURRENT, cell);
+    }
+
+    /** As {@link #inside(int, TradingHall.Cell)}, in a hall laid out as {@code layout} (F-22c122). */
+    public static List<Pos> inside(int cells, TradingHall.Layout layout, TradingHall.Cell cell) {
+        return insideRails(cells, layout, cell);
     }
 
     /**
@@ -88,12 +93,17 @@ public final class RailRoute {
      * out for the ride and put back after.
      */
     public static List<Pos> overhead(int cells, TradingHall.Cell cell) {
-        int door = TradingHall.width(cells) / 2;
+        return overhead(cells, TradingHall.Layout.CURRENT, cell);
+    }
+
+    /** As {@link #overhead(int, TradingHall.Cell)}, in a hall laid out as {@code layout} (F-22c122). */
+    public static List<Pos> overhead(int cells, TradingHall.Layout layout, TradingHall.Cell cell) {
+        int door = TradingHall.width(cells, layout) / 2;
         return List.of(new Pos(door, 3, TradingHall.FRONT_WALL), new Pos(cell.stand().x(), 3, TradingHall.FRONT));
     }
 
-    private static List<Pos> insideRails(int cells, TradingHall.Cell cell) {
-        int door = TradingHall.width(cells) / 2, x = cell.stand().x();
+    private static List<Pos> insideRails(int cells, TradingHall.Layout layout, TradingHall.Cell cell) {
+        int door = TradingHall.width(cells, layout) / 2, x = cell.stand().x();
         var rails = new ArrayList<Pos>();
         rails.add(new Pos(door, 1, TradingHall.FRONT_WALL));
         rails.add(new Pos(door, 1, TradingHall.FRONT_WALL - 1));
@@ -105,7 +115,12 @@ public final class RailRoute {
 
     /** The column outside the hall's door, in the hall's frame, where the line from the ground comes in. */
     public static Pos approach(int cells) {
-        return new Pos(TradingHall.width(cells) / 2, 0, TradingHall.FRONT_WALL + 1);
+        return approach(cells, TradingHall.Layout.CURRENT);
+    }
+
+    /** As {@link #approach(int)}, for a hall laid out as {@code layout} (F-22c122). */
+    public static Pos approach(int cells, TradingHall.Layout layout) {
+        return new Pos(TradingHall.width(cells, layout) / 2, 0, TradingHall.FRONT_WALL + 1);
     }
 
     /**
@@ -119,10 +134,21 @@ public final class RailRoute {
         return plan(ground, villagerX, villagerZ, origin, cells, cell, CART_ROOM);
     }
 
+    /** As {@link #plan(BaseSite.Ground, int, int, Pos, int, TradingHall.Cell)}, into a hall laid out as {@code layout} (F-22c122). */
+    public static Optional<Route> plan(BaseSite.Ground ground, int villagerX, int villagerZ, Pos origin, int cells, TradingHall.Layout layout, TradingHall.Cell cell) {
+        return plan(ground, villagerX, villagerZ, origin, cells, layout, cell, CART_ROOM);
+    }
+
     /** As {@link #plan(BaseSite.Ground, int, int, Pos, int, TradingHall.Cell)}, with {@code room} open blocks over each rail. */
     public static Optional<Route> plan(BaseSite.Ground ground, int villagerX, int villagerZ, Pos origin, int cells, TradingHall.Cell cell, int room) {
+        return plan(ground, villagerX, villagerZ, origin, cells, TradingHall.Layout.CURRENT, cell, room);
+    }
+
+    /** As {@link #plan(BaseSite.Ground, int, int, Pos, int, TradingHall.Cell, int)}, into a hall laid out as {@code layout} (F-22c122). */
+    public static Optional<Route> plan(BaseSite.Ground ground, int villagerX, int villagerZ, Pos origin, int cells, TradingHall.Layout layout,
+                                       TradingHall.Cell cell, int room) {
         if (room < CART_ROOM) throw new IllegalArgumentException("A line needs at least " + CART_ROOM + " open blocks over it");
-        var in = approach(cells);
+        var in = approach(cells, layout);
         int goalX = origin.x() + in.x(), goalZ = origin.z() + in.z();
         // The goal is reached heading north, straight in at the door: from the column south of it.
         var ground_ = new HashMap<Long, Optional<BaseSite.Column>>();
@@ -207,7 +233,7 @@ public final class RailRoute {
         }
         // Where the push starts: behind the cart, on the ground the run-up is on.
         var push = at.apply(villagerX + bx * (run + 1), villagerZ + bz * (run + 1)).orElseThrow();
-        for (var p : inside(cells, cell)) rails.add(new Pos(origin.x() + p.x(), origin.y() + p.y(), origin.z() + p.z()));
+        for (var p : inside(cells, layout, cell)) rails.add(new Pos(origin.x() + p.x(), origin.y() + p.y(), origin.z() + p.z()));
         return Optional.of(new Route(rails, rails.getFirst(), new Pos(villagerX, villagerTop + 1, villagerZ),
                 new Pos(villagerX + bx * (run + 1), push.top() + 1, villagerZ + bz * (run + 1)), bridge));
     }

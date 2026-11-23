@@ -128,7 +128,7 @@ public final class Ranch {
     private Phase phase = Phase.BUILD;
     private UUID leading;
     private int relined;
-    private long waitingSince = -1, clearSince = -1;
+    private long waitingSince = -1, clearSince = -1, gatewaySince = -1;
     /** Whether the animal it leads has been brought round to the front of the gate. */
     private boolean lined;
     private final Set<UUID> givenUp = new HashSet<>();
@@ -360,9 +360,23 @@ public final class Ranch {
         // In the gateway itself, with the gate open, it is not out yet: walked on out (F-22c105). Pushed into the gateway by
         // the cows as the gate opened, it was taken for out and the gate shut on it, which put it back in the pen; it opened
         // the gate again, 15 times, and looked back for the calf outside from within the shut pen (#417's CI).
-        boolean inGateway = seen.gateOpen() && seen.feet().x() == gate().x() && seen.feet().z() == gate().z();
+        // And with the gate shut (F-22c124): in the gateway with the gate shut, it is not out either. Taken for out, it looked
+        // back from within the shut gate's cell for a calf penned there with it, and its walk round to the gate's front had
+        // no route ("1 got out", #493's CI): it opens the gate and walks on out, as from inside.
+        boolean inGateway = seen.feet().x() == gate().x() && seen.feet().z() == gate().z();
         if (in || inGateway) return out(seen, "Open the gate to leave", "Out of the pen");
-        if (seen.gateOpen()) return gate(seen, false, outside(), false, "Shut the gate behind");
+        if (seen.gateOpen()) {
+            // One it penned standing in the gateway is neither in nor out, as the player there is not: the gate is not shut on
+            // it while it is there, for a while, so that it steps in or out first (F-22c124). Shut on it, it was taken for one
+            // that got out from where it stood in the shut gate's cell.
+            boolean animalInGateway = seen.animals().stream().anyMatch(a -> penned.contains(a.id()) && a.at().x() == gate().x() && a.at().z() == gate().z());
+            if (animalInGateway) {
+                if (gatewaySince < 0) gatewaySince = seen.tick();
+                if (seen.tick() - gatewaySince <= CLEAR) return new Step.Wait(false, "Wait for the " + kind.noun() + " to step off the gateway");
+            }
+            gatewaySince = -1;
+            return gate(seen, false, outside(), false, "Shut the gate behind");
+        }
         // The gate shut, it looks back: one that slipped out as it left is brought back in, a few times at most.
         var out = escaped(seen);
         if (!out.isEmpty() && returns < RETURNS && seen.food() > 0) {

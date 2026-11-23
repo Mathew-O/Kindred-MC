@@ -2543,6 +2543,22 @@ final class PlayerRuntime {
     }
 
     /**
+     * A netherite step offered and not dispatched, and why (F-22c125, a diagnostic), once for each offer: on #493's CI the
+     * ingot's step was offered every refresh for 18 seconds after a run of routine smelts, nothing ran and nothing said why.
+     */
+    private void netheriteUnsent(Entry entry, List<NativeTaskCandidate> offered, String why) {
+        if (entry.netheriteTaskId == null) return;
+        for (var candidate : offered) {
+            if (!candidate.candidate().id().equals(entry.netheriteTaskId)) continue;
+            if (candidate == entry.netheriteUnsentFor) return;
+            entry.netheriteUnsentFor = candidate;
+            KindredMod.LOGGER.info("{} netherite {} {} offered and not dispatched: {}", entry.data.displayName(), candidate.skill(),
+                    candidate.arguments(), why);
+            return;
+        }
+    }
+
+    /**
      * A task accepted for dispatch and dropped before its skill started: said at most once a minute, with the gates that
      * dropped it. Its decision loop saw it accepted, and a goal that offers it again each tick would stand still unsaid (F-25c4m).
      */
@@ -5906,7 +5922,7 @@ final class PlayerRuntime {
             int damage = hallDamage(world, standing);
             if (damage > 0) {
                 String why = "Repairing its trading hall, " + damage + (damage == 1 ? " block" : " blocks") + " out of place";
-                var plan = hallPlan(standing);
+                var plan = hallPlan(world, standing);
                 var repair = new dev.kindred.core.construction.Blueprint("the trading hall's repair", plan.source(), plan.creator(), plan.license(),
                         plan.blocks(), List.of());
                 if (startBuild(server.getCommandSource(), id, repair, new BlockPos(standing.x(), standing.y(), standing.z()), 0) != 1) return false;
@@ -6316,7 +6332,9 @@ final class PlayerRuntime {
     static final int HALL_CELLS = 3;
 
     private boolean startHall(Entry entry, PlayerMemoryStore.Hall hall, String why) {
-        var plan = hallPlan(hall);
+        var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(hall.dimension())));
+        if (world == null) return false;
+        var plan = hallPlan(world, hall);
         if (startBuild(server.getCommandSource(), entry.data.id(), plan, new BlockPos(hall.x(), hall.y(), hall.z()), 0) != 1) return false;
         entry.hallBuild = entry.build;
         noteBase(entry, why);
@@ -6869,9 +6887,21 @@ final class PlayerRuntime {
         return entry == null ? "" : entry.lifeNote;
     }
 
-    /** The plan its trading hall was built on. */
-    private static dev.kindred.core.construction.Blueprint hallPlan(PlayerMemoryStore.Hall hall) {
-        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+    /**
+     * How its trading hall's cells are laid out, read from what stands (F-22c122): a hall built before, one wall between
+     * its cells, is repaired as it was built and never moved; one on open ground is laid as halls are built now.
+     */
+    private static dev.kindred.core.construction.TradingHall.Layout hallLayout(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        var origin = new BlockPos(hall.x(), hall.y(), hall.z());
+        return dev.kindred.core.construction.TradingHall.standing(hall.cells(), hall.wood(), "cobblestone", p -> {
+            BlockPos at = origin.add(p.x(), p.y(), p.z());
+            return world.isChunkLoaded(at) ? BuildRunner.spec(world.getBlockState(at)) : null;
+        });
+    }
+
+    /** The plan its trading hall was built on: its cells laid out as what stands has them (F-22c122). */
+    private static dev.kindred.core.construction.Blueprint hallPlan(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone", hallLayout(world, hall));
     }
 
     /**
@@ -6881,7 +6911,7 @@ final class PlayerRuntime {
     private static int hallDamage(ServerWorld world, PlayerMemoryStore.Hall hall) {
         int damage = 0;
         var origin = new BlockPos(hall.x(), hall.y(), hall.z());
-        for (var block : hallPlan(hall).blocks()) {
+        for (var block : hallPlan(world, hall).blocks()) {
             BlockPos at = origin.add(block.at().x(), block.at().y(), block.at().z());
             if (!world.isChunkLoaded(at)) return 0;
             if (!BuildRunner.spec(world.getBlockState(at)).sameAs(block.spec())) damage++;
@@ -8123,6 +8153,7 @@ final class PlayerRuntime {
         }
 
         if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.RUN_SKILL) {
+            if (!java.util.Objects.equals(entry.currentTaskId, entry.netheriteTaskId)) netheriteUnsent(entry, taskCandidates, "a skill under way, " + entry.skillId);
             holdSkillTick(entry);
             entry.runner.tick();
             observeRunner(entry);
@@ -8131,10 +8162,13 @@ final class PlayerRuntime {
             var chosen = selection.candidate();
             entry.currentTaskId = chosen.id();
             var match = taskCandidates.stream().filter(tc -> tc.candidate().id().equals(chosen.id())).findFirst();
+            if (!chosen.id().equals(entry.netheriteTaskId)) netheriteUnsent(entry, taskCandidates,
+                    match.map(other -> "chose " + other.skill() + " " + other.arguments() + " instead").orElse("the choice matched no candidate"));
             if (match.isPresent()) {
                 NativeTaskCandidate candidateToDispatch = match.get();
                 bindBodyBlockScanBudget(body);
                 if (!validateCandidateStillExecutable(entry, body, candidateToDispatch)) {
+                    netheriteUnsent(entry, taskCandidates, "no longer executable");
                     entry.cachedRoutineCandidates = List.of();
                     entry.routineRefreshPending = true;
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
@@ -8159,6 +8193,7 @@ final class PlayerRuntime {
                     }
                     entry.pendingSource = candidateToDispatch.source();
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
+                    if (res != 1) netheriteUnsent(entry, taskCandidates, "refused: " + entry.blocker);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.attentionTaskId)) entry.attendedAt = entry.addressedAt;
@@ -8205,6 +8240,7 @@ final class PlayerRuntime {
                 entry.currentTaskId = null;
             }
         } else {
+            netheriteUnsent(entry, taskCandidates, decision.action() + ": " + decision.reason());
             if (!entry.nativeWorkPending && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)) {
                 if (!taskCandidates.isEmpty()) {
                     entry.currentTaskId = null;
@@ -8934,6 +8970,7 @@ final class PlayerRuntime {
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)) {
             entry.netheriteAt = server.getTicks() + 600;
+            entry.netheriteHoldCause = "its step blocked";
             entry.routineRefreshPending = true;
         }
         // A furnace or crafting table it put down for its netherite is its own to come back to (E-16c).
@@ -8951,6 +8988,7 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeSmithAction smith && state == SkillRunner.State.COMPLETED) {
             say(entry, dev.kindred.core.Netherite.said(smith.piece()), "");
             entry.netheriteAt = server.getTicks() + 20;
+            entry.netheriteHoldCause = "a piece upgraded";
             entry.routineRefreshPending = true;
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.brewTaskId)) {
@@ -11270,10 +11308,14 @@ final class PlayerRuntime {
                         List.copyOf(entry.factionPlay.arrivedForTest));
     }
 
-    /**
-     * For fixtures (M-06m1): {@code target} recorded as set aside as open water it saw at {@code tick}, as the open-water
-     * look records it, or ({@code water} false) refused once at {@code tick}, as a refused walk is.
-     */
+    /** For fixtures (M-06k9): its plans out of the water and the dry-ground searches they asked, since it was made. */
+    int[] drySearchForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.campaign == null) return new int[] {0, 0};
+        return new int[] {(int) entry.campaign.surfacePlans, (int) entry.campaign.drySearches};
+    }
+
     /**
      * For fixtures (M-06m1): the open-water look toward its live move's end from where it stands now, as its faction play
      * makes it (F-35j): "all water seen", or the first column it has not seen as water.
@@ -11289,6 +11331,10 @@ final class PlayerRuntime {
         return at == null ? "all water seen toward " + to.toShortString() : "the first column not seen as water toward " + to.toShortString() + ": " + at[0] + ", " + at[1];
     }
 
+    /**
+     * For fixtures (M-06m1): {@code target} recorded as set aside as open water it saw at {@code tick}, as the open-water
+     * look records it, or ({@code water} false) refused once at {@code tick}, as a refused walk is.
+     */
     void factionTargetRecordForTest(UUID player, String target, long tick, boolean water) {
         requireThread();
         var entry = entries.get(player);
@@ -12025,6 +12071,8 @@ final class PlayerRuntime {
         BlockPos cart, push;
         final BlockPos floor, slot, door, origin;
         final int cells, cellIndex;
+        /** How its hall's cells are laid out, read from what stands as it was planned (F-22c122). */
+        dev.kindred.core.construction.TradingHall.Layout layout = dev.kindred.core.construction.TradingHall.Layout.CURRENT;
         /** Every rail it has put down, to take up again; and how often it has laid the line again. */
         final Set<BlockPos> laid = new HashSet<>();
         int replans;
@@ -12269,8 +12317,8 @@ final class PlayerRuntime {
                         return bringCandidates(entry, body);
                     }
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
-                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
-                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells, b.layout,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
                     if (again.isEmpty()) return giveUp(entry, body, "No rail line with room for the " + b.noun + " in its boat from where it sits.");
                     var r = again.get();
                     b.rails = r.rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
@@ -12469,7 +12517,7 @@ final class PlayerRuntime {
                 // The line laid along the bank past the boat: a rolling empty cart takes up a boat its box comes within a
                 // fifth of a block of, there beside its rail as well as before it, and carries it on, villager and all.
                 var ground = bringGround(world, b);
-                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex);
+                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex);
                 var hallAt = new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ());
                 dev.kindred.core.construction.RailRoute.Route best = null;
                 BlockPos dock = null;
@@ -12477,7 +12525,7 @@ final class PlayerRuntime {
                     var bank = boat.getBlockPos().offset(d);
                     // Close enough for the cart's box, passing the bank column's middle, to meet the boat's.
                     if (Math.hypot(boat.getX() - (bank.getX() + 0.5), boat.getZ() - (bank.getZ() + 0.5)) > 1.3) continue;
-                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, cell,
+                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, b.layout, cell,
                             dev.kindred.core.construction.RailRoute.BOAT_ROOM);
                     if (line.isEmpty() || !line.get().bridge().isEmpty()) continue;
                     if (best == null || line.get().rails().size() < best.rails().size()) {
@@ -12610,8 +12658,8 @@ final class PlayerRuntime {
                 if (on < 1 || on > 4) {
                     if (b.replans >= 4) return giveUp(entry, body, "The " + b.noun + " kept wandering off the line.");
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
-                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
-                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), heldBoat(world, b) != null
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells, b.layout,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex), heldBoat(world, b) != null
                                     ? dev.kindred.core.construction.RailRoute.BOAT_ROOM : dev.kindred.core.construction.RailRoute.CART_ROOM);
                     if (again.isEmpty()) return giveUp(entry, body, "No rail line from where the " + b.noun + " wandered to.");
                     b.replans++;
@@ -13142,7 +13190,7 @@ final class PlayerRuntime {
                 }
                 // The bridge taken back toward the hall: the block furthest from its door first, from the block beside it
                 // on the hall's side, so that it ends on the hall's bank. A block broken over the water floats up beside it.
-                var in = dev.kindred.core.construction.RailRoute.approach(b.cells);
+                var in = dev.kindred.core.construction.RailRoute.approach(b.cells, b.layout);
                 BlockPos approach = b.origin.add(in.x(), in.y(), in.z());
                 BlockPos furthest = null;
                 for (var at : b.bridged) {
@@ -13223,7 +13271,7 @@ final class PlayerRuntime {
                     return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
                 // The door put back as the hall's plan has it, by the build runner, which places a door as players do.
-                var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone");
+                var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone", b.layout);
                 var door = new ArrayList<dev.kindred.core.construction.Blueprint.Block>();
                 var rel = new dev.kindred.core.construction.Pos(b.door.getX() - b.origin.getX(), b.door.getY() - b.origin.getY(), b.door.getZ() - b.origin.getZ());
                 for (var block : hall.blocks()) if (block.at().x() == rel.x() && block.at().z() == rel.z() && (block.at().y() == rel.y() || block.at().y() == rel.y() + 1)) door.add(block);
@@ -13255,7 +13303,8 @@ final class PlayerRuntime {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos origin = new BlockPos(hall.x(), hall.y(), hall.z());
-        var cells = dev.kindred.core.construction.TradingHall.cells(hall.cells());
+        var layout = hallLayout(world, hall);
+        var cells = dev.kindred.core.construction.TradingHall.cells(hall.cells(), layout);
         var holding = Valuables.holding(player, lootWanted(entry));
         var around = new net.minecraft.util.math.Box(origin).expand(BRING_RANGE);
         for (var villager : world.getEntitiesByClass(net.minecraft.entity.passive.VillagerEntity.class, around, v -> v.isAlive() && !v.isBaby() && !v.hasVehicle())) {
@@ -13286,7 +13335,7 @@ final class PlayerRuntime {
                 return null;
             }
             var route = dev.kindred.core.construction.RailRoute.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
-                    new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                    new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), layout, free);
             // By boat across water where no line is laid over it, or where its bridge wants more plain blocks than it has:
             // held in a boat, rowed over, let go of on the far bank and held again there (one that strolls only: one that
             // does not would not wade ashore). Its line from the far bank, with a boat's room, is what the bill is made by.
@@ -13294,9 +13343,9 @@ final class PlayerRuntime {
             int bridgeBlocks = route.map(r -> (int) r.bridge().stream().filter(p -> world.getBlockState(new BlockPos(p.x(), p.y(), p.z())).isReplaceable()).count()).orElse(0);
             boolean shortForBridge = bridgeBlocks > 0 && (shutterSlot(player) < 0 ? 0 : plainBlocks(player)) < 1 + bridgeBlocks;
             if ((route.isEmpty() || shortForBridge) && !villager.isAiDisabled() && boatSlot(player) >= 0
-                    && opensOverhead(player, origin, hall.cells(), cells.indexOf(free))) {
+                    && opensOverhead(player, origin, hall.cells(), layout, cells.indexOf(free))) {
                 var across = dev.kindred.core.construction.WaterCrossing.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
-                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), layout, free);
                 if (across.isPresent()) {
                     crossing = across.get();
                     route = Optional.of(crossing.home());
@@ -13362,10 +13411,11 @@ final class PlayerRuntime {
             var r = route.get();
             BlockPos floor = origin.add(free.stand().x(), free.stand().y(), free.stand().z());
             BlockPos slot = origin.add(free.jobBlock().x(), free.jobBlock().y(), free.jobBlock().z());
-            BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells()) / 2, 1, 7);
+            BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells(), layout) / 2, 1, 7);
             noteBring(entry, "Bringing the " + noun + " home");
             var bring = new Bring(id, noun, rails, bridge, new BlockPos(r.cart().x(), r.cart().y(), r.cart().z()), new BlockPos(r.push().x(), r.push().y(), r.push().z()),
                     floor, slot, door, origin, hall.cells(), cells.indexOf(free), hall.wood(), jobBlock);
+            bring.layout = layout;
             // One that strolls is held in a boat while the line is laid, where it has one to put down on it.
             if (!villager.isAiDisabled() && boatSlot(player) >= 0) bring.phase = Bring.Phase.HOLD;
             if (crossing != null) {
@@ -13639,7 +13689,7 @@ final class PlayerRuntime {
     /** The hall's blocks over the line that a villager riding in its boat would put its eyes into: over the doorway, then the lintel. */
     private static List<BlockPos> overhead(Bring b) {
         var out = new ArrayList<BlockPos>();
-        for (var p : dev.kindred.core.construction.RailRoute.overhead(b.cells, dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex))) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(b.cells, b.layout, dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex))) {
             out.add(b.origin.add(p.x(), p.y(), p.z()));
         }
         return out;
@@ -13647,11 +13697,11 @@ final class PlayerRuntime {
 
     /** Whether it can take out the hall's blocks over the line, and so keep what they drop to put back: a tool that takes each. */
     private static boolean opensOverhead(ServerPlayerEntity player, Bring b) {
-        return opensOverhead(player, b.origin, b.cells, b.cellIndex);
+        return opensOverhead(player, b.origin, b.cells, b.layout, b.cellIndex);
     }
 
-    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, int cellIndex) {
-        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, dev.kindred.core.construction.TradingHall.cells(cells).get(cellIndex))) {
+    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, dev.kindred.core.construction.TradingHall.Layout layout, int cellIndex) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, layout, dev.kindred.core.construction.TradingHall.cells(cells, layout).get(cellIndex))) {
             var at = origin.add(p.x(), p.y(), p.z());
             var state = player.getServerWorld().getBlockState(at);
             if (state.isAir() || !state.isToolRequired()) continue;
@@ -15313,9 +15363,45 @@ final class PlayerRuntime {
      * to spare; and the first piece upgraded at a smithing table of its own, one it holds put down beside it first.
      */
     private List<NativeTaskCandidate> netheriteCandidates(Entry entry, NativePlayerBody body) {
+        var steps = netheriteSteps(entry, body);
+        if (steps != null) entry.netheriteHeldWhy = null;
+        return steps;
+    }
+
+    /**
+     * Why its netherite gives no step (F-22c125, a diagnostic), said only when the reason changes, with its decision's
+     * state: on #493's CI the run gave none, unsaid, between its table going down and seven routine smelts, with the ingot
+     * due, and its body had come up "Stopped or unavailable" where locally it comes up "Awaiting local decision".
+     */
+    private void netheriteHeld(Entry entry, String why, String detail) {
+        if (why.equals(entry.netheriteHeldWhy)) return;
+        entry.netheriteHeldWhy = why;
+        KindredMod.LOGGER.info("{} netherite held: {} (its decision: {})", entry.data.displayName(), detail, entry.mindStatus);
+    }
+
+    /** Its netherite held until {@code until}, and why, said as {@link #netheriteHeld} says it. */
+    private List<NativeTaskCandidate> netheriteHold(Entry entry, long until, String why) {
+        entry.netheriteAt = until;
+        entry.netheriteHoldCause = why;
+        netheriteHeld(entry, why, why + ", until tick " + until);
+        return null;
+    }
+
+    private List<NativeTaskCandidate> netheriteSteps(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         long now = server.getTicks();
-        if (now < entry.netheriteAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        if (now < entry.netheriteAt) {
+            netheriteHeld(entry, String.valueOf(entry.netheriteHoldCause), entry.netheriteHoldCause + ", until tick " + entry.netheriteAt + " (now " + now + ")");
+            return null;
+        }
+        if (!worldEditsEnabled()) {
+            netheriteHeld(entry, "world edits off", "world edits off");
+            return null;
+        }
+        if (matches.running(player.getUuid()).isPresent()) {
+            netheriteHeld(entry, "in a match", "in a match");
+            return null;
+        }
         var inventory = player.getInventory();
         var held = new HashMap<String, Integer>();
         var pieces = new HashMap<Integer, String>();
@@ -15340,10 +15426,8 @@ final class PlayerRuntime {
             if (entry.campaign.smelting(body, Items.ANCIENT_DEBRIS) && pieces.size() > 0 && held.getOrDefault("minecraft:netherite_ingot", 0) == 0) {
                 return List.of(new NativeTaskCandidate(task, "native_wait", Map.of("seconds", "1")));
             }
-            entry.netheriteAt = now + 1200;
-            return null;
+            return netheriteHold(entry, now + 1200, "no step for what it holds");
         }
-        KindredMod.LOGGER.info("{} netherite: {}", entry.data.displayName(), step.get());
         task = stepTask(entry.data.id(), "netherite:" + step.get(), id -> entry.netheriteTaskId = id);
         Optional<PortalRunCampaign.Task> next = switch (step.get()) {
             case dev.kindred.core.Netherite.Step.Smelt smelt -> entry.campaign.smeltItem(body, Items.ANCIENT_DEBRIS, smelt.debris(), "Smelt ancient debris into scrap");
@@ -15351,11 +15435,12 @@ final class PlayerRuntime {
             case dev.kindred.core.Netherite.Step.Template template -> entry.campaign.craftAtTable(body, "netherite_upgrade_smithing_template");
             case dev.kindred.core.Netherite.Step.Upgrade upgrade -> Optional.empty();
         };
+        // The step and the skill it is to be taken with (F-22c125, a diagnostic): on #493's CI "netherite: Ingot[]" came twice
+        // every 120 ticks for 18 seconds with nothing run, and the line did not say what it was to do.
+        KindredMod.LOGGER.info("{} netherite: {}{}", entry.data.displayName(), step.get(), step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade ? ""
+                : next.map(t -> " by " + t.skill() + " " + t.args()).orElse(" by nothing it can do now"));
         if (!(step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade upgrade)) {
-            if (next.isEmpty()) {
-                entry.netheriteAt = now + 1200;
-                return null;
-            }
+            if (next.isEmpty()) return netheriteHold(entry, now + 1200, "nothing it can do now for " + step.get());
             entry.netheriteStep = next.get();
             return List.of(new NativeTaskCandidate(task, next.get().skill(), next.get().args()));
         }
@@ -15365,29 +15450,20 @@ final class PlayerRuntime {
         if (table == null) {
             int tableSlot = -1;
             for (int slot = 0; slot < 36 && tableSlot < 0; slot++) if (inventory.getStack(slot).isOf(Items.SMITHING_TABLE)) tableSlot = slot;
-            if (tableSlot < 0) {
-                entry.netheriteAt = now + 2400;
-                return null;
-            }
+            if (tableSlot < 0) return netheriteHold(entry, now + 2400, "no smithing table");
             if (tableSlot >= 9) {
                 int free = 8;
                 for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
                 return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tableSlot), "target", String.valueOf(free))));
             }
             BlockPos spot = workstationSpot(entry, player, "minecraft:smithing_table");
-            if (spot == null) {
-                entry.netheriteAt = now + 600;
-                return null;
-            }
+            if (spot == null) return netheriteHold(entry, now + 600, "no spot for its smithing table");
             entry.smithingTable = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
             return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(tableSlot), "x", String.valueOf(spot.getX()),
                     "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
         }
         if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) > 4.5 * 4.5) {
-            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) {
-                entry.netheriteAt = now + 1200;
-                return null;
-            }
+            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) return netheriteHold(entry, now + 1200, "its smithing table too far");
             return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
                     "z", String.valueOf(table.getZ()), "range", "2.5")));
         }
@@ -19582,10 +19658,28 @@ final class PlayerRuntime {
         heapHighWater = 0;
         // The body's position-keyed maps by player (F-31j), counted here on the server thread that changes them.
         String maps = bodyMaps();
+        String drySearches = drySearches();
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth)
-                .thenApply(text -> text + "; " + BODY_MAPS + " " + maps);
+                .thenApply(text -> text + "; " + DRY_SEARCHES + " " + drySearches + "; " + BODY_MAPS + " " + maps);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
+    }
+
+    /** The cost line's name for {@link #drySearches}, its counts in this order (M-06k9). */
+    static final String DRY_SEARCHES = "dry-ground searches by player, plans out of the water/searches/positions expanded";
+
+    /**
+     * Each player's way out of the water since it was made, for the cost line (M-06k9): its plans that weighed it, the
+     * searches for dry ground they asked (a search that found nothing is not asked again from the same cell for
+     * {@value PortalRunCampaign#DRY_MISS_TICKS} ticks), and the positions those searches expanded. Read only.
+     */
+    private String drySearches() {
+        var by = new java.util.TreeMap<String, String>();
+        for (Entry entry : entries.values()) {
+            var c = entry.campaign;
+            by.put(entry.data.displayName(), c == null ? "0/0/0" : c.surfacePlans + "/" + c.drySearches + "/" + c.drySearchNodes);
+        }
+        return by.toString();
     }
 
     /** The cost line's name for {@link #bodyMaps}, its sizes in this order (F-31j). */
@@ -20093,6 +20187,11 @@ final class PlayerRuntime {
         private BlockPos smithingTable;
         private long netheriteAt;
         private UUID netheriteTaskId;
+        /** The netherite candidate last said to be offered and not dispatched (F-22c125), so that each offer is said once. */
+        private NativeTaskCandidate netheriteUnsentFor;
+        /** Why its netherite was last held, as said (F-22c125), and what set its next look. */
+        private String netheriteHeldWhy;
+        private String netheriteHoldCause;
         /** The run's own step it last took for its netherite (a furnace or table put down is then its own). */
         private PortalRunCampaign.Task netheriteStep;
         /** Whether its fights with players use its melee tactics (E-41b); off only for a benchmark's declared baseline. */
