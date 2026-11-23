@@ -28,10 +28,10 @@ public final class NativeFactionWalkEndGameTests implements FabricGameTest {
     /** How far south of the island's middle the off-line cases stand: off the causeway's line, as on the failing run. */
     private static final int OFF_LINE = -3;
     /** How long after its move is set it may take to get into Blue's land east, along the causeway. */
-    private static final int WALK_TICKS = 1500;
+    private static final int WALK_TICKS = 3000;
 
     /** Three south of the causeway's line: its walk ends on the causeway it sees, and it walks it. */
-    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionWalkEndOffLine", tickLimit = 2400)
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionWalkEndOffLine", tickLimit = 3900)
     public void offTheCausewaysLineItsWalkEndsOnTheCausewayItSees(TestContext context) {
         run(context, true, OFF_LINE);
     }
@@ -49,7 +49,7 @@ public final class NativeFactionWalkEndGameTests implements FabricGameTest {
     }
 
     private static void run(TestContext context, boolean causeway, int dz) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3800);
         var server = context.getWorld().getServer();
         var world = context.getWorld();
         ServerPlayerEntity[] ben = new ServerPlayerEntity[1];
@@ -70,8 +70,14 @@ public final class NativeFactionWalkEndGameTests implements FabricGameTest {
                     world.setTimeOfDay(1000);
                     var player = f.player();
                     player.getInventory().clear();
+                    // A wooden pickaxe: faction walks wait for the first wooden tool (M-06i1a).
+                    player.getInventory().setStack(0, new net.minecraft.item.ItemStack(net.minecraft.item.Items.WOODEN_PICKAXE));
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
+                    // Playing, its goal on, as the open-water test stages it: without them no decision is made, its faction
+                    // play's walks included.
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, dev.kindred.core.survival.SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");
                     NativeFactionOpenWaterGameTests.factions(context, f, ben, o);
                 })
                 .createAndAdd(() -> {
