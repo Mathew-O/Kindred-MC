@@ -49,6 +49,71 @@ public final class NativeClutchPoolGameTests implements FabricGameTest {
     }
 
     /**
+     * Pinned unchanged (the lead's word): over dry stone, its pour not to be scooped back (staged: the poured source turned
+     * to flowing water as soon as it is poured, as water that runs off would), the clutch verifies as "poured, water left",
+     * its bucket empty and nothing else lost, before the fix and after.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "clutchPool3", tickLimit = 600)
+    public void overDryStoneAPourNotScoopedBackStillVerifiesAsWaterLeft(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        boolean[] ran = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Spilt"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> context.assertTrue(f.player().age > JOINED, "Past the join's sixty ticks of grace: " + f.player().age))
+                .createAndAdd(() -> {
+                    pool(context, 0);
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.BREAD, 4));
+                    inventory.setStack(1, new ItemStack(Items.COBBLESTONE, 64));
+                    inventory.setStack(3, new ItemStack(Items.WATER_BUCKET));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(16);
+                    player.getHungerManager().setSaturationLevel(0);
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    player.refreshPositionAndAngles(o.getX() + 3.5, o.getY() + 22, o.getZ() + 3.5, 0, 0);
+                    player.fallDistance = 0;
+                })
+                .createAndAdd(() -> {
+                    // Staged: poured (its bucket empty), the source on the stone is made to run off at once.
+                    context.assertTrue(f.player().getInventory().getStack(3).isOf(Items.BUCKET), "Poured");
+                    var world = context.getWorld();
+                    for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) {
+                        var at = context.getAbsolutePos(new BlockPos(x, 2, z));
+                        if (world.getFluidState(at).isStill()) {
+                            world.setBlockState(at, Blocks.WATER.getDefaultState().with(net.minecraft.block.FluidBlock.LEVEL, 1));
+                            ran[0] = true;
+                        }
+                    }
+                    context.assertTrue(ran[0], "Its poured source found and made to run off");
+                })
+                .createAndAdd(() -> {
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    context.assertTrue(record != null && record.kind().equals("native_clutch") && record.state() != ActionRecord.State.PREPARED
+                            && record.state() != ActionRecord.State.DISPATCHED, "The clutch settled: " + record);
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var record = f.runtime.nativeActionStatus(Actor.console(), f.id).record();
+                    KindredMod.LOGGER.info("Spilt: {}", record);
+                    context.assertTrue(player != null, "Not held for a reconcile: " + record);
+                    context.assertTrue(record.state() == ActionRecord.State.VERIFIED && "Native clutch: poured, water left".equals(record.detail()),
+                            "Verified as poured, water left: " + record);
+                    var inventory = player.getInventory();
+                    context.assertTrue(inventory.count(Items.WATER_BUCKET) == 0 && inventory.count(Items.BUCKET) == 1, "Its bucket empty");
+                    context.assertTrue(inventory.count(Items.BREAD) == 4 && inventory.count(Items.COBBLESTONE) == 64, "Nothing else lost");
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * The check is not loosened (the lead's negative case): over dry stone, its cobblestone taken from the pack while it
      * falls, the clutch still ends held for a reconcile, as it does before the fix.
      */
