@@ -719,7 +719,6 @@ final class PortalRunCampaign {
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
         roomDropEnded(task, completed);
-        refusedStep(task, completed, tick, why);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -2913,8 +2912,15 @@ final class PortalRunCampaign {
             return wait;
         }
         // Underground with every way on refused (liquid below, holes all round): climb a step and look again.
-        Optional<Task> anotherWay = climbToFindAnotherWay(body, tick, stageLabel(stage));
-        if (anotherWay.isPresent()) return anotherWay;
+        if (underground(player)) {
+            Optional<Task> up = climb(body, "Climb to find another way");
+            if (up.isPresent()) {
+                paced(tick);
+                cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
+                progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
+                return up;
+            }
+        }
         // Stranded on a ledge or pillar with every way off a drop: take the shortest fall it can afford, as a player
         // jumps down rather than wait for ever.
         Optional<Task> drop = jumpDown(player);
@@ -2924,77 +2930,6 @@ final class PortalRunCampaign {
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         return Optional.empty();
-    }
-
-    /**
-     * Underground with every way on refused (liquid below, holes all round): a step of the climb, to look again from
-     * higher; the cell it leaves set aside, a dead end it does not step back down into.
-     */
-    private Optional<Task> climbToFindAnotherWay(NativePlayerBody body, long tick, String stageLabel) {
-        var player = body.entity();
-        if (!underground(player)) return Optional.empty();
-        // Hemmed in again after a while out of it: where this spell of it began.
-        if (hemmedFrom == null || lastTick - hemmedLast > HEMMED_GAP) {
-            hemmedFrom = lastFeet;
-        }
-        hemmedLast = lastTick;
-        BlockPos target = refusedTarget != null && lastTick - refusedAt <= HEMMED_TARGET_AGE ? refusedTarget : null;
-        int ceiling = target != null ? target.getY() + 2 : hemmedFrom.getY() + HEMMED_CLIMB;
-        if (lastFeet.getY() >= ceiling) return Optional.empty();
-        Optional<Task> up = climb(body, "Climb to find another way");
-        if (up.isPresent()) {
-            paced(tick);
-            cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
-            progress = stageLabel + ": no way on from here - " + up.get().label();
-        }
-        return up;
-    }
-
-    /**
-     * The bound on the climb to find another way (F-25c4bx1): with every step still refused it goes no higher than the
-     * refused step's own target and two, or, with none known, {@value #HEMMED_CLIMB} above where it was first hemmed in;
-     * then the fallback offers nothing, and the spell is the watchdog's and rescue's, as any other with no way on. A
-     * tightening: no timeout is changed, and rescue stays once a spell. In iteration 26, batch 2's 707 Sol climbed from its
-     * own cast site at y −49 to y 66, 120 blocks over its work, its two stuck spells at the top.
-     */
-    static final int HEMMED_CLIMB = 8;
-    /** A gap in being hemmed in, in ticks, after which the next time is a new spell of it. */
-    private static final long HEMMED_GAP = 200;
-    /** How recent a refused step must be, in ticks, for its target to bound the climb. */
-    private static final long HEMMED_TARGET_AGE = 1200;
-    /** Where this spell of being hemmed in began, and when the fallback last ran. */
-    private BlockPos hemmedFrom;
-    private long hemmedLast = Long.MIN_VALUE / 2;
-    /** The target of the last step refused, and when. */
-    private BlockPos refusedTarget;
-    private long refusedAt = Long.MIN_VALUE / 2;
-
-    /**
-     * A walk refused for want of a route: its target remembered for the bound on the climb (F-25c4bx1). Only that: a step
-     * cancelled ("authority lost") or blocked for another reason is no place it could not reach. In iteration 27 a "Dig down
-     * toward lava" cancelled a block below batch 1's 404 Echo came just before a climb that went on up to its crafting
-     * table. Nor the climb's own steps: its breaks are refused for now, not here, and a step up of its own refused is no
-     * target of its work.
-     */
-    private void refusedStep(Task task, boolean completed, long tick, String why) {
-        if (task == null || completed || !"native_goto".equals(task.skill()) || why == null || !why.startsWith("No walkable route")
-                || task.label().startsWith("Climb to find another way")) return; // Nor its own step up.
-        BlockPos at = position(task.args());
-        if (at == null) return;
-        refusedTarget = at;
-        refusedAt = tick;
-    }
-
-    /**
-     * For fixtures only, a setter: sets where it stands, its clock and the server's edit policy as its plan's tick would,
-     * then asks for the plan's fallback climb as the plan does with every step refused (F-25c4bx1). Package-private; called
-     * from no main source.
-     */
-    Optional<Task> anotherWayForTest(NativePlayerBody body, BlockPos feet, long tick, EditPolicy.ServerPolicy policy) {
-        this.policy = policy;
-        lastFeet = feet.toImmutable();
-        lastTick = Math.max(lastTick, tick);
-        return climbToFindAnotherWay(body, tick, "Iron");
     }
 
     /**
