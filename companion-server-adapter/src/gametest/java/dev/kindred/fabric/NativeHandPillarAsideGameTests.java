@@ -31,10 +31,11 @@ public final class NativeHandPillarAsideGameTests implements FabricGameTest {
      * Technical: F-25c4dp, as 707 Kindred (above). STAGED: deepslate round it, no sky; a shaft one wide, two high, its feet
      * on cobbled deepslate; deepslate iron ore over its head, west of that and north of its head, as in the replay world; the
      * player in the shaft with no pickaxe, two stacks of cobbled deepslate and eight bread; the portal goal, no logs; daylight
-     * held; 20 ticks for the light to settle before the goal. Fails unless, within 2,400 ticks, its feet are three or more
-     * above where it began: past the ore's level.
+     * held; 20 ticks for the light to settle before the goal. Fails unless, within 6,000 ticks, its feet are three or more
+     * above where it began: past the ore's level (by hand each deepslate block takes about 300 ticks, and the way aside and
+     * up takes eight or more).
      */
-    @GameTest(templateName = FixtureGround.FIELD, batchId = "handPillarAside", tickLimit = 3000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "handPillarAside", tickLimit = 7000)
     public void underABlockItCannotClearByHandItStepsAsideAndClimbsOn(TestContext context) {
         shaft(context, false);
     }
@@ -61,7 +62,7 @@ public final class NativeHandPillarAsideGameTests implements FabricGameTest {
         StringBuilder seen = new StringBuilder();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "Climber"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, boxed ? "Boxed" : "Climber"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
@@ -115,7 +116,7 @@ public final class NativeHandPillarAsideGameTests implements FabricGameTest {
                         }
                         return;
                     }
-                    context.assertTrue(watched[0] <= 2400, "Not past the ore over its head after 2,400 ticks: " + seen + " now y"
+                    context.assertTrue(watched[0] <= 6000, "Not past the ore over its head after 6,000 ticks: " + seen + " now y"
                             + (player.getBlockY() - o.getY()) + " " + progress);
                     context.assertTrue(player.getBlockY() >= o.getY() + 3, "Not past the ore yet");
                 })
