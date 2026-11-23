@@ -957,6 +957,8 @@ final class PortalRunCampaign {
         if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) {
             castFailedFrom = null;
             castFailedStands.clear();
+            walkUpsFrom.clear();
+            walkUpBoundSaid.clear();
         }
         if (completed || task == null) return;
         // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
@@ -6820,8 +6822,57 @@ final class PortalRunCampaign {
                     .or(() -> toldLava(body)).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
-        if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
+        if (feet.equals(castFailedFrom)) {
+            // A walk up that would end where it begins, or has already been offered from here, is not offered again (F-25c4dr).
+            // It is a goto of range 1.5: a source one across and one down is that near the feet, so the walk counted as
+            // arrived where it began and completed without a step; the cell it was refused from stayed the one the fill
+            // failed from, and the same walk was offered the next tick, the fill never tried again. In E-40 iteration 30's
+            // first batch it held the cast so, from `PortalRunCampaign.java:6823` on 853b686c (RUNNER 2's read).
+            if (Math.sqrt(feet.getSquaredDistance(castLava)) > WALK_UP + 0.01 && walkUpsFrom.add(feet.asLong())) {
+                return Optional.of(go(castLava, WALK_UP, false, WALK_UP_LABEL));
+            }
+            return besideItsLava(body, feet);
+        }
         return Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
+    }
+
+    /** How near the cast's walk up to its lava ends, and its label. */
+    private static final double WALK_UP = 1.5;
+    static final String WALK_UP_LABEL = "Cast: walk up to the lava", OPEN_OVER_LAVA = "Cast: open the rock over its lava at ";
+    /** Cells a walk up to the lava was offered from since the last fill or cast that took (F-25c4dr). */
+    private final Set<Long> walkUpsFrom = new java.util.HashSet<>();
+    /** Cells the bound was said at, once each, since the last fill or cast that took (F-25c4dr). */
+    private final Set<Long> walkUpBoundSaid = new java.util.HashSet<>();
+
+    /**
+     * With its fill refused from where it stands and no walk up that moves it, the lava beside it is reached otherwise
+     * (F-25c4dr): the rock over the source opened, where that is in reach and opens onto the lava alone, as its tunnel opens a
+     * cell over lava (F-25c4ac); else a dig toward the lava (F-25c4ad); else the fill once more from here, whose second
+     * refusal sets the source aside, as a refusal from closer up does.
+     */
+    private Optional<Task> besideItsLava(NativePlayerBody body, BlockPos feet) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos over = castLava.up();
+        Optional<Task> next = Optional.empty();
+        String how;
+        if (!passable(world, over) && !blocked(over) && onlyLavaBelow(world, over) && eyeDistance(player, over) <= REACH && body.miningEligible(over)) {
+            next = Optional.of(new Task("native_break", coords(over, Map.of("collect", "false", "over_lava", "true")), OPEN_OVER_LAVA + over.toShortString()));
+            how = "the rock over it opened";
+        } else {
+            next = digToward(body, castLava, "Cast: dig toward the lava at " + castLava.toShortString());
+            how = "a dig toward it";
+        }
+        if (next.isEmpty()) {
+            castFailedFrom = null;
+            next = Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
+            how = "the fill once more";
+        }
+        if (walkUpBoundSaid.add(feet.asLong())) {
+            KindredMod.LOGGER.info("F-25c4dr-marker: {} at {}, its fill of the lava at {} refused there, no walk up that moves it: {}",
+                    player.getName().getString(), feet.toShortString(), castLava.toShortString(), how);
+        }
+        return next;
     }
 
     /**
