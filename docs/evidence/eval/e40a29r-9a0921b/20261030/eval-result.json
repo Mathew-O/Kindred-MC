@@ -1,0 +1,60 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 11156, "paid": 11156, "lapsed": 302, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 118.7, "snapshotMicrosMax": 23498.5, "tagMicrosMean": 122.5, "tagMicrosMax": 28325.8, "bySource": {"container.take:furnace": 75, "pickup:class_2248.method_36993": 7606, "pickup:class_3222.method_7329": 2997, "pickup:class_52.method_331": 17, "screen:class_1714": 82, "screen:class_1723": 562, "use:item": 119}, "dropsByOrigin": {"class_1428.method_6007": 103, "class_1540.method_5773": 12, "class_2248.method_36993": 7788, "class_3222.method_7329": 218, "class_4019.method_18289": 1, "class_52.method_331": 77}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 16.65, "tickMsWorst": 1643.03, "tickMsWorstAt": 1, "ticksOver50ms": 1291, "ticksOver200ms": 23, "heapMbMax": 1234, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 1940, "iron_ingot": 11260, "iron_pickaxe": 37720, "diamond": 48420, "obsidian": 46382},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 52920, "x": -1, "y": -31, "z": -63, "attempt": 1}, {"tick": 57460, "x": 0, "y": -29, "z": -85, "attempt": 2}, {"tick": 61900, "x": -21, "y": -30, "z": -85, "attempt": 3}, {"tick": 69260, "x": -1, "y": -1, "z": -33, "attempt": 4}, {"tick": 73440, "x": -1, "y": -9, "z": -41, "attempt": 5}, {"tick": 90000, "x": 1, "y": -1, "z": -41, "attempt": 1}, {"tick": 95320, "x": 6, "y": 6, "z": -61, "attempt": 2}, {"tick": 106560, "x": 6, "y": 63, "z": -1, "attempt": 1}, {"tick": 111100, "x": 6, "y": 64, "z": 20, "attempt": 2}, {"tick": 126520, "x": 11, "y": 118, "z": -1, "attempt": 3}, {"tick": 131500, "x": 13, "y": 75, "z": 29, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1902,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 1.5
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 540, "stone_tools": 2280, "iron_ingot": 9800, "iron_pickaxe": 73260, "obsidian": 95932},
+      "deaths": [
+        {"tick": 56353, "cause": "Sol was slain by Zombie", "x": 62, "y": 84, "z": 17, "light": 0, "timeOfDay": 8515, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: fight back - Take cover from creeper", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 142245, "cause": "Sol suffocated in a wall", "x": -2, "y": -53, "z": -55, "light": 0, "timeOfDay": 22407, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: no progress here for a while - make a way elsewhere: stairs up 2", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "make a way elsewhere: stairs up 2"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 103120, "x": 3, "y": -46, "z": -188, "attempt": 1}, {"tick": 124340, "x": 10, "y": -45, "z": -183, "attempt": 1}, {"tick": 128820, "x": -12, "y": -45, "z": -178, "attempt": 1}, {"tick": 133660, "x": -11, "y": -44, "z": -201, "attempt": 2}, {"tick": 138120, "x": -20, "y": -40, "z": -165, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5949,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1120, "stone_tools": 2820, "iron_ingot": 4620, "iron_pickaxe": 30800, "obsidian": 81117, "portal_lit": 86385},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 28120, "x": 16, "y": 17, "z": -9, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4395,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.6
+    }
+  }
+}

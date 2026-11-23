@@ -719,7 +719,6 @@ final class PortalRunCampaign {
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
         roomDropEnded(task, completed);
-        refusedStep(task, completed, tick, why);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -840,20 +839,37 @@ final class PortalRunCampaign {
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceDone = true;
             retraceFrom = lastFeet; // Where it stood when the walk was chosen.
-            // Ended lower than it began (F-25c4at1): the climb's own rule, that the way back up never leads down, applied to
-            // where the walk ended. Held from where it began, not only where it ended: in iteration 26 the walk back from the
-            // step ended a block lower, the stall there lifted as soon as the climb stepped it up again, and the walk back
-            // was offered again, three steps round, for 21 game minutes on batch 1's 31102026 Sol.
-            if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
-                retraceLowerFrom = retraceChosenAt;
-                retraceLowerUntil = tick + 600;
-            }
         }
         // Refused ("no walkable route"), the way it came is not asked for again from here for a while, so the climb has its
         // turn: sealed in for the night, every walk back along it was refused, another cell of it each time (F-25c4at).
         if (task != null && !completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceFrom = lastFeet;
             retraceStalledUntil = tick + 600;
+        }
+        // Ended lower than its run of offers began, done or not (F-25c4at1, F-25c4at2): the climb's own rule, that the way back
+        // up never leads down, applied to where the walk ended. Held from where it began, not only where it ended.
+        // - F-25c4at1: in iteration 26 the walk back from the step ended a block lower, the stall there lifted as soon as the
+        //   climb stepped it up again, and the walk back was offered again, three steps round, for 21 game minutes on batch
+        //   1's 31102026 Sol.
+        // - F-25c4at2: in iteration 29, batch 2's 31102026 Echo was offered the walk back at y 26 and again two lower, and it
+        //   ended refused at y 7; its climb took it back up and the walk back was offered again, about every seven seconds
+        //   (707 Sol so from y 65 to 43). A refused walk armed no hold, and the offer again moved where it began.
+        if (task != null && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
+            // Said once at each walk back's end where this rule and F-25c4at1's would decide differently (F-25c4at2): how often
+            // the run's start or a refused walk arms, or withholds, the hold.
+            boolean at1 = completed && retraceLastOffer != null && lastFeet.getY() < retraceLastOffer.getY();
+            boolean at2 = retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY();
+            if (at1 != at2 || at2 && !retraceChosenAt.equals(retraceLastOffer)) {
+                KindredMod.LOGGER.info("F-25c4at2-marker: {} walk back ended {} at {}, its run began at {}, its last offer at {}: F-25c4at1 {}, F-25c4at2 {}",
+                        who, completed ? "done" : "refused", lastFeet.toShortString(), retraceChosenAt == null ? "-" : retraceChosenAt.toShortString(),
+                        retraceLastOffer == null ? "-" : retraceLastOffer.toShortString(), at1 ? "hold" : "none", at2 ? "hold" : "none");
+            }
+            retraceLastOffer = null;
+            if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
+                retraceLowerFrom = retraceChosenAt;
+                retraceLowerUntil = tick + 600;
+            }
+            retraceChosenAt = null; // The run of offers ends with the walk.
         }
         if (task != null && completed && "native_place".equals(task.skill()) && task.label().startsWith("Seal the shelter at")
                 && position(task.args()) != null) {
@@ -2913,8 +2929,15 @@ final class PortalRunCampaign {
             return wait;
         }
         // Underground with every way on refused (liquid below, holes all round): climb a step and look again.
-        Optional<Task> anotherWay = climbToFindAnotherWay(body, tick, stageLabel(stage));
-        if (anotherWay.isPresent()) return anotherWay;
+        if (underground(player)) {
+            Optional<Task> up = climb(body, "Climb to find another way");
+            if (up.isPresent()) {
+                paced(tick);
+                cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
+                progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
+                return up;
+            }
+        }
         // Stranded on a ledge or pillar with every way off a drop: take the shortest fall it can afford, as a player
         // jumps down rather than wait for ever.
         Optional<Task> drop = jumpDown(player);
@@ -2927,75 +2950,16 @@ final class PortalRunCampaign {
     }
 
     /**
-     * Underground with every way on refused (liquid below, holes all round): a step of the climb, to look again from
-     * higher; the cell it leaves set aside, a dead end it does not step back down into.
+     * How long a search for dry ground that found nothing, from one cell, is not asked again from it (M-06k9): dry ground
+     * that comes within reach is found within this many ticks where it stands, and at once from another cell.
      */
-    private Optional<Task> climbToFindAnotherWay(NativePlayerBody body, long tick, String stageLabel) {
-        var player = body.entity();
-        if (!underground(player)) return Optional.empty();
-        // Hemmed in again after a while out of it: where this spell of it began.
-        if (hemmedFrom == null || lastTick - hemmedLast > HEMMED_GAP) {
-            hemmedFrom = lastFeet;
-        }
-        hemmedLast = lastTick;
-        BlockPos target = refusedTarget != null && lastTick - refusedAt <= HEMMED_TARGET_AGE ? refusedTarget : null;
-        int ceiling = target != null ? target.getY() + 2 : hemmedFrom.getY() + HEMMED_CLIMB;
-        if (lastFeet.getY() >= ceiling) return Optional.empty();
-        Optional<Task> up = climb(body, "Climb to find another way");
-        if (up.isPresent()) {
-            paced(tick);
-            cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
-            progress = stageLabel + ": no way on from here - " + up.get().label();
-        }
-        return up;
-    }
+    static final int DRY_MISS_TICKS = 20;
 
     /**
-     * The bound on the climb to find another way (F-25c4bx1): with every step still refused it goes no higher than the
-     * refused step's own target and two, or, with none known, {@value #HEMMED_CLIMB} above where it was first hemmed in;
-     * then the fallback offers nothing, and the spell is the watchdog's and rescue's, as any other with no way on. A
-     * tightening: no timeout is changed, and rescue stays once a spell. In iteration 26, batch 2's 707 Sol climbed from its
-     * own cast site at y −49 to y 66, 120 blocks over its work, its two stuck spells at the top.
+     * Since it was made, for the cost line and the fixtures (M-06k9): the plans its way out of the water was weighed on,
+     * the dry-ground searches they asked, and the positions those searches expanded.
      */
-    static final int HEMMED_CLIMB = 8;
-    /** A gap in being hemmed in, in ticks, after which the next time is a new spell of it. */
-    private static final long HEMMED_GAP = 200;
-    /** How recent a refused step must be, in ticks, for its target to bound the climb. */
-    private static final long HEMMED_TARGET_AGE = 1200;
-    /** Where this spell of being hemmed in began, and when the fallback last ran. */
-    private BlockPos hemmedFrom;
-    private long hemmedLast = Long.MIN_VALUE / 2;
-    /** The target of the last step refused, and when. */
-    private BlockPos refusedTarget;
-    private long refusedAt = Long.MIN_VALUE / 2;
-
-    /**
-     * A walk refused for want of a route: its target remembered for the bound on the climb (F-25c4bx1). Only that: a step
-     * cancelled ("authority lost") or blocked for another reason is no place it could not reach. In iteration 27 a "Dig down
-     * toward lava" cancelled a block below batch 1's 404 Echo came just before a climb that went on up to its crafting
-     * table. Nor the climb's own steps: its breaks are refused for now, not here, and a step up of its own refused is no
-     * target of its work.
-     */
-    private void refusedStep(Task task, boolean completed, long tick, String why) {
-        if (task == null || completed || !"native_goto".equals(task.skill()) || why == null || !why.startsWith("No walkable route")
-                || task.label().startsWith("Climb to find another way")) return; // Nor its own step up.
-        BlockPos at = position(task.args());
-        if (at == null) return;
-        refusedTarget = at;
-        refusedAt = tick;
-    }
-
-    /**
-     * For fixtures only, a setter: sets where it stands, its clock and the server's edit policy as its plan's tick would,
-     * then asks for the plan's fallback climb as the plan does with every step refused (F-25c4bx1). Package-private; called
-     * from no main source.
-     */
-    Optional<Task> anotherWayForTest(NativePlayerBody body, BlockPos feet, long tick, EditPolicy.ServerPolicy policy) {
-        this.policy = policy;
-        lastFeet = feet.toImmutable();
-        lastTick = Math.max(lastTick, tick);
-        return climbToFindAnotherWay(body, tick, "Iron");
-    }
+    long surfacePlans, drySearches, drySearchNodes;
 
     /**
      * Swimming or sunk: up to air and dry ground before anything else. Short of breath with the surface straight
@@ -3006,6 +2970,7 @@ final class PortalRunCampaign {
     private Optional<Task> surface(NativePlayerBody body) {
         var player = body.entity();
         if (!PlayerRuntime.inDeepWater(player) && !wadingTwoDeep(player)) return Optional.empty();
+        surfacePlans++;
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
         // staged End run was turned back to the shore on every pass across a bay).
         if (!player.isSubmergedInWater() && player.getAir() >= player.getMaxAir() / 2 && endGoal()
@@ -3028,7 +2993,7 @@ final class PortalRunCampaign {
             // Its face at the surface already, a block below it at most, and dry ground a few steps off: it climbs out.
             // Bobbing under on the way out and sent up for air again, it cut short each climb out of a flooded shaft's
             // top, and drowned there.
-            var ashore = above.getY() - feet.getY() <= 1 ? navigator.nearestReachableDryStand(feet, 400, 3, p -> !blocked(p)) : Optional.<BlockPos>empty();
+            var ashore = above.getY() - feet.getY() <= 1 ? drySearch(0, world, navigator, feet, 400, 3, p -> !blocked(p)) : Optional.<BlockPos>empty();
             if (ashore.isPresent()) return Optional.of(go(ashore.get(), 0.8, true, "Get out of the water: to dry ground"));
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
@@ -3059,8 +3024,8 @@ final class PortalRunCampaign {
         // leaves the body over the water, and the current carries it back in. On 606 in E-40's iteration 11
         // (`e40a11-744c636`) Kindred, walked to the stand beside a flowing channel two deep, was carried back in each time
         // and sent out again 3,789 times, its dig toward lava stopped "In deep water" 1,782 times (F-25c4cf).
-        var dry = navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
-                .or(() -> navigator.nearestReachableDryStand(feet, 4000, 16, p -> !blocked(p)));
+        var dry = drySearch(1, world, navigator, feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
+                .or(() -> drySearch(2, world, navigator, feet, 4000, 16, p -> !blocked(p)));
         if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
@@ -3069,6 +3034,31 @@ final class PortalRunCampaign {
         // climbed onto, as a player gets out, before anything else is dug from the water (F-25c4t).
         return climb(body, "Climb out of the water");
     }
+
+    /**
+     * One of {@link #surface}'s searches for dry ground, {@code which} of its three (M-06k9). One that found nothing is
+     * not asked again from the same cell for {@value #DRY_MISS_TICKS} ticks: dry ground that comes within reach is found
+     * within that where it stands, and at once from another cell. Only what was not found is kept; a stand found is
+     * searched for again as before. In M-06k's shipped-configuration read (2026-11-22) these searches were 67.7% of the
+     * ticks over 200 ms, players going up for air hundreds of times from much the same cells, every search finding nothing.
+     */
+    private Optional<BlockPos> drySearch(int which, ServerWorld world, NativeNavigator navigator, BlockPos feet, int maxNodes, int radius,
+                                         java.util.function.Predicate<BlockPos> allowed) {
+        long now = world.getTime();
+        if (dryMissCell[which] == feet.asLong() && now - dryMissAt[which] < DRY_MISS_TICKS && now >= dryMissAt[which]) return Optional.empty();
+        drySearches++;
+        var found = navigator.nearestReachableDryStand(feet, maxNodes, radius, allowed);
+        drySearchNodes += navigator.lastDryStandExpanded();
+        if (found.isEmpty()) {
+            dryMissCell[which] = feet.asLong();
+            dryMissAt[which] = now;
+        } else dryMissCell[which] = Long.MIN_VALUE;
+        return found;
+    }
+
+    /** Per search of {@link #surface}'s three, the cell its last search that found nothing was asked from, and when. */
+    private final long[] dryMissCell = {Long.MIN_VALUE, Long.MIN_VALUE, Long.MIN_VALUE};
+    private final long[] dryMissAt = new long[3];
 
     /**
      * The water cell nearest to {@code feet} by swimming, through water alone, with open air straight above it: where its
@@ -5448,6 +5438,7 @@ final class PortalRunCampaign {
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
      */
     private Optional<Task> retrace(NativePlayerBody body, String label) {
+        who = body.entity().getName().getString(); // For the line at the walk back's end (F-25c4at2).
         if (retraceBarred) return Optional.empty();
         var world = body.entity().getServerWorld();
         // A walk back that cannot start completes at once without moving; asked for again it only loops (the
@@ -5483,12 +5474,24 @@ final class PortalRunCampaign {
             }
         }
         if (target == null || target.getSquaredDistance(lastFeet) < 2) return Optional.empty();
-        retraceChosenAt = lastFeet;
+        // Where its run of offers began (F-25c4at2): an offer again before the walk ends, as the plan looks again while it
+        // walks, is the same walk, and does not move where it began.
+        if (retraceChosenAt == null || lastTick - retraceOfferedAt > RETRACE_RUN_GAP) retraceChosenAt = lastFeet;
+        retraceOfferedAt = lastTick;
+        retraceLastOffer = lastFeet; // F-25c4at1's "chosen at", for the line at the walk's end (F-25c4at2).
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
     }
 
-    /** Where its last walk back was chosen, for the guard on one that ends lower (F-25c4at1). */
+    /**
+     * Where its run of walk-back offers began, for the guard on one that ends lower (F-25c4at1); kept through offers again
+     * until the walk ends (F-25c4at2).
+     */
     private BlockPos retraceChosenAt;
+    /** When the walk back was last offered; a run with no offer for {@link #RETRACE_RUN_GAP} ticks is over (F-25c4at2). */
+    private long retraceOfferedAt = -1;
+    private static final long RETRACE_RUN_GAP = 200;
+    /** Where the walk back was last offered, F-25c4at1's "chosen at", for the line at the walk's end (F-25c4at2). */
+    private BlockPos retraceLastOffer;
     /** Where a walk back that ended lower than it began was chosen, and until when the way back is held from there. */
     private BlockPos retraceLowerFrom;
     private long retraceLowerUntil = -1;

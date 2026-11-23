@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 15.163,
+  "items": {"windows": 14409, "gained": 11969, "paid": 11969, "lapsed": 2789, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 127.0, "snapshotMicrosMax": 8188.1, "tagMicrosMean": 120.3, "tagMicrosMax": 8264.5, "bySource": {"container.take:furnace": 121, "pickup:class_1308.method_6099": 2, "pickup:class_1428.method_6007": 2, "pickup:class_2248.method_36993": 10434, "pickup:class_3222.method_7329": 3243, "pickup:class_52.method_331": 161, "screen:class_1714": 117, "screen:class_1723": 573, "use:item": 105}, "dropsByOrigin": {"class_1308.method_6099": 3, "class_1428.method_6007": 536, "class_1540.method_5773": 2, "class_2248.method_36993": 10673, "class_3222.method_7329": 249, "class_3962.method_26374": 3, "class_4215.method_43392": 3, "class_52.method_331": 421}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.49, "tickMsWorst": 1800.69, "tickMsWorstAt": 25, "ticksOver50ms": 1104, "ticksOver200ms": 19, "heapMbMax": 1165, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 760, "stone_tools": 1500, "iron_ingot": 8240, "iron_pickaxe": 22760, "diamond": 45600, "obsidian": 82180, "portal_lit": 213624},
+      "deaths": [
+        {"tick": 100643, "cause": "Kindred was slain by Zombie", "x": -326, "y": -29, "z": -326, "light": 0, "timeOfDay": 12095, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Obsidian: fight back - Back off from zombie the way it came (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 89640, "x": -302, "y": -52, "z": -380, "attempt": 1}, {"tick": 94220, "x": -302, "y": -52, "z": -364, "attempt": 2}, {"tick": 97900, "x": -302, "y": -52, "z": -377, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 9191,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.5
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1160, "stone_tools": 2420, "iron_ingot": 34020, "iron_pickaxe": 116940, "obsidian": 166465},
+      "deaths": [
+        {"tick": 13429, "cause": "Sol was slain by Zombie", "x": -375, "y": 28, "z": -122, "light": 0, "timeOfDay": 13591, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 79060, "x": -345, "y": 56, "z": -64, "attempt": 1}, {"tick": 82680, "x": -345, "y": 56, "z": -64, "attempt": 2}, {"tick": 86680, "x": -345, "y": 56, "z": -64, "attempt": 3}, {"tick": 90480, "x": -345, "y": 56, "z": -64, "attempt": 4}, {"tick": 94080, "x": -345, "y": 56, "z": -64, "attempt": 5}, {"tick": 98440, "x": -345, "y": 56, "z": -64, "attempt": 6}, {"tick": 143080, "x": -248, "y": -51, "z": -309, "attempt": 1}, {"tick": 152000, "x": -248, "y": -51, "z": -309, "attempt": 2}, {"tick": 160740, "x": -251, "y": -51, "z": -309, "attempt": 3}, {"tick": 279140, "x": -201, "y": -47, "z": -333, "attempt": 1}, {"tick": 283680, "x": -224, "y": -44, "z": -333, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7532,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 3.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1860, "stone_tools": 2220, "iron_ingot": 56780, "iron_pickaxe": 84320, "obsidian": 88983, "portal_lit": 89758},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3459,
+      "chunkMinutes": 69360.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
