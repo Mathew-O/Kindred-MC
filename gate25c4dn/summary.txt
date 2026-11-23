@@ -1,1 +1,2 @@
 branch-1 (60e5a7c2): 61 min, peak 3056 MB, 130 required tests failed, fence-top 17, disk 6.0G
+branch-2 (60e5a7c2): 61 min, peak 3109 MB, 114 required tests failed, fence-top 19, disk 6.0G
