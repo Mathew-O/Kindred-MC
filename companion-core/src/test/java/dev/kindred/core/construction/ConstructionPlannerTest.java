@@ -396,6 +396,48 @@ class ConstructionPlannerTest {
                 "with that block gone, clear");
     }
 
+    /**
+     * The eyes' line to a block three along and one across crosses an x face and a z face at exactly the same point. Which
+     * cell the server's look enters first there is its floating point's choice: on #457's CI it went into dirt beside the
+     * cleared cells the planner had stepped through, and refused the hideout's break as out of sight three times, the
+     * dirt was walled in, and the hideout left one block short (run 45025077528). Either way round, a solid block on it is
+     * in the way (F-22c107).
+     */
+    @Test
+    void aLineThroughACellEdgeIsClearOnlyWhereBothCellsBesideTheEdgeAre() {
+        var cells = BuildTestSites.flat();
+        cells.put(new Pos(0, 1, 1), BuildTestSites.solid("minecraft:dirt"));
+        double[] eye = {3.5, ConstructionPlanner.EYE, 0.5};
+        double[] middle = {0.5, 1.5, 1.5};
+        assertEquals(List.of(new Pos(2, 1, 0), new Pos(1, 1, 0), new Pos(2, 1, 1), new Pos(1, 1, 1), new Pos(0, 1, 1)),
+                ConstructionPlanner.cellsOnLine(eye, middle), "both cells beside the edge, then the cell past it");
+        assertTrue(ConstructionPlanner.clearSight(new BuildSite(cells), eye, middle, new Pos(0, 1, 1), new Pos(0, 1, 1), true),
+                "nothing beside the edge: clear");
+        for (Pos beside : List.of(new Pos(1, 1, 0), new Pos(2, 1, 1))) {
+            var walled = new java.util.HashMap<>(cells);
+            walled.put(beside, BuildTestSites.solid("minecraft:dirt"));
+            assertFalse(ConstructionPlanner.clearSight(new BuildSite(walled), eye, middle, new Pos(0, 1, 1), new Pos(0, 1, 1), true),
+                    "dirt at " + beside + ", one way round the edge: not clear");
+        }
+    }
+
+    /** A line that misses the edge by less than a millionth of its length is a tie too: the server's own start is a ten-millionth back (F-22c107). */
+    @Test
+    void aLineAHairOffACellEdgeIsATie() {
+        double[] middle = {0.5, 1.5, 1.5};
+        for (double off : new double[] {1e-9, -1e-9}) {
+            var line = ConstructionPlanner.cellsOnLine(new double[] {3.5, ConstructionPlanner.EYE, 0.5 + off}, middle);
+            assertTrue(line.contains(new Pos(1, 1, 0)) && line.contains(new Pos(2, 1, 1)), off + ": " + line);
+        }
+    }
+
+    /** A line through no edge passes the cells it always did, one face at a time, nothing added (F-22c107). */
+    @Test
+    void aLineThroughNoEdgeIsAsBefore() {
+        assertEquals(List.of(new Pos(1, 1, 0), new Pos(1, 1, 1), new Pos(2, 1, 1), new Pos(3, 1, 1)),
+                ConstructionPlanner.cellsOnLine(new double[] {0.5, ConstructionPlanner.EYE, 0.5}, new double[] {3.5, 1.5, 1.7}));
+    }
+
     /** The plan's own way to a spot it can walk to, step by step, for a failed walk's diagnostics; none where it cannot (F-22c59). */
     @Test
     void theWayThePlanWalksToASpotIsItsOwnStepByStep() {
