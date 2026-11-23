@@ -7,6 +7,7 @@
     "BoatPaddleMixin",
     "PlayerManagerMixin",
     "PlayerManagerSaveInvoker",
+    "SpawnLocatingInvoker",
     "FishingBobberAccessor",
     "ServerCommandSourceAccessor",
     "ExplosionTerritoryMixin",
