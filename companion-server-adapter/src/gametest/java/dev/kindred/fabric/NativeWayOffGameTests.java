@@ -92,11 +92,13 @@ public final class NativeWayOffGameTests implements FabricGameTest {
 
     /**
      * Against a shooter it does not turn: a walk down the tunnel in its line of fire, as e40c1-eed2dc5-8675309-echo-173225
-     * died twice in its gate, is worse than main's way, the straight back-off refused and cover taken. Staged: the tunnel,
-     * a skeleton in the alcove, cobblestone in the hotbar for cover. It takes cover, with no turned heading.
+     * died twice in its gate, is worse than main's way, the straight back-off refused and cover sought again. There its
+     * cover was blocked ("produced no effect or was obstructed") before it backed off from the skeleton; with a block to
+     * hand here it only takes cover, so it is staged with none: the tunnel, a skeleton in the alcove, no block for cover.
+     * It backs off from the skeleton, and for five seconds no heading is turned for ground.
      */
     @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffShooter", tickLimit = 600)
-    public void inATunnelWithASkeletonAfterItItTakesCoverRatherThanTurn(TestContext context) {
+    public void inATunnelWithASkeletonAfterItItDoesNotTurnItsBackOff(TestContext context) {
         run(context, "Shotat", Ground.TUNNEL, Foe.SKELETON);
     }
 
@@ -158,7 +160,6 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     inventory.clear();
                     inventory.setStack(0, new ItemStack(Items.IRON_SWORD));
                     inventory.setStack(1, new ItemStack(Items.BREAD, 4));
-                    if (foe == Foe.SKELETON) inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 16));
                     player.setHealth(5);
                     player.getHungerManager().setFoodLevel(16);
                     player.getHungerManager().setSaturationLevel(0);
@@ -203,8 +204,10 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     if (side[0] != 0 && dx * side[0] < -0.5) swung[0] = true;
                     String told = String.format(java.util.Locale.ROOT, "farthest %.1f, first way off ended %.1f off; its steps:", farthest[0], firstEnd[0]) + steps + " " + ends;
                     if (foe == Foe.SKELETON) {
-                        // Cover taken from it, and no heading turned for ground on the way.
-                        context.assertTrue(steps.indexOf("Take cover from skeleton") >= 0 && turned.isEmpty(), "Cover, no turn; turned " + turned + "; its steps:" + steps);
+                        // It backs off from it, and five seconds on no heading has been turned for ground.
+                        context.assertTrue(turned.isEmpty(), "No turn against a shooter; turned " + turned + "; its steps:" + steps);
+                        context.assertTrue(steps.indexOf("Back off from skeleton") >= 0 && context.getTick() - since[0] >= 100,
+                                "Backed off from it, five seconds; its steps:" + steps);
                     } else if (ground == Ground.WALLED) {
                         // Eight seconds by the wall, round one side of it.
                         context.assertTrue(context.getTick() - since[0] >= 160 && side[0] != 0 && farthest[0] >= 5, "Round one side; " + told);
