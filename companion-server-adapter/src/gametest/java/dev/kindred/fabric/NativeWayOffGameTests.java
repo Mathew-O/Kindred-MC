@@ -113,8 +113,21 @@ public final class NativeWayOffGameTests implements FabricGameTest {
         run(context, "Lavawise", Ground.LAVA, Foe.ZOMBIE);
     }
 
+    /**
+     * A turned back-off gets it off the wall but not across the cave: in f29e-on-505-echo-43893 a turned heading carried it
+     * sixteen to twenty blocks with the zombie keeping pace and striking, where straight away ended at the wall in three or
+     * four and it dug in; both of the branch's deaths there, in ten runs alone, came after such a walk. On the tunnel's
+     * ground, the first turned back-off ends four to five and a half blocks from where it stood.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffShort", tickLimit = 600)
+    public void inATunnelATurnedBackOffEndsWithinSixBlocks(TestContext context) {
+        run(context, "Shortway", Ground.TUNNEL, Foe.ZOMBIE);
+    }
+
     private static void run(TestContext context, String name, Ground ground, Foe foe) {
         boolean creeper = foe == Foe.CREEPER;
+        // The turned back-off's own reach: off the wall, not across the cave.
+        boolean capped = name.equals("Shortway");
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         var server = context.getWorld().getServer();
         var difficulty = server.getSaveProperties().getDifficulty();
@@ -235,6 +248,7 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     } else {
                         // The first straight way off takes it at least four blocks before it ends: down the tunnel, not a step.
                         context.assertTrue(firstEnd[0] >= 4 && farthest[0] >= 5, "Four blocks on the first way off; " + told);
+                        if (capped) context.assertTrue(firstEnd[0] <= 5.5, "The turned way off ended within five and a half blocks; " + told);
                     }
                 })
                 .createAndAdd(() -> {
