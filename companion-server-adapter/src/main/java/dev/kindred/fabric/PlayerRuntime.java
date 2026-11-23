@@ -2864,6 +2864,104 @@ final class PlayerRuntime {
         return inHazard || onHazard || burning && player.isOnFire();
     }
 
+    /**
+     * Why the hazard retreat's cell at {@code targetFeet} is refused, or null when it may be stepped to: the checks the
+     * retreat candidate makes, in its order (F-25c6d: the same function decides and explains, so the log cannot differ).
+     */
+    static String retreatRefusal(ServerPlayerEntity player, BlockPos targetFeet) {
+        var world = player.getServerWorld();
+        BlockPos targetGround = targetFeet.down();
+        if (!world.isChunkLoaded(targetFeet)) return "not loaded";
+        if (!world.isInBuildLimit(targetFeet.up())) return "out of the build limit";
+        if (!world.getWorldBorder().contains(targetFeet)) return "outside the border";
+        var targetSupport = world.getBlockState(targetGround);
+        if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)) return "floor " + blockName(targetSupport) + " not a full top";
+        if (targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)) return "floor " + blockName(targetSupport);
+        if (!world.getFluidState(targetFeet).isEmpty()) return "fluid " + blockName(world.getBlockState(targetFeet)) + " at its feet";
+        var targetFeetState = world.getBlockState(targetFeet);
+        if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
+                || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
+                || targetFeetState.isOf(Blocks.LAVA)) return blockName(targetFeetState) + " at its feet";
+        var box = player.getBoundingBox().offset(net.minecraft.util.math.Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
+        if (!world.isSpaceEmpty(player, box)) return "no room (" + blockName(targetFeetState) + ", " + blockName(world.getBlockState(targetFeet.up())) + " above)";
+        return null;
+    }
+
+    private static String blockName(net.minecraft.block.BlockState state) {
+        return net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath();
+    }
+
+    /**
+     * What {@link #isHazardousSituation(ServerPlayerEntity)} saw (F-25c6d's diagnostic): each of its clauses that holds,
+     * with the block and its offset from the feet; for being in lava without lava at the feet, the nearest lava cell the
+     * body touches. "nothing" when none holds.
+     */
+    static String hazardSeen(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var feetState = world.getBlockState(feet);
+        var groundState = world.getBlockState(feet.down());
+        java.util.List<String> seen = new java.util.ArrayList<>();
+        if (feetState.isOf(Blocks.FIRE) || feetState.isOf(Blocks.SOUL_FIRE) || feetState.isOf(Blocks.LAVA)
+                || feetState.isOf(Blocks.SWEET_BERRY_BUSH) || feetState.isOf(Blocks.POWDER_SNOW)) seen.add(blockName(feetState) + " at its feet (0, 0, 0)");
+        else if (world.getFluidState(feet).isIn(FluidTags.LAVA)) seen.add("lava fluid at its feet (0, 0, 0)");
+        if (player.isInLava() && !world.getFluidState(feet).isIn(FluidTags.LAVA)) {
+            BlockPos nearest = null;
+            var box = player.getBoundingBox();
+            for (BlockPos at : BlockPos.iterate(BlockPos.ofFloored(box.minX, box.minY, box.minZ), BlockPos.ofFloored(box.maxX, box.maxY, box.maxZ))) {
+                if (world.getFluidState(at).isIn(FluidTags.LAVA) && (nearest == null || at.getSquaredDistance(feet) < nearest.getSquaredDistance(feet))) nearest = at.toImmutable();
+            }
+            seen.add(nearest == null ? "in lava (no lava cell in its box)" : "in lava at " + nearest.subtract(feet).toShortString()
+                    + String.format(java.util.Locale.ROOT, ", %.1f off", Math.sqrt(nearest.getSquaredDistance(feet))));
+        }
+        if (player.isSubmergedInWater() && player.getAir() < player.getMaxAir() / 2) seen.add("drowning (air " + player.getAir() + ")");
+        if (groundState.isOf(Blocks.MAGMA_BLOCK) || groundState.isOf(Blocks.CACTUS) || groundState.isOf(Blocks.LAVA)) seen.add(blockName(groundState) + " under it (0, -1, 0)");
+        if (player.isOnFire()) seen.add("alight (fire ticks " + player.getFireTicks() + ")");
+        return seen.isEmpty() ? "nothing" : String.join("; ", seen);
+    }
+
+    /**
+     * The hazard interrupt's line, once a spell (F-25c6d; log only): which trigger cancelled the task, what the hazard
+     * test saw, the feet and floor, and each way off the retreat would consider with why it was refused. E-40c4's
+     * Nether players stood 37 to 130 game minutes where every task was cancelled and no retreat was offered.
+     */
+    private void logHazardSpell(Entry entry, ServerPlayerEntity player, boolean creeper, boolean fall) {
+        BlockPos feet = player.getBlockPos();
+        var world = player.getServerWorld();
+        java.util.List<String> triggers = new java.util.ArrayList<>();
+        if (isHazardousSituation(player)) triggers.add("hazard");
+        if (creeper) triggers.add("creeper");
+        if (fall) triggers.add("fall to break");
+        String[] dirs = {"north", "south", "east", "west"};
+        BlockPos[] adj = {feet.north(), feet.south(), feet.east(), feet.west()};
+        java.util.List<String> cells = new java.util.ArrayList<>();
+        for (int d = 0; d < 4; d++) {
+            String why = retreatRefusal(player, adj[d]);
+            cells.add(dirs[d] + " " + (why == null ? "free" : why));
+        }
+        boolean inLava = player.isInLava() || world.getFluidState(feet).isIn(FluidTags.LAVA);
+        String escape = !inLava ? "not in lava" : lavaBank(player, feet).map(b -> "to " + b.toShortString()).orElse("no dry ground in sight");
+        // The creeper trigger reads the last tactical observation: which creepers it held, and how old it is and where it
+        // was made, so a stale one (from before a portal, or a failing refresh) shows as such.
+        String creepers = "none";
+        var obs = entry.lastTacticalObservation;
+        if (creeper && obs != null) {
+            java.util.List<String> lit = new java.util.ArrayList<>();
+            for (var mob : obs.observedMobs()) {
+                if (mob.isCreeper() && (mob.isIgnited() || (mob.fuseTicksRemaining() >= 0 && mob.fuseTicksRemaining() <= 25))) {
+                    lit.add(String.format(java.util.Locale.ROOT, "%.1f off, fuse %d%s", mob.distance(), mob.fuseTicksRemaining(), mob.isIgnited() ? ", ignited" : ""));
+                }
+            }
+            creepers = lit + " in an observation " + (server.getTicks() - obs.tick()) + " ticks old, made in " + obs.dimension();
+        }
+        KindredMod.LOGGER.info("{} hazard spell at {} in {}: trigger {}; saw {}; feet {}, floor {}; retreat cells: {}; lava escape: {}; creepers: {}; cancelling {}",
+                entry.data.displayName(), feet.toShortString(), world.getRegistryKey().getValue().getPath(), String.join(" and ", triggers),
+                hazardSeen(player), blockName(world.getBlockState(feet)), blockName(world.getBlockState(feet.down())),
+                String.join(", ", cells), escape, creepers, entry.skillId);
+        entry.hazardSpellTick = server.getTicks();
+        entry.hazardSpellCancels = 0;
+    }
+
     /** Swimming or sunk: not wading on a shallow bottom with the head above the surface. */
     static boolean inDeepWater(ServerPlayerEntity player) {
         if (player.isSubmergedInWater()) return true;
@@ -3126,7 +3224,15 @@ final class PlayerRuntime {
             entry.lastTacticalObservation = obs;
             entry.lastTacticalDecision = dev.kindred.core.tactics.TacticalPriorityPolicy.evaluate(obs, candidates);
             entry.lastTacticalRefreshTick = tick;
+            entry.tacticalFailureLogged = false;
         } catch (Exception ignored) {
+            // The last observation stays in use while the refresh fails, so a failure is said once (F-25c6d).
+            if (!entry.tacticalFailureLogged) {
+                entry.tacticalFailureLogged = true;
+                KindredMod.LOGGER.info("{}: the tactical observation could not be refreshed at tick {}; the last, from tick {}, stays in use: {}",
+                        entry.data.displayName(), tick, entry.lastTacticalObservation == null ? "none" : String.valueOf(entry.lastTacticalObservation.tick()),
+                        String.valueOf(ignored));
+            }
         }
     }
 
@@ -3614,19 +3720,7 @@ final class PlayerRuntime {
             String[] dirs = new String[]{"north", "south", "east", "west"};
             BlockPos[] adj = new BlockPos[]{feetPos.north(), feetPos.south(), feetPos.east(), feetPos.west()};
             for (int d = 0; d < 4; d++) {
-                BlockPos targetFeet = adj[d];
-                BlockPos targetGround = targetFeet.down();
-                if (!world.isChunkLoaded(targetFeet) || !world.isInBuildLimit(targetFeet.up()) || !world.getWorldBorder().contains(targetFeet)) continue;
-                var targetSupport = world.getBlockState(targetGround);
-                if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)
-                        || targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)
-                        || !world.getFluidState(targetFeet).isEmpty()) continue;
-                var targetFeetState = world.getBlockState(targetFeet);
-                if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
-                        || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
-                        || targetFeetState.isOf(Blocks.LAVA)) continue;
-                var box = player.getBoundingBox().offset(net.minecraft.util.math.Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
-                if (!world.isSpaceEmpty(player, box)) continue;
+                if (retreatRefusal(player, adj[d]) != null) continue;
 
                 // Found a safe retreat direction
                 UUID taskId = UUID.nameUUIDFromBytes(("hazard_retreat:" + entry.data.id() + ":" + feetPos.asLong() + ":" + dirs[d]).getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -7855,9 +7949,20 @@ final class PlayerRuntime {
         boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false);
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
+        // A spell of hazard ends on the first tick none of the interrupt's triggers holds (F-25c6d's diagnostic).
+        if (!isHazardousSituation(body.entity()) && !creeperThreat && !breakFall && entry.hazardSpellLogged) {
+            entry.hazardSpellLogged = false;
+            KindredMod.LOGGER.info("{} hazard spell over at {} after {} ticks, {} task(s) cancelled", entry.data.displayName(),
+                    body.entity().getBlockPos().toShortString(), server.getTicks() - entry.hazardSpellTick, entry.hazardSpellCancels);
+        }
         if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight && !puttingOut || creeperThreat && !handlingCreeper || breakFall)
                 && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
                 && !escapingWater) {
+            if (!entry.hazardSpellLogged) {
+                entry.hazardSpellLogged = true;
+                logHazardSpell(entry, body.entity(), creeperThreat && !handlingCreeper, breakFall);
+            }
+            entry.hazardSpellCancels++;
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort(breakFall && !isHazardousSituation(body.entity()) ? "Falling: the fall to be broken with water"
@@ -8028,6 +8133,7 @@ final class PlayerRuntime {
                         // A reroll's step refused, counted as a failure, so that it is not asked for tick after tick (E-45c).
                         KindredMod.LOGGER.info("{} reroll {} refused: {}", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker);
                         entry.reroll.failed++;
+                        entry.rerollRefused++;
                         entry.routineRefreshPending = true;
                         entry.cachedRoutineCandidates = List.of();
                     }
@@ -8851,6 +8957,7 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
         // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
         if (entry.reroll != null && state != SkillRunner.State.RUNNING) {
+            if (state == SkillRunner.State.BLOCKED) entry.rerollRefused++;
             entry.reroll.failed = state == SkillRunner.State.BLOCKED ? entry.reroll.failed + 1 : 0;
             entry.routineRefreshPending = true;
         }
@@ -13580,6 +13687,8 @@ final class PlayerRuntime {
         int tries, failed, nudges;
         long since;
         boolean givingUp;
+        /** Since when, standing on its lectern to break it, it has found no room to step off to; -1 when it has (F-22c116). */
+        long noRoomSince = -1;
         /** Each look's offers, in words, for fixtures. */
         final List<String> looks = new ArrayList<>();
         /** The ids of the steps it has given, to know its own refusals. */
@@ -13664,6 +13773,16 @@ final class PlayerRuntime {
                 if (slot < 0) {
                     // Just broken: the lectern lies where it fell a moment before it is picked up.
                     if (r.tries > 0 && now - r.since < 100) return List.of(waitTask(task, "For the lectern to be picked up"));
+                    // Lying where the break's own collection did not reach (in the hole it left, broken from a block beside
+                    // one up, stepped off onto): walked onto, for as long as a villager is given to take up a lectern (F-22c116).
+                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                            item -> item.getStack().isOf(Items.LECTERN));
+                    if (r.tries > 0 && !lying.isEmpty() && now - r.since < JOB_NUDGE) {
+                        BlockPos drop = lying.getFirst().getBlockPos();
+                        return List.of(new NativeTaskCandidate(rerollTask(entry, "pickup:" + drop.asLong()), "native_goto", Map.of(
+                                "x", String.valueOf(drop.getX()), "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()),
+                                "range", "0.5", "partial", "true")));
+                    }
                     KindredMod.LOGGER.info("{} reroll: no lectern to put down ({} lying near, entities ticking there {}, the villager's age {}); let be",
                             entry.data.displayName(), world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                                     item -> item.getStack().isOf(Items.LECTERN)).size(), world.shouldTickEntity(r.lectern), villager == null ? -1 : villager.age);
@@ -13737,11 +13856,27 @@ final class PlayerRuntime {
                 }
                 if (!reach) return List.of(goNear(task, r.lectern));
                 // Standing on it, as a small pen leaves a player stepping up onto it: off it first (a break of the block
-                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground).
+                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground). With no
+                // room to step off to, it waits for some rather than asking for a break it would be refused, for as long as
+                // a villager is given to let its job go; then it lets the villager be, the lectern left standing, and says
+                // why: never through refusals (F-22c116, CI #451: six refusals, the lectern left in the ground).
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(r.lectern).stretch(0, 1, 0))) {
                     var off = offTheLectern(entry, world, r);
-                    if (off != null) return List.of(off);
+                    if (off != null) {
+                        r.noRoomSince = -1;
+                        return List.of(off);
+                    }
+                    if (r.noRoomSince < 0) r.noRoomSince = now;
+                    if (now - r.noRoomSince > JOB_WAIT) {
+                        say(entry, "There's no room to step off my lectern; I've left it standing.", "");
+                        entry.rerollGivenUp.add(r.villager);
+                        entry.reroll = null;
+                        entry.rerollAt = now + 1200;
+                        return null;
+                    }
+                    return List.of(waitTask(task, "For room off the lectern"));
                 }
+                r.noRoomSince = -1;
                 var args = new HashMap<>(at);
                 args.put("collect", "true");
                 return List.of(new NativeTaskCandidate(task, "native_break", Map.copyOf(args)));
@@ -13797,20 +13932,37 @@ final class PlayerRuntime {
     }
 
     /**
-     * A walk off the lectern's block to the middle of one beside it, clear of it: where it stood to begin with, else
-     * any side of the lectern with room to stand; or null when there is none.
+     * A walk off the lectern's block to the middle of one with room to stand, clear of it (see {@link #stepOffTo}), with
+     * where it stood to begin with tried first; or null when there is none.
      */
     private static NativeTaskCandidate offTheLectern(Entry entry, net.minecraft.server.world.ServerWorld world, Reroll r) {
-        var sides = new ArrayList<BlockPos>();
-        sides.add(r.stand);
-        for (Direction side : Direction.Type.HORIZONTAL) sides.add(r.lectern.offset(side));
-        for (BlockPos at : sides) {
-            if (at.equals(r.lectern) || !world.getBlockState(at).getCollisionShape(world, at).isEmpty()
+        BlockPos at = stepOffTo(world, r.lectern, r.stand);
+        if (at == null) return null;
+        return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
+                "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+    }
+
+    /**
+     * A cell to step off {@code block} to, before breaking it from beside (F-22c116): its feet and head clear, a full top
+     * face under it to stand on (glass is one, though not a solid block), no mob in it, and not over {@code block} itself. {@code first} (where it stood before, say) is tried
+     * first, then the four sides at {@code block}'s height, then the four beside it one up, where a block beside is a
+     * floor to step across onto from on top of it (as a pen's fill leaves one); null when there is none. Only cells beside
+     * it, a step from where it stands on it: a cell two across can lie behind a wall with no way round (a lectern by its
+     * pen's wall), and a walk there gets no nearer. The break of the block underfoot stays
+     * {@code RoamingEdits.breakDenial}'s to refuse: this only finds where to stand so that it is not asked for.
+     */
+    static BlockPos stepOffTo(net.minecraft.server.world.ServerWorld world, BlockPos block, BlockPos first) {
+        var cells = new ArrayList<BlockPos>();
+        if (first != null) cells.add(first);
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side));
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side).up());
+        for (BlockPos at : cells) {
+            if (at.getX() == block.getX() && at.getZ() == block.getZ()) continue;
+            if (!world.getBlockState(at).getCollisionShape(world, at).isEmpty()
                     || !world.getBlockState(at.up()).getCollisionShape(world, at.up()).isEmpty()
-                    || !world.getBlockState(at.down()).isSolidBlock(world, at.down())) continue;
+                    || !world.getBlockState(at.down()).isSideSolidFullSquare(world, at.down(), Direction.UP)) continue;
             if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(at), e -> !(e instanceof ServerPlayerEntity)).isEmpty()) continue;
-            return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
-                    "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+            return at.toImmutable();
         }
         return null;
     }
@@ -13888,6 +14040,12 @@ final class PlayerRuntime {
     List<String> rerollLooks(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? List.of() : List.copyOf(entry.rerollLooks);
+    }
+
+    /** The reroll's steps refused, for fixtures (F-22c116). */
+    int rerollStepsRefused(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.rerollRefused;
     }
 
     /** Villagers it gave up rerolling, for fixtures. */
@@ -19738,6 +19896,12 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
+        /** The hazard interrupt's line written for this spell (F-25c6d), the tick it began and the tasks it cancelled. */
+        private boolean hazardSpellLogged;
+        private long hazardSpellTick;
+        private int hazardSpellCancels;
+        /** The tactical observation's refresh failing: logged at its first failure, again only after one succeeds (F-25c6d). */
+        private boolean tacticalFailureLogged;
         /** The task putting out the fire carried out of lava, let through the hazard abort (F-25c6b). */
         private UUID fireOutTaskId;
         /** Water it poured at its feet to put out a fire, and until when it means to take it back up (F-25c6b). */
@@ -19926,6 +20090,8 @@ final class PlayerRuntime {
         };
         private final Set<UUID> rerollKept = new HashSet<>(), rerollGivenUp = new HashSet<>();
         private final List<String> rerollLooks = new ArrayList<>();
+        /** The reroll's steps refused, at dispatch or as they ran, for fixtures (F-22c116). */
+        private int rerollRefused;
         private long rerollAt;
         /**
          * Hit hard by a player (E-41g): who, and what it does about it, until when; whether what it is doing gives way to
