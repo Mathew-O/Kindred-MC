@@ -913,8 +913,10 @@ In a faction world:
 - Disk: the World Record (`kindred/companions.sqlite` and its `-wal`) grows with the number of players and what they do, and nothing
   is pruned but settled action history. Measured with 3 AI players on seed 101 at 72 game days a real day (dragon goal, a build of
   2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
-  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
-  for a long run; for eight players and a month, see "A month-long run: what grows on disk" below.
+  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. It reads
+  `Kindred cost: world day N: …`, where N is the world's own day (its game time in whole days, from 1), so a restart goes
+  on with the world's count; logs from before this fix read `Kindred cost: day N: …`, counted from that start. Keep the
+  disk well ahead of it for a long run; for eight players and a month, see "A month-long run: what grows on disk" below.
   The same line counts the messages the Wire refused since start, by why and on which channel, for example
   `Wire 3 refused since start (BUDGET on team 1, DUPLICATE on faction 2)` (F-34e). It never says what a refused message
   said, who sent it or to whom. A refusal now and then is routine (a channel's minute spent, the same news twice), but a
@@ -1003,7 +1005,9 @@ Set before the first start, and leave:
   are not settings. Nothing to set.
 
 **Every day, read the pre-flight report.** It reads the console's `Kindred cost:` lines (one a game day, and one at
-each stop) and, with the server stopped, a copy of the Record:
+each stop) and, with the server stopped, a copy of the Record. It tells the two forms apart by the word `world`: a
+`world day N` line is the world's day and goes on over a restart, so growth is read day to day across stops; an older
+`day N` line counts from its start, so a drop in the number begins a new start and growth is never read across one:
 
 ```
 tools/soak/preflight.py --console logs/latest.log --heap-max-mb 10240
