@@ -2996,7 +2996,7 @@ final class PortalRunCampaign {
      * How long a search for dry ground that found nothing, from one cell, is not asked again from it (M-06k9): dry ground
      * that comes within reach is found within this many ticks where it stands, and at once from another cell.
      */
-    static final int DRY_MISS_TICKS = 20;
+    static final int DRY_MISS_TICKS = 0;
 
     /**
      * Since it was made, for the cost line and the fixtures (M-06k9): the plans its way out of the water was weighed on,
