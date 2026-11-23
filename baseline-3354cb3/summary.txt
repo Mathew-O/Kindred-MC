@@ -1,2 +1,3 @@
 base-1 (3354cb33): 62 min, peak 3130 MB, 124 required tests failed, fence-top 12, disk 5.5G
 base-2 (3354cb33): 59 min, peak 3093 MB, 122 required tests failed, fence-top 14, disk 5.5G
+base-3 (3354cb33): 63 min, peak 3443 MB, 119 required tests failed, fence-top 18, disk 5.4G
