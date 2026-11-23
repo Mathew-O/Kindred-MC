@@ -29,8 +29,32 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "obsidianPickup", tickLimit = 1500)
     public void anUntakenStepToTakeTheWaterBackLeavesNoObsidianBehind(TestContext context) {
-        scene(context, false);
+        scene(context, false, Mode.AS_IS);
     }
+
+    /**
+     * Its lava out of sight at the goal's first look (F-22c118): its first step a walk to look for lava, before any obsidian
+     * is made, as on #465's CI (run 45074150100, attempt 1: "Obsidian: Make and mine obsidian (0/10) - Explore the cave toward
+     * lava", then "stand beside lava"), where the check read that walk as exploring with its obsidian left in the water and
+     * failed a player that then mined, picked up and took its water back as it should. Staged: a block over the lava, taken
+     * away once it looks. Passes as above: a walk to look before any obsidian is made is not exploring with it left.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "obsidianPickupUnseen", tickLimit = 1500)
+    public void aWalkToLookForLavaBeforeAnyObsidianIsMadeIsNotExploringWithItsObsidianLeft(TestContext context) {
+        scene(context, false, Mode.HIDDEN);
+    }
+
+    /**
+     * The check still catches what it is for (F-22c118): the obsidian mined and left lying in the water, out of the
+     * player's reach to pick up (staged: its drop made one no player can pick up), the player goes on to explore. Passes
+     * only once the check reads that as exploring with its obsidian left in the water.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "obsidianPickupLeft", tickLimit = 1500)
+    public void obsidianLeftInTheWaterAndAWalkToExploreIsStillCaught(TestContext context) {
+        scene(context, false, Mode.LEFT);
+    }
+
+    private enum Mode { AS_IS, HIDDEN, LEFT }
 
     /**
      * As above, staged (F-22c94): from the obsidian mined until its water is back in the bucket, the player held on its stand,
@@ -41,10 +65,10 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
      */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "obsidianPickupDrain", tickLimit = 1500)
     public void theWaterTakenBackItsLastFlowStillDrainingTheObsidianIsPickedUpFirst(TestContext context) {
-        scene(context, true);
+        scene(context, true, Mode.AS_IS);
     }
 
-    private static void scene(TestContext context, boolean drain) {
+    private static void scene(TestContext context, boolean drain, Mode mode) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos lava = context.getAbsolutePos(new BlockPos(5, 1, 3));
         BlockPos shore = context.getAbsolutePos(new BlockPos(4, 2, 3));
@@ -61,7 +85,23 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
             if (progress != null && !progress.equals(last[0])) {
                 last[0] = progress;
                 if (seen.length() < 3000) seen.append(progress.replaceAll("^.* - ", "")).append("; ");
-                if (progress.contains("Explore") && ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 0) exploredFirst[0] = true;
+                // Exploring with its obsidian left: once the obsidian is mined, not a walk to look for lava before any is
+                // made (F-22c118).
+                var lookWorld = context.getWorld();
+                boolean minedYet = !lookWorld.getBlockState(lava).isOf(Blocks.OBSIDIAN) && !lookWorld.getFluidState(lava).isIn(FluidTags.LAVA);
+                if (progress.contains("Explore") && minedYet && ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 0) exploredFirst[0] = true;
+                // Staged (F-22c118): the lava's cover taken away once it has looked for lava.
+                if (mode == Mode.HIDDEN && progress.contains("Explore") && lookWorld.getBlockState(lava.up()).isOf(Blocks.STONE)) {
+                    lookWorld.setBlockState(lava.up(), Blocks.AIR.getDefaultState());
+                    KindredMod.LOGGER.info("Obsidian pickup: the lava's cover taken away as it looks: {}", progress);
+                }
+            }
+            // Staged (F-22c118): the obsidian mined left lying where it fell, no player able to pick it up.
+            if (mode == Mode.LEFT) {
+                for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
+                        new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8), i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) {
+                    item.setPickupDelayInfinite();
+                }
             }
             // Staged (F-22c94): from the obsidian mined until its water is back in the bucket, the player held on its stand,
             // two cells off the hole the obsidian lies in, so it never passes over the drop, as in CI, where it lay out of
@@ -108,6 +148,8 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     context.setBlockState(5, 0, 3, Blocks.STONE);
                     context.setBlockState(5, 1, 3, Blocks.LAVA);
                     for (int x = 0; x <= 7; x++) for (int z = 0; z <= 7; z++) context.setBlockState(x, 7, z, Blocks.STONE);
+                    // Staged (F-22c118): the lava out of sight under a block until the player looks for it.
+                    if (mode == Mode.HIDDEN) context.setBlockState(5, 2, 3, Blocks.STONE);
                     f.runtime.createNative(f.source, "Smith");
                 })
                 .createAndAdd(() -> f.established(context))
@@ -121,6 +163,15 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
+                    if (mode != Mode.LEFT) return;
+                    // The check still catches its obsidian left in the water (F-22c118).
+                    watch.run();
+                    context.assertTrue(exploredFirst[0], "Went exploring with its obsidian left in the water, and the check caught it: " + tail.get());
+                    KindredMod.LOGGER.info("Obsidian pickup: left in the water, caught; {}", seen);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> {
+                    if (mode == Mode.LEFT) return;
                     watch.run();
                     var world = context.getWorld();
                     boolean mined = !world.getBlockState(lava).isOf(Blocks.OBSIDIAN) && !world.getFluidState(lava).isIn(FluidTags.LAVA);
@@ -132,19 +183,22 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     }
                     context.assertTrue(asked[0] != null, "On its stand, the obsidian mined, its water still poured: " + tail.get());
                 })
-                .createAndAdd(() -> context.assertTrue(asked[0].contains("native_bucket fill"),
+                .createAndAdd(() -> context.assertTrue(mode == Mode.LEFT || asked[0].contains("native_bucket fill"),
                         "The step asked for and not taken was to take the water back: " + asked[0] + "; " + tail.get()))
                 .createAndAdd(() -> {
+                    if (mode == Mode.LEFT) return;
                     watch.run();
                     context.assertTrue(lostSite[0] == null, "The site given up with its water still standing: " + lostSite[0] + "; " + tail.get());
                     context.assertTrue(waterBack[0], "Its water back in the bucket: " + tail.get());
                 })
                 .createAndAdd(() -> {
+                    if (mode == Mode.LEFT) return;
                     watch.run();
                     context.assertFalse(exploredFirst[0], "Went exploring with its obsidian left in the water: " + tail.get());
                     context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 1, "The obsidian mined and picked up: " + tail.get());
                 })
                 .createAndAdd(() -> {
+                    if (mode == Mode.LEFT) return;
                     var inventory = f.player().getInventory();
                     context.assertTrue(ItemMoves.count(inventory, Items.WATER_BUCKET) == 1 && ItemMoves.count(inventory, Items.BUCKET) == 0,
                             "The water was taken back into the bucket: " + tail.get());
