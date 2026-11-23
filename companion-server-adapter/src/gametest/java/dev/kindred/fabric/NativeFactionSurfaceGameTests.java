@@ -113,7 +113,7 @@ public final class NativeFactionSurfaceGameTests implements FabricGameTest {
     }
 
     /** The box, the player in it, and the two factions; where it stands. */
-    private static BlockPos staged(TestContext context, NativePaidSkillsGameTests.Fixture f, ServerPlayerEntity[] ben, boolean openSide, boolean noRoof) {
+    static BlockPos staged(TestContext context, NativePaidSkillsGameTests.Fixture f, ServerPlayerEntity[] ben, boolean openSide, boolean noRoof) {
         var server = context.getWorld().getServer();
         var world = context.getWorld();
         var player = f.player();
