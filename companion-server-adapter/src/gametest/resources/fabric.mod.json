@@ -96,6 +96,7 @@
       "dev.kindred.fabric.NativeFallingColumnGameTests",
       "dev.kindred.fabric.NativeCobwebHeadRoomGameTests",
       "dev.kindred.fabric.NativeHalfCastFrameGameTests",
+      "dev.kindred.fabric.NativeCastFloorGameTests",
       "dev.kindred.fabric.NativeObstructedPortalGameTests",
       "dev.kindred.fabric.NativeCavernLedgeGameTests",
       "dev.kindred.fabric.NativeLakeBedClimbGameTests",
