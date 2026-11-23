@@ -159,11 +159,23 @@ the walk's entry are 0 in all three runs, and no changed line acts in either fla
 
 **Kept:** the runs are on `claude/spacer-runs-1112`, under `gate25c4di1g/`.
 
+## The live read, E-40 iteration 28 (2026-11-23)
+
+From E-40 iteration 28's consoles (`claude/corpus-data-e40a28-consoles-1123` at `ba0e2639`, main `7e2f9bff`, both batches, evidence in #481), read from the consoles; score.py's stuck kinds as score.py gives them.
+
+| | Iteration 26 | Iteration 27 | Iteration 28 |
+| --- | --- | --- | --- |
+| "Take its bed back up in the morning" refused | 25,926 | 3,466 | 0 |
+| Take-ups completed | 19 | 22 | 33 |
+| Beds left where they stand | | | 0 |
+| score.py's "refused target repeated" spells | 7 | 3 | 0 in both batches |
+
+**Read: the 7 spells are gone, and the cost to watch is 0 beds left against 33 taken up. The row stays Done** (the lead,
+2026-11-23).
+
 ## Remaining limitations and handoff
 
-- **The live read, iteration 28:** the 7 spells of iteration 26 are expected to go, −21 stuck minutes, 9 of them on
-  batch 1's 20261030. If they don't, this row reopens.
-- **The cost to watch in 28:** beds left where they stand, against beds taken up, per seed.
+- **The live read, iteration 28:** read 2026-11-23, above. The spells are gone; 0 beds left against 33 taken up.
 - **A take-up from the other half needs its spawn at the bed.** A bed set down but never lain in (its spawn elsewhere)
   is not broken from beneath it; it is set aside.
 - **Openings:** at most two blocks a morning, each beside the bed's room. A bed whose way in is longer is set aside, and
