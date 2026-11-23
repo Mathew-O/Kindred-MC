@@ -266,6 +266,7 @@
       "dev.kindred.fabric.NativeChronicleGameTests",
       "dev.kindred.fabric.NativeKnowledgeGameTests",
       "dev.kindred.fabric.NativeCostGameTests",
+      "dev.kindred.fabric.NativeDrySpawnGameTests",
       "dev.kindred.fabric.NativeHazardSpellLogGameTests",
       "dev.kindred.fabric.NativeCraftHelperGameTests",
       "dev.kindred.fabric.NativeGatherTargetGameTests",
