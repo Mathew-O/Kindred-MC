@@ -29,7 +29,17 @@ import net.minecraft.util.math.Box;
  * the next start after a crash; its snapshot is forgotten only once the server has saved the restored blocks.
  */
 public final class NativeArenaRestoreGameTests implements FabricGameTest {
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "arenaRestoreEnd", tickLimit = 2000)
+    /**
+     * Where its ground is laid from (F-22c119): in from its structure's corner as far as its arena's field runs the other
+     * way, the field kept from 10 west and 10 north of here to 50 east and 30 south, so that all of it lies in its own
+     * structure. On a structure as small as its plot, the field ran into the plots of the tests placed round it: on #475's
+     * CI its two battle tests left 2,068 blocks in other tests' running plots.
+     */
+    private static BlockPos origin(TestContext context) {
+        return context.getAbsolutePos(new BlockPos(10, 0, 10));
+    }
+
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "arenaRestoreEnd", tickLimit = 2000)
     public void afterThePodiumTheArenaIsPutBackAndUntilThenNothingInItCanBeBrokenForADrop(TestContext context) {
         var b = new Battle(context);
         boolean[] once = {false};
@@ -72,7 +82,7 @@ public final class NativeArenaRestoreGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "arenaRestoreStop", tickLimit = 1600)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "arenaRestoreStop", tickLimit = 1600)
     public void whenTheServerStopsMidBattleTheArenaIsPutBackAtOnce(TestContext context) {
         var b = new Battle(context);
         b.start(context.createTimedTaskRunner())
@@ -90,12 +100,12 @@ public final class NativeArenaRestoreGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "arenaRestoreCrash", tickLimit = 1200)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "arenaRestoreCrash", tickLimit = 1200)
     public void anArenaACrashLeftStandingIsPutBackAtTheNextStart(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1100);
         var server = context.getWorld().getServer();
         UUID match = UUID.randomUUID();
-        BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+        BlockPos o = origin(context);
         var box = new BlockBox(o.getX() + 1, o.getY() + 1, o.getZ() + 1, o.getX() + 6, o.getY() + 5, o.getZ() + 6);
         Map<BlockPos, BlockState> before = new HashMap<>();
         @SuppressWarnings("unchecked") java.util.concurrent.CompletableFuture<Void>[] written = new java.util.concurrent.CompletableFuture[1];
@@ -152,7 +162,7 @@ public final class NativeArenaRestoreGameTests implements FabricGameTest {
         Battle(TestContext context) {
             this.context = context;
             this.f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1900);
-            this.o = context.getAbsolutePos(BlockPos.ORIGIN);
+            this.o = origin(context);
         }
 
         TimedTaskRunner start(TimedTaskRunner runner) {
