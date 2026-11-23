@@ -2864,6 +2864,89 @@ final class PlayerRuntime {
         return inHazard || onHazard || burning && player.isOnFire();
     }
 
+    /**
+     * Why the hazard retreat's cell at {@code targetFeet} is refused, or null when it may be stepped to: the checks the
+     * retreat candidate makes, in its order (F-25c6d: the same function decides and explains, so the log cannot differ).
+     */
+    static String retreatRefusal(ServerPlayerEntity player, BlockPos targetFeet) {
+        var world = player.getServerWorld();
+        BlockPos targetGround = targetFeet.down();
+        if (!world.isChunkLoaded(targetFeet)) return "not loaded";
+        if (!world.isInBuildLimit(targetFeet.up())) return "out of the build limit";
+        if (!world.getWorldBorder().contains(targetFeet)) return "outside the border";
+        var targetSupport = world.getBlockState(targetGround);
+        if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)) return "floor " + blockName(targetSupport) + " not a full top";
+        if (targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)) return "floor " + blockName(targetSupport);
+        if (!world.getFluidState(targetFeet).isEmpty()) return "fluid " + blockName(world.getBlockState(targetFeet)) + " at its feet";
+        var targetFeetState = world.getBlockState(targetFeet);
+        if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
+                || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
+                || targetFeetState.isOf(Blocks.LAVA)) return blockName(targetFeetState) + " at its feet";
+        var box = player.getBoundingBox().offset(net.minecraft.util.math.Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
+        if (!world.isSpaceEmpty(player, box)) return "no room (" + blockName(targetFeetState) + ", " + blockName(world.getBlockState(targetFeet.up())) + " above)";
+        return null;
+    }
+
+    private static String blockName(net.minecraft.block.BlockState state) {
+        return net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath();
+    }
+
+    /**
+     * What {@link #isHazardousSituation(ServerPlayerEntity)} saw (F-25c6d's diagnostic): each of its clauses that holds,
+     * with the block and its offset from the feet; for being in lava without lava at the feet, the nearest lava cell the
+     * body touches. "nothing" when none holds.
+     */
+    static String hazardSeen(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var feetState = world.getBlockState(feet);
+        var groundState = world.getBlockState(feet.down());
+        java.util.List<String> seen = new java.util.ArrayList<>();
+        if (feetState.isOf(Blocks.FIRE) || feetState.isOf(Blocks.SOUL_FIRE) || feetState.isOf(Blocks.LAVA)
+                || feetState.isOf(Blocks.SWEET_BERRY_BUSH) || feetState.isOf(Blocks.POWDER_SNOW)) seen.add(blockName(feetState) + " at its feet (0, 0, 0)");
+        else if (world.getFluidState(feet).isIn(FluidTags.LAVA)) seen.add("lava fluid at its feet (0, 0, 0)");
+        if (player.isInLava() && !world.getFluidState(feet).isIn(FluidTags.LAVA)) {
+            BlockPos nearest = null;
+            var box = player.getBoundingBox();
+            for (BlockPos at : BlockPos.iterate(BlockPos.ofFloored(box.minX, box.minY, box.minZ), BlockPos.ofFloored(box.maxX, box.maxY, box.maxZ))) {
+                if (world.getFluidState(at).isIn(FluidTags.LAVA) && (nearest == null || at.getSquaredDistance(feet) < nearest.getSquaredDistance(feet))) nearest = at.toImmutable();
+            }
+            seen.add(nearest == null ? "in lava (no lava cell in its box)" : "in lava at " + nearest.subtract(feet).toShortString()
+                    + String.format(java.util.Locale.ROOT, ", %.1f off", Math.sqrt(nearest.getSquaredDistance(feet))));
+        }
+        if (player.isSubmergedInWater() && player.getAir() < player.getMaxAir() / 2) seen.add("drowning (air " + player.getAir() + ")");
+        if (groundState.isOf(Blocks.MAGMA_BLOCK) || groundState.isOf(Blocks.CACTUS) || groundState.isOf(Blocks.LAVA)) seen.add(blockName(groundState) + " under it (0, -1, 0)");
+        if (player.isOnFire()) seen.add("alight (fire ticks " + player.getFireTicks() + ")");
+        return seen.isEmpty() ? "nothing" : String.join("; ", seen);
+    }
+
+    /**
+     * The hazard interrupt's line, once a spell (F-25c6d; log only): which trigger cancelled the task, what the hazard
+     * test saw, the feet and floor, and each way off the retreat would consider with why it was refused. E-40c4's
+     * Nether players stood 37 to 130 game minutes where every task was cancelled and no retreat was offered.
+     */
+    private void logHazardSpell(Entry entry, ServerPlayerEntity player, boolean creeper, boolean fall) {
+        BlockPos feet = player.getBlockPos();
+        var world = player.getServerWorld();
+        java.util.List<String> triggers = new java.util.ArrayList<>();
+        if (isHazardousSituation(player)) triggers.add("hazard");
+        if (creeper) triggers.add("creeper");
+        if (fall) triggers.add("fall to break");
+        String[] dirs = {"north", "south", "east", "west"};
+        BlockPos[] adj = {feet.north(), feet.south(), feet.east(), feet.west()};
+        java.util.List<String> cells = new java.util.ArrayList<>();
+        for (int d = 0; d < 4; d++) {
+            String why = retreatRefusal(player, adj[d]);
+            cells.add(dirs[d] + " " + (why == null ? "free" : why));
+        }
+        boolean inLava = player.isInLava() || world.getFluidState(feet).isIn(FluidTags.LAVA);
+        String escape = !inLava ? "not in lava" : lavaBank(player, feet).map(b -> "to " + b.toShortString()).orElse("no dry ground in sight");
+        KindredMod.LOGGER.info("{} hazard spell at {} in {}: trigger {}; saw {}; feet {}, floor {}; retreat cells: {}; lava escape: {}; cancelling {}",
+                entry.data.displayName(), feet.toShortString(), world.getRegistryKey().getValue().getPath(), String.join(" and ", triggers),
+                hazardSeen(player), blockName(world.getBlockState(feet)), blockName(world.getBlockState(feet.down())),
+                String.join(", ", cells), escape, entry.skillId);
+    }
+
     /** Swimming or sunk: not wading on a shallow bottom with the head above the surface. */
     static boolean inDeepWater(ServerPlayerEntity player) {
         if (player.isSubmergedInWater()) return true;
@@ -3614,19 +3697,7 @@ final class PlayerRuntime {
             String[] dirs = new String[]{"north", "south", "east", "west"};
             BlockPos[] adj = new BlockPos[]{feetPos.north(), feetPos.south(), feetPos.east(), feetPos.west()};
             for (int d = 0; d < 4; d++) {
-                BlockPos targetFeet = adj[d];
-                BlockPos targetGround = targetFeet.down();
-                if (!world.isChunkLoaded(targetFeet) || !world.isInBuildLimit(targetFeet.up()) || !world.getWorldBorder().contains(targetFeet)) continue;
-                var targetSupport = world.getBlockState(targetGround);
-                if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)
-                        || targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)
-                        || !world.getFluidState(targetFeet).isEmpty()) continue;
-                var targetFeetState = world.getBlockState(targetFeet);
-                if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
-                        || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
-                        || targetFeetState.isOf(Blocks.LAVA)) continue;
-                var box = player.getBoundingBox().offset(net.minecraft.util.math.Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
-                if (!world.isSpaceEmpty(player, box)) continue;
+                if (retreatRefusal(player, adj[d]) != null) continue;
 
                 // Found a safe retreat direction
                 UUID taskId = UUID.nameUUIDFromBytes(("hazard_retreat:" + entry.data.id() + ":" + feetPos.asLong() + ":" + dirs[d]).getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -7855,9 +7926,15 @@ final class PlayerRuntime {
         boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false);
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
+        // A spell of hazard ends on the first tick none of the interrupt's triggers holds (F-25c6d's diagnostic).
+        if (!isHazardousSituation(body.entity()) && !creeperThreat && !breakFall) entry.hazardSpellLogged = false;
         if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight && !puttingOut || creeperThreat && !handlingCreeper || breakFall)
                 && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
                 && !escapingWater) {
+            if (!entry.hazardSpellLogged) {
+                entry.hazardSpellLogged = true;
+                logHazardSpell(entry, body.entity(), creeperThreat && !handlingCreeper, breakFall);
+            }
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort(breakFall && !isHazardousSituation(body.entity()) ? "Falling: the fall to be broken with water"
@@ -19791,6 +19868,8 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
+        /** The hazard interrupt's line written for this spell (F-25c6d). */
+        private boolean hazardSpellLogged;
         /** The task putting out the fire carried out of lava, let through the hazard abort (F-25c6b). */
         private UUID fireOutTaskId;
         /** Water it poured at its feet to put out a fire, and until when it means to take it back up (F-25c6b). */
