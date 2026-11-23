@@ -142,8 +142,9 @@ public final class Digger {
     /** When it last went on with a branch mine; one not gone on with for {@link #BRANCH_BEGINS_AFTER} ticks begins afresh. */
     private long lastBranchTick = -1;
     private static final long BRANCH_BEGINS_AFTER = 600;
-    /** A stuck spell's place its branch mine lays its legs away from (F-25c4dq), and where one was last so laid. */
-    private Cell awayFrom, branchLaid;
+    /** Its record of ground stood in, asked for when a branch mine begins, and where one was last laid elsewhere (F-25c4dq). */
+    private java.util.function.Supplier<java.util.function.Predicate<Cell>> seenGround;
+    private Cell branchLaid;
 
     // ------------------------------------------------------------------ state the campaign shares
 
@@ -312,40 +313,77 @@ public final class Digger {
     }
 
     /**
-     * A branch mine begun inside a stuck spell, within reach of where the spell was caught: its first leg laid along the
-     * axis it is farther off on, away from that place, and its steps between legs away on the other (F-25c4dq). Its legs
-     * alternate back and forth from where the mine began and its steps go one way, so the whole zigzag then lies beyond where
-     * it began from the spell's place, never nearer. Leg length, step and alternation are as they were.
+     * A branch mine begun lays its legs where it has stood least (F-25c4dq). Where the first four legs of its heading would
+     * run through {@value #BRANCH_SEEN_TURN} or more eight-block cells it has stood in (the cells its watchdog counts as new
+     * ground once), it takes, of the four headings for its first leg and the two sides its steps between legs may go, the
+     * one through the fewest; ties go to the heading and side it has. Below that, and where all round it is new ground, it
+     * mines as before. Leg length, step and alternation are as they were.
      *
-     * In main's holepit scene (`diag-holepit-079bdc2-8675309-kindred-111140`), a mine begun within about ten of where the
-     * spell was caught laid its legs across that place: leg after leg swept back through the eight blocks round it, every
-     * step fresh rock and no iron found, and near starts failed 7 of 16 runs against 10 of 62 for far ones. In E-40 iteration
-     * 29, 8 of 112 stuck spells were such a working mine.
+     * In main's holepit scene (`diag-holepit-079bdc2-8675309-kindred-111140`), a mine begun near where it had walked laid its
+     * legs back across that ground: leg after leg swept through ground it had stood in, every step fresh rock and no iron
+     * found, its watchdog's clock never set back. In E-40 iteration 29, 8 of 112 stuck spells were such a working mine.
      */
     private <T> void branchBegins(Body<T> body) {
         long now = body.now();
         boolean begins = lastBranchTick < 0 || now - lastBranchTick > BRANCH_BEGINS_AFTER;
         lastBranchTick = now;
-        if (!begins || awayFrom == null) return;
+        if (!begins || seenGround == null) return;
+        var seen = seenGround.get();
+        if (seen == null) return;
         Cell feet = body.feet();
-        int dx = feet.x() - awayFrom.x(), dz = feet.z() - awayFrom.z();
-        if (Math.max(Math.abs(dx), Math.abs(dz)) > BRANCH_LEG + 8) return; // Too far for its legs to come back to it.
-        boolean alongX = Math.abs(dx) >= Math.abs(dz);
-        Side leg = alongX ? (dx >= 0 ? Side.EAST : Side.WEST) : (dz >= 0 ? Side.SOUTH : Side.NORTH);
-        Side step = alongX ? (dz >= 0 ? Side.SOUTH : Side.NORTH) : (dx >= 0 ? Side.EAST : Side.WEST);
-        heading = leg;
-        branchSide = leg.counterclockwise() == step;
+        // Only where its heading runs back into ground it has stood in: the cell it stands in, and one beside it as the grid
+        // falls, are no reason to turn, so where all round it is new it mines as before.
+        int here = seenAhead(feet, heading, branchSide, seen);
+        if (here < BRANCH_SEEN_TURN) return;
+        Side bestLeg = heading;
+        boolean bestSide = branchSide;
+        int best = here;
+        for (Side leg : Side.HORIZONTAL) {
+            for (boolean side : new boolean[] {false, true}) {
+                if (leg == heading && side == branchSide) continue;
+                int score = seenAhead(feet, leg, side, seen);
+                if (score < best) {
+                    best = score;
+                    bestLeg = leg;
+                    bestSide = side;
+                }
+            }
+        }
+        if (bestLeg == heading && bestSide == branchSide) return;
+        heading = bestLeg;
+        branchSide = bestSide;
         branchRun = 0;
         branchStepping = false;
         branchLaid = feet;
     }
 
-    /** Where a branch mine inside a stuck spell should lay its legs away from, or null for none (F-25c4dq). */
-    public void branchAwayFrom(Cell from) {
-        awayFrom = from;
+    /** Eight-block cells its heading must run into, stood in, before a branch mine begun turns its legs (F-25c4dq). */
+    private static final int BRANCH_SEEN_TURN = 3;
+
+    /** Eight-block cells stood in that the first four legs from {@code feet} along {@code leg} would cover (F-25c4dq). */
+    private static int seenAhead(Cell feet, Side leg, boolean side, java.util.function.Predicate<Cell> seen) {
+        Side step = side ? leg.counterclockwise() : leg.clockwise();
+        var cells = new HashSet<Long>();
+        int stoodIn = 0;
+        for (int along = 0; along <= BRANCH_LEG; along++) {
+            for (int over = 0; over <= 3 * BRANCH_STEP; over++) {
+                Cell at = feet.add(leg.dx * along + step.dx * over, 0, leg.dz * along + step.dz * over);
+                long key = (((long) (at.x() >> 3)) << 32) ^ ((at.z() >> 3) & 0xffffffffL);
+                if (cells.add(key) && seen.test(at)) stoodIn++;
+            }
+        }
+        return stoodIn;
     }
 
-    /** Where a branch mine was last begun with its legs laid away from a stuck spell's place, once; then null (F-25c4dq). */
+    /**
+     * The player's own record of the eight-block cells it has stood in, as an observation: asked for once, when a branch mine
+     * begins (F-25c4dq). Null for none.
+     */
+    public void branchSeen(java.util.function.Supplier<java.util.function.Predicate<Cell>> seen) {
+        seenGround = seen;
+    }
+
+    /** Where a branch mine was last begun with its legs laid elsewhere than its heading, once; then null (F-25c4dq). */
     public Cell takeBranchLaid() {
         Cell laid = branchLaid;
         branchLaid = null;

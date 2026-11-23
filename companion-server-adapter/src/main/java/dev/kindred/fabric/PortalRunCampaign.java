@@ -1046,7 +1046,6 @@ final class PortalRunCampaign {
         best.clear();
         stuckClock = 0;
         stuckLevel = 0;
-        caughtAt = null;
         relocate = null;
         obsidianSite = null;
         exploreHeading = null;
@@ -1320,8 +1319,6 @@ final class PortalRunCampaign {
 
     private Optional<Task> nextTask(NativePlayerBody body, EditPolicy.ServerPolicy policy, long tick) {
         if (spellStart == 0) spellStart = tick;
-        // Begun inside a run of spells with none caught here, as a replay of one begins: caught where it stands (F-25c4dq).
-        if (stuckLevel > 0 && caughtAt == null) caughtAt = body.entity().getBlockPos().toImmutable();
         // An opening under the water whose fill or reseal did not go as planned: nothing more until it is reconciled (F-35g).
         if (reconcile != null) {
             progress = stageLabel(stage) + ": held for reconciliation - " + reconcile;
@@ -1372,7 +1369,6 @@ final class PortalRunCampaign {
             paced = 0;
             stuckClock = 0;
             stuckLevel = 0;
-            caughtAt = null;
             relocate = null;
             relocateEarly = false;
             progressMade(tick);
@@ -1500,7 +1496,6 @@ final class PortalRunCampaign {
         stuckSpells++;
         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
         stuckLevel++;
-        caughtAt = lastFeet.toImmutable(); // Where this spell was caught (F-25c4dq).
         stuckClock = 0;
         digger.forgetTunnelled();
         if (!elsewhere) {
@@ -1534,7 +1529,6 @@ final class PortalRunCampaign {
         stuckSpells++;
         event("no progress for a while near " + lastFeet.toShortString().replace(",", "") + " (" + progress + ")");
         stuckLevel++;
-        caughtAt = lastFeet.toImmutable(); // Where this spell was caught (F-25c4dq).
         stuckClock = 0;
         relocateEarly = false;
         digger.forgetTunnelled();
@@ -1762,17 +1756,13 @@ final class PortalRunCampaign {
     void stuckTicksForTest(long ticks) { stuckTicks = ticks; }
 
     /**
-     * For fixtures only, a setter: a stuck spell caught at {@code at}, as the watchdog's count of one leaves it (its level
-     * one), and the heading its digs go along (F-25c4dq). Package-private; called from no main source.
+     * For fixtures only, a setter: the eight-block cells from {@code from} to {@code to} stood in, as its watchdog records
+     * them when it walks there, and the heading its digs go along (F-25c4dq). Package-private; called from no main source.
      */
-    void spellCaughtForTest(BlockPos at, Direction heading) {
-        stuckLevel = Math.max(stuckLevel, 1);
-        caughtAt = at.toImmutable();
+    void groundStoodInForTest(BlockPos from, BlockPos to, Direction heading) {
+        for (BlockPos cell : BlockPos.iterate(from, to)) seenCells.add(BlockPos.asLong(cell.getX() >> 3, cell.getY() >> 3, cell.getZ() >> 3));
         digDirection(heading);
     }
-
-    /** Where the stuck spell it is in was caught: where the watchdog counted it, or where a replay of one began (F-25c4dq). */
-    private BlockPos caughtAt;
 
     /**
      * What a rescue's adviser is told (F-29, F-29b), about a thousand tokens: where it is and how it is; the light, the time
@@ -2199,7 +2189,6 @@ final class PortalRunCampaign {
         if (outcome.equals("unstuck")) {
             stuckClock = 0;
             stuckLevel = 0;
-            caughtAt = null;
             relocate = null;
             relocateEarly = false;
         }
@@ -5248,15 +5237,19 @@ final class PortalRunCampaign {
     }
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
-        // Inside a stuck spell, a branch mine begun near where the spell was caught lays its legs away from there (F-25c4dq).
-        digger.branchAwayFrom(stuckLevel > 0 && caughtAt != null ? cell(caughtAt) : null);
+        // A branch mine begun lays its legs where it has stood least: its own record of new ground, as an observation taken
+        // when the mine begins (F-25c4dq).
+        Side before = digger.heading();
+        digger.branchSeen(() -> {
+            var stoodIn = Set.copyOf(seenCells);
+            return c -> stoodIn.contains(BlockPos.asLong(c.x() >> 3, c.y() >> 3, c.z() >> 3));
+        });
         var task = digger.descendOrTunnel(dig(body), top, target, what);
         Cell laid = digger.takeBranchLaid();
         if (laid != null) {
-            KindredMod.LOGGER.info("F-25c4dq-marker: {} branch mine for {} begun at {}, {} across from where its spell was caught at {}: its legs laid {}",
+            KindredMod.LOGGER.info("F-25c4dq-marker: {} branch mine for {} begun at {}: its legs laid {}, not {}, toward ground it has not stood in",
                     body.entity().getName().getString(), what, pos(laid).toShortString(),
-                    Math.max(Math.abs(laid.x() - caughtAt.getX()), Math.abs(laid.z() - caughtAt.getZ())), caughtAt.toShortString(),
-                    digger.heading().name().toLowerCase(java.util.Locale.ROOT));
+                    digger.heading().name().toLowerCase(java.util.Locale.ROOT), before.name().toLowerCase(java.util.Locale.ROOT));
         }
         return task;
     }
