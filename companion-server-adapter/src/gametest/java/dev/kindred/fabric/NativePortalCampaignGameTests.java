@@ -3106,10 +3106,14 @@ public final class NativePortalCampaignGameTests implements FabricGameTest {
 
     private enum NightWater { AS_IS, ROOF_LATE, CLIMBED }
 
-    /** A dig-in for the night whose cell is above {@code startY}, read from its label: a climb (F-22c120). */
+    /**
+     * A dig-in for the night whose cell is at or above {@code startY}, read from its label: a climb (F-22c120). Its first
+     * cleared cell is its feet minus one, so a dig-in where it began clears {@code startY - 1} and is not counted; one after
+     * a rise of a block clears {@code startY}, below the height clause's start + 2, and is.
+     */
     private static boolean dugInAbove(String goal, int startY) {
         var cell = java.util.regex.Pattern.compile("Dig in for the night[^:]*: clear (-?\\d+), (-?\\d+), (-?\\d+)").matcher(goal);
-        return cell.find() && Integer.parseInt(cell.group(2)) > startY;
+        return cell.find() && Integer.parseInt(cell.group(2)) >= startY;
     }
 
     private static void nightWater(TestContext context, NightWater mode) {
