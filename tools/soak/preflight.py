@@ -31,7 +31,10 @@ import sys
 from pathlib import Path
 
 GAME_DAYS_A_MONTH = 2160  # 30 real days of 24 hours at 20 real minutes a game day.
-COST = re.compile(r"Kindred cost: day (\d+): (.*)$")
+# A cost line is numbered by the world's day ("world day N", M-06i4's fix: the world's game time in days, so a restart
+# goes on with the count), or, in a log from before it, by the day of that start ("day N", counted from each start's
+# first tick, so a restart began again at 1).
+COST = re.compile(r"Kindred cost: (world )?day (\d+): (.*)$")
 STAMP = re.compile(r"^\[(\d\d:\d\d:\d\d)\] \[([^/\]]+)/(WARN|ERROR)\]")
 PRUNES = {
     "fold": re.compile(r"Kindred action fold: (\d+) settled actions, (\d+) events"),
@@ -56,9 +59,10 @@ def number(pattern, text, cast=int, default=None):
     return cast(m.group(1)) if m else default
 
 
-def cost_line(day, body):
-    """One cost line's figures, each None where the line does not give it."""
-    out = {"day": day}
+def cost_line(day, body, counted="world"):
+    """One cost line's figures, each None where the line does not give it. counted: "world" for a world day, "start" for
+    an older line's day of its start."""
+    out = {"day": day, "dayCounted": counted}
     out["recordThrough"] = number(r"the Record through event (\d+)", body)
     out["writtenSinceStart"] = number(r", (\d+) written since start", body)
     out["databaseBytes"] = number(r"the database (-?\d+) bytes on disk", body)
@@ -104,7 +108,7 @@ def read_console(text):
     for raw in text.splitlines():
         m = COST.search(raw)
         if m:
-            lines.append(cost_line(int(m.group(1)), m.group(2)))
+            lines.append(cost_line(int(m.group(2)), m.group(3), "world" if m.group(1) else "start"))
             continue
         for name, pattern in PRUNES.items():
             p = pattern.search(raw)
@@ -147,18 +151,32 @@ def read_record(path):
 
 
 def growth(lines):
-    """Per game day, measured between successive day lines (a stop's line for the same day replaces its day's)."""
-    by_day = {}
+    """Per game day, measured between successive day lines (a stop's line for the same day replaces its day's).
+
+    World days and the older lines' days of a start are kept apart and never measured against each other: a world day is
+    the world's own count and goes on over a restart, while an older line's day began again at 1 at each start, so its
+    days are measured only between lines of the same start (a day number lower than the line before begins a new one)."""
+    keyed, start = {}, 0
+    previous = None
     for line in lines:
-        by_day[line["day"]] = line
-    days = sorted(by_day)
+        if line["dayCounted"] == "start":
+            if previous is not None and previous["dayCounted"] == "start" and line["day"] < previous["day"]:
+                start += 1
+            keyed[("start", start, line["day"])] = line
+        else:
+            keyed[("world", 0, line["day"])] = line
+        previous = line
+    days = sorted(keyed)
     out = []
     for before, after in zip(days, days[1:]):
-        a, b = by_day[before], by_day[after]
+        if before[:2] != after[:2]:
+            continue
+        a, b = keyed[before], keyed[after]
+        before, after = before[2], after[2]
         span = after - before
         if a.get("databaseBytes") is None or b.get("databaseBytes") is None or span <= 0:
             continue
-        out.append({"fromDay": before, "toDay": after,
+        out.append({"fromDay": before, "toDay": after, "dayCounted": a["dayCounted"],
                     "bytesPerGameDay": (b["databaseBytes"] - a["databaseBytes"]) / span,
                     "eventsPerGameDay": ((b.get("recordThrough") or 0) - (a.get("recordThrough") or 0)) / span,
                     # Each web's facts kept for good, a game day: only for a player in both lines (a web is rebuilt at start).
@@ -236,8 +254,8 @@ def text(out):
         ticks = ("%d ticks, mean %.1f ms, p99 %s ms, %d over 50 ms, longest %.0f ms" % (t["count"], t["meanMs"], "over 2000" if t.get("p99Over") else t["p99Ms"], t["over50"], t["longestMs"])
                  if t.get("count") else "no ticks measured")
         tr = line.get("territoryRefusals")
-        w.append("  day %s: db %s bytes, Record through %s; heap %s MB (high water %s MB); %s; Wire refused %s %s%s; disconnects %s" % (
-            line["day"], line.get("databaseBytes"), line.get("recordThrough"), line.get("heapInUseMb"), line.get("heapHighWaterMb"), ticks,
+        w.append("  %s %s: db %s bytes, Record through %s; heap %s MB (high water %s MB); %s; Wire refused %s %s%s; disconnects %s" % (
+            "world day" if line.get("dayCounted") == "world" else "day", line["day"], line.get("databaseBytes"), line.get("recordThrough"), line.get("heapInUseMb"), line.get("heapHighWaterMb"), ticks,
             line.get("wireRefused"), line.get("wireRefusedBy") or "",
             "; territory %(written)d written, %(sameMinute)d same minute, %(overCap)d over cap" % tr if tr else "", line.get("nativeDisconnects")))
         if line.get("websByPlayer"):
