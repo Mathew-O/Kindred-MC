@@ -784,7 +784,12 @@ final class NativePlayerSkills {
                 case "south" -> new Vec3d(0, 0, 1);
                 case "east" -> new Vec3d(1, 0, 0);
                 case "west" -> new Vec3d(-1, 0, 0);
-                default -> throw new IllegalArgumentException("Retreat direction must be north, south, east or west");
+                // A corner's cell (F-25c6d): standing on a block's corner over lava, the block holding it up is diagonal.
+                case "northeast" -> new Vec3d(1, 0, -1);
+                case "northwest" -> new Vec3d(-1, 0, -1);
+                case "southeast" -> new Vec3d(1, 0, 1);
+                case "southwest" -> new Vec3d(-1, 0, 1);
+                default -> throw new IllegalArgumentException("Retreat direction must be north, south, east, west or a diagonal between them");
             };
             start = body.entity().getPos();
             // The middle of the cell that many blocks off from the one it stands in, the cell the runtime found safe: a
