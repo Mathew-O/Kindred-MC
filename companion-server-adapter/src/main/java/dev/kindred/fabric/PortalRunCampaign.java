@@ -719,7 +719,6 @@ final class PortalRunCampaign {
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
         roomDropEnded(task, completed);
-        refusedStep(task, completed, tick, why);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -2276,6 +2275,11 @@ final class PortalRunCampaign {
         portalAdopted = false;
     }
 
+    /** The frame site it is building at, or null (fixtures only). */
+    PortalSite portalSiteForTest() {
+        return portalSite;
+    }
+
     /** A move elsewhere toward {@code target}, begun now as the watchdog begins one (fixtures only). */
     void relocateForTest(BlockPos target) {
         stuckSpells++;
@@ -2908,8 +2912,15 @@ final class PortalRunCampaign {
             return wait;
         }
         // Underground with every way on refused (liquid below, holes all round): climb a step and look again.
-        Optional<Task> anotherWay = climbToFindAnotherWay(body, tick, stageLabel(stage));
-        if (anotherWay.isPresent()) return anotherWay;
+        if (underground(player)) {
+            Optional<Task> up = climb(body, "Climb to find another way");
+            if (up.isPresent()) {
+                paced(tick);
+                cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
+                progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
+                return up;
+            }
+        }
         // Stranded on a ledge or pillar with every way off a drop: take the shortest fall it can afford, as a player
         // jumps down rather than wait for ever.
         Optional<Task> drop = jumpDown(player);
@@ -2919,77 +2930,6 @@ final class PortalRunCampaign {
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         return Optional.empty();
-    }
-
-    /**
-     * Underground with every way on refused (liquid below, holes all round): a step of the climb, to look again from
-     * higher; the cell it leaves set aside, a dead end it does not step back down into.
-     */
-    private Optional<Task> climbToFindAnotherWay(NativePlayerBody body, long tick, String stageLabel) {
-        var player = body.entity();
-        if (!underground(player)) return Optional.empty();
-        // Hemmed in again after a while out of it: where this spell of it began.
-        if (hemmedFrom == null || lastTick - hemmedLast > HEMMED_GAP) {
-            hemmedFrom = lastFeet;
-        }
-        hemmedLast = lastTick;
-        BlockPos target = refusedTarget != null && lastTick - refusedAt <= HEMMED_TARGET_AGE ? refusedTarget : null;
-        int ceiling = target != null ? target.getY() + 2 : hemmedFrom.getY() + HEMMED_CLIMB;
-        if (lastFeet.getY() >= ceiling) return Optional.empty();
-        Optional<Task> up = climb(body, "Climb to find another way");
-        if (up.isPresent()) {
-            paced(tick);
-            cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
-            progress = stageLabel + ": no way on from here - " + up.get().label();
-        }
-        return up;
-    }
-
-    /**
-     * The bound on the climb to find another way (F-25c4bx1): with every step still refused it goes no higher than the
-     * refused step's own target and two, or, with none known, {@value #HEMMED_CLIMB} above where it was first hemmed in;
-     * then the fallback offers nothing, and the spell is the watchdog's and rescue's, as any other with no way on. A
-     * tightening: no timeout is changed, and rescue stays once a spell. In iteration 26, batch 2's 707 Sol climbed from its
-     * own cast site at y −49 to y 66, 120 blocks over its work, its two stuck spells at the top.
-     */
-    static final int HEMMED_CLIMB = 8;
-    /** A gap in being hemmed in, in ticks, after which the next time is a new spell of it. */
-    private static final long HEMMED_GAP = 200;
-    /** How recent a refused step must be, in ticks, for its target to bound the climb. */
-    private static final long HEMMED_TARGET_AGE = 1200;
-    /** Where this spell of being hemmed in began, and when the fallback last ran. */
-    private BlockPos hemmedFrom;
-    private long hemmedLast = Long.MIN_VALUE / 2;
-    /** The target of the last step refused, and when. */
-    private BlockPos refusedTarget;
-    private long refusedAt = Long.MIN_VALUE / 2;
-
-    /**
-     * A walk refused for want of a route: its target remembered for the bound on the climb (F-25c4bx1). Only that: a step
-     * cancelled ("authority lost") or blocked for another reason is no place it could not reach. In iteration 27 a "Dig down
-     * toward lava" cancelled a block below batch 1's 404 Echo came just before a climb that went on up to its crafting
-     * table. Nor the climb's own steps: its breaks are refused for now, not here, and a step up of its own refused is no
-     * target of its work.
-     */
-    private void refusedStep(Task task, boolean completed, long tick, String why) {
-        if (task == null || completed || !"native_goto".equals(task.skill()) || why == null || !why.startsWith("No walkable route")
-                || task.label().startsWith("Climb to find another way")) return; // Nor its own step up.
-        BlockPos at = position(task.args());
-        if (at == null) return;
-        refusedTarget = at;
-        refusedAt = tick;
-    }
-
-    /**
-     * For fixtures only, a setter: sets where it stands, its clock and the server's edit policy as its plan's tick would,
-     * then asks for the plan's fallback climb as the plan does with every step refused (F-25c4bx1). Package-private; called
-     * from no main source.
-     */
-    Optional<Task> anotherWayForTest(NativePlayerBody body, BlockPos feet, long tick, EditPolicy.ServerPolicy policy) {
-        this.policy = policy;
-        lastFeet = feet.toImmutable();
-        lastTick = Math.max(lastTick, tick);
-        return climbToFindAnotherWay(body, tick, "Iron");
     }
 
     /**
@@ -5576,11 +5516,18 @@ final class PortalRunCampaign {
         private final NativePlayerBody body;
         private final ServerPlayerEntity player;
         private final WorldDig world;
+        /** Cells this dig never breaks into, besides those set aside: a frame's own, for a dig back up to it (F-25c4dm1). */
+        private final Set<Long> keep;
 
         Dig(NativePlayerBody body) {
+            this(body, Set.of());
+        }
+
+        Dig(NativePlayerBody body, Set<Long> keep) {
             this.body = body;
             this.player = body.entity();
             this.world = new WorldDig(player.getServerWorld());
+            this.keep = keep;
         }
 
         @Override public DigTerrain world() { return world; }
@@ -5590,7 +5537,7 @@ final class PortalRunCampaign {
         @Override public boolean onGround() { return player.isOnGround(); }
         @Override public boolean swimming() { return PlayerRuntime.inDeepWater(player); }
         @Override public boolean groundBelow() { return PortalRunCampaign.groundBelow(player); }
-        @Override public boolean blocked(Cell cell) { return PortalRunCampaign.this.blocked(pos(cell)); }
+        @Override public boolean blocked(Cell cell) { return keep.contains(cell.asLong()) || PortalRunCampaign.this.blocked(pos(cell)); }
         @Override public void setAside(Cell cell, long until) { cellsAside.until(cell.asLong(), until); }
         @Override public boolean breakableNow(Cell cell) { return PortalRunCampaign.this.breakableNow(body, pos(cell)); }
         @Override public boolean handClearable(Cell cell) { return PortalRunCampaign.this.handClearable(body, pos(cell)); }
@@ -6965,9 +6912,18 @@ final class PortalRunCampaign {
                 Optional<Task> mould = within(body, site, at[0], back, () -> placeBlock(body, back, "Cast: mould at " + back.toShortString()));
                 if (mould.isPresent()) return mould;
             }
+            backOnFloor(body, site);
             if (castFailedStands.contains(player.getBlockPos().asLong())) {
                 Optional<Task> move = stepCloser(body, site, at[0], cell);
                 if (move.isPresent()) return move;
+            }
+            // Poured only with its feet on the frame's floor, the stand's own level, as 331 of the 344 casts that took in
+            // E-40's iteration 26 were. Back down at its lava from a refill, the cell was within reach by distance and no
+            // face of it showed from below: 36 of the 58 "No reachable face to pour against" came from one to three under
+            // the floor (Kindred on 707's second batch, three under, at 119, -50, -157) (F-25c4dm1).
+            if (player.getBlockY() < site.origin().getY()) {
+                Optional<Task> up = stepCloser(body, site, at[0], cell, FLOOR_STEP);
+                return up.isPresent() ? up : backUp(body, site);
             }
             return within(body, site, at[0], cell, () -> Optional.of(new Task("native_cast", coords(cell, Map.of()), "Cast obsidian at " + cell.toShortString())));
         }
@@ -7023,12 +6979,120 @@ final class PortalRunCampaign {
 
     /** Do {@code then} from where the player stands if {@code cell} is in reach, else step along the front row to a spot that is. */
     private Optional<Task> within(NativePlayerBody body, PortalSite site, int across, BlockPos cell, java.util.function.Supplier<Optional<Task>> then) {
+        backOnFloor(body, site);
         Optional<Task> now = eyeDistance(body.entity(), cell) <= CAST_REACH + 0.3 ? then.get() : Optional.<Task>empty();
-        return now.isPresent() ? now : stepCloser(body, site, across, cell);
+        if (now.isPresent()) return now;
+        Optional<Task> closer = stepCloser(body, site, across, cell);
+        return closer.isPresent() ? closer : backUp(body, site);
+    }
+
+    /** A step onto the frame's floor from under it, for a pour held until it stands there (F-25c4dm1). */
+    static final String FLOOR_STEP = "Cast: step up to the frame's floor";
+    /** Its own staircase back up to the frame's stand, when no walk leads there from under the floor (F-25c4dm1). */
+    static final String DIG_BACK = "Cast: dig back up to the frame";
+    /** A dig back that has gained it no height in this long is a failed one; the second gives the site up (F-25c4dm1). */
+    private static final long DIG_BACK_TICKS = 600;
+    private BlockPos digBackSite;
+    private int digBackFailures, digBackBestY;
+    private long digBackSince, digBackEmptyAt;
+    private boolean digBackBegun;
+
+    /**
+     * Under the frame's floor with no stand it can walk to: its own staircase back up toward the stand, the core's
+     * {@code Digger.toward} with the frame's cells and their mould kept, before anything gives up. In E-40's iteration 26
+     * a refill's own dig down to the lava cut the stair it had walked up by, "Cast: step closer" found no walkable route
+     * to the stands 3 to 7 above, and the goal fell to "no way on from here - Climb to find another way": Sol on 707's
+     * second batch climbed from Y=-54 to 66 with its lava in hand and its frame half cast. Seven watchdog spells held it,
+     * 21 minutes (F-25c4dm1). Two dig backs that gain no height, or find no cell to dig, give the site up as a site it
+     * cannot clear is given up, so this cannot loop. Nothing on or over the floor: that is the walk's.
+     */
+    private Optional<Task> backUp(NativePlayerBody body, PortalSite site) {
+        var player = body.entity();
+        int y = player.getBlockY();
+        if (!site.origin().equals(digBackSite)) {
+            digBackSite = site.origin();
+            digBackFailures = 0;
+            digBackBestY = y;
+            digBackSince = lastTick;
+            digBackEmptyAt = Long.MIN_VALUE / 2;
+            digBackBegun = false;
+        }
+        if (y >= site.origin().getY()) {
+            backOnFloor(body, site);
+            return Optional.empty();
+        }
+        if (y > digBackBestY) {
+            digBackBestY = y;
+            digBackSince = lastTick;
+        } else if (lastTick - digBackSince > DIG_BACK_TICKS) {
+            digBackFailures++;
+            digBackSince = lastTick;
+            event("its dig back up to the frame at " + site.origin().toShortString() + " gained nothing in " + DIG_BACK_TICKS + " ticks");
+        }
+        Optional<Task> dig = digBackFailures < 2 ? digger.toward(new Dig(body, frameCells(site)), cell(site.stand().down()), DIG_BACK) : Optional.empty();
+        if (dig.isPresent()) {
+            digBackBegun = true;
+            return dig;
+        }
+        // No cell to dig from here: a failure, counted once a while, so that a tick or two of a step not yet settled does
+        // not give the site up.
+        if (digBackFailures < 2 && lastTick - digBackEmptyAt <= DIG_BACK_TICKS) return Optional.empty();
+        digBackEmptyAt = lastTick;
+        if (++digBackFailures < 2) return Optional.empty();
+        KindredMod.LOGGER.info("{} gives up the frame site at {}: no way back up to it from {}", player.getName().getString(),
+                site.origin().toShortString(), player.getBlockPos().toShortString());
+        event("gives up the frame site at " + site.origin().toShortString() + ": no way back up to it");
+        abandonedSites.add(siteKey(site));
+        clearTriedFrom.clear();
+        digBackSite = null;
+        portalSite = null;
+        return Optional.empty();
+    }
+
+    /**
+     * Back on the frame's floor from a dig back: the stands its walks were refused to from under it are its to walk to
+     * again, before it pours. Staged, its first pour from the top of its own staircase, off the stands, was refused for
+     * no face, and with the stands still set aside it climbed away (F-25c4dm1).
+     */
+    private void backOnFloor(NativePlayerBody body, PortalSite site) {
+        if (!digBackBegun || !site.origin().equals(digBackSite) || body.entity().getBlockY() < site.origin().getY()) return;
+        for (BlockPos stand : stands(site)) cellsAside.put(stand.asLong(), lastTick);
+        digBackBegun = false;
+        event("back up on its frame's floor at " + body.entity().getBlockPos().toShortString());
+    }
+
+    /**
+     * The frame's cells, the cells over them and the mould behind them, and the ground under its stands: a dig back up
+     * never breaks into its own frame, nor the floor it will cast from. Staged, its staircase stepped under the row in
+     * front of the frame and dug out those stands' floor (F-25c4dm1).
+     */
+    private static Set<Long> frameCells(PortalSite site) {
+        var keep = new java.util.HashSet<Long>();
+        for (int across = 0; across <= 3; across++) for (int up = 0; up <= 5; up++) {
+            BlockPos at = site.at(across, up);
+            keep.add(at.asLong());
+            keep.add(at.offset(site.toward()).asLong());
+        }
+        for (BlockPos stand : stands(site)) keep.add(stand.down().asLong());
+        return keep;
+    }
+
+    /** The row in front of the frame and the row behind it, where its pours are made from (as {@link #stepCloser}). */
+    private static List<BlockPos> stands(PortalSite site) {
+        var stands = new java.util.ArrayList<BlockPos>();
+        for (int across = 0; across <= 3; across++) {
+            stands.add(site.front(across, 0));
+            stands.add(site.front(across, 0).offset(site.toward().getOpposite()));
+        }
+        return stands;
     }
 
     /** A step to another spot on the front row (or the stand) from which {@code cell} is in reach. */
     private Optional<Task> stepCloser(NativePlayerBody body, PortalSite site, int across, BlockPos cell) {
+        return stepCloser(body, site, across, cell, "Cast: step closer");
+    }
+
+    private Optional<Task> stepCloser(NativePlayerBody body, PortalSite site, int across, BlockPos cell, String label) {
         var player = body.entity();
         var navigator = new NativeNavigator(player.getServerWorld());
         // The front row first, then the row behind it, from which the upper cells' faces show past the frame below.
@@ -7038,7 +7102,7 @@ final class PortalRunCampaign {
         for (BlockPos stand : stands) {
             if (stand.equals(player.getBlockPos()) || castFailedStands.contains(stand.asLong()) || !navigator.standable(stand) || blocked(stand)) continue;
             if (Vec3d.ofBottomCenter(stand).add(0, 1.62, 0).distanceTo(Vec3d.ofCenter(cell)) > CAST_REACH) continue;
-            return Optional.of(go(stand, 0.3, false, "Cast: step closer"));
+            return Optional.of(go(stand, 0.3, false, label));
         }
         return Optional.empty();
     }
