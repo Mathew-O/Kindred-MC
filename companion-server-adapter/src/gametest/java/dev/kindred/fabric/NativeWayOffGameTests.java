@@ -68,27 +68,40 @@ public final class NativeWayOffGameTests implements FabricGameTest {
 
     private enum Ground { TUNNEL, OPEN, WALLED }
 
+    private enum Foe { ZOMBIE, CREEPER, SKELETON }
+
     @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffTunnel", tickLimit = 600)
     public void inATunnelWithTheRockStraightBehindItItBacksOffDownTheTunnel(TestContext context) {
-        run(context, "Tunneled", Ground.TUNNEL, false);
+        run(context, "Tunneled", Ground.TUNNEL, Foe.ZOMBIE);
     }
 
     @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffOpen", tickLimit = 600)
     public void onOpenGroundItBacksStraightAwayAsBefore(TestContext context) {
-        run(context, "Openfield", Ground.OPEN, false);
+        run(context, "Openfield", Ground.OPEN, Foe.ZOMBIE);
     }
 
     @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffCreeper", tickLimit = 600)
     public void inATunnelARunFromACreeperGoesDownTheTunnel(TestContext context) {
-        run(context, "Creeperrun", Ground.TUNNEL, true);
+        run(context, "Creeperrun", Ground.TUNNEL, Foe.CREEPER);
     }
 
     @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffSwing", tickLimit = 600)
     public void withAWallBehindAndAWayRoundEitherSideItKeepsToOne(TestContext context) {
-        run(context, "Swingless", Ground.WALLED, false);
+        run(context, "Swingless", Ground.WALLED, Foe.ZOMBIE);
     }
 
-    private static void run(TestContext context, String name, Ground ground, boolean creeper) {
+    /**
+     * Against a shooter it does not turn: a walk down the tunnel in its line of fire, as e40c1-eed2dc5-8675309-echo-173225
+     * died twice in its gate, is worse than main's way, the straight back-off refused and cover taken. Staged: the tunnel,
+     * a skeleton in the alcove, cobblestone in the hotbar for cover. It takes cover, with no turned heading.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffShooter", tickLimit = 600)
+    public void inATunnelWithASkeletonAfterItItTakesCoverRatherThanTurn(TestContext context) {
+        run(context, "Shotat", Ground.TUNNEL, Foe.SKELETON);
+    }
+
+    private static void run(TestContext context, String name, Ground ground, Foe foe) {
+        boolean creeper = foe == Foe.CREEPER;
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         var server = context.getWorld().getServer();
         var difficulty = server.getSaveProperties().getDifficulty();
@@ -106,10 +119,12 @@ public final class NativeWayOffGameTests implements FabricGameTest {
         boolean[] swung = {false};
         String label = creeper ? "[Run from creeper]" : "[Back off from zombie]";
         List<String> ends = new CopyOnWriteArrayList<>();
+        List<String> turned = new CopyOnWriteArrayList<>();
         var appender = new AbstractAppender("wayOff" + name, null, null, true, Property.EMPTY_ARRAY) {
             @Override public void append(LogEvent event) {
                 String line = event.getMessage().getFormattedMessage();
                 if (line.startsWith(name + " native_goto ") && line.endsWith(label) && !line.startsWith(name + " native_goto DISPATCHED")) ends.add(line);
+                if (line.startsWith(name + " heading turned for ground")) turned.add(line);
             }
         };
         // On the root's config, so the Kindred logger's own console output is left as it is.
@@ -143,6 +158,7 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     inventory.clear();
                     inventory.setStack(0, new ItemStack(Items.IRON_SWORD));
                     inventory.setStack(1, new ItemStack(Items.BREAD, 4));
+                    if (foe == Foe.SKELETON) inventory.setStack(2, new ItemStack(Items.COBBLESTONE, 16));
                     player.setHealth(5);
                     player.getHungerManager().setFoodLevel(16);
                     player.getHungerManager().setSaturationLevel(0);
@@ -155,6 +171,11 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                         var c = context.spawnEntity(net.minecraft.entity.EntityType.CREEPER, at);
                         c.setPersistent();
                         c.setTarget(player);
+                    } else if (foe == Foe.SKELETON) {
+                        var s = context.spawnEntity(net.minecraft.entity.EntityType.SKELETON, at);
+                        s.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+                        s.setPersistent();
+                        s.setTarget(player);
                     } else {
                         var z = context.spawnEntity(net.minecraft.entity.EntityType.ZOMBIE, at);
                         z.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
@@ -181,7 +202,10 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     if (side[0] == 0 && Math.abs(dx) >= 1.5) side[0] = dx < 0 ? -1 : 1;
                     if (side[0] != 0 && dx * side[0] < -0.5) swung[0] = true;
                     String told = String.format(java.util.Locale.ROOT, "farthest %.1f, first way off ended %.1f off; its steps:", farthest[0], firstEnd[0]) + steps + " " + ends;
-                    if (ground == Ground.WALLED) {
+                    if (foe == Foe.SKELETON) {
+                        // Cover taken from it, and no heading turned for ground on the way.
+                        context.assertTrue(steps.indexOf("Take cover from skeleton") >= 0 && turned.isEmpty(), "Cover, no turn; turned " + turned + "; its steps:" + steps);
+                    } else if (ground == Ground.WALLED) {
                         // Eight seconds by the wall, round one side of it.
                         context.assertTrue(context.getTick() - since[0] >= 160 && side[0] != 0 && farthest[0] >= 5, "Round one side; " + told);
                     } else {
@@ -193,7 +217,7 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     var player = f.player();
                     if (ground == Ground.WALLED) context.assertTrue(!swung[0], "Kept to the side it took, " + (side[0] < 0 ? "west" : "east")
                             + "; its steps:" + steps + " " + ends);
-                    if (ground == Ground.TUNNEL) context.assertTrue(player.getX() < start[0].x - 4, "Down the tunnel west, at x " + String.format(java.util.Locale.ROOT, "%.1f", player.getX() - start[0].x)
+                    if (ground == Ground.TUNNEL && foe != Foe.SKELETON) context.assertTrue(player.getX() < start[0].x - 4, "Down the tunnel west, at x " + String.format(java.util.Locale.ROOT, "%.1f", player.getX() - start[0].x)
                             + " from where it stood; its steps:" + steps);
                     KindredMod.LOGGER.info("{}: {} blocks off, the first way off ended {} off; its steps:{}", name, String.format(java.util.Locale.ROOT, "%.1f", farthest[0]),
                             String.format(java.util.Locale.ROOT, "%.1f", firstEnd[0]), steps);
