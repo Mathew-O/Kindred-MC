@@ -128,6 +128,8 @@ final class PortalRunCampaign {
      * by turns (the corpus's kindred-48005).
      */
     private boolean hungryOnTop;
+    /** In a spell of rests not taken, hurt with a mob on foot after it in the open (F-25c4dh1): its line said once a spell. */
+    private boolean healSkipped;
     /**
      * The reserve turn's wood search (F-25c4cr1): daylight ticks spent on it with no wood gained, the tick last counted, and
      * whether it is set aside for this descent. On a seed with no trees in reach (31102026's open sand) the search would
@@ -2697,9 +2699,24 @@ final class PortalRunCampaign {
             }
         }
         // Hurt with nothing after it: heal before going on (food in hand is eaten by the survival tasks).
-        if (player.getHealth() < (recovering ? 18 : 10) && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
-            progress = stageLabel(stage) + ": heal before going on";
-            return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Rest to heal"));
+        // Not with a mob on foot after it within sixteen and no wall round it (F-25c4dh1): threats() wants sight and is empty
+        // below six health by design, so "nothing after it" was read with a zombie walking up, and the rest was a pause for it
+        // to close in, cut short by the fight (in main's corpus gate a fifth of the rests were followed within five seconds by
+        // a fight or a back-off; F-22c104a's second-zombie deaths came so). It goes on with its work instead, as the hole-up
+        // does in the open (F-25c4dh); the fight and the back-off are as before. Walled in, it rests as before.
+        boolean healHere = player.getHealth() < (recovering ? 18 : 10) && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0);
+        if (healHere && huntedOnFootWithin(player, 16) && (!underground(player) || openings(player.getServerWorld(), player.getBlockPos()).size() > 4)) {
+            if (!healSkipped) {
+                healSkipped = true;
+                KindredMod.LOGGER.info("{} hurt with a mob on foot after it in the open: no rest to heal, on with its work (health {})",
+                        player.getName().getString(), Math.round(player.getHealth()));
+            }
+        } else {
+            healSkipped = false;
+            if (healHere) {
+                progress = stageLabel(stage) + ": heal before going on";
+                return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Rest to heal"));
+            }
         }
         // Up and healed: the advice is done with; the rest of its time is spent playing safe, not climbing out again.
         if (recovering && !underground(player) && player.getHealth() >= 18) {
