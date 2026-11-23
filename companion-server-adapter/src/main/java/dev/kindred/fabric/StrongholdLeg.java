@@ -442,7 +442,7 @@ final class StrongholdLeg {
     /** F-25c4do: the trip's steps that gave nothing at its last plan, for the once-a-spell "waiting" line. */
     private final StringBuilder refused = new StringBuilder();
 
-    String refusedSteps() { return refused.length() == 0 ? "none" : refused.toString(); }
+    String refusedSteps() { return refused.length() == 0 ? "none" : refused.length() <= 600 ? refused.toString() : refused.substring(0, 600) + " ..."; }
 
     /** A stage of the trip in words, such as Blaze rods. */
     static String label(StrongholdRunPlanner.Stage stage) {

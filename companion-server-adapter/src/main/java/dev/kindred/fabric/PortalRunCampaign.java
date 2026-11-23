@@ -2965,9 +2965,14 @@ final class PortalRunCampaign {
                     ItemMoves.count(player.getInventory(), Items.BUCKET), ItemMoves.count(player.getInventory(), Items.OBSIDIAN),
                     portalSite == null ? "none" : portalSite.origin().toShortString(),
                     castLava == null ? "none" : castLava.toShortString(), (legActive ? "the End trip's: " + stronghold.refusedSteps() + "; the portal's: " : "")
-                            + (refusedSteps.length() == 0 ? "none" : refusedSteps));
+                            + (refusedSteps.length() == 0 ? "none" : bounded(refusedSteps)));
         }
         return Optional.empty();
+    }
+
+    /** F-25c4do: the "waiting" line's steps, cut at 1,200 characters so no one line can flood a long console. */
+    private static String bounded(CharSequence steps) {
+        return steps.length() <= 1200 ? steps.toString() : steps.subSequence(0, 1200) + " ... (" + (steps.length() - 1200) + " more characters)";
     }
 
     /** F-25c4do: one of the stage's steps that gave nothing, and why, for the once-a-spell "waiting" line. */
