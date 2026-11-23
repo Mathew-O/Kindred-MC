@@ -39,6 +39,12 @@ public final class NativeCastFloorGameTests implements FabricGameTest {
         BlockPos next = site.at(3, 1);
         int[] watched = new int[1];
         boolean[] fromBelow = new boolean[1];
+        // The frame's obsidian, and its feet's height over the floor, a tick ago: a cell is judged by where its feet were
+        // when it turned to obsidian, not by the plan's label, which still reads "Cast obsidian" while the walk before it
+        // ends (on main 0ab12ea2 merged in, a step closer still under way took its feet one under the floor for four ticks
+        // with that label up, and the cell was then poured from the floor).
+        int[] castBefore = {-1};
+        int[] upBefore = {0};
         StringBuilder seen = new StringBuilder();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
@@ -110,7 +116,16 @@ public final class NativeCastFloorGameTests implements FabricGameTest {
                     int up = player.getBlockY() - site.origin().getY();
                     if (watched[0]++ % 50 == 0 || progress.contains("Cast obsidian")) seen.append(watched[0]).append(": ").append(progress).append(" @ ")
                             .append(player.getBlockPos().subtract(o).toShortString()).append("; ");
-                    if (progress.contains("Cast obsidian") && up < 0) fromBelow[0] = true;
+                    int cast = 0;
+                    for (int across = 0; across <= 3; across++) for (int high = 0; high <= 4; high++) {
+                        if (world.getBlockState(site.at(across, high)).isOf(Blocks.OBSIDIAN)) cast++;
+                    }
+                    if (castBefore[0] >= 0 && cast > castBefore[0]) {
+                        seen.append(watched[0]).append(": obsidian ").append(cast).append(", feet ").append(upBefore[0]).append(" then ").append(up).append(" over the floor; ");
+                        if (up < 0 || upBefore[0] < 0) fromBelow[0] = true;
+                    }
+                    castBefore[0] = cast;
+                    upBefore[0] = up;
                     context.assertTrue(!progress.contains("Climb to find another way") && up <= 2,
                             "It climbed away from its frame, " + up + " over the floor: " + seen + " now " + progress);
                     context.assertTrue(f.runtime.campaignForTest(f.id).portalSiteForTest() != null, "It gave the frame site up: " + seen + " now " + progress);
