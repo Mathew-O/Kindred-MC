@@ -2543,6 +2543,22 @@ final class PlayerRuntime {
     }
 
     /**
+     * A netherite step offered and not dispatched, and why (F-22c125, a diagnostic), once for each offer: on #493's CI the
+     * ingot's step was offered every refresh for 18 seconds after a run of routine smelts, nothing ran and nothing said why.
+     */
+    private void netheriteUnsent(Entry entry, List<NativeTaskCandidate> offered, String why) {
+        if (entry.netheriteTaskId == null) return;
+        for (var candidate : offered) {
+            if (!candidate.candidate().id().equals(entry.netheriteTaskId)) continue;
+            if (candidate == entry.netheriteUnsentFor) return;
+            entry.netheriteUnsentFor = candidate;
+            KindredMod.LOGGER.info("{} netherite {} {} offered and not dispatched: {}", entry.data.displayName(), candidate.skill(),
+                    candidate.arguments(), why);
+            return;
+        }
+    }
+
+    /**
      * A task accepted for dispatch and dropped before its skill started: said at most once a minute, with the gates that
      * dropped it. Its decision loop saw it accepted, and a goal that offers it again each tick would stand still unsaid (F-25c4m).
      */
@@ -8153,6 +8169,7 @@ final class PlayerRuntime {
         }
 
         if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.RUN_SKILL) {
+            if (!java.util.Objects.equals(entry.currentTaskId, entry.netheriteTaskId)) netheriteUnsent(entry, taskCandidates, "a skill under way, " + entry.skillId);
             holdSkillTick(entry);
             entry.runner.tick();
             observeRunner(entry);
@@ -8161,10 +8178,13 @@ final class PlayerRuntime {
             var chosen = selection.candidate();
             entry.currentTaskId = chosen.id();
             var match = taskCandidates.stream().filter(tc -> tc.candidate().id().equals(chosen.id())).findFirst();
+            if (!chosen.id().equals(entry.netheriteTaskId)) netheriteUnsent(entry, taskCandidates,
+                    match.map(other -> "chose " + other.skill() + " " + other.arguments() + " instead").orElse("the choice matched no candidate"));
             if (match.isPresent()) {
                 NativeTaskCandidate candidateToDispatch = match.get();
                 bindBodyBlockScanBudget(body);
                 if (!validateCandidateStillExecutable(entry, body, candidateToDispatch)) {
+                    netheriteUnsent(entry, taskCandidates, "no longer executable");
                     entry.cachedRoutineCandidates = List.of();
                     entry.routineRefreshPending = true;
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
@@ -8189,6 +8209,7 @@ final class PlayerRuntime {
                     }
                     entry.pendingSource = candidateToDispatch.source();
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
+                    if (res != 1) netheriteUnsent(entry, taskCandidates, "refused: " + entry.blocker);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.attentionTaskId)) entry.attendedAt = entry.addressedAt;
@@ -8235,6 +8256,7 @@ final class PlayerRuntime {
                 entry.currentTaskId = null;
             }
         } else {
+            netheriteUnsent(entry, taskCandidates, decision.action() + ": " + decision.reason());
             if (!entry.nativeWorkPending && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)) {
                 if (!taskCandidates.isEmpty()) {
                     entry.currentTaskId = null;
@@ -8964,6 +8986,7 @@ final class PlayerRuntime {
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)) {
             entry.netheriteAt = server.getTicks() + 600;
+            entry.netheriteHoldCause = "its step blocked";
             entry.routineRefreshPending = true;
         }
         // A furnace or crafting table it put down for its netherite is its own to come back to (E-16c).
@@ -8981,6 +9004,7 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeSmithAction smith && state == SkillRunner.State.COMPLETED) {
             say(entry, dev.kindred.core.Netherite.said(smith.piece()), "");
             entry.netheriteAt = server.getTicks() + 20;
+            entry.netheriteHoldCause = "a piece upgraded";
             entry.routineRefreshPending = true;
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.brewTaskId)) {
@@ -15355,9 +15379,45 @@ final class PlayerRuntime {
      * to spare; and the first piece upgraded at a smithing table of its own, one it holds put down beside it first.
      */
     private List<NativeTaskCandidate> netheriteCandidates(Entry entry, NativePlayerBody body) {
+        var steps = netheriteSteps(entry, body);
+        if (steps != null) entry.netheriteHeldWhy = null;
+        return steps;
+    }
+
+    /**
+     * Why its netherite gives no step (F-22c125, a diagnostic), said only when the reason changes, with its decision's
+     * state: on #493's CI the run gave none, unsaid, between its table going down and seven routine smelts, with the ingot
+     * due, and its body had come up "Stopped or unavailable" where locally it comes up "Awaiting local decision".
+     */
+    private void netheriteHeld(Entry entry, String why, String detail) {
+        if (why.equals(entry.netheriteHeldWhy)) return;
+        entry.netheriteHeldWhy = why;
+        KindredMod.LOGGER.info("{} netherite held: {} (its decision: {})", entry.data.displayName(), detail, entry.mindStatus);
+    }
+
+    /** Its netherite held until {@code until}, and why, said as {@link #netheriteHeld} says it. */
+    private List<NativeTaskCandidate> netheriteHold(Entry entry, long until, String why) {
+        entry.netheriteAt = until;
+        entry.netheriteHoldCause = why;
+        netheriteHeld(entry, why, why + ", until tick " + until);
+        return null;
+    }
+
+    private List<NativeTaskCandidate> netheriteSteps(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         long now = server.getTicks();
-        if (now < entry.netheriteAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        if (now < entry.netheriteAt) {
+            netheriteHeld(entry, String.valueOf(entry.netheriteHoldCause), entry.netheriteHoldCause + ", until tick " + entry.netheriteAt + " (now " + now + ")");
+            return null;
+        }
+        if (!worldEditsEnabled()) {
+            netheriteHeld(entry, "world edits off", "world edits off");
+            return null;
+        }
+        if (matches.running(player.getUuid()).isPresent()) {
+            netheriteHeld(entry, "in a match", "in a match");
+            return null;
+        }
         var inventory = player.getInventory();
         var held = new HashMap<String, Integer>();
         var pieces = new HashMap<Integer, String>();
@@ -15382,10 +15442,8 @@ final class PlayerRuntime {
             if (entry.campaign.smelting(body, Items.ANCIENT_DEBRIS) && pieces.size() > 0 && held.getOrDefault("minecraft:netherite_ingot", 0) == 0) {
                 return List.of(new NativeTaskCandidate(task, "native_wait", Map.of("seconds", "1")));
             }
-            entry.netheriteAt = now + 1200;
-            return null;
+            return netheriteHold(entry, now + 1200, "no step for what it holds");
         }
-        KindredMod.LOGGER.info("{} netherite: {}", entry.data.displayName(), step.get());
         task = stepTask(entry.data.id(), "netherite:" + step.get(), id -> entry.netheriteTaskId = id);
         Optional<PortalRunCampaign.Task> next = switch (step.get()) {
             case dev.kindred.core.Netherite.Step.Smelt smelt -> entry.campaign.smeltItem(body, Items.ANCIENT_DEBRIS, smelt.debris(), "Smelt ancient debris into scrap");
@@ -15393,11 +15451,12 @@ final class PlayerRuntime {
             case dev.kindred.core.Netherite.Step.Template template -> entry.campaign.craftAtTable(body, "netherite_upgrade_smithing_template");
             case dev.kindred.core.Netherite.Step.Upgrade upgrade -> Optional.empty();
         };
+        // The step and the skill it is to be taken with (F-22c125, a diagnostic): on #493's CI "netherite: Ingot[]" came twice
+        // every 120 ticks for 18 seconds with nothing run, and the line did not say what it was to do.
+        KindredMod.LOGGER.info("{} netherite: {}{}", entry.data.displayName(), step.get(), step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade ? ""
+                : next.map(t -> " by " + t.skill() + " " + t.args()).orElse(" by nothing it can do now"));
         if (!(step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade upgrade)) {
-            if (next.isEmpty()) {
-                entry.netheriteAt = now + 1200;
-                return null;
-            }
+            if (next.isEmpty()) return netheriteHold(entry, now + 1200, "nothing it can do now for " + step.get());
             entry.netheriteStep = next.get();
             return List.of(new NativeTaskCandidate(task, next.get().skill(), next.get().args()));
         }
@@ -15407,29 +15466,20 @@ final class PlayerRuntime {
         if (table == null) {
             int tableSlot = -1;
             for (int slot = 0; slot < 36 && tableSlot < 0; slot++) if (inventory.getStack(slot).isOf(Items.SMITHING_TABLE)) tableSlot = slot;
-            if (tableSlot < 0) {
-                entry.netheriteAt = now + 2400;
-                return null;
-            }
+            if (tableSlot < 0) return netheriteHold(entry, now + 2400, "no smithing table");
             if (tableSlot >= 9) {
                 int free = 8;
                 for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
                 return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tableSlot), "target", String.valueOf(free))));
             }
             BlockPos spot = workstationSpot(entry, player, "minecraft:smithing_table");
-            if (spot == null) {
-                entry.netheriteAt = now + 600;
-                return null;
-            }
+            if (spot == null) return netheriteHold(entry, now + 600, "no spot for its smithing table");
             entry.smithingTable = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
             return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(tableSlot), "x", String.valueOf(spot.getX()),
                     "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
         }
         if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) > 4.5 * 4.5) {
-            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) {
-                entry.netheriteAt = now + 1200;
-                return null;
-            }
+            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) return netheriteHold(entry, now + 1200, "its smithing table too far");
             return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
                     "z", String.valueOf(table.getZ()), "range", "2.5")));
         }
@@ -20155,6 +20205,11 @@ final class PlayerRuntime {
         private BlockPos smithingTable;
         private long netheriteAt;
         private UUID netheriteTaskId;
+        /** The netherite candidate last said to be offered and not dispatched (F-22c125), so that each offer is said once. */
+        private NativeTaskCandidate netheriteUnsentFor;
+        /** Why its netherite was last held, as said (F-22c125), and what set its next look. */
+        private String netheriteHeldWhy;
+        private String netheriteHoldCause;
         /** The run's own step it last took for its netherite (a furnace or table put down is then its own). */
         private PortalRunCampaign.Task netheriteStep;
         /** Whether its fights with players use its melee tactics (E-41b); off only for a benchmark's declared baseline. */
