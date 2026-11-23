@@ -7547,9 +7547,16 @@ final class PortalRunCampaign {
     /**
      * The direction to get away along, {@code away} straight from the threat (F-25c4dh5): {@code away} itself where the
      * first few cells that way can be walked, else the walkable heading nearest it that still gains, the one taken last
-     * while it still gains and can be walked; straight away itself is never kept, so on open ground nothing changes. None: {@code away}, as before, and the walk is refused as it was.
+     * while it still gains and can be walked; straight away itself is never kept, so on open ground nothing changes. None, or a
+     * shooter after it: {@code away}, as before, and the walk is refused as it was.
      */
     private Vec3d wayOff(ServerPlayerEntity player, Vec3d away, String what) {
+        // With a shooter after it, no turn: a walk along the turned heading kept it in the line of fire, where main's straight
+        // back-off was refused and cover taken (e40c1-eed2dc5-8675309-echo-173225, twice shot in dh5's first gate).
+        if (shooterAfter(player)) {
+            wayOffHeading = -1;
+            return away.normalize();
+        }
         var navigator = new NativeNavigator(player.getServerWorld());
         boolean spell = wayOffAt > Long.MIN_VALUE && lastTick - wayOffAt <= WAY_OFF_KEEP;
         if (!spell) wayOffTold = false;
@@ -7574,6 +7581,12 @@ final class PortalRunCampaign {
         }
         double[] unit = WayOffHeading.unit(heading);
         return new Vec3d(unit[0], 0, unit[1]);
+    }
+
+    /** A shooter after the player within the back-off's own reach of sixteen blocks, as {@link #defend} tells them apart. */
+    private static boolean shooterAfter(ServerPlayerEntity player) {
+        return !player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                mob -> mob.isAlive() && mob.getTarget() == player && mob instanceof net.minecraft.entity.ai.RangedAttackMob).isEmpty();
     }
 
     /**
