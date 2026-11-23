@@ -2972,7 +2972,7 @@ final class NativePlayerBody implements BodyAdapter {
             // A client accepts a teleport once its new world has loaded; until then vanilla holds the portal cooldown
             // (ServerPlayerEntity.tickPortalCooldown counts down only out of the teleportation state). With no client it
             // was accepted only at the join, so after its first portal crossing a body's cooldown never ran down and it
-            // could never go through a portal again: home from the Nether included (F-25c6e). Accepted here, as a
+            // could never go through a portal again, home from the Nether included (F-25b1). Accepted here, as a
             // client would, a tick after it arrives.
             if (isInTeleportationState()) onTeleportationDone();
             super.tick();
