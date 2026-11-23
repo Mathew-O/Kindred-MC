@@ -236,8 +236,20 @@ public final class NativeStrongholdGameTests implements FabricGameTest {
                     // STAGED, the Nether end: a closed netherrack room laid round the portal it arrived by, the portal and
                     // its frame kept, so no run's ground differs (vanilla's own there, once, had it gather gold far off and
                     // find no walk back to the portal) and nothing in it but the room. Put back as the test ends.
+                    // Laid round the portal block nearest it, not its feet: by this tick it may already have stepped off
+                    // toward ground of vanilla's (a room round its feet once left the portal behind its wall).
                     var nether = f.player().getServerWorld();
-                    BlockPos feet = f.player().getBlockPos();
+                    BlockPos at = f.player().getBlockPos();
+                    BlockPos feet = null;
+                    for (BlockPos cell : BlockPos.iterateOutwards(at, 8, 4, 8)) {
+                        if (nether.getBlockState(cell).isOf(Blocks.NETHER_PORTAL) && !nether.getBlockState(cell.down()).isOf(Blocks.NETHER_PORTAL)) {
+                            feet = cell.toImmutable();
+                            break;
+                        }
+                    }
+                    context.assertTrue(feet != null, "The portal it arrived by, near " + at.toShortString());
+                    context.assertTrue(Math.abs(at.getX() - feet.getX()) <= 5 && Math.abs(at.getZ() - feet.getZ()) <= 5
+                            && at.getY() - feet.getY() >= 0 && at.getY() - feet.getY() <= 3, "Still in the room's bounds: " + at.toShortString());
                     FixtureGround.keep(context, nether, feet.add(-6, -2, -6), feet.add(6, 5, 6));
                     for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) for (int dy = -2; dy <= 5; dy++) {
                         BlockPos cell = feet.add(dx, dy, dz);
