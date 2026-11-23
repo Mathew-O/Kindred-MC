@@ -218,6 +218,7 @@
       "dev.kindred.fabric.ReplayWakingGameTests",
       "dev.kindred.fabric.NativeSwimUpGameTests",
       "dev.kindred.fabric.NativeDryMissGameTests",
+      "dev.kindred.fabric.NativeSwimBackGameTests",
       "dev.kindred.fabric.NativeLogsKeptOutGameTests",
       "dev.kindred.fabric.NativeKnowledgeCapGameTests",
       "dev.kindred.fabric.NativeKnownLogsKeptOutGameTests",
