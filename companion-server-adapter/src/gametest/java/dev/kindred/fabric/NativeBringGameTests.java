@@ -317,7 +317,7 @@ public final class NativeBringGameTests implements FabricGameTest {
      * 1's bed ten ticks later, block-centred on it as a villager waking there is set, across the one-block wall between: a
      * villager sleeps in the bed it has claimed from anywhere within 2.0 of it, walls or no.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOvernight", tickLimit = 20000)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "bringOvernight", tickLimit = 20000)
     public void aLibrarianBroughtHomeIsStillInItsCellTheMorningAfter(TestContext context) {
         scene(context, false, false, false, false, true, true, false, false, false, false, false, false, false, 9);
     }
@@ -471,6 +471,7 @@ public final class NativeBringGameTests implements FabricGameTest {
         long[] nightAt = {-1}, morningAt = {-1}, sleptAt = {-1};
         int[] homeColumn = {Integer.MIN_VALUE};
         String[] outOfCell = {null};
+        BlockPos[] sleptIn = {null};
         boolean[] morningLogged = {false};
         // F-22c98b: whether the librarian's boat was set off the line for the push under way; how many times it was.
         boolean[] offLineSet = {false};
@@ -1223,6 +1224,7 @@ public final class NativeBringGameTests implements FabricGameTest {
                     }
                     if (sleptAt[0] < 0 && librarianNow.isSleeping()) {
                         sleptAt[0] = now;
+                        sleptIn[0] = librarianNow.getSleepingPosition().map(p -> p.subtract(origin[0])).orElse(null);
                         KindredMod.LOGGER.info("Bring overnight: asleep, {}", overnight(world, librarianNow, origin[0]));
                     }
                     int column = librarianNow.getBlockX() - origin[0].getX();
@@ -1243,6 +1245,15 @@ public final class NativeBringGameTests implements FabricGameTest {
                                 sleptAt[0] < 0 ? "; it never slept" : "; asleep at +" + (sleptAt[0] - nightAt[0]) + " ticks");
                     }
                     context.assertTrue(outOfCell[0] == null, "Still in the cell it was brought to (column " + homeColumn[0] + ") the morning after: left it " + outOfCell[0]);
+                    // Asleep in its own cell's bed, the bed's head (its claimed home), and awake again beside it.
+                    // Its own bed's head, where the hall's plan puts it.
+                    BlockPos ownHead = hall.blocks().stream().filter(b -> b.at().x() == homeColumn[0] && b.at().y() == 1
+                                    && b.spec().block().endsWith("_bed") && "head".equals(b.spec().properties().get("part")))
+                            .map(b -> new BlockPos(b.at().x(), b.at().y(), b.at().z())).findFirst().orElse(null);
+                    context.assertTrue(sleptIn[0] != null && sleptIn[0].equals(ownHead),
+                            "Asleep in its own cell's bed in the night, its head at " + (ownHead == null ? "?" : ownHead.toShortString()) + ": "
+                                    + (sleptIn[0] == null ? "it never slept" : "in " + sleptIn[0].toShortString()));
+                    context.assertTrue(!librarianNow.isSleeping(), "Awake again in the morning: " + overnight(world, librarianNow, origin[0]));
                     librarianNow.discard();
                     f.runtime.stop();
                 })
