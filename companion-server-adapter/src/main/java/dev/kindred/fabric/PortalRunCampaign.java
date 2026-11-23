@@ -718,6 +718,8 @@ final class PortalRunCampaign {
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
+        // A swim back to the dry ground it last stood on that did not get there: that cell given up, and as before (M-06m3).
+        if (task != null && !completed && BACK_TO_DRY_LABEL.equals(task.label())) lastDryGivenUp = lastDry;
         roomDropEnded(task, completed);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
@@ -2961,6 +2963,15 @@ final class PortalRunCampaign {
      */
     long surfacePlans, drySearches, drySearchNodes;
 
+    /** How far back it swims to the dry ground it last stood on, when none is in reach where it swims (M-06m3). */
+    static final int BACK_TO_DRY = 128;
+    /** The swim back's label: its failure gives that cell up (M-06m3). */
+    static final String BACK_TO_DRY_LABEL = "Get out of the water: back to dry ground it stood on";
+    /** Where it last stood on dry ground, on its own feet; and that cell, given up after a swim back to it failed. */
+    private BlockPos lastDry, lastDryGivenUp;
+    /** The squared distance its last swim back set out from; -1 before one. */
+    private double backFrom = -1;
+
     /**
      * Swimming or sunk: up to air and dry ground before anything else. Short of breath with the surface straight
      * above, it swims up first; otherwise it heads for the nearest dry ground within reach, through the water if it
@@ -2969,6 +2980,17 @@ final class PortalRunCampaign {
      */
     private Optional<Task> surface(NativePlayerBody body) {
         var player = body.entity();
+        // Where it last stood on dry ground, on its own feet (M-06m3): what it swims back to with none in reach.
+        BlockPos here = player.getBlockPos().toImmutable();
+        var standsOn = player.getServerWorld().getBlockState(here.down());
+        if (player.isOnGround() && !player.isTouchingWater() && player.getServerWorld().getFluidState(here).isEmpty()
+                && standsOn.isSideSolidFullSquare(player.getServerWorld(), here.down(), net.minecraft.util.math.Direction.UP)) {
+            if (!here.equals(lastDry)) {
+                lastDry = here;
+                lastDryGivenUp = null;
+                backFrom = -1;
+            }
+        }
         if (!PlayerRuntime.inDeepWater(player) && !wadingTwoDeep(player)) return Optional.empty();
         surfacePlans++;
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
@@ -3027,6 +3049,20 @@ final class PortalRunCampaign {
         var dry = drySearch(1, world, navigator, feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
                 .or(() -> drySearch(2, world, navigator, feet, 4000, 16, p -> !blocked(p)));
         if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
+        // None in reach where it swims: back to the dry ground it last stood on, as a player swims back the way it came
+        // (M-06m3). Its own memory only, the cell it stood on; no look at what is there now. A swim there that fails gives
+        // it up until it stands dry again, and it does as before. In M-06k9's shipped runs a claim walk carried Kindred,
+        // and Sol, out to sea; every plan was "up for air", 14,488 and 21,059 of them, the shore 24 to 75 blocks back.
+        if (lastDry != null && !lastDry.equals(lastDryGivenUp) && lastDry.getSquaredDistance(feet) <= (double) BACK_TO_DRY * BACK_TO_DRY
+                && !lastDry.isWithinDistance(feet, 3) && !blocked(lastDry)) {
+            // Each swim back from nearer than the last: one that left it no nearer gives the cell up, so no new loop.
+            double far = lastDry.getSquaredDistance(feet);
+            if (backFrom >= 0 && far >= backFrom) lastDryGivenUp = lastDry;
+            else {
+                backFrom = far;
+                return Optional.of(go(lastDry, 1.0, true, BACK_TO_DRY_LABEL));
+            }
+        }
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
