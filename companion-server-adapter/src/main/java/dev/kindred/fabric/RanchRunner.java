@@ -163,6 +163,15 @@ final class RanchRunner {
                     .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " " + a.id().toString().substring(0, 8) + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList(),
                     ranch.diagnosis());
         }
+        // F-22c124, diagnostic: as it turns from leaving to bring one back, where it stands against the pen and its gate cell,
+        // whether the gate is open, and where each of its kind outside the pen stands (the existing lines give its feet only
+        // as it began to leave and as it ended).
+        if (before.equals("leaving the pen") && ranch.phase().startsWith("bringing a")) {
+            KindredMod.LOGGER.info("Ranch turned back at {}: standing at {} ({}), the gate cell {} {}, outside the pen {}", origin.toShortString(),
+                    seen.feet(), ranch.inside(seen.feet()) ? "inside" : seen.feet().x() == ranch.gate().x() && seen.feet().z() == ranch.gate().z() ? "in the gateway" : "outside",
+                    ranch.gate(), seen.gateOpen() ? "open" : "shut", seen.animals().stream().filter(a -> !ranch.inside(a.at()))
+                            .map(a -> a.kind().noun() + (a.adult() ? "" : " (young)") + " " + a.id().toString().substring(0, 8) + " at " + a.at().x() + "," + a.at().y() + "," + a.at().z()).toList());
+        }
         progress = ranch.phase();
         return switch (step) {
             case Ranch.Step.Build b -> buildPen(body, campaign);
