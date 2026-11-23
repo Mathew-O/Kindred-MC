@@ -37,11 +37,40 @@ import java.util.List;
 public final class NativeHearingGameTests implements FabricGameTest {
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "hearing", tickLimit = 900)
     public void whatTheServerSendsItsConnectionIsTheSoundsAroundItLoggedAndNotActedOn(TestContext context) {
+        sounds(context, Creeper.AS_IS);
+    }
+
+    /**
+     * F-22c121: the creeper's first ticks held, as when its chunk, forced just before, is not yet ticking its entities. It
+     * is put in the world 15 ticks after it is lit. Its hiss is sent on its first tick with its fuse lit, so it is heard
+     * once it ticks, and it is taken away then, well before its fuse runs out.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "hearingHeld", tickLimit = 900)
+    public void aPrimedCreeperWhoseFirstTicksAreHeldIsStillHeardHissing(TestContext context) {
+        sounds(context, Creeper.HELD);
+    }
+
+    /** How the creeper behind it comes into the world: at once, or {@link #HELD_TICKS} after it is lit. */
+    private enum Creeper { AS_IS, HELD }
+
+    private static final int HELD_TICKS = 15;
+    /** Its fuse is 30 of its own ticks; it is taken away by this many after it is lit, ticked or not, so it never goes off. */
+    private static final int FUSE_BOUND = 29;
+
+    private static void sounds(TestContext context, Creeper mode) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false);
         BlockPos[] origin = new BlockPos[1];
         CreeperEntity[] creeper = new CreeperEntity[1];
         CowEntity[] cow = new CowEntity[1];
         int[] at = new int[2];
+        // The creeper as it was taken away: its age, whether it had ticked with its fuse lit, and how many ticks after it was lit.
+        String[] creeperGone = new String[1];
+        // What it heard, read once: its listening is ended as it is read, so a retried step would read nothing.
+        var heardOnce = new java.util.concurrent.atomic.AtomicReference<List<NativePlayerBody.Heard>>();
+        context.runAtEveryTick(() -> {
+            if (mode == Creeper.HELD && creeper[0] != null && !creeper[0].isRemoved() && creeper[0].getWorld().getEntityById(creeper[0].getId()) == null
+                    && context.getWorld().getServer().getTicks() >= at[0] + HELD_TICKS) context.getWorld().spawnEntity(creeper[0]);
+        });
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Listener"))
@@ -71,7 +100,7 @@ public final class NativeHearingGameTests implements FabricGameTest {
                     f.runtime.nativeBody(f.id).orElseThrow().listenForTest(true);
                     at[0] = world.getServer().getTicks();
                     // Behind it: a creeper primed four blocks back.
-                    creeper[0] = spawn(world, EntityType.CREEPER, o.add(0, 0, -4));
+                    creeper[0] = mode == Creeper.HELD ? created(world, EntityType.CREEPER, o.add(0, 0, -4)) : spawn(world, EntityType.CREEPER, o.add(0, 0, -4));
                     creeper[0].setAiDisabled(true);
                     creeper[0].ignite();
                     // Six blocks east: a skeleton with a bow, shooting at an armor stand to the south-east, away from it.
@@ -93,27 +122,39 @@ public final class NativeHearingGameTests implements FabricGameTest {
                     world.setBlockState(o.add(-10, 0, 10), Blocks.LAVA.getDefaultState());
                 })
                 .createAndAdd(() -> {
-                    // Its fuse is 30 ticks: taken away after its priming has been sent, before it goes off.
-                    context.assertTrue(context.getWorld().getServer().getTicks() >= at[0] + 10, "The fuse lit");
+                    // Its fuse is 30 of its own ticks: taken away once it has ticked with its fuse lit (its hiss is sent on
+                    // that tick) or its hiss is heard, and by FUSE_BOUND ticks after it was lit at the latest, before it goes off.
+                    int since = context.getWorld().getServer().getTicks() - at[0];
+                    boolean lit = creeper[0].getClientFuseTime(1.0f) > 0;
+                    boolean hissed = f.runtime.nativeBody(f.id).orElseThrow().heardForTest().stream()
+                            .anyMatch(h -> h.sound().equals("minecraft:entity.creeper.primed"));
+                    context.assertTrue(lit || hissed || since >= FUSE_BOUND, "The fuse lit");
+                    creeperGone[0] = "age " + creeper[0].age + (lit ? ", ticked with its fuse lit" : ", never ticked with its fuse lit")
+                            + (hissed ? ", its hiss heard" : "") + ", +" + since + " ticks after it was lit";
+                    KindredMod.LOGGER.info("E-71f creeper taken away: {}", creeperGone[0]);
                     creeper[0].discard();
                 })
                 .createAndAdd(() -> context.assertTrue(context.getWorld().getServer().getTicks() >= at[0] + 200, "Ten seconds of listening"))
                 .createAndAdd(() -> {
-                    var body = f.runtime.nativeBody(f.id).orElseThrow();
-                    List<NativePlayerBody.Heard> heard = body.heardForTest();
-                    body.listenForTest(false);
                     BlockPos o = origin[0];
+                    boolean first = heardOnce.get() == null;
+                    if (first) {
+                        var body = f.runtime.nativeBody(f.id).orElseThrow();
+                        heardOnce.set(body.heardForTest());
+                        body.listenForTest(false);
+                    }
+                    List<NativePlayerBody.Heard> heard = heardOnce.get();
                     var self = f.player().getPos();
-                    for (var h : heard) {
+                    if (first) for (var h : heard) {
                         double d = Double.isNaN(h.x()) ? Double.NaN : Math.sqrt(self.squaredDistanceTo(h.x(), h.y(), h.z()));
                         KindredMod.LOGGER.info("E-71f heard: +{} ticks, {} {} ({}) at {}, {}, {} ({} blocks), volume {}, pitch {}",
                                 h.tick() - at[0], h.packet(), h.sound(), h.category(), round(h.x() - o.getX()), round(h.y() - o.getY()),
                                 round(h.z() - o.getZ()), round(d), h.volume(), h.pitch());
                     }
-                    KindredMod.LOGGER.info("E-71f heard {} packets in all; lava: {}; cow steps: {}", heard.size(),
+                    if (first) KindredMod.LOGGER.info("E-71f heard {} packets in all; lava: {}; cow steps: {}", heard.size(),
                             heard.stream().filter(h -> h.sound().contains("lava")).count(), heard.stream().filter(h -> h.sound().equals("minecraft:entity.cow.step")).count());
                     context.assertTrue(heard.stream().anyMatch(h -> h.sound().equals("minecraft:entity.creeper.primed")
-                            && Math.abs(h.z() - (o.getZ() - 4 + 0.5)) < 1.5), "The creeper's priming, from behind it: " + heard);
+                            && Math.abs(h.z() - (o.getZ() - 4 + 0.5)) < 1.5), "The creeper's priming, from behind it (the creeper taken away at " + creeperGone[0] + "): " + heard);
                     context.assertTrue(heard.stream().anyMatch(h -> h.sound().equals("minecraft:entity.skeleton.shoot")), "The skeleton's shot: " + heard);
                     context.assertTrue(heard.stream().anyMatch(h -> h.packet().equals("explosion")), "The explosion: " + heard);
                     context.assertTrue(heard.stream().anyMatch(h -> h.packet().equals("world event") && h.sound().equals("2001")), "The block broken (world event 2001): " + heard);
@@ -252,11 +293,17 @@ public final class NativeHearingGameTests implements FabricGameTest {
     }
 
     private static <T extends net.minecraft.entity.Entity> T spawn(ServerWorld world, EntityType<T> type, BlockPos at) {
+        T entity = created(world, type, at);
+        world.spawnEntity(entity);
+        return entity;
+    }
+
+    /** Made and placed, not yet in the world. */
+    private static <T extends net.minecraft.entity.Entity> T created(ServerWorld world, EntityType<T> type, BlockPos at) {
         T entity = type.create(world);
         if (entity == null) throw new IllegalStateException("No " + type);
         entity.refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
         if (entity instanceof net.minecraft.entity.mob.MobEntity mob) mob.setPersistent();
-        world.spawnEntity(entity);
         return entity;
     }
 

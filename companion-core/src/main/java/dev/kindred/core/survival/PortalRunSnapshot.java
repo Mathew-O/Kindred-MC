@@ -1,5 +1,7 @@
 package dev.kindred.core.survival;
 
+import java.util.Set;
+
 /**
  * In plain terms: everything that matters for earning a Nether portal, counted from the player's own items
  * and what it can see: wood, stone, coal, iron, diamonds, flint, obsidian, buckets, tools, food, nearby
@@ -44,6 +46,10 @@ package dev.kindred.core.survival;
  * @param furnaceCooking  the reachable furnace has raw meat or fish to cook
  * @param cornersPlaced   corner blocks already set in its own frame, which count with those carried toward the four
  *                        corners but make no tool (F-25c4ci)
+ * @param freeSlots       empty slots of the main inventory (36), where a crafted result that stacks with nothing goes;
+ *                        {@link #ROOM_UNKNOWN} where the caller does not count them (F-25c4dn)
+ * @param roomyStacks     the recipe names ("planks" for any planks) of which a stack carried still has room for more, so a
+ *                        result of that kind fits with no empty slot (F-25c4dn)
  */
 public record PortalRunSnapshot(
         int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
@@ -51,7 +57,32 @@ public record PortalRunSnapshot(
         int craftingTables, int furnaces, int saplings, int edibleFood,
         int pickaxeTier, int pickaxes, int swordTier, int chestArmorTier, int shields,
         boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
-        int foodLevel, boolean portalFramed, boolean portalLit, int rawMeat, boolean furnaceCooking, int cornersPlaced) {
+        int foodLevel, boolean portalFramed, boolean portalLit, int rawMeat, boolean furnaceCooking, int cornersPlaced,
+        int freeSlots, Set<String> roomyStacks) {
+
+    /**
+     * Free slots where the caller does not count them: room assumed, as before the count was carried (F-25c4dn). The
+     * whole main inventory, so any craft fits.
+     */
+    public static final int ROOM_UNKNOWN = 36;
+
+    public PortalRunSnapshot {
+        roomyStacks = Set.copyOf(roomyStacks);
+    }
+
+    /** As the canonical constructor, with the inventory's room not counted: room assumed (F-25c4dn). */
+    public PortalRunSnapshot(
+            int logs, int planks, int sticks, int cobble, int coal, int rawIron, int ironIngots, int diamonds,
+            int flint, int gravel, int obsidian, int emptyBuckets, int lavaBuckets, int waterBuckets, int flintAndSteel,
+            int craftingTables, int furnaces, int saplings, int edibleFood,
+            int pickaxeTier, int pickaxes, int swordTier, int chestArmorTier, int shields,
+            boolean tableNearby, boolean furnaceNearby, boolean furnaceSmelting, int furnaceOutput,
+            int foodLevel, boolean portalFramed, boolean portalLit, int rawMeat, boolean furnaceCooking, int cornersPlaced) {
+        this(logs, planks, sticks, cobble, coal, rawIron, ironIngots, diamonds, flint, gravel, obsidian, emptyBuckets, lavaBuckets,
+                waterBuckets, flintAndSteel, craftingTables, furnaces, saplings, edibleFood, pickaxeTier, pickaxes, swordTier,
+                chestArmorTier, shields, tableNearby, furnaceNearby, furnaceSmelting, furnaceOutput, foodLevel, portalFramed, portalLit,
+                rawMeat, furnaceCooking, cornersPlaced, ROOM_UNKNOWN, Set.of());
+    }
 
     /** As the canonical constructor, with no corner of a frame set. */
     public PortalRunSnapshot(
@@ -82,6 +113,13 @@ public record PortalRunSnapshot(
 
     /** Blocks toward the frame's four corners: those carried and those already set in it. */
     public int cornerBlocks() { return cobble + cornersPlaced; }
+
+    /**
+     * Whether a crafted {@code item} (a recipe name, "planks" for any planks) has room in the pack: an empty slot, or a
+     * stack of it with room for more (F-25c4dn). The craft's own check also counts a slot its ingredients empty, which this
+     * does not: where only that would make room, room is made first, one drop more than needed.
+     */
+    public boolean roomFor(String item) { return freeSlots > 0 || roomyStacks.contains(item); }
 
     /** Plank-equivalents available from planks and uncrafted logs. */
     public int woodUnits() { return planks + logs * 4; }

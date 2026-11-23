@@ -116,7 +116,12 @@ public final class PortalRunPlanner {
         /** Cut a tree in sight, when wood comes first; never a search for one, which is the route's own business. */
         CUT_TREES,
         /** Wait for the portal a teammate builds for the team (E-40a). */
-        AWAIT_TEAM_PORTAL
+        AWAIT_TEAM_PORTAL,
+        /**
+         * Make room in the pack for a craft's result, {@link Step#item()}, before the craft: what the craft's own check asks
+         * for and the counts alone do not show (F-25c4dn).
+         */
+        MAKE_ROOM
     }
 
     /**
@@ -186,6 +191,26 @@ public final class PortalRunPlanner {
      * the End instead of building a portal of its own, and waits for the team's.
      */
     public static List<Step> plan(PortalRunSnapshot s, WorldFacts facts, PlanPreferences prefs, Team team) {
+        return roomFirst(s, steps(s, facts, prefs, team));
+    }
+
+    /**
+     * Each craft whose result has no room in the pack made a step to make room for it (F-25c4dn): the plan offers a craft
+     * only when the craft would find a place for what it makes. In E-40 iteration 27 (`claude/corpus-data-e40a27-consoles-1122`
+     * at `7b930d48`) the plan offered "Craft a spare stone pickaxe" from counts alone to batch 1's 404 Kindred with its pack
+     * full; the craft refused it, at the table and walked back to again and again between climbs, 136 times.
+     */
+    static List<Step> roomFirst(PortalRunSnapshot s, List<Step> steps) {
+        var out = new ArrayList<Step>(steps.size());
+        for (Step step : steps) {
+            out.add(step.action() == Action.CRAFT && !s.roomFor(step.item())
+                    ? new Step(Action.MAKE_ROOM, step.item(), 1, step.stage(), "Make room for " + step.item().replace('_', ' ') + ": " + step.why())
+                    : step);
+        }
+        return out;
+    }
+
+    private static List<Step> steps(PortalRunSnapshot s, WorldFacts facts, PlanPreferences prefs, Team team) {
         Objects.requireNonNull(s);
         Objects.requireNonNull(facts);
         Objects.requireNonNull(prefs);
