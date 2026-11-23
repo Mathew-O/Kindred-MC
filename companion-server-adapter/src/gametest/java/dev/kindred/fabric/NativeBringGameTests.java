@@ -300,6 +300,19 @@ public final class NativeBringGameTests implements FabricGameTest {
     }
 
     /**
+     * F-22c122. As the last, and the night after: once the librarian is brought home, night falls (STAGED: the time of day
+     * set to 12,500, the start of a villager's rest, then to 1,000 once it has slept or 2,400 ticks on), the hall's other
+     * cells' beds free, and the librarian left to claim a bed and sleep as vanilla does. By morning it is still in the
+     * cell it was brought to. In CI on #465 (run 45056595996, attempt 1) the librarian brought home to cell 0 was on cell
+     * 1's bed ten ticks later, block-centred on it as a villager waking there is set, across the one-block wall between: a
+     * villager sleeps in the bed it has claimed from anywhere within 2.0 of it, walls or no.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "bringOvernight", tickLimit = 20000)
+    public void aLibrarianBroughtHomeIsStillInItsCellTheMorningAfter(TestContext context) {
+        scene(context, false, false, false, false, true, true, false, false, false, false, false, false, false, 9);
+    }
+
+    /**
      * As the last, the librarian stepping into Hal's boat a moment late, after Hal's wait for it: Hal does not break the
      * boat that now holds it, but rows it across and brings it home. In CI on #72 (`a2c7baa`) Hal's break of that boat,
      * planned while it stood empty, was still under way when the librarian stepped in; it broke the boat under it and let
@@ -437,11 +450,18 @@ public final class NativeBringGameTests implements FabricGameTest {
      * 4 the librarian by the hall's south-west corner and Hal set by the line's stop, so that it climbs out to put the door back
      * by a stair (F-22c84, the dirt).
      * 6 the librarian's boat set aside off the line each time the cart rolls, until the bring is given up (F-22c98b).
+     * 9 the night after it is brought home, and the morning (F-22c122).
      */
     private static void scene(TestContext context, boolean make, boolean wander, boolean river, boolean mine, boolean strolling, boolean lake,
                               boolean slowed, boolean derailed, boolean seated, boolean behind, boolean doorAside, boolean bornInBoat, boolean pressed,
                               int onBed) {
         boolean[] asideOnce = {false};
+        // F-22c122: the tick night was set and morning; the column it was brought home to; the first sight of it slept or out
+        // of that column.
+        long[] nightAt = {-1}, morningAt = {-1}, sleptAt = {-1};
+        int[] homeColumn = {Integer.MIN_VALUE};
+        String[] outOfCell = {null};
+        boolean[] morningLogged = {false};
         // F-22c98b: whether the librarian's boat was set off the line for the push under way; how many times it was.
         boolean[] offLineSet = {false};
         double[] pitFloor = {Double.NaN};
@@ -1165,6 +1185,11 @@ public final class NativeBringGameTests implements FabricGameTest {
                         hal.closeHandledScreen();
                         context.assertTrue(trades, "Its trades open from the corridor: " + hal.currentScreenHandler);
                     }
+                    if (onBed == 9) {
+                        homeColumn[0] = librarian[0].getBlockX() - origin[0].getX();
+                        KindredMod.LOGGER.info("Bring overnight: brought home, {}", overnight(world, librarian[0], origin[0]));
+                        return;
+                    }
                     librarian[0].discard();
                     f.runtime.stop();
                   } catch (net.minecraft.test.GameTestException failing) {
@@ -1175,7 +1200,51 @@ public final class NativeBringGameTests implements FabricGameTest {
                     throw failing;
                   }
                 })
+                .createAndAdd(() -> {
+                    // F-22c122: the night after, and the morning; the librarian left to itself as vanilla leaves it.
+                    if (onBed != 9) return;
+                    var world = context.getWorld();
+                    long now = world.getTime();
+                    var librarianNow = librarian[0];
+                    if (nightAt[0] < 0) {
+                        nightAt[0] = now;
+                        world.setTimeOfDay(12500);
+                        KindredMod.LOGGER.info("Bring overnight: STAGED, night: the time of day set to 12500; {}", overnight(world, librarianNow, origin[0]));
+                    }
+                    if (sleptAt[0] < 0 && librarianNow.isSleeping()) {
+                        sleptAt[0] = now;
+                        KindredMod.LOGGER.info("Bring overnight: asleep, {}", overnight(world, librarianNow, origin[0]));
+                    }
+                    int column = librarianNow.getBlockX() - origin[0].getX();
+                    if (outOfCell[0] == null && column != homeColumn[0]) {
+                        outOfCell[0] = "+" + (now - nightAt[0]) + " ticks into the night, " + overnight(world, librarianNow, origin[0]);
+                        KindredMod.LOGGER.info("Bring overnight: out of the cell it was brought to (column {}): {}", homeColumn[0], outOfCell[0]);
+                    }
+                    if (world.getTime() % 100 == 0) KindredMod.LOGGER.info("Bring overnight: +{} ticks, {}", now - nightAt[0], overnight(world, librarianNow, origin[0]));
+                    if (morningAt[0] < 0 && (sleptAt[0] >= 0 && now - sleptAt[0] >= 100 || now - nightAt[0] >= 2400)) {
+                        morningAt[0] = now;
+                        world.setTimeOfDay(1000);
+                        KindredMod.LOGGER.info("Bring overnight: STAGED, morning: the time of day set to 1000; {}", overnight(world, librarianNow, origin[0]));
+                    }
+                    context.assertTrue(morningAt[0] >= 0 && now - morningAt[0] >= 200, "The night and the morning after");
+                    if (!morningLogged[0]) {
+                        morningLogged[0] = true;
+                        KindredMod.LOGGER.info("Bring overnight: the morning after, {}{}", overnight(world, librarianNow, origin[0]),
+                                sleptAt[0] < 0 ? "; it never slept" : "; asleep at +" + (sleptAt[0] - nightAt[0]) + " ticks");
+                    }
+                    context.assertTrue(outOfCell[0] == null, "Still in the cell it was brought to (column " + homeColumn[0] + ") the morning after: left it " + outOfCell[0]);
+                    librarianNow.discard();
+                    f.runtime.stop();
+                })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
+    }
+
+    /** F-22c122: the time of day, and the villager's claimed bed (its HOME), sleeping, and place, from the hall's corner. */
+    private static String overnight(net.minecraft.server.world.ServerWorld world, net.minecraft.entity.passive.VillagerEntity villager, BlockPos hall) {
+        var home = villager.getBrain().getOptionalRegisteredMemory(net.minecraft.entity.ai.brain.MemoryModuleType.HOME);
+        return "time of day " + (world.getTimeOfDay() % 24000) + ", its bed " + home.map(g -> g.pos().subtract(hall).toShortString()).orElse("none")
+                + (villager.isSleeping() ? ", asleep in " + villager.getSleepingPosition().map(p -> p.subtract(hall).toShortString()).orElse("?") : ", awake")
+                + ", at " + villager.getPos().subtract(hall.getX(), hall.getY(), hall.getZ());
     }
 }
