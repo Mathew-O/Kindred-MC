@@ -181,6 +181,7 @@ public final class NativeCostGameTests implements FabricGameTest {
                     context.assertTrue(line[0].isDone(), "Measured");
                     String s = line[0].join();
                     context.assertTrue(s.endsWith("; " + PlayerRuntime.BODY_MAPS + " {Counter=0/0/0/0/0/0/0}"), "Its body maps, by player and size: " + s);
+                    context.assertTrue(s.contains("; " + PlayerRuntime.DRY_SEARCHES + " {Counter="), "Its dry-ground searches, by player (M-06k9): " + s);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))

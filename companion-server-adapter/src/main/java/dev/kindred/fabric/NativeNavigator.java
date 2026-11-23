@@ -102,6 +102,9 @@ final class NativeNavigator {
     /** The core navigator this one hands its searches to, over this world. */
     Navigator core() { return core; }
 
+    /** The positions its last dry-stand search expanded (M-06k9). */
+    int lastDryStandExpanded() { return core.lastDryStandExpanded(); }
+
     /** This navigator's view of the world's per-cell facts, read through its own cache of the blocks (F-35e). */
     Terrain terrain() { return terrain; }
 
