@@ -1,0 +1,63 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.359,
+  "items": {"windows": 7209, "gained": 8960, "paid": 8960, "lapsed": 166, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 116.5, "snapshotMicrosMax": 8244.8, "tagMicrosMean": 127.3, "tagMicrosMax": 13017.1, "bySource": {"container.take:furnace": 67, "pickup:class_1308.method_6099": 1, "pickup:class_1428.method_6007": 1, "pickup:class_2248.method_36993": 6591, "pickup:class_3222.method_7329": 1888, "pickup:class_52.method_331": 79, "screen:class_1714": 83, "screen:class_1723": 411, "use:item": 5}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 80, "class_1540.method_5773": 2, "class_2248.method_36993": 6604, "class_3222.method_7329": 192, "class_52.method_331": 144}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 23.08, "tickMsWorst": 1792.29, "tickMsWorstAt": 167, "ticksOver50ms": 16337, "ticksOver200ms": 173, "heapMbMax": 1297, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 860, "stone_tools": 1600, "iron_ingot": 13040},
+      "deaths": [
+        {"tick": 119883, "cause": "Kindred hit the ground too hard", "x": -299, "y": 20, "z": -112, "light": 0, "timeOfDay": 8671, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Wood: hurt and out of food - Climb toward the surface for food: back the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4544,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 840, "stone_tools": 1780, "iron_ingot": 7260, "iron_pickaxe": 20260},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 32720, "x": -246, "y": 63, "z": -90, "attempt": 1}, {"tick": 37300, "x": -247, "y": 63, "z": -69, "attempt": 2}, {"tick": 41880, "x": -268, "y": 62, "z": -70, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4264,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1820, "stone_tools": 2420, "iron_ingot": 12720, "iron_pickaxe": 103480},
+      "deaths": [
+        {"tick": 14192, "cause": "Echo was slain by Zombie", "x": -354, "y": 30, "z": -175, "light": 0, "timeOfDay": 14354, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 33319, "cause": "Echo was slain by Zombie", "x": -368, "y": 32, "z": -143, "light": 0, "timeOfDay": 9481, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 136731, "cause": "Echo was slain by Cave Spider", "x": -242, "y": -45, "z": 94, "light": 4, "timeOfDay": 1519, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from cave_spider", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 59660, "x": -346, "y": 63, "z": -66, "attempt": 1}, {"tick": 79280, "x": -352, "y": 63, "z": 202, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5411,
+      "chunkMinutes": 34665.6,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
