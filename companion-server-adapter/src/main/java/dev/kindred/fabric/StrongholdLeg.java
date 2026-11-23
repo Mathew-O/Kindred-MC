@@ -58,7 +58,9 @@ final class StrongholdLeg {
     private final List<EyeFlights.Flight> flights = new ArrayList<>();
     private double[] estimate;
     private BlockPos asideFor;
-    private long pearlHuntSince = -1;
+    /** When the pearl hunt began, in server ticks; {@link #UNSET} before its first snapshot. */
+    private long pearlHuntSince = UNSET;
+    private static final long UNSET = Long.MIN_VALUE;
     private int pearlsAtHunt;
     private String dimension = "";
     private Direction heading;
@@ -160,6 +162,14 @@ final class StrongholdLeg {
     }
 
     StrongholdRunPlanner.Stage stage() { return stage; }
+
+    /**
+     * A fixture's stall (F-25c6e), STAGED: the pearl hunt's clock set back as if it had begun {@code ticks} ago, once, so
+     * a test need not wait the ten game minutes; what follows is the leg's own (the clock's own resets included).
+     */
+    void pearlHuntBegunForTest(long ticks) {
+        pearlHuntSince = campaign.lastTick() - ticks;
+    }
 
     /** On the move between places (across water, too), rather than working where it stands. */
     boolean crossing() {
@@ -325,9 +335,12 @@ final class StrongholdLeg {
         StrongholdRunSnapshot.Dimension dim = inNether ? StrongholdRunSnapshot.Dimension.NETHER
                 : overworld(player) ? StrongholdRunSnapshot.Dimension.OVERWORLD : StrongholdRunSnapshot.Dimension.END;
         // A pearl hunt that has gone on a long while without a pearl is stalled; a new pearl restarts the clock, and
-        // so does anything else it was doing before (the clock is the hunt's own, not the trip's).
+        // so does anything else it was doing before (the clock is the hunt's own, not the trip's). The way home it
+        // stalled into is not "anything else": restarted there, the hunt was not stalled the next pass and the stage
+        // went back to PEARLS a step after RETURN, so it never walked home (F-25c6e, NativeStrongholdGameTests).
         long now = campaign.lastTick();
-        if (stage != StrongholdRunPlanner.Stage.PEARLS || pearls + eyes > pearlsAtHunt || pearlHuntSince < 0) {
+        boolean hunting = stage == StrongholdRunPlanner.Stage.PEARLS || stage == StrongholdRunPlanner.Stage.RETURN;
+        if (!hunting || pearls + eyes > pearlsAtHunt || pearlHuntSince == UNSET) {
             pearlHuntSince = now;
             pearlsAtHunt = pearls + eyes;
         }

@@ -199,4 +199,84 @@ public final class NativeStrongholdGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * F-25c6e: with the rods done and no pearl coming, home through its portal, then pearls hunted in the Overworld, not
+     * back to the Nether. STAGED: seven blaze rods given (said so: the rods are not earned here), and the pearl hunt's
+     * clock set back past its ten-minute stall once the hunt has begun ({@code pearlHuntBegunForTest}); the walk in, the
+     * hunt, the stall's ending of it, the walk back through the portal and the stage after are the player's own. On
+     * main it stays in the Nether in PEARLS (e40c4's 31102026 Sol: 135 game minutes, no pearl, no return).
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "returnAfterRods", tickLimit = 3600)
+    public void withTheRodsAndNoPearlComingItComesHomeAndHuntsThemThere(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 3500);
+        boolean[] stalled = {false};
+        int[] home = {0};
+        boolean[] backAgain = {false};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Homebound"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    litPortal(context);
+                    context.getWorld().setTimeOfDay(1000);
+                    var player = f.player();
+                    BlockPos stand = context.getAbsolutePos(new BlockPos(3, 2, 7));
+                    player.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 180, 0);
+                    stockedForTheNether(player);
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.STRONGHOLD) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    context.assertTrue(f.player().getServerWorld().getRegistryKey() == World.NETHER,
+                            "Through to the Nether: " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    // STAGED: the rods, given once over there (given at home, it would hunt its pearls at home and never go).
+                    f.player().getInventory().insertStack(new net.minecraft.item.ItemStack(net.minecraft.item.Items.BLAZE_ROD, 7));
+                })
+                .createAndAdd(() -> {
+                    var leg = f.runtime.campaignForTest(f.id).stronghold();
+                    context.assertTrue(leg.stage() == dev.kindred.core.survival.StrongholdRunPlanner.Stage.PEARLS,
+                            "Hunting pearls with its rods: " + leg.stage() + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    // Hunted off from where it came through, as ten minutes of hunting would take it: standing in the
+                    // portal it arrived by, vanilla's portal cooldown keeps it from going back through at once.
+                    var player = f.player();
+                    BlockPos feet = player.getBlockPos();
+                    boolean inPortal = player.getServerWorld().getBlockState(feet).isOf(Blocks.NETHER_PORTAL)
+                            || player.getServerWorld().getBlockState(feet.up()).isOf(Blocks.NETHER_PORTAL);
+                    context.assertTrue(!inPortal && !player.hasPortalCooldown(), "Out of the portal it came through, its cooldown over: "
+                            + feet.toShortString() + ", cooldown " + player.hasPortalCooldown());
+                    if (!stalled[0]) {
+                        // STAGED: the hunt's clock set back past its stall, once.
+                        leg.pearlHuntBegunForTest(StrongholdLeg.PEARL_STALL_TICKS + 20);
+                        stalled[0] = true;
+                    }
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    f.player().getHungerManager().setFoodLevel(20);
+                    context.assertTrue(f.player().getServerWorld().getRegistryKey() == World.OVERWORLD,
+                            "Home through its portal: " + f.player().getServerWorld().getRegistryKey().getValue() + " - "
+                                    + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                })
+                .createAndAdd(() -> {
+                    context.getWorld().setTimeOfDay(1000);
+                    backAgain[0] |= f.player().getServerWorld().getRegistryKey() == World.NETHER;
+                    context.assertTrue(++home[0] >= 300, "Home a while: " + home[0] + " ticks");
+                })
+                .createAndAdd(() -> {
+                    var leg = f.runtime.campaignForTest(f.id).stronghold();
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    context.assertTrue(!backAgain[0], "Never back into the Nether for pearls: " + progress);
+                    context.assertTrue(leg.stage() == dev.kindred.core.survival.StrongholdRunPlanner.Stage.PEARLS,
+                            "Hunting pearls at home, not the Nether again: " + leg.stage() + " - " + progress);
+                    int rods = 0;
+                    var inventory = f.player().getInventory();
+                    for (int i = 0; i < inventory.size(); i++) if (inventory.getStack(i).isOf(net.minecraft.item.Items.BLAZE_ROD)) rods += inventory.getStack(i).getCount();
+                    context.assertTrue(rods == 7, "Home with its seven rods: " + rods);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }
