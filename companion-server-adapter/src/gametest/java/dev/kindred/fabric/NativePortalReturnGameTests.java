@@ -99,6 +99,16 @@ public final class NativePortalReturnGameTests implements FabricGameTest {
                     context.assertTrue(++waited[0] >= 40, "Standing in the arrival portal: " + waited[0] + " ticks");
                 })
                 .createAndAdd(() -> {
+                    // A body after a crossing takes damage: in the teleportation state vanilla makes a player invulnerable to
+                    // all but a pearl, and a body that never left it could not be hurt again (the lead's control).
+                    var player = f.player();
+                    float before = player.getHealth();
+                    player.damage(nether.getDamageSources().generic(), 2.0f);
+                    context.assertTrue(player.getHealth() < before, "Hurt after its crossing: health " + before + " to " + player.getHealth()
+                            + ", in its teleportation state " + player.isInTeleportationState());
+                    player.setHealth(before);
+                })
+                .createAndAdd(() -> {
                     context.assertTrue(!backTooSoon[0] && f.player().getServerWorld() == nether, "Not sent straight back by the portal it came through");
                     context.assertTrue(f.runtime.nativeWalk(f.source, f.id, "north", 2) == 1, "The walk out of the Nether end admitted");
                 })

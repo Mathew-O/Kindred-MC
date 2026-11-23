@@ -2969,11 +2969,11 @@ final class NativePlayerBody implements BodyAdapter {
             if (this != player) return; // A dead entity replaced by respawn no longer drives the body.
             beforeTick();
             if (isRemoved()) return;
-            // A client accepts a teleport once its new world has loaded; until then vanilla holds the portal cooldown
-            // (ServerPlayerEntity.tickPortalCooldown counts down only out of the teleportation state). With no client it
-            // was accepted only at the join, so after its first portal crossing a body's cooldown never ran down and it
-            // could never go through a portal again, home from the Nether included (F-25b1). Accepted here, as a
-            // client would, a tick after it arrives.
+            // A client accepts a teleport once its new world has loaded. Until then vanilla holds the player in its
+            // teleportation state: the portal cooldown counts down only out of it (ServerPlayerEntity.tickPortalCooldown),
+            // and the player is invulnerable to all but a pearl in it (ServerPlayerEntity.isInvulnerableTo). With no client
+            // it was accepted only at the join, so after its first teleport a body could never go through a portal again
+            // and could never be hurt again (F-25b5). Accepted here, as a client would, a tick after it arrives.
             if (isInTeleportationState()) onTeleportationDone();
             super.tick();
             // Human physics/item/hunger ticks normally come from the network handler. There is no client.
