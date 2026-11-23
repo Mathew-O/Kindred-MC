@@ -350,7 +350,7 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
      * seed 303's land at Y 64 over a sea at 62), thirty up; walled,
      * a ring of stone four high round its edge, so that no line from its eyes reaches the water.
      */
-    private static BlockPos island(TestContext context, BlockPos o, boolean walled, boolean causeway) {
+    static BlockPos island(TestContext context, BlockPos o, boolean walled, boolean causeway) {
         var world = context.getWorld();
         FixtureGround.keep(context, o.add(-SEA - 1, -7, -SEA - 1), o.add(SEA + 1, 8, SEA + 1));
         for (int x = -SEA; x <= SEA; x++) for (int z = -SEA; z <= SEA; z++) {
@@ -399,7 +399,7 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
     }
 
     /** The two factions and their land, as {@code NativeFactionBackOffGameTests} has them: every place east, on the water. */
-    private static void factions(TestContext context, NativePaidSkillsGameTests.Fixture f, ServerPlayerEntity[] ben, BlockPos o) {
+    static void factions(TestContext context, NativePaidSkillsGameTests.Fixture f, ServerPlayerEntity[] ben, BlockPos o) {
         var server = context.getWorld().getServer();
         var player = f.player();
         var here = Territory.Chunk.at(W, o.getX(), o.getZ());
