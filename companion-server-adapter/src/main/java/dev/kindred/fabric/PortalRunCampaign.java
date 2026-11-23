@@ -5548,7 +5548,12 @@ final class PortalRunCampaign {
         @Override public DigTerrain world() { return world; }
         @Override public Cell feet() { return cell(player.getBlockPos()); }
         @Override public long now() { return lastTick; }
-        @Override public void event(String line) { PortalRunCampaign.this.event(line); }
+        // The dig's own lines, few and said once a place, to the console too, with its name (F-25c4dp): how often a way aside
+        // from under a block it may not dig is begun, read from a run's console.
+        @Override public void event(String line) {
+            PortalRunCampaign.this.event(line);
+            KindredMod.LOGGER.info("{} digs: {}", player.getName().getString(), line);
+        }
         @Override public boolean onGround() { return player.isOnGround(); }
         @Override public boolean swimming() { return PlayerRuntime.inDeepWater(player); }
         @Override public boolean groundBelow() { return PortalRunCampaign.groundBelow(player); }
