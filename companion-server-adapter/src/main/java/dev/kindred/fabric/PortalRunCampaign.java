@@ -4872,10 +4872,25 @@ final class PortalRunCampaign {
     private double toldLavaBest, toldLavaWalkFrom = -1;
     private String toldLavaRefused;
     private boolean toldLavaWalkEnded, toldLavaLogged;
+    /**
+     * Near the told place, its walk onto the told cell itself ended (F-25c4dm2). Known by that walk's own label: asked for
+     * while the walk toward it was still going, the walk that then ended was the earlier one, and staged it was taken for
+     * this, and nothing walked it on round the corner.
+     */
+    private boolean toldLavaOntoEnded;
+    /** Told walks cut short for its safety, this told place (F-25c4dm2). */
+    private int toldLavaRetreats;
+    /** The task the runtime last cut short for the body's safety, a hazard's retreat or a fall to break (F-25c4dm2). */
+    private Task cutForSafety;
+
+    /** The runtime's word that {@code task} was cut short for the body's own safety: told before the task's end (F-25c4dm2). */
+    void cutForSafety(Task task) {
+        cutForSafety = task;
+    }
     /** Told sites set aside for the rest of the run, by the four-block column of each. */
     private final Set<Long> toldLavaAside = new HashSet<>();
     private String who = "";
-    private static final String TOLD_LAVA_WALK = "Cast: walk to the lava ";
+    private static final String TOLD_LAVA_WALK = "Cast: walk to the lava ", TOLD_LAVA_LOOK = "Cast: look for the lava ", TOLD_LAVA_ONTO = ", onto the place told";
 
     /** Lava it filled its cast's bucket at and has not yet told its team of, taken once by the runtime, which tells them (F-25c4dm). */
     Optional<BlockPos> takeLavaFound() {
@@ -4901,6 +4916,8 @@ final class PortalRunCampaign {
         toldLavaRefused = null;
         toldLavaWalkEnded = false;
         toldLavaLogged = false;
+        toldLavaOntoEnded = false;
+        toldLavaRetreats = 0;
         event("told of lava at " + at.toShortString() + " by " + by, false);
     }
 
@@ -4921,9 +4938,18 @@ final class PortalRunCampaign {
             }
         }
         if (toldLava != null && "native_goto".equals(task.skill()) && task.label().startsWith(TOLD_LAVA_WALK)) {
-            if (completed) toldLavaWalkEnded = true;
+            // Cut short by the body's own retreat from a hazard (the runtime's own word, cutForSafety, not its message), the
+            // walk ended where it got to; it was not refused. Staged, the walk onto the told cell was cancelled so beside the
+            // pool, the told place was set aside as refused, and the hunt dug down before its sight had the pool. Once a told
+            // place: cut short so again, a place it cannot safely go to is refused and set aside, never walked into again
+            // and again (F-25c4dm2).
+            boolean retreated = !completed && task.equals(cutForSafety) && toldLavaRetreats++ < 1;
+            if (!completed && task.equals(cutForSafety) && !retreated) why = "cut short for its safety twice on the way";
+            if ((completed || retreated) && task.label().endsWith(TOLD_LAVA_ONTO)) toldLavaOntoEnded = true;
+            if (completed || retreated) toldLavaWalkEnded = true;
             else toldLavaRefused = why == null || why.isBlank() ? "its walk there did not go" : why;
         }
+        if (task.equals(cutForSafety)) cutForSafety = null;
     }
 
     private void setToldLavaAside(String reason) {
@@ -4968,10 +4994,22 @@ final class PortalRunCampaign {
             setToldLavaAside("no ground gained toward it in two minutes");
             return Optional.empty();
         }
+        // Near the told place and no lava in sight yet: on to the told cell itself, then a look there, until the 200 ticks
+        // set it aside; never the chain's next step meanwhile. Returned empty, the chain went on to the blind mine: on
+        // #457's CI (run 45063245649) its walk there, partial within three, ended in the passage round the corner from the
+        // pool, and the next plan, five off, dug down for lava at the pool's own level ("Dig down toward lava") before
+        // the pool came into sight (F-25c4dm2).
         if (off <= 6) {
             if (toldLavaNear < 0) toldLavaNear = lastTick;
-            if (lastTick - toldLavaNear > 200) setToldLavaAside("there, and no lava in sight");
-            return Optional.empty();
+            if (lastTick - toldLavaNear > 200) {
+                setToldLavaAside("there, and no lava in sight");
+                return Optional.empty();
+            }
+            if (off > 1.5 && !toldLavaOntoEnded) {
+                Task onto = go(toldLava, 1.5, true, TOLD_LAVA_WALK + toldLavaBy + " found at " + toldLava.toShortString() + TOLD_LAVA_ONTO);
+                if (!setAside(onto)) return Optional.of(onto);
+            }
+            return Optional.of(new Task("native_wait", Map.of("seconds", "1"), TOLD_LAVA_LOOK + toldLavaBy + " told it of at " + toldLava.toShortString()));
         }
         BlockPos to = off > LAVA_LEG ? legToward(lastFeet, toldLava, LAVA_LEG) : toldLava;
         Task walk = go(to, 3, true, TOLD_LAVA_WALK + toldLavaBy + " found at " + toldLava.toShortString());
