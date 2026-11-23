@@ -1510,6 +1510,27 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     /**
+     * Whether placing {@code stack} at {@code cell} puts the block in that cell, by vanilla's own rule: the cell's block may be
+     * replaced by it ({@code BlockState.canReplace} with an {@code ItemPlacementContext}), not {@code isReplaceable()}. The
+     * two differ for a sculk vein, which a block replaces though it is not replaceable: placed against its top, the block
+     * went into the vein's cell while the placement looked for it one above, and the outcome was held as uncertain for the
+     * rest of a run (E-40's iteration 30, seed 303, Echo; F-31g3).
+     */
+    static boolean takesBlock(ServerWorld world, ServerPlayerEntity player, BlockPos cell, Direction side, ItemStack stack) {
+        var face = Vec3d.ofCenter(cell).add(side.getOffsetX() * 0.5, side.getOffsetY() * 0.5, side.getOffsetZ() * 0.5);
+        var context = new net.minecraft.item.ItemPlacementContext(world, player, Hand.MAIN_HAND, stack, new BlockHitResult(face, side, cell, false));
+        return world.getBlockState(cell).canReplace(context);
+    }
+
+    /**
+     * A cell that is replaceable yet will not take this block (snow two or more layers deep, for a block): placed there,
+     * vanilla puts nothing in it, so the placement is refused before it is tried, as it ended with no effect before.
+     */
+    static boolean refusesBlock(ServerWorld world, ServerPlayerEntity player, BlockPos cell, Direction side, ItemStack stack) {
+        return world.getBlockState(cell).isReplaceable() && !takesBlock(world, player, cell, side, stack);
+    }
+
+    /**
      * A look for a placement (E-08b): the way the player faces and the point on the clicked face, which together give a
      * placed block its state (a stair's facing and half, a slab's half). Null keeps the face's middle and the current look.
      */
@@ -1525,9 +1546,12 @@ final class NativePlayerBody implements BodyAdapter {
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(target)) return false;
 
+        // Where the block goes, by vanilla's own rule (F-31g3): into the cell when the item may replace what is there
+        // (air, water, a sculk vein), otherwise against it.
+        if (refusesBlock(world, player, target, clickedSide, stack)) return false;
         final BlockPos placedPos;
         final BlockPos clickedPos;
-        if (world.getBlockState(target).isReplaceable()) {
+        if (takesBlock(world, player, target, clickedSide, stack)) {
             placedPos = target;
             clickedPos = target.offset(clickedSide.getOpposite());
         } else {
@@ -1538,7 +1562,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (!world.isChunkLoaded(placedPos) || !world.isChunkLoaded(clickedPos) || !world.isInBuildLimit(placedPos)) {
             return false;
         }
-        if (!world.getBlockState(placedPos).isReplaceable()) return false;
+        if (!takesBlock(world, player, placedPos, clickedSide, stack)) return false;
         if (player.getEyePos().squaredDistanceTo(placedPos.getX() + 0.5, placedPos.getY() + 0.5, placedPos.getZ() + 0.5) > 25.0) {
             return false;
         }
