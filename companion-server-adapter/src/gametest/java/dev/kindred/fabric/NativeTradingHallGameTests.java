@@ -493,4 +493,117 @@ public final class NativeTradingHallGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
                 .completeIfSuccessful();
     }
+
+    /**
+     * F-22c122. A hall built before F-22c122 (STAGED: laid as halls were then, one wall between its cells), recorded whole,
+     * with a librarian shut in its first cell behind its lectern, and three of its blocks gone, as a creeper would leave
+     * it. Its layout is read from what stands: the repair puts back what was gone as the hall was built, its cells where
+     * they are, never moved to the two-thick walls halls are built with now; it never sets out for beds, or for the wool
+     * to make them, and the hall ends whole.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "tradingHallLegacy", tickLimit = 8000)
+    public void aHallBuiltBeforeItsWallsWereMadeTwoThickIsRepairedAsItWasBuilt(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 7500);
+        String[] first = {null};
+        var cabin = dev.kindred.core.construction.Houses.of(dev.kindred.core.construction.Houses.Stage.CABIN,
+                dev.kindred.core.construction.BuildStyle.CLASSIC);
+        var legacyHall = TradingHall.of(3, "oak", "cobblestone", TradingHall.Layout.LEGACY);
+        BlockPos o = NativeBaseGameTests.origin(context);
+        BlockPos cabinAt = o.add(10, 7, 10), hallAt = o.add(10, 7, 28), home = o.add(14, 7, 24);
+        var cells = TradingHall.cells(3, TradingHall.Layout.LEGACY);
+        var cell = cells.getFirst();
+        BlockPos stand = hallAt.add(cell.stand().x(), cell.stand().y(), cell.stand().z());
+        BlockPos front = hallAt.add(cell.jobBlock().x(), cell.jobBlock().y(), cell.jobBlock().z());
+        // As the repair fixture's: its front wall, a wall over a cell's front, and its roof.
+        var broken = java.util.List.of(hallAt.add(1, 2, 7), hallAt.add(5, 3, 4), hallAt.add(3, 4, 1));
+        VillagerEntity[] librarian = new VillagerEntity[1];
+        // What the build said it wanted or did, each tick it was under way: never beds, wool or sheep.
+        java.util.Set<String> forBeds = new java.util.TreeSet<>();
+        context.runAtEveryTick(() -> {
+            if (librarian[0] == null || f.nativeId == null) return;
+            String status = f.runtime.buildStatus(f.id).orElse("");
+            if (status.contains("bed") || status.contains("wool") || status.contains("sheep")) forBeds.add(status);
+        });
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Mason"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    NativeBaseGameTests.ground(context, new BlockPos[0]);
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    int flags = net.minecraft.block.Block.NOTIFY_LISTENERS | net.minecraft.block.Block.FORCE_STATE;
+                    for (var b : cabin.placed(BuildRunner.pos(cabinAt), 0)) world.setBlockState(BuildRunner.blockPos(b.at()), state(b.spec()), flags);
+                    // STAGED: the hall as halls were built before F-22c122.
+                    for (var b : legacyHall.placed(BuildRunner.pos(hallAt), 0)) world.setBlockState(BuildRunner.blockPos(b.at()), state(b.spec()), flags);
+                    String bases = "{\"player\":\"Mason\",\"anchor\":{\"dimension\":\"minecraft:overworld\",\"x\":" + home.getX() + ",\"y\":" + home.getY()
+                            + ",\"z\":" + home.getZ() + "},\"built\":[{\"stage\":\"cabin\",\"dimension\":\"minecraft:overworld\",\"x\":" + cabinAt.getX()
+                            + ",\"y\":" + cabinAt.getY() + ",\"z\":" + cabinAt.getZ() + ",\"complete\":true,\"variant\":0,\"turns\":0}],"
+                            + "\"hall\":{\"dimension\":\"minecraft:overworld\",\"x\":" + hallAt.getX() + ",\"y\":" + hallAt.getY() + ",\"z\":" + hallAt.getZ()
+                            + ",\"cells\":3,\"wood\":\"oak\",\"complete\":true}}";
+                    try {
+                        Files.createDirectories(f.directory.resolve("memory"));
+                        Files.writeString(f.directory.resolve("memory").resolve(f.id + ".bases.json"), bases, StandardCharsets.UTF_8);
+                    } catch (java.io.IOException error) {
+                        throw new RuntimeException("The fixture's base record could not be written", error);
+                    }
+                    world.setBlockState(front, Blocks.LECTERN.getDefaultState());
+                    var villager = EntityType.VILLAGER.create(world);
+                    villager.refreshPositionAndAngles(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5, 180, 0);
+                    villager.setAiDisabled(true);
+                    villager.setVillagerData(new VillagerData(VillagerType.PLAINS, VillagerProfession.LIBRARIAN, 1));
+                    world.spawnEntity(villager);
+                    librarian[0] = villager;
+                    for (var at : broken) world.setBlockState(at, Blocks.AIR.getDefaultState(), flags);
+                    var player = f.player();
+                    var inventory = player.getInventory();
+                    inventory.clear();
+                    inventory.setStack(0, new ItemStack(Items.STONE_PICKAXE));
+                    inventory.setStack(1, new ItemStack(Items.STONE_AXE));
+                    inventory.setStack(2, new ItemStack(Items.BREAD, 16));
+                    inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 2));
+                    inventory.setStack(4, new ItemStack(Items.OAK_PLANKS, 1));
+                    inventory.setStack(5, new ItemStack(Items.DIRT, 16));
+                    player.setHealth(20);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.refreshPositionAndAngles(home.getX() + 0.5, home.getY(), home.getZ() + 0.5, 0, 0);
+                    context.assertTrue(f.runtime.setPlaystyleMode(f.source, f.id, dev.kindred.core.progression.PlaystyleProfile.OPTIMAL_SURVIVAL) == 1, "Playing");
+                    context.assertTrue(f.runtime.setBases(f.source, true) == 1, "Bases on");
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.nativeLifecycle(f.source, "resume", f.id) == 1, "Mason playing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    for (var at : broken) {
+                        context.assertTrue(!world.getBlockState(at).isAir(), "Put back at " + at.subtract(hallAt).toShortString() + ": " + f.runtime.baseNote(f.id)
+                                + " / " + f.runtime.buildStatus(f.id).orElse(""));
+                    }
+                    context.assertTrue(f.runtime.buildStatus(f.id).isEmpty(), "The repair ended: " + f.runtime.buildStatus(f.id).orElse(""));
+                })
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    int wrong = 0;
+                    var report = new StringBuilder();
+                    for (var b : legacyHall.placed(BuildRunner.pos(hallAt), 0)) {
+                        var got = BuildRunner.spec(world.getBlockState(BuildRunner.blockPos(b.at())));
+                        if (!got.sameAs(b.spec())) {
+                            wrong++;
+                            if (report.length() < 600) report.append(b.at()).append(' ').append(got).append(" for ").append(b.spec()).append("; ");
+                        }
+                    }
+                    check(context, first, wrong == 0, "Whole as it was built, its cells where they were: " + wrong + " of its blocks not in their state: " + report);
+                    check(context, first, forBeds.isEmpty(), "Never out for beds, wool or sheep: " + forBeds);
+                    check(context, first, f.runtime.baseNote(f.id).contains("whole again"), "Said whole again: " + f.runtime.baseNote(f.id));
+                    check(context, first, world.getBlockState(front).isOf(Blocks.LECTERN), "Its lectern left across the cell's front: " + world.getBlockState(front));
+                    var inventory = f.player().getInventory();
+                    check(context, first, inventory.count(Items.COBBLESTONE) == 0 && inventory.count(Items.OAK_PLANKS) == 0,
+                            "What it held went into the repair: " + inventory.count(Items.COBBLESTONE) + " cobblestone, " + inventory.count(Items.OAK_PLANKS) + " planks");
+                    context.assertTrue(first[0] == null, first[0]);
+                    KindredMod.LOGGER.info("Trading hall, legacy: repaired as it was built ({})", f.runtime.baseNote(f.id));
+                    librarian[0].discard();
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
 }
