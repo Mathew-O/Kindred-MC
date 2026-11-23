@@ -3,6 +3,7 @@ package dev.kindred.fabric;
 import dev.kindred.core.ActionLease;
 import dev.kindred.core.Checkpoint;
 import dev.kindred.core.SkillBody;
+import net.minecraft.registry.Registries;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
@@ -67,10 +68,31 @@ final class NativeGoToSkill implements SkillBody {
     /** A sprint-jump is in the air; it is held to its landing, as a player commits to one. */
     private boolean leapt;
     private int replans, reroutes, lastReroute = -REROUTE_GAP;
+    /**
+     * Why each new route this walk was sought: the check that asked for it, the body against its waypoint and what stood
+     * in the waypoint's two cells. Said once, when the walk ends "Route … is blocked" (F-25c4dm3).
+     */
+    private final List<String> replanWhy = new java.util.ArrayList<>();
     /** Something ahead has changed and the route is to be planned again on landing. */
     private boolean rerouteDue;
     private int ticksSinceProgress;
     private double bestDistance = Double.MAX_VALUE;
+    /**
+     * The waypoint {@link #bestDistance} is measured to. Moving on to a later one is progress (F-25c4dm3). Before, only
+     * nearing the current one was: reached at 0.4 off, the next began about a block off, so a body at a full sprint gained
+     * no ground by that measure, forty ticks of it every thirteen to sixteen blocks, and spent a replan each time; a walk
+     * longer than about fifty blocks in a straight line spent its four and ended "Route … is blocked" in open ground.
+     */
+    private int progressIndex = -1;
+    /** The old measure's count, kept for the line that says when it would have called a stall (F-25c4dm3's marker). */
+    private int ticksByOldMeasure;
+    private double bestByOldMeasure = Double.MAX_VALUE;
+    /**
+     * The body's yaw a tick ago, its last turn of more than 3 degrees, and its reversals: two such turns in a row the
+     * opposite way, as F-10d's walk test counts them. Said once, at the third (F-10d1's marker).
+     */
+    private float yawBefore = Float.NaN, lastSwing;
+    private int reversals;
     private int ticks;
     /** Mob kinds it means to fight, when it keeps clear of the rest; null when it minds no mobs. */
     private final java.util.Set<String> engage;
@@ -267,6 +289,8 @@ final class NativeGoToSkill implements SkillBody {
         index = path.size() > 1 ? 1 : 0;
         ticksSinceProgress = 0;
         bestDistance = Double.MAX_VALUE;
+        ticksByOldMeasure = 0;
+        bestByOldMeasure = Double.MAX_VALUE;
         return true;
     }
 
@@ -322,7 +346,7 @@ final class NativeGoToSkill implements SkillBody {
                 return Step.completed(Map.of("arrived", feet.toShortString()));
             }
             // The partial route ends here; another plan from this vantage may see farther.
-            if (!replan()) {
+            if (!replan("the partial route's end", null)) {
                 shutOnArrival(player);
                 return Step.completed(Map.of("closest", feet.toShortString(), "partial", "true"));
             }
@@ -330,19 +354,42 @@ final class NativeGoToSkill implements SkillBody {
         }
         double horizontal = Math.hypot(next.getX() + 0.5 - pos.x, next.getZ() + 0.5 - pos.z);
         double distance = horizontal + Math.abs(next.getY() - pos.y);
-        if (distance < bestDistance - 0.05) {
+        // The marker (F-25c4dm3): where the old measure, nearing the current waypoint only, would have called forty ticks
+        // of no progress, while the walk was moving on through its waypoints.
+        if (distance < bestByOldMeasure - 0.05) {
+            bestByOldMeasure = distance;
+            ticksByOldMeasure = 0;
+        } else if (++ticksByOldMeasure > STUCK_TICKS) {
+            ticksByOldMeasure = 0;
+            if (ticksSinceProgress < STUCK_TICKS) KindredMod.LOGGER.info("{} walk to {}: no stall at {}, moving on through its waypoints (by the old measure, forty ticks of no progress)",
+                    player.getName().getString(), target.toShortString(), feet.toShortString());
+        }
+        boolean movedOn = index != progressIndex;
+        if (movedOn || distance < bestDistance - 0.05) {
+            progressIndex = index;
             bestDistance = distance;
             ticksSinceProgress = 0;
         } else if (++ticksSinceProgress > STUCK_TICKS || horizontal > 4 || pos.y < next.getY() - 2.5) {
-            if (!replan()) {
+            String fired = ticksSinceProgress > STUCK_TICKS ? "no progress for " + STUCK_TICKS + " ticks"
+                    : horizontal > 4 ? String.format(java.util.Locale.ROOT, "the waypoint %.1f off flat", horizontal)
+                    : String.format(java.util.Locale.ROOT, "%.1f under the waypoint", next.getY() - pos.y);
+            boolean spent = replans >= MAX_REPLANS;
+            String stuckAt = note(fired, next);
+            if (!replan(fired, next)) {
                 body.stopInputs();
+                // Which check fired, where the body and its waypoint were, and why no new route was had, with the reasons
+                // for the replans before: said once, as the walk ends (F-25c4dm3).
+                KindredMod.LOGGER.info("{} walk to {} blocked at {}: {}; {}; the replans: {}", player.getName().getString(),
+                        target.toShortString(), feet.toShortString(), stuckAt,
+                        spent ? "its " + MAX_REPLANS + " replans spent, " + reroutes + " reroutes besides" : "the replan found no route",
+                        replanWhy.isEmpty() ? "none" : String.join("; ", replanWhy));
                 return Step.blocked("Route to " + target.toShortString() + " is blocked", true);
             }
             next = path.get(index);
         }
         var navigator = new NativeNavigator(player.getServerWorld()).throughDoors();
         if (navigator.hazard(next) || navigator.hazard(next.up())) {
-            if (!replan()) {
+            if (!replan("a new hazard on the waypoint", next)) {
                 body.stopInputs();
                 return Step.blocked("Route crosses a new hazard", true);
             }
@@ -358,7 +405,8 @@ final class NativeGoToSkill implements SkillBody {
                 reroutes++;
                 lastReroute = ticks;
                 rerouteDue = false;
-                if (!plan() && !replan()) {
+                replanWhy.add(note("reroute " + reroutes + ", the way ahead changed or the mobs it minds moved", next));
+                if (!plan() && !replan("a reroute that found none", next)) {
                     body.stopInputs();
                     return Step.blocked("Route to " + target.toShortString() + " is blocked ahead", true);
                 }
@@ -467,9 +515,21 @@ final class NativeGoToSkill implements SkillBody {
         return false;
     }
 
-    private boolean replan() {
+    private boolean replan(String why, BlockPos waypoint) {
         if (++replans > MAX_REPLANS) return false;
-        return plan();
+        boolean found = plan();
+        replanWhy.add(note(why, waypoint) + (found ? "" : ", none found"));
+        return found;
+    }
+
+    /** The tick, the check, the body against the waypoint and what is in the waypoint's two cells (F-25c4dm3). */
+    private String note(String why, BlockPos waypoint) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        String at = String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f", player.getX(), player.getY(), player.getZ());
+        return "tick " + ticks + " " + why + " at " + at + (waypoint == null ? "" : ", waypoint " + waypoint.toShortString() + " ("
+                + Registries.BLOCK.getId(world.getBlockState(waypoint).getBlock()).getPath() + ", "
+                + Registries.BLOCK.getId(world.getBlockState(waypoint.up()).getBlock()).getPath() + ")");
     }
 
     private static double flat(Vec3d pos, BlockPos node) {
@@ -532,6 +592,15 @@ final class NativeGoToSkill implements SkillBody {
 
     private boolean steer(BlockPos next, Vec3d pos) {
         var player = body.entity();
+        if (!Float.isNaN(yawBefore)) {
+            float swing = net.minecraft.util.math.MathHelper.wrapDegrees(player.getYaw() - yawBefore);
+            if (Math.abs(swing) > 3 && Math.abs(lastSwing) > 3 && Math.signum(swing) != Math.signum(lastSwing) && ++reversals == 3) {
+                KindredMod.LOGGER.info("{} walk to {}: its yaw reversed a third time at {}", player.getName().getString(), target.toShortString(),
+                        player.getBlockPos().toShortString());
+            }
+            if (Math.abs(swing) > 3) lastSwing = swing;
+        }
+        yawBefore = player.getYaw();
         var navigator = new NativeNavigator(player.getServerWorld());
         boolean inWater = player.isTouchingWater();
         boolean grounded = player.isOnGround();
@@ -568,6 +637,14 @@ final class NativeGoToSkill implements SkillBody {
         // as a player steers along a way rather than from block to block: no sharp swing to a waypoint a lane over and
         // barely ahead (F-10g's hallway snapped 45 degrees in a tick past a block put in its way).
         Vec3d aimAt = centre(aim);
+        // A long straight run on a route that steps across the grid (a staircase of cells): a point a fixed way along the
+        // route, not the farthest such corner itself. That corner jumped on to the next every few ticks, each one on the
+        // line or off it, and the yaw stepped back and forth by three to eight degrees a jump (F-10d1: the run-in past
+        // F-10d's wall, no longer smoothed by a false replan from its middle once F-25c4dm3 counts moving on as progress).
+        if (level && !aim.equals(next)) {
+            Vec3d carrot = alongRoute(pos, LOOK_AHEAD);
+            if (carrot != null && straight(navigator, pos, carrot, false)) aimAt = carrot;
+        }
         if (level && flat(pos, aim) < PURSUIT) {
             for (double ahead : new double[] {PURSUIT, PURSUIT - 1}) {
                 Vec3d carrot = alongRoute(pos, ahead);

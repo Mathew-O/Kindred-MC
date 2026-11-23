@@ -1952,6 +1952,13 @@ final class PlayerRuntime {
         return new String[] {entry.nativeTask == null ? "" : Integer.toHexString(System.identityHashCode(entry.nativeTask)), entry.runner.state().name()};
     }
 
+    /** The campaign task now dispatched to the native player, or null, for fixtures (F-25c4dm3). */
+    PortalRunCampaign.Task activeCampaignTaskForTest(UUID id) {
+        requireThread();
+        Entry entry = entries.get(id);
+        return entry == null ? null : entry.activeCampaignTask;
+    }
+
     /** The world identity a native player's claims are keyed by, for fixtures. */
     UUID nativeWorldIdForTest(UUID id) {
         requireThread();
