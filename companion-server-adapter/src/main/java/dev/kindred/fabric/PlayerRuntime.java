@@ -5344,6 +5344,9 @@ final class PlayerRuntime {
                 }
             }
             if ("native_bridge".equals(task.skill())) entry.campaign.bridgeEnded(completed ? Map.of() : entry.runner.lastProgress());
+            // Cut short for its safety, a hazard's retreat or a fall to break: the campaign told so in so many words, not by the
+            // reason's text (F-25c4dm2).
+            if (!completed && entry.hazardInterrupted) entry.campaign.cutForSafety(task);
             entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
@@ -10734,11 +10737,15 @@ final class PlayerRuntime {
         // Its base's stage being built (M-06i2): a walk other than to defend its land waits till the stage is done, and
         // is kept. A walk under way when a stage falls due goes on to its end first; the stage begins after it.
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && factionBaseBegun(entry)) return null;
-        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
+        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without, at
+        // once. A place it once set aside as open water it saw, chosen again after its wait and set aside again by a
+        // refusal (asked from where it could not see the water), is weighed as water is: the next choice at the decision
+        // interval (M-06m1; F-35j1). On #465's CI (run 45056595996, attempt 2) such a place was chosen again, refused once
+        // and re-chosen 5 ticks later, and the paced open-water test failed on it.
         if (play.setAside(tick).contains(move.target())) {
             settledInFlight(entry, play, player, move);
             play.move = null;
-            play.decidedAt = Long.MIN_VALUE / 2;
+            play.decidedAt = play.setAsideAsWater(move.target()) ? tick : Long.MIN_VALUE / 2;
             return null;
         }
         // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
@@ -11182,6 +11189,33 @@ final class PlayerRuntime {
         return entry == null ? List.of(List.of(), List.of(), List.of())
                 : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest),
                         List.copyOf(entry.factionPlay.arrivedForTest));
+    }
+
+    /**
+     * For fixtures (M-06m1): {@code target} recorded as set aside as open water it saw at {@code tick}, as the open-water
+     * look records it, or ({@code water} false) refused once at {@code tick}, as a refused walk is.
+     */
+    /**
+     * For fixtures (M-06m1): the open-water look toward its live move's end from where it stands now, as its faction play
+     * makes it (F-35j): "all water seen", or the first column it has not seen as water.
+     */
+    String factionWaterLookForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.campaign == null || entry.nativeBody == null || entry.factionPlay.move == null) return "no look (no move)";
+        var body = entry.nativeBody.entity();
+        BlockPos to = FactionsPlayer.destination(entry.factionPlay.move, body);
+        if (to == null) return "no look (no destination)";
+        int[] at = entry.campaign.knowledge().waterLookBreak(body.getBlockPos(), to, FactionsPlayer.OPEN_WATER);
+        return at == null ? "all water seen toward " + to.toShortString() : "the first column not seen as water toward " + to.toShortString() + ": " + at[0] + ", " + at[1];
+    }
+
+    void factionTargetRecordForTest(UUID player, String target, long tick, boolean water) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return;
+        if (water) entry.factionPlay.openWater(target, tick);
+        else entry.factionPlay.refused(target, tick);
     }
 
     List<Long> factionDecisionsForTest(UUID player) {

@@ -962,7 +962,12 @@ final class PortalRunCampaign {
         // A refusal that lasts is set aside as the same task failing again and again, above.
         boolean framePlacement = "native_place".equals(task.skill()) && (task.label().startsWith("Cast: mould at")
                 || task.label().startsWith("Cast: corner at"));
-        if (pos != null && !firstRefusedFill && !framePlacement) avoid(pos, walk, pool, tick);
+        // A walk to pick a drop up refused is not set aside at once: its next look first tries the leaves in the way, as a
+        // player breaks a tree's leaves by hand to reach the log it cut (F-22c114); with none, the drop is set aside then.
+        boolean pickupRefused = "native_goto".equals(task.skill()) && task.label().startsWith("Pick up ") && pos != null
+                && leafClears.getOrDefault(pos.asLong(), 0) < LEAF_CLEARS;
+        if (pickupRefused) refusedPickup = pos.toImmutable();
+        if (pos != null && !firstRefusedFill && !framePlacement && !pickupRefused) avoid(pos, walk, pool, tick);
         if ("native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploreFailures++;
             exploreHeading = null;
@@ -4862,10 +4867,25 @@ final class PortalRunCampaign {
     private double toldLavaBest, toldLavaWalkFrom = -1;
     private String toldLavaRefused;
     private boolean toldLavaWalkEnded, toldLavaLogged;
+    /**
+     * Near the told place, its walk onto the told cell itself ended (F-25c4dm2). Known by that walk's own label: asked for
+     * while the walk toward it was still going, the walk that then ended was the earlier one, and staged it was taken for
+     * this, and nothing walked it on round the corner.
+     */
+    private boolean toldLavaOntoEnded;
+    /** Told walks cut short for its safety, this told place (F-25c4dm2). */
+    private int toldLavaRetreats;
+    /** The task the runtime last cut short for the body's safety, a hazard's retreat or a fall to break (F-25c4dm2). */
+    private Task cutForSafety;
+
+    /** The runtime's word that {@code task} was cut short for the body's own safety: told before the task's end (F-25c4dm2). */
+    void cutForSafety(Task task) {
+        cutForSafety = task;
+    }
     /** Told sites set aside for the rest of the run, by the four-block column of each. */
     private final Set<Long> toldLavaAside = new HashSet<>();
     private String who = "";
-    private static final String TOLD_LAVA_WALK = "Cast: walk to the lava ";
+    private static final String TOLD_LAVA_WALK = "Cast: walk to the lava ", TOLD_LAVA_LOOK = "Cast: look for the lava ", TOLD_LAVA_ONTO = ", onto the place told";
 
     /** Lava it filled its cast's bucket at and has not yet told its team of, taken once by the runtime, which tells them (F-25c4dm). */
     Optional<BlockPos> takeLavaFound() {
@@ -4891,6 +4911,8 @@ final class PortalRunCampaign {
         toldLavaRefused = null;
         toldLavaWalkEnded = false;
         toldLavaLogged = false;
+        toldLavaOntoEnded = false;
+        toldLavaRetreats = 0;
         event("told of lava at " + at.toShortString() + " by " + by, false);
     }
 
@@ -4911,9 +4933,18 @@ final class PortalRunCampaign {
             }
         }
         if (toldLava != null && "native_goto".equals(task.skill()) && task.label().startsWith(TOLD_LAVA_WALK)) {
-            if (completed) toldLavaWalkEnded = true;
+            // Cut short by the body's own retreat from a hazard (the runtime's own word, cutForSafety, not its message), the
+            // walk ended where it got to; it was not refused. Staged, the walk onto the told cell was cancelled so beside the
+            // pool, the told place was set aside as refused, and the hunt dug down before its sight had the pool. Once a told
+            // place: cut short so again, a place it cannot safely go to is refused and set aside, never walked into again
+            // and again (F-25c4dm2).
+            boolean retreated = !completed && task.equals(cutForSafety) && toldLavaRetreats++ < 1;
+            if (!completed && task.equals(cutForSafety) && !retreated) why = "cut short for its safety twice on the way";
+            if ((completed || retreated) && task.label().endsWith(TOLD_LAVA_ONTO)) toldLavaOntoEnded = true;
+            if (completed || retreated) toldLavaWalkEnded = true;
             else toldLavaRefused = why == null || why.isBlank() ? "its walk there did not go" : why;
         }
+        if (task.equals(cutForSafety)) cutForSafety = null;
     }
 
     private void setToldLavaAside(String reason) {
@@ -4958,10 +4989,22 @@ final class PortalRunCampaign {
             setToldLavaAside("no ground gained toward it in two minutes");
             return Optional.empty();
         }
+        // Near the told place and no lava in sight yet: on to the told cell itself, then a look there, until the 200 ticks
+        // set it aside; never the chain's next step meanwhile. Returned empty, the chain went on to the blind mine: on
+        // #457's CI (run 45063245649) its walk there, partial within three, ended in the passage round the corner from the
+        // pool, and the next plan, five off, dug down for lava at the pool's own level ("Dig down toward lava") before
+        // the pool came into sight (F-25c4dm2).
         if (off <= 6) {
             if (toldLavaNear < 0) toldLavaNear = lastTick;
-            if (lastTick - toldLavaNear > 200) setToldLavaAside("there, and no lava in sight");
-            return Optional.empty();
+            if (lastTick - toldLavaNear > 200) {
+                setToldLavaAside("there, and no lava in sight");
+                return Optional.empty();
+            }
+            if (off > 1.5 && !toldLavaOntoEnded) {
+                Task onto = go(toldLava, 1.5, true, TOLD_LAVA_WALK + toldLavaBy + " found at " + toldLava.toShortString() + TOLD_LAVA_ONTO);
+                if (!setAside(onto)) return Optional.of(onto);
+            }
+            return Optional.of(new Task("native_wait", Map.of("seconds", "1"), TOLD_LAVA_LOOK + toldLavaBy + " told it of at " + toldLava.toShortString()));
         }
         BlockPos to = off > LAVA_LEG ? legToward(lastFeet, toldLava, LAVA_LEG) : toldLava;
         Task walk = go(to, 3, true, TOLD_LAVA_WALK + toldLavaBy + " found at " + toldLava.toShortString());
@@ -8988,9 +9031,42 @@ final class PortalRunCampaign {
         // through the cell the next block was coming down into, and was buried there (F-25c4cl).
         if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
         BlockPos at = nearest.getBlockPos();
+        // Its walk to a drop just refused (F-22c114): the leaves in the way broken by hand, or else the drop set aside, as
+        // a refused walk sets it aside.
+        if (refusedPickup != null) {
+            BlockPos refused = refusedPickup;
+            refusedPickup = null;
+            if (refused.equals(at)) {
+                Optional<Task> leaves = leavesToDrop(body, at, label);
+                if (leaves.isPresent()) return leaves;
+            }
+            avoid(refused, false, false, lastTick);
+            if (refused.equals(at)) return Optional.empty();
+        }
         Optional<Task> intoIt = intoTheDropsCell(body, nearest, at, label);
         if (intoIt != null) return intoIt;
         return Optional.of(go(at, 0.6, false, label));
+    }
+
+    /** A drop's cell whose walk was just refused, for its next look (F-22c114); null when there is none. */
+    private BlockPos refusedPickup;
+    /** The leaves broken on the way to each drop's cell, by the cell, so that a way that never opens is set aside after all. */
+    private final Map<Long, Integer> leafClears = new HashMap<>();
+    static final int LEAF_CLEARS = 4;
+
+    /**
+     * The leaves in the way to a drop in reach, the first block between its eyes and the drop, broken by hand (F-22c114):
+     * a log cut from a tree falls into the cell beside the trunk, walled round by the tree's leaves, and no walk gets into
+     * it. Only leaves, and only {@value #LEAF_CLEARS} to a cell; empty when the first block in the way is anything else.
+     */
+    private Optional<Task> leavesToDrop(NativePlayerBody body, BlockPos at, String label) {
+        if (leafClears.getOrDefault(at.asLong(), 0) >= LEAF_CLEARS) return Optional.empty();
+        var world = body.entity().getServerWorld();
+        Optional<BlockPos> cover = obstruction(body, at);
+        if (cover.isEmpty() || !world.getBlockState(cover.get()).isIn(BlockTags.LEAVES)) return Optional.empty();
+        if (leafClears.size() > 256) leafClears.clear();
+        leafClears.merge(at.asLong(), 1, Integer::sum);
+        return Optional.of(breakAt(cover.get(), "Clear the leaves to the drop: " + label.toLowerCase(java.util.Locale.ROOT)));
     }
 
     /** How long a drop with no way into its cell is set aside, in ticks: a minute (F-22c74). */
@@ -9021,6 +9097,8 @@ final class PortalRunCampaign {
                 && world.getFluidState(head.up()).isEmpty() && !(world.getBlockState(head.up()).getBlock() instanceof net.minecraft.block.FallingBlock)) {
             return Optional.of(breakAt(head, "Open the head room over the drop: " + label.toLowerCase(java.util.Locale.ROOT)));
         }
+        Optional<Task> leaves = leavesToDrop(body, at, label);
+        if (leaves.isPresent()) return leaves;
         setAside(at, lastTick + DROP_NO_WAY);
         KindredMod.LOGGER.info("{} sets aside the drop at {}: no way into its cell, and its head room not to be opened ({})",
                 body.entity().getName().getString(), at.toShortString(), label);
