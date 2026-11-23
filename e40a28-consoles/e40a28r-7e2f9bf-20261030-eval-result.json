@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 20261030,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 14032, "paid": 14032, "lapsed": 366, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 134.0, "snapshotMicrosMax": 53582.0, "tagMicrosMean": 118.8, "tagMicrosMax": 16242.5, "bySource": {"container.take:furnace": 98, "pickup:class_2248.method_36993": 11063, "pickup:class_3222.method_7329": 2251, "pickup:class_52.method_331": 18, "screen:class_1714": 111, "screen:class_1723": 782, "use:item": 75}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 161, "class_1540.method_5773": 30, "class_2248.method_36993": 10643, "class_3222.method_7329": 294, "class_4019.method_18289": 1, "class_52.method_331": 131}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 19.39, "tickMsWorst": 1915.65, "tickMsWorstAt": 68918, "ticksOver50ms": 2170, "ticksOver200ms": 33, "heapMbMax": 1054, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 400, "stone_tools": 2080, "iron_ingot": 8860, "iron_pickaxe": 23080, "obsidian": 61643, "portal_lit": 67761},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2295,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 540, "stone_tools": 1840, "iron_ingot": 8220, "iron_pickaxe": 23740, "obsidian": 99442},
+      "deaths": [
+        {"tick": 100906, "cause": "Sol was slain by Zombie", "x": 0, "y": -52, "z": 89, "light": 5, "timeOfDay": 5068, "dimension": "minecraft:overworld", "hunger": 7, "underSky": false, "stage": "Iron: fight back - Back off from zombie the way it came", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 57080, "x": 111, "y": -54, "z": 207, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5130,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 960, "stone_tools": 2800, "iron_ingot": 9740, "iron_pickaxe": 16960},
+      "deaths": [
+        {"tick": 107071, "cause": "Echo was shot by Skeleton", "x": -141, "y": 77, "z": 223, "light": 0, "timeOfDay": 11233, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3939,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}
