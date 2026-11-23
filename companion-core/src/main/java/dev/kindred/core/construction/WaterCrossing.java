@@ -45,6 +45,12 @@ public final class WaterCrossing {
      * home to the hall of {@code cells} at {@code origin}, into {@code cell}; empty when there is none.
      */
     public static Optional<Crossing> plan(BaseSite.Ground ground, int villagerX, int villagerZ, Pos origin, int cells, TradingHall.Cell cell) {
+        return plan(ground, villagerX, villagerZ, origin, cells, TradingHall.Layout.CURRENT, cell);
+    }
+
+    /** As {@link #plan(BaseSite.Ground, int, int, Pos, int, TradingHall.Cell)}, into a hall laid out as {@code layout} (F-22c122). */
+    public static Optional<Crossing> plan(BaseSite.Ground ground, int villagerX, int villagerZ, Pos origin, int cells, TradingHall.Layout layout,
+                                          TradingHall.Cell cell) {
         var cache = new HashMap<Long, Optional<BaseSite.Column>>();
         java.util.function.BiFunction<Integer, Integer, Optional<BaseSite.Column>> at = (x, z) ->
                 cache.computeIfAbsent(((long) x << 32) ^ (z & 0xffffffffL), k -> ground.at(x, z));
@@ -91,13 +97,13 @@ public final class WaterCrossing {
         }
         if (banks.isEmpty()) return Optional.empty();
         // The banks nearest the hall's door tried first; of those with a line home, the one least rowed and laid.
-        var door = RailRoute.approach(cells);
+        var door = RailRoute.approach(cells, layout);
         double doorX = origin.x() + door.x() + 0.5, doorZ = origin.z() + door.z() + 0.5;
         var order = new ArrayList<>(banks.values());
         order.sort(Comparator.comparingDouble(b -> Math.hypot(b.landing().x() + 0.5 - doorX, b.landing().z() + 0.5 - doorZ)));
         Crossing best = null;
         for (var bank : order.subList(0, Math.min(TRIED, order.size()))) {
-            var home = RailRoute.plan(ground, bank.landing().x(), bank.landing().z(), origin, cells, cell, RailRoute.BOAT_ROOM);
+            var home = RailRoute.plan(ground, bank.landing().x(), bank.landing().z(), origin, cells, layout, cell, RailRoute.BOAT_ROOM);
             if (home.isEmpty() || !home.get().bridge().isEmpty()) continue;
             var crossing = new Crossing(bank.water(), bank.landing(), bank.row(), home.get());
             if (best == null || cost(crossing) < cost(best)) best = crossing;
