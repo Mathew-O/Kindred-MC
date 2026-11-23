@@ -362,6 +362,100 @@ public class NativeBackOffFlipGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
+    /**
+     * F-25c4dh1, STAGED: the zombie is held ten blocks off the player by the fixture each tick, behind a wall at first so the
+     * player does not see it, its target the player. "Heal before going on", a four-second rest, read nothing after it from
+     * {@code threats()}, which wants sight (and is empty below six health by design), so the player stood still for the mob
+     * to walk up, and the
+     * fight cut the rest short; in main's corpus gate a fifth of the rests were followed within five seconds by a fight
+     * or a back-off. On open ground with a mob on foot after it within sixteen, it rests no more: for five seconds no
+     * "heal before going on".
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipHealHunted", tickLimit = 600)
+    public void hurtInTheOpenWithAZombieAfterItItDoesNotStopToRest(TestContext context) {
+        healRest(context, "Healhunted", true);
+    }
+
+    /** The control: the same, with nothing after it, it rests to heal within five seconds, as before. */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "backOffFlipHealAlone", tickLimit = 600)
+    public void hurtInTheOpenWithNothingAfterItItRestsToHeal(TestContext context) {
+        healRest(context, "Healalone", false);
+    }
+
+    private static void healRest(TestContext context, String name, boolean hunted) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
+        var server = context.getWorld().getServer();
+        var difficulty = server.getSaveProperties().getDifficulty();
+        FixtureGround.whenDone(context, () -> server.setDifficulty(difficulty, true));
+        server.setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+        net.minecraft.entity.mob.ZombieEntity[] zombie = new net.minecraft.entity.mob.ZombieEntity[1];
+        long[] started = {-1};
+        boolean[] rested = {false};
+        double[] farthest = {0};
+        StringBuilder steps = new StringBuilder();
+        String[] lastStep = {""};
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    // Level stone ground open to the sky, and a wall five off between the player and where the zombie is held.
+                    for (int x = MID - 30; x <= MID + 30; x++) for (int z = MID - 30; z <= MID + 30; z++) {
+                        context.setBlockState(x, 0, z, Blocks.STONE);
+                        context.setBlockState(x, 1, z, Blocks.STONE);
+                        for (int y = 2; y <= 8; y++) context.setBlockState(x, y, z, Blocks.AIR);
+                    }
+                    for (int x = MID - 3; x <= MID + 3; x++) for (int y = 2; y <= 5; y++) context.setBlockState(x, y, MID + 5, Blocks.STONE);
+                    f.runtime.createNative(f.source, name);
+                })
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var at = context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID));
+                    f.player().refreshPositionAndAngles(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+                    f.player().setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround()
+                        && f.player().getBlockPos().equals(context.getAbsolutePos(new net.minecraft.util.math.BlockPos(MID, 2, MID))), "Standing on the ground"))
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    player.getInventory().setStack(0, new ItemStack(Items.IRON_SWORD));
+                    player.setHealth(7);
+                    player.getHungerManager().setFoodLevel(20);
+                    player.getHungerManager().setSaturationLevel(0);
+                    context.getWorld().setTimeOfDay(6000);
+                    if (hunted) zombie[0] = zombie(context, player, context.getRelative(new net.minecraft.util.math.Vec3d(player.getX(), player.getY(), player.getZ() + 10)));
+                    started[0] = context.getTick();
+                    context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    context.getWorld().setTimeOfDay(6000);
+                    if (hunted) {
+                        // Staged: held ten off it each tick, behind the wall at first, still after the player: a zombie
+                        // keeps pace, and one left where it was would be outwalked past sixteen by the player's work.
+                        zombie[0].refreshPositionAndAngles(player.getX(), player.getY(), player.getZ() + 10, 0, 0);
+                        zombie[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        zombie[0].setTarget(player);
+                        // On the first tick it is held, as the player decides from where it stands: its work then walks it off.
+                        if (farthest[0] == 0) farthest[0] = Math.sqrt(player.squaredDistanceTo(zombie[0]));
+                    }
+                    String progress = f.runtime.panelBots(Actor.console()).getFirst().goalProgress();
+                    if (!progress.equals(lastStep[0])) {
+                        lastStep[0] = progress;
+                        steps.append(" @").append(context.getTick() - started[0]).append(" ").append(progress).append(";");
+                    }
+                    rested[0] |= progress.contains("heal before going on");
+                    if (!hunted) context.assertTrue(rested[0], "Rests to heal with nothing after it; its steps:" + steps);
+                    else context.assertTrue(context.getTick() - started[0] >= 100, "Five seconds on");
+                })
+                .createAndAdd(() -> {
+                    // The staging itself: the zombie was where it was held, within sixteen of the player as it decided.
+                    context.assertTrue(!hunted || farthest[0] <= 12, "The zombie held at most 12 off on its first tick held; it was " + String.format("%.1f", farthest[0]));
+                    context.assertTrue(!hunted || !rested[0], "Rested to heal with a zombie after it ten off; its steps:" + steps);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
     /** A zombie after the player, in a helmet so the sun does not burn it, kept from despawning. */
     private static net.minecraft.entity.mob.ZombieEntity zombie(TestContext context, net.minecraft.server.network.ServerPlayerEntity player,
                                                                  net.minecraft.util.math.Vec3d at) {

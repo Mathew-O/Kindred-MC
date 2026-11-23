@@ -51,7 +51,7 @@ final class NativeClutchAction extends NativeRecordedAction {
     private BlockPos water;
     private float fallen;
     private int landedTicks;
-    private boolean halted, unknown, scooped;
+    private boolean halted, unknown, scooped, takenBeside;
     private Step result;
     private CompletableFuture<ActionRecord> flush;
 
@@ -164,8 +164,15 @@ final class NativeClutchAction extends NativeRecordedAction {
             admission.uncertain(result.reason());
             return waiting();
         }
-        scooped = !world.getFluidState(water).isStill() && player.getInventory().getStack(slot).isOf(Items.WATER_BUCKET);
-        return scooped ? settle() : waiting();
+        boolean refilled = player.getInventory().getStack(slot).isOf(Items.WATER_BUCKET);
+        // Poured on water already there (a pool too shallow to break the fall, its bed read as the ground: the landing
+        // looks through water), the scoop's own aim can take a bucket of the pool beside it: the bucket is full again and
+        // its pour is still where it went. On 31102026 in E-40's iteration 27 that waited out the scoop and was held as
+        // a conservation failure, nothing lost (E-07d1). Either way the water is found: taken back from where it was
+        // poured, or still there; what it holds is checked as for any scoop.
+        scooped = refilled && !world.getFluidState(water).isStill();
+        takenBeside = refilled && world.getFluidState(water).isStill();
+        return scooped || takenBeside ? settle() : waiting();
     }
 
     private Step settle() {
@@ -183,16 +190,18 @@ final class NativeClutchAction extends NativeRecordedAction {
                 else flush = admission.close();
                 return waiting();
             }
-        } else if (scooped ? waterAfter == waterBefore && emptyAfter == emptyBefore : waterAfter == waterBefore - 1 && emptyAfter == emptyBefore + 1) {
+        } else if (scooped || takenBeside ? waterAfter == waterBefore && emptyAfter == emptyBefore : waterAfter == waterBefore - 1 && emptyAfter == emptyBefore + 1) {
             if (conserved(after)) {
                 if (!scooped) progress.put("waterLeftAt", water.toShortString());
+                if (takenBeside) progress.put("takenBeside", "true");
                 result = Step.completed(Map.copyOf(progress));
-                admission.verify(after.description() + "; " + progress, scooped ? "Native clutch: poured and scooped" : "Native clutch: poured, water left");
+                admission.verify(after.description() + "; " + progress, scooped ? "Native clutch: poured and scooped"
+                        : takenBeside ? "Native clutch: poured on water, a bucket taken back beside it" : "Native clutch: poured, water left");
                 return waiting();
             }
         }
         unknown = true;
-        result = Step.blocked("Clutch conservation check failed; reconcile", true);
+        result = Step.blocked("Clutch conservation check failed; reconcile: " + shortfall(after, waterBefore, waterAfter, emptyBefore, emptyAfter), true);
         admission.uncertain(result.reason());
         return waiting();
     }
@@ -210,6 +219,31 @@ final class NativeClutchAction extends NativeRecordedAction {
         for (ItemStack stack : after.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
         for (var entry : lost.entrySet()) if (entry.getValue() > (entry.getKey() == Items.WATER_BUCKET ? 1 : 0)) return false;
         return true;
+    }
+
+    /**
+     * What the check found short, for whoever reconciles it (E-07d1): each item held fewer of than before, by count and
+     * the slots it was in, and the buckets as they went.
+     */
+    private String shortfall(InventoryEvidence after, int waterBefore, int waterAfter, int emptyBefore, int emptyAfter) {
+        Map<Item, Integer> lost = new java.util.LinkedHashMap<>();
+        Map<Item, java.util.List<Integer>> slots = new HashMap<>();
+        for (int i = 0; i < before.stacks().length; i++) {
+            ItemStack stack = before.stacks()[i];
+            if (stack.isEmpty()) continue;
+            lost.merge(stack.getItem(), stack.getCount(), Integer::sum);
+            slots.computeIfAbsent(stack.getItem(), k -> new java.util.ArrayList<>()).add(i);
+        }
+        for (ItemStack stack : after.stacks()) if (!stack.isEmpty()) lost.merge(stack.getItem(), -stack.getCount(), Integer::sum);
+        var parts = new java.util.ArrayList<String>();
+        for (var entry : lost.entrySet()) {
+            if (entry.getValue() <= 0 || entry.getKey() == Items.WATER_BUCKET || entry.getKey() == Items.BUCKET) continue;
+            parts.add(entry.getValue() + " " + net.minecraft.registry.Registries.ITEM.getId(entry.getKey()) + " from slot "
+                    + slots.get(entry.getKey()).stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",")));
+        }
+        parts.add("water buckets " + waterBefore + " to " + waterAfter + ", empty buckets " + emptyBefore + " to " + emptyAfter
+                + (water == null ? ", nothing poured seen" : scooped ? ", scooped" : takenBeside ? ", taken back beside it" : ", poured, not scooped"));
+        return String.join("; ", parts);
     }
 
     @Override

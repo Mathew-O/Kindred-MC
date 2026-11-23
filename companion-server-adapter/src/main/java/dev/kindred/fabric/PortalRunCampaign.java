@@ -128,6 +128,8 @@ final class PortalRunCampaign {
      * by turns (the corpus's kindred-48005).
      */
     private boolean hungryOnTop;
+    /** In a spell of rests not taken, hurt with a mob on foot after it in the open (F-25c4dh1): its line said once a spell. */
+    private boolean healSkipped;
     /**
      * The reserve turn's wood search (F-25c4cr1): daylight ticks spent on it with no wood gained, the tick last counted, and
      * whether it is set aside for this descent. On a seed with no trees in reach (31102026's open sand) the search would
@@ -960,7 +962,12 @@ final class PortalRunCampaign {
         // A refusal that lasts is set aside as the same task failing again and again, above.
         boolean framePlacement = "native_place".equals(task.skill()) && (task.label().startsWith("Cast: mould at")
                 || task.label().startsWith("Cast: corner at"));
-        if (pos != null && !firstRefusedFill && !framePlacement) avoid(pos, walk, pool, tick);
+        // A walk to pick a drop up refused is not set aside at once: its next look first tries the leaves in the way, as a
+        // player breaks a tree's leaves by hand to reach the log it cut (F-22c114); with none, the drop is set aside then.
+        boolean pickupRefused = "native_goto".equals(task.skill()) && task.label().startsWith("Pick up ") && pos != null
+                && leafClears.getOrDefault(pos.asLong(), 0) < LEAF_CLEARS;
+        if (pickupRefused) refusedPickup = pos.toImmutable();
+        if (pos != null && !firstRefusedFill && !framePlacement && !pickupRefused) avoid(pos, walk, pool, tick);
         if ("native_goto".equals(task.skill()) && task.label().startsWith("Explore")) {
             exploreFailures++;
             exploreHeading = null;
@@ -2697,9 +2704,24 @@ final class PortalRunCampaign {
             }
         }
         // Hurt with nothing after it: heal before going on (food in hand is eaten by the survival tasks).
-        if (player.getHealth() < (recovering ? 18 : 10) && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0)) {
-            progress = stageLabel(stage) + ": heal before going on";
-            return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Rest to heal"));
+        // Not with a mob on foot after it within sixteen and no wall round it (F-25c4dh1): threats() wants sight and is empty
+        // below six health by design, so "nothing after it" was read with a zombie walking up, and the rest was a pause for it
+        // to close in, cut short by the fight (in main's corpus gate a fifth of the rests were followed within five seconds by
+        // a fight or a back-off; F-22c104a's second-zombie deaths came so). It goes on with its work instead, as the hole-up
+        // does in the open (F-25c4dh); the fight and the back-off are as before. Walled in, it rests as before.
+        boolean healHere = player.getHealth() < (recovering ? 18 : 10) && (player.getHungerManager().getFoodLevel() >= 18 || snapshot.edibleFood() > 0);
+        if (healHere && huntedOnFootWithin(player, 16) && (!underground(player) || openings(player.getServerWorld(), player.getBlockPos()).size() > 4)) {
+            if (!healSkipped) {
+                healSkipped = true;
+                KindredMod.LOGGER.info("{} hurt with a mob on foot after it in the open: no rest to heal, on with its work (health {})",
+                        player.getName().getString(), Math.round(player.getHealth()));
+            }
+        } else {
+            healSkipped = false;
+            if (healHere) {
+                progress = stageLabel(stage) + ": heal before going on";
+                return Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Rest to heal"));
+            }
         }
         // Up and healed: the advice is done with; the rest of its time is spent playing safe, not climbing out again.
         if (recovering && !underground(player) && player.getHealth() >= 18) {
@@ -8971,9 +8993,42 @@ final class PortalRunCampaign {
         // through the cell the next block was coming down into, and was buried there (F-25c4cl).
         if (comingDownOnTheWay(world, player.getBlockPos(), nearest.getBlockPos())) return Optional.of(settle(label));
         BlockPos at = nearest.getBlockPos();
+        // Its walk to a drop just refused (F-22c114): the leaves in the way broken by hand, or else the drop set aside, as
+        // a refused walk sets it aside.
+        if (refusedPickup != null) {
+            BlockPos refused = refusedPickup;
+            refusedPickup = null;
+            if (refused.equals(at)) {
+                Optional<Task> leaves = leavesToDrop(body, at, label);
+                if (leaves.isPresent()) return leaves;
+            }
+            avoid(refused, false, false, lastTick);
+            if (refused.equals(at)) return Optional.empty();
+        }
         Optional<Task> intoIt = intoTheDropsCell(body, nearest, at, label);
         if (intoIt != null) return intoIt;
         return Optional.of(go(at, 0.6, false, label));
+    }
+
+    /** A drop's cell whose walk was just refused, for its next look (F-22c114); null when there is none. */
+    private BlockPos refusedPickup;
+    /** The leaves broken on the way to each drop's cell, by the cell, so that a way that never opens is set aside after all. */
+    private final Map<Long, Integer> leafClears = new HashMap<>();
+    static final int LEAF_CLEARS = 4;
+
+    /**
+     * The leaves in the way to a drop in reach, the first block between its eyes and the drop, broken by hand (F-22c114):
+     * a log cut from a tree falls into the cell beside the trunk, walled round by the tree's leaves, and no walk gets into
+     * it. Only leaves, and only {@value #LEAF_CLEARS} to a cell; empty when the first block in the way is anything else.
+     */
+    private Optional<Task> leavesToDrop(NativePlayerBody body, BlockPos at, String label) {
+        if (leafClears.getOrDefault(at.asLong(), 0) >= LEAF_CLEARS) return Optional.empty();
+        var world = body.entity().getServerWorld();
+        Optional<BlockPos> cover = obstruction(body, at);
+        if (cover.isEmpty() || !world.getBlockState(cover.get()).isIn(BlockTags.LEAVES)) return Optional.empty();
+        if (leafClears.size() > 256) leafClears.clear();
+        leafClears.merge(at.asLong(), 1, Integer::sum);
+        return Optional.of(breakAt(cover.get(), "Clear the leaves to the drop: " + label.toLowerCase(java.util.Locale.ROOT)));
     }
 
     /** How long a drop with no way into its cell is set aside, in ticks: a minute (F-22c74). */
@@ -9004,6 +9059,8 @@ final class PortalRunCampaign {
                 && world.getFluidState(head.up()).isEmpty() && !(world.getBlockState(head.up()).getBlock() instanceof net.minecraft.block.FallingBlock)) {
             return Optional.of(breakAt(head, "Open the head room over the drop: " + label.toLowerCase(java.util.Locale.ROOT)));
         }
+        Optional<Task> leaves = leavesToDrop(body, at, label);
+        if (leaves.isPresent()) return leaves;
         setAside(at, lastTick + DROP_NO_WAY);
         KindredMod.LOGGER.info("{} sets aside the drop at {}: no way into its cell, and its head room not to be opened ({})",
                 body.entity().getName().getString(), at.toShortString(), label);
