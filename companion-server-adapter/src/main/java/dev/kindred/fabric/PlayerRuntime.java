@@ -1406,12 +1406,13 @@ final class PlayerRuntime {
             net.minecraft.util.math.Vec3d position;
             if (fresh) {
                 if (state.isPresent()) throw new IllegalStateException("Fresh creation conflicts with native data");
-                // The spot create found (M-06i4a), so a search's random order cannot put the body somewhere else; still free.
+                // The spot create found (M-06i4a) while it is still free; taken meanwhile (two made from one place in one
+                // tick both found its first free cell, neither body there yet), found again as before, the ring first.
                 SpawnLocation spawn = entry.freshSpawn;
                 entry.freshSpawn = null;
-                if (spawn == null || source.getWorld() != world || !spawnFree(world, spawn.x(), spawn.y(), spawn.z())) {
-                    throw new IllegalStateException("Creation area is no longer available");
-                }
+                if (spawn != null && !spawnFree(world, spawn.x(), spawn.y(), spawn.z())) spawn = null;
+                if (spawn == null) spawn = nativeSpawn(source, entry.data.id());
+                if (spawn == null || source.getWorld() != world) throw new IllegalStateException("Creation area is no longer available");
                 position = new net.minecraft.util.math.Vec3d(spawn.x(), spawn.y(), spawn.z());
             } else {
                 var tag = state.orElseThrow(() -> new IllegalStateException("Native save is missing"));
