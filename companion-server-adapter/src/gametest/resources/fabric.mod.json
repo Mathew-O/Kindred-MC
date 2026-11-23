@@ -104,6 +104,7 @@
       "dev.kindred.fabric.NativeAttackWearGameTests",
       "dev.kindred.fabric.NativeRespawnCaveGameTests",
       "dev.kindred.fabric.NativeBedPocketGameTests",
+      "dev.kindred.fabric.NativeCraftRoomGameTests",
       "dev.kindred.fabric.NativeHemmedClimbGameTests",
       "dev.kindred.fabric.NativeRetraceLowerGameTests",
       "dev.kindred.fabric.NativeBedTakeUpGameTests",

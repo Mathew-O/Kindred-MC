@@ -718,6 +718,7 @@ final class PortalRunCampaign {
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
+        roomDropEnded(task, completed);
         refusedStep(task, completed, tick, why);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
@@ -3306,6 +3307,38 @@ final class PortalRunCampaign {
      * nine stuck spells, where it had only to wait for daylight (F-25c4bi).
      */
     private Optional<Task> makeRoom(ServerPlayerEntity player) {
+        return makeRoom(player, 3, 64, "");
+    }
+
+    /** Stone-like blocks kept when room is made for a craft: a furnace's eight and a stone pickaxe's three, and to spare. */
+    private static final int ROOM_STONE_KEEP = 16;
+
+    /**
+     * Room for a craft's result, the plan's step when the craft would find none (F-25c4dn): one drop of surplus, as
+     * {@link #makeRoom(ServerPlayerEntity)} chooses it, with one slot wanted rather than three and stone kept down to
+     * {@value #ROOM_STONE_KEEP}, enough for the stone crafts; the drop that came straight back is not thrown again, as
+     * there. Nothing to drop, nothing offered: the plan's next step has its turn, and the craft is not offered meanwhile.
+     * Its drop is remembered as thrown once it is done, not when it is offered: offered and not yet dispatched, it was
+     * marked thrown, the next stack too on the next look, and with nothing left to offer the plan fell to its next step
+     * and climbed (the fixture, 1 run of 3 before this). The inventory-full drop keeps its own rule.
+     */
+    private Optional<Task> makeRoomFor(ServerPlayerEntity player, String item) {
+        return makeRoom(player, 1, ROOM_STONE_KEEP, " to make room for " + item.replace('_', ' '));
+    }
+
+    /** The room drop offered last, and what it records as thrown once done (F-25c4dn): its task, its item, its record. */
+    private Task roomDrop;
+    private Item roomDropItem;
+    private long[] roomDropRecord;
+
+    /** A room drop done: thrown now, for the rule against throwing again what came straight back. */
+    private void roomDropEnded(Task task, boolean completed) {
+        if (task == null || !task.equals(roomDrop)) return;
+        if (completed) droppedSurplus.put(roomDropItem, new long[] {lastTick, roomDropRecord[1], roomDropRecord[2]});
+        roomDrop = null;
+    }
+
+    private Optional<Task> makeRoom(ServerPlayerEntity player, int wantFree, int stoneKeep, String forWhat) {
         var inventory = player.getInventory();
         BlockPos feet = player.getBlockPos();
         droppedSurplus.values().removeIf(d -> lastTick - d[0] > 1200);
@@ -3316,14 +3349,14 @@ final class PortalRunCampaign {
             else if (stoneLike(stack)) stoneTotal += stack.getCount();
             else if (stack.isOf(Items.GRAVEL)) gravelTotal += stack.getCount();
         }
-        if (free >= 3) return Optional.empty();
+        if (free >= wantFree) return Optional.empty();
         // The biggest surplus stack goes first, so a few drops clear real room.
         int bestSlot = -1, bestCount = 0;
         for (int s = 0; s < 36; s++) {
             ItemStack stack = inventory.getStack(s);
             if (stack.isEmpty()) continue;
             int surplus = JUNK.contains(stack.getItem()) && !wanted.contains(stack.getItem()) ? stack.getCount()
-                    : stoneLike(stack) ? Math.min(stack.getCount(), stoneTotal - 64)
+                    : stoneLike(stack) ? Math.min(stack.getCount(), stoneTotal - stoneKeep)
                     : stack.isOf(Items.GRAVEL) ? Math.min(stack.getCount(), gravelTotal - 8) : 0;
             long[] dropped = droppedSurplus.get(stack.getItem());
             // It came back; or it is not yet known whether it will: thrown a moment ago, it lies at its feet until its
@@ -3334,9 +3367,16 @@ final class PortalRunCampaign {
         }
         if (bestSlot < 0) return Optional.empty();
         Item item = inventory.getStack(bestSlot).getItem();
-        droppedSurplus.put(item, new long[] {lastTick, feet.asLong(), ItemMoves.count(inventory, item) - bestCount});
-        return Optional.of(new Task("native_discard", Map.of("slot", String.valueOf(bestSlot), "count", String.valueOf(bestCount)),
-                "Drop surplus " + Registries.ITEM.getId(inventory.getStack(bestSlot).getItem()).getPath().replace('_', ' ')));
+        long[] record = {lastTick, feet.asLong(), ItemMoves.count(inventory, item) - bestCount};
+        var drop = new Task("native_discard", Map.of("slot", String.valueOf(bestSlot), "count", String.valueOf(bestCount)),
+                "Drop surplus " + Registries.ITEM.getId(inventory.getStack(bestSlot).getItem()).getPath().replace('_', ' ') + forWhat);
+        if (forWhat.isEmpty()) droppedSurplus.put(item, record);
+        else {
+            roomDrop = drop;
+            roomDropItem = item;
+            roomDropRecord = record;
+        }
+        return Optional.of(drop);
     }
 
     private static boolean stoneLike(ItemStack stack) {
@@ -3501,9 +3541,21 @@ final class PortalRunCampaign {
         }
         boolean framed = siteHere && portalComplete(player.getServerWorld(), portalSite);
         boolean lit = siteHere && player.getServerWorld().getBlockState(portalSite.at(1, 1)).isOf(Blocks.NETHER_PORTAL);
+        // Room for a craft's result (F-25c4dn): the empty slots of the main inventory, where the craft puts what it makes,
+        // and the kinds of which a stack carried has room for more. The craft's own check (planCraft) refuses without it.
+        int freeSlots = 0;
+        var roomyStacks = new java.util.HashSet<String>();
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = inventory.getStack(slot);
+            if (stack.isEmpty()) freeSlots++;
+            else if (stack.getCount() < stack.getMaxCount()) {
+                roomyStacks.add(Registries.ITEM.getId(stack.getItem()).getPath());
+                if (stack.isIn(ItemTags.PLANKS)) roomyStacks.add("planks");
+            }
+        }
         return new PortalRunSnapshot(logs, planks, sticks, cobble, coal, rawIron, iron, diamonds, flint, gravel, obsidian, buckets, lavaBuckets,
                 water, fns, tables, furnaces, saplings, food, pick, pickaxes, sword, chest, shields, tableNearby, furnacePos.isPresent(), furnaceSmelting, furnaceOutput,
-                player.getHungerManager().getFoodLevel(), framed, lit, rawMeat, furnaceCooking, cornersPlaced);
+                player.getHungerManager().getFoodLevel(), framed, lit, rawMeat, furnaceCooking, cornersPlaced, freeSlots, roomyStacks);
     }
 
     /** Raw meat and fish a furnace cooks into food that fills more than twice as much. */
@@ -3690,6 +3742,8 @@ final class PortalRunCampaign {
                         return descendOrTunnel(body, Math.max(DIAMOND_TOP, depth), depth, "diamonds");
                     });
             case CRAFT -> craft(body, step.item());
+            // Not while a mob attacks, as the inventory-full drop (F-25c4bk).
+            case MAKE_ROOM -> threats(player).isEmpty() && creeperAfter(player) == null ? makeRoomFor(player, step.item()) : Optional.empty();
             case PLACE_TABLE -> placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");
             case SMELT -> "log".equals(step.item()) ? charcoal(body) : smelt(body);
@@ -5847,16 +5901,18 @@ final class PortalRunCampaign {
             return Optional.empty();
         }
         if (eyeDistance(player, table.get()) <= 4.4) {
-            if (body.planCraft(recipe, table.get()).isPresent()) {
+            var check = body.checkCraft(recipe, table.get());
+            if (check.plan().isPresent()) {
                 return Optional.of(new Task("native_craft", Map.of("recipe", recipe), "Craft " + recipe.replace('_', ' ')));
             }
             // At the table and not the makings: a walk to it would end at once, again and again (F-25c4av: 927 walks in a
             // run's last 19 game minutes, seed 20261030; the hand-over's sticks with no planks, E-40a). Nothing to do for it.
+            // Said for what it is (F-25c4dn): the makings, the room for the result, or the grid or a screen in the way.
             long now = player.getServerWorld().getTime();
             Long said = unmakeable.get(recipe);
             if (said == null || now - said >= 1_200) {
                 unmakeable.put(recipe, now);
-                KindredMod.LOGGER.info("{} cannot make {} at the table in reach: not the makings", player.getName().getString(), recipe);
+                KindredMod.LOGGER.info("{} cannot make {} at the table in reach: {}", player.getName().getString(), recipe, check.why());
             }
             return Optional.empty();
         }

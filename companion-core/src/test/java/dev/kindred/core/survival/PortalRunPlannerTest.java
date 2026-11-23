@@ -1138,4 +1138,31 @@ class PortalRunPlannerTest {
         sim.apply(step);
         assertEquals(Action.MINE_IRON, PortalRunPlanner.plan(sim.snapshot(), TREES, habit(PlanPreferences.Habit.SPARE_PICKAXE)).getLast().action());
     }
+
+    /**
+     * F-25c4dn: a craft whose result has no room in the pack is a step to make room for it, and the craft comes once there
+     * is room: an empty slot, or a stack of the result with room for more. Room not counted is room assumed.
+     */
+    @Test
+    void aCraftWithNoRoomForItsResultMakesRoomFirst() {
+        var craft = PortalRunPlanner.Step.craft("stone_pickaxe", PortalRunPlanner.Stage.STONE, "Craft stone pickaxe");
+        var other = PortalRunPlanner.Step.of(Action.GATHER_STONE, PortalRunPlanner.Stage.STONE, "Mine cobblestone");
+        var full = room(0, java.util.Set.of("cobblestone"));
+        var made = PortalRunPlanner.roomFirst(full, List.of(craft, other));
+        assertEquals(Action.MAKE_ROOM, made.get(0).action(), "no room: room made first");
+        assertEquals("stone_pickaxe", made.get(0).item(), "room for the craft's result");
+        assertEquals(other, made.get(1), "other steps unchanged");
+        assertEquals(List.of(craft), PortalRunPlanner.roomFirst(room(1, java.util.Set.of()), List.of(craft)), "an empty slot");
+        var furnace = PortalRunPlanner.Step.craft("furnace", PortalRunPlanner.Stage.STONE, "Craft furnace");
+        assertEquals(List.of(furnace), PortalRunPlanner.roomFirst(room(0, java.util.Set.of("furnace")), List.of(furnace)),
+                "a furnace stack with room for more");
+        var unknown = new PortalRunSnapshot(0, 0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                true, false, false, 0, 20, false, false, 0, false, 0);
+        assertEquals(List.of(craft), PortalRunPlanner.roomFirst(unknown, List.of(craft)), "room not counted: assumed");
+    }
+
+    private static PortalRunSnapshot room(int freeSlots, java.util.Set<String> roomy) {
+        return new PortalRunSnapshot(0, 0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                true, false, false, 0, 20, false, false, 0, false, 0, freeSlots, roomy);
+    }
 }
