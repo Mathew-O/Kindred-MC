@@ -982,10 +982,13 @@ final class PlayerRuntime {
                 && entry.snapshot().lifecycle() != LifecycleState.REMOVED).count();
         if (count + nativeCreationsPending >= maxNativePlayers) return reject(source, "This server allows " + maxNativePlayers
                 + " native players (maxNativePlayers in edits.properties); incomplete records still occupy a slot.");
-        if (nativeSpawn(source) == null) return reject(source, "Make room on solid ground in an already loaded area.");
+        UUID newId = UUID.randomUUID();
+        SpawnLocation spot = nativeSpawn(source, newId);
+        if (spot == null) return reject(source, "Make room on solid ground in an already loaded area.");
+        lastCreateSpawn = spot;
         PlayerCreationRequest request;
         try {
-            request = new PlayerCreationRequest(UUID.randomUUID(), actor.playerId() == null ? new UUID(0, 0) : actor.playerId(),
+            request = new PlayerCreationRequest(newId, actor.playerId() == null ? new UUID(0, 0) : actor.playerId(),
                     name, worldId, source.getWorld().getRegistryKey().getValue().toString());
         } catch (IllegalArgumentException invalid) { return reject(source, invalid.getMessage()); }
         ++nativeCreationsPending;
@@ -1005,6 +1008,7 @@ final class PlayerRuntime {
                 entry.blocker = "Creation lost administrative authority before spawn; reconcile allocation.";
                 return;
             }
+            entry.freshSpawn = spot;
             connectNative(source, entry, true);
         }));
         return 1;
@@ -1402,7 +1406,12 @@ final class PlayerRuntime {
             net.minecraft.util.math.Vec3d position;
             if (fresh) {
                 if (state.isPresent()) throw new IllegalStateException("Fresh creation conflicts with native data");
-                SpawnLocation spawn = nativeSpawn(source);
+                // The spot create found (M-06i4a) while it is still free; taken meanwhile (two made from one place in one
+                // tick both found its first free cell, neither body there yet), found again as before, the ring first.
+                SpawnLocation spawn = entry.freshSpawn;
+                entry.freshSpawn = null;
+                if (spawn != null && !spawnFree(world, spawn.x(), spawn.y(), spawn.z())) spawn = null;
+                if (spawn == null) spawn = nativeSpawn(source, entry.data.id());
                 if (spawn == null || source.getWorld() != world) throw new IllegalStateException("Creation area is no longer available");
                 position = new net.minecraft.util.math.Vec3d(spawn.x(), spawn.y(), spawn.z());
             } else {
@@ -8221,26 +8230,58 @@ final class PlayerRuntime {
         }
     }
 
-    private SpawnLocation nativeSpawn(ServerCommandSource source) {
+    /** The eight blocks round {@code source}'s position at its own height, as a native player has always been made. */
+    private SpawnLocation ringSpawn(ServerCommandSource source) {
         var world = source.getWorld();
         var base = source.getPosition();
         for (int[] offset : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}}) {
             double x = Math.floor(base.x) + offset[0] + 0.5;
             double z = Math.floor(base.z) + offset[1] + 0.5;
-            BlockPos pos = BlockPos.ofFloored(x, base.y, z);
-            var bounds = new net.minecraft.util.math.Box(x - .3, base.y, z - .3, x + .3, base.y + 1.8, z + .3);
-            if (world.isChunkLoaded(pos) && world.isInBuildLimit(pos) && world.getWorldBorder().contains(bounds)
-                    && world.isSpaceEmpty(null, bounds) && world.getOtherEntities(null, bounds).isEmpty()
-                    && world.getFluidState(pos).isEmpty() && world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) {
-                return new SpawnLocation(x, base.y, z, 0);
-            }
+            if (spawnFree(world, x, base.y, z)) return new SpawnLocation(x, base.y, z, 0);
         }
         return null;
     }
 
-    /** Whether a native player could be made at {@code source}'s position now, as the roster spawn takes it (F-26's starters). */
+    /**
+     * Where a native player is made for {@code source}: the ring round its position first, as always; only if that fails,
+     * the ground a human joining there would be put on (M-06i4a). That is vanilla's own search ({@code getWorldSpawnPos}):
+     * in a dimension with sky light and not in adventure mode, every column within {@code spawnRadius} (cut by the
+     * border) in vanilla's order, seeded by the new player's id, each judged by vanilla's {@code findOverworldSpawn},
+     * which refuses a column topped by fluid. Narrower than vanilla: only columns in loaded chunks, the spot found must
+     * also be free as the ring's are, and there is no fallback into water: none found is null, the same refusal.
+     */
+    private SpawnLocation nativeSpawn(ServerCommandSource source, UUID id) {
+        SpawnLocation ring = ringSpawn(source);
+        if (ring != null) return ring;
+        var world = source.getWorld();
+        if (!world.getDimension().hasSkyLight() || server.getSaveProperties().getGameMode() == net.minecraft.world.GameMode.ADVENTURE) return null;
+        var base = BlockPos.ofFloored(source.getPosition());
+        int radius = SpawnColumns.radius(server.getSpawnRadius(world), world.getWorldBorder().getDistanceInsideBorder(base.getX(), base.getZ()));
+        return SpawnColumns.first(base.getX(), base.getZ(), radius, id.getMostSignificantBits() ^ id.getLeastSignificantBits(),
+                (x, z) -> world.isChunkLoaded(x >> 4, z >> 4),
+                (x, z) -> {
+                    BlockPos ground = dev.kindred.fabric.mixin.SpawnLocatingInvoker.kindred$findOverworldSpawn(world, x, z);
+                    return ground != null && spawnFree(world, ground.getX() + 0.5, ground.getY(), ground.getZ() + 0.5)
+                            ? new SpawnLocation(ground.getX() + 0.5, ground.getY(), ground.getZ() + 0.5, 0) : null;
+                });
+    }
+
+    /** A player's box at ({@code x}, {@code y}, {@code z}) loaded, in the border, empty of blocks and entities, dry, on a solid block. */
+    private static boolean spawnFree(net.minecraft.server.world.ServerWorld world, double x, double y, double z) {
+        BlockPos pos = BlockPos.ofFloored(x, y, z);
+        var bounds = new net.minecraft.util.math.Box(x - .3, y, z - .3, x + .3, y + 1.8, z + .3);
+        return world.isChunkLoaded(pos) && world.isInBuildLimit(pos) && world.getWorldBorder().contains(bounds)
+                && world.isSpaceEmpty(null, bounds) && world.getOtherEntities(null, bounds).isEmpty()
+                && world.getFluidState(pos).isEmpty() && world.getBlockState(pos.down()).isSolidBlock(world, pos.down());
+    }
+
+    /**
+     * Whether a native player could be made at {@code source}'s position by the ring round it, as the roster spawn takes
+     * it ({@code EvalBootstrap}'s starters, which look outward for such a spot themselves, so they are made where they
+     * always were; M-06i4a's search is not asked).
+     */
     boolean nativeSpawnable(ServerCommandSource source) {
-        return nativeSpawn(source) != null;
+        return ringSpawn(source) != null;
     }
 
     int create(ServerCommandSource source, String name) {
@@ -10775,11 +10816,15 @@ final class PlayerRuntime {
         // Its base's stage being built (M-06i2): a walk other than to defend its land waits till the stage is done, and
         // is kept. A walk under way when a stage falls due goes on to its end first; the stage begins after it.
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && factionBaseBegun(entry)) return null;
-        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
+        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without, at
+        // once. A place it once set aside as open water it saw, chosen again after its wait and set aside again by a
+        // refusal (asked from where it could not see the water), is weighed as water is: the next choice at the decision
+        // interval (M-06m1; F-35j1). On #465's CI (run 45056595996, attempt 2) such a place was chosen again, refused once
+        // and re-chosen 5 ticks later, and the paced open-water test failed on it.
         if (play.setAside(tick).contains(move.target())) {
             settledInFlight(entry, play, player, move);
             play.move = null;
-            play.decidedAt = Long.MIN_VALUE / 2;
+            play.decidedAt = play.setAsideAsWater(move.target()) ? tick : Long.MIN_VALUE / 2;
             return null;
         }
         // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
@@ -11223,6 +11268,33 @@ final class PlayerRuntime {
         return entry == null ? List.of(List.of(), List.of(), List.of())
                 : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest),
                         List.copyOf(entry.factionPlay.arrivedForTest));
+    }
+
+    /**
+     * For fixtures (M-06m1): {@code target} recorded as set aside as open water it saw at {@code tick}, as the open-water
+     * look records it, or ({@code water} false) refused once at {@code tick}, as a refused walk is.
+     */
+    /**
+     * For fixtures (M-06m1): the open-water look toward its live move's end from where it stands now, as its faction play
+     * makes it (F-35j): "all water seen", or the first column it has not seen as water.
+     */
+    String factionWaterLookForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.campaign == null || entry.nativeBody == null || entry.factionPlay.move == null) return "no look (no move)";
+        var body = entry.nativeBody.entity();
+        BlockPos to = FactionsPlayer.destination(entry.factionPlay.move, body);
+        if (to == null) return "no look (no destination)";
+        int[] at = entry.campaign.knowledge().waterLookBreak(body.getBlockPos(), to, FactionsPlayer.OPEN_WATER);
+        return at == null ? "all water seen toward " + to.toShortString() : "the first column not seen as water toward " + to.toShortString() + ": " + at[0] + ", " + at[1];
+    }
+
+    void factionTargetRecordForTest(UUID player, String target, long tick, boolean water) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return;
+        if (water) entry.factionPlay.openWater(target, tick);
+        else entry.factionPlay.refused(target, tick);
     }
 
     List<Long> factionDecisionsForTest(UUID player) {
@@ -19230,7 +19302,6 @@ final class PlayerRuntime {
     /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
     private int lateWritesRefused, lateCallbacksDropped, lateTellsRefused;
 
-    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it, tells refused as it stops (their events written)}. */
     /** A fixture's view of a player's last tactical observation (F-25c6d), or null. */
     dev.kindred.core.tactics.TacticalObservation tacticalObservationForTest(UUID player) {
         requireThread();
@@ -19238,6 +19309,12 @@ final class PlayerRuntime {
         return entry == null ? null : entry.lastTacticalObservation;
     }
 
+    /** The spot the last accepted {@code createNative} found for its body, {x, y, z}, or null (M-06i4a's fixtures). */
+    double[] createSpawnForTest() { return lastCreateSpawn == null ? null : new double[] {lastCreateSpawn.x(), lastCreateSpawn.y(), lastCreateSpawn.z()}; }
+
+    private SpawnLocation lastCreateSpawn;
+
+    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it, tells refused as it stops (their events written)}. */
     int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped, lateTellsRefused}; }
 
     /** Test-only: run once just as the next stop begins, after its barrier is set (a fixture's act "as it stops"). */
@@ -20172,6 +20249,8 @@ final class PlayerRuntime {
         private UUID barricadeTaskId;
         private long lastBarricadeTick = Long.MIN_VALUE / 2;
         private boolean nativePending;
+        /** The spot {@code createNative} found for a fresh body, used once by its connect (M-06i4a). */
+        private SpawnLocation freshSpawn;
         /** A settlement of its unresolved actions under way (F-31g1): no second one, and no connection, meanwhile. */
         private boolean settling;
         private ConnectionToken pendingConnection;

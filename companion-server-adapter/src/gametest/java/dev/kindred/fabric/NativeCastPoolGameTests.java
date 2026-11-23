@@ -20,6 +20,16 @@ import net.minecraft.util.math.Vec3d;
 public final class NativeCastPoolGameTests implements FabricGameTest {
     /** How long it has to fill its bucket with lava; and the most refused walks to the lava allowed meanwhile. */
     private static final int BUDGET = 2400, MOST_REFUSED = 3;
+    /**
+     * The most of a failure's text kept. Vanilla writes a failed test's name and text onto one page of the lectern's book at
+     * its plot, and a page over 1,024 characters fails that chunk's save (#418's CI, 1,435). The head is kept: the cause, the
+     * dig steps and the feet's last moves come first.
+     */
+    private static final int MESSAGE_MOST = 900;
+
+    private static String within(String message) {
+        return message.length() <= MESSAGE_MOST ? message : message.substring(0, MESSAGE_MOST - 3) + "...";
+    }
 
     /**
      * Rock round {@code o} with no sky: its alcove (its feet's cell and the one over them), walled but for the east, where it
@@ -28,11 +38,16 @@ public final class NativeCastPoolGameTests implements FabricGameTest {
      * below its feet, a pool of lava five across, in sight from the alcove. Glowstone in the cavern, so it is lit.
      */
     private static void cavern(TestContext context, BlockPos o) {
+        cavern(context, o, 0);
+    }
+
+    /** As {@link #cavern(TestContext, BlockPos)}, the pool moved {@code poolSouth} blocks south (z+). */
+    private static void cavern(TestContext context, BlockPos o, int poolSouth) {
         var world = context.getWorld();
         FixtureGround.keep(context, o.add(-12, -18, -12), o.add(14, 5, 12));
         for (BlockPos cell : BlockPos.iterate(o.add(-12, -18, -12), o.add(14, 5, 12))) world.setBlockState(cell, Blocks.STONE.getDefaultState());
         for (BlockPos cell : BlockPos.iterate(o.add(-8, -14, -8), o.add(10, -2, 8))) world.setBlockState(cell, Blocks.AIR.getDefaultState());
-        for (BlockPos cell : BlockPos.iterate(o.add(3, -15, -2), o.add(7, -15, 2))) world.setBlockState(cell, Blocks.LAVA.getDefaultState());
+        for (BlockPos cell : BlockPos.iterate(o.add(3, -15, -2 + poolSouth), o.add(7, -15, 2 + poolSouth))) world.setBlockState(cell, Blocks.LAVA.getDefaultState());
         for (int[] g : new int[][] {{-8, -8}, {10, -8}, {-8, 8}, {10, 8}}) world.setBlockState(o.add(g[0], -2, g[1]), Blocks.GLOWSTONE.getDefaultState());
         world.setBlockState(o, Blocks.AIR.getDefaultState());
         world.setBlockState(o.up(), Blocks.AIR.getDefaultState());
@@ -55,17 +70,40 @@ public final class NativeCastPoolGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, batchId = "castPool", tickLimit = BUDGET + 800)
     public void aPoolNoWalkReachesIsDugTowardNotWalkedForEveryTick(TestContext context) {
+        cast(context, 0);
+    }
+
+    /**
+     * In plain terms: the same, with the pool two blocks further south, so that the lava it sets out for lies south of the
+     * alcove's line; it still digs its way down to it in time, rather than tunnel to and fro along its own level.
+     *
+     * Technical: F-25c4dj1. In this class's test above on #394's CI (run 43842018263, job 133212759665), its dig set out for
+     * the pool's source at (+5, −15, +1) from the alcove; past the lava's line, along its own level, it advanced 295 times in
+     * a row with no break after its 20th and no lava in 2,400 ticks. Alone at the placements here it set out for (−1) each
+     * time and filled its bucket in some 1,050 ticks. STAGED as the test above, the pool moved two blocks south, so the
+     * source it sets out for is at (+5, −15, +1). On main (3ace71a) 3 of 3 fail, "No bucket of lava in 2400 ticks" with 348,
+     * 317 and 317 dig steps, its feet stepping between (+6, 0, +3) and (+7, 0, +3) every ten ticks; in the third of those
+     * runs the test above failed alone the same way. Fails and passes as the test above.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "castPoolSouth", tickLimit = BUDGET + 800)
+    public void aPoolNoWalkReachesSouthOfItsLineIsDugTowardInTime(TestContext context) {
+        cast(context, 2);
+    }
+
+    private void cast(TestContext context, int poolSouth) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, BUDGET + 700);
         BlockPos o = context.getAbsolutePos(new BlockPos(30, 22, 40));
         int[] refused = {0}, dug = {0}, watched = {0};
         StringBuilder seen = new StringBuilder();
+        // Where its feet stood, relative to the alcove, each time they moved: for a failure's message.
+        java.util.ArrayDeque<String> moves = new java.util.ArrayDeque<>();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Caster"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player() != null, "Its body"))
                 .createAndAdd(() -> {
-                    cavern(context, o);
+                    cavern(context, o, poolSouth);
                     context.getWorld().setTimeOfDay(6000);
                     var player = f.player();
                     var inventory = player.getInventory();
@@ -105,18 +143,24 @@ public final class NativeCastPoolGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(6000);
                     var player = f.player();
-                    context.assertTrue(player != null && player.isAlive(), "The player died; " + seen);
+                    context.assertTrue(player != null && player.isAlive(), within("The player died; " + seen));
                     String progress = f.runtime.panelBots(dev.kindred.core.Actor.console()).getFirst().goalProgress();
                     if (seen.length() < 1200 && !seen.toString().endsWith(progress + "; ")) seen.append(progress).append("; ");
                     if (refused[0] > MOST_REFUSED) {
-                        throw new net.minecraft.test.GameTestException("Its walk to the lava refused " + refused[0] + " times in " + watched[0] + " ticks: " + seen);
+                        throw new net.minecraft.test.GameTestException(within("Its walk to the lava refused " + refused[0] + " times in " + watched[0] + " ticks: " + seen));
+                    }
+                    String at = player.getBlockPos().subtract(o).toShortString() + " @" + watched[0];
+                    if (moves.isEmpty() || !moves.peekLast().startsWith(player.getBlockPos().subtract(o).toShortString() + " @")) {
+                        moves.addLast(at);
+                        if (moves.size() > 40) moves.removeFirst();
                     }
                     boolean lava = player.getInventory().count(Items.LAVA_BUCKET) > 0;
-                    context.assertTrue(++watched[0] <= BUDGET || lava, "No bucket of lava in " + BUDGET + " ticks (" + dug[0] + " dig steps toward it): " + seen);
+                    context.assertTrue(++watched[0] <= BUDGET || lava, within("No bucket of lava in " + BUDGET + " ticks (" + dug[0] + " dig steps toward it); its feet's last moves "
+                            + moves + ": " + seen));
                     context.assertTrue(lava, "Not yet");
                 })
                 .createAndAdd(() -> {
-                    KindredMod.LOGGER.info("Cast pool: {} refused walks, {} dig steps toward the lava, lava in hand {}, after {} ticks; {}", refused[0], dug[0],
+                    KindredMod.LOGGER.info("Cast pool (pool " + poolSouth + " south): {} refused walks, {} dig steps toward the lava, lava in hand {}, after {} ticks; {}", refused[0], dug[0],
                             f.player().getInventory().count(Items.LAVA_BUCKET) > 0, watched[0], seen);
                     f.runtime.stop();
                 })
