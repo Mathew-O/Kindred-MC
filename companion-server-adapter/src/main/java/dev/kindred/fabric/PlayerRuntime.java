@@ -5906,7 +5906,7 @@ final class PlayerRuntime {
             int damage = hallDamage(world, standing);
             if (damage > 0) {
                 String why = "Repairing its trading hall, " + damage + (damage == 1 ? " block" : " blocks") + " out of place";
-                var plan = hallPlan(standing);
+                var plan = hallPlan(world, standing);
                 var repair = new dev.kindred.core.construction.Blueprint("the trading hall's repair", plan.source(), plan.creator(), plan.license(),
                         plan.blocks(), List.of());
                 if (startBuild(server.getCommandSource(), id, repair, new BlockPos(standing.x(), standing.y(), standing.z()), 0) != 1) return false;
@@ -6316,7 +6316,9 @@ final class PlayerRuntime {
     static final int HALL_CELLS = 3;
 
     private boolean startHall(Entry entry, PlayerMemoryStore.Hall hall, String why) {
-        var plan = hallPlan(hall);
+        var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(hall.dimension())));
+        if (world == null) return false;
+        var plan = hallPlan(world, hall);
         if (startBuild(server.getCommandSource(), entry.data.id(), plan, new BlockPos(hall.x(), hall.y(), hall.z()), 0) != 1) return false;
         entry.hallBuild = entry.build;
         noteBase(entry, why);
@@ -6869,9 +6871,21 @@ final class PlayerRuntime {
         return entry == null ? "" : entry.lifeNote;
     }
 
-    /** The plan its trading hall was built on. */
-    private static dev.kindred.core.construction.Blueprint hallPlan(PlayerMemoryStore.Hall hall) {
-        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+    /**
+     * How its trading hall's cells are laid out, read from what stands (F-22c122): a hall built before, one wall between
+     * its cells, is repaired as it was built and never moved; one on open ground is laid as halls are built now.
+     */
+    private static dev.kindred.core.construction.TradingHall.Layout hallLayout(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        var origin = new BlockPos(hall.x(), hall.y(), hall.z());
+        return dev.kindred.core.construction.TradingHall.standing(hall.cells(), hall.wood(), "cobblestone", p -> {
+            BlockPos at = origin.add(p.x(), p.y(), p.z());
+            return world.isChunkLoaded(at) ? BuildRunner.spec(world.getBlockState(at)) : null;
+        });
+    }
+
+    /** The plan its trading hall was built on: its cells laid out as what stands has them (F-22c122). */
+    private static dev.kindred.core.construction.Blueprint hallPlan(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone", hallLayout(world, hall));
     }
 
     /**
@@ -6881,7 +6895,7 @@ final class PlayerRuntime {
     private static int hallDamage(ServerWorld world, PlayerMemoryStore.Hall hall) {
         int damage = 0;
         var origin = new BlockPos(hall.x(), hall.y(), hall.z());
-        for (var block : hallPlan(hall).blocks()) {
+        for (var block : hallPlan(world, hall).blocks()) {
             BlockPos at = origin.add(block.at().x(), block.at().y(), block.at().z());
             if (!world.isChunkLoaded(at)) return 0;
             if (!BuildRunner.spec(world.getBlockState(at)).sameAs(block.spec())) damage++;
@@ -12033,6 +12047,8 @@ final class PlayerRuntime {
         BlockPos cart, push;
         final BlockPos floor, slot, door, origin;
         final int cells, cellIndex;
+        /** How its hall's cells are laid out, read from what stands as it was planned (F-22c122). */
+        dev.kindred.core.construction.TradingHall.Layout layout = dev.kindred.core.construction.TradingHall.Layout.CURRENT;
         /** Every rail it has put down, to take up again; and how often it has laid the line again. */
         final Set<BlockPos> laid = new HashSet<>();
         int replans;
@@ -12277,8 +12293,8 @@ final class PlayerRuntime {
                         return bringCandidates(entry, body);
                     }
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
-                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
-                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells, b.layout,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
                     if (again.isEmpty()) return giveUp(entry, body, "No rail line with room for the " + b.noun + " in its boat from where it sits.");
                     var r = again.get();
                     b.rails = r.rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
@@ -12477,7 +12493,7 @@ final class PlayerRuntime {
                 // The line laid along the bank past the boat: a rolling empty cart takes up a boat its box comes within a
                 // fifth of a block of, there beside its rail as well as before it, and carries it on, villager and all.
                 var ground = bringGround(world, b);
-                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex);
+                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex);
                 var hallAt = new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ());
                 dev.kindred.core.construction.RailRoute.Route best = null;
                 BlockPos dock = null;
@@ -12485,7 +12501,7 @@ final class PlayerRuntime {
                     var bank = boat.getBlockPos().offset(d);
                     // Close enough for the cart's box, passing the bank column's middle, to meet the boat's.
                     if (Math.hypot(boat.getX() - (bank.getX() + 0.5), boat.getZ() - (bank.getZ() + 0.5)) > 1.3) continue;
-                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, cell,
+                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, b.layout, cell,
                             dev.kindred.core.construction.RailRoute.BOAT_ROOM);
                     if (line.isEmpty() || !line.get().bridge().isEmpty()) continue;
                     if (best == null || line.get().rails().size() < best.rails().size()) {
@@ -12618,8 +12634,8 @@ final class PlayerRuntime {
                 if (on < 1 || on > 4) {
                     if (b.replans >= 4) return giveUp(entry, body, "The " + b.noun + " kept wandering off the line.");
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
-                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
-                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), heldBoat(world, b) != null
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells, b.layout,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex), heldBoat(world, b) != null
                                     ? dev.kindred.core.construction.RailRoute.BOAT_ROOM : dev.kindred.core.construction.RailRoute.CART_ROOM);
                     if (again.isEmpty()) return giveUp(entry, body, "No rail line from where the " + b.noun + " wandered to.");
                     b.replans++;
@@ -13150,7 +13166,7 @@ final class PlayerRuntime {
                 }
                 // The bridge taken back toward the hall: the block furthest from its door first, from the block beside it
                 // on the hall's side, so that it ends on the hall's bank. A block broken over the water floats up beside it.
-                var in = dev.kindred.core.construction.RailRoute.approach(b.cells);
+                var in = dev.kindred.core.construction.RailRoute.approach(b.cells, b.layout);
                 BlockPos approach = b.origin.add(in.x(), in.y(), in.z());
                 BlockPos furthest = null;
                 for (var at : b.bridged) {
@@ -13231,7 +13247,7 @@ final class PlayerRuntime {
                     return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
                 // The door put back as the hall's plan has it, by the build runner, which places a door as players do.
-                var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone");
+                var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone", b.layout);
                 var door = new ArrayList<dev.kindred.core.construction.Blueprint.Block>();
                 var rel = new dev.kindred.core.construction.Pos(b.door.getX() - b.origin.getX(), b.door.getY() - b.origin.getY(), b.door.getZ() - b.origin.getZ());
                 for (var block : hall.blocks()) if (block.at().x() == rel.x() && block.at().z() == rel.z() && (block.at().y() == rel.y() || block.at().y() == rel.y() + 1)) door.add(block);
@@ -13263,7 +13279,8 @@ final class PlayerRuntime {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos origin = new BlockPos(hall.x(), hall.y(), hall.z());
-        var cells = dev.kindred.core.construction.TradingHall.cells(hall.cells());
+        var layout = hallLayout(world, hall);
+        var cells = dev.kindred.core.construction.TradingHall.cells(hall.cells(), layout);
         var holding = Valuables.holding(player, lootWanted(entry));
         var around = new net.minecraft.util.math.Box(origin).expand(BRING_RANGE);
         for (var villager : world.getEntitiesByClass(net.minecraft.entity.passive.VillagerEntity.class, around, v -> v.isAlive() && !v.isBaby() && !v.hasVehicle())) {
@@ -13294,7 +13311,7 @@ final class PlayerRuntime {
                 return null;
             }
             var route = dev.kindred.core.construction.RailRoute.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
-                    new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                    new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), layout, free);
             // By boat across water where no line is laid over it, or where its bridge wants more plain blocks than it has:
             // held in a boat, rowed over, let go of on the far bank and held again there (one that strolls only: one that
             // does not would not wade ashore). Its line from the far bank, with a boat's room, is what the bill is made by.
@@ -13302,9 +13319,9 @@ final class PlayerRuntime {
             int bridgeBlocks = route.map(r -> (int) r.bridge().stream().filter(p -> world.getBlockState(new BlockPos(p.x(), p.y(), p.z())).isReplaceable()).count()).orElse(0);
             boolean shortForBridge = bridgeBlocks > 0 && (shutterSlot(player) < 0 ? 0 : plainBlocks(player)) < 1 + bridgeBlocks;
             if ((route.isEmpty() || shortForBridge) && !villager.isAiDisabled() && boatSlot(player) >= 0
-                    && opensOverhead(player, origin, hall.cells(), cells.indexOf(free))) {
+                    && opensOverhead(player, origin, hall.cells(), layout, cells.indexOf(free))) {
                 var across = dev.kindred.core.construction.WaterCrossing.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
-                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), layout, free);
                 if (across.isPresent()) {
                     crossing = across.get();
                     route = Optional.of(crossing.home());
@@ -13370,10 +13387,11 @@ final class PlayerRuntime {
             var r = route.get();
             BlockPos floor = origin.add(free.stand().x(), free.stand().y(), free.stand().z());
             BlockPos slot = origin.add(free.jobBlock().x(), free.jobBlock().y(), free.jobBlock().z());
-            BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells()) / 2, 1, 7);
+            BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells(), layout) / 2, 1, 7);
             noteBring(entry, "Bringing the " + noun + " home");
             var bring = new Bring(id, noun, rails, bridge, new BlockPos(r.cart().x(), r.cart().y(), r.cart().z()), new BlockPos(r.push().x(), r.push().y(), r.push().z()),
                     floor, slot, door, origin, hall.cells(), cells.indexOf(free), hall.wood(), jobBlock);
+            bring.layout = layout;
             // One that strolls is held in a boat while the line is laid, where it has one to put down on it.
             if (!villager.isAiDisabled() && boatSlot(player) >= 0) bring.phase = Bring.Phase.HOLD;
             if (crossing != null) {
@@ -13647,7 +13665,7 @@ final class PlayerRuntime {
     /** The hall's blocks over the line that a villager riding in its boat would put its eyes into: over the doorway, then the lintel. */
     private static List<BlockPos> overhead(Bring b) {
         var out = new ArrayList<BlockPos>();
-        for (var p : dev.kindred.core.construction.RailRoute.overhead(b.cells, dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex))) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(b.cells, b.layout, dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex))) {
             out.add(b.origin.add(p.x(), p.y(), p.z()));
         }
         return out;
@@ -13655,11 +13673,11 @@ final class PlayerRuntime {
 
     /** Whether it can take out the hall's blocks over the line, and so keep what they drop to put back: a tool that takes each. */
     private static boolean opensOverhead(ServerPlayerEntity player, Bring b) {
-        return opensOverhead(player, b.origin, b.cells, b.cellIndex);
+        return opensOverhead(player, b.origin, b.cells, b.layout, b.cellIndex);
     }
 
-    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, int cellIndex) {
-        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, dev.kindred.core.construction.TradingHall.cells(cells).get(cellIndex))) {
+    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, dev.kindred.core.construction.TradingHall.Layout layout, int cellIndex) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, layout, dev.kindred.core.construction.TradingHall.cells(cells, layout).get(cellIndex))) {
             var at = origin.add(p.x(), p.y(), p.z());
             var state = player.getServerWorld().getBlockState(at);
             if (state.isAir() || !state.isToolRequired()) continue;
