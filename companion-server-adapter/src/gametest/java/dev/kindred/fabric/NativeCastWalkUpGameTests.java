@@ -44,7 +44,9 @@ public final class NativeCastWalkUpGameTests implements FabricGameTest {
      *   the lava is then shut, so the fill is refused from where it stands, the lava within 1.5 of its feet.
      *
      * Fails if more than {@value #MOST_IN_PLACE} walks up to the lava complete with its feet where they began, or if within
-     * {@value #BUDGET} ticks it has no bucket of lava. Passes with its bucket of lava, alive.
+     * {@value #BUDGET} ticks it has no bucket of lava, or if at any tick it is in the lava or its feet are in the source's cell or
+     * the cell over it (REFACTOR's point: one of iteration 29's lava deaths died as a dig beside it opened onto lava). Passes
+     * with its bucket of lava, alive.
      */
     @GameTest(templateName = FixtureGround.FIELD, batchId = "castWalkUp", tickLimit = BUDGET + 800)
     public void aWalkUpToLavaBesideItsFeetDoesNotComeBackFromWhereItBegan(TestContext context) {
@@ -53,6 +55,7 @@ public final class NativeCastWalkUpGameTests implements FabricGameTest {
         BlockPos lavaAt = o.add(1, -1, 0);
         int[] inPlace = {0}, walkUps = {0}, watched = {0};
         BlockPos[] lastEnd = {null};
+        String[] over = {null};
         StringBuilder seen = new StringBuilder();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
@@ -113,6 +116,12 @@ public final class NativeCastWalkUpGameTests implements FabricGameTest {
                     var player = f.player();
                     context.assertTrue(player != null && player.isAlive(), within("The player died; " + seen));
                     String progress = f.runtime.panelBots(dev.kindred.core.Actor.console()).getFirst().goalProgress();
+                    // Its feet never over the opened lava, nor in it: the rock over a source beside them opened, it stands back.
+                    // Kept: a step retried each tick would pass on a later tick.
+                    if (over[0] == null && (player.isInLava() || player.getBlockPos().equals(lavaAt.up()) || player.getBlockPos().equals(lavaAt))) {
+                        over[0] = within("In or over its lava at " + player.getBlockPos().subtract(o).toShortString() + " @" + watched[0] + ": " + seen);
+                    }
+                    context.assertTrue(over[0] == null, String.valueOf(over[0]));
                     if (seen.length() < 700 && !seen.toString().endsWith(progress + "; ")) seen.append(progress).append("; ");
                     if (inPlace[0] > MOST_IN_PLACE) {
                         throw new net.minecraft.test.GameTestException(within("Its walk up to the lava completed where it began " + inPlace[0] + " times ("
