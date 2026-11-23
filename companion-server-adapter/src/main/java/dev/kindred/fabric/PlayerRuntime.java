@@ -8028,6 +8028,7 @@ final class PlayerRuntime {
                         // A reroll's step refused, counted as a failure, so that it is not asked for tick after tick (E-45c).
                         KindredMod.LOGGER.info("{} reroll {} refused: {}", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker);
                         entry.reroll.failed++;
+                        entry.rerollRefused++;
                         entry.routineRefreshPending = true;
                         entry.cachedRoutineCandidates = List.of();
                     }
@@ -8851,6 +8852,7 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
         // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
         if (entry.reroll != null && state != SkillRunner.State.RUNNING) {
+            if (state == SkillRunner.State.BLOCKED) entry.rerollRefused++;
             entry.reroll.failed = state == SkillRunner.State.BLOCKED ? entry.reroll.failed + 1 : 0;
             entry.routineRefreshPending = true;
         }
@@ -13580,6 +13582,8 @@ final class PlayerRuntime {
         int tries, failed, nudges;
         long since;
         boolean givingUp;
+        /** Since when, standing on its lectern to break it, it has found no room to step off to; -1 when it has (F-22c116). */
+        long noRoomSince = -1;
         /** Each look's offers, in words, for fixtures. */
         final List<String> looks = new ArrayList<>();
         /** The ids of the steps it has given, to know its own refusals. */
@@ -13664,6 +13668,16 @@ final class PlayerRuntime {
                 if (slot < 0) {
                     // Just broken: the lectern lies where it fell a moment before it is picked up.
                     if (r.tries > 0 && now - r.since < 100) return List.of(waitTask(task, "For the lectern to be picked up"));
+                    // Lying where the break's own collection did not reach (in the hole it left, broken from a block beside
+                    // one up, stepped off onto): walked onto, for as long as a villager is given to take up a lectern (F-22c116).
+                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                            item -> item.getStack().isOf(Items.LECTERN));
+                    if (r.tries > 0 && !lying.isEmpty() && now - r.since < JOB_NUDGE) {
+                        BlockPos drop = lying.getFirst().getBlockPos();
+                        return List.of(new NativeTaskCandidate(rerollTask(entry, "pickup:" + drop.asLong()), "native_goto", Map.of(
+                                "x", String.valueOf(drop.getX()), "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()),
+                                "range", "0.5", "partial", "true")));
+                    }
                     KindredMod.LOGGER.info("{} reroll: no lectern to put down ({} lying near, entities ticking there {}, the villager's age {}); let be",
                             entry.data.displayName(), world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                                     item -> item.getStack().isOf(Items.LECTERN)).size(), world.shouldTickEntity(r.lectern), villager == null ? -1 : villager.age);
@@ -13737,11 +13751,27 @@ final class PlayerRuntime {
                 }
                 if (!reach) return List.of(goNear(task, r.lectern));
                 // Standing on it, as a small pen leaves a player stepping up onto it: off it first (a break of the block
-                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground).
+                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground). With no
+                // room to step off to, it waits for some rather than asking for a break it would be refused, for as long as
+                // a villager is given to let its job go; then it lets the villager be, the lectern left standing, and says
+                // why: never through refusals (F-22c116, CI #451: six refusals, the lectern left in the ground).
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(r.lectern).stretch(0, 1, 0))) {
                     var off = offTheLectern(entry, world, r);
-                    if (off != null) return List.of(off);
+                    if (off != null) {
+                        r.noRoomSince = -1;
+                        return List.of(off);
+                    }
+                    if (r.noRoomSince < 0) r.noRoomSince = now;
+                    if (now - r.noRoomSince > JOB_WAIT) {
+                        say(entry, "There's no room to step off my lectern; I've left it standing.", "");
+                        entry.rerollGivenUp.add(r.villager);
+                        entry.reroll = null;
+                        entry.rerollAt = now + 1200;
+                        return null;
+                    }
+                    return List.of(waitTask(task, "For room off the lectern"));
                 }
+                r.noRoomSince = -1;
                 var args = new HashMap<>(at);
                 args.put("collect", "true");
                 return List.of(new NativeTaskCandidate(task, "native_break", Map.copyOf(args)));
@@ -13797,20 +13827,37 @@ final class PlayerRuntime {
     }
 
     /**
-     * A walk off the lectern's block to the middle of one beside it, clear of it: where it stood to begin with, else
-     * any side of the lectern with room to stand; or null when there is none.
+     * A walk off the lectern's block to the middle of one with room to stand, clear of it (see {@link #stepOffTo}), with
+     * where it stood to begin with tried first; or null when there is none.
      */
     private static NativeTaskCandidate offTheLectern(Entry entry, net.minecraft.server.world.ServerWorld world, Reroll r) {
-        var sides = new ArrayList<BlockPos>();
-        sides.add(r.stand);
-        for (Direction side : Direction.Type.HORIZONTAL) sides.add(r.lectern.offset(side));
-        for (BlockPos at : sides) {
-            if (at.equals(r.lectern) || !world.getBlockState(at).getCollisionShape(world, at).isEmpty()
+        BlockPos at = stepOffTo(world, r.lectern, r.stand);
+        if (at == null) return null;
+        return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
+                "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+    }
+
+    /**
+     * A cell to step off {@code block} to, before breaking it from beside (F-22c116): its feet and head clear, a full top
+     * face under it to stand on (glass is one, though not a solid block), no mob in it, and not over {@code block} itself. {@code first} (where it stood before, say) is tried
+     * first, then the four sides at {@code block}'s height, then the four beside it one up, where a block beside is a
+     * floor to step across onto from on top of it (as a pen's fill leaves one); null when there is none. Only cells beside
+     * it, a step from where it stands on it: a cell two across can lie behind a wall with no way round (a lectern by its
+     * pen's wall), and a walk there gets no nearer. The break of the block underfoot stays
+     * {@code RoamingEdits.breakDenial}'s to refuse: this only finds where to stand so that it is not asked for.
+     */
+    static BlockPos stepOffTo(net.minecraft.server.world.ServerWorld world, BlockPos block, BlockPos first) {
+        var cells = new ArrayList<BlockPos>();
+        if (first != null) cells.add(first);
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side));
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side).up());
+        for (BlockPos at : cells) {
+            if (at.getX() == block.getX() && at.getZ() == block.getZ()) continue;
+            if (!world.getBlockState(at).getCollisionShape(world, at).isEmpty()
                     || !world.getBlockState(at.up()).getCollisionShape(world, at.up()).isEmpty()
-                    || !world.getBlockState(at.down()).isSolidBlock(world, at.down())) continue;
+                    || !world.getBlockState(at.down()).isSideSolidFullSquare(world, at.down(), Direction.UP)) continue;
             if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(at), e -> !(e instanceof ServerPlayerEntity)).isEmpty()) continue;
-            return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
-                    "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+            return at.toImmutable();
         }
         return null;
     }
@@ -13888,6 +13935,12 @@ final class PlayerRuntime {
     List<String> rerollLooks(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? List.of() : List.copyOf(entry.rerollLooks);
+    }
+
+    /** The reroll's steps refused, for fixtures (F-22c116). */
+    int rerollStepsRefused(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.rerollRefused;
     }
 
     /** Villagers it gave up rerolling, for fixtures. */
@@ -19926,6 +19979,8 @@ final class PlayerRuntime {
         };
         private final Set<UUID> rerollKept = new HashSet<>(), rerollGivenUp = new HashSet<>();
         private final List<String> rerollLooks = new ArrayList<>();
+        /** The reroll's steps refused, at dispatch or as they ran, for fixtures (F-22c116). */
+        private int rerollRefused;
         private long rerollAt;
         /**
          * Hit hard by a player (E-41g): who, and what it does about it, until when; whether what it is doing gives way to
