@@ -2941,10 +2941,25 @@ final class PlayerRuntime {
         }
         boolean inLava = player.isInLava() || world.getFluidState(feet).isIn(FluidTags.LAVA);
         String escape = !inLava ? "not in lava" : lavaBank(player, feet).map(b -> "to " + b.toShortString()).orElse("no dry ground in sight");
-        KindredMod.LOGGER.info("{} hazard spell at {} in {}: trigger {}; saw {}; feet {}, floor {}; retreat cells: {}; lava escape: {}; cancelling {}",
+        // The creeper trigger reads the last tactical observation: which creepers it held, and how old it is and where it
+        // was made, so a stale one (from before a portal, or a failing refresh) shows as such.
+        String creepers = "none";
+        var obs = entry.lastTacticalObservation;
+        if (creeper && obs != null) {
+            java.util.List<String> lit = new java.util.ArrayList<>();
+            for (var mob : obs.observedMobs()) {
+                if (mob.isCreeper() && (mob.isIgnited() || (mob.fuseTicksRemaining() >= 0 && mob.fuseTicksRemaining() <= 25))) {
+                    lit.add(String.format(java.util.Locale.ROOT, "%.1f off, fuse %d%s", mob.distance(), mob.fuseTicksRemaining(), mob.isIgnited() ? ", ignited" : ""));
+                }
+            }
+            creepers = lit + " in an observation " + (server.getTicks() - obs.tick()) + " ticks old, made in " + obs.dimension();
+        }
+        KindredMod.LOGGER.info("{} hazard spell at {} in {}: trigger {}; saw {}; feet {}, floor {}; retreat cells: {}; lava escape: {}; creepers: {}; cancelling {}",
                 entry.data.displayName(), feet.toShortString(), world.getRegistryKey().getValue().getPath(), String.join(" and ", triggers),
                 hazardSeen(player), blockName(world.getBlockState(feet)), blockName(world.getBlockState(feet.down())),
-                String.join(", ", cells), escape, entry.skillId);
+                String.join(", ", cells), escape, creepers, entry.skillId);
+        entry.hazardSpellTick = server.getTicks();
+        entry.hazardSpellCancels = 0;
     }
 
     /** Swimming or sunk: not wading on a shallow bottom with the head above the surface. */
@@ -3209,7 +3224,15 @@ final class PlayerRuntime {
             entry.lastTacticalObservation = obs;
             entry.lastTacticalDecision = dev.kindred.core.tactics.TacticalPriorityPolicy.evaluate(obs, candidates);
             entry.lastTacticalRefreshTick = tick;
+            entry.tacticalFailureLogged = false;
         } catch (Exception ignored) {
+            // The last observation stays in use while the refresh fails, so a failure is said once (F-25c6d).
+            if (!entry.tacticalFailureLogged) {
+                entry.tacticalFailureLogged = true;
+                KindredMod.LOGGER.info("{}: the tactical observation could not be refreshed at tick {}; the last, from tick {}, stays in use: {}",
+                        entry.data.displayName(), tick, entry.lastTacticalObservation == null ? "none" : String.valueOf(entry.lastTacticalObservation.tick()),
+                        String.valueOf(ignored));
+            }
         }
     }
 
@@ -7927,7 +7950,11 @@ final class PlayerRuntime {
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
         // A spell of hazard ends on the first tick none of the interrupt's triggers holds (F-25c6d's diagnostic).
-        if (!isHazardousSituation(body.entity()) && !creeperThreat && !breakFall) entry.hazardSpellLogged = false;
+        if (!isHazardousSituation(body.entity()) && !creeperThreat && !breakFall && entry.hazardSpellLogged) {
+            entry.hazardSpellLogged = false;
+            KindredMod.LOGGER.info("{} hazard spell over at {} after {} ticks, {} task(s) cancelled", entry.data.displayName(),
+                    body.entity().getBlockPos().toShortString(), server.getTicks() - entry.hazardSpellTick, entry.hazardSpellCancels);
+        }
         if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight && !puttingOut || creeperThreat && !handlingCreeper || breakFall)
                 && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
                 && !escapingWater) {
@@ -7935,6 +7962,7 @@ final class PlayerRuntime {
                 entry.hazardSpellLogged = true;
                 logHazardSpell(entry, body.entity(), creeperThreat && !handlingCreeper, breakFall);
             }
+            entry.hazardSpellCancels++;
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort(breakFall && !isHazardousSituation(body.entity()) ? "Falling: the fall to be broken with water"
@@ -19868,8 +19896,12 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
-        /** The hazard interrupt's line written for this spell (F-25c6d). */
+        /** The hazard interrupt's line written for this spell (F-25c6d), the tick it began and the tasks it cancelled. */
         private boolean hazardSpellLogged;
+        private long hazardSpellTick;
+        private int hazardSpellCancels;
+        /** The tactical observation's refresh failing: logged at its first failure, again only after one succeeds (F-25c6d). */
+        private boolean tacticalFailureLogged;
         /** The task putting out the fire carried out of lava, let through the hazard abort (F-25c6b). */
         private UUID fireOutTaskId;
         /** Water it poured at its feet to put out a fire, and until when it means to take it back up (F-25c6b). */

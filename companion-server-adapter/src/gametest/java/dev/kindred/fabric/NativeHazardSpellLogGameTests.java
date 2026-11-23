@@ -33,10 +33,12 @@ public final class NativeHazardSpellLogGameTests implements FabricGameTest {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         String name = "Singed";
         List<String> lines = new CopyOnWriteArrayList<>();
+        List<String> over = new CopyOnWriteArrayList<>();
         var appender = new AbstractAppender("hazardSpellLog", null, null, true, Property.EMPTY_ARRAY) {
             @Override public void append(LogEvent event) {
                 String line = event.getMessage().getFormattedMessage();
                 if (line.startsWith(name + " hazard spell at ")) lines.add(line);
+                if (line.startsWith(name + " hazard spell over at ")) over.add(line);
             }
         };
         var logContext = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
@@ -92,8 +94,18 @@ public final class NativeHazardSpellLogGameTests implements FabricGameTest {
                         context.assertTrue(line.contains(dir + " no room (stone, stone above)"), "The " + dir + " cell refused for want of room: " + line);
                     }
                     context.assertTrue(line.contains("lava escape: not in lava"), "No lava escape: " + line);
+                    context.assertTrue(line.contains("creepers: none"), "No creeper trigger: " + line);
                     context.assertTrue(lines.size() == 1 || lines.stream().skip(1).allMatch(l -> !l.contains("at " + at[0].toShortString())),
                             "Once a spell, not once a cancel: " + lines.size() + " lines at its spot");
+                    // Off the magma onto the stone: the spell is over, said once with its length and its cancels.
+                    var out = context.getAbsolutePos(new BlockPos(MID + 4, 2, MID));
+                    f.player().refreshPositionAndAngles(out.getX() + 0.5, out.getY(), out.getZ() + 0.5, 0, 0);
+                    f.player().setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(!over.isEmpty(), "The spell's end logged"))
+                .createAndAdd(() -> {
+                    String end = over.getFirst();
+                    context.assertTrue(end.matches(".* hazard spell over at .* after \\d+ ticks, [1-9]\\d* task\\(s\\) cancelled"), "Its length and its cancels: " + end);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
