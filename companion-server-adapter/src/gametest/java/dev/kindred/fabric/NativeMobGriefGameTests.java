@@ -109,13 +109,13 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
         }
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefEndermanTake", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanTake", tickLimit = 400)
     public void anEndermanTakesNoBlockFromClaimedLand(TestContext context) {
         anEndermanTakesNoBlockFromClaimedLand(context, false);
     }
 
     /** As {@link #anEndermanTakesNoBlockFromClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefEndermanTakeSafe", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanTakeSafe", tickLimit = 400)
     public void anEndermanTakesNoBlockFromASafeZone(TestContext context) {
         anEndermanTakesNoBlockFromClaimedLand(context, true);
     }
@@ -156,13 +156,13 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefEndermanPlace", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanPlace", tickLimit = 400)
     public void anEndermanSetsNoBlockDownOnClaimedLand(TestContext context) {
         anEndermanSetsNoBlockDownOnClaimedLand(context, false);
     }
 
     /** As {@link #anEndermanSetsNoBlockDownOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefEndermanPlaceSafe", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanPlaceSafe", tickLimit = 400)
     public void anEndermanSetsNoBlockDownInASafeZone(TestContext context) {
         anEndermanSetsNoBlockDownOnClaimedLand(context, true);
     }
@@ -202,13 +202,13 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefRavager", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefRavager", tickLimit = 400)
     public void aRavagerTramplesNoLeavesOnClaimedLand(TestContext context) {
         aRavagerTramplesNoLeavesOnClaimedLand(context, false);
     }
 
     /** As {@link #aRavagerTramplesNoLeavesOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefRavagerSafe", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefRavagerSafe", tickLimit = 400)
     public void aRavagerTramplesNoLeavesInASafeZone(TestContext context) {
         aRavagerTramplesNoLeavesOnClaimedLand(context, true);
     }
@@ -245,13 +245,13 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefSilverfish", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefSilverfish", tickLimit = 400)
     public void aSilverfishHidesInNoStoneOnClaimedLand(TestContext context) {
         aSilverfishHidesInNoStoneOnClaimedLand(context, false);
     }
 
     /** As {@link #aSilverfishHidesInNoStoneOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefSilverfishSafe", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefSilverfishSafe", tickLimit = 400)
     public void aSilverfishHidesInNoStoneInASafeZone(TestContext context) {
         aSilverfishHidesInNoStoneOnClaimedLand(context, true);
     }
@@ -293,13 +293,13 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefWither", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefWither", tickLimit = 400)
     public void aWitherTearsThroughNoBlockOnClaimedLand(TestContext context) {
         aWitherTearsThroughNoBlockOnClaimedLand(context, false);
     }
 
     /** As {@link #aWitherTearsThroughNoBlockOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefWitherSafe", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefWitherSafe", tickLimit = 400)
     public void aWitherTearsThroughNoBlockInASafeZone(TestContext context) {
         aWitherTearsThroughNoBlockOnClaimedLand(context, true);
     }
@@ -338,13 +338,13 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefZombieDoor", tickLimit = 1600)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefZombieDoor", tickLimit = 1600)
     public void aZombieBreaksNoDoorOnClaimedLand(TestContext context) {
         aZombieBreaksNoDoorOnClaimedLand(context, false);
     }
 
     /** As {@link #aZombieBreaksNoDoorOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefZombieDoorSafe", tickLimit = 1600)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefZombieDoorSafe", tickLimit = 1600)
     public void aZombieBreaksNoDoorInASafeZone(TestContext context) {
         aZombieBreaksNoDoorOnClaimedLand(context, true);
     }
