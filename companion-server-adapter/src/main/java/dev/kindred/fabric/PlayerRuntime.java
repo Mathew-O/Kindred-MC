@@ -3792,6 +3792,26 @@ final class PlayerRuntime {
                         dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
                 candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", direction, "blocks", "1")));
             }
+            // In fire, not lava, with no cell of the eight to step to (F-25c6g): the fire at its feet put out, as a player
+            // punches it out. e40c5's 31102026 Echo stood 423 ticks in fire atop a one-wide nether_wart_block column, every
+            // cell refused for "floor air not a full top" and 140 tasks cancelled with nothing in their place; staged, a
+            // body that could be hurt burned to death there with #492's corner cells in.
+            BlockPos fireCell = feetPos;
+            if (direction == null && !inLava && mayEdit && world.getBlockState(fireCell).isIn(BlockTags.FIRE)) {
+                UUID taskId = UUID.nameUUIDFromBytes(("fire_at_feet:" + entry.data.id() + ":" + fireCell.asLong() + ":" + server.getTicks() / 40)
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
+                        dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                entry.fireAtFeetTaskId = taskId;
+                entry.fireAtFeetCell = fireCell.toImmutable();
+                candidates.add(new NativeTaskCandidate(candidate, "native_break", Map.of("x", String.valueOf(fireCell.getX()),
+                        "y", String.valueOf(fireCell.getY()), "z", String.valueOf(fireCell.getZ()))));
+                if (server.getTicks() - entry.fireAtFeetLoggedTick >= 1200) {
+                    entry.fireAtFeetLoggedTick = server.getTicks();
+                    KindredMod.LOGGER.info("{} puts out the fire at its feet at {}, no cell of the eight to step to (F-25c6g)",
+                            entry.data.displayName(), fireCell.toShortString());
+                }
+            }
             // In lava with lava on every side (F-25c6a): no cell beside it to step to, so it makes for the nearest dry
             // ground it can see, up and across, rather than giving up every task it begins as a hazard with nothing in
             // their place (E-40c3: seed 303 Kindred at the bottom of the Nether's lava sea for some 105,000 ticks).
@@ -8026,7 +8046,12 @@ final class PlayerRuntime {
         boolean burningInFight = "native_fight".equals(entry.skillId) && body.entity().isOnFire() && !body.entity().isInLava()
                 && !isHazardousSituation(body.entity(), false);
         // Nor a stop to putting that fire out, its own water poured or walked into (F-25c6b).
-        boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false);
+        boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false)
+                // Nor to putting out the fire at its feet, while that fire is still there and it stands in it (F-25c6g).
+                || entry.fireAtFeetTaskId != null && entry.fireAtFeetTaskId.equals(entry.currentTaskId) && "native_break".equals(entry.skillId)
+                        && entry.fireAtFeetCell != null && entry.fireAtFeetCell.equals(body.entity().getBlockPos())
+                        && body.entity().getServerWorld().getBlockState(entry.fireAtFeetCell).isIn(BlockTags.FIRE)
+                        && !body.entity().isInLava();
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
         // A spell of hazard ends on the first tick none of the interrupt's triggers holds (F-25c6d's diagnostic).
@@ -20115,6 +20140,11 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
+        /** When F-25c6g's "puts out the fire at its feet" line was last logged, a line a minute at most. */
+        private long fireAtFeetLoggedTick = -1200;
+        /** F-25c6g's task putting out the fire at its feet, which the hazard interrupt lets run while that fire is there. */
+        private UUID fireAtFeetTaskId;
+        private BlockPos fireAtFeetCell;
         /** The hazard interrupt's line written for this spell (F-25c6d), the tick it began and the tasks it cancelled. */
         private boolean hazardSpellLogged;
         private long hazardSpellTick;
