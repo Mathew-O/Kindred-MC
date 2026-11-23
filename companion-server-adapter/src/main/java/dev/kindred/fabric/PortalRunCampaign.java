@@ -7578,8 +7578,8 @@ final class PortalRunCampaign {
 
     /**
      * Whether the first {@link #WAY_OFF_CELLS} cells along heading {@code i} from the player's feet can be walked, by the
-     * route finder's own reading: each a stand level with the last, a step up with head room, or a step down; a corner
-     * cut only with one side of it open. Local blocks only.
+     * route finder's own reading: each a stand level with the last, a step up with head room, or a drop no deeper than
+     * {@link NativeNavigator#MAX_SAFE_DROP}; a corner cut only with one side of it open. Local blocks only.
      */
     private static boolean walkable(NativeNavigator navigator, ServerPlayerEntity player, int i) {
         double[] unit = WayOffHeading.unit(i);
@@ -7592,8 +7592,12 @@ final class PortalRunCampaign {
             if (x != at.getX() && z != at.getZ()
                     && !(navigator.clear(new BlockPos(x, at.getY(), at.getZ())) || navigator.clear(new BlockPos(at.getX(), at.getY(), z)))) return false;
             BlockPos next = navigator.standable(level) ? level
-                    : navigator.standable(level.up()) && navigator.passable(at.up(2)) ? level.up()
-                    : navigator.standable(level.down()) ? level.down() : null;
+                    : navigator.standable(level.up()) && navigator.passable(at.up(2)) ? level.up() : null;
+            // Down off an edge no deeper than the route finder itself drops, the body's two cells open on the way.
+            for (int d = 1; next == null && d <= NativeNavigator.MAX_SAFE_DROP && navigator.passable(level.down(d - 1))
+                    && navigator.passable(level.down(d - 1).up()); d++) {
+                if (navigator.standable(level.down(d))) next = level.down(d);
+            }
             if (next == null) return false;
             at = next;
         }
