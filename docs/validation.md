@@ -102,6 +102,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06j1: the remaining items walked or scoped out](evidence/M-06j1.md#the-remaining-items-2026-11-12-session-a-claudem06j1-close-1112).
 
+## The load with the factions layer, paired by seed (M-06i) — 23 November 2026 (`claude/m06i-load-paired-1123`)
+
+- [M-06i: the load with the factions layer, paired by seed](evidence/M-06i.md#the-load-with-the-factions-layer-paired-by-seed-2026-11-23-claudem06i-load-paired-1123): main `97f7f1bc`, ten seeds, factions off against on as shipped, each arm alone; mean +1.26 ms paired median (6 up, 4 down, p = 0.75), p99 +3.5 ms; one run a side, no noise figure; every audit clean; the row's load item stays open.
+
 ## A founder claims the ground its first base will stand on (M-06i) — 12 November 2026 (`claude/m06i-base-site-1111`)
 
 - [M-06i: a founder claims the ground its first base will stand on](evidence/M-06i.md#a-founder-claims-the-ground-its-first-base-will-stand-on-2026-11-12-claudem06i-base-site-1111).
@@ -283,6 +287,7 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 - [M-06i3](evidence/M-06i3.md) (2026-11-16, test-only): the bedrock-box no-way fixture stages the daytime it assumes; night staged 0 of 3; the narrowed six-class order 16 of 16 ×3 with it; Factions 49 of 49 ×3; done (#403).
 - [M-06k4a](evidence/M-06k4a.md) (2026-11-21, harness and docs): a stop that stands at "Saving worlds" 120 s is dumped (threads, the world's file times) and at 600 s killed by `run.py`; `StallTest` 4 of 4 with a stub server, the eval tests 45 of 45; a hung stop counted in `run.json` and the summary; the runbook saves before `stop`; no native or runtime test rerun; done (#423, `355bd50`).
 - [M-06m](evidence/M-06m.md) (2026-11-22, test hook and message only): the paced open-water test names the moves settled by arrival in its failure, its assertion unchanged; the cause of #427's early choice not reproduced (two diagnostics, 3 runs each); the class 4 of 4 ×3; open.
+- [M-06m1](evidence/M-06m1.md) (2026-11-22, factions): a place once set aside as water, refused again from out of sight of it, is followed by its next choice at the decision interval; the fixture 0 of 3 before, 3 of 3 after, its dry control 3 of 3 both; with six related classes 23 of 23 ×3; the corpus gate passed (one confirmed scene cleared by the lead); in review.
 
 ## The last scaffold down a hollow (F-22c45) — 10 November 2026 (`claude/ci-green-1110-hollow`)
 

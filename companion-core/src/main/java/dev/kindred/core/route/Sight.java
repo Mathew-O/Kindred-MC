@@ -491,6 +491,27 @@ public final class Sight {
         return true;
     }
 
+    /**
+     * Where {@link #seenOpenWaterToward} first finds a column it has not seen as water, as {x, z}, or null when every
+     * column it looks at is water it saw (M-06m1, for fixtures' logs): its memory keeps water columns only, so "not seen
+     * as water" is all it can say of that column, seen as something else or not seen at all.
+     */
+    public int[] waterLookBreak(Cell from, Cell to, int run) {
+        double dx = to.x() - from.x(), dz = to.z() - from.z();
+        double far = Math.hypot(dx, dz);
+        if (far <= HORIZONTAL_RADIUS) {
+            for (int ox = -2; ox <= 2; ox++) for (int oz = -2; oz <= 2; oz++) {
+                if (!waterColumns.contains(column(to.x() + ox, to.z() + oz))) return new int[] {to.x() + ox, to.z() + oz};
+            }
+            return null;
+        }
+        for (int i = HORIZONTAL_RADIUS - run + 1; i <= HORIZONTAL_RADIUS; i++) {
+            int x = (int) Math.floor(from.x() + 0.5 + dx * i / far), z = (int) Math.floor(from.z() + 0.5 + dz * i / far);
+            if (!waterColumns.contains(column(x, z))) return new int[] {x, z};
+        }
+        return null;
+    }
+
     public void forget(Cell pos) {
         for (var map : known.values()) map.remove(pos.asLong());
         known.get(Kind.CAVE).remove(cell(pos));
