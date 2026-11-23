@@ -3010,7 +3010,7 @@ final class PortalRunCampaign {
             // Its face at the surface already, a block below it at most, and dry ground a few steps off: it climbs out.
             // Bobbing under on the way out and sent up for air again, it cut short each climb out of a flooded shaft's
             // top, and drowned there.
-            var ashore = above.getY() - feet.getY() <= 1 ? drySearch(navigator, feet, 400, 3, p -> !blocked(p)) : Optional.<BlockPos>empty();
+            var ashore = above.getY() - feet.getY() <= 1 ? drySearch(0, world, navigator, feet, 400, 3, p -> !blocked(p)) : Optional.<BlockPos>empty();
             if (ashore.isPresent()) return Optional.of(go(ashore.get(), 0.8, true, "Get out of the water: to dry ground"));
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
@@ -3041,8 +3041,8 @@ final class PortalRunCampaign {
         // leaves the body over the water, and the current carries it back in. On 606 in E-40's iteration 11
         // (`e40a11-744c636`) Kindred, walked to the stand beside a flowing channel two deep, was carried back in each time
         // and sent out again 3,789 times, its dig toward lava stopped "In deep water" 1,782 times (F-25c4cf).
-        var dry = drySearch(navigator, feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
-                .or(() -> drySearch(navigator, feet, 4000, 16, p -> !blocked(p)));
+        var dry = drySearch(1, world, navigator, feet, 4000, 16, p -> !blocked(p) && !waterRound(world, p))
+                .or(() -> drySearch(2, world, navigator, feet, 4000, 16, p -> !blocked(p)));
         if (dry.isPresent()) return Optional.of(go(dry.get(), 0.8, true, "Get out of the water: to dry ground"));
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
@@ -3052,11 +3052,29 @@ final class PortalRunCampaign {
         return climb(body, "Climb out of the water");
     }
 
-    /** One of {@link #surface}'s searches for dry ground, counted for the fixtures (M-06k9). */
-    private Optional<BlockPos> drySearch(NativeNavigator navigator, BlockPos feet, int maxNodes, int radius, java.util.function.Predicate<BlockPos> allowed) {
+    /**
+     * One of {@link #surface}'s searches for dry ground, {@code which} of its three (M-06k9). One that found nothing is
+     * not asked again from the same cell for {@value #DRY_MISS_TICKS} ticks: dry ground that comes within reach is found
+     * within that where it stands, and at once from another cell. Only what was not found is kept; a stand found is
+     * searched for again as before. In M-06k's shipped-configuration read (2026-11-22) these searches were 67.7% of the
+     * ticks over 200 ms, players going up for air hundreds of times from much the same cells, every search finding nothing.
+     */
+    private Optional<BlockPos> drySearch(int which, ServerWorld world, NativeNavigator navigator, BlockPos feet, int maxNodes, int radius,
+                                         java.util.function.Predicate<BlockPos> allowed) {
+        long now = world.getTime();
+        if (dryMissCell[which] == feet.asLong() && now - dryMissAt[which] < DRY_MISS_TICKS && now >= dryMissAt[which]) return Optional.empty();
         drySearchesForTest++;
-        return navigator.nearestReachableDryStand(feet, maxNodes, radius, allowed);
+        var found = navigator.nearestReachableDryStand(feet, maxNodes, radius, allowed);
+        if (found.isEmpty()) {
+            dryMissCell[which] = feet.asLong();
+            dryMissAt[which] = now;
+        } else dryMissCell[which] = Long.MIN_VALUE;
+        return found;
     }
+
+    /** Per search of {@link #surface}'s three, the cell its last search that found nothing was asked from, and when. */
+    private final long[] dryMissCell = {Long.MIN_VALUE, Long.MIN_VALUE, Long.MIN_VALUE};
+    private final long[] dryMissAt = new long[3];
 
     /**
      * The water cell nearest to {@code feet} by swimming, through water alone, with open air straight above it: where its
