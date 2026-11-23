@@ -1,1 +1,2 @@
 dr-1 (fefd33ad): 32 min, peak 3101 MB, 128 required tests failed, fence-top 21, disk 4.3G
+dr-2 (fefd33ad): 32 min, peak 3877 MB, 111 required tests failed, fence-top 25, disk 4.3G
