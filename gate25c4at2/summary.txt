@@ -1,2 +1,3 @@
 at2-1 (b3da0956): 61 min, peak 3130 MB, 123 required tests failed, fence-top 19, disk 4.7G
 at2-2 (b3da0956): 63 min, peak 3160 MB, 120 required tests failed, fence-top 32, disk 4.6G
+at2-3 (b3da0956): 63 min, peak 3114 MB, 124 required tests failed, fence-top 17, disk 4.6G
