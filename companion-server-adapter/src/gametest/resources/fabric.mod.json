@@ -143,6 +143,7 @@
       "dev.kindred.fabric.NativeGoldGameTests",
       "dev.kindred.fabric.NativeStairGameTests",
       "dev.kindred.fabric.NativeStrandedPickupGameTests",
+      "dev.kindred.fabric.NativeDropInLeavesGameTests",
       "dev.kindred.fabric.NativeBridgeGameTests",
       "dev.kindred.fabric.NativeBodyTickingGameTests",
       "dev.kindred.fabric.NativeRulesetGameTests",
