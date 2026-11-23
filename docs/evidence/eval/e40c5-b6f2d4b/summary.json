@@ -1,0 +1,1350 @@
+{
+ "build": "e40c5-b6f2d4b",
+ "jar": "kindred-b6f2d4b.jar",
+ "otherJars": {},
+ "seeds": [
+  "101",
+  "202",
+  "20261030",
+  "31102026",
+  "404"
+ ],
+ "missing": [
+  "303"
+ ],
+ "short": {},
+ "freeSwitches": {},
+ "kinds": [
+  "earned"
+ ],
+ "scenarios": [
+  "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on"
+ ],
+ "team": {
+  "teamFurthestIndex": {
+   "median": 6,
+   "min": 6,
+   "max": 7,
+   "n": 5
+  },
+  "teamDeathsPerHour": {
+   "median": 0.75,
+   "min": 0.25,
+   "max": 1.5,
+   "n": 5
+  },
+  "stuckSpells": {
+   "median": 14,
+   "min": 0,
+   "max": 35,
+   "n": 5
+  },
+  "stuckMinutes": {
+   "median": 42,
+   "min": 0,
+   "max": 105,
+   "n": 5
+  },
+  "blockedForReconciliation": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "blockedMinutes": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "rescues": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "rescuesUnstuck": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "rescueAsks": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "rescueSpells": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "rescueSpellsOut": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "rescueRounds": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "recipesTried": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "spellsOutByRecipe": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "askSeconds": null,
+  "askSecondsPooled": null,
+  "tokens": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "linesPerMinute": {
+   "median": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "n": 5
+  },
+  "talkLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "unaskedLines": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 5
+  },
+  "silentMeetings": {
+   "median": 0,
+   "min": 0,
+   "max": 1,
+   "n": 5
+  },
+  "days": {
+   "median": 12.0,
+   "min": 12.0,
+   "max": 18.06,
+   "n": 5
+  },
+  "teamDeathsPerDay": {
+   "median": 0.25,
+   "min": 0.06,
+   "max": 0.5,
+   "n": 5
+  },
+  "teamStuckMinutesPerDay": {
+   "median": 2.77,
+   "min": 0.0,
+   "max": 8.75,
+   "n": 5
+  },
+  "teamChunkLoadsPerHour": {
+   "median": 5092.0,
+   "min": 1937.2,
+   "max": 12044.2,
+   "n": 5
+  },
+  "teamChunkMinutesPerHour": {
+   "median": 52016.4,
+   "min": 52012.8,
+   "max": 52018.8,
+   "n": 5
+  },
+  "teamBridgeBlocksPerSecond": {
+   "median": 1.44,
+   "min": 0.88,
+   "max": 1.86,
+   "n": 4
+  },
+  "minutesTo_wooden_tool": {
+   "median": 0.9,
+   "min": 0.3,
+   "max": 5.6,
+   "n": 5,
+   "reached": 5
+  },
+  "reached_wooden_tool": 5,
+  "minutesTo_stone_tools": {
+   "median": 1.9,
+   "min": 1.2,
+   "max": 6.2,
+   "n": 5,
+   "reached": 5
+  },
+  "reached_stone_tools": 5,
+  "minutesTo_iron_ingot": {
+   "median": 6.9,
+   "min": 4.7,
+   "max": 10.4,
+   "n": 5,
+   "reached": 5
+  },
+  "reached_iron_ingot": 5,
+  "minutesTo_iron_pickaxe": {
+   "median": 20.2,
+   "min": 15.5,
+   "max": 64.0,
+   "n": 5,
+   "reached": 5
+  },
+  "reached_iron_pickaxe": 5,
+  "minutesTo_diamond": {
+   "median": 74.6,
+   "min": 38.0,
+   "max": null,
+   "n": 5,
+   "reached": 4
+  },
+  "reached_diamond": 4,
+  "minutesTo_obsidian": {
+   "median": 40.6,
+   "min": 33.6,
+   "max": 77.7,
+   "n": 5,
+   "reached": 5
+  },
+  "reached_obsidian": 5,
+  "minutesTo_portal_lit": {
+   "median": 74.8,
+   "min": 43.0,
+   "max": 141.7,
+   "n": 5,
+   "reached": 5
+  },
+  "reached_portal_lit": 5,
+  "minutesTo_nether_entered": {
+   "median": null,
+   "min": 64.6,
+   "max": null,
+   "n": 5,
+   "reached": 2
+  },
+  "reached_nether_entered": 2,
+  "minutesTo_blaze_rods": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 5,
+   "reached": 0
+  },
+  "reached_blaze_rods": 0,
+  "minutesTo_eyes": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 5,
+   "reached": 0
+  },
+  "reached_eyes": 0,
+  "minutesTo_stronghold": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 5,
+   "reached": 0
+  },
+  "reached_stronghold": 0,
+  "minutesTo_end": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 5,
+   "reached": 0
+  },
+  "reached_end": 0,
+  "minutesTo_dragon": {
+   "median": null,
+   "min": null,
+   "max": null,
+   "n": 5,
+   "reached": 0
+  },
+  "reached_dragon": 0
+ },
+ "deathCauses": {
+  "zombie": 5,
+  "skeleton": 4,
+  "fall": 2,
+  "creeper": 2,
+  "husk": 1,
+  "suffocation": 1
+ },
+ "stuckKinds": {
+  "water loop": 5,
+  "no walkable route": 10,
+  "refused target repeated": 0,
+  "hole or pit": 11,
+  "hemmed in": 24,
+  "waiting for daylight or a teammate": 0,
+  "mining for a find": 3,
+  "busy-work loop": 31,
+  "other": 1,
+  "unmatched": 0
+ },
+ "deathKinds": {
+  "lava": 0,
+  "drowning": 0,
+  "fall": 2,
+  "starving with a mob near": 3,
+  "cornered": 3,
+  "dark melee": 2,
+  "other": 5
+ },
+ "perSeed": {
+  "101": {
+   "complete": true,
+   "ticksRun": 288000,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 1,
+    "linesPerMinute": 0.0
+   },
+   "factions": null,
+   "server": {
+    "tickMsMean": 17.49,
+    "tickMsWorst": 1800.69,
+    "tickMsWorstAt": 25,
+    "ticksOver50ms": 1104,
+    "ticksOver200ms": 19,
+    "heapMbMax": 1165,
+    "samples": 14400
+   },
+   "teamFurthest": "portal_lit",
+   "teamFurthestIndex": 6,
+   "teamDeathsPerHour": 0.5,
+   "players": {
+    "Kindred": {
+     "furthest": "portal_lit",
+     "furthestIndex": 6,
+     "minutesTo": {
+      "wooden_tool": 0.6,
+      "stone_tools": 1.2,
+      "iron_ingot": 6.9,
+      "iron_pickaxe": 19.0,
+      "diamond": 38.0,
+      "obsidian": 68.5,
+      "portal_lit": 178.0
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "zombie": 1
+     },
+     "stuckSpells": 3,
+     "stuckMinutes": 9,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 9191,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 2297.8,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 1,
+     "bridgeSeconds": 0.5,
+     "bridgeBlocksPerSecond": 2.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 1,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 3,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Sol": {
+     "furthest": "obsidian",
+     "furthestIndex": 5,
+     "minutesTo": {
+      "wooden_tool": 1.0,
+      "stone_tools": 2.0,
+      "iron_ingot": 28.4,
+      "iron_pickaxe": 97.5,
+      "obsidian": 138.7
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "zombie": 1
+     },
+     "stuckSpells": 11,
+     "stuckMinutes": 33,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 7532,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 1883.0,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 4,
+     "bridgeSeconds": 3.0,
+     "bridgeBlocksPerSecond": 1.33,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 1,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 3,
+      "no walkable route": 3,
+      "refused target repeated": 0,
+      "hole or pit": 3,
+      "hemmed in": 2,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Echo": {
+     "furthest": "portal_lit",
+     "furthestIndex": 6,
+     "minutesTo": {
+      "wooden_tool": 1.6,
+      "stone_tools": 1.9,
+      "iron_ingot": 47.3,
+      "iron_pickaxe": 70.3,
+      "obsidian": 74.2,
+      "portal_lit": 74.8
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 3459,
+     "chunkMinutes": 69360.0,
+     "chunkLoadsPerHour": 864.8,
+     "chunkMinutesPerHour": 17340.0,
+     "bridgeBlocks": 0,
+     "bridgeSeconds": 0.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    }
+   },
+   "days": 15.163,
+   "teamDeathsPerDay": 0.13,
+   "teamStuckMinutesPerDay": 2.77,
+   "teamChunkLoadsPerHour": 5045.5,
+   "teamChunkMinutesPerHour": 52017.6,
+   "teamBridgeBlocksPerSecond": 1.43
+  },
+  "202": {
+   "complete": true,
+   "ticksRun": 288000,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": null,
+   "server": {
+    "tickMsMean": 24.14,
+    "tickMsWorst": 1792.23,
+    "tickMsWorstAt": 70207,
+    "ticksOver50ms": 10566,
+    "ticksOver200ms": 13,
+    "heapMbMax": 1364,
+    "samples": 14400
+   },
+   "teamFurthest": "nether_entered",
+   "teamFurthestIndex": 7,
+   "teamDeathsPerHour": 0.25,
+   "players": {
+    "Kindred": {
+     "furthest": "obsidian",
+     "furthestIndex": 5,
+     "minutesTo": {
+      "wooden_tool": 0.9,
+      "stone_tools": 1.9,
+      "iron_ingot": 4.7,
+      "iron_pickaxe": 34.0,
+      "obsidian": 40.6
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "fall": 1
+     },
+     "stuckSpells": 17,
+     "stuckMinutes": 51,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 10751,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 2687.8,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 4,
+     "bridgeSeconds": 1.5,
+     "bridgeBlocksPerSecond": 2.67,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 1,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 2,
+      "refused target repeated": 0,
+      "hole or pit": 3,
+      "hemmed in": 12,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Sol": {
+     "furthest": "obsidian",
+     "furthestIndex": 5,
+     "minutesTo": {
+      "wooden_tool": 3.1,
+      "stone_tools": 9.8,
+      "iron_ingot": 12.1,
+      "iron_pickaxe": 24.2,
+      "obsidian": 55.1
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 15,
+     "stuckMinutes": 45,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 4382,
+     "chunkMinutes": 69360.0,
+     "chunkLoadsPerHour": 1095.5,
+     "chunkMinutesPerHour": 17340.0,
+     "bridgeBlocks": 3,
+     "bridgeSeconds": 1.6,
+     "bridgeBlocksPerSecond": 1.88,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 1,
+      "hemmed in": 1,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 13,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Echo": {
+     "furthest": "nether_entered",
+     "furthestIndex": 7,
+     "minutesTo": {
+      "wooden_tool": 5.1,
+      "stone_tools": 7.0,
+      "iron_ingot": 11.6,
+      "iron_pickaxe": 27.8,
+      "diamond": 51.2,
+      "obsidian": 54.2,
+      "portal_lit": 55.6,
+      "nether_entered": 64.6
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 1,
+     "stuckMinutes": 3,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 33044,
+     "chunkMinutes": 69360.0,
+     "chunkLoadsPerHour": 8261.0,
+     "chunkMinutesPerHour": 17340.0,
+     "bridgeBlocks": 6,
+     "bridgeSeconds": 3.9,
+     "bridgeBlocksPerSecond": 1.54,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 1,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    }
+   },
+   "days": 18.062,
+   "teamDeathsPerDay": 0.06,
+   "teamStuckMinutesPerDay": 5.48,
+   "teamChunkLoadsPerHour": 12044.2,
+   "teamChunkMinutesPerHour": 52018.8,
+   "teamBridgeBlocksPerSecond": 1.86
+  },
+  "20261030": {
+   "complete": true,
+   "ticksRun": 288000,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": null,
+   "server": {
+    "tickMsMean": 14.34,
+    "tickMsWorst": 2002.7,
+    "tickMsWorstAt": 51657,
+    "ticksOver50ms": 624,
+    "ticksOver200ms": 15,
+    "heapMbMax": 913,
+    "samples": 14400
+   },
+   "teamFurthest": "portal_lit",
+   "teamFurthestIndex": 6,
+   "teamDeathsPerHour": 0.75,
+   "players": {
+    "Kindred": {
+     "furthest": "iron_pickaxe",
+     "furthestIndex": 3,
+     "minutesTo": {
+      "wooden_tool": 0.3,
+      "stone_tools": 3.8,
+      "iron_ingot": 9.1,
+      "iron_pickaxe": 20.2
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 1801,
+     "chunkMinutes": 69360.0,
+     "chunkLoadsPerHour": 450.2,
+     "chunkMinutesPerHour": 17340.0,
+     "bridgeBlocks": 0,
+     "bridgeSeconds": 0.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Sol": {
+     "furthest": "iron_ingot",
+     "furthestIndex": 2,
+     "minutesTo": {
+      "wooden_tool": 0.5,
+      "stone_tools": 1.8,
+      "iron_ingot": 6.7
+     },
+     "deaths": 2,
+     "deathsPerHour": 0.5,
+     "causes": {
+      "creeper": 1,
+      "fall": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 4180,
+     "chunkMinutes": 69350.4,
+     "chunkLoadsPerHour": 1045.0,
+     "chunkMinutesPerHour": 17337.6,
+     "bridgeBlocks": 0,
+     "bridgeSeconds": 0.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 1,
+      "starving with a mob near": 0,
+      "cornered": 1,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Echo": {
+     "furthest": "portal_lit",
+     "furthestIndex": 6,
+     "minutesTo": {
+      "wooden_tool": 1.7,
+      "stone_tools": 3.2,
+      "iron_ingot": 12.9,
+      "iron_pickaxe": 26.8,
+      "obsidian": 40.0,
+      "portal_lit": 43.0
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "zombie": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 1768,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 442.0,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 0,
+     "bridgeSeconds": 0.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 1,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    }
+   },
+   "days": 12.0,
+   "teamDeathsPerDay": 0.25,
+   "teamStuckMinutesPerDay": 0.0,
+   "teamChunkLoadsPerHour": 1937.2,
+   "teamChunkMinutesPerHour": 52016.4
+  },
+  "31102026": {
+   "complete": true,
+   "ticksRun": 288000,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": null,
+   "server": {
+    "tickMsMean": 20.8,
+    "tickMsWorst": 3962.05,
+    "tickMsWorstAt": 1,
+    "ticksOver50ms": 2204,
+    "ticksOver200ms": 27,
+    "heapMbMax": 1095,
+    "samples": 14400
+   },
+   "teamFurthest": "nether_entered",
+   "teamFurthestIndex": 7,
+   "teamDeathsPerHour": 1.5,
+   "players": {
+    "Kindred": {
+     "furthest": "iron_ingot",
+     "furthestIndex": 2,
+     "minutesTo": {
+      "wooden_tool": 83.5,
+      "stone_tools": 85.4,
+      "iron_ingot": 80.7
+     },
+     "deaths": 5,
+     "deathsPerHour": 1.25,
+     "causes": {
+      "husk": 1,
+      "skeleton": 2,
+      "suffocation": 1,
+      "zombie": 1
+     },
+     "stuckSpells": 3,
+     "stuckMinutes": 9,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 18781,
+     "chunkMinutes": 69335.9,
+     "chunkLoadsPerHour": 4695.2,
+     "chunkMinutesPerHour": 17334.0,
+     "bridgeBlocks": 0,
+     "bridgeSeconds": 0.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 1,
+      "other": 4
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 1,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 2,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Sol": {
+     "furthest": "portal_lit",
+     "furthestIndex": 6,
+     "minutesTo": {
+      "wooden_tool": 48.2,
+      "stone_tools": 50.0,
+      "iron_ingot": 54.3,
+      "iron_pickaxe": 71.9,
+      "diamond": 74.6,
+      "obsidian": 78.8,
+      "portal_lit": 80.9
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "zombie": 1
+     },
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 7282,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 1820.5,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 0,
+     "bridgeSeconds": 0.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 1,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Echo": {
+     "furthest": "nether_entered",
+     "furthestIndex": 7,
+     "minutesTo": {
+      "wooden_tool": 5.6,
+      "stone_tools": 6.2,
+      "iron_ingot": 10.4,
+      "iron_pickaxe": 64.0,
+      "obsidian": 77.7,
+      "portal_lit": 78.5,
+      "nether_entered": 79.1
+     },
+     "deaths": 0,
+     "deathsPerHour": 0.0,
+     "causes": {},
+     "stuckSpells": 0,
+     "stuckMinutes": 0,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 9263,
+     "chunkMinutes": 69360.0,
+     "chunkLoadsPerHour": 2315.8,
+     "chunkMinutesPerHour": 17340.0,
+     "bridgeBlocks": 55,
+     "bridgeSeconds": 37.7,
+     "bridgeBlocksPerSecond": 1.46,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    }
+   },
+   "days": 12.0,
+   "teamDeathsPerDay": 0.5,
+   "teamStuckMinutesPerDay": 0.75,
+   "teamChunkLoadsPerHour": 8831.5,
+   "teamChunkMinutesPerHour": 52012.8,
+   "teamBridgeBlocksPerSecond": 1.46
+  },
+  "404": {
+   "complete": true,
+   "ticksRun": 288000,
+   "hours": 4.0,
+   "chatter": {
+    "talkLines": 0,
+    "unaskedLines": 0,
+    "silentMeetings": 0,
+    "linesPerMinute": 0.0
+   },
+   "factions": null,
+   "server": {
+    "tickMsMean": 15.4,
+    "tickMsWorst": 2552.85,
+    "tickMsWorstAt": 170158,
+    "ticksOver50ms": 694,
+    "ticksOver200ms": 28,
+    "heapMbMax": 965,
+    "samples": 14400
+   },
+   "teamFurthest": "portal_lit",
+   "teamFurthestIndex": 6,
+   "teamDeathsPerHour": 0.75,
+   "players": {
+    "Kindred": {
+     "furthest": "iron_pickaxe",
+     "furthestIndex": 3,
+     "minutesTo": {
+      "wooden_tool": 1.1,
+      "stone_tools": 4.3,
+      "iron_ingot": 11.2,
+      "iron_pickaxe": 34.3
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "skeleton": 1
+     },
+     "stuckSpells": 2,
+     "stuckMinutes": 6,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 8707,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 2176.8,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 0,
+     "bridgeSeconds": 0.0,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 1,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 0,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 2,
+      "busy-work loop": 0,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Sol": {
+     "furthest": "diamond",
+     "furthestIndex": 4,
+     "minutesTo": {
+      "wooden_tool": 1.0,
+      "stone_tools": 2.3,
+      "iron_ingot": 14.5,
+      "iron_pickaxe": 53.2,
+      "diamond": 84.4
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "creeper": 1
+     },
+     "stuckSpells": 21,
+     "stuckMinutes": 63,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 8772,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 2193.0,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 1,
+     "bridgeSeconds": 2.2,
+     "bridgeBlocksPerSecond": 0.45,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 1,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 0
+     },
+     "stuckKinds": {
+      "water loop": 2,
+      "no walkable route": 2,
+      "refused target repeated": 0,
+      "hole or pit": 1,
+      "hemmed in": 9,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 1,
+      "busy-work loop": 6,
+      "other": 0,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    },
+    "Echo": {
+     "furthest": "portal_lit",
+     "furthestIndex": 6,
+     "minutesTo": {
+      "wooden_tool": 1.1,
+      "stone_tools": 5.5,
+      "iron_ingot": 9.3,
+      "iron_pickaxe": 15.5,
+      "diamond": 138.2,
+      "obsidian": 33.6,
+      "portal_lit": 141.7
+     },
+     "deaths": 1,
+     "deathsPerHour": 0.25,
+     "causes": {
+      "skeleton": 1
+     },
+     "stuckSpells": 12,
+     "stuckMinutes": 36,
+     "rescues": 0,
+     "rescuesUnstuck": 0,
+     "rescueAsks": 0,
+     "askSeconds": [],
+     "rescueSpells": 0,
+     "rescueSpellsOut": 0,
+     "rescueRounds": 0,
+     "recipesTried": 0,
+     "spellsOutByRecipe": 0,
+     "tokens": 0,
+     "metrics": null,
+     "chunkLoads": 2889,
+     "chunkMinutes": 69355.2,
+     "chunkLoadsPerHour": 722.2,
+     "chunkMinutesPerHour": 17338.8,
+     "bridgeBlocks": 2,
+     "bridgeSeconds": 1.2,
+     "bridgeBlocksPerSecond": 1.67,
+     "deathKinds": {
+      "lava": 0,
+      "drowning": 0,
+      "fall": 0,
+      "starving with a mob near": 0,
+      "cornered": 0,
+      "dark melee": 0,
+      "other": 1
+     },
+     "stuckKinds": {
+      "water loop": 0,
+      "no walkable route": 0,
+      "refused target repeated": 0,
+      "hole or pit": 1,
+      "hemmed in": 0,
+      "waiting for daylight or a teammate": 0,
+      "mining for a find": 0,
+      "busy-work loop": 10,
+      "other": 1,
+      "unmatched": 0
+     },
+     "blockedForReconciliation": 0,
+     "blockedMinutes": 0
+    }
+   },
+   "days": 12.0,
+   "teamDeathsPerDay": 0.25,
+   "teamStuckMinutesPerDay": 8.75,
+   "teamChunkLoadsPerHour": 5092.0,
+   "teamChunkMinutesPerHour": 52016.4,
+   "teamBridgeBlocksPerSecond": 0.88
+  }
+ }
+}
