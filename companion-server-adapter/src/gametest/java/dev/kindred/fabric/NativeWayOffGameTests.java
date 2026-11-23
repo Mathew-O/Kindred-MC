@@ -66,7 +66,7 @@ public final class NativeWayOffGameTests implements FabricGameTest {
         for (int x = MID - 1; x <= MID + 1; x++) for (int y = 2; y <= 3; y++) context.setBlockState(x, y, MID - 1, Blocks.STONE);
     }
 
-    private enum Ground { TUNNEL, OPEN, WALLED }
+    private enum Ground { TUNNEL, OPEN, WALLED, LAVA }
 
     private enum Foe { ZOMBIE, CREEPER, SKELETON }
 
@@ -102,6 +102,17 @@ public final class NativeWayOffGameTests implements FabricGameTest {
         run(context, "Shotat", Ground.TUNNEL, Foe.SKELETON);
     }
 
+    /**
+     * A guard on the walkable check: a way off across lava is no way off. The tunnel west has lava in its floor four blocks
+     * on, within the cells the check reads, so of the ways that gain none can be walked: it turns no heading for ground, as
+     * on main. The check reads lava, fire and magma through the route finder's own {@code standable} and {@code passable}.
+     * Whether it burns later, in the fight that follows, is not this check's to decide: logged, not asserted.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, batchId = "wayOffLava", tickLimit = 600)
+    public void inATunnelWithLavaInTheWayOffItTurnsNoHeadingAcrossIt(TestContext context) {
+        run(context, "Lavawise", Ground.LAVA, Foe.ZOMBIE);
+    }
+
     private static void run(TestContext context, String name, Ground ground, Foe foe) {
         boolean creeper = foe == Foe.CREEPER;
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
@@ -119,6 +130,7 @@ public final class NativeWayOffGameTests implements FabricGameTest {
         // The side it went round the wall, once a block and a half out: -1 west, 1 east; and whether it came back past.
         int[] side = {0};
         boolean[] swung = {false};
+        boolean[] burned = {false};
         String label = creeper ? "[Run from creeper]" : "[Back off from zombie]";
         List<String> ends = new CopyOnWriteArrayList<>();
         List<String> turned = new CopyOnWriteArrayList<>();
@@ -143,6 +155,10 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                         case TUNNEL -> tunnel(context, 1);
                         case OPEN -> open(context);
                         case WALLED -> walled(context);
+                        case LAVA -> {
+                            tunnel(context, 1);
+                            context.setBlockState(MID - 4, 1, MID, Blocks.LAVA);
+                        }
                     }
                     f.runtime.createNative(f.source, name);
                 })
@@ -203,7 +219,12 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     if (side[0] == 0 && Math.abs(dx) >= 1.5) side[0] = dx < 0 ? -1 : 1;
                     if (side[0] != 0 && dx * side[0] < -0.5) swung[0] = true;
                     String told = String.format(java.util.Locale.ROOT, "farthest %.1f, first way off ended %.1f off; its steps:", farthest[0], firstEnd[0]) + steps + " " + ends;
-                    if (foe == Foe.SKELETON) {
+                    if (ground == Ground.LAVA) {
+                        // Five seconds on, no heading turned across the lava.
+                        burned[0] |= player.isOnFire() || player.isInLava();
+                        context.assertTrue(turned.isEmpty(), "No turn across lava; turned " + turned + "; its steps:" + steps);
+                        context.assertTrue(context.getTick() - since[0] >= 100, "Five seconds; its steps:" + steps);
+                    } else if (foe == Foe.SKELETON) {
                         // It backs off from it, and five seconds on no heading has been turned for ground.
                         context.assertTrue(turned.isEmpty(), "No turn against a shooter; turned " + turned + "; its steps:" + steps);
                         context.assertTrue(steps.indexOf("Back off from skeleton") >= 0 && context.getTick() - since[0] >= 100,
@@ -220,6 +241,7 @@ public final class NativeWayOffGameTests implements FabricGameTest {
                     var player = f.player();
                     if (ground == Ground.WALLED) context.assertTrue(!swung[0], "Kept to the side it took, " + (side[0] < 0 ? "west" : "east")
                             + "; its steps:" + steps + " " + ends);
+                    if (ground == Ground.LAVA) KindredMod.LOGGER.info("{}: burned in the five seconds: {}", name, burned[0]);
                     if (ground == Ground.TUNNEL && foe != Foe.SKELETON) context.assertTrue(player.getX() < start[0].x - 4, "Down the tunnel west, at x " + String.format(java.util.Locale.ROOT, "%.1f", player.getX() - start[0].x)
                             + " from where it stood; its steps:" + steps);
                     KindredMod.LOGGER.info("{}: {} blocks off, the first way off ended {} off; its steps:{}", name, String.format(java.util.Locale.ROOT, "%.1f", farthest[0]),
