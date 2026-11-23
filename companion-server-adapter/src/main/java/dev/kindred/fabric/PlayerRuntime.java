@@ -11237,7 +11237,7 @@ final class PlayerRuntime {
         requireThread();
         var entry = entries.get(player);
         if (entry == null || entry.campaign == null) return new int[] {0, 0};
-        return new int[] {entry.campaign.surfacePlansForTest, entry.campaign.drySearchesForTest};
+        return new int[] {(int) entry.campaign.surfacePlans, (int) entry.campaign.drySearches};
     }
 
     /**
@@ -19545,10 +19545,28 @@ final class PlayerRuntime {
         heapHighWater = 0;
         // The body's position-keyed maps by player (F-31j), counted here on the server thread that changes them.
         String maps = bodyMaps();
+        String drySearches = drySearches();
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth)
-                .thenApply(text -> text + "; " + BODY_MAPS + " " + maps);
+                .thenApply(text -> text + "; " + DRY_SEARCHES + " " + drySearches + "; " + BODY_MAPS + " " + maps);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
+    }
+
+    /** The cost line's name for {@link #drySearches}, its counts in this order (M-06k9). */
+    static final String DRY_SEARCHES = "dry-ground searches by player, plans out of the water/searches/positions expanded";
+
+    /**
+     * Each player's way out of the water since it was made, for the cost line (M-06k9): its plans that weighed it, the
+     * searches for dry ground they asked (a search that found nothing is not asked again from the same cell for
+     * {@value PortalRunCampaign#DRY_MISS_TICKS} ticks), and the positions those searches expanded. Read only.
+     */
+    private String drySearches() {
+        var by = new java.util.TreeMap<String, String>();
+        for (Entry entry : entries.values()) {
+            var c = entry.campaign;
+            by.put(entry.data.displayName(), c == null ? "0/0/0" : c.surfacePlans + "/" + c.drySearches + "/" + c.drySearchNodes);
+        }
+        return by.toString();
     }
 
     /** The cost line's name for {@link #bodyMaps}, its sizes in this order (F-31j). */

@@ -2993,24 +2993,27 @@ final class PortalRunCampaign {
     }
 
     /**
-     * Swimming or sunk: up to air and dry ground before anything else. Short of breath with the surface straight
-     * above, it swims up first; otherwise it heads for the nearest dry ground within reach, through the water if it
-     * must. Live run 69 drowned twice holed up in a flooded passage, sinking while it waited behind its wall, and each
-     * wait was cut short by the runtime's drowning check without anything taking it up.
-     */
-    /**
      * How long a search for dry ground that found nothing, from one cell, is not asked again from it (M-06k9): dry ground
      * that comes within reach is found within this many ticks where it stands, and at once from another cell.
      */
     static final int DRY_MISS_TICKS = 20;
 
-    /** For fixtures (M-06k9): the plans its way out of the water was weighed on, and the dry-ground searches they asked. */
-    int surfacePlansForTest, drySearchesForTest;
+    /**
+     * Since it was made, for the cost line and the fixtures (M-06k9): the plans its way out of the water was weighed on,
+     * the dry-ground searches they asked, and the positions those searches expanded.
+     */
+    long surfacePlans, drySearches, drySearchNodes;
 
+    /**
+     * Swimming or sunk: up to air and dry ground before anything else. Short of breath with the surface straight
+     * above, it swims up first; otherwise it heads for the nearest dry ground within reach, through the water if it
+     * must. Live run 69 drowned twice holed up in a flooded passage, sinking while it waited behind its wall, and each
+     * wait was cut short by the runtime's drowning check without anything taking it up.
+     */
     private Optional<Task> surface(NativePlayerBody body) {
         var player = body.entity();
         if (!PlayerRuntime.inDeepWater(player) && !wadingTwoDeep(player)) return Optional.empty();
-        surfacePlansForTest++;
+        surfacePlans++;
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
         // staged End run was turned back to the shore on every pass across a bay).
         if (!player.isSubmergedInWater() && player.getAir() >= player.getMaxAir() / 2 && endGoal()
@@ -3086,8 +3089,9 @@ final class PortalRunCampaign {
                                          java.util.function.Predicate<BlockPos> allowed) {
         long now = world.getTime();
         if (dryMissCell[which] == feet.asLong() && now - dryMissAt[which] < DRY_MISS_TICKS && now >= dryMissAt[which]) return Optional.empty();
-        drySearchesForTest++;
+        drySearches++;
         var found = navigator.nearestReachableDryStand(feet, maxNodes, radius, allowed);
+        drySearchNodes += navigator.lastDryStandExpanded();
         if (found.isEmpty()) {
             dryMissCell[which] = feet.asLong();
             dryMissAt[which] = now;
