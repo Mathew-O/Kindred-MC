@@ -1,0 +1,63 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 12.000,
+  "items": {"windows": 14409, "gained": 20303, "paid": 20303, "lapsed": 595, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 122.1, "snapshotMicrosMax": 33463.5, "tagMicrosMean": 113.4, "tagMicrosMax": 10022.7, "bySource": {"container.take:furnace": 119, "pickup:class_1308.method_6099": 1, "pickup:class_1428.method_6007": 1, "pickup:class_2248.method_36993": 12603, "pickup:class_3222.method_7329": 7212, "pickup:class_52.method_331": 34, "screen:class_1714": 100, "screen:class_1723": 778, "use:item": 50}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 21, "class_1540.method_5773": 33, "class_2248.method_36993": 12209, "class_3222.method_7329": 524, "class_52.method_331": 253}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 15.40, "tickMsWorst": 2552.85, "tickMsWorstAt": 170158, "ticksOver50ms": 694, "ticksOver200ms": 28, "heapMbMax": 965, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1360, "stone_tools": 5120, "iron_ingot": 13440, "iron_pickaxe": 41200},
+      "deaths": [
+        {"tick": 103489, "cause": "Kindred was shot by Skeleton", "x": 54, "y": 67, "z": -221, "light": 6, "timeOfDay": 7651, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Wood: inventory full - Drop surplus dirt", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 165780, "x": 26, "y": 18, "z": -188, "attempt": 1}, {"tick": 182180, "x": 21, "y": 18, "z": -205, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8707,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 2720, "iron_ingot": 17420, "iron_pickaxe": 63840, "diamond": 101260},
+      "deaths": [
+        {"tick": 186898, "cause": "Sol was blown up by Creeper", "x": 16, "y": 61, "z": -29, "light": 0, "timeOfDay": 19060, "dimension": "minecraft:overworld", "hunger": 6, "underSky": false, "stage": "Iron: Get out of the water: to dry ground (tried elsewhere 11 times)", "stance": "PRESS_ON", "habits": "[]", "task": "Get out of the water: to dry ground"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 39640, "x": 92, "y": 16, "z": -43, "attempt": 1}, {"tick": 62780, "x": 106, "y": 18, "z": -43, "attempt": 1}, {"tick": 107260, "x": 49, "y": -46, "z": -36, "attempt": 1}, {"tick": 111920, "x": 49, "y": -54, "z": -34, "attempt": 2}, {"tick": 130440, "x": 31, "y": 58, "z": -52, "attempt": 3}, {"tick": 137540, "x": 23, "y": 56, "z": -37, "attempt": 4}, {"tick": 148460, "x": 18, "y": 63, "z": 1, "attempt": 5}, {"tick": 153380, "x": -9, "y": 60, "z": -1, "attempt": 6}, {"tick": 157600, "x": 23, "y": 55, "z": -37, "attempt": 7}, {"tick": 172820, "x": 11, "y": 63, "z": -38, "attempt": 8}, {"tick": 176640, "x": 29, "y": 55, "z": -42, "attempt": 9}, {"tick": 180660, "x": 26, "y": 63, "z": -14, "attempt": 10}, {"tick": 184840, "x": 25, "y": 55, "z": -42, "attempt": 11}, {"tick": 242520, "x": 45, "y": -46, "z": -38, "attempt": 1}, {"tick": 247240, "x": 49, "y": -47, "z": -35, "attempt": 2}, {"tick": 251080, "x": 73, "y": -32, "z": -35, "attempt": 3}, {"tick": 256360, "x": 24, "y": -46, "z": -35, "attempt": 4}, {"tick": 262080, "x": 25, "y": -46, "z": -34, "attempt": 5}, {"tick": 272680, "x": 73, "y": -32, "z": -35, "attempt": 6}, {"tick": 279920, "x": 45, "y": -48, "z": -38, "attempt": 7}, {"tick": 286900, "x": 47, "y": -48, "z": -38, "attempt": 8}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 8772,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 2.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1380, "stone_tools": 6580, "iron_ingot": 11220, "iron_pickaxe": 18620, "diamond": 165800, "obsidian": 40345, "portal_lit": 169996},
+      "deaths": [
+        {"tick": 127273, "cause": "Echo was shot by Skeleton", "x": 15, "y": 49, "z": -62, "light": 6, "timeOfDay": 7435, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: inventory full - Drop surplus dirt", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 43960, "x": 105, "y": -54, "z": -107, "attempt": 1}, {"tick": 48840, "x": 100, "y": -54, "z": -92, "attempt": 2}, {"tick": 56060, "x": 100, "y": -54, "z": -92, "attempt": 3}, {"tick": 63280, "x": 100, "y": -54, "z": -92, "attempt": 4}, {"tick": 70500, "x": 100, "y": -54, "z": -92, "attempt": 5}, {"tick": 77700, "x": 100, "y": -54, "z": -92, "attempt": 6}, {"tick": 84920, "x": 100, "y": -54, "z": -92, "attempt": 7}, {"tick": 92120, "x": 100, "y": -54, "z": -92, "attempt": 8}, {"tick": 99320, "x": 100, "y": -54, "z": -92, "attempt": 9}, {"tick": 106540, "x": 100, "y": -54, "z": -92, "attempt": 10}, {"tick": 113740, "x": 100, "y": -54, "z": -92, "attempt": 11}, {"tick": 121000, "x": 99, "y": -52, "z": -90, "attempt": 12}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2889,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 1.2
+    }
+  }
+}
