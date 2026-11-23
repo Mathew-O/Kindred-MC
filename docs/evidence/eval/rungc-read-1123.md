@@ -139,6 +139,9 @@ does not say. This is a proposal for the lead, not built.
 606 Echo) the search walks 67 to 158 times its farthest reach. In `StrongholdLeg.explore`, `tried` is fresh on each
 pass and a stalled pass turns at right angles. This is read from the code, not tested.
 
+**The lever after the freeze** (the lead, 2026-11-23): the return after rods. With rods and no pearl, `netherDone`
+never holds, so the RETURN stage never comes (31102026 Sol). Not started.
+
 ## What e40c5 should count
 
 For each Nether player, every count against the same player's entry tick:
