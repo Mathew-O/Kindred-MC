@@ -1,0 +1,12 @@
+diff --git a/companion-server-adapter/src/main/java/dev/kindred/fabric/PlayerRuntime.java b/companion-server-adapter/src/main/java/dev/kindred/fabric/PlayerRuntime.java
+index 2c386148..d9881154 100644
+--- a/companion-server-adapter/src/main/java/dev/kindred/fabric/PlayerRuntime.java
++++ b/companion-server-adapter/src/main/java/dev/kindred/fabric/PlayerRuntime.java
+@@ -7583,7 +7583,6 @@ final class PlayerRuntime {
+         entry.lastTacticalObservation = null;
+         entry.blocker = "Respawned after dying.";
+         KindredMod.LOGGER.info("{} respawned at {}", entry.data.displayName(), body.entity().getBlockPos().toShortString());
+-        captureWaking(entry, body);
+         persistNativeSaveReceipt(entry);
+     }
+ 

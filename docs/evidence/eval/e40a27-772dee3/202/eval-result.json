@@ -1,0 +1,62 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.348,
+  "items": {"windows": 7209, "gained": 10940, "paid": 10940, "lapsed": 328, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 139.0, "snapshotMicrosMax": 8223.0, "tagMicrosMean": 132.2, "tagMicrosMax": 15102.5, "bySource": {"container.take:furnace": 96, "pickup:class_1428.method_6007": 1, "pickup:class_1540.method_5773": 1, "pickup:class_2248.method_36993": 8299, "pickup:class_3222.method_7329": 1899, "pickup:class_52.method_331": 53, "screen:class_1707": 39, "screen:class_1714": 104, "screen:class_1723": 713, "use:item": 63}, "dropsByOrigin": {"class_1428.method_6007": 383, "class_1540.method_5773": 13, "class_1560.method_6099": 1, "class_2248.method_36993": 8386, "class_3222.method_7329": 255, "class_4019.method_18289": 1, "class_4019.method_18291": 1, "class_52.method_331": 103}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 20.18, "tickMsWorst": 936.57, "tickMsWorstAt": 5838, "ticksOver50ms": 2013, "ticksOver200ms": 15, "heapMbMax": 1544, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1760, "stone_tools": 2300, "iron_ingot": 9180, "iron_pickaxe": 73480, "diamond": 97360, "obsidian": 122406},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 63960, "x": -186, "y": 21, "z": 45, "attempt": 1}, {"tick": 71180, "x": -186, "y": 21, "z": 45, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2395,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2120, "stone_tools": 3000, "iron_ingot": 6980, "iron_pickaxe": 13940, "diamond": 41100},
+      "deaths": [
+        {"tick": 41768, "cause": "Sol was slain by Zombie", "x": 3, "y": -44, "z": -81, "light": 11, "timeOfDay": 17930, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Obsidian: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 128580, "x": -224, "y": -54, "z": -62, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7740,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 3,
+      "bridgeSeconds": 1.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1900, "stone_tools": 3840, "iron_ingot": 13960, "iron_pickaxe": 70480, "obsidian": 71946},
+      "deaths": [
+        {"tick": 120566, "cause": "Echo suffocated in a wall", "x": 37, "y": 60, "z": 36, "light": 0, "timeOfDay": 728, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Interrupted: make a way elsewhere: walk on", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"},
+        {"tick": 135656, "cause": "Echo was shot by Skeleton", "x": 60, "y": 22, "z": 96, "light": 5, "timeOfDay": 168, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Iron: hurt and out of food - Climb toward the surface for food: clear 59, 24, 96", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 63520, "x": -10, "y": -31, "z": -43, "attempt": 1}, {"tick": 87280, "x": 22, "y": 5, "z": -32, "attempt": 1}, {"tick": 99100, "x": 22, "y": 64, "z": -12, "attempt": 2}, {"tick": 106300, "x": 22, "y": 64, "z": -17, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6264,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 5,
+      "bridgeSeconds": 2.1
+    }
+  }
+}

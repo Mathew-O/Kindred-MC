@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 9485, "paid": 9485, "lapsed": 205, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 116.0, "snapshotMicrosMax": 8183.5, "tagMicrosMean": 121.3, "tagMicrosMax": 8275.4, "bySource": {"container.take:furnace": 94, "pickup:class_2248.method_36993": 7052, "pickup:class_3222.method_7329": 1889, "pickup:class_52.method_331": 31, "screen:class_1714": 77, "screen:class_1723": 427, "use:item": 120}, "dropsByOrigin": {"class_1428.method_6007": 10, "class_1540.method_5773": 9, "class_2248.method_36993": 6996, "class_3222.method_7329": 161, "class_52.method_331": 159}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 16.84, "tickMsWorst": 1320.90, "tickMsWorstAt": 5838, "ticksOver50ms": 755, "ticksOver200ms": 14, "heapMbMax": 1007, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 680, "stone_tools": 1360, "iron_ingot": 13760, "iron_pickaxe": 21320, "obsidian": 67905, "portal_lit": 72763},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4040,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1100, "stone_tools": 3120, "iron_ingot": 15200, "iron_pickaxe": 34960},
+      "deaths": [
+        {"tick": 64565, "cause": "Sol was slain by Zombie", "x": 196, "y": -21, "z": -16, "light": 0, "timeOfDay": 16727, "dimension": "minecraft:overworld", "hunger": 19, "underSky": false, "stage": "Iron: fight back - Fight zombie (tried elsewhere 1 time)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 56040, "x": 67, "y": 62, "z": 56, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6217,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 11,
+      "bridgeSeconds": 5.8
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1160, "stone_tools": 1900, "iron_ingot": 4200, "iron_pickaxe": 30000, "obsidian": 75435, "portal_lit": 101764},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 61280, "x": -73, "y": 63, "z": 168, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3432,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

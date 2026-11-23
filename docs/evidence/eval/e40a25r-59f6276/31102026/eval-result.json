@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 4739, "paid": 4739, "lapsed": 70, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 83.5, "snapshotMicrosMax": 6139.3, "tagMicrosMean": 89.3, "tagMicrosMax": 1747.7, "bySource": {"container.take:furnace": 48, "pickup:class_1308.method_6099": 1, "pickup:class_1540.method_5773": 1, "pickup:class_2248.method_36993": 4357, "pickup:class_3222.method_7329": 179, "pickup:class_52.method_331": 56, "screen:class_1714": 41, "screen:class_1723": 123, "use:item": 3}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1540.method_5773": 15, "class_2248.method_36993": 4349, "class_3222.method_7329": 83, "class_52.method_331": 263}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 12.84, "tickMsWorst": 1315.02, "tickMsWorstAt": 1, "ticksOver50ms": 972, "ticksOver200ms": 12, "heapMbMax": 1308, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 7500, "stone_tools": 9520, "iron_ingot": 12600, "iron_pickaxe": 38100},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3033,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2040, "stone_tools": 2480, "iron_ingot": 13780},
+      "deaths": [
+        {"tick": 67760, "cause": "Sol was slain by Husk", "x": 115, "y": 64, "z": 215, "light": 2, "timeOfDay": 19922, "dimension": "minecraft:overworld", "hunger": 9, "underSky": false, "stage": "Iron: fight back - Fight husk", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4796,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 4280, "stone_tools": 5920, "iron_ingot": 16160, "iron_pickaxe": 32900},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 23840, "x": 21, "y": 34, "z": 225, "attempt": 1}, {"tick": 99620, "x": 81, "y": 62, "z": 275, "attempt": 1}, {"tick": 106820, "x": 82, "y": 62, "z": 275, "attempt": 2}, {"tick": 123500, "x": 82, "y": 62, "z": 275, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3479,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

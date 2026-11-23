@@ -66,8 +66,16 @@ final class BuildRunner {
     private final Map<Pos, Integer> wrong = new HashMap<>();
     private final Set<Pos> givenUp = new HashSet<>();
     private final Map<Pos, Integer> refused = new HashMap<>();
-    /** Whether it has gone back once, all else built, to what it gave up on as it went. */
-    private boolean retriedGivenUp;
+    /** How often it has gone back, all else built, to what it gave up on as it went. */
+    private int givenUpRounds;
+    /** Cells whose placement was refused with an animal or another mob standing in them. */
+    private final Set<Pos> obstructed = new HashSet<>();
+    /**
+     * Rounds back to what it gave up on, all else built, a 2 s wait before each (about 4 s a round with its tries), when a
+     * cell given up on had an animal or another mob standing in it: about 20 s for it to move, as a player waits for an
+     * animal to step out of a gateway, before the build is given up as before. With nothing in the cell, one round, as before.
+     */
+    static final int OBSTRUCTED_ROUNDS = 5;
     /** How often each given-up block has been tried again because another waited on it (E-70a1). */
     private final Map<Pos, Integer> setAsideRetries = new HashMap<>();
     /** The most times a given-up block is tried again for a block that waits on it. */
@@ -139,6 +147,38 @@ final class BuildRunner {
 
     String progress() { return progress; }
     List<Blueprint.Block> blocks() { return blocks; }
+
+    /** The last give-up {@link #logCannotPlaceYet} reported, so that each is logged once while it lasts. */
+    private String cannotPlaceLogged;
+
+    /**
+     * Diagnostic, log only (F-22c107): when the planner gives up on the rest as "blocks it cannot place yet", each block
+     * not yet in its state, with what the site reads in its cell, what the world holds there, its placement rule and
+     * whether it was given up on, refused or came out wrong. CI saw a hideout's last two planks so (#397, #417); alone,
+     * the class passes. Logged once for each such set, not every tick it lasts.
+     */
+    private void logCannotPlaceYet(ConstructionPlanner.Step step, BuildSite site, net.minecraft.server.world.ServerWorld world) {
+        if (step.kind() != ConstructionPlanner.Kind.BLOCKED || !step.reason().equals("The rest are blocks it cannot place yet")) {
+            cannotPlaceLogged = null;
+            return;
+        }
+        var rest = new StringBuilder();
+        for (var b : blocks) {
+            var cell = site.cell(b.at());
+            if (cell.map(c -> c.state().sameAs(b.spec())).orElse(false)) continue;
+            if (!rest.isEmpty()) rest.append("; ");
+            rest.append(b.at()).append(" wants ").append(b.spec()).append(": site ")
+                    .append(cell.map(c -> c.kind() + " " + c.state() + (c.floor() ? " floor" : "")).orElse("unknown"))
+                    .append(", world ").append(world.getBlockState(blockPos(b.at())))
+                    .append(", rule ").append(Placement.rule(b.spec()))
+                    .append(givenUp.contains(b.at()) ? ", given up" : "").append(refused.containsKey(b.at()) ? ", refused" : "")
+                    .append(wrong.containsKey(b.at()) ? ", came out wrong" : "");
+        }
+        String line = rest.toString();
+        if (line.equals(cannotPlaceLogged)) return;
+        cannotPlaceLogged = line;
+        KindredMod.LOGGER.info("Build {}: the rest are blocks it cannot place yet: {}", blueprint.name(), line);
+    }
 
     /** Item counts in the inventory, by id. */
     static Map<String, Integer> counts(ServerPlayerEntity player) {
@@ -531,6 +571,7 @@ final class BuildRunner {
         var setAside = blocks.stream().filter(b -> givenUp.contains(b.at())).toList();
         var step = walkedTo != null ? walkedTo : ConstructionPlanner.next(wanted, clear, site, feet, items, scaffold, shunned,
                 spareScaffold(player, wanted, site), setAside);
+        logCannotPlaceYet(step, site, world);
         // A block with nothing to be set against but one it gave up on (a bed's foot over a floor plank an animal stood
         // in): that block is tried again now, a few times at most, rather than the bed left for good (E-70a1).
         if (step.kind() == ConstructionPlanner.Kind.BLOCKED && step.target() != null && step.reason().startsWith(ConstructionPlanner.WAITS_ON_SET_ASIDE)
@@ -604,8 +645,15 @@ final class BuildRunner {
                 // What it gave up on as it went (a break refused while its own scaffold stood on the cell, a placement
                 // refused while it stood in it) is tried once more when all else is built: what was in the way is
                 // likely gone. A cabin's floor plank so left had kept a base unfinished until its retry five minutes on.
-                if (!givenUp.isEmpty() && !retriedGivenUp && tally.placed() < tally.total()) {
-                    retriedGivenUp = true;
+                // With something standing in a cell given up on, a few rounds, for it to move: a pen's gate, its last
+                // block, was refused from six spots in one second with an animal in the gateway, tried once more at once,
+                // and the pen given up at 23 of 24 (#359's CI, run 43729280146, chickens; #357's, the pigs on main).
+                boolean standing = givenUp.stream().anyMatch(obstructed::contains);
+                if (!givenUp.isEmpty() && givenUpRounds < (standing ? OBSTRUCTED_ROUNDS : 1) && tally.placed() < tally.total()) {
+                    givenUpRounds++;
+                    // The spots it was refused from were not the trouble, the animal was: each round may use them again.
+                    // Kept, they ran out round the gate in a few rounds, and the plan was "No way to reach" it, waited on for good.
+                    if (standing) shunned.clear();
                     givenUp.clear();
                     refused.clear();
                     wrong.clear();
@@ -909,6 +957,17 @@ final class BuildRunner {
     /** The drop of wool its last pick-up went for, and that pick-up's label: counted in {@link #woolWalks} once it ends. */
     private java.util.UUID woolFor;
     private String woolLabel;
+    /**
+     * Whose walk the last pick-up was, and how often a walk for each block's drop ended short of it, out of the player's
+     * reach, with the drop still lying (F-22c112): such a walk is not counted against the drop, up to {@link #SHORT_ENDS}
+     * times. Wool keeps its six walks as they were.
+     */
+    private java.util.UUID woolBy;
+    /** The walks the last pick-up allowed its drop: one for a block's drop, six for wool's, which is left as it was. */
+    private int woolTimes;
+    private final Map<java.util.UUID, Integer> shortEnds = new HashMap<>();
+    /** How many walks for one drop may end short of it, the drop still lying out of reach, before they count against it. */
+    static final int SHORT_ENDS = 3;
 
     /**
      * Wool for the build (a trading hall's beds, E-45d), as players get it: what has dropped picked up first; a sheep of
@@ -931,6 +990,8 @@ final class BuildRunner {
         // one runs, and a count kept here passed six in a wait for a drop to land, which was then let lie (on CI on
         // #12, short of the beds' wool after all nine sheep were shorn).
         woolFor = drop.getUuid();
+        woolBy = player.getUuid();
+        woolTimes = times;
         woolLabel = "Pick up " + name;
         // Beside it already: a moment for it, as a drop is not picked up in its first half second. Still falling: a
         // moment for it to land, a walk to a block in the air being no walk at all.
@@ -1014,7 +1075,20 @@ final class BuildRunner {
      */
     void finished(PortalRunCampaign.Task task, boolean completed, String reason, ServerWorld world) {
         if (woolFor != null && task.label().equals(woolLabel)) {
-            woolWalks.merge(woolFor, 1, Integer::sum);
+            // A walk counts against the drop it went for when it failed, or ended with the drop gone or within the player's
+            // reach. One that completed short of it, the drop still lying out of reach, does not, up to SHORT_ENDS times
+            // (F-22c112): the navigator ends a walk to a drop's block well short of it (1.8 to 4.2 blocks on the trading
+            // hall's wool), and a block's drop, allowed one walk, was then never gone for again, its build a block short.
+            var lying = world.getEntity(woolFor) instanceof net.minecraft.entity.ItemEntity drop && drop.isAlive() ? drop : null;
+            var by = woolBy == null ? null : world.getPlayerByUuid(woolBy);
+            boolean outOfReach = woolTimes == 1 && completed && lying != null && by != null && !by.getBoundingBox().expand(1, 0.5, 1).intersects(lying.getBoundingBox());
+            int shorts = outOfReach ? shortEnds.merge(woolFor, 1, Integer::sum) : 0;
+            if (outOfReach && shorts <= SHORT_ENDS) {
+                KindredMod.LOGGER.info("Build {}: {} ended {} short of the drop it went for, out of reach; not counted against it ({} of {}) (F-22c112)",
+                        blueprint.name(), woolLabel, String.format(java.util.Locale.ROOT, "%.2f", Math.sqrt(by.squaredDistanceTo(lying))), shorts, SHORT_ENDS);
+            } else {
+                woolWalks.merge(woolFor, 1, Integer::sum);
+            }
             woolFor = null;
         }
         // A step for the build's needs is no placement: the run's own gathering keeps account of those that fail.
@@ -1101,6 +1175,17 @@ final class BuildRunner {
         }
         // A block whose placement is refused again and again (the server's policy, another's claim) is left.
         if (!completed) {
+            // Something standing in the cell, which no block goes into: named. An animal or another mob there is waited
+            // out at the end (see DONE); a player there (its own body, a stance off the middle) is only named.
+            var in = world.getOtherEntities(null, new net.minecraft.util.math.Box(blockPos(at)),
+                    e -> !e.isSpectator() && (e instanceof net.minecraft.entity.LivingEntity living ? living.isAlive() : e.isCollidable()));
+            if (!in.isEmpty()) {
+                boolean mob = in.stream().anyMatch(e -> !(e instanceof net.minecraft.entity.player.PlayerEntity));
+                if (mob) obstructed.add(at);
+                KindredMod.LOGGER.info("Build {}: {} refused with {} in the cell", blueprint.name(), task.label(),
+                        in.stream().map(e -> e instanceof net.minecraft.entity.player.PlayerEntity p ? "the player " + p.getName().getString()
+                                : Registries.ENTITY_TYPE.getId(e.getType()).toString()).distinct().toList());
+            }
             if (refused.merge(at, 1, Integer::sum) >= 3) givenUp.add(at);
             return;
         }

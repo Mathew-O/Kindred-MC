@@ -306,6 +306,20 @@ public final class NativeAccountingGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "realTimePeriod", tickLimit = 800)
     public void aWalkRunningAtItsPeriodsEndOnASlowStoreCarriesOnIntoTheNext(TestContext context) {
+        walkOverPeriodEnd(context, "SlowMidnight", java.time.Duration.ZERO);
+    }
+
+    /**
+     * The same walk with its server's ticks running long (F-22c103): a tick begun with less of the paid slice left than
+     * RENEW_GAIN_MIN takes that long, so the slice could lapse between the tick's check and the move's. The walk is not
+     * begun on so little of its slice; it holds for the next period's, and runs on to the way's far end.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "realTimePeriod", tickLimit = 800)
+    public void aWalkWhoseTicksRunLongAtItsPeriodsEndCarriesOnIntoTheNext(TestContext context) {
+        walkOverPeriodEnd(context, "LongTickMidnight", PlayerRuntime.RENEW_GAIN_MIN);
+    }
+
+    private static void walkOverPeriodEnd(TestContext context, String name, java.time.Duration tickHold) {
         var f = new NativePaidSkillsGameTests.Fixture(context);
         ZoneOffset[] zone = new ZoneOffset[1];
         long[] lastTick = new long[1];
@@ -314,7 +328,7 @@ public final class NativeAccountingGameTests implements FabricGameTest {
         BlockPos end = start.east(68);
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Runtime ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "SlowMidnight"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, name))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
@@ -335,6 +349,7 @@ public final class NativeAccountingGameTests implements FabricGameTest {
                     var limit = f.runtime.activityLimitForTest(f.id);
                     context.assertTrue(limit != null && limit.timezone().equals(zone[0].getId()), "Zone saved");
                     f.runtime.delayBudgetWritesForTest(java.time.Duration.ofMillis(400));
+                    f.runtime.holdSkillTicksForTest(tickHold);
                     lastTick[0] = System.nanoTime();
                     context.assertTrue(f.runtime.nativeGotoCentred(f.source, f.id, end) == 1, "A walk of 68 blocks over its period's end: "
                             + f.runtime.nativeActivityStatus(Actor.console(), f.id).work());
@@ -353,6 +368,7 @@ public final class NativeAccountingGameTests implements FabricGameTest {
                     context.assertTrue(carried[0], "It was carried into the next period, not started again");
                     context.assertTrue(!f.runtime.nativeStatuses(Actor.console()).getFirst().stopped(), "Not halted");
                     f.runtime.delayBudgetWritesForTest(java.time.Duration.ZERO);
+                    f.runtime.holdSkillTicksForTest(java.time.Duration.ZERO);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Writer closed"))

@@ -25,6 +25,8 @@ import net.minecraft.util.math.Box;
 public final class NativeKitBeforeNightGameTests implements FabricGameTest {
     /** How far the fixture puts its spawn from where it dies: inside the campaign's bound for a walk back at night. */
     private static final int APART = 16;
+    /** Its spawn farther off, beyond F-25c4di1f1's first bound of 24 and within the bound of 40 (F-25c4di1f2), about as far as e40a24's 707 Sol woke from its kit. */
+    private static final int FAR = 34;
     /** How long its drops have lain already when it wakes (staged); and how long it has after that to have its kit back. */
     private static final int LAIN = 3_000, BUDGET = 1_200;
     /** How long after its kit is back it has to dig in for the night. */
@@ -40,9 +42,13 @@ public final class NativeKitBeforeNightGameTests implements FabricGameTest {
      * every side, and a pad of rock five deep at each end to dig into.
      */
     private static void ground(TestContext context) {
+        ground(context, APART);
+    }
+
+    private static void ground(TestContext context, int apart) {
         NativeNightsGameTests.pad(context, context.getAbsolutePos(DIES));
-        NativeNightsGameTests.pad(context, context.getAbsolutePos(DIES.east(APART)));
-        NativeNightsGameTests.floor(context, DIES.getX() - MARGIN, DIES.getX() + APART + MARGIN, DIES.getZ() - MARGIN, DIES.getZ() + MARGIN);
+        NativeNightsGameTests.pad(context, context.getAbsolutePos(DIES.east(apart)));
+        NativeNightsGameTests.floor(context, DIES.getX() - MARGIN, DIES.getX() + apart + MARGIN, DIES.getZ() - MARGIN, DIES.getZ() + MARGIN);
     }
 
     /** Its kit, worn and held: an iron chestplate on, an iron pickaxe in hand, bread and cobblestone in its pack. */
@@ -106,8 +112,26 @@ public final class NativeKitBeforeNightGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "kitBeforeNight", tickLimit = LAIN + BUDGET + SHELTER + 3_400)
     public void wokenAtNightNearItsKitWithNothingAboutItGoesBackBeforeItHolesUp(TestContext context) {
+        goesBack(context, APART);
+    }
+
+    /**
+     * In plain terms: the same, but it wakes farther from its things, about as far as a player in a real run did: it
+     * still walks back for them before it shelters.
+     *
+     * Technical: F-25c4di1f2, the wider bound. STAGED as the test above, its spawn {@value #FAR} blocks east of where the
+     * fixture kills it (beyond the first bound of 24, within 40), its ground running {@value #MARGIN} beyond. The four walks at
+     * five ticks a block fit well inside what is left of its drops' time. Fails and passes as the test above.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "kitBeforeNightFar", tickLimit = LAIN + BUDGET + SHELTER + 3_400)
+    public void wokenAtNightFartherFromItsKitWithNothingAboutItStillGoesBackBeforeItHolesUp(TestContext context) {
+        goesBack(context, FAR);
+    }
+
+    /** Its death, its waking {@code apart} blocks east, then its kit back and dug in for the night, as the tests above say. */
+    private static void goesBack(TestContext context, int apart) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, LAIN + BUDGET + SHELTER + 3_200);
-        BlockPos died = context.getAbsolutePos(DIES), spawn = died.east(APART);
+        BlockPos died = context.getAbsolutePos(DIES), spawn = died.east(apart);
         ServerPlayerEntity[] dead = {null};
         int[] deaths = {0}, woken = {0}, after = {0};
         StringBuilder seen = new StringBuilder(), lost = new StringBuilder();
@@ -116,7 +140,7 @@ public final class NativeKitBeforeNightGameTests implements FabricGameTest {
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Waker"))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> {
-                    ground(context);
+                    ground(context, apart);
                     context.getWorld().setWeather(12_000, 0, false, false);
                     context.getWorld().setTimeOfDay(14_000);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");

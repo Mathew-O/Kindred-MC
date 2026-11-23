@@ -128,6 +128,15 @@ final class PortalRunCampaign {
      * by turns (the corpus's kindred-48005).
      */
     private boolean hungryOnTop;
+    /**
+     * The reserve turn's wood search (F-25c4cr1): daylight ticks spent on it with no wood gained, the tick last counted, and
+     * whether it is set aside for this descent. On a seed with no trees in reach (31102026's open sand) the search would
+     * otherwise go on while the last pickaxe could still be finding lava.
+     */
+    private long reserveSearchTicks, reserveCountedAt = Long.MIN_VALUE;
+    private boolean reserveAside;
+    /** Daylight ticks a reserve wood search runs with no wood gained before it is set aside, as the other set-asides. */
+    static final int RESERVE_SEARCH_TICKS = 2400;
     /** The steps of filling its bucket from the water over its head (F-35g), and the progress line's words for them. */
     private enum Overhead { OPEN, FILL, SEAL, DRAIN }
     static final String OVERHEAD = "Water over its head";
@@ -217,7 +226,7 @@ final class PortalRunCampaign {
      * ground (vanilla's despawn); the ticks a block a walk is reckoned at (a walk is some 4.3 blocks a second, so under 5);
      * and how many such walks must fit in what is left of the kit's life on the ground.
      */
-    static final int KIT_WALK_MOST = 24, KIT_HOSTILE_SIGHT = 24, DROP_LIFE = 6_000, KIT_TICKS_A_BLOCK = 5, KIT_WALKS_LEFT = 4;
+    static final int KIT_WALK_MOST = 40, KIT_HOSTILE_SIGHT = 24, DROP_LIFE = 6_000, KIT_TICKS_A_BLOCK = 5, KIT_WALKS_LEFT = 4;
     private String progress = "Starting";
     private PortalRunPlanner.Stage stage = PortalRunPlanner.Stage.WOOD;
     private long lastTick;
@@ -673,6 +682,19 @@ final class PortalRunCampaign {
      * and carried out by the run's own steps: ore in sight, then the caves it knows, then down to where iron is; fuel,
      * a furnace and the smelt. Empty once it holds them, or where it cannot from here.
      */
+    /**
+     * Where the player stands and the server's tick, kept as {@code plan()} keeps them, for a caller that asks the run's
+     * steps of it with no goal of its own (a build's gather, look, route or climb), whose plan never runs (F-22c115).
+     * Left at the world's origin, every refused walk was counted as from one place, and its stranding never lapsed as
+     * the player moved: a cabin's three refused walks to stone in its pit kept the field's twelve logs out as "stranded
+     * from 0, 0, 0", its build turning between a walk out to look for logs and its way back up to the build.
+     */
+    private void standing(NativePlayerBody body) {
+        var player = body.entity();
+        lastFeet = player.getBlockPos().toImmutable();
+        lastTick = Math.max(lastTick, player.getServerWorld().getServer().getTicks());
+    }
+
     Optional<Task> ironFor(NativePlayerBody body, EditPolicy.ServerPolicy policy, int wanted) {
         this.policy = policy;
         lastFeet = body.entity().getBlockPos().toImmutable();
@@ -694,6 +716,7 @@ final class PortalRunCampaign {
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
+        refusedStep(task, completed, tick, why);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -731,6 +754,7 @@ final class PortalRunCampaign {
             }
             if (toldTrees != null && toldTrees.isWithinDistance(cut, TREES_APART)) toldTrees = null;
         }
+        if (task != null) lavaTaskFinished(task, completed, why);
         // Its walks that found no way from about here. A walk that did go somewhere does not end it: a few steps across
         // the chamber it is shut in, or up its own stair, are no way out. Once it stands well off from there, or no walk
         // has failed for a minute, it is stranded no longer.
@@ -813,6 +837,14 @@ final class PortalRunCampaign {
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceDone = true;
             retraceFrom = lastFeet; // Where it stood when the walk was chosen.
+            // Ended lower than it began (F-25c4at1): the climb's own rule, that the way back up never leads down, applied to
+            // where the walk ended. Held from where it began, not only where it ended: in iteration 26 the walk back from the
+            // step ended a block lower, the stall there lifted as soon as the climb stepped it up again, and the walk back
+            // was offered again, three steps round, for 21 game minutes on batch 1's 31102026 Sol.
+            if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
+                retraceLowerFrom = retraceChosenAt;
+                retraceLowerUntil = tick + 600;
+            }
         }
         // Refused ("no walkable route"), the way it came is not asked for again from here for a while, so the climb has its
         // turn: sealed in for the night, every walk back along it was refused, another cell of it each time (F-25c4at).
@@ -1290,9 +1322,20 @@ final class PortalRunCampaign {
         boolean nightIn = dugInForTheNight(dweller);
         // Its work only: a walk up for air, a back-off, a run from a creeper or any other safety step goes as before.
         if (nightIn && planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get())
-                && outUnderTheSky(dweller, planned.get())) {
+                && outUnderTheSky(dweller, planned.get(), tick)) {
             planned = daylightBelow(body);
             progress = stageLabel(stage) + ": nothing to do before daylight - " + planned.get().label();
+        }
+        // Its own shelter's seal from tonight is not its work's to break before daylight (F-25c4dl): it holds in it, its
+        // way in closed, as above. The night in the bed it carries seals its pocket first and hands the night back when
+        // the bed may not go down now (waiting to try again, given up tonight, or a way in left); below ground the iron's
+        // branch mine goes on through the night, and its next cell was the seal. In E-40 step 8 (`e40a25s-0d3432b`) on
+        // 303, four of the five "mining for a find" spells were one cell sealed and cleared by turns, no advance, and 101
+        // Echo's with it off. Not a safety step, and not its way out by its own seal when it has no other ("open its
+        // shelter"), which goes as before.
+        if (planned.isPresent() && !passive(planned.get()) && !surfacing(planned.get()) && breaksTonightsSeal(dweller, planned.get(), tick)) {
+            planned = daylightBelow(body);
+            progress = stageLabel(stage) + ": its shelter sealed for the night - " + planned.get().label();
         }
         // New ground restarts the clock; only material progress ends a move elsewhere and the run of attempts.
         boolean newGround = seenCells.size() < 100_000
@@ -1673,7 +1716,8 @@ final class PortalRunCampaign {
 
     /** Whether a walk to {@code to} would take it out under the sky, by the night's rule (F-35m's fixtures). */
     static boolean outUnderTheSkyForTest(ServerPlayerEntity player, BlockPos to) {
-        return outUnderTheSky(player, go(to, 1, true, "a fixture"));
+        Task walk = go(to, 1, true, "a fixture");
+        return outUnderTheSky(player, walk) || wayOutUnderTheSky(player, to);
     }
 
     /** The cell the goal's gather would go for first (its first {@code nearest}, with the one rule {@link #gatherable}). */
@@ -2443,6 +2487,7 @@ final class PortalRunCampaign {
         }
         noteHappenings(player);
         var steps = new java.util.ArrayList<>(PortalRunPlanner.plan(snapshot, facts, preferences(), team));
+        boundReserve(player, snapshot, facts, steps);
         // On the way to the End the portal's plan has nothing left to say, in the Nether least of all: none of the
         // upkeep below that follows its steps (workstations carried along, waiting for daylight to cut logs) applies.
         boolean legActive = endGoal() && stronghold.active(player);
@@ -2538,16 +2583,19 @@ final class PortalRunCampaign {
         // step back by a hit is no reason to turn and wall off, nor a skeleton stepping out of view one to walk back
         // into its fire (live run 58's three deaths came as the goal switched between them every second). Only a
         // fall below six health ends a fight early; a retreat turns to fight only when there is nowhere to back off to.
-        boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
-        boolean retreating = lastTick < retreatHeldUntil;
         // A back-off that ended with a mob on foot still in reach gained nothing: a zombie walks as fast as a player. Then
         // it neither backs off again nor holes up for a while, but fights it, as below; in e40a22 five players switched
         // between backing off and holing up every second or two while a zombie kept pace and struck, and died with food
         // or a pickaxe in hand, the sword never drawn (A1).
+        // Before the held choices are read (F-22c104): read after, the retreat it ends still held for this decision, and
+        // the fight it falls through to was turned back into a back-off below, which held the retreat again. Caught so as it
+        // backed off again, the player backed off with the zombie at its back until it was killed (CI on #385, #416, main).
         if (onFootInReach(player) != null && backOffEndedAt > Long.MIN_VALUE && lastTick - backOffEndedAt <= GAINLESS_CATCH) {
             backOffGainlessUntil = Math.max(backOffGainlessUntil, lastTick + GAINLESS_HOLD);
             retreatHeldUntil = Math.min(retreatHeldUntil, lastTick);
         }
+        boolean fighting = lastTick < fightHeldUntil && player.getHealth() >= 6;
+        boolean retreating = lastTick < retreatHeldUntil;
         // Only while a mob on foot after it is still close: a passage sealed behind it (F-25c4dc) and a hole-up once it is
         // gone are as before.
         boolean gainless = lastTick < backOffGainlessUntil && huntedOnFootWithin(player, 8);
@@ -2837,15 +2885,8 @@ final class PortalRunCampaign {
             return wait;
         }
         // Underground with every way on refused (liquid below, holes all round): climb a step and look again.
-        if (underground(player)) {
-            Optional<Task> up = climb(body, "Climb to find another way");
-            if (up.isPresent()) {
-                paced(tick);
-                cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
-                progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
-                return up;
-            }
-        }
+        Optional<Task> anotherWay = climbToFindAnotherWay(body, tick, stageLabel(stage));
+        if (anotherWay.isPresent()) return anotherWay;
         // Stranded on a ledge or pillar with every way off a drop: take the shortest fall it can afford, as a player
         // jumps down rather than wait for ever.
         Optional<Task> drop = jumpDown(player);
@@ -2855,6 +2896,77 @@ final class PortalRunCampaign {
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         return Optional.empty();
+    }
+
+    /**
+     * Underground with every way on refused (liquid below, holes all round): a step of the climb, to look again from
+     * higher; the cell it leaves set aside, a dead end it does not step back down into.
+     */
+    private Optional<Task> climbToFindAnotherWay(NativePlayerBody body, long tick, String stageLabel) {
+        var player = body.entity();
+        if (!underground(player)) return Optional.empty();
+        // Hemmed in again after a while out of it: where this spell of it began.
+        if (hemmedFrom == null || lastTick - hemmedLast > HEMMED_GAP) {
+            hemmedFrom = lastFeet;
+        }
+        hemmedLast = lastTick;
+        BlockPos target = refusedTarget != null && lastTick - refusedAt <= HEMMED_TARGET_AGE ? refusedTarget : null;
+        int ceiling = target != null ? target.getY() + 2 : hemmedFrom.getY() + HEMMED_CLIMB;
+        if (lastFeet.getY() >= ceiling) return Optional.empty();
+        Optional<Task> up = climb(body, "Climb to find another way");
+        if (up.isPresent()) {
+            paced(tick);
+            cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
+            progress = stageLabel + ": no way on from here - " + up.get().label();
+        }
+        return up;
+    }
+
+    /**
+     * The bound on the climb to find another way (F-25c4bx1): with every step still refused it goes no higher than the
+     * refused step's own target and two, or, with none known, {@value #HEMMED_CLIMB} above where it was first hemmed in;
+     * then the fallback offers nothing, and the spell is the watchdog's and rescue's, as any other with no way on. A
+     * tightening: no timeout is changed, and rescue stays once a spell. In iteration 26, batch 2's 707 Sol climbed from its
+     * own cast site at y −49 to y 66, 120 blocks over its work, its two stuck spells at the top.
+     */
+    static final int HEMMED_CLIMB = 8;
+    /** A gap in being hemmed in, in ticks, after which the next time is a new spell of it. */
+    private static final long HEMMED_GAP = 200;
+    /** How recent a refused step must be, in ticks, for its target to bound the climb. */
+    private static final long HEMMED_TARGET_AGE = 1200;
+    /** Where this spell of being hemmed in began, and when the fallback last ran. */
+    private BlockPos hemmedFrom;
+    private long hemmedLast = Long.MIN_VALUE / 2;
+    /** The target of the last step refused, and when. */
+    private BlockPos refusedTarget;
+    private long refusedAt = Long.MIN_VALUE / 2;
+
+    /**
+     * A walk refused for want of a route: its target remembered for the bound on the climb (F-25c4bx1). Only that: a step
+     * cancelled ("authority lost") or blocked for another reason is no place it could not reach. In iteration 27 a "Dig down
+     * toward lava" cancelled a block below batch 1's 404 Echo came just before a climb that went on up to its crafting
+     * table. Nor the climb's own steps: its breaks are refused for now, not here, and a step up of its own refused is no
+     * target of its work.
+     */
+    private void refusedStep(Task task, boolean completed, long tick, String why) {
+        if (task == null || completed || !"native_goto".equals(task.skill()) || why == null || !why.startsWith("No walkable route")
+                || task.label().startsWith("Climb to find another way")) return; // Nor its own step up.
+        BlockPos at = position(task.args());
+        if (at == null) return;
+        refusedTarget = at;
+        refusedAt = tick;
+    }
+
+    /**
+     * For fixtures only, a setter: sets where it stands, its clock and the server's edit policy as its plan's tick would,
+     * then asks for the plan's fallback climb as the plan does with every step refused (F-25c4bx1). Package-private; called
+     * from no main source.
+     */
+    Optional<Task> anotherWayForTest(NativePlayerBody body, BlockPos feet, long tick, EditPolicy.ServerPolicy policy) {
+        this.policy = policy;
+        lastFeet = feet.toImmutable();
+        lastTick = Math.max(lastTick, tick);
+        return climbToFindAnotherWay(body, tick, "Iron");
     }
 
     /**
@@ -4169,6 +4281,7 @@ final class PortalRunCampaign {
 
     private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,
                                   Predicate<BlockPos> also) {
+        standing(body);
         Optional<Task> task = gatherFrom(body, kind, radius, what, guarded, also);
         if (task.isEmpty() && kind == WorldKnowledge.Kind.LOG && stuckSpells > 0 && lastTick - spellStart >= stuckTicks && logsSpell != stuckSpells) {
             logsSpell = stuckSpells;
@@ -4280,6 +4393,7 @@ final class PortalRunCampaign {
      * nothing said why the build's gather had passed it over. The caller logs it once a trip.
      */
     boolean knownLogsKeptOut(NativePlayerBody body, int radius, java.util.function.Function<BlockPos, String> filtered, String prefix) {
+        standing(body);
         BlockPos feet = body.entity().getBlockPos();
         var known = new java.util.ArrayList<>(knowledge.all(WorldKnowledge.Kind.LOG));
         if (known.isEmpty()) return false;
@@ -4590,6 +4704,7 @@ final class PortalRunCampaign {
 
     /** A walk out over the surface to look for {@code what}, as the goal looks for a tree it has not seen (E-08c). */
     Optional<Task> lookFor(NativePlayerBody body, String what) {
+        standing(body);
         return groundBelow(body.entity()) && !underground(body.entity()) ? explore(body.entity(), what) : Optional.empty();
     }
 
@@ -4716,6 +4831,133 @@ final class PortalRunCampaign {
         BlockPos to = off > 40 ? legToward(lastFeet, toldTrees, 40) : toldTrees;
         Task walk = go(to, 3, true, "Walk to the trees " + toldTreesBy + " found at " + toldTrees.toShortString());
         return setAside(walk) ? Optional.empty() : Optional.of(walk);
+    }
+
+    /** Lava it filled its cast's bucket at and has told its team of, and the one not yet told of, taken once by the runtime (F-25c4dm). */
+    private final List<BlockPos> lavaTold = new java.util.ArrayList<>();
+    private BlockPos lavaFound;
+    /** Sites this close together are one: a pool is told of once, however many of its sources are filled at. */
+    static final int LAVA_APART = 16;
+    /** Lava a teammate told it it filled a bucket at: walked toward, short of lava with none seen, before the blind hunt (F-25c4dm). */
+    private BlockPos toldLava;
+    private String toldLavaBy = "";
+    private long toldLavaSince, toldLavaNear = -1;
+    private double toldLavaBest, toldLavaWalkFrom = -1;
+    private String toldLavaRefused;
+    private boolean toldLavaWalkEnded, toldLavaLogged;
+    /** Told sites set aside for the rest of the run, by the four-block column of each. */
+    private final Set<Long> toldLavaAside = new HashSet<>();
+    private String who = "";
+    private static final String TOLD_LAVA_WALK = "Cast: walk to the lava ";
+
+    /** Lava it filled its cast's bucket at and has not yet told its team of, taken once by the runtime, which tells them (F-25c4dm). */
+    Optional<BlockPos> takeLavaFound() {
+        BlockPos found = lavaFound;
+        lavaFound = null;
+        return Optional.ofNullable(found);
+    }
+
+    /**
+     * A teammate's word of lava it filled a bucket at, for a cast: the nearer of those it is told of is kept, never one it
+     * has set aside. A heading, not a sighting: nothing is known of the lava until it sees it for itself (F-25c4dm).
+     */
+    void toldOfLava(BlockPos at, String by, long tick) {
+        if (at == null || toldLavaAside.contains(BlockPos.asLong(at.getX() >> 2, 0, at.getZ() >> 2))) return;
+        if (toldLava != null && (toldLava.isWithinDistance(at, LAVA_APART)
+                || lastFeet != null && toldLava.getSquaredDistance(lastFeet) <= at.getSquaredDistance(lastFeet))) return;
+        toldLava = at.toImmutable();
+        toldLavaBy = by;
+        toldLavaSince = tick;
+        toldLavaBest = Double.MAX_VALUE;
+        toldLavaNear = -1;
+        toldLavaWalkFrom = -1;
+        toldLavaRefused = null;
+        toldLavaWalkEnded = false;
+        toldLavaLogged = false;
+        event("told of lava at " + at.toShortString() + " by " + by, false);
+    }
+
+    /** The lava a teammate told it of, for fixtures: none once it got there or set it aside. */
+    BlockPos toldLavaForTest() { return toldLava; }
+
+    /** Its own bucket filled at lava, told of once a pool; filled at lava it was told of, it got there; a walk there that ended, judged. */
+    private void lavaTaskFinished(Task task, boolean completed, String why) {
+        if (completed && "native_bucket".equals(task.skill()) && task.label().equals("Cast: fill a bucket with lava") && position(task.args()) != null) {
+            BlockPos filled = position(task.args()).toImmutable();
+            if (lavaTold.stream().noneMatch(told -> told.isWithinDistance(filled, LAVA_APART))) {
+                if (lavaTold.size() < 64) lavaTold.add(filled);
+                lavaFound = filled;
+            }
+            if (toldLava != null && toldLava.isWithinDistance(filled, LAVA_APART)) {
+                KindredMod.LOGGER.info("{} reached the lava {} told it of at {}: its bucket filled at {}", who, toldLavaBy, toldLava.toShortString(), filled.toShortString());
+                toldLava = null;
+            }
+        }
+        if (toldLava != null && "native_goto".equals(task.skill()) && task.label().startsWith(TOLD_LAVA_WALK)) {
+            if (completed) toldLavaWalkEnded = true;
+            else toldLavaRefused = why == null || why.isBlank() ? "its walk there did not go" : why;
+        }
+    }
+
+    private void setToldLavaAside(String reason) {
+        toldLavaAside.add(BlockPos.asLong(toldLava.getX() >> 2, 0, toldLava.getZ() >> 2));
+        KindredMod.LOGGER.info("{} sets aside the lava {} told it of at {}: {}", who, toldLavaBy, toldLava.toShortString(), reason);
+        event("set aside the lava " + toldLavaBy + " told of at " + toldLava.toShortString() + ": " + reason);
+        toldLava = null;
+    }
+
+    /**
+     * Short of lava for its cast with none seen and no cave to look in, to the lava a teammate told it it filled a bucket
+     * at, a walk at a time, as a player goes where a friend says the lava is, before it mines blind for its own. Walks only:
+     * no dig toward it. Set aside, and the hunt goes on as before, on a refused walk, a walk that got it no nearer, standing
+     * within six of it a while with no lava seen, or two minutes with no ground gained. Arrived, its own sight finds the pool
+     * and the cast's fill goes on from there; the told place is never read for lava. In E-40's iteration 25 (`e40a25s-0d3432b`)
+     * on 404 with the atlas off, Echo branch-mined for lava at Y=-54 for three stuck spells after Kindred had filled its
+     * bucket 138 to 158 blocks off; on 101 off and 606 on, the same (F-25c4dm).
+     */
+    private Optional<Task> toldLava(NativePlayerBody body) {
+        if (toldLava == null) return Optional.empty();
+        who = body.entity().getName().getString();
+        if (body.entity().getServerWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) return Optional.empty();
+        double off = Math.sqrt(lastFeet.getSquaredDistance(toldLava));
+        if (toldLavaRefused != null) {
+            setToldLavaAside("its walk there was refused (" + toldLavaRefused + ")");
+            return Optional.empty();
+        }
+        // The walk it last took there ended; judged by where it stands now.
+        if (toldLavaWalkEnded) {
+            toldLavaWalkEnded = false;
+            if (toldLavaWalkFrom >= 0 && off > toldLavaWalkFrom - 2 && off > 6) {
+                setToldLavaAside("its walk there got it no nearer (" + Math.round(off) + " blocks off)");
+                return Optional.empty();
+            }
+            toldLavaWalkFrom = -1;
+        }
+        if (off < toldLavaBest - 2) {
+            toldLavaBest = off;
+            toldLavaSince = lastTick;
+        }
+        if (lastTick - toldLavaSince > 2400) {
+            setToldLavaAside("no ground gained toward it in two minutes");
+            return Optional.empty();
+        }
+        if (off <= 6) {
+            if (toldLavaNear < 0) toldLavaNear = lastTick;
+            if (lastTick - toldLavaNear > 200) setToldLavaAside("there, and no lava in sight");
+            return Optional.empty();
+        }
+        BlockPos to = off > LAVA_LEG ? legToward(lastFeet, toldLava, LAVA_LEG) : toldLava;
+        Task walk = go(to, 3, true, TOLD_LAVA_WALK + toldLavaBy + " found at " + toldLava.toShortString());
+        if (setAside(walk)) {
+            setToldLavaAside("its walk there was set aside");
+            return Optional.empty();
+        }
+        if (!toldLavaLogged) {
+            KindredMod.LOGGER.info("{} walks to the lava {} told it of at {}, {} blocks off", who, toldLavaBy, toldLava.toShortString(), Math.round(off));
+            toldLavaLogged = true;
+        }
+        if (toldLavaWalkFrom < 0) toldLavaWalkFrom = off;
+        return Optional.of(walk);
     }
 
     /**
@@ -4905,6 +5147,7 @@ final class PortalRunCampaign {
      * does not make a way up it.
      */
     Optional<Task> climbOut(NativePlayerBody body) {
+        standing(body);
         return wayUp(body, "Climb out to the build");
     }
 
@@ -5062,6 +5305,26 @@ final class PortalRunCampaign {
     }
 
     /**
+     * For fixtures only, a setter: sets where it stands now and its way in, as its plan's tick would record them
+     * (F-25c4at1). Package-private; called from no main source.
+     */
+    void wayInForTest(BlockPos feet, List<BlockPos> way) {
+        lastFeet = feet.toImmutable();
+        trail.clear();
+        for (BlockPos cell : way) trail.addLast(cell.toImmutable());
+    }
+
+    /**
+     * For fixtures only: moves its clock on to {@code tick} and asks for the walk back from where it stands, as the climb
+     * asks for it (F-25c4at1); the walk back it chooses is recorded as the climb's would be. Package-private; called from no
+     * main source.
+     */
+    Optional<Task> walkBackForTest(NativePlayerBody body, long tick) {
+        lastTick = Math.max(lastTick, tick);
+        return retrace(body, "Climb toward the surface for logs");
+    }
+
+    /**
      * Back along its own trail: each leg to the highest cell it stood in within a score of blocks, further back along
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
      */
@@ -5077,6 +5340,12 @@ final class PortalRunCampaign {
         // Only while it is still there: once it has climbed up or moved away, the way it came is worth a try again.
         if (lastTick < retraceStalledUntil && retraceFrom != null && retraceFrom.getManhattanDistance(lastFeet) <= 1
                 && lastFeet.getY() <= retraceFrom.getY()) return Optional.empty();
+        // A walk back that ended lower than it began (F-25c4at1) is held while it stands within three of where that walk
+        // began, horizontally, and no higher: the climb's step up and its cut through have their turn. Not a threshold or
+        // timeout loosened: the same while, the climb's own rule that the way back up never leads down, read from where
+        // the walk ended.
+        if (lastTick < retraceLowerUntil && retraceLowerFrom != null && lastFeet.getY() <= retraceLowerFrom.getY()
+                && horizontalSquared(retraceLowerFrom, lastFeet) <= 3 * 3) return Optional.empty();
         if (trail.size() < 2) return Optional.empty();
         int index = nearestOnTrail();
         var cells = new java.util.ArrayList<>(trail);
@@ -5095,7 +5364,19 @@ final class PortalRunCampaign {
             }
         }
         if (target == null || target.getSquaredDistance(lastFeet) < 2) return Optional.empty();
+        retraceChosenAt = lastFeet;
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
+    }
+
+    /** Where its last walk back was chosen, for the guard on one that ends lower (F-25c4at1). */
+    private BlockPos retraceChosenAt;
+    /** Where a walk back that ended lower than it began was chosen, and until when the way back is held from there. */
+    private BlockPos retraceLowerFrom;
+    private long retraceLowerUntil = -1;
+
+    private static int horizontalSquared(BlockPos a, BlockPos b) {
+        int dx = a.getX() - b.getX(), dz = a.getZ() - b.getZ();
+        return dx * dx + dz * dz;
     }
 
     /**
@@ -5251,6 +5532,7 @@ final class PortalRunCampaign {
      * caller whose walk there has just failed.
      */
     Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, java.util.function.Predicate<BlockPos> goal, boolean needEdit, String label) {
+        standing(body);
         var player = body.entity();
         if (!player.isOnGround() && !player.isTouchingWater()) return Optional.empty(); // Mid-jump: plan on landing.
         var world = player.getServerWorld();
@@ -5403,6 +5685,7 @@ final class PortalRunCampaign {
 
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
     Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
+        standing(body);
         return digger.tunnelAlong(dig(body), side(heading), label);
     }
 
@@ -5633,13 +5916,32 @@ final class PortalRunCampaign {
         return false;
     }
 
+    /**
+     * The swap that readies backpack {@code slot} on the hotbar. Its target is chosen as {@link #handSlot} chooses: an empty
+     * slot, else one holding nothing kept to hand, else a block while another stays. With every slot holding something kept
+     * to hand, slot 8, but not over a torch or a block, which another step has just readied (F-25c4dk): taking slot 8
+     * whatever it held, a block readied for the night's seal and a torch readied to light the way swapped each other out of
+     * it, neither placed (in step 8's consoles 303 off Sol 4,560 times, 505 on Echo 1,412).
+     */
     Task swapToHotbar(NativePlayerBody body, int slot, String label) {
         var inventory = body.entity().getInventory();
-        int target = 8;
-        for (int s = 0; s < 9; s++) if (inventory.getStack(s).isEmpty()) { target = s; break; }
+        int target = handSlot(inventory);
+        if (target < 0) {
+            target = 8;
+            if (readied(inventory.getStack(8))) {
+                for (int s = 7; s >= 0; s--) {
+                    if (!readied(inventory.getStack(s)) && !onlyWeaponAt(inventory, s)) { target = s; break; }
+                }
+            }
+        }
         // Not the only sword or axe on the hotbar: swapped out for a block, it was only taken back to hand (F-25c4cv).
         if (onlyWeaponAt(inventory, target)) target = 7;
         return new Task("native_swap", Map.of("source", String.valueOf(slot), "target", String.valueOf(target)), label);
+    }
+
+    /** A torch or a block: what a step readies on the hotbar to place next (F-25c4dk). */
+    private static boolean readied(ItemStack stack) {
+        return stack.isOf(Items.TORCH) || stack.isOf(Items.SOUL_TORCH) || stack.getItem() instanceof net.minecraft.item.BlockItem;
     }
 
     static final String WEAPON_TO_HAND = "Take its weapon to hand";
@@ -6017,6 +6319,51 @@ final class PortalRunCampaign {
         return seal.isPresent() ? seal : Optional.of(new Task("native_wait", Map.of("seconds", "4"), "Wait for daylight"));
     }
 
+    /** The most nodes the night's look at a walk's way searches: a walk from a shelter is a short one. */
+    private static final int WAY_NODES = 4_000;
+    /** How long the answer for one walk's way holds before it is asked again (F-22c76): a held walk is planned again each tick. */
+    private static final int WAY_ASKED_FOR = 200;
+    private BlockPos wayAskedTo;
+    private long wayAskedUntil;
+    private boolean wayAskedOut;
+
+    /**
+     * Dug in for the night, whether a walk of its work takes it out under the sky: where it ends ({@link
+     * #outUnderTheSky(ServerPlayerEntity, Task)}), or, ending below ground, the way it would go there (F-22c76). The way's
+     * answer is kept for {@value #WAY_ASKED_FOR} ticks for the same walk's end, so a walk held and planned again each tick
+     * is not searched again each tick.
+     */
+    private boolean outUnderTheSky(ServerPlayerEntity player, Task task, long tick) {
+        if (outUnderTheSky(player, task)) return true;
+        if (!"native_goto".equals(task.skill())) return false;
+        BlockPos to = position(task.args());
+        if (to == null || !player.getServerWorld().isChunkLoaded(to)) return false;
+        if (to.equals(wayAskedTo) && tick <= wayAskedUntil) return wayAskedOut;
+        wayAskedTo = to.toImmutable();
+        wayAskedUntil = tick + WAY_ASKED_FOR;
+        wayAskedOut = wayOutUnderTheSky(player, to);
+        return wayAskedOut;
+    }
+
+    /**
+     * Whether the way a walk would go to {@code to}, searched as {@code NativeGoToSkill} searches its route, passes a cell
+     * open to the sky (F-22c76). In ci259's NativeFactionShelterGameTests a player dug in four down by a stair was sent to a
+     * cell below the ground twelve off; its way went up the stair and over the ground, and it dug in again. Only the cells of
+     * the way it would walk are asked, as the walk itself goes by them; a way not found says nothing, and the walk goes on
+     * as before.
+     */
+    private static boolean wayOutUnderTheSky(ServerPlayerEntity player, BlockPos to) {
+        var world = player.getServerWorld();
+        var navigator = new NativeNavigator(world).throughDoors();
+        BlockPos start = NativeGoToSkill.restingOn(player, navigator);
+        var found = navigator.find(start, to, cell -> cell.getSquaredDistance(to) <= 1, WAY_NODES, 96);
+        if (!found.complete()) return false;
+        // Not the cell it stands in: under an open shaft, a shelter not yet sealed, that is where it already is, not where the
+        // walk takes it.
+        for (BlockPos cell : found.nodes()) if (!cell.equals(start) && world.isSkyVisible(cell)) return true;
+        return false;
+    }
+
     /**
      * A walk that ends out under the sky, or on the ground's top: the surface's, which the night leaves for daylight
      * (F-25c4cd). Where it can see the ground's top at the walk's end, on it or above it; where it cannot, at or above
@@ -6305,7 +6652,7 @@ final class PortalRunCampaign {
         BlockPos feet = player.getBlockPos();
         if (knownCastLava(player) == null) {
             return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
-                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
+                    .or(() -> toldLava(body)).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (ItemMoves.count(inventory, Items.BUCKET) == 0) return Optional.empty();
         // Lava seen beyond one walk's reach is walked toward a leg at a time. As one walk it was refused and set aside,
@@ -6339,7 +6686,7 @@ final class PortalRunCampaign {
             castLava = null;
             lavaNoWalk = null;
             return followPocket(body).or(() -> cave(body, "lava", DIAMOND_TARGET)).or(this::lookAround)
-                    .or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
+                    .or(() -> toldLava(body)).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
         if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
@@ -7201,6 +7548,19 @@ final class PortalRunCampaign {
     void bedTaskEnded(Task task, boolean completed) {
         if (task == null) return;
         if (WAKE_BED_LABEL.equals(task.label())) wakeBedAt = null;
+        if (OPEN_BED_WAY_LABEL.equals(task.label())) {
+            if (completed) bedOpenings++;
+            // The doorway's other block is pending until its own break has ended, so that no take-up is offered through a
+            // gap one high in the meantime (the walled fixture, 1 of 3 on main 8d4d30c2 merged in: its bed broken from
+            // outside, the drop out of reach).
+            BlockPos at = position(task.args());
+            if (!completed || at != null && at.equals(bedDoorway)) bedDoorway = null;
+        }
+        // A morning take-up, or a block opened toward it, that did not go: set aside with the walk (F-25c4di1g). Each time it
+        // was offered again on the next tick, refused again: 10,958 times in ten game minutes on iteration 26's 20261030 Echo.
+        if ((MORNING_BED_LABEL.equals(task.label()) || OPEN_BED_WAY_LABEL.equals(task.label())) && !completed && carriedBedAt != null) {
+            setBedAside("its take-up refused");
+        }
         if (BED_DOWN_LABEL.equals(task.label()) && !completed) {
             bedDownRefusals++;
             bedDownAgainAt = lastTick + BED_DOWN_BACKOFF;
@@ -7269,6 +7629,7 @@ final class PortalRunCampaign {
         // Called by the runtime for a player with no goal too, whose plan never runs: the server's tick, as the plan has it.
         lastTick = Math.max(lastTick, world.getServer().getTicks());
         boolean sleepable = dev.kindred.core.survival.Nights.sleepTime(world.getTimeOfDay(), world.isThundering());
+        bedOwner = player.getName().getString();
         seeCarriedBed(world);
         if (carriedBedAt != null && (!world.isChunkLoaded(carriedBedAt) || !world.getBlockState(carriedBedAt).isIn(BlockTags.BEDS))) carriedBedAt = null;
         if (bedSlot(player) >= 0) bedUrgent = false;
@@ -7312,9 +7673,19 @@ final class PortalRunCampaign {
             // hurt, in a zombie fight, walked for its bed and died). Danger only, not hunger: a hungry player takes up its
             // bed before it goes off after food, rather than leave an earned bed behind.
             if (!safeForChore(player)) return Optional.empty();
-            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 4.5 * 4.5) return Optional.of(new Task("native_break", coords(carriedBedAt, Map.of("carried_bed", "true")), "Take its bed back up in the morning"));
-            return toBedStand(player, "Back to its bed to take it up");
+            // A take-up refused is set aside with the walk, not offered again on the next tick (F-25c4di1g).
+            if (lastTick < bedWalkAsideUntil) return Optional.empty();
+            // The doorway it opened toward its bed finished before the take-up, so it can walk in after the bed's drop.
+            Optional<Task> doorway = openDoorway(player);
+            if (doorway.isPresent()) return doorway;
+            if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(carriedBedAt)) <= 4.5 * 4.5) {
+                Optional<Task> up = takeUp(body);
+                if (up.isPresent()) return up;
+            }
+            return toBedStand(player, "Back to its bed to take it up", true);
         }
+        bedOpenings = 0;
+        bedDoorway = null;
         if (!bedNights || homeInReach || stronghold.spawnByPortal(player) || bedTries >= BED_TRIES) return Optional.empty();
         if (nightWork(player)) {
             if (!"Up tonight for work only the night gives: ender pearls".equals(lastNightWork)) {
@@ -7332,7 +7703,7 @@ final class PortalRunCampaign {
             }
             // Not while hurt or in a fight: the pocket's way to its bed is a step or two, but never ahead of fighting back.
             if (player.hurtTime > 0 || player.getAttacker() != null) return Optional.empty();
-            return toBedStand(player, "To the bed it carries");
+            return toBedStand(player, "To the bed it carries", false);
         }
         int slot = bedSlot(player);
         if (slot < 0) {
@@ -7425,17 +7796,22 @@ final class PortalRunCampaign {
     /**
      * To a cell it can stand in with its bed within reach, never at the bed itself, which no walk can stand on (seed 101
      * of the E-70a batch: 811 walks refused in 36 s toward a bed head). With no such cell, or walks that bring it no nearer,
-     * the chore is set aside a while; set aside {@value #BED_WALK_ASIDES} times, the bed is left where it stands.
+     * the chore is set aside a while; set aside {@value #BED_WALK_ASIDES} times, the bed is left where it stands. To take
+     * the bed up ({@code inSight}), only a cell from which a half of it can be seen, its own cells aside (F-25c4di1g): in
+     * iteration 26 the walk ended outside its sealed pocket, the pocket's wall between it and its bed, five times. With
+     * none, by day, the way to it is opened first, as {@link #openWay} allows.
      */
-    private Optional<Task> toBedStand(ServerPlayerEntity player, String label) {
+    private Optional<Task> toBedStand(ServerPlayerEntity player, String label, boolean inSight) {
         if (lastTick < bedWalkAsideUntil) return Optional.empty();
         var world = player.getServerWorld();
         BlockPos stand = null;
         double best = Double.MAX_VALUE;
         Vec3d bed = Vec3d.ofCenter(carriedBedAt);
+        BlockPos foot = carriedBedFoot(world);
         for (BlockPos cell : BlockPos.iterate(carriedBedAt.add(-3, -2, -3), carriedBedAt.add(3, 1, 3))) {
             if (!world.isChunkLoaded(cell) || !standable(world, cell)) continue;
             if (Vec3d.ofBottomCenter(cell).add(0, 1.62, 0).squaredDistanceTo(bed) > 4.0 * 4.0) continue;
+            if (inSight && (cell.equals(carriedBedAt) || cell.equals(foot) || !seesBedFrom(world, cell, foot))) continue;
             double d = cell.getSquaredDistance(player.getBlockPos());
             if (d < best) {
                 best = d;
@@ -7447,21 +7823,170 @@ final class PortalRunCampaign {
             bedWalkBest = now;
             bedWalkTries = 0;
         }
+        if (stand == null && inSight) {
+            Optional<Task> open = openWay(player);
+            if (open.isPresent()) return open;
+        }
         if (stand == null || ++bedWalkTries > BED_WALK_TRIES) {
             bedWalkTries = 0;
             bedWalkBest = Double.MAX_VALUE;
-            if (++bedWalkAsides >= BED_WALK_ASIDES) {
-                event("left its bed where it stands at " + carriedBedAt.toShortString() + ": no way to it");
-                carriedBedAt = null;
-                bedWalkAsides = 0;
-                return Optional.empty();
-            }
-            bedWalkAsideUntil = lastTick + BED_WALK_ASIDE;
-            event("its bed at " + carriedBedAt.toShortString() + " set aside a while: " + (stand == null ? "nowhere to stand by it" : "no nearer"));
+            setBedAside(stand == null ? (inSight ? "nowhere in sight of it to stand" : "nowhere to stand by it") : "no nearer");
             return Optional.empty();
         }
         bedWalks++;
         return Optional.of(go(stand, 0.5, false, label));
+    }
+
+    /**
+     * The chore of its bed set aside a while, for {@code why}; set aside {@value #BED_WALK_ASIDES} times, the bed is left
+     * where it stands: a bed it no longer carries.
+     */
+    private void setBedAside(String why) {
+        if (++bedWalkAsides >= BED_WALK_ASIDES) {
+            event("left its bed where it stands at " + carriedBedAt.toShortString() + ": " + why);
+            KindredMod.LOGGER.info("{} left its bed where it stands at {}: {}", bedOwner, carriedBedAt.toShortString(), why);
+            carriedBedAt = null;
+            bedWalkAsides = 0;
+            return;
+        }
+        bedWalkAsideUntil = lastTick + BED_WALK_ASIDE;
+        event("its bed at " + carriedBedAt.toShortString() + " set aside a while: " + why);
+    }
+
+    static final String MORNING_BED_LABEL = "Take its bed back up in the morning";
+    static final String OPEN_BED_WAY_LABEL = "Open the way to its bed";
+    /** Blocks it may open toward its bed in one morning (F-25c4di1g). */
+    static final int BED_OPENINGS = 2;
+    /** Its name, for the console's lines of its bed's chore. */
+    private String bedOwner = "";
+    /** Blocks it has opened toward its bed this morning. */
+    private int bedOpenings;
+    /**
+     * The other block of the doorway it is opening toward its bed, once the first is broken: the pocket's own cell is two
+     * high, and a one-high gap lets it see its bed but not walk in after the bed's drop.
+     */
+    private BlockPos bedDoorway;
+    /** The blocks it has said it opens toward its bed, once each. */
+    private final java.util.Set<BlockPos> bedOpeningsSaid = new java.util.HashSet<>();
+
+    /** The foot of the bed it carries, its head at {@code carriedBedAt}. */
+    private BlockPos carriedBedFoot(ServerWorld world) {
+        var state = world.getBlockState(carriedBedAt);
+        if (!state.isIn(BlockTags.BEDS)) return carriedBedAt;
+        return carriedBedAt.offset(state.get(net.minecraft.block.BedBlock.FACING).getOpposite()).toImmutable();
+    }
+
+    /** Whether from a cell's eyes either half of its bed is seen: the line to its middle meets nothing but that half. */
+    private boolean seesBedFrom(ServerWorld world, BlockPos cell, BlockPos foot) {
+        Vec3d eyes = Vec3d.ofBottomCenter(cell).add(0, 1.62, 0);
+        for (BlockPos half : List.of(carriedBedAt, foot)) {
+            var hit = world.raycast(new net.minecraft.world.RaycastContext(eyes, Vec3d.ofCenter(half), net.minecraft.world.RaycastContext.ShapeType.OUTLINE,
+                    net.minecraft.world.RaycastContext.FluidHandling.NONE, net.minecraft.block.ShapeContext.absent()));
+            if (hit.getType() != net.minecraft.util.hit.HitResult.Type.BLOCK || hit.getBlockPos().equals(half)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Its bed back up in the morning (F-25c4di1g), from a half the break will take: each half is offered only once
+     * {@link NativePlayerBody#miningEligible} (the break's own rule, read in one place) says it is in reach and in sight.
+     * Woken on top of one half, in a pocket with nowhere beside the bed to stand (iteration 26's 20261030 Echo: 10,958
+     * refusals of "Would remove the block the player stands on"), it takes the bed up from the other: vanilla's loot drops
+     * the bed from its head, and the head goes with the foot's break by neighbour update, drops and all. That other half is
+     * not the block under it, but its break takes the half it stands on with it; so it is allowed only where
+     * {@code RoamingEdits.breakDenial}'s rule against breaking the block underfoot is not what it stands to lose: the half
+     * under it is the bed it set down itself and lay in tonight, and under that half is a solid top with no fluid, so it
+     * drops only the bed's height onto ground. Empty when neither half will do.
+     */
+    private Optional<Task> takeUp(NativePlayerBody body) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos foot = carriedBedFoot(world);
+        BlockPos under = BlockPos.ofFloored(player.getX(), player.getY() - 0.2, player.getZ());
+        boolean onIt = under.equals(carriedBedAt) || under.equals(foot);
+        if (onIt) {
+            BlockPos floor = under.down();
+            boolean ground = world.getBlockState(floor).isSideSolidFullSquare(world, floor, Direction.UP)
+                    && world.getFluidState(floor).isEmpty() && world.getFluidState(under).isEmpty();
+            var spawn = player.getSpawnPointPosition();
+            boolean own = spawn != null && player.getSpawnPointDimension() == world.getRegistryKey() && (spawn.equals(carriedBedAt) || spawn.equals(foot));
+            if (!ground || !own) return Optional.empty();
+        }
+        for (BlockPos half : List.of(carriedBedAt, foot)) {
+            if (half.equals(under) || !body.miningEligible(half)) continue;
+            return Optional.of(new Task("native_break", coords(half, Map.of("carried_bed", "true")), MORNING_BED_LABEL));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * The doorway's other block, once the first is broken (F-25c4di1g): the other half of the same two-high cell, not a
+     * block {@code miningRefusal} named, beside the bed's room and plain ground, by day, within {@value #BED_OPENINGS} a
+     * morning, under all of the break's rules; refused, the chore is set aside. Pending until its own break has ended, so
+     * that the take-up waits for it: with only the named block open it saw its bed and broke it, but could not walk in
+     * after the drop through a gap one high.
+     */
+    private Optional<Task> openDoorway(ServerPlayerEntity player) {
+        if (bedDoorway == null || bedOpenings == 0) return Optional.empty();
+        var world = player.getServerWorld();
+        BlockPos block = bedDoorway;
+        if (night(world) || bedOpenings >= BED_OPENINGS || world.getBlockState(block).isAir()) {
+            bedDoorway = null;
+            return Optional.empty();
+        }
+        if (bedOpeningsSaid.add(block)) {
+            KindredMod.LOGGER.info("{} opens the way to its bed at {}: {} at {}", bedOwner, carriedBedAt.toShortString(),
+                    net.minecraft.registry.Registries.BLOCK.getId(world.getBlockState(block).getBlock()).getPath(), block.toShortString());
+        }
+        return Optional.of(new Task("native_break", coords(block, Map.of()), OPEN_BED_WAY_LABEL));
+    }
+
+    /**
+     * By day, with neither half of its bed in sight and nowhere in sight of it to stand (F-25c4di1g): the one block the
+     * line from its eyes to its bed's middle meets, broken, when that block's far side is its bed's own room: the block is
+     * beside a cell of the bed, or the air over one, and is plain ground (no block entity, no fluid, breakable); at most
+     * {@value #BED_OPENINGS} a morning, a second wall deeper in counted with the first, as is the doorway's other block
+     * ({@link #openDoorway}), broken next so it can walk in after the bed's drop. It opens the pocket it sealed for
+     * the night and never digs a fresh tunnel toward a bed it cannot otherwise reach. The break is a {@code native_break}
+     * under all of {@code RoamingEdits.breakDenial}'s rules (lava beside it, the block underfoot); refused, the chore is set
+     * aside. At night the pocket stays sealed (F-25c4dl): the chore is set aside instead.
+     */
+    private Optional<Task> openWay(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        if (night(world) || bedOpenings >= BED_OPENINGS) return Optional.empty();
+        BlockPos foot = carriedBedFoot(world);
+        var room = List.of(carriedBedAt, foot, carriedBedAt.up(), foot.up());
+        for (BlockPos half : List.of(carriedBedAt, foot)) {
+            var hit = world.raycast(new net.minecraft.world.RaycastContext(player.getEyePos(), Vec3d.ofCenter(half), net.minecraft.world.RaycastContext.ShapeType.OUTLINE,
+                    net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
+            if (hit.getType() != net.minecraft.util.hit.HitResult.Type.BLOCK) continue;
+            BlockPos block = hit.getBlockPos().toImmutable();
+            if (room.contains(block)) continue;
+            var state = world.getBlockState(block);
+            if (state.isAir() || state.hasBlockEntity() || !state.getFluidState().isEmpty() || state.getHardness(world, block) < 0) continue;
+            boolean besideRoom = false;
+            for (Direction direction : Direction.values()) besideRoom |= room.contains(block.offset(direction));
+            if (!besideRoom) continue;
+            // The doorway's other block: below the one named, or above it, beside the bed's room too and plain ground.
+            bedDoorway = null;
+            for (BlockPos other : List.of(block.down(), block.up())) {
+                var otherState = world.getBlockState(other);
+                if (room.contains(other) || otherState.isAir() || otherState.hasBlockEntity() || !otherState.getFluidState().isEmpty()
+                        || otherState.getHardness(world, other) < 0) continue;
+                boolean beside = false;
+                for (Direction direction : Direction.values()) beside |= room.contains(other.offset(direction));
+                if (beside) {
+                    bedDoorway = other.toImmutable();
+                    break;
+                }
+            }
+            if (bedOpeningsSaid.add(block)) {
+                KindredMod.LOGGER.info("{} opens the way to its bed at {}: {} at {}", bedOwner, carriedBedAt.toShortString(),
+                        net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath(), block.toShortString());
+            }
+            return Optional.of(new Task("native_break", coords(block, Map.of()), OPEN_BED_WAY_LABEL));
+        }
+        return Optional.empty();
     }
 
     /** The chore of its bed, for fixtures: walks given toward it, times set aside, and whether the bed still stands. */
@@ -7501,6 +8026,21 @@ final class PortalRunCampaign {
             }
         }
         return true;
+    }
+
+    /** How long a seal of its own counts as tonight's: a night is shorter. */
+    private static final long SEAL_TONIGHT = 12_000;
+
+    /**
+     * Whether {@code task} breaks a seal of its own shelter placed tonight, at night (F-25c4dl): a break of one of
+     * {@link #ownSeals} placed within {@value #SEAL_TONIGHT} ticks, other than its way out by it ("open its shelter").
+     */
+    private boolean breaksTonightsSeal(ServerPlayerEntity player, Task task, long tick) {
+        if (!"native_break".equals(task.skill()) || task.label().contains(": open its shelter at ") || !night(player.getServerWorld())) return false;
+        BlockPos cell = position(task.args());
+        if (cell == null) return false;
+        Long sealed = ownSeals.get(cell.asLong());
+        return sealed != null && tick - sealed <= SEAL_TONIGHT;
     }
 
     private boolean inNightShelter(ServerPlayerEntity player) {
@@ -8109,6 +8649,33 @@ final class PortalRunCampaign {
         }
         foe = null;
         return null;
+    }
+
+    /**
+     * The reserve turn, bounded (F-25c4cr1): its wood search runs {@link #RESERVE_SEARCH_TICKS} daylight ticks at most with
+     * no wood gained (a walk refused or nothing left to explore gains none either), then is set aside for this descent and
+     * the cast goes on. The descent's reserve is over once the lava is found or the wood it wanted is in hand.
+     */
+    private void boundReserve(ServerPlayerEntity player, PortalRunSnapshot snapshot, WorldFacts facts, List<PortalRunPlanner.Step> steps) {
+        if (facts.knows(WorldFacts.Source.LAVA) || snapshot.lavaBuckets() > 0 || snapshot.woodUnits() >= 2 || snapshot.sticks() >= 2) {
+            reserveAside = false;
+            reserveSearchTicks = 0;
+            reserveCountedAt = Long.MIN_VALUE;
+        }
+        if (steps.isEmpty() || !PortalRunPlanner.RESERVE_WHY.equals(steps.getLast().why())) {
+            reserveCountedAt = Long.MIN_VALUE;
+            return;
+        }
+        if (!reserveAside) {
+            // By day only: a wait for daylight before going up is no search that failed.
+            if (player.getServerWorld().isDay() && reserveCountedAt != Long.MIN_VALUE) reserveSearchTicks += lastTick - reserveCountedAt;
+            reserveCountedAt = lastTick;
+            if (reserveSearchTicks < RESERVE_SEARCH_TICKS) return;
+            reserveAside = true;
+            KindredMod.LOGGER.info("{} found no wood for its reserve in {} ticks; set aside for this descent, on to the lava",
+                    player.getName().getString(), reserveSearchTicks);
+        }
+        steps.set(steps.size() - 1, PortalRunPlanner.castStep(snapshot));
     }
 
     private List<HostileEntity> threats(ServerPlayerEntity player) {

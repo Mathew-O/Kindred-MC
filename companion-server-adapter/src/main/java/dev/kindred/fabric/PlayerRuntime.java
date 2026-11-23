@@ -555,7 +555,7 @@ final class PlayerRuntime {
         this.nativeSaveReader = nativeSaveReader;
         this.actionWriterDecorator = java.util.Objects.requireNonNull(actionWriterDecorator);
         this.startupLedgerReader = java.util.Objects.requireNonNull(startupLedgerReader);
-        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::now, (player, message) -> {
+        socials = new CompanionSocials(this::socialParticipant, PlayerRuntime::socialNow, (player, message) -> {
             player.sendMessage(message, false);
             if (heardForFixtures != null) heardForFixtures.accept(player, message);
         }, new HabitHooks(), this::aiPlayerOf);
@@ -573,8 +573,8 @@ final class PlayerRuntime {
             @Override public void sendState(PeerUpdate update) { wire.sendState(update); } // F-34c: the team path is the Wire's.
         });
         chatIntents = new ChatIntents(this, server);
-        initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::now);
-        peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::now, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
+        initiative = new InitiativeLane(new InitiativeSource(), socials, PlayerRuntime::socialNow);
+        peerTalk = new PeerTalk(new PeerTalkSource(), socials, PlayerRuntime::socialNow, dev.kindred.core.social.Conversation.Chatter.of(System.getenv("KINDRED_CHATTER")));
         webs = new KnowledgeWebs(server::getTicks);
         // M-06e's notices in today's words after the channel's prefix (their line is the "what" fact).
         var wording = new dev.kindred.core.wire.Wording().with(dev.kindred.core.factions.Capture.VULNERABLE, "{what}")
@@ -601,7 +601,7 @@ final class PlayerRuntime {
             if (ai != null) dev.kindred.core.wire.MatchTitles.of(ai, title).ifPresent(wire::send);
         });
         gifts = new GiftWatch(server, new GiftOutcome()); // E-22a: a gift counts once picked up.
-        outings = new Outings(new OutingSource(), socials, PlayerRuntime::now); // E-27a: a short trip together.
+        outings = new Outings(new OutingSource(), socials, PlayerRuntime::socialNow); // E-27a: a short trip together.
         socials.setHearing(new CompanionSocials.Hearing() {
             @Override public Optional<String> heard(ServerPlayerEntity speaker, CompanionSocials.Participant player, String message) {
                 var offer = initiative.heard(speaker, player, message); // An answer to its last line; an offer's yes or no (E-53).
@@ -635,7 +635,7 @@ final class PlayerRuntime {
                 KindredMod.LOGGER.info("{} asked in chat by {}: {}: refused (wary of them)", entry.data.displayName(), speaker.getName().getString(), ask);
                 return Optional.of(NOT_AFTER_LAST_TIME);
             }
-        }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::now);
+        }, () -> voiceOn ? strategist : Optional.empty(), server, PlayerRuntime::socialNow);
         socials.setVoice(voice);
         voice.setManner(socials::manner);
         voice.setSwearing(socials::maySwear); // E-18b: a rough player's reply may swear to someone who said yes.
@@ -657,6 +657,24 @@ final class PlayerRuntime {
     }
 
     private static long now() { return System.nanoTime() / 1_000_000; }
+
+    /**
+     * The social lane's clock, milliseconds (F-22c101): real time, as {@link #now()}, plus what a fixture has moved it on
+     * by. Its gaps (a player's seconds between direct replies, the typing delay, a lane's turn) are kept in real time
+     * while a test server runs faster than real time; a fixture moves this clock on past such a gap rather than park the
+     * server thread for it, which stalled every test running beside it. Nothing but a fixture moves it: in play it is
+     * real time.
+     */
+    static long socialNow() { return now() + socialAheadMillis; }
+
+    /** How far fixtures have moved the social lane's clock past real time (F-22c101); 0 in play. */
+    private static volatile long socialAheadMillis;
+
+    /** Moves the social lane's clock on by {@code millis}, for fixtures only (F-22c101): real time is not waited out. */
+    static void moveSocialClockForFixtures(long millis) {
+        if (millis < 0) throw new IllegalArgumentException("The social clock only moves on");
+        socialAheadMillis += millis;
+    }
     private static long nanos() { return System.nanoTime(); }
 
     /**
@@ -2188,6 +2206,9 @@ final class PlayerRuntime {
                 var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
                 task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack, source, target);
             } else if (skill.equals("native_fight")) {
+                var fought = entry.nativeBody.entity() == null ? null : entry.nativeBody.entity().getServerWorld().getEntity(UUID.fromString(arguments.get("target")));
+                KindredMod.LOGGER.info("{} fight starts with {}: {}", entry.data.displayName(),
+                        fought == null ? "an unseen target" : Registries.ENTITY_TYPE.getId(fought.getType()).getPath(), fightState(entry.nativeBody.entity()));
                 task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
                         !"false".equals(arguments.get("tactics")),
@@ -2420,6 +2441,14 @@ final class PlayerRuntime {
      * does not: held mid-action its record could be left uncertain. Neither does a lapse at the cap or at the end of
      * the hours. False once the hold has failed or taken too long; the skill then stops as any lapsed skill does.
      */
+    private boolean endsItsPeriodWithin(Entry entry, java.time.Duration margin) {
+        var session = entry.activity;
+        if (!HELD_OVER_PERIOD_END.contains(entry.skillId) || entry.nativeTask instanceof NativeRecordedAction
+                || session.remaining().compareTo(margin) > 0) return false;
+        java.time.Instant end = session.snapshot().period().endExclusive();
+        return session.bookedUntil().filter(booked -> !booked.isBefore(end)).isPresent();
+    }
+
     private boolean holdOverPeriodEnd(Entry entry) {
         var session = entry.activity;
         java.time.Instant now = java.time.Instant.now();
@@ -3155,7 +3184,7 @@ final class PlayerRuntime {
         chronicle.tick();
         if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
             checkLedgers();
-            logCost(tick / LEDGER_CHECK_TICKS + 1);
+            logCostNow();
         }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
@@ -3516,17 +3545,44 @@ final class PlayerRuntime {
      * or a drop it cannot take, where its path ends short of the player.
      */
     static boolean mobCanReachToEat(ServerPlayerEntity player, double range) {
+        return mobReachingToEat(player, range) != null;
+    }
+
+    /** As {@link #mobCanReachToEat}, the mob found, or null: what a meal held back is logged with (F-25c4dh4). */
+    static net.minecraft.entity.mob.HostileEntity mobReachingToEat(ServerPlayerEntity player, double range) {
         for (var mob : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class,
                 player.getBoundingBox().expand(range, 2, range), m -> m.isAlive() && m.getTarget() == player
                         && !(m instanceof net.minecraft.entity.ai.RangedAttackMob) && !(m instanceof net.minecraft.entity.mob.CreeperEntity))) {
             double d2 = player.squaredDistanceTo(mob);
             if (d2 > range * range) continue;
-            if (d2 <= 2.0 * 2.0) return true;
-            if (!mob.canSee(player)) continue;
+            // Within two it can get at the player only if it sees it or a path reaches it: not through a wall (F-25c4dh3).
+            boolean sees = mob.canSee(player);
+            if (d2 <= 2.0 * 2.0 && sees) return mob;
+            if (!sees && d2 > 2.0 * 2.0) continue;
             var path = mob.getNavigation().findPathTo(player, 1);
-            if (path != null && path.reachesTarget()) return true;
+            if (path != null && path.reachesTarget()) return mob;
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * In plain terms: a diagnostic line, at a fight's start and at its end, of how the player stood: its health and food,
+     * its armour and weapon, the mobs about it, and how dark it was (F-25c4dh4). E-40's iteration 27 had more zombie deaths
+     * than 26 in long fights before the first chestplate, with no meal in them, and its consoles could not say why: no
+     * health, no light but at a death, no mobs counted. Log only; nothing it decides reads it.
+     */
+    static String fightState(ServerPlayerEntity player) {
+        if (player == null) return "no body";
+        var world = player.getServerWorld();
+        var mobs = new java.util.TreeMap<String, Integer>();
+        for (var mob : world.getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class, player.getBoundingBox().expand(8, 4, 8),
+                m -> m.isAlive() && player.squaredDistanceTo(m) <= 8 * 8))
+            mobs.merge(Registries.ENTITY_TYPE.getId(mob.getType()).getPath(), 1, Integer::sum);
+        var hunger = player.getHungerManager();
+        BlockPos feet = player.getBlockPos();
+        return String.format(java.util.Locale.ROOT, "health %.1f, food %d, saturation %.1f, armour %d, weapon %s; mobs within 8 %s; light %d at Y %d",
+                player.getHealth(), hunger.getFoodLevel(), hunger.getSaturationLevel(), player.getArmor(),
+                Registries.ITEM.getId(player.getMainHandStack().getItem()).getPath(), mobs.isEmpty() ? "none" : mobs, world.getLightLevel(feet), feet.getY());
     }
 
     private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body, boolean admitted, boolean mayEdit) {
@@ -3671,7 +3727,8 @@ final class PlayerRuntime {
         // players died eating (505-kindred-33951 with cooked porkchop in hand) and the staged second zombie killed its player
         // mid-meal (F-25c4dh). Only one that can reach it: walled in for the night with a zombie outside, it eats as before.
         // And with the bar at six or below, where hunger is about to cost health, only one already in reach holds it back.
-        boolean pressedToEat = mobCanReachToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
+        var pressing = mobReachingToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
+        boolean pressedToEat = pressing != null;
         // With nothing better held, rotten flesh or raw chicken is eaten when hurt with too little in the bar to heal (under
         // 18) or too hungry to sprint, as a player does: their hunger costs less than going on unhealed. In E-40's iteration
         // 8 (`e40a8-aed3e82`) 20 of the 23 deaths came with the bar under 18, and Echo on 101 died at two health and two
@@ -3679,6 +3736,12 @@ final class PlayerRuntime {
         boolean lastResort = (needsHealth && foodLevel < 18 || foodLevel <= 6) && !holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
         java.util.function.Predicate<ItemStack> eligible = stack -> isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)
                 || lastResort && canEatVanilla && (stack.isOf(Items.ROTTEN_FLESH) || stack.isOf(Items.CHICKEN));
+        // A meal it would take held back by that mob, logged once a spell (F-25c4dh4): "refused, or never asked for".
+        boolean heldBack = pressedToEat && (canEatVanilla || needsHealth) && !outOfBreath && holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
+        if (heldBack && !entry.mealHeldBack) KindredMod.LOGGER.info("{} meal held back: {} {} blocks off can get at it ({})", entry.data.displayName(),
+                Registries.ENTITY_TYPE.getId(pressing.getType()).getPath(), String.format(java.util.Locale.ROOT, "%.1f", Math.sqrt(player.squaredDistanceTo(pressing))),
+                fightState(player));
+        entry.mealHeldBack = heldBack;
         if ((canEatVanilla || needsHealth) && !outOfBreath && !pressedToEat) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
@@ -5087,6 +5150,7 @@ final class PlayerRuntime {
         entry.campaign.nights(nightsOn && !ownNightRules(entry), entry.homeInReach);
         divideTheRun(entry, body);
         entry.campaign.takeTreesFound().ifPresent(at -> tellOfTrees(entry, body, at));
+        entry.campaign.takeLavaFound().ifPresent(at -> tellOfLava(entry, body, at));
         var task = entry.campaign.next(body, edits, server.getTicks());
         // Through a portal only on purpose: while it is after the End portal (the operator's goal is what allows the
         // trip) and the step it is on or about to take goes through one. Never while it works beside one: a player
@@ -7685,7 +7749,11 @@ final class PlayerRuntime {
             if (java.time.Instant.now().plus(entry.activity.remaining()).plus(RENEW_GAIN_MIN).isBefore(deadline)) entry.activity.renew(deadline);
         }
         boolean admitted = usable;
-        if (busy && (entry.activity == null || !entry.activity.paid())) usable = false;
+        // A walk or wait whose slice is booked to its period's end is not begun on its last RENEW_GAIN_MIN of it
+        // (F-22c103): its moves are rechecked against the slice as they are made, and a slice lapsing inside a long tick
+        // refused one, ending the walk ("Movement authority denied") where the period's hold below would have carried it.
+        // Left unused, that last of the slice is held over instead. A lapse at the hours' end or the cap is unchanged.
+        if (busy && (entry.activity == null || !entry.activity.paid() || endsItsPeriodWithin(entry, RENEW_GAIN_MIN))) usable = false;
         // A walk or wait whose slice lapsed at its period's end holds still for the next period's slice (F-11g).
         boolean holding = admitted && !usable && busy && holdOverPeriodEnd(entry);
         if (entry.activity != null && entry.activity.phase() == PaidActivitySession.Phase.BLOCKED && !entry.metadataFault) {
@@ -7713,7 +7781,7 @@ final class PlayerRuntime {
         }
         // Its social lane: what it sees and says, to the listeners its profile allows (SocialBrain).
         if (usable && body.entity() != null) {
-            socials.deliverDue(entry.data.id(), now());
+            socials.deliverDue(entry.data.id(), socialNow());
             CompanionSocials.Participant participant = socialParticipant(entry.data.id());
             if (participant != null) socials.tick(participant);
         }
@@ -7900,6 +7968,7 @@ final class PlayerRuntime {
         }
 
         if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.RUN_SKILL) {
+            holdSkillTick(entry);
             entry.runner.tick();
             observeRunner(entry);
         } else if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.PROPOSE_TASK) {
@@ -7959,6 +8028,7 @@ final class PlayerRuntime {
                         // A reroll's step refused, counted as a failure, so that it is not asked for tick after tick (E-45c).
                         KindredMod.LOGGER.info("{} reroll {} refused: {}", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker);
                         entry.reroll.failed++;
+                        entry.rerollRefused++;
                         entry.routineRefreshPending = true;
                         entry.cachedRoutineCandidates = List.of();
                     }
@@ -8245,7 +8315,7 @@ final class PlayerRuntime {
             return;
         }
         tickPerception(entry, body);
-        socials.deliverDue(entry.data.id(), now());
+        socials.deliverDue(entry.data.id(), socialNow());
         switch (decision.action()) {
             case RUN_SKILL -> tickSkill(entry, body);
             case RUN_FOLLOW -> tickFollow(entry, body);
@@ -8782,6 +8852,7 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
         // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
         if (entry.reroll != null && state != SkillRunner.State.RUNNING) {
+            if (state == SkillRunner.State.BLOCKED) entry.rerollRefused++;
             entry.reroll.failed = state == SkillRunner.State.BLOCKED ? entry.reroll.failed + 1 : 0;
             entry.routineRefreshPending = true;
         }
@@ -8899,12 +8970,27 @@ final class PlayerRuntime {
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
                 } else if (state == SkillRunner.State.COMPLETED) entry.factionPlay.walked(factionMove.target());
             }
+            // A leaf broken in its sight line along a faction leg (M-06i2c5): one of its breaks toward the target; refused,
+            // the leaf is not asked again; cancelled, nothing is counted. Either way it decides again from where it stands.
+            var leafPlay = entry.factionPlay;
+            var leafTask = "native_break".equals(entry.skillId) && entry.currentTaskId != null ? leafPlay.leafTasks.remove(entry.currentTaskId) : null;
+            if (leafTask != null) {
+                if (state == SkillRunner.State.COMPLETED) leafPlay.leafBroken(leafTask.getKey());
+                else if (state == SkillRunner.State.BLOCKED) leafPlay.leafRefused(leafTask.getKey(), leafTask.getValue());
+                KindredMod.LOGGER.info("{} faction leaves at {} {} ({} broken, {} refused in all)", entry.data.displayName(),
+                        leafTask.getValue().toShortString(), state == SkillRunner.State.COMPLETED ? "broken" : "not broken",
+                        leafPlay.leavesBroken, leafPlay.leavesRefusedCount);
+                entry.cachedRoutineCandidates = List.of();
+                attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
+            }
             if (state == SkillRunner.State.BLOCKED && "native_fight".equals(entry.skillId)
                     && entry.runner.reason().filter(r -> r.contains("broke off") || r.contains("Lost sight")).isPresent()) entry.fightStalledAt = server.getTicks();
             // Its label, or the routine that issued it: every outcome says where it came from (M-01).
             String label = outcomeLabel(entry, lifeLabel);
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
                     entry.runner.reason().map(r -> ": " + r).orElse(""), label.isEmpty() ? "" : " [" + label + "]");
+            if ("native_fight".equals(entry.skillId)) KindredMod.LOGGER.info("{} fight ends {}{}: {}", entry.data.displayName(), state,
+                    entry.runner.reason().map(r -> " (" + r + ")").orElse(""), fightState(entry.nativeBody == null ? null : entry.nativeBody.entity()));
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
                     + (label.isEmpty() ? "" : " [" + label + "]"));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
@@ -9997,6 +10083,27 @@ final class PlayerRuntime {
         if (told > 0) say(entry, "Trees here, if anyone needs wood.", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
     }
 
+    /**
+     * Lava a player has filled its cast's bucket at, told to its teammates in the same world (F-25c4dm): where to go for the
+     * cast's lava when they have seen none. Told to exactly whom the trees are (F-25c4cc): its own players in co-op, with a
+     * goal, none in a match, so no opponent in a race or a fight hears it; told once a pool, and said aloud. A teammate takes
+     * the nearer of the sites it is told of, as a heading: it sees the lava for itself when it gets there.
+     */
+    private void tellOfLava(Entry entry, NativePlayerBody body, net.minecraft.util.math.BlockPos at) {
+        var player = body.entity();
+        if (matches.active(player.getUuid()).isPresent()) return;
+        int told = 0;
+        for (Entry other : entries.values()) {
+            if (other == entry || other.goal == dev.kindred.core.survival.SurvivalGoal.NONE || other.campaign == null) continue;
+            var mate = other.nativeBody != null && other.nativeBody.connected() ? other.nativeBody.entity() : null;
+            if (mate == null || !mate.isAlive() || mate.getWorld() != player.getWorld() || other.snapshot().stopLatched()
+                    || matches.active(mate.getUuid()).isPresent()) continue;
+            other.campaign.toldOfLava(at, entry.data.displayName(), server.getTicks());
+            told++;
+        }
+        if (told > 0) say(entry, "Lava here, if anyone needs it for the cast.", "near " + at.getX() + ", " + at.getY() + ", " + at.getZ());
+    }
+
     /** A player's personality as its profile holds it now, for fixtures (C13). */
     Personality personalityForFixtures(UUID id) {
         Entry entry = entries.get(id);
@@ -10042,9 +10149,15 @@ final class PlayerRuntime {
         var player = body.entity();
         UUID self = entry.data.id();
         for (var task : teamCoordinator.listProjects().stream().flatMap(p -> p.tasks().values().stream()).toList()) {
-            if (HandOvers.givenBy(task, self) && (task.state() == SharedTask.TaskState.OPEN || task.state() == SharedTask.TaskState.REVOKED)) {
-                teamCoordinator.claimTask(task.id(), self, server.getTicks(), HAND_OVER_LEASE);
+            if (!HandOvers.givenBy(task, self)) continue;
+            boolean open = task.state() == SharedTask.TaskState.OPEN || task.state() == SharedTask.TaskState.REVOKED;
+            if (!open) {
+                entry.handOversLetGo.remove(task.id());
+                continue;
             }
+            // One it let go itself waits until something changes (E-40a1a); one let go by a stop or a lapsed hold does not.
+            if (stillLetGo(entry, task, player)) continue;
+            teamCoordinator.claimTask(task.id(), self, server.getTicks(), HAND_OVER_LEASE);
         }
         for (var material : SHARED_FINDS) {
             String item = HandOvers.materialItem(material);
@@ -10067,6 +10180,9 @@ final class PlayerRuntime {
                 members.add(member(other.data.id(), other.data.displayName(), mate));
             }
             var grants = members.size() < 2 ? List.<ShareOut.Grant>of() : ShareOut.share(members, material, free);
+            // Not the piece it let go to that teammate, which waits for something to change (E-40a1a).
+            var leftOut = grants.stream().filter(g -> letGoTo(entry, g.to(), HandOvers.pieceItem(g.slot(), g.material()))).toList();
+            if (!leftOut.isEmpty()) grants = grants.stream().filter(g -> !leftOut.contains(g)).toList();
             KindredMod.LOGGER.info("{} found {}: holds {}, {} unpromised; {} teammates by; share-out {}", entry.data.displayName(), item, held, free,
                     members.size() - 1, grants);
             if (grants.stream().allMatch(g -> g.to().equals(self))) continue; // Nobody else is better for it: its own to use.
@@ -10190,6 +10306,7 @@ final class PlayerRuntime {
                     entry.handOverFailures = 0;
                     entry.handOverLastDistance = Double.MAX_VALUE;
                     teamCoordinator.revokeTask(task.id(), "Its teammate stayed out of the team's range");
+                    letGo(entry, task);
                     KindredMod.LOGGER.info("{} lets go of handing over {}: {} stayed {} blocks off", entry.data.displayName(), task.title(),
                             mateEntry.data.displayName(), farOff);
                 } else {
@@ -10260,9 +10377,74 @@ final class PlayerRuntime {
             entry.handOverFailures = 0;
             entry.handOverLastDistance = Double.MAX_VALUE;
             teamCoordinator.revokeTask(taskId, "Six steps of the hand-over failed");
+            letGo(entry, task);
             KindredMod.LOGGER.info("{} lets go of handing over {}: six of its steps failed", entry.data.displayName(), task.title());
             entry.handOversWaitUntil = server.getTicks() + 1200;
         }
+    }
+
+    /**
+     * What stood when it let a hand-over go itself (E-40a1a): how far its teammate was (MAX_VALUE out of its world), the
+     * teammate's kit, and how much of the material it held. Until one of these changes the hand-over waits, and a find
+     * grants that teammate no piece like it: in step 8, 505 on Echo let go of an iron sword it had made for Sol 24 times,
+     * each new find of iron enough to promise it again and walk for Sol again, six blocked walks at a time.
+     */
+    private record LetGo(UUID to, String piece, double distance, Map<ShareOut.Slot, ShareOut.Material> kit, int held) { }
+
+    /** How many blocks nearer its teammate must come than when it let go, if not back in the team's range or within reach. */
+    static final double LET_GO_NEARER = 8;
+
+    /** Records what stood as it let {@code task} go itself. */
+    private void letGo(Entry entry, SharedTask task) {
+        var piece = HandOvers.Piece.of(task);
+        var self = entry.nativeBody != null && entry.nativeBody.connected() ? entry.nativeBody.entity() : null;
+        if (piece == null || self == null) return;
+        var mate = mateOf(piece.to());
+        double away = mate != null && mate.getWorld() == self.getWorld() ? self.distanceTo(mate) : Double.MAX_VALUE;
+        var kit = mate != null ? member(piece.to(), piece.to().toString(), mate).kit() : Map.<ShareOut.Slot, ShareOut.Material>of();
+        int held = self.getInventory().count(Registries.ITEM.get(net.minecraft.util.Identifier.of(piece.material())));
+        entry.handOversLetGo.put(task.id(), new LetGo(piece.to(), piece.piece(), away, kit, held));
+    }
+
+    /** The body in the world of the player {@code id}, connected and alive, or null. */
+    private ServerPlayerEntity mateOf(UUID id) {
+        Entry mateEntry = entries.get(id);
+        var mate = mateEntry != null && mateEntry.nativeBody != null && mateEntry.nativeBody.connected() ? mateEntry.nativeBody.entity() : null;
+        return mate != null && mate.isAlive() ? mate : null;
+    }
+
+    /** Whether it let a hand-over of {@code piece} to {@code to} go itself, and it still waits. */
+    private static boolean letGoTo(Entry entry, UUID to, String piece) {
+        return entry.handOversLetGo.values().stream().anyMatch(l -> l.to().equals(to) && l.piece().equals(piece));
+    }
+
+    /**
+     * Whether a hand-over it let go itself still waits (E-40a1a). It is taken up again once its teammate comes nearer
+     * (back in the team's range, {@value #LET_GO_NEARER} blocks nearer, or within reach and in sight), once the teammate's
+     * kit changes, or, the piece not yet made, once it holds more of the material; the record is then dropped.
+     */
+    private boolean stillLetGo(Entry entry, SharedTask task, ServerPlayerEntity self) {
+        var was = entry.handOversLetGo.get(task.id());
+        if (was == null) return false;
+        var mate = mateOf(was.to());
+        String why = null;
+        Item made = Registries.ITEM.get(net.minecraft.util.Identifier.of(was.piece()));
+        var piece = HandOvers.Piece.of(task);
+        int held = self.getInventory().count(Registries.ITEM.get(net.minecraft.util.Identifier.of(piece.material())));
+        if (self.getInventory().count(made) == 0 && held > was.held()) why = "it holds more " + piece.material();
+        if (why == null && mate != null && mate.getWorld() == self.getWorld()) {
+            double away = self.distanceTo(mate);
+            if (away <= TEAM_RANGE && (was.distance() > TEAM_RANGE || away <= was.distance() - LET_GO_NEARER || (away <= 3 && self.canSee(mate)))) {
+                why = "its teammate " + Math.round(away) + " blocks off, " + (was.distance() == Double.MAX_VALUE ? "out of its world" : Math.round(was.distance()))
+                        + " when it let go";
+            } else if (!member(was.to(), was.to().toString(), mate).kit().equals(was.kit())) {
+                why = "its teammate's kit changed";
+            }
+        }
+        if (why == null) return true;
+        entry.handOversLetGo.remove(task.id());
+        KindredMod.LOGGER.info("{} takes up handing over {} again: {}", entry.data.displayName(), task.title(), why);
+        return false;
     }
 
     // ------------------------------------------------------------------ raids in a match (E-44)
@@ -10484,6 +10666,7 @@ final class PlayerRuntime {
         BlockPos to = FactionsPlayer.destination(move, player);
         if (to == null || FactionsPlayer.arrived(move, player, to)) {
             // There: weigh again at once, so a claim or capture is asked where it now stands.
+            if (to != null) play.arrivedForTest(tick);
             settledInFlight(entry, play, player, move);
             play.move = null;
             play.decidedAt = Long.MIN_VALUE / 2;
@@ -10503,6 +10686,14 @@ final class PlayerRuntime {
             // The next choice at the decision interval, not on the same tick: chosen at once, a coast of water it saw was
             // set aside place by place, a search for each (F-35j1).
             return null;
+        }
+        // Leaves in its sight line hide the ground along a leg it sees none on (M-06i2c5): it breaks the nearest within its
+        // reach, by hand through the ordinary break, the server's edit policy and the faction land's rules asked at the
+        // break, its drops kept; then decides again from where it stands. On Factions seed 20261030 leaves hid the ground
+        // on 885 and 337 of the legs M-06i2c2 left as they were (bases on and off), most within 4 blocks of it (M-06i2c3).
+        if (!play.waiting(move.target(), tick)) {
+            var leaves = factionLeaves(entry, play, player, move, to);
+            if (leaves != null) return leaves;
         }
         // Its walk there refused, no way found (MOVEMENT, #120): a way made toward it instead, a step dug or a block of its
         // own put, as a player climbs out of a hollow, through the run's own route builder under the server's edit policy
@@ -10568,6 +10759,20 @@ final class PlayerRuntime {
      * put or the walk up to where that is needed, never a way that only walks (that was refused). Null when the server
      * allows no edits or the route builder finds none, and the walk waits as before.
      */
+    /** The break of the leaves in its sight line along a leg it sees no ground on (M-06i2c5), or null when there are none. */
+    private List<NativeTaskCandidate> factionLeaves(Entry entry, FactionsPlayer play, ServerPlayerEntity player,
+                                                    dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
+        if (!worldEditsEnabled()) return null;
+        BlockPos leaf = play.leavesInTheWay(move, player, to);
+        if (leaf == null) return null;
+        UUID id = UUID.nameUUIDFromBytes(("faction-leaves:" + entry.data.id() + ":" + leaf.asLong()).getBytes(StandardCharsets.UTF_8));
+        play.leafTasks.put(id, Map.entry(move.target(), leaf.toImmutable()));
+        var candidate = new dev.kindred.core.TaskPreferences.Candidate(id, dev.kindred.core.TaskPreferences.Priority.PROJECT, 90.0,
+                dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+        return List.of(new NativeTaskCandidate(candidate, "native_break", Map.of("x", String.valueOf(leaf.getX()), "y", String.valueOf(leaf.getY()),
+                "z", String.valueOf(leaf.getZ()))));
+    }
+
     private List<NativeTaskCandidate> factionWay(Entry entry, NativePlayerBody body, dev.kindred.core.factions.FactionPlay.Choice move, BlockPos to) {
         if (!worldEditsEnabled()) return null;
         if (entry.campaign == null) entry.campaign = new PortalRunCampaign();
@@ -10869,8 +11074,9 @@ final class PlayerRuntime {
     List<List<Long>> factionCompletedAndOverWaterForTest(UUID player) {
         requireThread();
         var entry = entries.get(player);
-        return entry == null ? List.of(List.of(), List.of())
-                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest));
+        return entry == null ? List.of(List.of(), List.of(), List.of())
+                : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest),
+                        List.copyOf(entry.factionPlay.arrivedForTest));
     }
 
     List<Long> factionDecisionsForTest(UUID player) {
@@ -10935,6 +11141,13 @@ final class PlayerRuntime {
         var entry = entries.get(player);
         if (entry == null || entry.nativeBody == null || !entry.nativeBody.connected() || entry.factionPlay.move == null) return null;
         return FactionsPlayer.destination(entry.factionPlay.move, entry.nativeBody.entity());
+    }
+
+    /** For fixtures (M-06i2c5): the leaves it broke and was refused in its sight line along faction legs. */
+    int[] factionLeavesForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? new int[2] : new int[] {entry.factionPlay.leavesBroken, entry.factionPlay.leavesRefusedCount};
     }
 
     /** For fixtures (M-06i2c1): whether the AI player is on a faction walk now. */
@@ -11640,10 +11853,18 @@ final class PlayerRuntime {
         UUID cartId;
         /** Pushes given, counted as each ends; steps refused or blocked in a row; walks to its bridge's blocks afloat; and, once it gives up, why. */
         int pushes, failed, doorTries, pickups;
+        /** Pushes given gently from here on: a push stopped short against the boat it holds the villager in (F-22c98c). */
+        boolean gentle;
         /** The last six ticks of a push at the villager (diagnostic only, F-22c98a): the cart, the held boat and the body. */
         final java.util.ArrayDeque<String> pushTrail = new java.util.ArrayDeque<>();
         /** Walks to the cart's item lying after a give-up, bounded on their own: never DOOR_BACK's tries (F-22c98b). */
         int cartPickWalks;
+        /**
+         * Given up, the held boat or the cart it could not walk to, let be where it is (F-22c103), and said as the bring ends.
+         * One out of reach ended the whole take-back, and the hall's door was left out.
+         */
+        boolean boatLetBe, cartLetBe;
+        String letBe = "";
         /** Its rails' drops in and by the cell said at most this often a bring, for a rail it ends without (F-22c64). */
         int railsNoted;
         /** When it began waiting in the cell's front for what lies in the cell to be picked up. */
@@ -11808,7 +12029,7 @@ final class PlayerRuntime {
         if (villager == null && b.failure == null) return giveUp(entry, body, "The " + b.noun + " I was bringing home is gone.");
         if (b.failed >= 3 && b.failure == null) return giveUp(entry, body, "I couldn't bring the " + b.noun + " home: "
                 + b.phase.name().toLowerCase(java.util.Locale.ROOT) + " went wrong three times over.");
-        if (b.failed >= 3) return endBring(entry, b.failure + " I couldn't take everything back.", false);
+        if (b.failed >= 3) return endBring(entry, b.failure + " I couldn't take everything back." + b.letBe, false);
         var task = bringTask(entry, "step");
         switch (b.phase) {
             case HOLD -> {
@@ -12195,6 +12416,12 @@ final class PlayerRuntime {
                     KindredMod.LOGGER.info("{} bringing: the cart at {} stopped short against the {} at {} ({} pushes); put down again", entry.data.displayName(),
                             cart.getPos(), b.noun, villager.getPos(), b.pushes);
                     KindredMod.LOGGER.info("{} bringing: the push's last ticks (F-22c98a): {}", entry.data.displayName(), String.join(" | ", b.pushTrail));
+                    // Against the boat it holds the villager in: the pushes after given gently, never fast enough to step past
+                    // the fifth of a block a cart takes up within into touching the boat, which stopped it dead (F-22c98c).
+                    if (!b.gentle && heldBoat(world, b) != null) {
+                        b.gentle = true;
+                        KindredMod.LOGGER.info("{} bringing: stopped short against the held boat; the pushes after given gently", entry.data.displayName());
+                    }
                     b.phase = Bring.Phase.RECART;
                     return bringCandidates(entry, body);
                 }
@@ -12209,8 +12436,9 @@ final class PlayerRuntime {
                             "y", String.valueOf(b.push.getY()), "z", String.valueOf(b.push.getZ()), "range", "0", "centre", "true")));
                 }
                 KindredMod.LOGGER.info("{} bringing: pushing the cart at {} into the {} at {}", entry.data.displayName(), cart.getPos(), b.noun, villager.getPos());
-                return List.of(new NativeTaskCandidate(bringTask(entry, "push:" + b.pushes), "native_push",
-                        Map.of("target", cart.getUuid().toString(), "seconds", "10")));
+                return List.of(new NativeTaskCandidate(bringTask(entry, "push:" + b.pushes), "native_push", b.gentle
+                        ? Map.of("target", cart.getUuid().toString(), "seconds", "10", "gentle", "true")
+                        : Map.of("target", cart.getUuid().toString(), "seconds", "10")));
             }
             case RECART -> {
                 // The cart taken back, to be put down again where the line now starts.
@@ -12588,6 +12816,14 @@ final class PlayerRuntime {
                 // Out of the front, and its job block put there behind the villager.
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(b.slot))) {
                     var out = b.slot.south(2);
+                    // Under its own shut trapdoor (F-22c96a): no walk is planned from a cell whose head is a shut trapdoor, so it
+                    // walks straight out south, as KEEP does from inside, the trapdoor left shut over the villager. Planned, the
+                    // walk out was refused three times in a second and the bring given up (F-22c96's line, CI on #429).
+                    if (world.getBlockState(b.slot.up()).isIn(net.minecraft.registry.tag.BlockTags.WOODEN_TRAPDOORS)) {
+                        long blocks = Math.max(1, Math.min(3, (long) Math.floor(Vec3d.ofBottomCenter(out).z - player.getZ() + 0.2)));
+                        return List.of(new NativeTaskCandidate(bringTask(entry, "out from under the trapdoor"), "native_walk",
+                                Map.of("direction", "south", "blocks", String.valueOf(blocks))));
+                    }
                     return List.of(new NativeTaskCandidate(bringTask(entry, "out"), "native_goto", Map.of("x", String.valueOf(out.getX()),
                             "y", String.valueOf(out.getY()), "z", String.valueOf(out.getZ()), "range", "0", "centre", "true")));
                 }
@@ -12603,14 +12839,27 @@ final class PlayerRuntime {
                     return List.of(new NativeTaskCandidate(bringTask(entry, "undo out"), "native_boat", Map.of("mode", "land")));
                 }
                 // Given up with the villager still in its boat: the boat broken first, the villager set down where it sat.
-                if (heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
-                    if (!player.canInteractWithEntity(boat, 0)) return List.of(goNear(task, boat.getBlockPos()));
+                if (!b.boatLetBe && heldBoat(world, b) instanceof net.minecraft.entity.vehicle.BoatEntity boat) {
+                    if (!player.canInteractWithEntity(boat, 0)) {
+                        // Two walks to it blocked: let be where it is, and the rest taken back (F-22c103). Set off the line
+                        // down a drop of two blocks, the boat had no walk to it three times, the bring ended there, and the
+                        // hall's door was left out (CI on #412, run 44871475068).
+                        if (b.failed >= 2) {
+                            b.boatLetBe = true;
+                            b.failed = 0;
+                            b.letBe += " I left the boat with the " + b.noun + " in it where I couldn't get to it.";
+                            KindredMod.LOGGER.info("{} bringing: the boat holding the {} at {} let be, two walks to it blocked", entry.data.displayName(), b.noun,
+                                    boat.getBlockPos().toShortString());
+                            return bringCandidates(entry, body);
+                        }
+                        return List.of(goNear(task, boat.getBlockPos()));
+                    }
                     return List.of(new NativeTaskCandidate(bringTask(entry, "undo boat"), "native_boat", Map.of("mode", "break", "target", boat.getUuid().toString())));
                 }
                 // Given up with the cart down: broken and taken back, whoever rides it set down where it is.
-                var cart = cartOf(world, b);
+                var cart = b.cartLetBe ? null : cartOf(world, b);
                 if (cart == null) {
-                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                    var lying = b.cartLetBe ? List.<net.minecraft.entity.ItemEntity>of() : world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                             item -> item.getStack().isOf(Items.MINECART));
                     // Its own count of walks to the cart's item (F-22c98b): counted on the door's tries, a few walks here left
                     // DOOR_BACK past its three before it tried once, and the hall's door was left out.
@@ -12618,7 +12867,17 @@ final class PlayerRuntime {
                     b.phase = Bring.Phase.TIDY;
                     return bringCandidates(entry, body);
                 }
-                if (!player.canInteractWithEntity(cart, 0)) return List.of(goNear(task, cart.getBlockPos()));
+                if (!player.canInteractWithEntity(cart, 0)) {
+                    // As the boat: two walks to it blocked, let be, and the rest taken back (F-22c103).
+                    if (b.failed >= 2) {
+                        b.cartLetBe = true;
+                        b.failed = 0;
+                        b.letBe += " I left the cart where I couldn't get to it.";
+                        KindredMod.LOGGER.info("{} bringing: the cart at {} let be, two walks to it blocked", entry.data.displayName(), cart.getBlockPos().toShortString());
+                        return bringCandidates(entry, body);
+                    }
+                    return List.of(goNear(task, cart.getBlockPos()));
+                }
                 return List.of(new NativeTaskCandidate(bringTask(entry, "undo cart"), "native_cart", Map.of("mode", "break", "target", cart.getUuid().toString())));
             }
             case TIDY -> {
@@ -12741,7 +13000,7 @@ final class PlayerRuntime {
             case DOOR_BACK -> {
                 boolean open = b.opened.keySet().stream().anyMatch(at -> world.getBlockState(at).isAir());
                 if (world.getBlockState(b.door).getBlock() instanceof net.minecraft.block.DoorBlock && !open) {
-                    if (b.failure != null) return endBring(entry, b.failure, false);
+                    if (b.failure != null) return endBring(entry, b.failure + b.letBe, false);
                     entry.brought.add(b.villager);
                     return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
@@ -12759,7 +13018,7 @@ final class PlayerRuntime {
                 }
                 var plan = new dev.kindred.core.construction.Blueprint("the trading hall's door", hall.source(), hall.creator(), hall.license(), door, List.of());
                 if (++b.doorTries > 3 || startBuild(server.getCommandSource(), entry.data.id(), plan, b.origin, 0) != 1) {
-                    if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back.", false);
+                    if (b.failure != null) return endBring(entry, b.failure + " I couldn't put my hall's door back." + b.letBe, false);
                     entry.brought.add(b.villager);
                     return endBring(entry, "I've brought the " + b.noun + " home, but couldn't put my hall's door back." + leftInCell(world, b), true);
                 }
@@ -13323,6 +13582,8 @@ final class PlayerRuntime {
         int tries, failed, nudges;
         long since;
         boolean givingUp;
+        /** Since when, standing on its lectern to break it, it has found no room to step off to; -1 when it has (F-22c116). */
+        long noRoomSince = -1;
         /** Each look's offers, in words, for fixtures. */
         final List<String> looks = new ArrayList<>();
         /** The ids of the steps it has given, to know its own refusals. */
@@ -13407,6 +13668,16 @@ final class PlayerRuntime {
                 if (slot < 0) {
                     // Just broken: the lectern lies where it fell a moment before it is picked up.
                     if (r.tries > 0 && now - r.since < 100) return List.of(waitTask(task, "For the lectern to be picked up"));
+                    // Lying where the break's own collection did not reach (in the hole it left, broken from a block beside
+                    // one up, stepped off onto): walked onto, for as long as a villager is given to take up a lectern (F-22c116).
+                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                            item -> item.getStack().isOf(Items.LECTERN));
+                    if (r.tries > 0 && !lying.isEmpty() && now - r.since < JOB_NUDGE) {
+                        BlockPos drop = lying.getFirst().getBlockPos();
+                        return List.of(new NativeTaskCandidate(rerollTask(entry, "pickup:" + drop.asLong()), "native_goto", Map.of(
+                                "x", String.valueOf(drop.getX()), "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()),
+                                "range", "0.5", "partial", "true")));
+                    }
                     KindredMod.LOGGER.info("{} reroll: no lectern to put down ({} lying near, entities ticking there {}, the villager's age {}); let be",
                             entry.data.displayName(), world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                                     item -> item.getStack().isOf(Items.LECTERN)).size(), world.shouldTickEntity(r.lectern), villager == null ? -1 : villager.age);
@@ -13480,11 +13751,27 @@ final class PlayerRuntime {
                 }
                 if (!reach) return List.of(goNear(task, r.lectern));
                 // Standing on it, as a small pen leaves a player stepping up onto it: off it first (a break of the block
-                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground).
+                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground). With no
+                // room to step off to, it waits for some rather than asking for a break it would be refused, for as long as
+                // a villager is given to let its job go; then it lets the villager be, the lectern left standing, and says
+                // why: never through refusals (F-22c116, CI #451: six refusals, the lectern left in the ground).
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(r.lectern).stretch(0, 1, 0))) {
                     var off = offTheLectern(entry, world, r);
-                    if (off != null) return List.of(off);
+                    if (off != null) {
+                        r.noRoomSince = -1;
+                        return List.of(off);
+                    }
+                    if (r.noRoomSince < 0) r.noRoomSince = now;
+                    if (now - r.noRoomSince > JOB_WAIT) {
+                        say(entry, "There's no room to step off my lectern; I've left it standing.", "");
+                        entry.rerollGivenUp.add(r.villager);
+                        entry.reroll = null;
+                        entry.rerollAt = now + 1200;
+                        return null;
+                    }
+                    return List.of(waitTask(task, "For room off the lectern"));
                 }
+                r.noRoomSince = -1;
                 var args = new HashMap<>(at);
                 args.put("collect", "true");
                 return List.of(new NativeTaskCandidate(task, "native_break", Map.copyOf(args)));
@@ -13540,20 +13827,37 @@ final class PlayerRuntime {
     }
 
     /**
-     * A walk off the lectern's block to the middle of one beside it, clear of it: where it stood to begin with, else
-     * any side of the lectern with room to stand; or null when there is none.
+     * A walk off the lectern's block to the middle of one with room to stand, clear of it (see {@link #stepOffTo}), with
+     * where it stood to begin with tried first; or null when there is none.
      */
     private static NativeTaskCandidate offTheLectern(Entry entry, net.minecraft.server.world.ServerWorld world, Reroll r) {
-        var sides = new ArrayList<BlockPos>();
-        sides.add(r.stand);
-        for (Direction side : Direction.Type.HORIZONTAL) sides.add(r.lectern.offset(side));
-        for (BlockPos at : sides) {
-            if (at.equals(r.lectern) || !world.getBlockState(at).getCollisionShape(world, at).isEmpty()
+        BlockPos at = stepOffTo(world, r.lectern, r.stand);
+        if (at == null) return null;
+        return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
+                "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+    }
+
+    /**
+     * A cell to step off {@code block} to, before breaking it from beside (F-22c116): its feet and head clear, a full top
+     * face under it to stand on (glass is one, though not a solid block), no mob in it, and not over {@code block} itself. {@code first} (where it stood before, say) is tried
+     * first, then the four sides at {@code block}'s height, then the four beside it one up, where a block beside is a
+     * floor to step across onto from on top of it (as a pen's fill leaves one); null when there is none. Only cells beside
+     * it, a step from where it stands on it: a cell two across can lie behind a wall with no way round (a lectern by its
+     * pen's wall), and a walk there gets no nearer. The break of the block underfoot stays
+     * {@code RoamingEdits.breakDenial}'s to refuse: this only finds where to stand so that it is not asked for.
+     */
+    static BlockPos stepOffTo(net.minecraft.server.world.ServerWorld world, BlockPos block, BlockPos first) {
+        var cells = new ArrayList<BlockPos>();
+        if (first != null) cells.add(first);
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side));
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side).up());
+        for (BlockPos at : cells) {
+            if (at.getX() == block.getX() && at.getZ() == block.getZ()) continue;
+            if (!world.getBlockState(at).getCollisionShape(world, at).isEmpty()
                     || !world.getBlockState(at.up()).getCollisionShape(world, at.up()).isEmpty()
-                    || !world.getBlockState(at.down()).isSolidBlock(world, at.down())) continue;
+                    || !world.getBlockState(at.down()).isSideSolidFullSquare(world, at.down(), Direction.UP)) continue;
             if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(at), e -> !(e instanceof ServerPlayerEntity)).isEmpty()) continue;
-            return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
-                    "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+            return at.toImmutable();
         }
         return null;
     }
@@ -13631,6 +13935,12 @@ final class PlayerRuntime {
     List<String> rerollLooks(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? List.of() : List.copyOf(entry.rerollLooks);
+    }
+
+    /** The reroll's steps refused, for fixtures (F-22c116). */
+    int rerollStepsRefused(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.rerollRefused;
     }
 
     /** Villagers it gave up rerolling, for fixtures. */
@@ -16268,7 +16578,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
-        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
+        logCostNow(); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -16551,6 +16861,23 @@ final class PlayerRuntime {
 
     /** Test seam: every activity budget write held this long before it goes to the store, as on a slow disk (F-22c2). */
     void delayBudgetWritesForTest(java.time.Duration delay) { budgetWriteDelay = delay; }
+
+    /**
+     * Test seam (F-22c103), off unless a fixture sets it: a skill's tick begun with less of its paid slice left than
+     * {@code hold} is held that long first, as a long tick on a loaded server is, so that its slice lapses inside the tick.
+     */
+    void holdSkillTicksForTest(java.time.Duration hold) { skillTickHold = hold; }
+
+    private volatile java.time.Duration skillTickHold = java.time.Duration.ZERO;
+
+    private void holdSkillTick(Entry entry) {
+        java.time.Duration hold = skillTickHold;
+        if (hold.isZero() || entry.activity == null || entry.activity.phase() != PaidActivitySession.Phase.ACTIVE
+                || entry.activity.remaining().compareTo(hold) >= 0) return;
+        // Held to its end: the server thread is often unparked early, so one park need not last.
+        long until = System.nanoTime() + hold.toNanos();
+        for (long left; (left = until - System.nanoTime()) > 0; ) java.util.concurrent.locks.LockSupport.parkNanos(left);
+    }
 
     /** Test seam: keep autonomous selection from replacing the state a fixture is inspecting. */
     void holdAutonomyForTest(UUID id, int ticks) {
@@ -19004,7 +19331,16 @@ final class PlayerRuntime {
         return id.toString().substring(0, 8);
     }
 
-    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    /**
+     * The cost line now, numbered by the world's day (the overworld's game time, {@link RecordGauge#worldDay}), so a
+     * restart goes on with the world's count, not a count of its own from 1 (M-06i4: after a restart at world time 61,286
+     * the line read "day 1" again). Still written every {@link #LEDGER_CHECK_TICKS} server ticks and at a stop.
+     */
+    CompletableFuture<String> logCostNow() {
+        return logCost(RecordGauge.worldDay(server.getOverworld().getTime()));
+    }
+
+    /** The cost line for world day {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
@@ -19464,6 +19800,8 @@ final class PlayerRuntime {
         private int walksFailed;
         /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
         private long fightStalledAt = Long.MIN_VALUE / 2;
+        /** Whether its last look found a meal held back by a mob that can get at it (F-25c4dh4's line, once a spell). */
+        private boolean mealHeldBack;
         /** When a walk last failed, and where and when a hunter last saw a runner (M-02a). */
         private long walkFailedAt = Long.MIN_VALUE / 2, preySeenAt = Long.MIN_VALUE / 2;
         private BlockPos preySeen;
@@ -19487,6 +19825,8 @@ final class PlayerRuntime {
         private int handOverFailures;
         /** How far its teammate was when its last walk to it ended, short of tossing reach (E-40a1). */
         private double handOverLastDistance = Double.MAX_VALUE;
+        /** The hand-overs it let go itself, and what stood then: each waits until something changes (E-40a1a). */
+        private final Map<TaskId, LetGo> handOversLetGo = new java.util.HashMap<>();
         private String teamLine;
         /** What it last said aloud, for fixtures. */
         private String lastSaid;
@@ -19639,6 +19979,8 @@ final class PlayerRuntime {
         };
         private final Set<UUID> rerollKept = new HashSet<>(), rerollGivenUp = new HashSet<>();
         private final List<String> rerollLooks = new ArrayList<>();
+        /** The reroll's steps refused, at dispatch or as they ran, for fixtures (F-22c116). */
+        private int rerollRefused;
         private long rerollAt;
         /**
          * Hit hard by a player (E-41g): who, and what it does about it, until when; whether what it is doing gives way to

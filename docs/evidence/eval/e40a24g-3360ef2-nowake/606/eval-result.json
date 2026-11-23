@@ -1,0 +1,64 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 606,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 8611, "paid": 8611, "lapsed": 370, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 99.8, "snapshotMicrosMax": 12179.0, "tagMicrosMean": 101.9, "tagMicrosMax": 12854.6, "bySource": {"container.take:furnace": 125, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 7030, "pickup:class_3222.method_7329": 795, "pickup:class_52.method_331": 20, "screen:class_1714": 105, "screen:class_1723": 902, "use:item": 3}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 287, "class_1560.method_6099": 1, "class_2248.method_36993": 7055, "class_3222.method_7329": 174, "class_52.method_331": 45}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 14.48, "tickMsWorst": 1118.58, "tickMsWorstAt": 5838, "ticksOver50ms": 922, "ticksOver200ms": 11, "heapMbMax": 936, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1120, "stone_tools": 2820, "iron_ingot": 6900, "iron_pickaxe": 35260},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2714,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 900, "stone_tools": 2400, "iron_ingot": 11540, "iron_pickaxe": 66420},
+      "deaths": [
+        {"tick": 48656, "cause": "Sol was slain by Zombie", "x": 279, "y": -10, "z": -19, "light": 0, "timeOfDay": 818, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 52038, "cause": "Sol was shot by Skeleton", "x": 275, "y": 14, "z": 1, "light": 4, "timeOfDay": 4200, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from skeleton the way it came", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"},
+        {"tick": 101950, "cause": "Sol suffocated in a wall", "x": 175, "y": 49, "z": -72, "light": 0, "timeOfDay": 6112, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Interrupted: make a way elsewhere: walk on", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 87820, "x": 177, "y": 16, "z": -79, "attempt": 1}, {"tick": 101500, "x": 179, "y": 51, "z": -75, "attempt": 1}, {"tick": 136260, "x": 184, "y": 16, "z": -70, "attempt": 1}, {"tick": 142620, "x": 190, "y": 51, "z": -70, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5555,
+      "chunkMinutes": 34665.6,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 0.8
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1620, "stone_tools": 3140, "iron_ingot": 7380, "iron_pickaxe": 20800, "diamond": 31220},
+      "deaths": [
+        {"tick": 31823, "cause": "Echo was slain by Zombie", "x": 261, "y": -13, "z": -24, "light": 0, "timeOfDay": 7985, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Obsidian: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 95156, "cause": "Echo was doomed to fall by Drowned", "x": 280, "y": -2, "z": -4, "light": 0, "timeOfDay": 23318, "dimension": "minecraft:overworld", "hunger": 12, "underSky": false, "stage": "Iron: Mine iron ore (0/16) - Branch mine for iron: clear 279, -1, -4", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "Branch mine for iron: clear 279, -1, -4"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4008,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

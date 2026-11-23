@@ -72,6 +72,153 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
     }
 
     /**
+     * Its goal's work cannot open the sea (F-22c117). On CI (#451, run 45050640733; #457, run 45063245649) Ada, after
+     * cobblestone with a wooden pickaxe, went to the sea's rim of stone (F-22c110's), the nearest stone in sight, and mined
+     * it at the sea's height: the sea ran out of the box kept and fell to the ground below (947 and 902 cells cleared as it
+     * was put back), and Ada, kept at the rim, set nothing aside as water ("A place out on the water it saw set aside: 0").
+     * Staged so: the island and its sea as the seen test lays them, Ada set on the rim with a wooden pickaxe, her goal
+     * on. The rim still stands after a minute of it, and no water has come out of the box kept.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionOpenWaterEdge", tickLimit = 1700)
+    public void aPlayerAfterStoneOnItsSeasEdgeCannotOpenTheSea(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 1600);
+        var server = context.getWorld().getServer();
+        var world = context.getWorld();
+        long[] since = {-1};
+        BlockPos[] isle = new BlockPos[1];
+        java.util.Set<Long> before = new java.util.HashSet<>();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Ada"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    // Where staged lays the island, read before it is laid: water already there is not the sea's.
+                    BlockPos up = f.player().getBlockPos().up(30);
+                    BlockPos o = new BlockPos((up.getX() & ~15) + 4, up.getY(), (up.getZ() & ~15) + 8);
+                    FixtureGround.simulated(context, o.add(-SEA - 3, 0, -SEA - 3), o.add(SEA + 3, 0, SEA + 3));
+                    rimWater(world, o, before::add);
+                    isle[0] = staged(context, f, false, false);
+                    context.assertTrue(isle[0].equals(o), "The island where it was read: " + isle[0].toShortString() + " / " + o.toShortString());
+                    // On the rim at the sea's west edge, as on CI, with what it had there: a wooden pickaxe, after stone.
+                    BlockPos rim = o.add(-SEA - 1, -2, 0);
+                    f.player().refreshPositionAndAngles(rim.getX() + 0.5, rim.getY(), rim.getZ() + 0.5, 90, 0);
+                    f.player().getInventory().setStack(0, new net.minecraft.item.ItemStack(net.minecraft.item.Items.WOODEN_PICKAXE));
+                    since[0] = server.getTicks();
+                })
+                .createAndAdd(() -> context.assertTrue(server.getTicks() - since[0] >= 1200, "A minute on"))
+                .createAndAdd(() -> {
+                    int[] rim = rim(world, isle[0]);
+                    int[] out = {0};
+                    BlockPos[] first = {null};
+                    rimWater(world, isle[0], pos -> {
+                        if (before.contains(pos)) return;
+                        out[0]++;
+                        if (first[0] == null) first[0] = BlockPos.fromLong(pos);
+                    });
+                    KindredMod.LOGGER.info("Open-water edge fixture: the rim {} of {} standing, {} cells of water outside the box kept, Ada at {}",
+                            rim[0], rim[1], out[0], f.player().getBlockPos().subtract(isle[0]).toShortString());
+                    context.assertTrue(rim[0] == rim[1], "The sea's rim stands: " + rim[0] + " of " + rim[1] + " blocks; Ada at "
+                            + f.player().getBlockPos().subtract(isle[0]).toShortString() + " from the island's middle");
+                    context.assertTrue(out[0] == 0, "No water outside the ground it keeps: " + out[0] + " cells, the first at "
+                            + (first[0] == null ? "none" : first[0].subtract(isle[0]).toShortString() + " from the island's middle"));
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /** The blocks of the sea's rim standing, and how many it has: its ring round the sea, from the floor to the sea's top. */
+    private static int[] rim(net.minecraft.server.world.ServerWorld world, BlockPos o) {
+        int standing = 0, all = 0;
+        for (int x = -SEA - 1; x <= SEA + 1; x++) for (int z = -SEA - 1; z <= SEA + 1; z++) {
+            if (Math.abs(x) <= SEA && Math.abs(z) <= SEA) continue;
+            for (int y = -6; y <= -3; y++) {
+                all++;
+                var state = world.getBlockState(o.add(x, y, z));
+                if (!state.isAir() && state.getFluidState().isEmpty()) standing++;
+            }
+        }
+        return new int[] {standing, all};
+    }
+
+    /** Water cells in the sea's three layers, for failure messages. */
+    private static int sea(net.minecraft.server.world.ServerWorld world, BlockPos o) {
+        int n = 0;
+        var at = new BlockPos.Mutable();
+        for (int x = -SEA; x <= SEA; x++) for (int z = -SEA; z <= SEA; z++) for (int y = -5; y <= -3; y++) {
+            at.set(o.getX() + x, o.getY() + y, o.getZ() + z);
+            if (world.getFluidState(at).isIn(net.minecraft.registry.tag.FluidTags.WATER)) n++;
+        }
+        return n;
+    }
+
+    /**
+     * The sea the island stands in keeps its water within the ground the test keeps (F-22c110). Rimless, its edge ran out
+     * past the box kept and fell below it, where nothing put it back; the curtain left over a later test's field put
+     * BuildBattle's voter in water on its walkway (CI runs 44918551355 and 43782657628, "Nobody voted").
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, skyAccess = true, batchId = "factionOpenWaterRim", tickLimit = 400)
+    public void itsSeaKeepsItsWaterWithinTheGroundItKeeps(TestContext context) {
+        BlockPos up = context.getAbsolutePos(BlockPos.ORIGIN).up(30);
+        BlockPos o = new BlockPos((up.getX() & ~15) + 4, up.getY(), (up.getZ() & ~15) + 8);
+        long[] laid = {-1};
+        var server = context.getWorld().getServer();
+        var world = context.getWorld();
+        // Water there before the island is laid is not the sea's: another test's ground, left standing where its plot was
+        // (on #442's CI, run 44985181724, a replay scene's water, in its plot two blocks past this box, was counted as the
+        // sea's). Staged here too: a source in a stone cup in the ground read, that cannot run.
+        BlockPos cup = o.add(-SEA - 3, -20, 0);
+        java.util.Set<Long> before = new java.util.HashSet<>();
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> {
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                        world.setBlockState(cup.add(dx, -1, dz), Blocks.STONE.getDefaultState());
+                        if (dx != 0 || dz != 0) world.setBlockState(cup.add(dx, 0, dz), Blocks.STONE.getDefaultState());
+                    }
+                    world.setBlockState(cup, Blocks.WATER.getDefaultState());
+                })
+                .createAndAdd(() -> {
+                    // The sea's chunks and those round it simulated: with no player near, a chunk the test server does not
+                    // tick runs no fluid, and a sea in one never spills, rimmed or not.
+                    FixtureGround.simulated(context, o.add(-SEA - 3, 0, -SEA - 3), o.add(SEA + 3, 0, SEA + 3));
+                    rimWater(world, o, before::add);
+                    context.assertTrue(before.contains(cup.asLong()), "Staged: the water in its cup read before the island is laid");
+                    island(context, o, false, false);
+                    laid[0] = server.getTicks();
+                })
+                .createAndAdd(() -> {
+                    // Water spreads a block in five ticks and falls at once: two hundred ticks is past its spread on a floor.
+                    context.assertTrue(server.getTicks() - laid[0] >= 200, "Two hundred ticks on");
+                    int[] out = {0};
+                    BlockPos[] first = {null};
+                    rimWater(world, o, pos -> {
+                        if (before.contains(pos)) return;
+                        out[0]++;
+                        if (first[0] == null) first[0] = BlockPos.fromLong(pos);
+                    });
+                    context.assertTrue(out[0] == 0, "No water outside the ground it keeps that was not there before: " + out[0]
+                            + " cells, the first at " + (first[0] == null ? "none" : first[0].subtract(o).toShortString() + " from the island's middle"));
+                    context.assertTrue(world.getFluidState(cup).isStill(), "The water there before still stands in its cup");
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = -1; dy <= 0; dy++) {
+                        world.setBlockState(cup.add(dx, dy, dz), Blocks.AIR.getDefaultState());
+                    }
+                })
+                .completeIfSuccessful();
+    }
+
+    /** Every cell holding a fluid round the island's kept box (±(SEA + 1), 7 below to 8 above) and 20 below it, two out. */
+    private static void rimWater(net.minecraft.server.world.ServerWorld world, BlockPos o, java.util.function.LongConsumer out) {
+        var at = new BlockPos.Mutable();
+        for (int x = -SEA - 3; x <= SEA + 3; x++) for (int z = -SEA - 3; z <= SEA + 3; z++) for (int y = -27; y <= 8; y++) {
+            boolean kept = Math.abs(x) <= SEA + 1 && Math.abs(z) <= SEA + 1 && y >= -7;
+            if (kept) continue;
+            at.set(o.getX() + x, o.getY() + y, o.getZ() + z);
+            if (!world.getFluidState(at).isEmpty()) out.accept(at.asLong());
+        }
+    }
+
+    /**
      * The fewest intervals between its choices the paced test must check, those not following a faction walk that completed
      * (set from main's runs, F-22c83's evidence), so the check never passes with nothing to check.
      */
@@ -117,6 +264,10 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                     var events = f.runtime.factionCompletedAndOverWaterForTest(f.id);
                     var completed = events.get(0);
                     var overWater = events.get(1);
+                    // Each move settled because it got there (M-06m), named in the failure only: on #427's CI (run 44934790203
+                    // attempt 2) a choice came 240 ticks after the last with no walk completed, Ada in the sea in Blue's
+                    // chunk east, her move's target; whether it was an arrival, the next such failure will say.
+                    var arrived = events.get(2);
                     int checked = 0;
                     var exempt = new java.util.ArrayList<String>();
                     for (int i = 1; i < decided.size(); i++) {
@@ -130,7 +281,7 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                         checked++;
                         context.assertTrue(to - from >= FactionsPlayer.DECIDE_TICKS,
                                 "Its next choice " + (to - from) + " ticks after the last, before the decision interval: " + decided
-                                        + "; walks completed at " + completed + ", places set aside as water at " + overWater);
+                                        + "; walks completed at " + completed + ", moves settled there at " + arrived + ", places set aside as water at " + overWater);
                     }
                     KindredMod.LOGGER.info("Paced fixture: {} intervals checked, let be after a walk that completed: {}", checked, exempt);
                     context.assertTrue(checked >= CHECKED, "At least " + CHECKED + " intervals between its choices checked: " + checked + " (let be: " + exempt + ")");
@@ -181,7 +332,12 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
                     if (walled) {
                         context.assertTrue(early[0] == 0, "Water it had not seen set aside before any walk was asked: " + early[0]);
                     } else {
-                        context.assertTrue(counts[0] >= 1, "A place out on the water it saw set aside: " + counts[0]);
+                        // The staging held: the sea's rim stands (F-22c117), so a place out on the water is still water.
+                        int[] rim = rim(context.getWorld(), isle[0]);
+                        context.assertTrue(rim[0] == rim[1], "The sea's rim stands: " + rim[0] + " of " + rim[1] + " blocks");
+                        context.assertTrue(counts[0] >= 1, "A place out on the water it saw set aside: " + counts[0] + "; Ada at "
+                                + f.player().getBlockPos().subtract(isle[0]).toShortString() + " from the island's middle, the sea "
+                                + sea(context.getWorld(), isle[0]) + " cells");
                         context.assertTrue(counts[1] <= BOUND, "Few faction walks asked into the sea it saw: " + counts[1] + " ended; move "
                                 + f.runtime.factionMoveForTest(f.id));
                     }
@@ -199,12 +355,20 @@ public final class NativeFactionOpenWaterGameTests implements FabricGameTest {
         FixtureGround.keep(context, o.add(-SEA - 1, -7, -SEA - 1), o.add(SEA + 1, 8, SEA + 1));
         for (int x = -SEA; x <= SEA; x++) for (int z = -SEA; z <= SEA; z++) {
             boolean land = Math.abs(x) <= 4 && Math.abs(z) <= 4 || causeway && x > 4 && Math.abs(z) <= 1;
-            world.setBlockState(o.add(x, -6, z), Blocks.STONE.getDefaultState());
+            world.setBlockState(o.add(x, -6, z), Blocks.BEDROCK.getDefaultState());
             for (int y = -5; y <= -1; y++) world.setBlockState(o.add(x, y, z), (land ? Blocks.STONE : y <= -3 ? Blocks.WATER : Blocks.AIR).getDefaultState());
             for (int y = 0; y <= 7; y++) world.setBlockState(o.add(x, y, z), Blocks.AIR.getDefaultState());
             if (walled && land && (Math.abs(x) == 4 || Math.abs(z) == 4)) {
                 for (int y = 0; y <= 3; y++) world.setBlockState(o.add(x, y, z), Blocks.STONE.getDefaultState());
             }
+        }
+        // A rim round the sea, from its floor to its top, in the box kept (F-22c110): without it the sea ran out past its
+        // floor's edge and fell below the box, where nothing put it back, onto a later test's field. The rim and the floor
+        // are bedrock (F-22c117): of stone, the rim was the nearest stone in sight from the water, and Ada's goal work
+        // mined it after cobblestone and opened the sea. The island keeps its own stone to mine, as before.
+        for (int x = -SEA - 1; x <= SEA + 1; x++) for (int z = -SEA - 1; z <= SEA + 1; z++) {
+            if (Math.abs(x) <= SEA && Math.abs(z) <= SEA) continue;
+            for (int y = -6; y <= -3; y++) world.setBlockState(o.add(x, y, z), Blocks.BEDROCK.getDefaultState());
         }
         for (BlockPos trunk : List.of(o.add(2, 0, 2), o.add(-2, 0, -2))) {
             for (int y = 0; y < 4; y++) world.setBlockState(trunk.up(y), Blocks.OAK_LOG.getDefaultState());

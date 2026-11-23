@@ -37,6 +37,97 @@ public final class NativeStrandedPickupGameTests implements FabricGameTest {
         scene(context, "Walk to logs at", true);
     }
 
+    /**
+     * In plain terms: a player building with no goal of its own, three of its walks just refused where it stood, walks
+     * well away from there: its trip for logs then sees the oak, not stranded where it no longer is (F-22c115).
+     *
+     * Technical: a build calls into the campaign ({@code gather}, {@code lookFor}, {@code buildRoute} and the like) with
+     * no goal, so its {@code plan()} never runs, and the campaign's own idea of where the player stands stayed where it
+     * began, at the world's origin. Every refused walk was counted as from there, and the stranding never lapsed as the
+     * player moved: in NativeBaseGameTests' stone-tools cabin (#451's CI, run 45009921929; run 44908125381) three refused
+     * walks to stone in its pit kept the field's twelve logs out as "stranded from 0, 0, 0", and the build turned between
+     * a walk out to look for logs and its way back up to the build for minutes. Staged: the refusals handed to its
+     * campaign as its walks' outcomes, and the player set ten off, as though it had walked there; its gather is called
+     * as the build calls it. Fails while stranded there; passes once its gather offers a step toward the oak.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "strandedBuildMoved", tickLimit = 400)
+    public void buildingWithNoGoalItsStrandingLapsesOnceItWalksAwayFromWhereItsWalksWereRefused(TestContext context) {
+        buildScene(context, true);
+    }
+
+    /**
+     * The same, the player not moved: building with no goal, three walks refused from where it stands still strand it
+     * there, as they do with a goal: the stranding rule kept.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "strandedBuildStays", tickLimit = 400)
+    public void buildingWithNoGoalThreeRefusedWalksFromWhereItStandsStillStrandIt(TestContext context) {
+        buildScene(context, false);
+    }
+
+    private static void buildScene(TestContext context, boolean moves) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 380);
+        BlockPos[] at = new BlockPos[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Strand"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos p = at[0] = context.getAbsolutePos(new BlockPos(60, 2, 60)).toImmutable();
+                    FixtureGround.keep(context, p.add(-10, -2, -10), p.add(10, 8, 26));
+                    for (BlockPos c : BlockPos.iterate(p.add(-10, -2, -10), p.add(10, 8, 26))) {
+                        world.setBlockState(c, (c.getY() < p.getY() ? Blocks.STONE : Blocks.AIR).getDefaultState());
+                    }
+                    // The oak, twenty south, in the open.
+                    BlockPos oak = p.add(0, 0, 20);
+                    world.setBlockState(oak.down(), Blocks.DIRT.getDefaultState());
+                    for (int y = 0; y < 4; y++) world.setBlockState(oak.up(y), Blocks.OAK_LOG.getDefaultState());
+                    var player = f.player();
+                    player.refreshPositionAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                    player.getInventory().clear();
+                    player.getInventory().setStack(0, new ItemStack(Items.BREAD, 8));
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "On the stone"))
+                .createAndAdd(() -> {
+                    // No goal: its campaign is the one a build calls into, its plan never run.
+                    var campaign = f.runtime.campaignForTest(f.id);
+                    var body = f.runtime.nativeBodyForTest(f.id);
+                    var player = f.player();
+                    campaign.observe(player);
+                    context.assertTrue(campaign.gather(body, dev.kindred.fabric.WorldKnowledge.Kind.LOG, 64, "logs").isPresent(),
+                            "Its gather sees the oak before any walk is refused");
+                    // Three of its walks refused from here, as the navigator refuses them, a cell off each.
+                    BlockPos feet = player.getBlockPos();
+                    long tick = context.getWorld().getServer().getTicks();
+                    for (BlockPos cell : new BlockPos[] {feet.add(-1, -1, 0), feet.add(0, -1, -1), feet.add(1, -1, 0)}) {
+                        campaign.taskFinished(PortalRunCampaign.go(cell, 0.6, true, "Walk to stone at " + cell.toShortString()), false, tick,
+                                "No walkable route toward " + cell.toShortString());
+                    }
+                    if (moves) {
+                        // As though it walked ten on toward the oak.
+                        player.refreshPositionAndAngles(at[0].getX() + 0.5, at[0].getY(), at[0].getZ() + 10.5, 0, 0);
+                        player.setVelocity(Vec3d.ZERO);
+                    }
+                })
+                .createAndAdd(() -> {
+                    var campaign = f.runtime.campaignForTest(f.id);
+                    var body = f.runtime.nativeBodyForTest(f.id);
+                    campaign.observe(f.player());
+                    var task = campaign.gather(body, dev.kindred.fabric.WorldKnowledge.Kind.LOG, 64, "logs");
+                    String said = "at " + f.player().getBlockPos().subtract(at[0]).toShortString() + " from where its walks were refused, stranded "
+                            + campaign.stranded() + ", its gather " + task.map(PortalRunCampaign.Task::label).orElse("nothing");
+                    if (moves) context.assertTrue(task.isPresent() && !campaign.stranded(), "Its trip for logs goes on once it has walked away: " + said);
+                    else context.assertTrue(campaign.stranded(), "Stranded by three walks refused from where it stands: " + said);
+                    KindredMod.LOGGER.info("Stranded building, {}: {}", moves ? "moved" : "stayed", said);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .createAndAdd(() -> FixtureGround.restore(context))
+                .completeIfSuccessful();
+    }
+
     private static void scene(TestContext context, String walk, boolean strands) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
         BlockPos[] at = new BlockPos[1];

@@ -2,6 +2,7 @@ package dev.kindred.fabric;
 
 import dev.kindred.core.route.Cell;
 import dev.kindred.core.route.Navigator;
+import dev.kindred.core.route.Side;
 import dev.kindred.core.route.Terrain;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -381,6 +382,25 @@ final class NativeNavigator {
             if (doors && state.getBlock() instanceof net.minecraft.block.DoorBlock door && door.getBlockSetType().canOpenByHand()) return true;
             var shape = state.getCollisionShape(world, pos);
             return shape.isEmpty() || shape.getMax(Direction.Axis.Y) <= 0.2;
+        }
+
+        /**
+         * An open door's leaf, where doors count as a way through: the side of its cell the leaf's collision lies along,
+         * read from the door's own state as the game shapes it (facing, hinge, open). A closed door is the body's to open.
+         */
+        @Override
+        public Side leaf(int x, int y, int z) {
+            if (!doors) return null;
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockState state = state(pos);
+            if (!(state.getBlock() instanceof net.minecraft.block.DoorBlock door) || !door.getBlockSetType().canOpenByHand()
+                    || !state.get(net.minecraft.block.DoorBlock.OPEN)) return null;
+            var box = state.getCollisionShape(world, pos).getBoundingBox();
+            if (box.maxX <= 0.2) return Side.WEST;
+            if (box.minX >= 0.8) return Side.EAST;
+            if (box.maxZ <= 0.2) return Side.NORTH;
+            if (box.minZ >= 0.8) return Side.SOUTH;
+            return null;
         }
 
         @Override
