@@ -18,15 +18,25 @@ import net.minecraft.util.math.BlockPos;
  * into the sea; there `surface`'s searches for dry ground (16 out) found none, the shore 24 to 75 blocks back, and every
  * plan was "up for air", for 12 and 31 minutes, 14,488 and 21,059 plans, until the watchdog's third move elsewhere went
  * inland. STAGED: a pool {@value #R} out each way and four deep, of bedrock, its rim three above the water, out of reach to
- * climb, nothing in it its goal would go for; a pad of dirt at its west edge, its top level with the water's, to stand on. BACK: the player stands on the pad, its goal
- * on, then is set {@value #OUT} blocks out, east of it, beyond the searches' 16; out of the water within the bound. NEVER:
+ * climb, nothing in it its goal would go for; a pad of bedrock at its west edge, its top level with the water's, to stand on. BACK: the player stands on the pad, its goal
+ * on, its home a bedrock stand {@value #HOME} east of the pool, then is set {@value #OUT} blocks out, east of it, beyond the searches' 16; out of the water within the bound. NEVER:
  * set straight out there with its goal on, never having stood dry: still in the water at the bound, as before.
+ *
+ * What BACK asserts is the mechanism, its plan the swim back within {@value #PLANNED} ticks, and then that it is out: in
+ * this staging main's explore can take it to the pad by chance (its heading turns back toward home), so being out alone
+ * would not tell the two apart. The outcome in play rests on the shipped-configuration runs (M-06m3's evidence).
  */
 public final class NativeSwimBackGameTests implements FabricGameTest {
     /** The pool's reach from its middle each way. */
     static final int R = 40;
     /** How far east of the pad the player is set out in the water: past the dry-ground searches' 16. */
     static final int OUT = 34;
+    /** How far east of the pool's rim its home is. */
+    static final int HOME = 40;
+    /** Ticks within which, once set out, its plan is the swim back. */
+    static final int PLANNED = 100;
+    /** The swim back's plan, as the goal's progress names it. */
+    static final String SWIM_BACK = "back to dry ground it stood on";
     /** Ticks it is given, once set out, to be out of the water. */
     static final int BOUND = 1200;
 
@@ -45,7 +55,7 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
     private static void run(TestContext context, boolean stood) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
         BlockPos[] at = new BlockPos[1];
-        long[] set = {-1}, onPad = {-1};
+        long[] set = {-1}, onPad = {-1}, swimBack = {-1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Floater"))
@@ -57,13 +67,19 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                     // p is the top water cell at the pool's middle; the pool's floor is four below it.
                     BlockPos p = f.player().getBlockPos().up(6);
                     at[0] = p;
-                    FixtureGround.keep(context, p.add(-R - 1, -5, -R - 1), p.add(R + 1, 4, R + 1));
+                    FixtureGround.keep(context, p.add(-R - 1, -5, -R - 1), p.add(R + 1 + HOME + 2, 4, R + 1));
+                    // Home, where its goal starts, well east of the pool: inland, away from the shore it will swim back to,
+                    // as in the shipped runs, where its explore turns (back toward home) does not take it to that shore.
+                    for (int x = R + HOME - 1; x <= R + HOME + 1; x++) for (int z = -1; z <= 1; z++) {
+                        world.setBlockState(p.add(x, 0, z), Blocks.BEDROCK.getDefaultState());
+                        for (int y = 1; y <= 3; y++) world.setBlockState(p.add(x, y, z), Blocks.AIR.getDefaultState());
+                    }
                     for (int x = -R - 1; x <= R + 1; x++) for (int z = -R - 1; z <= R + 1; z++) for (int y = -5; y <= 4; y++) {
                         boolean pool = Math.abs(x) <= R && Math.abs(z) <= R && y >= -3 && y <= 0;
                         boolean rim = (Math.abs(x) > R || Math.abs(z) > R) && y <= 3;
                         boolean pad = x >= -R && x <= -R + 2 && Math.abs(z) <= 1 && y >= -3 && y <= 0;
-                        // Bedrock and a dirt pad: nothing its goal wants to mine or walk to in the pool, as out at sea.
-                        world.setBlockState(p.add(x, y, z), (pad ? Blocks.DIRT : rim || y < -3 ? Blocks.BEDROCK : pool ? Blocks.WATER : Blocks.AIR).getDefaultState());
+                        // All bedrock, its pad too: nothing its goal wants to mine or walk to in the pool, as out at sea, nor a pad to dig into.
+                        world.setBlockState(p.add(x, y, z), (pad || rim || y < -3 ? Blocks.BEDROCK : pool ? Blocks.WATER : Blocks.AIR).getDefaultState());
                     }
                     var player = f.player();
                     var inventory = player.getInventory();
@@ -73,9 +89,16 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                     inventory.setStack(2, new ItemStack(Items.BREAD, 8));
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
-                    if (stood) place(f, p.add(-R + 1, 1, 0), false);
+                    // Home first, where its goal starts; the control straight out in the water instead, never having stood dry.
+                    if (stood) place(f, p.add(R + HOME, 1, 0), false);
                     else place(f, out(p), true);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
+                    onPad[0] = context.getTick();
+                })
+                .createAndAdd(() -> {
+                    // At home a while, its goal's first plans made there; then on the pad, or (the control) out in the water.
+                    context.assertTrue(context.getTick() - onPad[0] >= 40, "A while in");
+                    if (stood) place(f, at[0].add(-R + 1, 1, 0), false);
                     onPad[0] = context.getTick();
                 })
                 .createAndAdd(() -> {
@@ -94,13 +117,19 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                     // Its ground and water read a second after it was set out, not on that tick, when they are still the pad's.
                     boolean dry = since >= 20 && player.isOnGround() && !player.isTouchingWater();
                     if (stood) {
+                        // The mechanism, not only the outcome: in this staging main's explore can take it to the pad by chance
+                        // (its heading turned back toward home), so what is asserted is that its plan is the swim back.
+                        if (swimBack[0] < 0 && progress(f).contains(SWIM_BACK)) swimBack[0] = since;
+                        context.assertTrue(swimBack[0] >= 0 || since <= PLANNED, "Its plan the swim back to where it stood dry within "
+                                + PLANNED + " ticks of being set out: " + progress(f) + " at " + since + " ticks");
                         if (!dry) {
                             context.assertTrue(since <= BOUND, "Out of the water within " + BOUND + " ticks: at " + player.getBlockPos().subtract(at[0]).toShortString()
                                     + " from the pool's middle; " + progress(f));
                             throw new net.minecraft.test.GameTestException("Not out yet: " + progress(f));
                         }
-                        KindredMod.LOGGER.info("Swim-back fixture: out of the water {} ticks after it was set out, at {} from the pool's middle; {}",
-                                since, player.getBlockPos().subtract(at[0]).toShortString(), progress(f));
+                        context.assertTrue(swimBack[0] >= 0, "Out of the water, its plan the swim back first: " + progress(f));
+                        KindredMod.LOGGER.info("Swim-back fixture: its plan the swim back {} ticks after it was set out; out of the water {} ticks after, at {} from the pool's middle; {}",
+                                swimBack[0], since, player.getBlockPos().subtract(at[0]).toShortString(), progress(f));
                     } else {
                         if (since < BOUND) {
                             context.assertTrue(!dry, "Never stood dry: still in the water at " + since + " ticks; " + progress(f));
