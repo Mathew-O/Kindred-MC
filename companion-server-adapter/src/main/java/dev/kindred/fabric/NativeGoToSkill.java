@@ -60,6 +60,10 @@ final class NativeGoToSkill implements SkillBody {
     static final double CENTRE_WITHIN = 0.4;
     /** Ended only on a stand with nothing that harms beside it, as on a walk someone asked for (E-49). */
     private boolean safe;
+    /** With {@link #safe}, the reach across its level a stand must also be clear of lava and deep drops within (F-25c6h); 0 for none. */
+    private double edgeClear;
+    /** Stands passed over only for an edge within {@link #edgeClear} since the last plan, for the marker line (F-25c6h). */
+    private int edgeRefused;
     private NativeNavigator safety;
     private List<BlockPos> path;
     private boolean pathComplete;
@@ -136,12 +140,30 @@ final class NativeGoToSkill implements SkillBody {
         if (Math.sqrt(feet.getSquaredDistance(target)) > range + 0.01) return false;
         if (!safe) return true;
         if (safety == null) safety = new NativeNavigator(body.entity().getServerWorld());
-        return safety.safeStand(feet);
+        return stands(feet);
+    }
+
+    /** A stand it may end on: a safe one (E-49), and clear of edges within {@link #edgeClear} when that is asked (F-25c6h). */
+    private boolean stands(BlockPos feet) {
+        if (!safety.safeStand(feet)) return false;
+        if (edgeClear <= 0 || safety.clearOfEdges(feet, edgeClear)) return true;
+        edgeRefused++;
+        return false;
     }
 
     /** Ends only on a safe stand (E-49), and an unfinished route only on one too. */
     NativeGoToSkill safely() {
         safe = true;
+        return this;
+    }
+
+    /**
+     * As {@link #safely()}, its end also clear of lava and of deep drops within {@code reach} across its level (F-25c6h):
+     * a back-off ends where a blow of that reach cannot knock the player over an edge.
+     */
+    NativeGoToSkill safelyClearOfEdges(double reach) {
+        safe = true;
+        edgeClear = Math.max(0, reach);
         return this;
     }
 
@@ -237,7 +259,7 @@ final class NativeGoToSkill implements SkillBody {
         if (hold < 0) navigator.jumpingGaps(player.getHungerManager().getFoodLevel() >= SPRINT_FOOD ? 2 : 1);
         if (safe) {
             safety = new NativeNavigator(player.getServerWorld());
-            navigator.endingOnly(safety::safeStand);
+            navigator.endingOnly(this::stands);
         }
         if (engage != null) navigator.avoiding(dangers());
         if (shun != null) navigator.shunning(shun);
@@ -245,7 +267,10 @@ final class NativeGoToSkill implements SkillBody {
         // edge of the next, it is where it was asked to be (searched from the edge, the walk was "no walkable route").
         BlockPos over = BlockPos.ofFloored(player.getX(), player.getY() + 0.2, player.getZ());
         BlockPos start = goalReached(over) ? over : restingOn(player, navigator);
+        edgeRefused = 0;
         var found = navigator.find(start, target, this::goalReached, maxNodes, 96);
+        if (edgeRefused > 0) KindredMod.LOGGER.info("{} walk toward {} kept clear of edges: {} stand(s) within {} of lava or a deep drop passed over (F-25c6h)",
+                player.getName().getString(), target.toShortString(), edgeRefused, edgeClear);
         // A body over an edge searches from the block below its feet; when that is the goal, the route is the step off.
         boolean below = found.complete() && found.nodes().size() == 1 && goalReached(found.nodes().getFirst());
         if (found.nodes().size() < 2 && !goalReached(start) && !below || !found.complete() && !partial) {

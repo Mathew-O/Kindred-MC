@@ -283,6 +283,11 @@ final class NativeNavigator {
         return core.safeStand(cell(feet));
     }
 
+    /** Clear of lava and of deep drops within {@code reach} across its level, where a knockback lands (F-25c6h). */
+    boolean clearOfEdges(BlockPos feet, double reach) {
+        return core.clearOfEdges(cell(feet), reach);
+    }
+
     /** Feet in water deep enough to swim, never in lava. */
     boolean swimmable(BlockPos feet) {
         return core.swimmable(cell(feet));

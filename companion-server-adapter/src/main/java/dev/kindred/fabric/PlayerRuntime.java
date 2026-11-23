@@ -8098,8 +8098,24 @@ final class PlayerRuntime {
         // run on a286cc8 Echo, falling twenty-four blocks to break the fall, fought a zombie and then a creeper on the
         // way down, each fight cut short for the fall and chosen again, and the fall killed it (F-25c4p).
         var clutch = essentialCandidates.stream().filter(candidate -> "native_clutch".equals(candidate.skill())).findFirst();
+        // Likewise the hazard's own way out while the hazard holds (F-25c6h): the hazard interrupt cancels every other skill
+        // then, so a goal's urgent step ranked level with the retreat and taken in its place was cancelled each time and
+        // taken again, and the way out never ran. Staged in a one-wide tunnel, a fight with a zombie beside a lava cell won
+        // that way over "native_retreat" and then "native_lava_escape" until the player died in the lava (3 of 5 on main).
+        // Only the two skills the interrupt itself lets run, and only while its hazard test holds.
+        var hazardWayOut = clutch.isPresent() || !isHazardousSituation(body.entity()) ? Optional.<NativeTaskCandidate>empty()
+                : essentialCandidates.stream().filter(candidate -> "native_retreat".equals(candidate.skill())
+                        || "native_lava_escape".equals(candidate.skill())).findFirst();
         if (clutch.isPresent()) {
             taskCandidates = List.of(clutch.get());
+        } else if (hazardWayOut.isPresent()) {
+            taskCandidates = List.of(hazardWayOut.get());
+            int others = essentialCandidates.size() + routineCandidates.size() - 1;
+            if (others > 0 && server.getTicks() - entry.hazardWayOutLoggedTick >= 100) {
+                entry.hazardWayOutLoggedTick = server.getTicks();
+                KindredMod.LOGGER.info("{} takes {} over {} other candidate(s), the hazard still on (F-25c6h)", entry.data.displayName(),
+                        hazardWayOut.get().skill(), others);
+            }
         } else if (routineCandidates.isEmpty()) {
             taskCandidates = essentialCandidates;
         } else if (essentialCandidates.isEmpty()) {
@@ -20065,6 +20081,8 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
+        /** When F-25c6h's "takes its way out over the others" line was last logged, five seconds apart at most. */
+        private long hazardWayOutLoggedTick = -100;
         /** The hazard interrupt's line written for this spell (F-25c6d), the tick it began and the tasks it cancelled. */
         private boolean hazardSpellLogged;
         private long hazardSpellTick;

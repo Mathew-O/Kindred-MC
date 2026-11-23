@@ -519,6 +519,28 @@ public final class Navigator {
         return true;
     }
 
+    /**
+     * Clear of lava and of any drop deeper than {@link #MAX_SAFE_DROP} within {@code reach} across the level of
+     * {@code feet} (F-25c6h): where a knockback of that reach from a blow at the stand can land. A zombie's blow carries a
+     * player about 1.6, a hoglin's 3.6; {@link #safeStand} looks only at the four cells beside it, and a back-off that
+     * ended two cells from lava in a one-wide tunnel was knocked into it from there. Walls are not counted as stopping
+     * the blow: the test errs toward refusing a stand.
+     */
+    public boolean clearOfEdges(Cell feet, double reach) {
+        int r = (int) Math.ceil(reach);
+        double within = (reach + 0.5) * (reach + 0.5);
+        for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+            if (dx == 0 && dz == 0 || dx * dx + dz * dz > within) continue;
+            Cell cell = feet.add(dx, 0, dz);
+            if (lavaAt(cell) || lavaAt(cell.down())) return false;
+            if (!clear(cell) || standable(cell) || swimmable(cell)) continue;
+            int depth = 1;
+            while (depth <= MAX_SAFE_DROP + 1 && passable(cell.down(depth)) && !swimmable(cell.down(depth))) depth++;
+            if (depth > MAX_SAFE_DROP + 1 || lavaAt(cell.down(depth))) return false;
+        }
+        return true;
+    }
+
     /** Feet in water deep enough to swim, never in lava. */
     public boolean swimmable(Cell feet) {
         return loaded(feet) && terrain.fluid(feet.x(), feet.y(), feet.z()) == Terrain.Fluid.WATER

@@ -7543,18 +7543,30 @@ final class PortalRunCampaign {
         for (HostileEntity mob : hunters) away = away.add(player.getPos().subtract(mob.getPos()).normalize());
         if (away.lengthSquared() < 1.0E-4) return Optional.empty();
         String name = Registries.ENTITY_TYPE.getId(hunters.getFirst().getType()).getPath();
+        // Ended only where a blow cannot knock it over lava or a deep drop (F-25c6h): its partial walk took a player in a
+        // one-wide tunnel to a lava cell's edge, and the zombie's next blow put it in (3 of 5 staged, on main). The same
+        // reach for every hunter: a heavier hitter's (a ravager's, a piglin brute's) is not sourced from the pinned
+        // version yet, and is left for later.
+        String clear = BACK_OFF_CLEAR;
         // Back the way it came first, ground it knows it can walk: straight away from the mobs led live run 59 down
         // into a dark cave beyond its staircase, onto a creeper.
         Optional<BlockPos> back = trailAwayFrom(hunters);
         if (back.isPresent()) {
-            return Optional.of(new Task("native_goto", coords(back.get(), Map.of("range", "1", "partial", "true", "sprint", "true")),
+            return Optional.of(new Task("native_goto", coords(back.get(), Map.of("range", "1", "partial", "true", "sprint", "true", "edge_clear", clear)),
                     "Back off from " + name + " the way it came"));
         }
         away = away.normalize().multiply(10);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
         // At a sprint: walking, a zombie keeps pace and strikes the player's back all the way.
-        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Back off from " + name));
+        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true", "edge_clear", clear)),
+                "Back off from " + name));
     }
+
+    /**
+     * How far a blow carries a player, as {@code NativeFightAction.knockback} counts it for an ordinary mob: a back-off's end
+     * is kept that far from lava and deep drops (F-25c6h).
+     */
+    static final String BACK_OFF_CLEAR = "1.6";
 
     /**
      * A creeper close by that is after the player or already hissing. One that could not be fought is left alone
@@ -7626,7 +7638,7 @@ final class PortalRunCampaign {
         if (away.lengthSquared() < 1.0E-4) away = player.getRotationVector().multiply(-1, 0, -1);
         away = away.normalize().multiply(12);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
-        return new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Run from creeper");
+        return new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true", "edge_clear", BACK_OFF_CLEAR)), "Run from creeper");
     }
 
     /** The nearest skeleton-like shooter after the player with a clear line of fire to it. */
