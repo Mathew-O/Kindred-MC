@@ -1,2 +1,3 @@
 dq-1 (bf6c3f88): 32 min, peak 3843 MB, 114 required tests failed, fence-top 22, disk 5.1G
 dq-2 (bf6c3f88): 32 min, peak 3233 MB, 126 required tests failed, fence-top 20, disk 4.1G
+dq-3 (bf6c3f88): 32 min, peak 3172 MB, 115 required tests failed, fence-top 21, disk 3.9G
