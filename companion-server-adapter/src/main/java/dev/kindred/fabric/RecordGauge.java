@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
  * ledger's included, which the store writes in their own rows' transactions and never pass the runtime. The database's
  * size on disk is read off the server thread; the in-memory sizes are given by the runtime; the far looks (F-35m's sight
  * lines to far columns' tops) are counted where they are cast, on the server thread. One log line a game day:
- * {@code Kindred cost: ...}. The Wire's refusals are counts by reason and channel, never what was refused (F-34e). Nothing
+ * {@code Kindred cost: world day N: ...}, N the world's own day ({@link #worldDay}). The Wire's refusals are counts by reason and channel, never what was refused (F-34e). Nothing
  * here changes what is kept.
  */
 final class RecordGauge {
@@ -24,6 +24,18 @@ final class RecordGauge {
     record Held(long recordThrough, int webs, long webRelations, String websByPlayer, int worldRelations, long inboxed, int chroniclePages, long teamStateTold,
                 String wireRefused, long[] territoryRefused,
                 String ticks, long heapHighMb) { }
+
+    /** Game ticks in a world day. */
+    static final long DAY_TICKS = 24_000;
+
+    /**
+     * The world's day for the cost line: its game time (the overworld's absolute time, which {@code /time set} does not
+     * move) in whole days, from 1. Before M-06i4's fix the line counted this start's server ticks instead, and a restart
+     * began again at 1.
+     */
+    static long worldDay(long worldTime) {
+        return Math.max(0, worldTime) / DAY_TICKS + 1;
+    }
 
     /** The day's line from the store's {@code growth}, the database's files measured off the thread first. */
     static CompletableFuture<String> line(long day, Path database, Held held, SqliteCompanionStore.Growth growth) {
@@ -38,7 +50,7 @@ final class RecordGauge {
             long bytes = size(database) + size(database.resolveSibling(database.getFileName() + "-wal"));
             Runtime rt = Runtime.getRuntime();
             long heap = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
-            return "Kindred cost: day " + day + ": the Record through event " + held.recordThrough() + ", " + w + " written since start (" + c
+            return "Kindred cost: world day " + day + ": the Record through event " + held.recordThrough() + ", " + w + " written since start (" + c
                     + " characters of data); by kind events/characters " + counts + "; the database " + bytes + " bytes on disk; webs " + held.webs()
                     + " holding " + held.webRelations() + " relations, the world's " + held.worldRelations() + "; webs by player, held/kept for good " + held.websByPlayer()
                     + "; Wire inboxes " + held.inboxed()
