@@ -117,6 +117,7 @@ public final class NativeNavigationGameTests implements FabricGameTest {
         int[] ticks = new int[1], jumps = new int[1], reversals = new int[1];
         float[] maxTurn = new float[1], lastYaw = new float[1], lastDelta = new float[1];
         boolean[] wasOnGround = new boolean[] {true};
+        StringBuilder where = new StringBuilder();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Strider"))
@@ -150,7 +151,10 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                     float delta = net.minecraft.util.math.MathHelper.wrapDegrees(player.getYaw() - lastYaw[0]);
                     lastYaw[0] = player.getYaw();
                     maxTurn[0] = Math.max(maxTurn[0], Math.abs(delta));
-                    if (Math.abs(delta) > 3 && Math.abs(lastDelta[0]) > 3 && Math.signum(delta) != Math.signum(lastDelta[0])) reversals[0]++;
+                    if (Math.abs(delta) > 3 && Math.abs(lastDelta[0]) > 3 && Math.signum(delta) != Math.signum(lastDelta[0])) {
+                        reversals[0]++;
+                        where.append(String.format(java.util.Locale.ROOT, " @%d (%.1f, %.1f) %.1f→%.1f", ticks[0], player.getX() - origin[0].getX(), player.getZ() - origin[0].getZ(), lastDelta[0], delta));
+                    }
                     if (Math.abs(delta) > 3) lastDelta[0] = delta;
                     if (wasOnGround[0] && !player.isOnGround() && player.getVelocity().y > 0.2) jumps[0]++;
                     wasOnGround[0] = player.isOnGround();
@@ -160,7 +164,7 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                 })
                 .createAndAdd(() -> {
                     double seconds = ticks[0] / 20.0, metres = 38; // The way round the wall is about 38 blocks.
-                    String summary = ticks[0] + " ticks, " + jumps[0] + " jumps, max turn " + maxTurn[0] + " deg a tick, " + reversals[0] + " reversals";
+                    String summary = ticks[0] + " ticks, " + jumps[0] + " jumps, max turn " + maxTurn[0] + " deg a tick, " + reversals[0] + " reversals" + where;
                     KindredMod.LOGGER.info("Strider walk: {}", summary);
                     context.assertTrue(f.player().getBlockPos().getSquaredDistance(origin[0].add(34, 0, 0)) <= 4, "At the far end: " + f.player().getBlockPos());
                     context.assertTrue(metres / seconds > 5.8, "Faster than a plain sprint (5.6 blocks a second): " + summary);
@@ -519,6 +523,117 @@ public final class NativeNavigationGameTests implements FabricGameTest {
                     Vec3d at = player.getPos();
                     context.assertTrue(Math.hypot(at.x - (goal[0].getX() + 0.5), at.z - (goal[0].getZ() + 0.5)) < 0.8
                             && Math.abs(at.y - goal[0].getY()) < 0.1, "On the ground at the goal: " + at);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
+                .completeIfSuccessful();
+    }
+
+    /** How far the passage runs: a straight walk past what four replans cover by the old measure (F-25c4dm3). */
+    private static final int PASSAGE = 92;
+
+    /**
+     * A long straight walk is not taken for a stuck one (F-25c4dm3). A floating passage one wide and two high, 92 blocks
+     * long, walked end to end. A walk counted progress only as nearing its current waypoint, never as moving on to the
+     * next: reached at 0.4 off, the next one began about a block off, so a body at a full sprint counted forty ticks of
+     * "no progress" every thirteen to sixteen blocks and spent a replan each time. Its four spent, the next forty ticks
+     * ended the walk "Route … is blocked" in open ground. After #485's merge it cut F-25c4dm2's 51-block told walk; the
+     * told place was set aside and the blind dig followed. Passes once it stands at the far end, the walk completed.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "longStraightWalk", tickLimit = 900)
+    public void aLongStraightWalkIsNotTakenForStuck(TestContext context) {
+        straightPassage(context, Passage.OPEN);
+    }
+
+    /**
+     * Its first control (F-25c4dm3): the same passage walled across at 60, no way round. The walk still ends short of the
+     * wall, refused or at its nearest, and is not walked on forever.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "longStraightWalkWalled", tickLimit = 900)
+    public void aLongStraightWalkWalledAcrossIsStillRefused(TestContext context) {
+        straightPassage(context, Passage.WALLED);
+    }
+
+    /**
+     * Its second control (F-25c4dm3): pinned. Once 20 blocks on its way, the body is held where it stands each tick,
+     * nothing put in the route's way. A walk that cannot move on to a waypoint gains no progress by moving on, so it still
+     * ends, blocked, within the bound it always had: forty ticks a try, four replans.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "longStraightWalkPinned", tickLimit = 900)
+    public void aLongStraightWalkHeldFastOnTheWayStillEndsBlocked(TestContext context) {
+        straightPassage(context, Passage.PINNED);
+    }
+
+    private enum Passage { OPEN, WALLED, PINNED }
+
+    private static void straightPassage(TestContext context, Passage passage) {
+        var f = new NativePaidSkillsGameTests.Fixture(context);
+        BlockPos[] origin = new BlockPos[1];
+        int[] ticks = new int[1], pinnedAt = {-1};
+        Vec3d[] pin = new Vec3d[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, "Strider"))
+                .createAndAdd(() -> f.established(context))
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
+                .createAndAdd(() -> {
+                    var world = context.getWorld();
+                    world.setTimeOfDay(1000);
+                    BlockPos o = origin[0] = f.player().getBlockPos().up(20).toImmutable();
+                    FixtureGround.keep(context, o.add(-1, -2, -2), o.add(PASSAGE + 2, 3, 2));
+                    for (int x = -1; x <= PASSAGE + 1; x++) for (int z = -1; z <= 1; z++) for (int y = -1; y <= 2; y++) {
+                        boolean open = z == 0 && x >= 0 && x <= PASSAGE && (y == 0 || y == 1);
+                        world.setBlockState(o.add(x, y, z), (open ? Blocks.AIR : Blocks.STONE).getDefaultState());
+                    }
+                    if (passage == Passage.WALLED) for (int y = 0; y <= 1; y++) world.setBlockState(o.add(60, y, 0), Blocks.STONE.getDefaultState());
+                    var player = f.player();
+                    player.refreshPositionAndAngles(o.getX() + 0.5, o.getY(), o.getZ() + 0.5, -90, 0);
+                    player.setVelocity(Vec3d.ZERO);
+                })
+                .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "In the passage"))
+                .createAndAdd(() -> {
+                    f.runtime.nativeLifecycle(f.source, "resume", f.id);
+                    context.assertTrue(f.runtime.nativeGoto(f.source, f.id, origin[0].add(PASSAGE, 0, 0), 0.8) == 1, "Route requested");
+                })
+                .createAndAdd(() -> {
+                    ticks[0]++;
+                    var player = f.player();
+                    if (passage == Passage.PINNED && pinnedAt[0] < 0 && player.getX() >= origin[0].getX() + 20 && player.isOnGround()) {
+                        pinnedAt[0] = ticks[0];
+                        pin[0] = player.getPos();
+                    }
+                    if (pin[0] != null) {
+                        // Staging: held where it stood each tick, as a body caught on something unseen, with nothing in the
+                        // route's way to reroute round.
+                        player.requestTeleport(pin[0].x, pin[0].y, pin[0].z);
+                        player.setVelocity(Vec3d.ZERO);
+                    }
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    context.assertTrue(activity.phase().equals("IDLE") && !activity.work().isBlank(), "The walk ended: " + activity + " at " + player.getPos());
+                })
+                .createAndAdd(() -> {
+                    var player = f.player();
+                    var activity = f.runtime.nativeActivityStatus(Actor.console(), f.id);
+                    KindredMod.LOGGER.info("Strider straight walk ({}): {} ticks{}, {} at {}", passage, ticks[0],
+                            pinnedAt[0] < 0 ? "" : ", held fast at tick " + pinnedAt[0], activity.work(), player.getPos());
+                    var far = origin[0].add(PASSAGE, 0, 0);
+                    switch (passage) {
+                        case OPEN -> {
+                            context.assertTrue(activity.work().startsWith("Completed native_goto"), "The walk completes: " + activity.work() + " at " + player.getPos());
+                            context.assertTrue(player.getBlockPos().getSquaredDistance(far) <= 4, "At the far end: " + player.getPos());
+                        }
+                        case WALLED -> {
+                            // Refused or ended at its nearest short of the wall; never at the far end.
+                            context.assertTrue(player.getX() < origin[0].getX() + 60, "Short of the wall: " + player.getPos());
+                            context.assertTrue(player.getBlockPos().getSquaredDistance(far) > 4, "Not at the far end: " + player.getPos());
+                        }
+                        case PINNED -> {
+                            context.assertTrue(pinnedAt[0] > 0, "Held fast on its way");
+                            context.assertTrue(!activity.work().startsWith("Completed native_goto"), "The held walk did not complete: " + activity.work());
+                            // Forty ticks a try and four replans: two hundred ticks and some, never a walk that runs on.
+                            context.assertTrue(ticks[0] - pinnedAt[0] <= 260, "Ended within the bound: " + (ticks[0] - pinnedAt[0]) + " ticks after it was held fast");
+                        }
+                    }
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))

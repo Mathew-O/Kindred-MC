@@ -168,6 +168,7 @@ public final class NativeToldLavaGameTests implements FabricGameTest {
         String[] names = rivalless ? new String[] {"Walker", "Filler"} : new String[] {"Walker", "Filler", "Rival"};
         UUID[] ids = new UUID[names.length], players = new UUID[names.length];
         int[] blind = {0}, watched = {0}, fill = {0}, setOffs = {0};
+        PortalRunCampaign.Task[] lastTask = new PortalRunCampaign.Task[1];
         boolean[] walked = {false}, aside = {false}, hunted = {false}, walking = {false}, twice = {false};
         StringBuilder seen = new StringBuilder();
         String[] failed = {null};
@@ -271,7 +272,12 @@ public final class NativeToldLavaGameTests implements FabricGameTest {
                         // Staging, not the runtime: each walk toward the told lava set alight, so the body's own retreat cuts it
                         // short; the first only once it is 10 blocks on its way, so that cut is one with ground gained.
                         boolean nowWalking = doing.contains(WALK);
-                        if (nowWalking && !walking[0]) setOffs[0]++;
+                        // A set-off is a told walk dispatched, a new task: not the plan's label coming back to the walk, which
+                        // flips with the water bucket's climb while the fire is put out (F-25c4dm3: counted so, 4 in 1 of 20
+                        // runs under load, with two walks cut and set aside as it should be).
+                        var task = f.runtime.activeCampaignTaskForTest(ids[0]);
+                        if (task != null && task != lastTask[0] && task.label().startsWith(WALK)) setOffs[0]++;
+                        lastTask[0] = task;
                         walking[0] = nowWalking;
                         boolean onItsWay = setOffs[0] >= 2 || walker.getBlockPos().getManhattanDistance(o) >= 10;
                         if (nowWalking && onItsWay && walker.getFireTicks() <= 0) walker.setFireTicks(40);
