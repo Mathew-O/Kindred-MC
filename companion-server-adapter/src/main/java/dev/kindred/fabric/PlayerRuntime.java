@@ -2896,6 +2896,35 @@ final class PlayerRuntime {
         return null;
     }
 
+    /** The four corners' cells, in the order the hazard retreat tries them after the four sides (F-25c6d). */
+    private static final String[] CORNERS = {"northeast", "northwest", "southeast", "southwest"};
+    private static final int[][] CORNER_STEPS = {{1, -1}, {-1, -1}, {1, 1}, {-1, 1}};
+
+    /**
+     * Why a corner's cell is refused for the hazard retreat, or null when it may be stepped to (F-25c6d): the cell's own
+     * checks, as a side's, and a way past the corner, one of the two side cells it passes between with room for the body
+     * (so it never squeezes between two blocks). On a block's corner over lava, its middle over the lava, the block that
+     * holds it up is a corner's: E-40c4's Nether players stood 37 to 130 game minutes where the four sides had lava for
+     * a floor and every task was cancelled.
+     */
+    static String cornerRefusal(ServerPlayerEntity player, BlockPos feet, int corner) {
+        int dx = CORNER_STEPS[corner][0], dz = CORNER_STEPS[corner][1];
+        String own = retreatRefusal(player, feet.add(dx, 0, dz));
+        if (own != null) return own;
+        var world = player.getServerWorld();
+        for (BlockPos side : new BlockPos[] {feet.add(dx, 0, 0), feet.add(0, 0, dz)}) {
+            var box = player.getBoundingBox().offset(Vec3d.ofBottomCenter(side).subtract(player.getPos()));
+            if (world.isSpaceEmpty(player, box)) return null;
+        }
+        return "no way past the corner";
+    }
+
+    /** The first corner's cell the hazard retreat may step to from {@code feet}, or null. */
+    static String diagonalRetreat(ServerPlayerEntity player, BlockPos feet) {
+        for (int c = 0; c < 4; c++) if (cornerRefusal(player, feet, c) == null) return CORNERS[c];
+        return null;
+    }
+
     private static String blockName(net.minecraft.block.BlockState state) {
         return net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath();
     }
@@ -2947,6 +2976,10 @@ final class PlayerRuntime {
         for (int d = 0; d < 4; d++) {
             String why = retreatRefusal(player, adj[d]);
             cells.add(dirs[d] + " " + (why == null ? "free" : why));
+        }
+        for (int c = 0; c < 4; c++) {
+            String why = cornerRefusal(player, feet, c);
+            cells.add(CORNERS[c] + " " + (why == null ? "free" : why));
         }
         boolean inLava = player.isInLava() || world.getFluidState(feet).isIn(FluidTags.LAVA);
         String escape = !inLava ? "not in lava" : lavaBank(player, feet).map(b -> "to " + b.toShortString()).orElse("no dry ground in sight");
@@ -3728,15 +3761,20 @@ final class PlayerRuntime {
         if (isHazardousSituation(player)) {
             String[] dirs = new String[]{"north", "south", "east", "west"};
             BlockPos[] adj = new BlockPos[]{feetPos.north(), feetPos.south(), feetPos.east(), feetPos.west()};
+            int pick = -1;
             for (int d = 0; d < 4; d++) {
-                if (retreatRefusal(player, adj[d]) != null) continue;
+                if (retreatRefusal(player, adj[d]) == null) { pick = d; break; }
+            }
+            // A corner's cell only out of lava: in lava, F-25c6a's escape below makes for dry ground as before.
+            boolean inLava = player.isInLava() || world.getFluidState(feetPos).isIn(FluidTags.LAVA);
+            String direction = pick >= 0 ? dirs[pick] : inLava ? null : diagonalRetreat(player, feetPos);
+            if (direction != null) {
 
                 // Found a safe retreat direction
-                UUID taskId = UUID.nameUUIDFromBytes(("hazard_retreat:" + entry.data.id() + ":" + feetPos.asLong() + ":" + dirs[d]).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                UUID taskId = UUID.nameUUIDFromBytes(("hazard_retreat:" + entry.data.id() + ":" + feetPos.asLong() + ":" + direction).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
                         dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-                candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", dirs[d], "blocks", "1")));
-                break;
+                candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", direction, "blocks", "1")));
             }
             // In lava with lava on every side (F-25c6a): no cell beside it to step to, so it makes for the nearest dry
             // ground it can see, up and across, rather than giving up every task it begins as a hazard with nothing in
@@ -19272,12 +19310,19 @@ final class PlayerRuntime {
     /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
     private int lateWritesRefused, lateCallbacksDropped, lateTellsRefused;
 
-    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it, tells refused as it stops (their events written)}. */
+    /** A fixture's view of a player's last tactical observation (F-25c6d), or null. */
+    dev.kindred.core.tactics.TacticalObservation tacticalObservationForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? null : entry.lastTacticalObservation;
+    }
+
     /** The spot the last accepted {@code createNative} found for its body, {x, y, z}, or null (M-06i4a's fixtures). */
     double[] createSpawnForTest() { return lastCreateSpawn == null ? null : new double[] {lastCreateSpawn.x(), lastCreateSpawn.y(), lastCreateSpawn.z()}; }
 
     private SpawnLocation lastCreateSpawn;
 
+    /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it, tells refused as it stops (their events written)}. */
     int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped, lateTellsRefused}; }
 
     /** Test-only: run once just as the next stop begins, after its barrier is set (a fixture's act "as it stops"). */
