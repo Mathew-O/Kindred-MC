@@ -5382,6 +5382,9 @@ final class PlayerRuntime {
                 }
             }
             if ("native_bridge".equals(task.skill())) entry.campaign.bridgeEnded(completed ? Map.of() : entry.runner.lastProgress());
+            // Cut short for its safety, a hazard's retreat or a fall to break: the campaign told so in so many words, not by the
+            // reason's text (F-25c4dm2).
+            if (!completed && entry.hazardInterrupted) entry.campaign.cutForSafety(task);
             entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
