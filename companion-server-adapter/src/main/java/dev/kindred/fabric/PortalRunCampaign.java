@@ -1221,6 +1221,7 @@ final class PortalRunCampaign {
     /** {@link #STUCK_TICKS}, or less for a fixture that cannot wait minutes for the watchdog. */
     private long stuckTicks = STUCK_TICKS;
     private long stuckClock;
+    private long waitingLoggedFor = Long.MIN_VALUE; // F-25c4do: the spell whose "waiting" line was logged.
     private boolean lastActive;
     private int stuckLevel;
     private BlockPos relocate;
@@ -2900,11 +2901,16 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": " + steps.getFirst().why();
             return Optional.empty();
         }
+        StringBuilder refusedSteps = new StringBuilder(); // F-25c4do: the stage's steps and why each gave nothing, for "waiting".
         for (PortalRunPlanner.Step step : steps) {
-            if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
-            if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) continue; // Looking about for animals is daylight work.
+            if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) { refused(refusedSteps, step, "night, food in hand"); continue; }
+            if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) { refused(refusedSteps, step, "night"); continue; } // Looking about for animals is daylight work.
             Optional<Task> task = realize(step, snapshot, body, policy);
-            if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) continue;
+            if (task.isEmpty()) refused(refusedSteps, step, "no task");
+            if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) {
+                refused(refusedSteps, step, "set aside until " + setAside.get(task.get()) + " [" + task.get().label() + "]");
+                continue;
+            }
             if (task.isPresent()) {
                 progress = stageLabel(stage) + ": " + step.why() + " - " + task.get().label();
                 return task;
@@ -2946,7 +2952,27 @@ final class PortalRunCampaign {
             return drop;
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
+        long spellStart = tick - stuckClock;
+        if (spellStart != waitingLoggedFor) {
+            waitingLoggedFor = spellStart;
+            KindredMod.LOGGER.info("WAITING {} at {} tick {}, spell from {}, {}, tried elsewhere {}, tasks set aside {}, cells blocked {}, unreachable {}; buckets lava {} water {} empty {}, obsidian {}, site {}, chosen lava {}; steps: {}",
+                    player.getName().getString(), lastFeet.toShortString(), tick, spellStart, stageLabel(stage), stuckLevel,
+                    setAside.values().stream().filter(until -> until > tick).count(),
+                    cellsAside.blockedUntil().values().stream().filter(until -> until > tick).count(),
+                    cellsAside.unreachableUntil().values().stream().filter(until -> until > tick).count(),
+                    ItemMoves.count(player.getInventory(), Items.LAVA_BUCKET), ItemMoves.count(player.getInventory(), Items.WATER_BUCKET),
+                    ItemMoves.count(player.getInventory(), Items.BUCKET), ItemMoves.count(player.getInventory(), Items.OBSIDIAN),
+                    portalSite == null ? "none" : portalSite.origin().toShortString(),
+                    castLava == null ? "none" : castLava.toShortString(), (legActive ? "the End trip's: " + stronghold.refusedSteps() + "; the portal's: " : "")
+                            + (refusedSteps.length() == 0 ? "none" : refusedSteps));
+        }
         return Optional.empty();
+    }
+
+    /** F-25c4do: one of the stage's steps that gave nothing, and why, for the once-a-spell "waiting" line. */
+    private static void refused(StringBuilder into, PortalRunPlanner.Step step, String why) {
+        if (into.length() > 0) into.append("; ");
+        into.append(step.action()).append(" (").append(step.why()).append("): ").append(why);
     }
 
     /**
