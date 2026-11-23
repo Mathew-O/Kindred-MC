@@ -3304,21 +3304,6 @@ final class PortalRunCampaign {
         return makeRoom(player, 1, ROOM_STONE_KEEP, " to make room for " + item.replace('_', ' '));
     }
 
-    /** The gate's temporary marker (F-25c4dn): when it last logged, re-armed after 1,200 ticks without the step. */
-    private long roomMarkedAt = Long.MIN_VALUE / 2, roomSeenAt = Long.MIN_VALUE / 2;
-
-    /** Logs the gate's marker once a while: where the plan's room step stands in for a craft, and what it offers. */
-    private Optional<Task> roomMarked(ServerPlayerEntity player, String item, Optional<Task> drop) {
-        if (lastTick - roomSeenAt > 1200) roomMarkedAt = Long.MIN_VALUE / 2;
-        roomSeenAt = lastTick;
-        if (roomMarkedAt == Long.MIN_VALUE / 2) {
-            roomMarkedAt = lastTick;
-            KindredMod.LOGGER.info("{} F-25c4dn-marker: room made for {} in place of the craft at {}: {}", player.getName().getString(), item,
-                    player.getBlockPos().toShortString(), drop.map(Task::label).orElse("nothing to drop"));
-        }
-        return drop;
-    }
-
     /** The room drop offered last, and what it records as thrown once done (F-25c4dn): its task, its item, its record. */
     private Task roomDrop;
     private Item roomDropItem;
@@ -3736,7 +3721,7 @@ final class PortalRunCampaign {
                     });
             case CRAFT -> craft(body, step.item());
             // Not while a mob attacks, as the inventory-full drop (F-25c4bk).
-            case MAKE_ROOM -> roomMarked(player, step.item(), threats(player).isEmpty() && creeperAfter(player) == null ? makeRoomFor(player, step.item()) : Optional.empty());
+            case MAKE_ROOM -> threats(player).isEmpty() && creeperAfter(player) == null ? makeRoomFor(player, step.item()) : Optional.empty();
             case PLACE_TABLE -> placeItem(body, Items.CRAFTING_TABLE, "Place a crafting table");
             case PLACE_FURNACE -> placeItem(body, Items.FURNACE, "Place a furnace");
             case SMELT -> "log".equals(step.item()) ? charcoal(body) : smelt(body);
