@@ -46,6 +46,11 @@ public final class Digger {
         boolean breakableNow(Cell cell);
         /** Rock a player with no pickaxe at all can still punch through. */
         boolean handClearable(Cell cell);
+        /**
+         * Rock a player with no pickaxe could punch through once beside it: as {@link #handClearable}, less the reach and the
+         * line of sight, which hold only from there (F-25c4dp).
+         */
+        default boolean handClearableLater(Cell cell) { return handClearable(cell); }
         /** A block with nothing to collide with that a walk will not go through (a cobweb), cleared by hand. */
         boolean snareClearable(Cell cell);
         /** A block it may open from where it stands to show the lava under it: in reach, allowed, and one its tools break. */
@@ -583,6 +588,9 @@ public final class Digger {
         // The block over its head refused, for sand or gravel resting on it or a liquid beside it: then so is every way up
         // from here (F-25c4bd).
         boolean headRoomRefused = false;
+        // The block over its head one it may neither break with its tools nor clear by hand, iron ore over a climb by hand
+        // (F-25c4dp): then so is every way up from here, and only a step aside goes on.
+        boolean headRoomHard = false;
         // The ways whose step up was refused for a liquid beside the landing, not for the block over its head (F-25c4bf).
         var besideWater = new ArrayList<Side>();
         // A cell with nothing in it to collide with is room to climb through only if a walk will go through it too: a
@@ -617,6 +625,7 @@ public final class Digger {
                 // its last one climbing out and stood at Y 54 for good).
                 if (body.handClearable(cell)) return Optional.of(body.clear(cell, label + ": clear " + at(cell) + " by hand"));
                 if (body.snareClearable(cell)) return Optional.of(body.clear(cell, label + ": clear " + at(cell) + " by hand"));
+                headRoomHard |= cell.equals(feet.up(2));
                 refused = true;
             }
             // The block over its head once up there, sand or gravel resting on it, dug from here first: what rests on it
@@ -735,8 +744,24 @@ public final class Digger {
             }
         }
         if (headRoomRefused && !swimming) {
-            Optional<T> aside = fromBeside(body, feet, label, now);
+            Optional<T> aside = fromBeside(body, feet, label, now, false);
             if (aside.isPresent()) return aside;
+        }
+        // Under a block it may not dig at all, the same step aside, into a pocket whose own head room it may dig (F-25c4dp).
+        // In E-40 iteration 29 (main `9a0921b5`), batch 2's 707 Kindred, its pickaxe gone, climbed by hand from y -23 to
+        // y -13 in deepslate and came up under deepslate iron ore, iron ore also west of it and north of its head: no step
+        // up was offered, and it stood there to its spell (its replay world, Kindred-78320).
+        if (headRoomHard && !headRoomRefused && !swimming && body.onGround()) {
+            Optional<T> aside = fromBeside(body, feet, label, now, true);
+            if (aside.isPresent()) {
+                // Said once a place: the way aside takes several steps, each asked for from here.
+                if (!feet.equals(hardAsideFrom)) {
+                    hardAsideFrom = feet;
+                    body.event("the block over its head at " + feet.x() + ", " + (feet.y() + 2) + ", " + feet.z()
+                            + " one it may not dig: a way aside round it");
+                }
+                return aside;
+            }
         }
         // Under a hole up through the ceiling, nothing beside it to climb onto: up into the hole on blocks of its own, as a
         // player gets back up the way it fell or dug down (F-25c4be).
@@ -797,7 +822,7 @@ public final class Digger {
      * wide to such a block, and stood there to the end of the run (F-25c4bd). On 31102026 Sol had sandstone with four sand
      * on it over its head at Y=64, 6 stuck spells. On 101 Kindred had stone at Y=55 with a pocket of water beside it, 16.
      */
-    private <T> Optional<T> fromBeside(Body<T> body, Cell feet, String label, long now) {
+    private <T> Optional<T> fromBeside(Body<T> body, Cell feet, String label, long now, boolean hard) {
         var world = body.world();
         if (fallingOver(world, feet, 8, 1)) {
             return Optional.of(body.settle(label + ": let what falls settle"));
@@ -807,7 +832,7 @@ public final class Digger {
         // A pocket beside it whose head room it may dig or is clear: into it, and up from there.
         for (Side way : ways) {
             Cell side = feet.offset(way);
-            if (pocket(world, side) && !body.blocked(side) && !headRoomRefused(world, side)) {
+            if (pocket(world, side) && !body.blocked(side) && !headRoomRefused(world, side) && (!hard || headRoomDiggable(body, side))) {
                 heading = way;
                 asideFrom = feet;
                 asideTo = side;
@@ -837,6 +862,7 @@ public final class Digger {
             Cell side = feet.offset(way);
             if (passable(world, side.down()) || body.blocked(side) || body.blocked(side.up())) continue;
             if (!passable(world, side.up(2)) && liquidNear(world, side.up(2))) continue;
+            if (hard && !headRoomDiggable(body, side)) continue; // Not into another pocket under what it may not dig (F-25c4dp).
             Cell cell = !passable(world, side.up()) ? side.up() : side;
             if (passable(world, cell)) continue;
             Optional<T> dig = digBeside(body, cell, label + ": dig a pocket beside it");
@@ -932,6 +958,19 @@ public final class Digger {
     /** The block over a player's head there with sand or gravel resting on it, which would come down on it if dug out. */
     private static boolean capped(DigTerrain world, Cell feet) {
         return !passable(world, feet.up(2)) && falls(world, feet.up(3));
+    }
+
+    /** Where it last began a way aside from under a block it may not dig, for its line said once a place (F-25c4dp). */
+    private Cell hardAsideFrom;
+
+    /**
+     * The block over a player's head there open, or one it may dig there with its tools or by hand (F-25c4dp): the head room
+     * a step aside goes into, from under a block it may not dig.
+     */
+    private static <T> boolean headRoomDiggable(Body<T> body, Cell feet) {
+        Cell over = feet.up(2);
+        if (passable(body.world(), over)) return true;
+        return !body.blocked(over) && !liquidNear(body.world(), over) && (body.harvestable(over) || body.handClearableLater(over));
     }
 
     /** The block over a player's head there not to be dug: sand or gravel resting on it, or a liquid beside it. */

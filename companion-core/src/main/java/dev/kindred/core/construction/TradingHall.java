@@ -15,7 +15,9 @@ import java.util.Map;
  * Technical: A trading hall (E-45d): a row of cells, one for each villager kept, along a corridor the player
  * walks and trades from, as players build them. Each cell is one block wide and three deep: its bed along it,
  * head to the back wall, and the villager's floor before the bed's foot (a villager standing on a bed's top
- * never took up a job block before it: no path from there, in a fixture). Walled from the next, floored and
+ * never took up a job block before it: no path from there, in a fixture). Walled from the next, a wall two thick
+ * between cells (F-22c122: a villager sleeps in the bed it has claimed from within 2.0 of it, through a wall; across one
+ * wall it stood 1.81 from the next cell's bed), floored and
  * roofed, it is open to the corridor only across its front, where the villager's job block goes at its feet
  * once the villager is in, which shuts it in: a lintel over the job block leaves no room to stand on it, and
  * the one block open between the two is where the player trades across. The corridor is walled three high,
@@ -35,10 +37,33 @@ public final class TradingHall {
     /** A hall's ground north to south, and its height from its floor to its roof, for siting it (E-45d). */
     public static final int DEPTH = FRONT_WALL + 1, HEIGHT = ROOF + 1;
 
-    /** A hall's ground west to east: a wall either side of each cell, shared. */
+    /**
+     * How a hall's cells are spaced (F-22c122). {@link #CURRENT}: a wall two thick between cells, so that no spot a villager
+     * stands on in one cell comes within 2.0 of the next cell's bed (2.81 at the closest): vanilla sleeps a villager in the
+     * bed it has claimed from within 2.0 of it, through a wall. {@link #LEGACY}: a hall built before F-22c122, one wall
+     * between cells, read from what stands and repaired as it was built, never moved (its villager can sleep in the next
+     * cell's bed from 1.81, through the wall).
+     */
+    public enum Layout {
+        LEGACY(2), CURRENT(3);
+
+        private final int pitch;
+
+        Layout(int pitch) { this.pitch = pitch; }
+
+        /** From one cell to the next, west to east. */
+        public int pitch() { return pitch; }
+    }
+
+    /** A hall's ground west to east, as halls are built now. */
     public static int width(int cells) {
+        return width(cells, Layout.CURRENT);
+    }
+
+    /** A hall's ground west to east: a wall either side of each cell, one or two thick between them as {@code layout} has it. */
+    public static int width(int cells, Layout layout) {
         check(cells);
-        return 2 * cells + 1;
+        return layout.pitch() * (cells - 1) + 3;
     }
 
     /**
@@ -47,22 +72,55 @@ public final class TradingHall {
      */
     public record Cell(int index, Pos stand, Pos jobBlock, Pos opening, Pos tradeFrom) { }
 
-    /** The cells of a hall of {@code cells}, from the west. */
+    /** The cells of a hall of {@code cells}, from the west, as halls are built now. */
     public static List<Cell> cells(int cells) {
+        return cells(cells, Layout.CURRENT);
+    }
+
+    /** The cells of a hall of {@code cells} laid out as {@code layout}, from the west. */
+    public static List<Cell> cells(int cells, Layout layout) {
         check(cells);
         var out = new ArrayList<Cell>();
         for (int i = 0; i < cells; i++) {
-            int x = 1 + 2 * i;
+            int x = 1 + layout.pitch() * i;
             out.add(new Cell(i, new Pos(x, 1, FLOOR), new Pos(x, 1, FRONT), new Pos(x, 2, FRONT), new Pos(x, 1, CORRIDOR)));
         }
         return List.copyOf(out);
     }
 
+    /**
+     * How the hall of {@code cells} in {@code wood} and {@code stone} that stands is laid out, read from {@code standing}
+     * (what stands at each of its positions, null where unknown): the layout whose plan more of it matches, and as halls
+     * are built now where neither does more, as on open ground (F-22c122). A hall built before is repaired as it was built.
+     */
+    public static Layout standing(int cells, String wood, String stone, java.util.function.Function<Pos, BlockSpec> standing) {
+        check(cells);
+        if (cells == 1) return Layout.CURRENT;
+        int legacy = matches(of(cells, wood, stone, Layout.LEGACY), standing), current = matches(of(cells, wood, stone, Layout.CURRENT), standing);
+        return legacy > current ? Layout.LEGACY : Layout.CURRENT;
+    }
+
+    private static int matches(Blueprint plan, java.util.function.Function<Pos, BlockSpec> standing) {
+        int n = 0;
+        for (var block : plan.blocks()) {
+            var there = standing.apply(block.at());
+            if (there != null && there.sameAs(block.spec())) n++;
+        }
+        return n;
+    }
+
     /** The hall of {@code cells} cells in {@code wood} and {@code stone}: its floor, walls, cells, beds, roof, door and light. */
     public static Blueprint of(int cells, String wood, String stone) {
+        return of(cells, wood, stone, Layout.CURRENT);
+    }
+
+    /** As {@link #of(int, String, String)}, its cells laid out as {@code layout}. */
+    public static Blueprint of(int cells, String wood, String stone, Layout layout) {
         check(cells);
         if (!wood.matches("[a-z_]+") || !stone.matches("[a-z_]+")) throw new IllegalArgumentException("Not a material: " + wood + ", " + stone);
-        int width = width(cells);
+        int width = width(cells, layout);
+        var columns = new java.util.HashSet<Integer>();
+        for (Cell cell : cells(cells, layout)) columns.add(cell.stand().x());
         var at = new LinkedHashMap<Pos, BlockSpec>();
         var clear = new ArrayList<Pos>();
         BlockSpec planks = BlockSpec.of(Woods.planks(wood)), wall = BlockSpec.of(VanillaIds.NAMESPACE + stone);
@@ -77,12 +135,12 @@ public final class TradingHall {
                 at.put(new Pos(x, y, BACK), wall);
                 at.put(new Pos(x, y, FRONT_WALL), wall);
                 // Between the cells, and at either end, walls through the cells' depth to their fronts.
-                if (x % 2 == 0) for (int z = BED_HEAD; z <= FRONT; z++) at.put(new Pos(x, y, z), wall);
+                if (!columns.contains(x)) for (int z = BED_HEAD; z <= FRONT; z++) at.put(new Pos(x, y, z), wall);
             }
             // The corridor's ends.
             if (x == 0 || x == width - 1) for (int y = 1; y < ROOF; y++) for (int z = CORRIDOR; z < FRONT_WALL; z++) at.put(new Pos(x, y, z), wall);
         }
-        for (Cell cell : cells(cells)) {
+        for (Cell cell : cells(cells, layout)) {
             int x = cell.stand().x();
             // Its bed, head to the back wall; the villager's floor before its foot.
             at.put(new Pos(x, 1, BED_HEAD), BlockSpec.parse(VanillaIds.WHITE_BED + "[facing=north,part=head]"));
@@ -102,7 +160,7 @@ public final class TradingHall {
         int door = width / 2;
         at.put(new Pos(door, 1, FRONT_WALL), BlockSpec.parse(Woods.door(wood) + "[facing=north,half=lower,hinge=left,open=false]"));
         at.put(new Pos(door, 2, FRONT_WALL), BlockSpec.parse(Woods.door(wood) + "[facing=north,half=upper,hinge=left,open=false]"));
-        for (Cell cell : cells(cells)) {
+        for (Cell cell : cells(cells, layout)) {
             int x = cell.stand().x();
             if (x != door) at.put(new Pos(x, 3, FRONT_WALL - 1), BlockSpec.parse(VanillaIds.WALL_TORCH + "[facing=north]"));
         }
