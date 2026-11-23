@@ -682,6 +682,19 @@ final class PortalRunCampaign {
      * and carried out by the run's own steps: ore in sight, then the caves it knows, then down to where iron is; fuel,
      * a furnace and the smelt. Empty once it holds them, or where it cannot from here.
      */
+    /**
+     * Where the player stands and the server's tick, kept as {@code plan()} keeps them, for a caller that asks the run's
+     * steps of it with no goal of its own (a build's gather, look, route or climb), whose plan never runs (F-22c115).
+     * Left at the world's origin, every refused walk was counted as from one place, and its stranding never lapsed as
+     * the player moved: a cabin's three refused walks to stone in its pit kept the field's twelve logs out as "stranded
+     * from 0, 0, 0", its build turning between a walk out to look for logs and its way back up to the build.
+     */
+    private void standing(NativePlayerBody body) {
+        var player = body.entity();
+        lastFeet = player.getBlockPos().toImmutable();
+        lastTick = Math.max(lastTick, player.getServerWorld().getServer().getTicks());
+    }
+
     Optional<Task> ironFor(NativePlayerBody body, EditPolicy.ServerPolicy policy, int wanted) {
         this.policy = policy;
         lastFeet = body.entity().getBlockPos().toImmutable();
@@ -703,6 +716,7 @@ final class PortalRunCampaign {
     /** As {@link #taskFinished(Task, boolean, long)}, with why a task that did not go did not: the runtime's word for it. */
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
+        refusedStep(task, completed, tick, why);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
             completedForTest.addLast(task.label());
@@ -823,6 +837,14 @@ final class PortalRunCampaign {
         if (task != null && completed && "native_goto".equals(task.skill()) && task.label().endsWith(": back the way it came")) {
             retraceDone = true;
             retraceFrom = lastFeet; // Where it stood when the walk was chosen.
+            // Ended lower than it began (F-25c4at1): the climb's own rule, that the way back up never leads down, applied to
+            // where the walk ended. Held from where it began, not only where it ended: in iteration 26 the walk back from the
+            // step ended a block lower, the stall there lifted as soon as the climb stepped it up again, and the walk back
+            // was offered again, three steps round, for 21 game minutes on batch 1's 31102026 Sol.
+            if (retraceChosenAt != null && lastFeet.getY() < retraceChosenAt.getY()) {
+                retraceLowerFrom = retraceChosenAt;
+                retraceLowerUntil = tick + 600;
+            }
         }
         // Refused ("no walkable route"), the way it came is not asked for again from here for a while, so the climb has its
         // turn: sealed in for the night, every walk back along it was refused, another cell of it each time (F-25c4at).
@@ -2863,15 +2885,8 @@ final class PortalRunCampaign {
             return wait;
         }
         // Underground with every way on refused (liquid below, holes all round): climb a step and look again.
-        if (underground(player)) {
-            Optional<Task> up = climb(body, "Climb to find another way");
-            if (up.isPresent()) {
-                paced(tick);
-                cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
-                progress = stageLabel(stage) + ": no way on from here - " + up.get().label();
-                return up;
-            }
-        }
+        Optional<Task> anotherWay = climbToFindAnotherWay(body, tick, stageLabel(stage));
+        if (anotherWay.isPresent()) return anotherWay;
         // Stranded on a ledge or pillar with every way off a drop: take the shortest fall it can afford, as a player
         // jumps down rather than wait for ever.
         Optional<Task> drop = jumpDown(player);
@@ -2881,6 +2896,77 @@ final class PortalRunCampaign {
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
         return Optional.empty();
+    }
+
+    /**
+     * Underground with every way on refused (liquid below, holes all round): a step of the climb, to look again from
+     * higher; the cell it leaves set aside, a dead end it does not step back down into.
+     */
+    private Optional<Task> climbToFindAnotherWay(NativePlayerBody body, long tick, String stageLabel) {
+        var player = body.entity();
+        if (!underground(player)) return Optional.empty();
+        // Hemmed in again after a while out of it: where this spell of it began.
+        if (hemmedFrom == null || lastTick - hemmedLast > HEMMED_GAP) {
+            hemmedFrom = lastFeet;
+        }
+        hemmedLast = lastTick;
+        BlockPos target = refusedTarget != null && lastTick - refusedAt <= HEMMED_TARGET_AGE ? refusedTarget : null;
+        int ceiling = target != null ? target.getY() + 2 : hemmedFrom.getY() + HEMMED_CLIMB;
+        if (lastFeet.getY() >= ceiling) return Optional.empty();
+        Optional<Task> up = climb(body, "Climb to find another way");
+        if (up.isPresent()) {
+            paced(tick);
+            cellsAside.until(lastFeet.asLong(), lastTick + 2400); // A dead end: do not step back down into it.
+            progress = stageLabel + ": no way on from here - " + up.get().label();
+        }
+        return up;
+    }
+
+    /**
+     * The bound on the climb to find another way (F-25c4bx1): with every step still refused it goes no higher than the
+     * refused step's own target and two, or, with none known, {@value #HEMMED_CLIMB} above where it was first hemmed in;
+     * then the fallback offers nothing, and the spell is the watchdog's and rescue's, as any other with no way on. A
+     * tightening: no timeout is changed, and rescue stays once a spell. In iteration 26, batch 2's 707 Sol climbed from its
+     * own cast site at y −49 to y 66, 120 blocks over its work, its two stuck spells at the top.
+     */
+    static final int HEMMED_CLIMB = 8;
+    /** A gap in being hemmed in, in ticks, after which the next time is a new spell of it. */
+    private static final long HEMMED_GAP = 200;
+    /** How recent a refused step must be, in ticks, for its target to bound the climb. */
+    private static final long HEMMED_TARGET_AGE = 1200;
+    /** Where this spell of being hemmed in began, and when the fallback last ran. */
+    private BlockPos hemmedFrom;
+    private long hemmedLast = Long.MIN_VALUE / 2;
+    /** The target of the last step refused, and when. */
+    private BlockPos refusedTarget;
+    private long refusedAt = Long.MIN_VALUE / 2;
+
+    /**
+     * A walk refused for want of a route: its target remembered for the bound on the climb (F-25c4bx1). Only that: a step
+     * cancelled ("authority lost") or blocked for another reason is no place it could not reach. In iteration 27 a "Dig down
+     * toward lava" cancelled a block below batch 1's 404 Echo came just before a climb that went on up to its crafting
+     * table. Nor the climb's own steps: its breaks are refused for now, not here, and a step up of its own refused is no
+     * target of its work.
+     */
+    private void refusedStep(Task task, boolean completed, long tick, String why) {
+        if (task == null || completed || !"native_goto".equals(task.skill()) || why == null || !why.startsWith("No walkable route")
+                || task.label().startsWith("Climb to find another way")) return; // Nor its own step up.
+        BlockPos at = position(task.args());
+        if (at == null) return;
+        refusedTarget = at;
+        refusedAt = tick;
+    }
+
+    /**
+     * For fixtures only, a setter: sets where it stands, its clock and the server's edit policy as its plan's tick would,
+     * then asks for the plan's fallback climb as the plan does with every step refused (F-25c4bx1). Package-private; called
+     * from no main source.
+     */
+    Optional<Task> anotherWayForTest(NativePlayerBody body, BlockPos feet, long tick, EditPolicy.ServerPolicy policy) {
+        this.policy = policy;
+        lastFeet = feet.toImmutable();
+        lastTick = Math.max(lastTick, tick);
+        return climbToFindAnotherWay(body, tick, "Iron");
     }
 
     /**
@@ -4195,6 +4281,7 @@ final class PortalRunCampaign {
 
     private Optional<Task> gather(NativePlayerBody body, WorldKnowledge.Kind kind, int radius, String what, boolean guarded,
                                   Predicate<BlockPos> also) {
+        standing(body);
         Optional<Task> task = gatherFrom(body, kind, radius, what, guarded, also);
         if (task.isEmpty() && kind == WorldKnowledge.Kind.LOG && stuckSpells > 0 && lastTick - spellStart >= stuckTicks && logsSpell != stuckSpells) {
             logsSpell = stuckSpells;
@@ -4306,6 +4393,7 @@ final class PortalRunCampaign {
      * nothing said why the build's gather had passed it over. The caller logs it once a trip.
      */
     boolean knownLogsKeptOut(NativePlayerBody body, int radius, java.util.function.Function<BlockPos, String> filtered, String prefix) {
+        standing(body);
         BlockPos feet = body.entity().getBlockPos();
         var known = new java.util.ArrayList<>(knowledge.all(WorldKnowledge.Kind.LOG));
         if (known.isEmpty()) return false;
@@ -4616,6 +4704,7 @@ final class PortalRunCampaign {
 
     /** A walk out over the surface to look for {@code what}, as the goal looks for a tree it has not seen (E-08c). */
     Optional<Task> lookFor(NativePlayerBody body, String what) {
+        standing(body);
         return groundBelow(body.entity()) && !underground(body.entity()) ? explore(body.entity(), what) : Optional.empty();
     }
 
@@ -5058,6 +5147,7 @@ final class PortalRunCampaign {
      * does not make a way up it.
      */
     Optional<Task> climbOut(NativePlayerBody body) {
+        standing(body);
         return wayUp(body, "Climb out to the build");
     }
 
@@ -5215,6 +5305,26 @@ final class PortalRunCampaign {
     }
 
     /**
+     * For fixtures only, a setter: sets where it stands now and its way in, as its plan's tick would record them
+     * (F-25c4at1). Package-private; called from no main source.
+     */
+    void wayInForTest(BlockPos feet, List<BlockPos> way) {
+        lastFeet = feet.toImmutable();
+        trail.clear();
+        for (BlockPos cell : way) trail.addLast(cell.toImmutable());
+    }
+
+    /**
+     * For fixtures only: moves its clock on to {@code tick} and asks for the walk back from where it stands, as the climb
+     * asks for it (F-25c4at1); the walk back it chooses is recorded as the climb's would be. Package-private; called from no
+     * main source.
+     */
+    Optional<Task> walkBackForTest(NativePlayerBody body, long tick) {
+        lastTick = Math.max(lastTick, tick);
+        return retrace(body, "Climb toward the surface for logs");
+    }
+
+    /**
      * Back along its own trail: each leg to the highest cell it stood in within a score of blocks, further back along
      * the way it came than where it stands now, or under open sky, so loops in the way in are cut short.
      */
@@ -5230,6 +5340,12 @@ final class PortalRunCampaign {
         // Only while it is still there: once it has climbed up or moved away, the way it came is worth a try again.
         if (lastTick < retraceStalledUntil && retraceFrom != null && retraceFrom.getManhattanDistance(lastFeet) <= 1
                 && lastFeet.getY() <= retraceFrom.getY()) return Optional.empty();
+        // A walk back that ended lower than it began (F-25c4at1) is held while it stands within three of where that walk
+        // began, horizontally, and no higher: the climb's step up and its cut through have their turn. Not a threshold or
+        // timeout loosened: the same while, the climb's own rule that the way back up never leads down, read from where
+        // the walk ended.
+        if (lastTick < retraceLowerUntil && retraceLowerFrom != null && lastFeet.getY() <= retraceLowerFrom.getY()
+                && horizontalSquared(retraceLowerFrom, lastFeet) <= 3 * 3) return Optional.empty();
         if (trail.size() < 2) return Optional.empty();
         int index = nearestOnTrail();
         var cells = new java.util.ArrayList<>(trail);
@@ -5248,7 +5364,19 @@ final class PortalRunCampaign {
             }
         }
         if (target == null || target.getSquaredDistance(lastFeet) < 2) return Optional.empty();
+        retraceChosenAt = lastFeet;
         return Optional.of(go(target, 0.8, true, label + ": back the way it came"));
+    }
+
+    /** Where its last walk back was chosen, for the guard on one that ends lower (F-25c4at1). */
+    private BlockPos retraceChosenAt;
+    /** Where a walk back that ended lower than it began was chosen, and until when the way back is held from there. */
+    private BlockPos retraceLowerFrom;
+    private long retraceLowerUntil = -1;
+
+    private static int horizontalSquared(BlockPos a, BlockPos b) {
+        int dx = a.getX() - b.getX(), dz = a.getZ() - b.getZ();
+        return dx * dx + dz * dz;
     }
 
     /**
@@ -5404,6 +5532,7 @@ final class PortalRunCampaign {
      * caller whose walk there has just failed.
      */
     Optional<Task> buildRoute(NativePlayerBody body, BlockPos target, java.util.function.Predicate<BlockPos> goal, boolean needEdit, String label) {
+        standing(body);
         var player = body.entity();
         if (!player.isOnGround() && !player.isTouchingWater()) return Optional.empty(); // Mid-jump: plan on landing.
         var world = player.getServerWorld();
@@ -5556,6 +5685,7 @@ final class PortalRunCampaign {
 
     /** A tunnel along {@code heading}, as {@link #tunnel(NativePlayerBody, String)} digs along its own. */
     Optional<Task> tunnelAlong(NativePlayerBody body, Direction heading, String label) {
+        standing(body);
         return digger.tunnelAlong(dig(body), side(heading), label);
     }
 

@@ -845,17 +845,31 @@ on the first start (10 members, power 0 to 10 starting at 10, −2 a qualifying 
 Walked from the console on a fresh server on 2026-11-11 ([evidence](evidence/M-06j1.md)):
 
 1. Build the server from `packs/factions/` (its README): the seven mods by the index's links, each checked against its
-   SHA-512; the Fabric server launcher for 1.21.1 with Loader 0.19.5; the Kindred jar; the pack's `server.properties`,
-   `config/kindred/factions.properties` and `config/textile_backup.json5`. Back up the empty world first: start the
-   pack once without the Kindred jar, stop it, archive `world/`, then add the jar (walked 2026-11-12).
+   SHA-512; the Fabric server launcher for 1.21.1 with Loader 0.19.5 (Fabric's own download, for example
+   `https://meta.fabricmc.net/v2/versions/loader/1.21.1/0.19.5/1.1.2/server/jar` with installer 1.1.2, the newest stable
+   on 2026-11-22); the Kindred jar; the pack's `server.properties`, `config/kindred/factions.properties` and
+   `config/textile_backup.json5`. The first start stops at once until you have read Minecraft's EULA and set `eula=true`
+   in `eula.txt`; that is yours to accept. Back up the empty world first: start the pack once without the Kindred jar,
+   stop it, archive `world/`, then add the jar (walked 2026-11-12 and 2026-11-22).
 2. Start it, then at the console: `aiplayer mode world factions`, then `faction admin hub` (the safe zone, the borders,
-   the hub built). The mode is kept across restarts.
+   the hub built), then `aiplayer edits on`: without it AI players break and place nothing, so they cannot gather,
+   claim land worth having or build (it is the `autonomousEdits` setting in `<world>/kindred/edits.properties`). The
+   mode and the edits are kept across restarts.
 3. Pre-generate with Chunky (the README's commands); `spark tps` after should read 20. Use
    `spark heapsummary --save-to-file`, never the default, which uploads to spark's public paste site.
-4. AI players: `aiplayer native create <name>` puts one where the command stands. The console stands at world spawn,
-   inside the hub once it is built, so create the first with
-   `execute positioned ~20 ~ ~20 positioned over world_surface run aiplayer native create <name>`, and the rest beside it
-   with `execute at <first> positioned ~2 ~ ~ positioned over world_surface run ...`. Act for one with
+4. AI players: `aiplayer native create <name>` puts one where the command stands, and only on dry, solid ground with a
+   free cell beside it ("Make room on solid ground in an already loaded area" otherwise). The console stands at world
+   spawn, inside the hub once it is built, and a spawn by water leaves no such cell near it (seed 101's, 2026-11-22: a
+   fixed offset of 20 blocks found water at every try). Let vanilla find dry land for each player instead, then create it
+   there:
+   ```
+   summon minecraft:marker ~ ~ ~ {Tags:["spot"]}
+   spreadplayers ~ ~ 0 40 false @e[tag=spot]
+   execute at @e[tag=spot,limit=1] run aiplayer native create <name>
+   kill @e[tag=spot]
+   ```
+   `spreadplayers` never puts the marker on a liquid. Repeat the four lines for each player (walked 2026-11-22 for
+   three). Act for one with
    `/faction as <player> <request>` (`create`, `invite`, `join`, `claim`, `coins`, `shop price <item>`, `ah list`, ...).
    The auction house works the same way: `/faction as <player> ah sell <start> [buyNow] [hours]` lists what the player
    holds (25 coins a listing, five at a time, 48 hours unless given), `ah buy <id>` pays the buy-now price, and the seller
@@ -883,7 +897,9 @@ In a faction world:
 
 - `/faction create <name> <tag> [colour]`, `invite|uninvite|kick|promote|demote|leader <player>`, `join <faction>`,
   `leave`, `ally|truce|enemy <faction>`, `sethome`, `home` (tells where it is; with `/aiplayer teleport allow`, takes a person there), `colour <dye>`,
-  `disband`, `info [faction]`, `list`, `power [player]`. People and AI players use the same rules; an operator makes a
+  `disband`, `info [faction]`, `list`, `power [player]`. These are a player's requests: at the console, even `list` and
+  `info` need `faction as <player> list` (or `info`, `coins`); a bare `faction list` there answers "Only a player makes
+  faction requests". People and AI players use the same rules; an operator makes a
   request for an AI player with `/faction as <player> <request>`.
 - The leader alone sets ranks, hands over the lead, chooses the colour (one of the sixteen dyes) and disbands; officers
   invite, kick members and set relations and the home. A truce needs both factions to declare at least a truce, an
@@ -896,8 +912,10 @@ In a faction world:
 - Disk: the World Record (`kindred/companions.sqlite` and its `-wal`) grows with the number of players and what they do, and nothing
   is pruned but settled action history. Measured with 3 AI players on seed 101 at 72 game days a real day (dragon goal, a build of
   2026-11-09): 11.3 MB after the first game day, 40.5 MB after twelve; about 4 MB a game day at first, then 1.3 to 1.8 MB.
-  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. Keep the disk well ahead of it
-  for a long run; for eight players and a month, see "A month-long run: what grows on disk" below.
+  The daily `Kindred cost:` log line shows the database's size and what was written, by kind. It reads
+  `Kindred cost: world day N: …`, where N is the world's own day (its game time in whole days, from 1), so a restart goes
+  on with the world's count; logs from before this fix read `Kindred cost: day N: …`, counted from that start. Keep the
+  disk well ahead of it for a long run; for eight players and a month, see "A month-long run: what grows on disk" below.
   The same line counts the messages the Wire refused since start, by why and on which channel, for example
   `Wire 3 refused since start (BUDGET on team 1, DUPLICATE on faction 2)` (F-34e). It never says what a refused message
   said, who sent it or to whom. A refusal now and then is routine (a channel's minute spent, the same news twice), but a
@@ -986,7 +1004,9 @@ Set before the first start, and leave:
   are not settings. Nothing to set.
 
 **Every day, read the pre-flight report.** It reads the console's `Kindred cost:` lines (one a game day, and one at
-each stop) and, with the server stopped, a copy of the Record:
+each stop) and, with the server stopped, a copy of the Record. It tells the two forms apart by the word `world`: a
+`world day N` line is the world's day and goes on over a restart, so growth is read day to day across stops; an older
+`day N` line counts from its start, so a drop in the number begins a new start and growth is never read across one:
 
 ```
 tools/soak/preflight.py --console logs/latest.log --heap-max-mb 10240
