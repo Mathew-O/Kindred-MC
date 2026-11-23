@@ -4307,6 +4307,21 @@ final class PortalRunCampaign {
     }
 
     /** Rock a player with no pickaxe at all can still punch through: no drop, but a way out. */
+    /**
+     * As {@link #handClearable}, less the reach and the line of sight, which hold only once it is beside the block: a cell it
+     * may punch through when it gets there (F-25c4dp).
+     */
+    private boolean handClearableLater(NativePlayerBody body, BlockPos pos) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isIn(ItemTags.PICKAXES)) return false;
+        BlockState state = world.getBlockState(pos);
+        float hardness = state.getHardness(world, pos);
+        if (state.isAir() || hardness < 0 || hardness > HAND_HARDNESS || blocked(pos)) return false;
+        return RoamingEdits.breakDenial(player, pos, policy, false) == null;
+    }
+
     private boolean handClearable(NativePlayerBody body, BlockPos pos) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -5594,6 +5609,7 @@ final class PortalRunCampaign {
         @Override public void setAside(Cell cell, long until) { cellsAside.until(cell.asLong(), until); }
         @Override public boolean breakableNow(Cell cell) { return PortalRunCampaign.this.breakableNow(body, pos(cell)); }
         @Override public boolean handClearable(Cell cell) { return PortalRunCampaign.this.handClearable(body, pos(cell)); }
+        @Override public boolean handClearableLater(Cell cell) { return PortalRunCampaign.this.handClearableLater(body, pos(cell)); }
         @Override public boolean snareClearable(Cell cell) { return PortalRunCampaign.this.snareClearable(body, pos(cell)); }
         @Override public boolean opensOverLava(Cell cell) {
             BlockPos at = pos(cell);
