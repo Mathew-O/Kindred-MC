@@ -1522,7 +1522,7 @@ final class PortalRunCampaign {
 
     /**
      * The move elsewhere of attempt {@code level}: a heading turned once more for each, and every third home. When the
-     * plan's own step was a climb up (for food, the surface or another way), the new place is up as well as along, not at
+     * plan's own step was a climb up toward something (food, the surface, logs), the new place is up as well as along, not at
      * its own level: hurt and out of food at Y=-47 in E-40's iteration 30 (`e40a30-63b97ac`, 505 Kindred), its climb toward
      * the surface for food was put off by one sideways move after another at that depth. Nor is it a place it saw to be
      * open water: far out at sea, two moves 24 on along the sea's surface came before the one home that ended the spell
@@ -1557,7 +1557,10 @@ final class PortalRunCampaign {
 
     /** Whether the plan's own step, when the spell came, was a climb up (F-25c4do1). */
     private boolean climbWanted() {
-        return progress != null && (progress.contains(" - Climb toward") || progress.contains("Climb to find another way"));
+        // A climb toward something (food, the surface, logs), not the fallback "Climb to find another way", which is the
+        // plan with no way on: there, a move up was a target it could not walk to, where one at its own level walked and
+        // bridged it out of the spell (corpus e40a20-79a9aad-8675309-kindred-116320, in this change's gate).
+        return progress != null && progress.contains(" - Climb toward");
     }
 
     /** Where the move elsewhere under way is going, or null (fixtures only). */
