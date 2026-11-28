@@ -104,6 +104,8 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         // A staging error, if the at-feet staging did not find exactly one drop at its own lava cell: then the test fails
         // as a staging error naming the count, never as the property (F-22c118a; a neighbouring copy's drop was once taken).
         String[] stagingError = {null};
+        // Left in the water (LEFT): its own drop, found once at its lava cell, made unpickable for good.
+        boolean[] leftStaged = {false};
         boolean[] heldBack = {false};
         // What armed the check (F-22c118a), whichever came first: the moment on its stand, or its goal line to take the
         // water back. Armed by the goal line, whether its water was back before the next goal: "" if so, else what was not.
@@ -123,6 +125,12 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         // Armed by the goal line, the first task to end since: "" if it was its native_bucket COMPLETED for the water, else
         // that task. A report up to a tick before the goal change is seen (the -1 case) must still be this first task.
         String[] firstEnded = {null};
+        // The arming edge, the same lag as at the goal change: the step before "recover the water" can report its own end a
+        // tick after the goal line moved on. Its label and the arming's world time, and the one report so exempted.
+        long[] armedAt = {-1};
+        String[] stepBefore = {null};
+        String[] exempted = {null};
+        String[] previous = {""};
         String[] notTaken = {null};
         String[] asked = {null};
         String[] lostSite = {null};
@@ -139,6 +147,7 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line: {}", notTaken[0]);
             }
             if (progress != null && !progress.equals(last[0])) {
+                previous[0] = last[0];
                 last[0] = progress;
                 if (seen.length() < 3000) seen.append(progress.replaceAll("^.* - ", "")).append("; ");
                 // Exploring with its obsidian left: once the obsidian is mined, not a walk to look for lava before any is
@@ -151,6 +160,9 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 boolean recovering = progress.contains("Obsidian: recover the water");
                 if (hidden && armedBy[0] == null && recovering && minedYet) {
                     armedBy[0] = GOAL_LINE;
+                    armedAt[0] = lookWorld.getTime();
+                    stepBefore[0] = previous[0].replaceAll("^.* - ", "");
+                    KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line at world time {}, the step before it [{}]", armedAt[0], stepBefore[0]);
                     armed(f, lookWorld, shore, GOAL_LINE);
                     // Staged (F-22c118a): its step to take the water back held back, its empty bucket taken away.
                     if (mode == Mode.WATER_HELD_BACK) {
@@ -211,12 +223,25 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
             }
             if (stagingError[0] != null) context.assertTrue(false, stagingError[0]);
             // Staged (F-22c118): the obsidian mined left lying where it fell, no player able to pick it up.
-            if (mode == Mode.LEFT) {
-                for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
-                        new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8), i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) {
-                    item.setPickupDelayInfinite();
+            // Only its own lava cell is searched, as for the drop at its feet: a wider box reached the next plot's lava cell.
+            if (mode == Mode.LEFT && !leftStaged[0] && stagingError[0] == null) {
+                var world = context.getWorld();
+                var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(lava).expand(1),
+                        i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN));
+                boolean mined = !world.getBlockState(lava).isOf(Blocks.OBSIDIAN) && !world.getFluidState(lava).isIn(FluidTags.LAVA);
+                int count = drops.stream().mapToInt(i -> i.getStack().getCount()).sum();
+                if (drops.size() > 1 || count > 1) {
+                    stagingError[0] = "Staging error: " + count + " obsidian in " + drops.size() + " drops at its own lava cell " + lava.toShortString() + ", not 1";
+                } else if (drops.size() == 1) {
+                    drops.getFirst().setPickupDelayInfinite();
+                    leftStaged[0] = true;
+                    KindredMod.LOGGER.info("Obsidian pickup: STAGED, the obsidian's drop (1 of 1 at its own lava cell) left where it fell, unpickable");
+                } else if (mined) {
+                    stagingError[0] = "Staging error: 0 obsidian drops at its own lava cell " + lava.toShortString() + " once it was mined, not 1";
                 }
+                if (stagingError[0] != null) KindredMod.LOGGER.info("Obsidian pickup: {}", stagingError[0]);
             }
+            if (stagingError[0] != null) context.assertTrue(false, stagingError[0]);
             // Staged (F-22c94): from the obsidian mined until its water is back in the bucket, the player held on its stand,
             // two cells off the hole the obsidian lies in, so it never passes over the drop, as in CI, where it lay out of
             // the player's way; the drop itself is not touched. Then let go, the water's last flow still draining over it.
@@ -279,8 +304,18 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                         public void ended(String p, String skill, String state, String label) {
                             boolean recovered = "native_bucket".equals(skill) && "COMPLETED".equals(state) && label != null && label.contains("recover the water");
                             if (recovered) bucketCompleted[0] = true;
-                            if (GOAL_LINE.equals(armedBy[0]) && firstEnded[0] == null) firstEnded[0] = recovered ? ""
-                                    : "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label + "] at world time " + context.getWorld().getTime() + "; ";
+                            long now = context.getWorld().getTime();
+                            if (GOAL_LINE.equals(armedBy[0]) && firstEnded[0] == null) {
+                                if (!recovered && exempted[0] == null && label != null && label.equals(stepBefore[0]) && now - armedAt[0] <= reportBound) {
+                                    // The step before the goal line reporting its own end within the bound of the arming: not another task.
+                                    exempted[0] = skill + " " + state + " [" + label + "] at world time " + now + ", armed at " + armedAt[0];
+                                    KindredMod.LOGGER.info("Obsidian pickup: the arming edge: not counted as another task, the step before it: {}", exempted[0]);
+                                } else {
+                                    firstEnded[0] = recovered ? "" : "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label
+                                            + "] at world time " + now + ", armed by the goal line at " + armedAt[0] + " after [" + stepBefore[0] + "]"
+                                            + (exempted[0] == null ? "" : ", exempted " + exempted[0]) + "; ";
+                                }
+                            }
                             if (recovered && reportAt[0] < 0) {
                                 reportAt[0] = context.getWorld().getTime();
                                 if (reportDue[0] >= 0) KindredMod.LOGGER.info("Obsidian pickup: the clocks: its native_bucket COMPLETED reported at world time {}, the next goal seen at {}, a gap of {} ticks",
@@ -302,6 +337,7 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     if (mode != Mode.LEFT) return;
                     // The check still catches its obsidian left in the water (F-22c118).
                     watch.run();
+                    context.assertTrue(leftStaged[0], "Staging error: no obsidian drop found at its own lava cell to leave unpickable, not 1");
                     context.assertTrue(exploredFirst[0], "Went exploring with its obsidian left in the water, and the check caught it: " + tail.get());
                     KindredMod.LOGGER.info("Obsidian pickup: left in the water, caught; {}", seen);
                     f.runtime.stop();
