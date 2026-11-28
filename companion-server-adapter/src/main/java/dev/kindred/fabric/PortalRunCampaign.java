@@ -5928,10 +5928,24 @@ final class PortalRunCampaign {
         if (slot < 0) return Optional.empty();
         if (slot >= 9) return Optional.of(swapToHotbar(body, slot, "Ready a block"));
         int blocks = inventory.getStack(slot).getCount();
+        var world = body.entity().getServerWorld();
+        // A bridge cell full of lava (F-25c4ds) is filled from where the player stands, against the faces round it, and
+        // never leaned out over: the run leans out past the edge to click the side of the block it stands on, so its body
+        // is over the lava before any block is there. On 8675309 in E-40's iteration 30 (`e40a30-63b97ac`) Echo, on "Climb
+        // to the cave toward lava: bridge 1", was twice over such a cell with "feet air, floor lava", its bridge cancelled
+        // each time, and died in it. A run stops short of one; at one, its block goes in from the edge.
+        BlockPos first = route.steps().getFirst().cells().getFirst();
+        if (lavaIn(world, first)) {
+            if (!first.equals(lavaFillLogged)) KindredMod.LOGGER.info("F-25c4ds: {} fills the lava at {} from where it stands, not bridging out over it",
+                    body.entity().getName().getString(), first.toShortString());
+            lavaFillLogged = first.toImmutable();
+            return routeEdit(body, route.steps().getFirst(), label);
+        }
         Direction along = null;
         int run = 0;
         for (var step : route.steps()) {
             if (step.kind() != NativeRoutePlanner.Kind.BRIDGE || run == NativeBridgeAction.MAX_RUN || run >= blocks) break;
+            if (lavaIn(world, step.cells().getFirst())) break;
             BlockPos from = step.from(), to = step.to();
             int dx = to.getX() - from.getX(), dz = to.getZ() - from.getZ();
             if (to.getY() != from.getY() || Math.abs(dx) + Math.abs(dz) != 1 || !step.cells().getFirst().equals(to.down())) break;
@@ -5944,6 +5958,14 @@ final class PortalRunCampaign {
         BlockPos feet = route.steps().getFirst().from();
         return Optional.of(new Task("native_bridge", coords(feet, Map.of("dir", along.asString(), "n", String.valueOf(run), "slot", String.valueOf(slot))),
                 label + ": bridge " + run));
+    }
+
+    /** The last lava cell a bridge was filled at from the edge, so its line is logged once (F-25c4ds). */
+    private BlockPos lavaFillLogged;
+
+    /** Lava, still or flowing, in {@code cell} (F-25c4ds). */
+    private static boolean lavaIn(ServerWorld world, BlockPos cell) {
+        return world.getFluidState(cell).isIn(FluidTags.LAVA);
     }
 
     /**
