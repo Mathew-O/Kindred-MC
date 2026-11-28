@@ -1,2 +1,3 @@
 bx3-1 (7f8ce083): 32 min, peak 3135 MB, 119 required tests failed, fence-top 18, disk 5.9G
 bx3-2 (7f8ce083): 30 min, peak 3274 MB, 114 required tests failed, fence-top 25, disk 5.9G
+bx3-3 (7f8ce083): 30 min, peak 3376 MB, 129 required tests failed, fence-top 20, disk 5.8G
