@@ -6799,6 +6799,12 @@ final class PortalRunCampaign {
     private final Map<Long, Integer> fillRefusals = new HashMap<>();
     /** Spots a cast was refused or failed from since the last one that worked; the next try is from somewhere else. */
     private final Set<Long> castFailedStands = new java.util.HashSet<>();
+    /** Game ticks a frame cell's water is waited on to drain before it is filled in (F-22c128). */
+    private static final long DRAIN_WAIT = 200;
+    /** A gap in the waiting this long, in game ticks, and the wait on that cell starts over. */
+    private static final long DRAIN_GAP = 60;
+    /** The cell whose water is waited on, since when, the last tick it was, and the last cell the fill-in was told for. */
+    private long drainCell = Long.MIN_VALUE, drainFrom, drainLast, drainTold = Long.MIN_VALUE;
 
     /**
      * The cast's bucket of lava: filled at a source it has seen (walked to a leg at a time when far off), else looked for
@@ -7033,7 +7039,38 @@ final class PortalRunCampaign {
             // minutes (F-25c4ai).
             for (BlockPos open : at[1] == 4 ? List.of(cell, cell.up(), site.front(at[0], 5)) : List.of(cell, cell.up())) {
                 if (world.getBlockState(open).isAir()) continue;
-                if (!world.getFluidState(open).isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
+                if (!world.getFluidState(open).isEmpty()) {
+                    // Water left by the last cast drains in a moment; water that is still there after a while is no cast's, a
+                    // source or a flow from elsewhere, and is filled in with a block of its own, which the clearing digs out
+                    // after. Waited on without bound, on 707 Echo in E-40's iteration 30 (`e40a30r-63b97ac`) it stood "Cast:
+                    // let the water drain" for five and a half minutes, one block of its frame cast (F-22c128).
+                    long key = open.asLong();
+                    if (drainCell != key || lastTick - drainLast > DRAIN_GAP) {
+                        drainCell = key;
+                        drainFrom = lastTick;
+                    }
+                    drainLast = lastTick;
+                    // Once its bound has passed the cell is not waited on again: a step along the frame to fill it from would
+                    // otherwise start the wait over.
+                    if (drainTold != key && lastTick - drainFrom < DRAIN_WAIT) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
+                    if (drainTold != key) {
+                        drainTold = key;
+                        String why = "the water at " + open.toShortString() + " has not drained in " + DRAIN_WAIT / 20 + " seconds; filling it in to dig it out";
+                        KindredMod.LOGGER.info("{} cast: {}", player.getName().getString(), why);
+                        event("Cast: " + why);
+                    }
+                    Optional<Task> fill = within(body, site, at[0], open, () -> placeBlock(body, open, "Cast: block the standing water at " + open.toShortString()));
+                    if (fill.isPresent()) return fill;
+                    // No block to fill it with, or none it can put there from here: the site is set aside, as one whose
+                    // cell cannot be cleared is, and the plan chooses again, rather than wait on water that does not drain.
+                    // (The plan gives the cast only with the frame's blocks in hand: with none left it gets more first.)
+                    KindredMod.LOGGER.info("{} gives up the frame site at {}: the water at {} does not drain and no block can be put in it from here",
+                            player.getName().getString(), site.origin().toShortString(), open.toShortString());
+                    abandonedSites.add(siteKey(site));
+                    clearTriedFrom.clear();
+                    portalSite = null;
+                    return Optional.empty();
+                }
                 if (clearableNow(body, open)) return Optional.of(clearAt(open, "Cast: clear " + open.toShortString()));
                 // Out of reach from where it stands, back from the lava say: nearer the frame first, and only a block it
                 // cannot dig from there gives the site up. In the live pair on 458d192 Echo, back from the lava with the
