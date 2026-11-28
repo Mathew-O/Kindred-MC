@@ -4093,6 +4093,10 @@ final class PortalRunCampaign {
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (onTheWay(spot, feet)) continue;
+            // Never in the room kept for the bed it carries (F-22c127): the bed's room is cleared of whatever stands in it,
+            // the torch too, and the pocket dark again, the next torch went back in, lap after lap (iteration 30's 303
+            // Kindred, 541 times in under three minutes; 303 Echo, 547).
+            if (inBedRoom(spot)) continue;
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
@@ -8321,6 +8325,13 @@ final class PortalRunCampaign {
     }
 
     /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
+    /** Whether {@code cell} is one of the four kept for the bed it carries tonight: its two cells and the two over them. */
+    private boolean inBedRoom(BlockPos cell) {
+        if (bedRoomFor == null) return false;
+        for (BlockPos half : bedRoomFor) if (cell.equals(half) || cell.equals(half.up())) return true;
+        return false;
+    }
+
     private static boolean bedRoom(ServerWorld world, BlockPos pos) {
         return world.isChunkLoaded(pos) && world.getBlockState(pos).isAir() && world.getFluidState(pos).isEmpty()
                 && world.getBlockState(pos.up()).isAir() && world.getBlockState(pos.down()).isSideSolidFullSquare(world, pos.down(), Direction.UP);
