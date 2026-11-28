@@ -269,11 +269,38 @@ final class RanchRunner {
      */
     private BlockPos cell(BlockPos at, double x, double z, ServerWorld world) {
         var state = world.getBlockState(at);
-        if (!state.isIn(BlockTags.FENCES) && !(state.getBlock() instanceof FenceGateBlock && !state.get(FenceGateBlock.OPEN))) return at;
-        int cx = at.getX(), cz = at.getZ();
-        if (cz == origin.getZ() || cz == origin.getZ() + ranch.depth() - 1) cz += z < at.getZ() + 0.5 ? -1 : 1;
-        if (cx == origin.getX() || cx == origin.getX() + ranch.width() - 1) cx += x < at.getX() + 0.5 ? -1 : 1;
-        return new BlockPos(cx, at.getY(), cz);
+        boolean fence = state.isIn(BlockTags.FENCES);
+        boolean shutGate = state.getBlock() instanceof FenceGateBlock && !state.get(FenceGateBlock.OPEN);
+        boolean acrossZ = shutGate && state.get(FenceGateBlock.FACING).getAxis() == net.minecraft.util.math.Direction.Axis.Z;
+        int[] c = cellOf(fence, shutGate, acrossZ, at.getX(), at.getZ(), x, z, origin.getX(), origin.getZ(), ranch.width(), ranch.depth());
+        return new BlockPos(c[0], at.getY(), c[1]);
+    }
+
+    /**
+     * How far inside a face of a shut gate's cell, across its thin axis, a middle overlaps the gate: its collision spans
+     * 0.375 to 0.625 of the cell and a body is 0.6 wide, so 0.075, and a little over so that one pressed flush against a
+     * face does not flicker between cells (F-22c129).
+     */
+    static final double GATE_FACE = 0.075 + 1e-3;
+
+    /**
+     * The cell for a middle at {@code x}, {@code z} whose block is {@code ax}, {@code az}: that block's, unless it is a fence
+     * or a shut gate of the ring, when it is the cell beside on the middle's own side; but a middle well inside a shut gate,
+     * overlapping it across its thin axis ({@code acrossZ} when that is z), is in the gate's own cell (F-22c129). Shifted
+     * out of the shut gate's cell as one pressed against it, a player in the gate itself was read as just outside, its walk
+     * round to the gate's front asked from there, with no standable start, refused, and the calf it went for given up
+     * (CI run 45143611807; the fixture `inTheShutGatesCellAsItTurnsBackForACalfItStillBringsTheCalfIn`).
+     */
+    static int[] cellOf(boolean fence, boolean shutGate, boolean acrossZ, int ax, int az, double x, double z, int ox, int oz, int width, int depth) {
+        if (!fence && !shutGate) return new int[] {ax, az};
+        if (shutGate) {
+            double across = acrossZ ? z - az : x - ax;
+            if (across > GATE_FACE && across < 1 - GATE_FACE) return new int[] {ax, az};
+        }
+        int cx = ax, cz = az;
+        if (cz == oz || cz == oz + depth - 1) cz += z < az + 0.5 ? -1 : 1;
+        if (cx == ox || cx == ox + width - 1) cx += x < ax + 0.5 ? -1 : 1;
+        return new int[] {cx, cz};
     }
 
     /** Every post of the ring a fence and the gate a gate; a gate swung round by opening still counts. */
