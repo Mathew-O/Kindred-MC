@@ -109,6 +109,17 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         // Its water in the bucket and the source gone as the next goal began, the bucket's COMPLETED not yet reported:
         // the tick it began (F-22c118a, #509's CI, where the goal went on one line before the runner reported the step).
         long[] reportDue = {-1};
+        // How many world ticks after the next goal was seen its native_bucket COMPLETED may be reported. The goal change is
+        // seen on the test's timed tasks and the report made on the runtime's tick, two clocks a tick apart at most: the
+        // diagnostic's 60 copies under load saw gaps of -1, 1 and -1 (F-22c118a). The property is unchanged: the report is
+        // still the first task to end after the next goal began.
+        final long reportBound = 1;
+        // The world time its native_bucket COMPLETED for the water was reported at, for the diagnostic of the gap between
+        // the two clocks the check reads: the test's tick, which sees the goal change, and the runtime's, which reports.
+        long[] reportAt = {-1};
+        // Armed by the goal line, the first task to end since: "" if it was its native_bucket COMPLETED for the water, else
+        // that task. A report up to a tick before the goal change is seen (the -1 case) must still be this first task.
+        String[] firstEnded = {null};
         String[] notTaken = {null};
         String[] asked = {null};
         String[] lostSite = {null};
@@ -119,8 +130,9 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         Runnable watch = () -> {
             var bots = f.runtime.panelBots(Actor.console());
             String progress = bots.isEmpty() ? "" : bots.getFirst().goalProgress();
-            if (reportDue[0] >= 0 && notTaken[0] == null && context.getWorld().getTime() > reportDue[0]) {
-                notTaken[0] = "no native_bucket COMPLETED within the tick the next goal began; ";
+            if (reportDue[0] >= 0 && notTaken[0] == null && context.getWorld().getTime() > reportDue[0] + reportBound) {
+                notTaken[0] = "no native_bucket COMPLETED within " + reportBound + " world tick of the next goal beginning (seen at world time "
+                        + reportDue[0] + ", now " + context.getWorld().getTime() + ", a gap past " + (context.getWorld().getTime() - reportDue[0]) + " ticks); ";
                 KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line: {}", notTaken[0]);
             }
             if (progress != null && !progress.equals(last[0])) {
@@ -146,16 +158,20 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     }
                 } else if (GOAL_LINE.equals(armedBy[0]) && notTaken[0] == null && !recovering) {
                     // The next goal begun: its water back, all three, before it.
+                    KindredMod.LOGGER.info("Obsidian pickup: the clocks: the next goal seen at world time {}, its native_bucket COMPLETED {}",
+                            lookWorld.getTime(), reportAt[0] < 0 ? "not yet reported" : "reported at " + reportAt[0] + ", a gap of " + (reportAt[0] - lookWorld.getTime()) + " ticks");
                     var held = f.player().getInventory();
                     boolean inBucket = ItemMoves.count(held, Items.WATER_BUCKET) == 1;
                     boolean sourceGone = !(lookWorld.getFluidState(shore).isStill() && lookWorld.getFluidState(shore).isIn(FluidTags.WATER));
                     if (!bucketCompleted[0] && inBucket && sourceGone) {
-                        // The step's own report, due within the tick the next goal began, before any other task ends.
+                        // The step's own report, due within reportBound world ticks of the next goal beginning, before any other task ends.
                         reportDue[0] = lookWorld.getTime();
-                        KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: its water back, its native_bucket COMPLETED due this tick",
-                                progress.replaceAll("^.* - ", ""));
+                        KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: its water back, its native_bucket COMPLETED due within {} world tick",
+                                progress.replaceAll("^.* - ", ""), reportBound);
                     } else {
-                        notTaken[0] = (bucketCompleted[0] ? "" : "no native_bucket COMPLETED; ") + (inBucket ? "" : "no water bucket in hand; ")
+                        // Reported already (the -1 case, or earlier): it must have been the first task to end since the goal armed.
+                        String first = bucketCompleted[0] && firstEnded[0] != null && !firstEnded[0].isEmpty() ? firstEnded[0] : "";
+                        notTaken[0] = (bucketCompleted[0] ? "" : "no native_bucket COMPLETED; ") + first + (inBucket ? "" : "no water bucket in hand; ")
                                 + (sourceGone ? "" : "its poured source still on the shore; ");
                         KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: {}", progress.replaceAll("^.* - ", ""),
                                 notTaken[0].isEmpty() ? "its water back before it" : notTaken[0]);
@@ -247,12 +263,20 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                         public void ended(String p, String skill, String state, String label) {
                             boolean recovered = "native_bucket".equals(skill) && "COMPLETED".equals(state) && label != null && label.contains("recover the water");
                             if (recovered) bucketCompleted[0] = true;
-                            // Due as the next goal began: this tick, and the first task to end since (F-22c118a).
+                            if (GOAL_LINE.equals(armedBy[0]) && firstEnded[0] == null) firstEnded[0] = recovered ? ""
+                                    : "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label + "] at world time " + context.getWorld().getTime() + "; ";
+                            if (recovered && reportAt[0] < 0) {
+                                reportAt[0] = context.getWorld().getTime();
+                                if (reportDue[0] >= 0) KindredMod.LOGGER.info("Obsidian pickup: the clocks: its native_bucket COMPLETED reported at world time {}, the next goal seen at {}, a gap of {} ticks",
+                                        reportAt[0], reportDue[0], reportAt[0] - reportDue[0]);
+                            }
+                            // Due as the next goal began: within reportBound world ticks, and the first task to end since (F-22c118a).
                             if (reportDue[0] >= 0 && notTaken[0] == null) {
-                                notTaken[0] = recovered && context.getWorld().getTime() == reportDue[0] ? ""
-                                        : "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label + "]; ";
+                                long gap = context.getWorld().getTime() - reportDue[0];
+                                notTaken[0] = !recovered ? "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label + "], a gap of " + gap + " ticks; "
+                                        : gap > reportBound ? "its native_bucket COMPLETED " + gap + " world ticks after the next goal began, past " + reportBound + "; " : "";
                                 KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line: {}", notTaken[0].isEmpty()
-                                        ? "its native_bucket COMPLETED in the tick the next goal began, before any other task ended" : notTaken[0]);
+                                        ? "its native_bucket COMPLETED " + gap + " world tick(s) after the next goal began, before any other task ended" : notTaken[0]);
                             }
                         }
                     });
