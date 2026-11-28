@@ -212,6 +212,9 @@ final class WorldKnowledge {
         return sight.seenOpenWaterToward(cell(from), cell(to), run);
     }
 
+    /** Whether the column of {@code pos} is water it saw (F-25c4do1); nothing is read from the world. */
+    boolean seenWaterColumn(BlockPos pos) { return sight.seenWaterColumn(pos.getX(), pos.getZ()); }
+
     /** Where {@link #seenOpenWaterToward} first meets a column not seen as water, {x, z}, or null (M-06m1, fixtures' logs). */
     int[] waterLookBreak(BlockPos from, BlockPos to, int run) {
         return sight.waterLookBreak(cell(from), cell(to), run);

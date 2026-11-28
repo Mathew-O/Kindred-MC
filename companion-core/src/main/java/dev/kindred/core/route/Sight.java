@@ -491,6 +491,9 @@ public final class Sight {
         return true;
     }
 
+    /** Whether the column at {@code x}, {@code z} is water it saw (F-25c4do1); nothing is read from the world. */
+    public boolean seenWaterColumn(int x, int z) { return waterColumns.contains(column(x, z)); }
+
     /**
      * Where {@link #seenOpenWaterToward} first finds a column it has not seen as water, as {x, z}, or null when every
      * column it looks at is water it saw (M-06m1, for fixtures' logs): its memory keeps water columns only, so "not seen

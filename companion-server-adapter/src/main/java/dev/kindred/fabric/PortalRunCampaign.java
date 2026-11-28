@@ -1518,12 +1518,54 @@ final class PortalRunCampaign {
                 lastFeet.toShortString(), relocate.toShortString(), stuckLevel);
     }
 
-    /** The move elsewhere of attempt {@code level}: a heading turned once more for each, and every third home. */
+    /** How far above its feet a move elsewhere goes when the plan's own step was a climb up (F-25c4do1). */
+    static final int RELOCATE_RISE = 24;
+
+    /**
+     * The move elsewhere of attempt {@code level}: a heading turned once more for each, and every third home. When the
+     * plan's own step was a climb up toward something (food, the surface, logs), the new place is up as well as along, not at
+     * its own level: hurt and out of food at Y=-47 in E-40's iteration 30 (`e40a30-63b97ac`, 505 Kindred), its climb toward
+     * the surface for food was put off by one sideways move after another at that depth. Nor is it a place it saw to be
+     * open water: far out at sea, two moves 24 on along the sea's surface came before the one home that ended the spell
+     * (FACTIONS A's shipped-configuration runs on 101; F-25c4do1), nor a cell of water it saw at a shore, where land within
+     * two makes the water not open. Every heading toward water, it goes home if it has one.
+     */
     private void relocateFor(int level) {
         Direction heading = digDirection();
         for (int i = 0; i < level; i++) heading = heading.rotateYClockwise();
-        relocateTo(level % 3 == 0 && home != null && home.getSquaredDistance(lastFeet) > 16 * 16 ? home : lastFeet.offset(heading, 24));
+        boolean homeFar = home != null && home.getSquaredDistance(lastFeet) > 16 * 16;
+        if (level % 3 == 0 && homeFar) {
+            relocateTo(home);
+            return;
+        }
+        int rise = climbWanted() ? RELOCATE_RISE : 0;
+        Direction first = heading;
+        for (int turn = 0; turn < 4; turn++) {
+            BlockPos to = lastFeet.offset(heading, 24).up(rise);
+            if (!knowledge.seenWaterColumn(to) && !knowledge.seenOpenWaterToward(lastFeet, to, FactionsPlayer.OPEN_WATER)) {
+                if (rise > 0 || turn > 0) KindredMod.LOGGER.info("F-25c4do1: the move elsewhere from {} goes to {}: {}{}", lastFeet.toShortString(),
+                        to.toShortString(), rise > 0 ? "up " + rise + " for the plan's own climb (" + progress + ")" : "along",
+                        turn > 0 ? ", " + turn + " heading(s) toward water it saw passed over" : "");
+                relocateTo(to);
+                return;
+            }
+            heading = heading.rotateYClockwise();
+        }
+        KindredMod.LOGGER.info("F-25c4do1: the move elsewhere from {}: every heading toward water it saw; {}", lastFeet.toShortString(),
+                homeFar ? "home, " + home.toShortString() : "on as before");
+        relocateTo(homeFar ? home : lastFeet.offset(first, 24).up(rise));
     }
+
+    /** Whether the plan's own step, when the spell came, was a climb up (F-25c4do1). */
+    private boolean climbWanted() {
+        // A climb toward something (food, the surface, logs), not the fallback "Climb to find another way", which is the
+        // plan with no way on: there, a move up was a target it could not walk to, where one at its own level walked and
+        // bridged it out of the spell (corpus e40a20-79a9aad-8675309-kindred-116320, in this change's gate).
+        return progress != null && progress.contains(" - Climb toward");
+    }
+
+    /** Where the move elsewhere under way is going, or null (fixtures only). */
+    BlockPos relocateTargetForTest() { return relocate; }
 
     /**
      * The watchdog's spell, three minutes with no progress, while a move elsewhere begun early for a rescue is under way
@@ -7270,6 +7312,24 @@ final class PortalRunCampaign {
     /** Do {@code then} from where the player stands if {@code cell} is in reach, else step along the front row to a spot that is. */
     private Optional<Task> within(NativePlayerBody body, PortalSite site, int across, BlockPos cell, java.util.function.Supplier<Optional<Task>> then) {
         backOnFloor(body, site);
+        // Its dig along the floor under way: on to its stand before any pour or mould. From inside its own tunnel the next
+        // cell came within reach by distance with no face of it in sight, and three refused pours set the cast aside, the
+        // goal climbing away (F-25c4bx2's staged runs).
+        if (digAlong && site.origin().equals(digBackSite) && body.entity().getBlockY() == site.origin().getY()) {
+            Optional<Task> along = alongTheFloor(body, site);
+            if (along.isPresent()) return along;
+        }
+        // At the floor's level off its stands, a pour already refused from where it stands: a stand it can walk to, else its
+        // dig along, before the same pour again. Within reach of the next cell by distance and no face of it in sight, three
+        // refused pours set the cast aside and it waited until its watchdog moved it (F-25c4bx2's corpus gate, run 1, e40a20's
+        // 20261030 Kindred).
+        BlockPos feet = body.entity().getBlockPos();
+        if (feet.getY() == site.origin().getY() && castFailedStands.contains(feet.asLong()) && !stands(site).contains(feet)) {
+            Optional<Task> closer = stepCloser(body, site, across, cell);
+            if (closer.isPresent()) return closer;
+            Optional<Task> along = backUp(body, site);
+            if (along.isPresent()) return along;
+        }
         Optional<Task> now = eyeDistance(body.entity(), cell) <= CAST_REACH + 0.3 ? then.get() : Optional.<Task>empty();
         if (now.isPresent()) return now;
         Optional<Task> closer = stepCloser(body, site, across, cell);
@@ -7306,11 +7366,14 @@ final class PortalRunCampaign {
             digBackSince = lastTick;
             digBackEmptyAt = Long.MIN_VALUE / 2;
             digBackBegun = false;
+            digAlong = false;
+            digAlongSaid = null;
         }
-        if (y >= site.origin().getY()) {
+        if (y > site.origin().getY()) {
             backOnFloor(body, site);
             return Optional.empty();
         }
+        if (y == site.origin().getY()) return alongTheFloor(body, site);
         if (y > digBackBestY) {
             digBackBestY = y;
             digBackSince = lastTick;
@@ -7335,6 +7398,72 @@ final class PortalRunCampaign {
         abandonedSites.add(siteKey(site));
         clearTriedFrom.clear();
         digBackSite = null;
+        portalSite = null;
+        return Optional.empty();
+    }
+
+    /** Its dig along the frame's floor to its stand, and its label (F-25c4bx2). */
+    static final String DIG_ALONG = "Cast: dig along to the frame";
+    private int digAlongBest;
+    private boolean digAlong;
+    private BlockPos digAlongSaid;
+
+    /**
+     * At the frame's floor's level with no stand it can walk to: along the floor to its stand, by the same dig as the dig back
+     * up ({@code Digger.toward} to the block under {@code site.stand()}, the frame's cells and mould kept), with the same two
+     * failures that give the site up (F-25c4bx2). In E-40 iteration 30, batch 1's 505 Kindred, its lava refilled and its dig
+     * back up done, stood at the floor's level three to six blocks from its stands through rock: "Cast: step closer" was
+     * refused to all five, nothing dug along, and the goal climbed away ("no way on from here - Climb to find another way").
+     * Its progress is the distance across to its stand; two spells of {@link #DIG_BACK_TICKS} that get no nearer, or two
+     * with no cell to dig, give the site up. Beside its stand, the stands are its to walk to again.
+     */
+    private Optional<Task> alongTheFloor(NativePlayerBody body, PortalSite site) {
+        var player = body.entity();
+        BlockPos feet = player.getBlockPos();
+        BlockPos stand = site.stand();
+        int across = Math.max(Math.abs(feet.getX() - stand.getX()), Math.abs(feet.getZ() - stand.getZ()));
+        if (across <= 1) {
+            if (digAlong) {
+                digAlong = false;
+                for (BlockPos s : stands(site)) cellsAside.put(s.asLong(), lastTick);
+                event("dug along to its frame's stand at " + stand.toShortString());
+            }
+            return Optional.empty();
+        }
+        if (!digAlong) {
+            digAlong = true;
+            digAlongBest = across;
+            digBackSince = lastTick;
+        }
+        if (across < digAlongBest) {
+            digAlongBest = across;
+            digBackSince = lastTick;
+        } else if (lastTick - digBackSince > DIG_BACK_TICKS) {
+            digBackFailures++;
+            digBackSince = lastTick;
+            event("its dig along to the frame at " + site.origin().toShortString() + " got no nearer in " + DIG_BACK_TICKS + " ticks");
+        }
+        Optional<Task> dig = digBackFailures < 2 ? digger.toward(new Dig(body, frameCells(site)), cell(stand.down()), DIG_ALONG) : Optional.empty();
+        if (dig.isPresent()) {
+            // Said once a site, where the dig along begins.
+            if (digAlongSaid == null) {
+                digAlongSaid = feet;
+                KindredMod.LOGGER.info("F-25c4bx2-marker: {} at its frame's floor at {}, no walk to a stand: digs along to its stand at {}, {} across",
+                        player.getName().getString(), feet.toShortString(), stand.toShortString(), across);
+            }
+            return dig;
+        }
+        if (digBackFailures < 2 && lastTick - digBackEmptyAt <= DIG_BACK_TICKS) return Optional.empty();
+        digBackEmptyAt = lastTick;
+        if (++digBackFailures < 2) return Optional.empty();
+        KindredMod.LOGGER.info("{} gives up the frame site at {}: no way along to it from {}", player.getName().getString(),
+                site.origin().toShortString(), feet.toShortString());
+        event("gives up the frame site at " + site.origin().toShortString() + ": no way along to it");
+        abandonedSites.add(siteKey(site));
+        clearTriedFrom.clear();
+        digBackSite = null;
+        digAlong = false;
+        digAlongSaid = null;
         portalSite = null;
         return Optional.empty();
     }

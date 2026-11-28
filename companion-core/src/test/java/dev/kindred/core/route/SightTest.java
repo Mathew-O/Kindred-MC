@@ -130,4 +130,15 @@ class SightTest {
         var high = new Scene().set(3, 8, 3, Block.LOG);
         assertEquals(Optional.empty(), Sight.trunkFoot(high, new Cell(3, 8, 3)), "eight over the ground: out of reach");
     }
+
+    @Test
+    void aShoreCellOfWaterItSawIsWaterThoughNotOpenWater() {
+        var sight = new Sight();
+        // A strip of water five wide, x 0..4, z 0..2, seen: land (not water to it) north of z 0.
+        for (int x = 0; x <= 4; x++) for (int z = 0; z <= 2; z++) sight.remember(Sight.Kind.WATER, new Cell(x, 62, z));
+        var from = new Cell(2, 63, 20);
+        assertFalse(sight.seenOpenWaterToward(from, new Cell(2, 63, 0), 10), "land within two: not open water");
+        assertTrue(sight.seenWaterColumn(2, 0), "yet the cell itself is water it saw");
+        assertFalse(sight.seenWaterColumn(2, -1), "the column beyond: not seen as water");
+    }
 }
