@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 707,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 5066, "paid": 5066, "lapsed": 202, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 120.4, "snapshotMicrosMax": 8149.3, "tagMicrosMean": 121.0, "tagMicrosMax": 8237.3, "bySource": {"container.take:furnace": 87, "pickup:class_2248.method_36993": 3865, "pickup:class_3222.method_7329": 660, "pickup:class_52.method_331": 69, "screen:class_1714": 58, "screen:class_1723": 446, "use:item": 83}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 1, "class_1540.method_5773": 5, "class_2248.method_36993": 3879, "class_3222.method_7329": 71, "class_52.method_331": 260}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.00, "tickMsWorst": 1323.48, "tickMsWorstAt": 88306, "ticksOver50ms": 800, "ticksOver200ms": 12, "heapMbMax": 1172, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 660, "stone_tools": 1360, "iron_ingot": 5020, "iron_pickaxe": 12500, "obsidian": 68205, "portal_lit": 69280},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4632,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.5
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1880, "stone_tools": 5960, "iron_ingot": 13960, "iron_pickaxe": 29560, "obsidian": 74859, "portal_lit": 88305},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 58140, "x": 63, "y": 36, "z": -98, "attempt": 1}, {"tick": 65340, "x": 62, "y": 36, "z": -97, "attempt": 2}, {"tick": 71920, "x": 57, "y": 27, "z": -111, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 11737,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1260, "stone_tools": 5920, "iron_ingot": 24160, "iron_pickaxe": 30760},
+      "deaths": [
+        {"tick": 31072, "cause": "Echo tried to swim in lava", "x": -1, "y": 22, "z": -151, "light": 13, "timeOfDay": 7234, "dimension": "minecraft:overworld", "hunger": 10, "underSky": false, "stage": "Iron: hurt and out of food - Climb toward the surface for food: pillar up into the hole over it", "stance": "PRESS_ON", "habits": "[]", "task": "Climb toward the surface for food: pillar up into the hole over it"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 5560, "x": 9, "y": 60, "z": -135, "attempt": 1}, {"tick": 81440, "x": -11, "y": 47, "z": -30, "attempt": 1}, {"tick": 89560, "x": -11, "y": 47, "z": -30, "attempt": 2}, {"tick": 97720, "x": -11, "y": 47, "z": -30, "attempt": 3}, {"tick": 105840, "x": -11, "y": 48, "z": -30, "attempt": 4}, {"tick": 113980, "x": -11, "y": 47, "z": -30, "attempt": 5}, {"tick": 122140, "x": -11, "y": 47, "z": -30, "attempt": 6}, {"tick": 130280, "x": -11, "y": 47, "z": -30, "attempt": 7}, {"tick": 138420, "x": -11, "y": 48, "z": -30, "attempt": 8}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5549,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 0.5
+    }
+  }
+}
