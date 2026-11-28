@@ -126,6 +126,10 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
 
+## A player far out in water swims back to the dry ground it last stood on (M-06m3) — 28 November 2026 (`claude/m06m3-swim-back-to-dry-1123`)
+
+- [M-06m3](evidence/M-06m3.md): the fixture (STAGED, asserting the mechanism) stood dry and carried 0 of 3 before, 3 of 3 after, never stood dry unchanged; `DryMemoryTest` 5 of 5; the 12 water classes 20 of 20 ×3; the corpus gate passes (two confirmed scenes cleared), drownings and water loops as the baseline. The shipped pair, one run a side, had no long water spell: no outcome claimed. In progress: a live read of a long spell resolved by a swim back.
+
 ## A faction walk's end on ground it sees along the target chunk's near edge (M-06m2) — 23 November 2026 (`claude/m06m2-walk-end-seen-ground-1123`)
 
 - [M-06m2](evidence/M-06m2.md): the causeway fixture (STAGED, three south of its line) 0 of 3 before, 3 of 3 after, its controls unchanged; 17 faction-walk classes 41 of 41 ×3; the corpus gate passes (one confirmed scene cleared; no faction walk blocked anywhere in the corpus). The shipped configuration, one run a side: 16 walk ends moved to seen ground on the branch, none refused; blocked walks 13 against main's 30, the runs diverged, no effect claimed. In review.

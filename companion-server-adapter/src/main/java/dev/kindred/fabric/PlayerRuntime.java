@@ -3360,6 +3360,13 @@ final class PlayerRuntime {
         if (!heldHunts.isEmpty()) releaseHunts(tick);
         if (!toAdventure.isEmpty()) settleVoters();
         if (tick % 20 == 3) for (Entry entry : entries.values()) if (!entry.petsSeen.isEmpty()) checkPets(entry);
+        // Once a second, where each player with a campaign stands, whatever task drives its body: the dry ground it last
+        // stood on, its own feet only, for its swim back (M-06m3). A faction walk carries a body while its goal plans nothing.
+        if (tick % 20 == 7) for (Entry entry : entries.values()) {
+            if (entry.campaign != null && entry.nativeBody != null && entry.nativeBody.connected() && !entry.awaitingRespawn) {
+                entry.campaign.noteDry(entry.nativeBody.entity());
+            }
+        }
         recordDemonstrations(tick);
         if (tick % 20 == 7) pollRaces();
         if (tick % 20 == 13) pollHunts();
@@ -7773,6 +7780,7 @@ final class PlayerRuntime {
         recordDeath(player, body.deathSource() != null ? body.deathSource() : player.getRecentDamageSource());
         matches.fallen(player.getUuid()).ifPresent(this::announce);
         entry.awaitingRespawn = true;
+        if (entry.campaign != null) entry.campaign.forgetDry(); // No swim back to where it stood before it died (M-06m3).
         BlockPos deathPos = player.getBlockPos().toImmutable();
         entry.lastDeathAt = deathPos;
         entry.lastDeathWorld = player.getServerWorld().getRegistryKey().getValue().toString();
@@ -7895,6 +7903,7 @@ final class PlayerRuntime {
         entry.cachedRoutineCandidates = List.of();
         entry.cachedCraftingTablePos = null;
         entry.cachedFurnacePos = null;
+        if (entry.campaign != null) entry.campaign.forgetDry(); // Its respawn: no swim back to a cell from before it (M-06m3).
         entry.lastTacticalObservation = null;
         entry.blocker = "Respawned after dying.";
         KindredMod.LOGGER.info("{} respawned at {}", entry.data.displayName(), body.entity().getBlockPos().toShortString());
