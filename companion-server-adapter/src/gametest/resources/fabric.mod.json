@@ -71,6 +71,7 @@
       "dev.kindred.fabric.NativeLessonsGameTests",
       "dev.kindred.fabric.NativeAtlasGameTests",
       "dev.kindred.fabric.NativeBranchMineGameTests",
+      "dev.kindred.fabric.NativeBranchAwayGameTests",
       "dev.kindred.fabric.NativeTripDownGameTests",
       "dev.kindred.fabric.NativePortalLightGameTests",
       "dev.kindred.fabric.NativeBucketGameTests",

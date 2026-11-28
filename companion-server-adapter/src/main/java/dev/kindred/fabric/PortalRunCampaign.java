@@ -1759,6 +1759,15 @@ final class PortalRunCampaign {
     void stuckTicksForTest(long ticks) { stuckTicks = ticks; }
 
     /**
+     * For fixtures only, a setter: the eight-block cells from {@code from} to {@code to} stood in, as its watchdog records
+     * them when it walks there, and the heading its digs go along (F-25c4dq). Package-private; called from no main source.
+     */
+    void groundStoodInForTest(BlockPos from, BlockPos to, Direction heading) {
+        for (BlockPos cell : BlockPos.iterate(from, to)) seenCells.add(BlockPos.asLong(cell.getX() >> 3, cell.getY() >> 3, cell.getZ() >> 3));
+        digDirection(heading);
+    }
+
+    /**
      * What a rescue's adviser is told (F-29, F-29b), about a thousand tokens: where it is and how it is; the light, the time
      * and the hostile mobs it can see; the blocks round it nine by nine and five high as it sees them, each kind of block a
      * letter and what it cannot see a question mark; where it can walk each way and what stops it, how far it could climb
@@ -5281,7 +5290,21 @@ final class PortalRunCampaign {
     }
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
-        return digger.descendOrTunnel(dig(body), top, target, what);
+        // A branch mine begun lays its legs where it has stood least: its own record of new ground, as an observation taken
+        // when the mine begins (F-25c4dq).
+        Side before = digger.heading();
+        digger.branchSeen(() -> {
+            var stoodIn = Set.copyOf(seenCells);
+            return c -> stoodIn.contains(BlockPos.asLong(c.x() >> 3, c.y() >> 3, c.z() >> 3));
+        });
+        var task = digger.descendOrTunnel(dig(body), top, target, what);
+        Cell laid = digger.takeBranchLaid();
+        if (laid != null) {
+            KindredMod.LOGGER.info("F-25c4dq-marker: {} branch mine for {} begun at {}: its legs laid {}, not {}, toward ground it has not stood in",
+                    body.entity().getName().getString(), what, pos(laid).toShortString(),
+                    digger.heading().name().toLowerCase(java.util.Locale.ROOT), before.name().toLowerCase(java.util.Locale.ROOT));
+        }
+        return task;
     }
 
     /**
