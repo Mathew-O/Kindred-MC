@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 12.000,
+  "items": {"windows": 14409, "gained": 6268, "paid": 6268, "lapsed": 275, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 104.2, "snapshotMicrosMax": 8965.7, "tagMicrosMean": 109.9, "tagMicrosMax": 10232.9, "bySource": {"container.take:furnace": 111, "pickup:class_1308.method_6099": 1, "pickup:class_1536.method_6957": 10, "pickup:class_2248.method_36993": 5322, "pickup:class_3222.method_7329": 568, "pickup:class_52.method_331": 90, "screen:class_1714": 76, "screen:class_1723": 309, "use:item": 56}, "dropsByOrigin": {"class_1308.method_6099": 2, "class_1428.method_6007": 411, "class_1536.method_6957": 10, "class_1540.method_5773": 2, "class_2248.method_36993": 5337, "class_3222.method_7329": 99, "class_52.method_331": 223}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 14.06, "tickMsWorst": 1563.55, "tickMsWorstAt": 1, "ticksOver50ms": 649, "ticksOver200ms": 44, "heapMbMax": 1074, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 900, "stone_tools": 1400, "iron_ingot": 9220, "iron_pickaxe": 22540},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 72560, "x": -456, "y": 44, "z": 0, "attempt": 1}, {"tick": 76180, "x": -456, "y": 44, "z": -3, "attempt": 2}, {"tick": 79900, "x": -456, "y": 44, "z": -1, "attempt": 3}, {"tick": 83520, "x": -456, "y": 44, "z": -1, "attempt": 4}, {"tick": 98080, "x": -456, "y": 44, "z": -1, "attempt": 5}, {"tick": 101700, "x": -456, "y": 44, "z": -1, "attempt": 6}, {"tick": 105320, "x": -456, "y": 44, "z": -3, "attempt": 7}, {"tick": 129920, "x": -463, "y": 44, "z": -11, "attempt": 8}, {"tick": 144720, "x": -459, "y": 44, "z": -11, "attempt": 9}, {"tick": 148360, "x": -469, "y": 44, "z": -11, "attempt": 10}, {"tick": 152160, "x": -465, "y": 44, "z": 0, "attempt": 11}, {"tick": 155880, "x": -470, "y": 44, "z": -11, "attempt": 12}, {"tick": 172960, "x": -465, "y": 44, "z": -11, "attempt": 13}, {"tick": 176660, "x": -466, "y": 44, "z": -11, "attempt": 14}, {"tick": 191380, "x": -462, "y": 44, "z": 0, "attempt": 15}, {"tick": 197080, "x": -461, "y": 44, "z": -11, "attempt": 16}, {"tick": 200720, "x": -458, "y": 44, "z": -11, "attempt": 17}, {"tick": 215420, "x": -466, "y": 44, "z": 0, "attempt": 18}, {"tick": 219180, "x": -456, "y": 44, "z": -11, "attempt": 19}, {"tick": 222780, "x": -456, "y": 44, "z": -11, "attempt": 20}, {"tick": 226380, "x": -456, "y": 44, "z": -11, "attempt": 21}, {"tick": 240900, "x": -456, "y": 44, "z": -11, "attempt": 22}, {"tick": 244600, "x": -462, "y": 44, "z": -11, "attempt": 23}, {"tick": 248400, "x": -456, "y": 44, "z": -11, "attempt": 24}, {"tick": 252000, "x": -456, "y": 44, "z": -11, "attempt": 25}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 24051,
+      "chunkMinutes": 69360.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1760, "stone_tools": 2240, "iron_ingot": 7020, "iron_pickaxe": 31460, "obsidian": 55964, "portal_lit": 58704},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2511,
+      "chunkMinutes": 69360.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 1140, "stone_tools": 2180, "iron_ingot": 8500, "iron_pickaxe": 19100, "diamond": 52260, "obsidian": 74206},
+      "deaths": [
+        {"tick": 135406, "cause": "Echo was shot by Skeleton", "x": -424, "y": 27, "z": -130, "light": 0, "timeOfDay": 15568, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Take cover from skeleton", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7566,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

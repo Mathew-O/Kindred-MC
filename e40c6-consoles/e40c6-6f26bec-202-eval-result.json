@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=dragon; edits=on; ticks=288000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 202,
+  "ticks": 288000,
+  "ticksRun": 288000,
+  "complete": true,
+  "days": 13.248,
+  "items": {"windows": 14409, "gained": 10096, "paid": 10096, "lapsed": 396, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 101.4, "snapshotMicrosMax": 56268.7, "tagMicrosMean": 107.6, "tagMicrosMax": 7899.7, "bySource": {"container.take:furnace": 117, "pickup:class_1428.method_6007": 2, "pickup:class_1540.method_5773": 2, "pickup:class_2248.method_36993": 7401, "pickup:class_3222.method_7329": 2189, "pickup:class_52.method_331": 116, "screen:class_1714": 101, "screen:class_1723": 463, "use:item": 101}, "dropsByOrigin": {"class_1428.method_6007": 878, "class_1540.method_5773": 12, "class_2248.method_36993": 7381, "class_3222.method_7329": 203, "class_52.method_331": 230}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 16.97, "tickMsWorst": 3206.19, "tickMsWorstAt": 86753, "ticksOver50ms": 2037, "ticksOver200ms": 47, "heapMbMax": 1243, "samples": 14400},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 52580, "stone_tools": 53140, "iron_ingot": 59820, "iron_pickaxe": 122760, "obsidian": 263762},
+      "deaths": [
+        {"tick": 149566, "cause": "Kindred was shot by Skeleton", "x": 3, "y": -5, "z": 37, "light": 0, "timeOfDay": 11668, "dimension": "minecraft:overworld", "hunger": 8, "underSky": false, "stage": "Wood: Get out of the water: to dry ground", "stance": "PRESS_ON", "habits": "[SPARE_PICKAXE]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 9000, "x": -24, "y": 47, "z": -19, "attempt": 1}, {"tick": 16740, "x": -23, "y": 45, "z": -19, "attempt": 1}, {"tick": 25060, "x": -24, "y": 49, "z": -16, "attempt": 2}, {"tick": 40720, "x": -27, "y": 51, "z": -14, "attempt": 3}, {"tick": 48360, "x": -26, "y": 51, "z": -14, "attempt": 4}, {"tick": 281600, "x": 95, "y": -22, "z": -87, "attempt": 1}, {"tick": 286040, "x": 95, "y": -23, "z": -104, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 12059,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 26,
+      "bridgeSeconds": 12.3
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 1160, "stone_tools": 9400, "iron_ingot": 25220, "iron_pickaxe": 47420, "obsidian": 84098, "portal_lit": 85747, "nether_entered": 86760},
+      "deaths": [
+        {"tick": 87547, "cause": "Sol was slain by Hoglin", "x": -12, "y": 41, "z": 53, "light": 5, "timeOfDay": 21649, "dimension": "minecraft:the_nether", "hunger": 4, "underSky": false, "stage": "End: Blaze rods: fight back - Fight hoglin", "stance": "PRESS_ON", "habits": "[]", "task": "Fight hoglin"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 18400, "x": -103, "y": 34, "z": 68, "attempt": 1}, {"tick": 40640, "x": -66, "y": -14, "z": 151, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 5434,
+      "chunkMinutes": 69355.2,
+      "bridgeBlocks": 6,
+      "bridgeSeconds": 4.5
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 11960, "stone_tools": 13120, "iron_ingot": 17460, "iron_pickaxe": 64780, "diamond": 86600},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 73880, "x": -86, "y": 15, "z": 159, "attempt": 1}, {"tick": 79320, "x": -82, "y": -6, "z": 159, "attempt": 2}, {"tick": 84960, "x": -87, "y": -17, "z": 162, "attempt": 3}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4308,
+      "chunkMinutes": 69360.0,
+      "bridgeBlocks": 15,
+      "bridgeSeconds": 7.0
+    }
+  }
+}
