@@ -957,6 +957,8 @@ final class PortalRunCampaign {
         if (task != null && completed && ("native_cast".equals(task.skill()) || task.label().startsWith("Cast: fill"))) {
             castFailedFrom = null;
             castFailedStands.clear();
+            walkUpsFrom.clear();
+            walkUpBoundSaid.clear();
         }
         if (completed || task == null) return;
         // The same task failing again and again is set aside for a while, whatever it is, so the plan moves on.
@@ -4100,6 +4102,10 @@ final class PortalRunCampaign {
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (onTheWay(spot, feet)) continue;
+            // Never in the room kept for the bed it carries (F-22c127): the bed's room is cleared of whatever stands in it,
+            // the torch too, and the pocket dark again, the next torch went back in, lap after lap (iteration 30's 303
+            // Kindred, 541 times in under three minutes; 303 Echo, 547).
+            if (inBedRoom(spot)) continue;
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
@@ -4311,6 +4317,21 @@ final class PortalRunCampaign {
     }
 
     /** Rock a player with no pickaxe at all can still punch through: no drop, but a way out. */
+    /**
+     * As {@link #handClearable}, less the reach and the line of sight, which hold only once it is beside the block: a cell it
+     * may punch through when it gets there (F-25c4dp).
+     */
+    private boolean handClearableLater(NativePlayerBody body, BlockPos pos) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isIn(ItemTags.PICKAXES)) return false;
+        BlockState state = world.getBlockState(pos);
+        float hardness = state.getHardness(world, pos);
+        if (state.isAir() || hardness < 0 || hardness > HAND_HARDNESS || blocked(pos)) return false;
+        return RoamingEdits.breakDenial(player, pos, policy, false) == null;
+    }
+
     private boolean handClearable(NativePlayerBody body, BlockPos pos) {
         var player = body.entity();
         var world = player.getServerWorld();
@@ -5624,7 +5645,12 @@ final class PortalRunCampaign {
         @Override public DigTerrain world() { return world; }
         @Override public Cell feet() { return cell(player.getBlockPos()); }
         @Override public long now() { return lastTick; }
-        @Override public void event(String line) { PortalRunCampaign.this.event(line); }
+        // The dig's own lines, few and said once a place, to the console too, with its name (F-25c4dp): how often a way aside
+        // from under a block it may not dig is begun, read from a run's console.
+        @Override public void event(String line) {
+            PortalRunCampaign.this.event(line);
+            KindredMod.LOGGER.info("{} digs: {}", player.getName().getString(), line);
+        }
         @Override public boolean onGround() { return player.isOnGround(); }
         @Override public boolean swimming() { return PlayerRuntime.inDeepWater(player); }
         @Override public boolean groundBelow() { return PortalRunCampaign.groundBelow(player); }
@@ -5632,6 +5658,7 @@ final class PortalRunCampaign {
         @Override public void setAside(Cell cell, long until) { cellsAside.until(cell.asLong(), until); }
         @Override public boolean breakableNow(Cell cell) { return PortalRunCampaign.this.breakableNow(body, pos(cell)); }
         @Override public boolean handClearable(Cell cell) { return PortalRunCampaign.this.handClearable(body, pos(cell)); }
+        @Override public boolean handClearableLater(Cell cell) { return PortalRunCampaign.this.handClearableLater(body, pos(cell)); }
         @Override public boolean snareClearable(Cell cell) { return PortalRunCampaign.this.snareClearable(body, pos(cell)); }
         @Override public boolean opensOverLava(Cell cell) {
             BlockPos at = pos(cell);
@@ -6843,8 +6870,57 @@ final class PortalRunCampaign {
                     .or(() -> toldLava(body)).or(() -> descendOrTunnel(body, LAVA_TOP, LAVA_TARGET, "lava"));
         }
         if (eyeDistance(player, castLava) > 4.2) return Optional.of(go(castLava, 2.5, false, "Cast: walk to the lava"));
-        if (feet.equals(castFailedFrom)) return Optional.of(go(castLava, 1.5, false, "Cast: walk up to the lava"));
+        if (feet.equals(castFailedFrom)) {
+            // A walk up that would end where it begins, or has already been offered from here, is not offered again (F-25c4dr).
+            // It is a goto of range 1.5: a source one across and one down is that near the feet, so the walk counted as
+            // arrived where it began and completed without a step; the cell it was refused from stayed the one the fill
+            // failed from, and the same walk was offered the next tick, the fill never tried again. In E-40 iteration 30's
+            // first batch it held the cast so, from `PortalRunCampaign.java:6823` on 853b686c (RUNNER 2's read).
+            if (Math.sqrt(feet.getSquaredDistance(castLava)) > WALK_UP + 0.01 && walkUpsFrom.add(feet.asLong())) {
+                return Optional.of(go(castLava, WALK_UP, false, WALK_UP_LABEL));
+            }
+            return besideItsLava(body, feet);
+        }
         return Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
+    }
+
+    /** How near the cast's walk up to its lava ends, and its label. */
+    private static final double WALK_UP = 1.5;
+    static final String WALK_UP_LABEL = "Cast: walk up to the lava", OPEN_OVER_LAVA = "Cast: open the rock over its lava at ";
+    /** Cells a walk up to the lava was offered from since the last fill or cast that took (F-25c4dr). */
+    private final Set<Long> walkUpsFrom = new java.util.HashSet<>();
+    /** Cells the bound was said at, once each, since the last fill or cast that took (F-25c4dr). */
+    private final Set<Long> walkUpBoundSaid = new java.util.HashSet<>();
+
+    /**
+     * With its fill refused from where it stands and no walk up that moves it, the lava beside it is reached otherwise
+     * (F-25c4dr): the rock over the source opened, where that is in reach and opens onto the lava alone, as its tunnel opens a
+     * cell over lava (F-25c4ac); else a dig toward the lava (F-25c4ad); else the fill once more from here, whose second
+     * refusal sets the source aside, as a refusal from closer up does.
+     */
+    private Optional<Task> besideItsLava(NativePlayerBody body, BlockPos feet) {
+        var player = body.entity();
+        var world = player.getServerWorld();
+        BlockPos over = castLava.up();
+        Optional<Task> next = Optional.empty();
+        String how;
+        if (!passable(world, over) && !blocked(over) && onlyLavaBelow(world, over) && eyeDistance(player, over) <= REACH && body.miningEligible(over)) {
+            next = Optional.of(new Task("native_break", coords(over, Map.of("collect", "false", "over_lava", "true")), OPEN_OVER_LAVA + over.toShortString()));
+            how = "the rock over it opened";
+        } else {
+            next = digToward(body, castLava, "Cast: dig toward the lava at " + castLava.toShortString());
+            how = "a dig toward it";
+        }
+        if (next.isEmpty()) {
+            castFailedFrom = null;
+            next = Optional.of(new Task("native_bucket", coords(castLava, Map.of("mode", "fill")), "Cast: fill a bucket with lava"));
+            how = "the fill once more";
+        }
+        if (walkUpBoundSaid.add(feet.asLong())) {
+            KindredMod.LOGGER.info("F-25c4dr-marker: {} at {}, its fill of the lava at {} refused there, no walk up that moves it: {}",
+                    player.getName().getString(), feet.toShortString(), castLava.toShortString(), how);
+        }
+        return next;
     }
 
     /**
@@ -8272,6 +8348,13 @@ final class PortalRunCampaign {
     }
 
     /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
+    /** Whether {@code cell} is one of the four kept for the bed it carries tonight: its two cells and the two over them. */
+    private boolean inBedRoom(BlockPos cell) {
+        if (bedRoomFor == null) return false;
+        for (BlockPos half : bedRoomFor) if (cell.equals(half) || cell.equals(half.up())) return true;
+        return false;
+    }
+
     private static boolean bedRoom(ServerWorld world, BlockPos pos) {
         return world.isChunkLoaded(pos) && world.getBlockState(pos).isAir() && world.getFluidState(pos).isEmpty()
                 && world.getBlockState(pos.up()).isAir() && world.getBlockState(pos.down()).isSideSolidFullSquare(world, pos.down(), Direction.UP);

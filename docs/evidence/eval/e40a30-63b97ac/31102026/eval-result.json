@@ -1,0 +1,61 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 31102026,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 7940, "paid": 7940, "lapsed": 196, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 113.5, "snapshotMicrosMax": 11334.4, "tagMicrosMean": 127.6, "tagMicrosMax": 16614.0, "bySource": {"container.take:furnace": 91, "pickup:class_1536.method_6957": 11, "pickup:class_2248.method_36993": 5484, "pickup:class_3222.method_7329": 2126, "pickup:class_52.method_331": 64, "screen:class_1714": 65, "screen:class_1723": 214, "use:item": 81}, "dropsByOrigin": {"class_1536.method_6957": 11, "class_1540.method_5773": 6, "class_2248.method_36993": 5307, "class_3222.method_7329": 134, "class_52.method_331": 221}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 17.21, "tickMsWorst": 1537.64, "tickMsWorstAt": 143835, "ticksOver50ms": 1094, "ticksOver200ms": 16, "heapMbMax": 1012, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 74840, "stone_tools": 76300, "iron_ingot": 79600, "iron_pickaxe": 101840, "obsidian": 109466},
+      "deaths": [
+        {"tick": 52079, "cause": "Kindred was slain by Husk", "x": -32, "y": 57, "z": 357, "light": 15, "timeOfDay": 4241, "dimension": "minecraft:overworld", "hunger": 17, "underSky": true, "stage": "Wood: fight back - Back off from husk (tried elsewhere 3 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 10240, "x": 160, "y": 63, "z": 75, "attempt": 1}, {"tick": 27500, "x": 159, "y": 63, "z": 76, "attempt": 2}, {"tick": 51740, "x": -31, "y": 60, "z": 356, "attempt": 3}, {"tick": 86540, "x": 120, "y": 38, "z": 342, "attempt": 1}, {"tick": 126960, "x": 26, "y": 64, "z": 385, "attempt": 1}, {"tick": 131880, "x": 26, "y": 64, "z": 374, "attempt": 2}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6004,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 31500, "stone_tools": 32760, "iron_ingot": 35380, "iron_pickaxe": 54320},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 108160, "x": -51, "y": -3, "z": 220, "attempt": 1}, {"tick": 122700, "x": -51, "y": -3, "z": 220, "attempt": 2}, {"tick": 126300, "x": -51, "y": -3, "z": 220, "attempt": 3}, {"tick": 129900, "x": -51, "y": -3, "z": 220, "attempt": 4}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4264,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 30480, "stone_tools": 32040, "iron_ingot": 39000, "iron_pickaxe": 64080, "obsidian": 129700, "portal_lit": 137569},
+      "deaths": [
+        {"tick": 82722, "cause": "Echo was slain by Zombie", "x": -9, "y": -4, "z": 128, "light": 0, "timeOfDay": 10884, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Fight zombie (tried elsewhere 2 times)", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 69160, "x": 9, "y": 18, "z": 137, "attempt": 1}, {"tick": 81600, "x": -8, "y": -4, "z": 130, "attempt": 2}, {"tick": 135100, "x": 112, "y": -54, "z": 274, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 7787,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

@@ -163,7 +163,12 @@ public final class StrongholdRunPlanner {
         // that breaks in flight never sends it back to the Nether while it can still find the place.
         boolean searching = s.throwsRecorded() > 0 || s.strongholdEstimate() || s.strongholdSeen();
         int needed = !searching ? EYES_MIN : s.strongholdEstimate() || s.strongholdSeen() ? 0 : Math.max(1, 2 - s.throwsRecorded());
-        if (s.eyesPossible() < needed) return prepared(s, provisions) ? Stage.NETHER : Stage.PREPARE;
+        if (s.eyesPossible() < needed) {
+            // The rods in hand and short of pearls (F-25c6e): the endermen it meets here, never the Nether again for
+            // them, which sent a player home with rods and no pearl straight back.
+            if (!rodsShort(s)) return Stage.PEARLS;
+            return prepared(s, provisions) ? Stage.NETHER : Stage.PREPARE;
+        }
         if (s.eyes() < s.eyesPossible()) return Stage.EYES;
         if (!s.strongholdEstimate()) return Stage.LOCATE;
         if (!s.nearEstimate() && !s.strongholdSeen()) return Stage.TRAVEL;
@@ -235,9 +240,14 @@ public final class StrongholdRunPlanner {
     }
 
     /** The Nether's part is done: rods and pearls for the eyes wanted, or enough for the search with the hunt stalled. */
+    /**
+     * Done in the Nether: the rods, and either the pearls too or a pearl hunt that has stalled (F-25c6e: whatever the
+     * pearls then, the rest hunted in the Overworld; with none, a stalled hunt never ended the stage, and e40c4's
+     * 31102026 Sol stayed in the Nether some 135 game minutes after its seven rods with no pearl and no return).
+     */
     static boolean netherDone(StrongholdRunSnapshot s) {
         if (rodsShort(s)) return false;
-        return s.enderPearls() + s.eyes() >= PEARLS_TARGET || s.pearlHuntStalled() && s.eyesPossible() >= EYES_MIN;
+        return s.enderPearls() + s.eyes() >= PEARLS_TARGET || s.pearlHuntStalled();
     }
 
     /** Ready to go through: the way there, a spare pickaxe, a stone sword or better, and nothing the trip is due. */

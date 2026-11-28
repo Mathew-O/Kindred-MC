@@ -1,0 +1,63 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 8675309,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.285,
+  "items": {"windows": 7209, "gained": 7757, "paid": 7757, "lapsed": 331, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 97.8, "snapshotMicrosMax": 8151.2, "tagMicrosMean": 112.8, "tagMicrosMax": 3536.3, "bySource": {"container.take:furnace": 75, "pickup:class_2248.method_36993": 5561, "pickup:class_3222.method_7329": 1618, "pickup:class_52.method_331": 51, "screen:class_1714": 76, "screen:class_1723": 664, "use:item": 43}, "dropsByOrigin": {"class_1428.method_6007": 360, "class_2248.method_36993": 5569, "class_3222.method_7329": 215, "class_52.method_331": 74}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 14.20, "tickMsWorst": 1342.60, "tickMsWorstAt": 68017, "ticksOver50ms": 1291, "ticksOver200ms": 7, "heapMbMax": 1267, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1180, "stone_tools": 2740, "iron_ingot": 16360, "iron_pickaxe": 46240},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 43620, "x": -13, "y": 16, "z": 86, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3346,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 1.2
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2420, "stone_tools": 3980, "iron_ingot": 6040, "iron_pickaxe": 44420, "diamond": 70280, "obsidian": 54670, "portal_lit": 56058},
+      "deaths": [
+        {"tick": 15716, "cause": "Sol burned to death", "x": 93, "y": 16, "z": 89, "light": 12, "timeOfDay": 15878, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: Mine iron ore (3/18) - Branch mine for iron: clear 94, 17, 89", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 75408, "cause": "Sol was shot by Skeleton", "x": 2, "y": 31, "z": 138, "light": 0, "timeOfDay": 10411, "dimension": "minecraft:overworld", "hunger": 11, "underSky": false, "stage": "Done: fight back - Fight skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 81117, "cause": "Sol was slain by Zombie", "x": 34, "y": 86, "z": 164, "light": 0, "timeOfDay": 16120, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Done: fight back - Fight zombie", "stance": "PRESS_ON", "habits": "[TORCH_AS_YOU_GO]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 53400, "x": 18, "y": -51, "z": 76, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3298,
+      "chunkMinutes": 34665.6,
+      "bridgeBlocks": 5,
+      "bridgeSeconds": 7.2
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2260, "stone_tools": 4460, "iron_ingot": 14180, "iron_pickaxe": 45500},
+      "deaths": [
+        {"tick": 66857, "cause": "Echo tried to swim in lava", "x": -127, "y": -4, "z": 82, "light": 15, "timeOfDay": 1860, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 41880, "x": -34, "y": 17, "z": 81, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4886,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 2.0
+    }
+  }
+}
