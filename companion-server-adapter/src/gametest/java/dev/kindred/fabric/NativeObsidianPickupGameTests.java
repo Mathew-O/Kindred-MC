@@ -101,6 +101,11 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         boolean hidden = mode == Mode.HIDDEN || mode == Mode.HIDDEN_AT_FEET || mode == Mode.WATER_HELD_BACK;
         boolean atFeet = mode == Mode.HIDDEN_AT_FEET || mode == Mode.WATER_HELD_BACK;
         boolean[] droppedAtFeet = {false};
+        // A staging error, if the at-feet staging did not find exactly one drop at its own lava cell: then the test fails
+        // as a staging error naming the count, never as the property (F-22c118a; a neighbouring copy's drop was once taken).
+        String[] stagingError = {null};
+        // Left in the water (LEFT): its own drop, found once at its lava cell, made unpickable for good.
+        boolean[] leftStaged = {false};
         boolean[] heldBack = {false};
         // What armed the check (F-22c118a), whichever came first: the moment on its stand, or its goal line to take the
         // water back. Armed by the goal line, whether its water was back before the next goal: "" if so, else what was not.
@@ -109,6 +114,23 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         // Its water in the bucket and the source gone as the next goal began, the bucket's COMPLETED not yet reported:
         // the tick it began (F-22c118a, #509's CI, where the goal went on one line before the runner reported the step).
         long[] reportDue = {-1};
+        // How many world ticks after the next goal was seen its native_bucket COMPLETED may be reported. The goal change is
+        // seen on the test's timed tasks and the report made on the runtime's tick, two clocks a tick apart at most: the
+        // diagnostic's 60 copies under load saw gaps of -1, 1 and -1 (F-22c118a). The property is unchanged: the report is
+        // still the first task to end after the next goal began.
+        final long reportBound = 1;
+        // The world time its native_bucket COMPLETED for the water was reported at, for the diagnostic of the gap between
+        // the two clocks the check reads: the test's tick, which sees the goal change, and the runtime's, which reports.
+        long[] reportAt = {-1};
+        // Armed by the goal line, the first task to end since: "" if it was its native_bucket COMPLETED for the water, else
+        // that task. A report up to a tick before the goal change is seen (the -1 case) must still be this first task.
+        String[] firstEnded = {null};
+        // The arming edge, the same lag as at the goal change: the step before "recover the water" can report its own end a
+        // tick after the goal line moved on. Its label and the arming's world time, and the one report so exempted.
+        long[] armedAt = {-1};
+        String[] stepBefore = {null};
+        String[] exempted = {null};
+        String[] previous = {""};
         String[] notTaken = {null};
         String[] asked = {null};
         String[] lostSite = {null};
@@ -119,11 +141,13 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         Runnable watch = () -> {
             var bots = f.runtime.panelBots(Actor.console());
             String progress = bots.isEmpty() ? "" : bots.getFirst().goalProgress();
-            if (reportDue[0] >= 0 && notTaken[0] == null && context.getWorld().getTime() > reportDue[0]) {
-                notTaken[0] = "no native_bucket COMPLETED within the tick the next goal began; ";
+            if (reportDue[0] >= 0 && notTaken[0] == null && context.getWorld().getTime() > reportDue[0] + reportBound) {
+                notTaken[0] = "no native_bucket COMPLETED within " + reportBound + " world tick of the next goal beginning (seen at world time "
+                        + reportDue[0] + ", now " + context.getWorld().getTime() + ", a gap past " + (context.getWorld().getTime() - reportDue[0]) + " ticks); ";
                 KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line: {}", notTaken[0]);
             }
             if (progress != null && !progress.equals(last[0])) {
+                previous[0] = last[0];
                 last[0] = progress;
                 if (seen.length() < 3000) seen.append(progress.replaceAll("^.* - ", "")).append("; ");
                 // Exploring with its obsidian left: once the obsidian is mined, not a walk to look for lava before any is
@@ -136,6 +160,9 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 boolean recovering = progress.contains("Obsidian: recover the water");
                 if (hidden && armedBy[0] == null && recovering && minedYet) {
                     armedBy[0] = GOAL_LINE;
+                    armedAt[0] = lookWorld.getTime();
+                    stepBefore[0] = previous[0].replaceAll("^.* - ", "");
+                    KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line at world time {}, the step before it [{}]", armedAt[0], stepBefore[0]);
                     armed(f, lookWorld, shore, GOAL_LINE);
                     // Staged (F-22c118a): its step to take the water back held back, its empty bucket taken away.
                     if (mode == Mode.WATER_HELD_BACK) {
@@ -146,16 +173,20 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     }
                 } else if (GOAL_LINE.equals(armedBy[0]) && notTaken[0] == null && !recovering) {
                     // The next goal begun: its water back, all three, before it.
+                    KindredMod.LOGGER.info("Obsidian pickup: the clocks: the next goal seen at world time {}, its native_bucket COMPLETED {}",
+                            lookWorld.getTime(), reportAt[0] < 0 ? "not yet reported" : "reported at " + reportAt[0] + ", a gap of " + (reportAt[0] - lookWorld.getTime()) + " ticks");
                     var held = f.player().getInventory();
                     boolean inBucket = ItemMoves.count(held, Items.WATER_BUCKET) == 1;
                     boolean sourceGone = !(lookWorld.getFluidState(shore).isStill() && lookWorld.getFluidState(shore).isIn(FluidTags.WATER));
                     if (!bucketCompleted[0] && inBucket && sourceGone) {
-                        // The step's own report, due within the tick the next goal began, before any other task ends.
+                        // The step's own report, due within reportBound world ticks of the next goal beginning, before any other task ends.
                         reportDue[0] = lookWorld.getTime();
-                        KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: its water back, its native_bucket COMPLETED due this tick",
-                                progress.replaceAll("^.* - ", ""));
+                        KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: its water back, its native_bucket COMPLETED due within {} world tick",
+                                progress.replaceAll("^.* - ", ""), reportBound);
                     } else {
-                        notTaken[0] = (bucketCompleted[0] ? "" : "no native_bucket COMPLETED; ") + (inBucket ? "" : "no water bucket in hand; ")
+                        // Reported already (the -1 case, or earlier): it must have been the first task to end since the goal armed.
+                        String first = bucketCompleted[0] && firstEnded[0] != null && !firstEnded[0].isEmpty() ? firstEnded[0] : "";
+                        notTaken[0] = (bucketCompleted[0] ? "" : "no native_bucket COMPLETED; ") + first + (inBucket ? "" : "no water bucket in hand; ")
                                 + (sourceGone ? "" : "its poured source still on the shore; ");
                         KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line, the next goal {}: {}", progress.replaceAll("^.* - ", ""),
                                 notTaken[0].isEmpty() ? "its water back before it" : notTaken[0]);
@@ -168,23 +199,49 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 }
             }
             // Staged (F-22c118a): the obsidian's drop set at the player's feet as it is born, as CI's came to it at once.
-            if (atFeet && !droppedAtFeet[0] && f.player() != null) {
-                for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
-                        new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8), i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) {
+            // Only this copy's own lava cell is searched: a wider box reached the next plot's lava cell, 13 blocks along, and
+            // carried a neighbouring copy's drop to this player when copies shared a batch.
+            if (atFeet && !droppedAtFeet[0] && stagingError[0] == null && f.player() != null) {
+                var world = context.getWorld();
+                var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(lava).expand(1),
+                        i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN));
+                boolean mined = !world.getBlockState(lava).isOf(Blocks.OBSIDIAN) && !world.getFluidState(lava).isIn(FluidTags.LAVA);
+                int count = drops.stream().mapToInt(i -> i.getStack().getCount()).sum();
+                if (drops.size() > 1 || count > 1) {
+                    stagingError[0] = "Staging error: " + count + " obsidian in " + drops.size() + " drops at its own lava cell " + lava.toShortString() + ", not 1";
+                } else if (drops.size() == 1) {
+                    var item = drops.getFirst();
                     item.refreshPositionAndAngles(f.player().getX(), f.player().getY(), f.player().getZ(), 0, 0);
                     item.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                     item.setPickupDelay(0);
                     droppedAtFeet[0] = true;
-                    KindredMod.LOGGER.info("Obsidian pickup: STAGED, the obsidian's drop set at the player's feet, at {}", f.player().getBlockPos().toShortString());
+                    KindredMod.LOGGER.info("Obsidian pickup: STAGED, the obsidian's drop (1 of 1 at its own lava cell) set at the player's feet, at {}", f.player().getBlockPos().toShortString());
+                } else if (mined) {
+                    stagingError[0] = "Staging error: 0 obsidian drops at its own lava cell " + lava.toShortString() + " once it was mined, not 1";
                 }
+                if (stagingError[0] != null) KindredMod.LOGGER.info("Obsidian pickup: {}", stagingError[0]);
             }
+            if (stagingError[0] != null) context.assertTrue(false, stagingError[0]);
             // Staged (F-22c118): the obsidian mined left lying where it fell, no player able to pick it up.
-            if (mode == Mode.LEFT) {
-                for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
-                        new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8), i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) {
-                    item.setPickupDelayInfinite();
+            // Only its own lava cell is searched, as for the drop at its feet: a wider box reached the next plot's lava cell.
+            if (mode == Mode.LEFT && !leftStaged[0] && stagingError[0] == null) {
+                var world = context.getWorld();
+                var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(lava).expand(1),
+                        i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN));
+                boolean mined = !world.getBlockState(lava).isOf(Blocks.OBSIDIAN) && !world.getFluidState(lava).isIn(FluidTags.LAVA);
+                int count = drops.stream().mapToInt(i -> i.getStack().getCount()).sum();
+                if (drops.size() > 1 || count > 1) {
+                    stagingError[0] = "Staging error: " + count + " obsidian in " + drops.size() + " drops at its own lava cell " + lava.toShortString() + ", not 1";
+                } else if (drops.size() == 1) {
+                    drops.getFirst().setPickupDelayInfinite();
+                    leftStaged[0] = true;
+                    KindredMod.LOGGER.info("Obsidian pickup: STAGED, the obsidian's drop (1 of 1 at its own lava cell) left where it fell, unpickable");
+                } else if (mined) {
+                    stagingError[0] = "Staging error: 0 obsidian drops at its own lava cell " + lava.toShortString() + " once it was mined, not 1";
                 }
+                if (stagingError[0] != null) KindredMod.LOGGER.info("Obsidian pickup: {}", stagingError[0]);
             }
+            if (stagingError[0] != null) context.assertTrue(false, stagingError[0]);
             // Staged (F-22c94): from the obsidian mined until its water is back in the bucket, the player held on its stand,
             // two cells off the hole the obsidian lies in, so it never passes over the drop, as in CI, where it lay out of
             // the player's way; the drop itself is not touched. Then let go, the water's last flow still draining over it.
@@ -247,12 +304,30 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                         public void ended(String p, String skill, String state, String label) {
                             boolean recovered = "native_bucket".equals(skill) && "COMPLETED".equals(state) && label != null && label.contains("recover the water");
                             if (recovered) bucketCompleted[0] = true;
-                            // Due as the next goal began: this tick, and the first task to end since (F-22c118a).
+                            long now = context.getWorld().getTime();
+                            if (GOAL_LINE.equals(armedBy[0]) && firstEnded[0] == null) {
+                                if (!recovered && exempted[0] == null && label != null && label.equals(stepBefore[0]) && now - armedAt[0] <= reportBound) {
+                                    // The step before the goal line reporting its own end within the bound of the arming: not another task.
+                                    exempted[0] = skill + " " + state + " [" + label + "] at world time " + now + ", armed at " + armedAt[0];
+                                    KindredMod.LOGGER.info("Obsidian pickup: the arming edge: not counted as another task, the step before it: {}", exempted[0]);
+                                } else {
+                                    firstEnded[0] = recovered ? "" : "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label
+                                            + "] at world time " + now + ", armed by the goal line at " + armedAt[0] + " after [" + stepBefore[0] + "]"
+                                            + (exempted[0] == null ? "" : ", exempted " + exempted[0]) + "; ";
+                                }
+                            }
+                            if (recovered && reportAt[0] < 0) {
+                                reportAt[0] = context.getWorld().getTime();
+                                if (reportDue[0] >= 0) KindredMod.LOGGER.info("Obsidian pickup: the clocks: its native_bucket COMPLETED reported at world time {}, the next goal seen at {}, a gap of {} ticks",
+                                        reportAt[0], reportDue[0], reportAt[0] - reportDue[0]);
+                            }
+                            // Due as the next goal began: within reportBound world ticks, and the first task to end since (F-22c118a).
                             if (reportDue[0] >= 0 && notTaken[0] == null) {
-                                notTaken[0] = recovered && context.getWorld().getTime() == reportDue[0] ? ""
-                                        : "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label + "]; ";
+                                long gap = context.getWorld().getTime() - reportDue[0];
+                                notTaken[0] = !recovered ? "another task ended before its native_bucket COMPLETED: " + skill + " " + state + " [" + label + "], a gap of " + gap + " ticks; "
+                                        : gap > reportBound ? "its native_bucket COMPLETED " + gap + " world ticks after the next goal began, past " + reportBound + "; " : "";
                                 KindredMod.LOGGER.info("Obsidian pickup: armed by the goal line: {}", notTaken[0].isEmpty()
-                                        ? "its native_bucket COMPLETED in the tick the next goal began, before any other task ended" : notTaken[0]);
+                                        ? "its native_bucket COMPLETED " + gap + " world tick(s) after the next goal began, before any other task ended" : notTaken[0]);
                             }
                         }
                     });
@@ -262,6 +337,7 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                     if (mode != Mode.LEFT) return;
                     // The check still catches its obsidian left in the water (F-22c118).
                     watch.run();
+                    context.assertTrue(leftStaged[0], "Staging error: no obsidian drop found at its own lava cell to leave unpickable, not 1");
                     context.assertTrue(exploredFirst[0], "Went exploring with its obsidian left in the water, and the check caught it: " + tail.get());
                     KindredMod.LOGGER.info("Obsidian pickup: left in the water, caught; {}", seen);
                     f.runtime.stop();
@@ -313,7 +389,7 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     if (mode == Mode.LEFT || mode == Mode.WATER_HELD_BACK) return;
                     watch.run();
-                    if (atFeet) context.assertTrue(droppedAtFeet[0], "Staged: the obsidian's drop set at its feet as it was mined");
+                    if (atFeet) context.assertTrue(droppedAtFeet[0], "Staging error: no obsidian drop found at its own lava cell to set at its feet, not 1");
                     context.assertFalse(exploredFirst[0], "Went exploring with its obsidian left in the water: " + tail.get());
                     context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 1, "The obsidian mined and picked up: " + tail.get());
                 })

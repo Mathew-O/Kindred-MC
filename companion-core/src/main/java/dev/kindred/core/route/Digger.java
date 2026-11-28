@@ -144,6 +144,12 @@ public final class Digger {
     private final Map<Long, Long> pillarMissesUntil = new HashMap<>();
     private int branchRun;
     private boolean branchSide, branchStepping;
+    /** When it last went on with a branch mine; one not gone on with for {@link #BRANCH_BEGINS_AFTER} ticks begins afresh. */
+    private long lastBranchTick = -1;
+    private static final long BRANCH_BEGINS_AFTER = 600;
+    /** Its record of ground stood in, asked for when a branch mine begins, and where one was last laid elsewhere (F-25c4dq). */
+    private java.util.function.Supplier<java.util.function.Predicate<Cell>> seenGround;
+    private Cell branchLaid;
 
     // ------------------------------------------------------------------ state the campaign shares
 
@@ -314,7 +320,86 @@ public final class Digger {
             return digDown(body, target, "Dig down toward " + what).or(() -> tunnel(body, "Tunnel past liquid toward " + what, lava));
         }
         // At the richest depth with no ore or cave in view: branch mine, legs zigzagging through fresh stone.
+        branchBegins(body);
         return tunnel(body, "Branch mine for " + what, lava);
+    }
+
+    /**
+     * A branch mine begun lays its legs where it has stood least (F-25c4dq). Where the first four legs of its heading would
+     * run through {@value #BRANCH_SEEN_TURN} or more eight-block cells it has stood in (the cells its watchdog counts as new
+     * ground once), it takes, of the four headings for its first leg and the two sides its steps between legs may go, the
+     * one through the fewest; ties go to the heading and side it has. Below that, and where all round it is new ground, it
+     * mines as before. Leg length, step and alternation are as they were.
+     *
+     * In main's holepit scene (`diag-holepit-079bdc2-8675309-kindred-111140`), a mine begun near where it had walked laid its
+     * legs back across that ground: leg after leg swept through ground it had stood in, every step fresh rock and no iron
+     * found, its watchdog's clock never set back. In E-40 iteration 29, 8 of 112 stuck spells were such a working mine.
+     */
+    private <T> void branchBegins(Body<T> body) {
+        long now = body.now();
+        boolean begins = lastBranchTick < 0 || now - lastBranchTick > BRANCH_BEGINS_AFTER;
+        lastBranchTick = now;
+        if (!begins || seenGround == null) return;
+        var seen = seenGround.get();
+        if (seen == null) return;
+        Cell feet = body.feet();
+        // Only where its heading runs back into ground it has stood in: the cell it stands in, and one beside it as the grid
+        // falls, are no reason to turn, so where all round it is new it mines as before.
+        int here = seenAhead(feet, heading, branchSide, seen);
+        if (here < BRANCH_SEEN_TURN) return;
+        Side bestLeg = heading;
+        boolean bestSide = branchSide;
+        int best = here;
+        for (Side leg : Side.HORIZONTAL) {
+            for (boolean side : new boolean[] {false, true}) {
+                if (leg == heading && side == branchSide) continue;
+                int score = seenAhead(feet, leg, side, seen);
+                if (score < best) {
+                    best = score;
+                    bestLeg = leg;
+                    bestSide = side;
+                }
+            }
+        }
+        if (bestLeg == heading && bestSide == branchSide) return;
+        heading = bestLeg;
+        branchSide = bestSide;
+        branchRun = 0;
+        branchStepping = false;
+        branchLaid = feet;
+    }
+
+    /** Eight-block cells its heading must run into, stood in, before a branch mine begun turns its legs (F-25c4dq). */
+    private static final int BRANCH_SEEN_TURN = 3;
+
+    /** Eight-block cells stood in that the first four legs from {@code feet} along {@code leg} would cover (F-25c4dq). */
+    private static int seenAhead(Cell feet, Side leg, boolean side, java.util.function.Predicate<Cell> seen) {
+        Side step = side ? leg.counterclockwise() : leg.clockwise();
+        var cells = new HashSet<Long>();
+        int stoodIn = 0;
+        for (int along = 0; along <= BRANCH_LEG; along++) {
+            for (int over = 0; over <= 3 * BRANCH_STEP; over++) {
+                Cell at = feet.add(leg.dx * along + step.dx * over, 0, leg.dz * along + step.dz * over);
+                long key = (((long) (at.x() >> 3)) << 32) ^ ((at.z() >> 3) & 0xffffffffL);
+                if (cells.add(key) && seen.test(at)) stoodIn++;
+            }
+        }
+        return stoodIn;
+    }
+
+    /**
+     * The player's own record of the eight-block cells it has stood in, as an observation: asked for once, when a branch mine
+     * begins (F-25c4dq). Null for none.
+     */
+    public void branchSeen(java.util.function.Supplier<java.util.function.Predicate<Cell>> seen) {
+        seenGround = seen;
+    }
+
+    /** Where a branch mine was last begun with its legs laid elsewhere than its heading, once; then null (F-25c4dq). */
+    public Cell takeBranchLaid() {
+        Cell laid = branchLaid;
+        branchLaid = null;
+        return laid;
     }
 
     /**
