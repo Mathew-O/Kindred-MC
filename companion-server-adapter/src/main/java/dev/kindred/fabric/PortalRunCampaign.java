@@ -4131,6 +4131,7 @@ final class PortalRunCampaign {
             if (direction != digDirection()) spots.add(feet.offset(direction));
         }
         spots.add(feet.up().offset(digDirection().getOpposite()));
+        boolean castSkipped = false;
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (onTheWay(spot, feet)) continue;
@@ -4138,9 +4139,39 @@ final class PortalRunCampaign {
             // the torch too, and the pocket dark again, the next torch went back in, lap after lap (iteration 30's 303
             // Kindred, 541 times in under three minutes; 303 Echo, 547).
             if (inBedRoom(spot)) continue;
+            // Never in a cell its frame's cast will clear (F-22c127a): cleared, the torch dropped, it was picked up and lit there
+            // again, lap after lap (iteration 31's 20261030, Kindred at 24, 63, 88: 181 laps in 27 seconds, 263 on the seed).
+            if (inCastClear(spot)) {
+                castSkipped = true;
+                continue;
+            }
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
+        }
+        // Every open spot it tries in the cast's clear-set (beside a frame's corner, rock on its other sides): the nearest open
+        // cell clear of it within reach and two blocks, rather than the dark for good with torches in hand; with none, said
+        // once for the site.
+        if (castSkipped) {
+            BlockPos best = null;
+            double nearest = Double.MAX_VALUE;
+            for (BlockPos spot : BlockPos.iterate(feet.add(-2, 0, -2), feet.add(2, 1, 2))) {
+                if (spot.equals(feet) || spot.equals(feet.up()) || spots.contains(spot)) continue;
+                if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot) || onTheWay(spot, feet) || inCastClear(spot)) continue;
+                if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
+                double away = eyeDistance(player, spot);
+                if (away > REACH || away >= nearest) continue;
+                nearest = away;
+                best = spot.toImmutable();
+            }
+            if (best != null) return Optional.of(new Task("native_place", coords(best, Map.of("side", "up", "slot", String.valueOf(torch))),
+                    "Place a torch at " + best.toShortString()));
+            PortalSite site = portalSite;
+            if (site != null && castLightSiteTold != siteKey(site)) {
+                castLightSiteTold = siteKey(site);
+                KindredMod.LOGGER.info("{} light: no spot clear of the cast of its frame at {} within reach of {}", player.getName().getString(),
+                        site.origin().toShortString(), feet.toShortString());
+            }
         }
         return Optional.empty();
     }
@@ -8475,7 +8506,23 @@ final class PortalRunCampaign {
         return -1;
     }
 
-    /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
+    /**
+     * Whether {@code cell} is one its chosen frame's cast clears or builds on (F-22c127a): the frame's cells, the cells over
+     * them and the mould behind them ({@link #frameCells}), and the rows in front of the frame, which {@code clearPortalSite}
+     * clears of anything not replaceable (a torch is not) and the top cell's cast opens. A fixed set of at most 80 cells,
+     * read only while a frame site is chosen.
+     */
+    /** The frame site last said to leave it no spot for a torch clear of its cast (F-22c127a), said once a site. */
+    private long castLightSiteTold = Long.MIN_VALUE;
+
+    private boolean inCastClear(BlockPos cell) {
+        PortalSite site = portalSite;
+        if (site == null) return false;
+        if (frameCells(site).contains(cell.asLong())) return true;
+        for (int across = 0; across <= 3; across++) for (int up = 0; up <= 5; up++) if (site.front(across, up).equals(cell)) return true;
+        return false;
+    }
+
     /** Whether {@code cell} is one of the four kept for the bed it carries tonight: its two cells and the two over them. */
     private boolean inBedRoom(BlockPos cell) {
         if (bedRoomFor == null) return false;
@@ -8483,6 +8530,7 @@ final class PortalRunCampaign {
         return false;
     }
 
+    /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
     private static boolean bedRoom(ServerWorld world, BlockPos pos) {
         return world.isChunkLoaded(pos) && world.getBlockState(pos).isAir() && world.getFluidState(pos).isEmpty()
                 && world.getBlockState(pos.up()).isAir() && world.getBlockState(pos.down()).isSideSolidFullSquare(world, pos.down(), Direction.UP);
