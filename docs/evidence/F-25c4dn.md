@@ -6,7 +6,7 @@ Build: the claim `21b14080`; the fixture `c09f6cfd`, `28ec2e3b` (the freed slot 
 staged as its own); the change `8c69b35f`; the second change `ce208334`; main `150eb1f5`+ merged as `4716627a`; gated on
 `60e5a7c2`, with a temporary marker; the marker removed `1eb9b3b6`; main `285de9df` merged in as `98249fce`
 Design parent: F-25c4 (the portal run's steps)
-Status: complete (2026-11-23). The live read is E-40 iteration 30's 404.
+Status: complete (2026-11-23). The live read, E-40 iteration 30's 404: the crafting-table spells gone.
 
 ## Scope and implementation
 
@@ -159,11 +159,22 @@ same deaths. The lead has asked for a new baseline on current main.
 
 **Kept:** the runs are on `claude/spacer-runs-1112`, under `gate25c4dn/`.
 
+## The live read (E-40 iteration 30, 2026-11-23)
+
+Iteration 30 ran main `63b97ac9`, which has #486; iteration 29 ran `9a0921b5`, which does not. The consoles are on
+`claude/corpus-data-e40a30-consoles-1123` at `788c3f53`. Seed 404, both batches each:
+
+| Iteration | Stuck spells | Goal lines walking to a crafting table | "no room for the result" |
+| --- | --- | --- | --- |
+| 29 (`9a0921b5`) | 13 + 2 = 15 | 1 + 1 | 0 |
+| 30 (`63b97ac9`) | 1 + 1 = 2 | 0 + 1 | 0 |
+
+- 29's batch 1 404 also had 829 "Gather logs for a crafting table - Climb toward the surface for logs" lines; 30 has 0 and 2.
+- The crafting-table spells are gone, and no craft was refused for room. The row stays Done.
+
 ## Remaining limitations and handoff
 
-- **The live read, E-40 iteration 30's 404** (this change is not in 29's jar): the crafting-table spells of 27's batch 1
-  and 2 404 are expected to go. "cannot make … at the table in reach: no room for the result" should read as the reason
-  where any remains. If the spells stay, this row reopens.
+- **The live read, E-40 iteration 30's 404:** read above; the crafting-table spells are gone.
 - **Room by counts:** `roomFor` counts an empty slot or a stack with room. The craft's own check also counts a slot its
   ingredients empty. Where only that makes room, room is made first, one drop more than needed.
 - **Nothing to drop:** with a full pack of nothing surplus (stone at or under 16, no junk), `MAKE_ROOM` offers nothing and
