@@ -437,8 +437,10 @@ final class StrongholdLeg {
         if (stage == StrongholdRunPlanner.Stage.NETHER && overworld(player)) followUps.end(Objective.NETHER_TRIP, player, "going through to the Nether");
         Objective gate = stage == StrongholdRunPlanner.Stage.PREPARE ? Objective.NETHER_TRIP
                 : stage == StrongholdRunPlanner.Stage.PROVISION ? Objective.END_FIGHT : null;
+        refused.setLength(0);
         for (var step : StrongholdRunPlanner.plan(s, provisions)) {
             Optional<PortalRunCampaign.Task> task = realize(step, s, p, body, policy);
+            if (task.isEmpty()) refused.append(refused.length() == 0 ? "" : "; ").append(step.action()).append(" (").append(step.why()).append("): no task");
             if (task.isPresent()) {
                 progress = "End: " + label(stage) + ": " + step.why() + " - " + task.get().label();
                 if (gate != null) followUps.idle(gate, player, true);
@@ -449,6 +451,11 @@ final class StrongholdLeg {
         progress = stage == StrongholdRunPlanner.Stage.DONE ? "End: found the End portal" : "End: " + label(stage) + ": waiting for a feasible step";
         return Optional.empty();
     }
+
+    /** F-25c4do: the trip's steps that gave nothing at its last plan, for the once-a-spell "waiting" line. */
+    private final StringBuilder refused = new StringBuilder();
+
+    String refusedSteps() { return refused.length() == 0 ? "none" : refused.length() <= 600 ? refused.toString() : refused.substring(0, 600) + " ..."; }
 
     /** A stage of the trip in words, such as Blaze rods. */
     static String label(StrongholdRunPlanner.Stage stage) {
