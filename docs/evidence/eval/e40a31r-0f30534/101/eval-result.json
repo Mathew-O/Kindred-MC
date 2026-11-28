@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 101,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.506,
+  "items": {"windows": 7209, "gained": 6815, "paid": 6815, "lapsed": 180, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 100.4, "snapshotMicrosMax": 4257.9, "tagMicrosMean": 120.5, "tagMicrosMax": 40995.1, "bySource": {"container.take:furnace": 75, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 5498, "pickup:class_3222.method_7329": 905, "pickup:class_52.method_331": 51, "screen:class_1714": 63, "screen:class_1723": 333, "use:item": 69}, "dropsByOrigin": {"class_1308.method_6099": 2, "class_1428.method_6007": 245, "class_1540.method_5773": 2, "class_2248.method_36993": 5637, "class_3222.method_7329": 120, "class_52.method_331": 141}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 15.58, "tickMsWorst": 1462.80, "tickMsWorstAt": 44693, "ticksOver50ms": 928, "ticksOver200ms": 38, "heapMbMax": 1133, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1020, "stone_tools": 2200, "iron_ingot": 8060, "iron_pickaxe": 23200, "obsidian": 75967},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2769,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 7340, "stone_tools": 8100, "iron_ingot": 14640, "iron_pickaxe": 22820, "obsidian": 39500, "portal_lit": 44691},
+      "deaths": [
+        {"tick": 94968, "cause": "Sol tried to swim in lava", "x": -286, "y": -55, "z": -263, "light": 15, "timeOfDay": 23130, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Done: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3579,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 1,
+      "bridgeSeconds": 6.6
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 3080, "stone_tools": 3860, "iron_ingot": 7820, "iron_pickaxe": 31080},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3562,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 0.9
+    }
+  }
+}
