@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 7.158,
+  "items": {"windows": 7209, "gained": 6386, "paid": 6386, "lapsed": 1232, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 124.6, "snapshotMicrosMax": 16365.4, "tagMicrosMean": 130.3, "tagMicrosMax": 8186.6, "bySource": {"container.take:furnace": 89, "pickup:class_2248.method_36993": 6219, "pickup:class_3222.method_7329": 520, "pickup:class_52.method_331": 58, "screen:class_1707": 41, "screen:class_1714": 74, "screen:class_1723": 526, "use:item": 91}, "dropsByOrigin": {"class_1428.method_6007": 175, "class_1540.method_5773": 4, "class_2248.method_36993": 6236, "class_3222.method_7329": 99, "class_52.method_331": 189}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 21.41, "tickMsWorst": 1595.59, "tickMsWorstAt": 5838, "ticksOver50ms": 5015, "ticksOver200ms": 20, "heapMbMax": 1022, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 2500, "stone_tools": 3400, "iron_ingot": 7820, "iron_pickaxe": 20960, "obsidian": 65823, "portal_lit": 80774},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 57000, "x": -167, "y": -54, "z": 128, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2634,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 3120, "stone_tools": 4760, "iron_ingot": 9460, "iron_pickaxe": 23680, "obsidian": 82971, "portal_lit": 85464},
+      "deaths": [
+        {"tick": 37044, "cause": "Sol was shot by Skeleton", "x": -112, "y": -4, "z": -78, "light": 1, "timeOfDay": 13206, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: inventory full - Drop surplus cobbled deepslate", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 78440, "x": 151, "y": 115, "z": 118, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6482,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 6240, "stone_tools": 7260, "iron_ingot": 28380, "iron_pickaxe": 48940, "obsidian": 98487},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 21880, "x": 183, "y": 36, "z": 19, "attempt": 1}, {"tick": 69360, "x": 40, "y": 61, "z": -4, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 3635,
+      "chunkMinutes": 23731.7,
+      "bridgeBlocks": 3,
+      "bridgeSeconds": 1.2
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 10011, "paid": 10011, "lapsed": 277, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 126.7, "snapshotMicrosMax": 8215.7, "tagMicrosMean": 133.5, "tagMicrosMax": 21486.0, "bySource": {"container.take:furnace": 73, "pickup:class_1540.method_5773": 3, "pickup:class_2248.method_36993": 7777, "pickup:class_3222.method_7329": 1702, "pickup:class_52.method_331": 36, "screen:class_1714": 82, "screen:class_1723": 532, "use:item": 83}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 126, "class_1437.method_18056": 1, "class_1481.method_5619": 1, "class_1540.method_5773": 24, "class_1560.method_6099": 2, "class_2248.method_36993": 8015, "class_3222.method_7329": 193, "class_52.method_331": 97}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 27.99, "tickMsWorst": 3825.65, "tickMsWorstAt": 1, "ticksOver50ms": 22523, "ticksOver200ms": 174, "heapMbMax": 1795, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 560, "stone_tools": 2760, "iron_ingot": 7680, "iron_pickaxe": 39380, "obsidian": 72101, "portal_lit": 74699},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 62420, "x": 50, "y": 63, "z": 65, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2498,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 4,
+      "bridgeSeconds": 1.7
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 680, "stone_tools": 3620, "iron_ingot": 10180, "iron_pickaxe": 34860, "obsidian": 67775, "portal_lit": 71785},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 1767,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 380, "stone_tools": 2340, "iron_ingot": 55660, "iron_pickaxe": 75080},
+      "deaths": [
+        {"tick": 19038, "cause": "Echo was shot by Skeleton", "x": 38, "y": 65, "z": -6, "light": 4, "timeOfDay": 19200, "dimension": "minecraft:overworld", "hunger": 12, "underSky": true, "stage": "Iron: Mine cobblestone for a furnace and portal corners - Cut through west for stone: advance", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4825,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

@@ -30,6 +30,17 @@ import java.util.TreeMap;
  */
 public final class NativeBuildGameTests implements FabricGameTest {
     /**
+     * Where its ground is laid from (F-22c119, slice 4): in from its structure's corner as far as its ground runs the other
+     * way, 8 west and 8 north, so that all of it (to 24 east and south at the most) lies in its own structure. On a
+     * structure as small as its plot, its ground ran into the plots of the tests placed round it: on #475's CI 7 of its
+     * restores left 1,508 blocks in other tests' running plots, and the bed-over-a-plank test left 140 each run beside the
+     * cart-door test (F-22c123).
+     */
+    private static BlockPos origin(TestContext context) {
+        return context.getAbsolutePos(new BlockPos(8, 0, 8));
+    }
+
+    /**
      * A check retried each tick until it passes or the test runs out: the first failure is kept as the message, so a
      * test that runs out (and stops its runtime, taking the player away) still says what was wrong.
      */
@@ -47,7 +58,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * walled in by the rest of the floor under the bed, the prop was out of reach to take down and the cabin was left
      * a plank short.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildBedOverSetAside", tickLimit = 6000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildBedOverSetAside", tickLimit = 6000)
     public void aBedOverAPlankAnAnimalStoodInWaitsForThePlankAndTheFloorIsWhole(TestContext context) {
         java.util.concurrent.atomic.AtomicInteger refusedThere = new java.util.concurrent.atomic.AtomicInteger();
         BlockPos[] origin = new BlockPos[1];
@@ -82,7 +93,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     var world = context.getWorld();
                     world.setTimeOfDay(1000);
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-8, 1, -8), o.add(12, 10, 12));
@@ -130,7 +141,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                         }
                     }
                     check(context, first, wrong == 0, wrong + " blocks not in their state: " + report);
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     var dirt = new java.util.ArrayList<String>();
                     for (BlockPos pos : BlockPos.iterate(o.add(-8, 2, -8), o.add(12, 10, 12))) {
                         if (world.getBlockState(pos).isOf(Blocks.DIRT)) dirt.add(pos.subtract(origin[0]).toShortString());
@@ -143,7 +154,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildHut", tickLimit = 14000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildHut", tickLimit = 14000)
     public void aHutIsBuiltFromItsOwnBlocksEachInItsState(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 13500);
         String[] first = {null};
@@ -158,7 +169,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-8, 1, -8), o.add(16, 16, 16));
@@ -206,7 +217,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                         var state = world.getBlockState(BuildRunner.blockPos(p));
                         check(context, first, state.getCollisionShape(world, BuildRunner.blockPos(p)).isEmpty(), "Kept clear: " + p + " holds " + state);
                     }
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     var dirt = new java.util.ArrayList<String>();
                     for (BlockPos pos : BlockPos.iterate(o.add(-8, 2, -8), o.add(16, 16, 16))) {
                         if (world.getBlockState(pos).isOf(Blocks.DIRT)) dirt.add(pos.subtract(origin[0]).toShortString());
@@ -235,7 +246,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * clockwise, from exactly the blocks it takes. Every block must match the original as vanilla's own rotation turns
      * it.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildSchematic", tickLimit = 9000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildSchematic", tickLimit = 9000)
     public void aStructureSavedByVanillaIsReadAndBuiltTurnedAQuarter(TestContext context) {
         kiosk(context, false);
     }
@@ -246,7 +257,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * and the indices packed three bits a block (eight states), running over from one long into the next. The native player builds it
      * as it builds the structure file, turned a quarter, and every block must match the original as vanilla turns it.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildLitematic", tickLimit = 9000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildLitematic", tickLimit = 9000)
     public void aLitematicaSchematicIsReadAndBuiltTurnedAQuarter(TestContext context) {
         kiosk(context, true);
     }
@@ -265,7 +276,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its ground put back as it found it when the test ends, passed or failed (F-22c75a): the kiosk and the
                     // copy it builds stand past this test's own plot, oak logs among them, and a later batch's plot beside
                     // them saw them. The pit fixture's player walked to the copy's posts, seven blocks off, for a log, and
@@ -374,7 +385,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                         }
                     }
                     check(context, first, placed == 24 && wrong == 0, wrong + " of " + placed + " not as vanilla turns the original: " + report);
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     int dirt = 0;
                     for (BlockPos pos : BlockPos.iterate(o.add(-6, 2, -6), o.add(18, 12, 14))) if (world.getBlockState(pos).isOf(Blocks.DIRT)) dirt++;
                     check(context, first, dirt == 0, "The scaffold taken down: " + dirt + " left");
@@ -447,7 +458,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * leads out: it climbs out first, then scaffolds up and places the block. Without that, its walks round to the block
      * found "no walkable route" eight times and the build stopped.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildHollow", tickLimit = 6000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildHollow", tickLimit = 6000)
     public void aBuildBegunFromAHollowBelowItsFloorClimbsOutAndIsFinished(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
         var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
@@ -462,7 +473,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-8, -3, -8), o.add(16, 16, 16));
@@ -513,7 +524,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * the take-down was "out of reach" eight times in a row, the build stopped, never climbing out. Staged: the player put
      * in the pit once its scaffold has started coming down. It climbs out and takes the rest of its scaffold down.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildHollowTakeDown", tickLimit = 8000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildHollowTakeDown", tickLimit = 8000)
     public void aScaffoldTakenDownFromAHollowBelowTheFloorIsClimbedOutOfAndTakenDown(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 7500);
         var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
@@ -530,7 +541,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-8, -3, -8), o.add(16, 20, 16));
@@ -600,7 +611,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * blocked ("Nothing in hand to place") while it stands high on its own column. It must be back on the ground within
      * a minute, and the build must not stop on its failed steps.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildBlockedOnScaffold", tickLimit = 6000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildBlockedOnScaffold", tickLimit = 6000)
     public void blockedUpItsOwnScaffoldItComesDownTheColumn(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
         var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
@@ -616,7 +627,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-8, -3, -8), o.add(16, 20, 16));
@@ -682,7 +693,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * its scaffold; once it is placed, the player is put on the edge of a stone set in the gap beside the column (the column
      * stands off the wall). Its scaffold must come all the way down.
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildPerchBesideColumn", tickLimit = 8000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildPerchBesideColumn", tickLimit = 8000)
     public void onAPerchBesideItsOwnColumnItStepsDownOntoItsTopAndTakesItDown(TestContext context) {
         perchBesideColumn(context, 1, true);
     }
@@ -692,7 +703,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * column's top a drop of four below, no way onto it and out of reach: the take-down is refused once and the build ends
      * there, built, its scaffolding left standing, within a minute, not waited on till its ticks run out (F-22c47).
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildFarPerchBesideColumn", tickLimit = 8000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildFarPerchBesideColumn", tickLimit = 8000)
     public void onAFarPerchBesideItsOwnColumnTheTakeDownIsRefusedOnceAndTheBuildEnds(TestContext context) {
         perchBesideColumn(context, 0, false);
     }
@@ -716,7 +727,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-8, -3, -8), o.add(16, 20, 16));
@@ -814,7 +825,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * half a block down: it slid onto the roof, where no walk could start, and the cabin stopped short. It steps over the
      * column's middle first and goes down its own scaffold, never onto the slab, and takes the scaffold down (F-22c57).
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildDownBesideSlab", tickLimit = 6000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildDownBesideSlab", tickLimit = 6000)
     public void aScaffoldBesideASlabIsClimbedDownOverItsMiddleNotOntoTheSlab(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
         var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
@@ -831,7 +842,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-6, -1, -6), o.add(12, 20, 12));
@@ -917,7 +928,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
      * after a second it let the drop lie and went out to look for sheep (on CI on #12 a trading hall was left short of
      * its beds' wool after all nine sheep were shorn).
      */
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "buildWoolDrop", tickLimit = 3000)
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "buildWoolDrop", tickLimit = 3000)
     public void aDropOfWoolItWaitsBesideIsPickedUpAndMadeIntoTheBed(TestContext context) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2500);
         var blocks = new java.util.ArrayList<dev.kindred.core.construction.Blueprint.Block>();
@@ -935,7 +946,7 @@ public final class NativeBuildGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos o = context.getAbsolutePos(BlockPos.ORIGIN);
+                    BlockPos o = origin(context);
                     // Its field, wider than its plot, and what its player builds on it put back as the test ends, passed or
                     // failed (F-22c75b): left standing, a player's workstation lay in the plot next door for a later test.
                     FixtureGround.keep(context, o.add(-8, -3, -8), o.add(24, 16, 24));
