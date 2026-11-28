@@ -63,6 +63,7 @@
       "dev.kindred.fabric.NativePortalReturnGameTests",
       "dev.kindred.fabric.NativeNavigationGameTests",
       "dev.kindred.fabric.NativeRaisedDoorwayGameTests",
+      "dev.kindred.fabric.NativeRelocateUpGameTests",
       "dev.kindred.fabric.NativeRespawnGameTests",
       "dev.kindred.fabric.NativePortalCampaignGameTests",
       "dev.kindred.fabric.NativeBackOffFlipGameTests",
