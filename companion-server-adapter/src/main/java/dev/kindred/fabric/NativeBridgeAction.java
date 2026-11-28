@@ -293,7 +293,7 @@ final class NativeBridgeAction extends NativeRecordedAction {
     }
 
     /**
-     * Whether, by what the player itself sees, bridging upright could kill it: lava under the next cell, whatever it
+     * Whether, by what the player itself sees, bridging upright could kill it: lava in or under the next cell, whatever it
      * holds (water does not save a fall into lava); a drop it would not survive, or no ground in sight, with no water
      * bucket in its hotbar to land in; a hostile in sight within {@link #NEAR_MOB}; or a hit or an arrow at it in the
      * last {@link #SHOT_TICKS}.
@@ -307,6 +307,8 @@ final class NativeBridgeAction extends NativeRecordedAction {
         boolean bucket = false;
         for (int s = 0; s < 9; s++) if (player.getInventory().getStack(s).isOf(Items.WATER_BUCKET)) bucket = true;
         BlockPos column = cell(next);
+        // Lava in the cell itself, to its brim (F-25c4ds): the body leans out over it for the click.
+        if (world.getFluidState(column).isIn(FluidTags.LAVA)) return true;
         for (int down = 1; down <= SIGHT_DOWN; down++) {
             BlockPos at = column.down(down);
             if (!world.isChunkLoaded(at) || at.getY() < world.getBottomY()) return !bucket;
