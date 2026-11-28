@@ -62,6 +62,36 @@ public final class NativeCostGameTests implements FabricGameTest {
     }
 
     /**
+     * The cost line goes on with the world's day after a restart (M-06i4): a world whose game time is 61,286, as the
+     * rehearsal's restart found it, writes its line as world day 3, not day 1. The line is the runtime's own, the one it
+     * writes each game day and at a stop. The world's time is set for the test and put back after it, in a batch of its own.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "costWorldDay", tickLimit = 400)
+    public void afterARestartTheCostLineGoesOnWithTheWorldsDay(TestContext context) {
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 300);
+        var world = context.getWorld().getServer().getOverworld();
+        var props = context.getWorld().getServer().getSaveProperties().getMainWorldProperties(); // the overworld's own
+        long[] was = {world.getTime()};
+        @SuppressWarnings("unchecked") CompletableFuture<String>[] line = new CompletableFuture[1];
+        context.createTimedTaskRunner()
+                .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
+                .createAndAdd(() -> {
+                    was[0] = world.getTime();
+                    props.setTime(61_286);
+                    line[0] = f.runtime.logCostNow();
+                    props.setTime(was[0]);
+                })
+                .createAndAdd(() -> {
+                    context.assertTrue(line[0].isDone(), "Measured");
+                    String s = line[0].join();
+                    context.assertTrue(s.startsWith("Kindred cost: world day 3: "), "The world's third day, not the start's first: " + s);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))
+                .completeIfSuccessful();
+    }
+
+    /**
      * A message the Wire refuses shows in the day's line as a count by reason and channel, and nothing of what it said
      * (F-34e): a refusal there would have shown at once that Echo's join was never told (F-34d).
      */
@@ -151,6 +181,7 @@ public final class NativeCostGameTests implements FabricGameTest {
                     context.assertTrue(line[0].isDone(), "Measured");
                     String s = line[0].join();
                     context.assertTrue(s.endsWith("; " + PlayerRuntime.BODY_MAPS + " {Counter=0/0/0/0/0/0/0}"), "Its body maps, by player and size: " + s);
+                    context.assertTrue(s.contains("; " + PlayerRuntime.DRY_SEARCHES + " {Counter="), "Its dry-ground searches, by player (M-06k9): " + s);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Stopped"))

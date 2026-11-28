@@ -1,6 +1,7 @@
 package dev.kindred.fabric;
 
 import dev.kindred.core.factions.FactionSettings;
+import dev.kindred.core.factions.SafeZones;
 import dev.kindred.core.record.ClaimLedger;
 import dev.kindred.core.record.WorldEvent;
 import java.util.Map;
@@ -49,6 +50,20 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
         for (int row : rows) runtime.record(WorldEvent.recorded(0, System.currentTimeMillis(), W, ClaimLedger.CLAIM, null, owner, ClaimLedger.chunk(W, x, row), Map.of()));
     }
 
+    /** The chunk column from local x {@code b} east claimed, or (M-06d1a) made a safe zone, across the rows claimEast takes. */
+    private static void protectEast(PlayerRuntime runtime, TestContext context, int b, boolean safe) {
+        if (!safe) {
+            claimEast(runtime, context, b);
+            return;
+        }
+        var chunks = new java.util.TreeSet<String>();
+        for (int z = 0; z <= 10; z++) {
+            var at = context.getAbsolutePos(new BlockPos(b, 0, z));
+            chunks.add(SafeZones.chunkAt(W, at.getX(), at.getZ()));
+        }
+        runtime.record(SafeZones.zone("fixture", chunks, null, 0, System.currentTimeMillis()));
+    }
+
     /**
      * The ground from {@code fromX} to {@code toX} cleared on stone, open to height 8, kept simulated; a stone roof over it.
      * It reaches past the plot to the chunk border, so it is kept and put back as the test ends, passed or failed, with
@@ -94,8 +109,18 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
         }
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefEndermanTake", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanTake", tickLimit = 400)
     public void anEndermanTakesNoBlockFromClaimedLand(TestContext context) {
+        anEndermanTakesNoBlockFromClaimedLand(context, false);
+    }
+
+    /** As {@link #anEndermanTakesNoBlockFromClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanTakeSafe", tickLimit = 400)
+    public void anEndermanTakesNoBlockFromASafeZone(TestContext context) {
+        anEndermanTakesNoBlockFromClaimedLand(context, true);
+    }
+
+    private static void anEndermanTakesNoBlockFromClaimedLand(TestContext context, boolean safe) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 380);
         int b = border(context);
         int wild = b - 4, claimed = b + 3;
@@ -107,10 +132,10 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                     dirtAbout(context, wild, 4);
                     dirtAbout(context, claimed, 4);
                     f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
-                    claimEast(f.runtime, context, b);
+                    protectEast(f.runtime, context, b, safe);
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue(f.runtime.recordWritten(), "Claimed");
+                    context.assertTrue(f.runtime.recordWritten(), safe ? "The safe zone written" : "Claimed");
                     for (int i = 0; i < 2; i++) {
                         int x = i == 0 ? wild : claimed;
                         e[i] = context.spawnEntity(EntityType.ENDERMAN, new Vec3d(x + 0.5, 2, 4.5));
@@ -131,8 +156,18 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefEndermanPlace", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanPlace", tickLimit = 400)
     public void anEndermanSetsNoBlockDownOnClaimedLand(TestContext context) {
+        anEndermanSetsNoBlockDownOnClaimedLand(context, false);
+    }
+
+    /** As {@link #anEndermanSetsNoBlockDownOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefEndermanPlaceSafe", tickLimit = 400)
+    public void anEndermanSetsNoBlockDownInASafeZone(TestContext context) {
+        anEndermanSetsNoBlockDownOnClaimedLand(context, true);
+    }
+
+    private static void anEndermanSetsNoBlockDownOnClaimedLand(TestContext context, boolean safe) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 380);
         int b = border(context);
         int wild = b - 4, claimed = b + 3;
@@ -142,10 +177,10 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     floor(context, b - 7, b + 6, 0, 8);
                     f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
-                    claimEast(f.runtime, context, b);
+                    protectEast(f.runtime, context, b, safe);
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue(f.runtime.recordWritten(), "Claimed");
+                    context.assertTrue(f.runtime.recordWritten(), safe ? "The safe zone written" : "Claimed");
                     for (int i = 0; i < 2; i++) {
                         int x = i == 0 ? wild : claimed;
                         e[i] = context.spawnEntity(EntityType.ENDERMAN, new Vec3d(x + 0.5, 2, 4.5));
@@ -167,8 +202,18 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefRavager", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefRavager", tickLimit = 400)
     public void aRavagerTramplesNoLeavesOnClaimedLand(TestContext context) {
+        aRavagerTramplesNoLeavesOnClaimedLand(context, false);
+    }
+
+    /** As {@link #aRavagerTramplesNoLeavesOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefRavagerSafe", tickLimit = 400)
+    public void aRavagerTramplesNoLeavesInASafeZone(TestContext context) {
+        aRavagerTramplesNoLeavesOnClaimedLand(context, true);
+    }
+
+    private static void aRavagerTramplesNoLeavesOnClaimedLand(TestContext context, boolean safe) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 380);
         int b = border(context);
         int wild = b - 4, claimed = b + 3;
@@ -183,10 +228,10 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                         context.setBlockState(x + dx, y, 6, Blocks.OAK_LEAVES.getDefaultState().with(net.minecraft.block.LeavesBlock.PERSISTENT, true));
                     }
                     f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
-                    claimEast(f.runtime, context, b);
+                    protectEast(f.runtime, context, b, safe);
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue(f.runtime.recordWritten(), "Claimed");
+                    context.assertTrue(f.runtime.recordWritten(), safe ? "The safe zone written" : "Claimed");
                     for (int i = 0; i < 2; i++) r[i] = context.spawnEntity(EntityType.RAVAGER, new Vec3d((i == 0 ? wild : claimed) + 0.5, 2, 3.5));
                 })
                 .createAndAdd(() -> {
@@ -200,8 +245,18 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefSilverfish", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefSilverfish", tickLimit = 400)
     public void aSilverfishHidesInNoStoneOnClaimedLand(TestContext context) {
+        aSilverfishHidesInNoStoneOnClaimedLand(context, false);
+    }
+
+    /** As {@link #aSilverfishHidesInNoStoneOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefSilverfishSafe", tickLimit = 400)
+    public void aSilverfishHidesInNoStoneInASafeZone(TestContext context) {
+        aSilverfishHidesInNoStoneOnClaimedLand(context, true);
+    }
+
+    private static void aSilverfishHidesInNoStoneOnClaimedLand(TestContext context, boolean safe) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 380);
         int b = border(context);
         int wild = b - 4, claimed = b + 3;
@@ -215,10 +270,10 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                         context.setBlockState(x + dx, y, 4 + dz, dx == 0 && dz == 0 && y == 3 ? Blocks.AIR : Blocks.STONE);
                     }
                     f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
-                    claimEast(f.runtime, context, b);
+                    protectEast(f.runtime, context, b, safe);
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue(f.runtime.recordWritten(), "Claimed");
+                    context.assertTrue(f.runtime.recordWritten(), safe ? "The safe zone written" : "Claimed");
                     for (int i = 0; i < 2; i++) {
                         s[i] = context.spawnEntity(EntityType.SILVERFISH, new Vec3d((i == 0 ? wild : claimed) + 0.5, 3, 4.5));
                         s[i].setAiDisabled(true);
@@ -238,8 +293,18 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefWither", tickLimit = 400)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefWither", tickLimit = 400)
     public void aWitherTearsThroughNoBlockOnClaimedLand(TestContext context) {
+        aWitherTearsThroughNoBlockOnClaimedLand(context, false);
+    }
+
+    /** As {@link #aWitherTearsThroughNoBlockOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefWitherSafe", tickLimit = 400)
+    public void aWitherTearsThroughNoBlockInASafeZone(TestContext context) {
+        aWitherTearsThroughNoBlockOnClaimedLand(context, true);
+    }
+
+    private static void aWitherTearsThroughNoBlockOnClaimedLand(TestContext context, boolean safe) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 380);
         int b = border(context);
         int wild = b - 4, claimed = b + 3;
@@ -255,10 +320,10 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                         context.setBlockState(x + dx, y, 4 + dz, dx == 0 && dz == 0 ? Blocks.AIR : Blocks.OAK_PLANKS);
                     }
                     f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
-                    claimEast(f.runtime, context, b);
+                    protectEast(f.runtime, context, b, safe);
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue(f.runtime.recordWritten(), "Claimed");
+                    context.assertTrue(f.runtime.recordWritten(), safe ? "The safe zone written" : "Claimed");
                     for (int i = 0; i < 2; i++) {
                         w[i] = context.spawnEntity(EntityType.WITHER, new Vec3d((i == 0 ? wild : claimed) + 0.5, 2, 4.5));
                         w[i].damage(context.getWorld().getDamageSources().generic(), 1);
@@ -273,8 +338,18 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                 .completeIfSuccessful();
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "griefZombieDoor", tickLimit = 1600)
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefZombieDoor", tickLimit = 1600)
     public void aZombieBreaksNoDoorOnClaimedLand(TestContext context) {
+        aZombieBreaksNoDoorOnClaimedLand(context, false);
+    }
+
+    /** As {@link #aZombieBreaksNoDoorOnClaimedLand}, the chunk column east a safe zone, not a claim (M-06d1a). */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "griefZombieDoorSafe", tickLimit = 1600)
+    public void aZombieBreaksNoDoorInASafeZone(TestContext context) {
+        aZombieBreaksNoDoorOnClaimedLand(context, true);
+    }
+
+    private static void aZombieBreaksNoDoorOnClaimedLand(TestContext context, boolean safe) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, false, 1580);
         int b = border(context);
         int wild = b - 4, claimed = b + 3;
@@ -299,10 +374,10 @@ public final class NativeMobGriefGameTests implements FabricGameTest {
                     }
                     server.setDifficulty(net.minecraft.world.Difficulty.HARD, true);
                     f.runtime.factionsWorldForTest(FactionSettings.DEFAULTS);
-                    claimEast(f.runtime, context, b);
+                    protectEast(f.runtime, context, b, safe);
                 })
                 .createAndAdd(() -> {
-                    context.assertTrue(f.runtime.recordWritten(), "Claimed");
+                    context.assertTrue(f.runtime.recordWritten(), safe ? "The safe zone written" : "Claimed");
                     for (int i = 0; i < 2; i++) {
                         int x = i == 0 ? wild : claimed;
                         v[i] = context.spawnEntity(EntityType.VILLAGER, new Vec3d(x + 0.5, 2, 6.5));

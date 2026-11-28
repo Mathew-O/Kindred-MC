@@ -982,10 +982,13 @@ final class PlayerRuntime {
                 && entry.snapshot().lifecycle() != LifecycleState.REMOVED).count();
         if (count + nativeCreationsPending >= maxNativePlayers) return reject(source, "This server allows " + maxNativePlayers
                 + " native players (maxNativePlayers in edits.properties); incomplete records still occupy a slot.");
-        if (nativeSpawn(source) == null) return reject(source, "Make room on solid ground in an already loaded area.");
+        UUID newId = UUID.randomUUID();
+        SpawnLocation spot = nativeSpawn(source, newId);
+        if (spot == null) return reject(source, "Make room on solid ground in an already loaded area.");
+        lastCreateSpawn = spot;
         PlayerCreationRequest request;
         try {
-            request = new PlayerCreationRequest(UUID.randomUUID(), actor.playerId() == null ? new UUID(0, 0) : actor.playerId(),
+            request = new PlayerCreationRequest(newId, actor.playerId() == null ? new UUID(0, 0) : actor.playerId(),
                     name, worldId, source.getWorld().getRegistryKey().getValue().toString());
         } catch (IllegalArgumentException invalid) { return reject(source, invalid.getMessage()); }
         ++nativeCreationsPending;
@@ -1005,6 +1008,7 @@ final class PlayerRuntime {
                 entry.blocker = "Creation lost administrative authority before spawn; reconcile allocation.";
                 return;
             }
+            entry.freshSpawn = spot;
             connectNative(source, entry, true);
         }));
         return 1;
@@ -1402,7 +1406,12 @@ final class PlayerRuntime {
             net.minecraft.util.math.Vec3d position;
             if (fresh) {
                 if (state.isPresent()) throw new IllegalStateException("Fresh creation conflicts with native data");
-                SpawnLocation spawn = nativeSpawn(source);
+                // The spot create found (M-06i4a) while it is still free; taken meanwhile (two made from one place in one
+                // tick both found its first free cell, neither body there yet), found again as before, the ring first.
+                SpawnLocation spawn = entry.freshSpawn;
+                entry.freshSpawn = null;
+                if (spawn != null && !spawnFree(world, spawn.x(), spawn.y(), spawn.z())) spawn = null;
+                if (spawn == null) spawn = nativeSpawn(source, entry.data.id());
                 if (spawn == null || source.getWorld() != world) throw new IllegalStateException("Creation area is no longer available");
                 position = new net.minecraft.util.math.Vec3d(spawn.x(), spawn.y(), spawn.z());
             } else {
@@ -2206,6 +2215,9 @@ final class PlayerRuntime {
                 var operation = NativePlayerSkills.body(skill, arguments, entry.nativeBody, () -> entry.lease, nativeMovementHabits(entry));
                 task = new NativeSwapAction(operation, entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack, source, target);
             } else if (skill.equals("native_fight")) {
+                var fought = entry.nativeBody.entity() == null ? null : entry.nativeBody.entity().getServerWorld().getEntity(UUID.fromString(arguments.get("target")));
+                KindredMod.LOGGER.info("{} fight starts with {}: {}", entry.data.displayName(),
+                        fought == null ? "an unseen target" : Registries.ENTITY_TYPE.getId(fought.getType()).getPath(), fightState(entry.nativeBody.entity()));
                 task = new NativeFightAction(entry.nativeBody, () -> entry.lease, nativeActionWriter(), this::handBack,
                         UUID.fromString(arguments.get("target")), Integer.parseInt(arguments.getOrDefault("slot", "-1")),
                         !"false".equals(arguments.get("tactics")),
@@ -2528,6 +2540,22 @@ final class PlayerRuntime {
         java.time.Instant now = java.time.Instant.now();
         var window = entry.activityLimit == null ? java.util.Optional.<dev.kindred.scheduler.ActivityWindow>empty() : activityWindow(entry.activityLimit);
         return ScheduleClock.windowInterval(window, period, now).map(dev.kindred.scheduler.TimeInterval::endExclusive).orElse(now);
+    }
+
+    /**
+     * A netherite step offered and not dispatched, and why (F-22c125, a diagnostic), once for each offer: on #493's CI the
+     * ingot's step was offered every refresh for 18 seconds after a run of routine smelts, nothing ran and nothing said why.
+     */
+    private void netheriteUnsent(Entry entry, List<NativeTaskCandidate> offered, String why) {
+        if (entry.netheriteTaskId == null) return;
+        for (var candidate : offered) {
+            if (!candidate.candidate().id().equals(entry.netheriteTaskId)) continue;
+            if (candidate == entry.netheriteUnsentFor) return;
+            entry.netheriteUnsentFor = candidate;
+            KindredMod.LOGGER.info("{} netherite {} {} offered and not dispatched: {}", entry.data.displayName(), candidate.skill(),
+                    candidate.arguments(), why);
+            return;
+        }
     }
 
     /**
@@ -2861,6 +2889,137 @@ final class PlayerRuntime {
         return inHazard || onHazard || burning && player.isOnFire();
     }
 
+    /**
+     * Why the hazard retreat's cell at {@code targetFeet} is refused, or null when it may be stepped to: the checks the
+     * retreat candidate makes, in its order (F-25c6d: the same function decides and explains, so the log cannot differ).
+     */
+    static String retreatRefusal(ServerPlayerEntity player, BlockPos targetFeet) {
+        var world = player.getServerWorld();
+        BlockPos targetGround = targetFeet.down();
+        if (!world.isChunkLoaded(targetFeet)) return "not loaded";
+        if (!world.isInBuildLimit(targetFeet.up())) return "out of the build limit";
+        if (!world.getWorldBorder().contains(targetFeet)) return "outside the border";
+        var targetSupport = world.getBlockState(targetGround);
+        if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)) return "floor " + blockName(targetSupport) + " not a full top";
+        if (targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)) return "floor " + blockName(targetSupport);
+        if (!world.getFluidState(targetFeet).isEmpty()) return "fluid " + blockName(world.getBlockState(targetFeet)) + " at its feet";
+        var targetFeetState = world.getBlockState(targetFeet);
+        if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
+                || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
+                || targetFeetState.isOf(Blocks.LAVA)) return blockName(targetFeetState) + " at its feet";
+        var box = player.getBoundingBox().offset(net.minecraft.util.math.Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
+        if (!world.isSpaceEmpty(player, box)) return "no room (" + blockName(targetFeetState) + ", " + blockName(world.getBlockState(targetFeet.up())) + " above)";
+        return null;
+    }
+
+    /** The four corners' cells, in the order the hazard retreat tries them after the four sides (F-25c6d). */
+    private static final String[] CORNERS = {"northeast", "northwest", "southeast", "southwest"};
+    private static final int[][] CORNER_STEPS = {{1, -1}, {-1, -1}, {1, 1}, {-1, 1}};
+
+    /**
+     * Why a corner's cell is refused for the hazard retreat, or null when it may be stepped to (F-25c6d): the cell's own
+     * checks, as a side's, and a way past the corner, one of the two side cells it passes between with room for the body
+     * (so it never squeezes between two blocks). On a block's corner over lava, its middle over the lava, the block that
+     * holds it up is a corner's: E-40c4's Nether players stood 37 to 130 game minutes where the four sides had lava for
+     * a floor and every task was cancelled.
+     */
+    static String cornerRefusal(ServerPlayerEntity player, BlockPos feet, int corner) {
+        int dx = CORNER_STEPS[corner][0], dz = CORNER_STEPS[corner][1];
+        String own = retreatRefusal(player, feet.add(dx, 0, dz));
+        if (own != null) return own;
+        var world = player.getServerWorld();
+        for (BlockPos side : new BlockPos[] {feet.add(dx, 0, 0), feet.add(0, 0, dz)}) {
+            var box = player.getBoundingBox().offset(Vec3d.ofBottomCenter(side).subtract(player.getPos()));
+            if (world.isSpaceEmpty(player, box)) return null;
+        }
+        return "no way past the corner";
+    }
+
+    /** The first corner's cell the hazard retreat may step to from {@code feet}, or null. */
+    static String diagonalRetreat(ServerPlayerEntity player, BlockPos feet) {
+        for (int c = 0; c < 4; c++) if (cornerRefusal(player, feet, c) == null) return CORNERS[c];
+        return null;
+    }
+
+    private static String blockName(net.minecraft.block.BlockState state) {
+        return net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath();
+    }
+
+    /**
+     * What {@link #isHazardousSituation(ServerPlayerEntity)} saw (F-25c6d's diagnostic): each of its clauses that holds,
+     * with the block and its offset from the feet; for being in lava without lava at the feet, the nearest lava cell the
+     * body touches. "nothing" when none holds.
+     */
+    static String hazardSeen(ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        BlockPos feet = player.getBlockPos();
+        var feetState = world.getBlockState(feet);
+        var groundState = world.getBlockState(feet.down());
+        java.util.List<String> seen = new java.util.ArrayList<>();
+        if (feetState.isOf(Blocks.FIRE) || feetState.isOf(Blocks.SOUL_FIRE) || feetState.isOf(Blocks.LAVA)
+                || feetState.isOf(Blocks.SWEET_BERRY_BUSH) || feetState.isOf(Blocks.POWDER_SNOW)) seen.add(blockName(feetState) + " at its feet (0, 0, 0)");
+        else if (world.getFluidState(feet).isIn(FluidTags.LAVA)) seen.add("lava fluid at its feet (0, 0, 0)");
+        if (player.isInLava() && !world.getFluidState(feet).isIn(FluidTags.LAVA)) {
+            BlockPos nearest = null;
+            var box = player.getBoundingBox();
+            for (BlockPos at : BlockPos.iterate(BlockPos.ofFloored(box.minX, box.minY, box.minZ), BlockPos.ofFloored(box.maxX, box.maxY, box.maxZ))) {
+                if (world.getFluidState(at).isIn(FluidTags.LAVA) && (nearest == null || at.getSquaredDistance(feet) < nearest.getSquaredDistance(feet))) nearest = at.toImmutable();
+            }
+            seen.add(nearest == null ? "in lava (no lava cell in its box)" : "in lava at " + nearest.subtract(feet).toShortString()
+                    + String.format(java.util.Locale.ROOT, ", %.1f off", Math.sqrt(nearest.getSquaredDistance(feet))));
+        }
+        if (player.isSubmergedInWater() && player.getAir() < player.getMaxAir() / 2) seen.add("drowning (air " + player.getAir() + ")");
+        if (groundState.isOf(Blocks.MAGMA_BLOCK) || groundState.isOf(Blocks.CACTUS) || groundState.isOf(Blocks.LAVA)) seen.add(blockName(groundState) + " under it (0, -1, 0)");
+        if (player.isOnFire()) seen.add("alight (fire ticks " + player.getFireTicks() + ")");
+        return seen.isEmpty() ? "nothing" : String.join("; ", seen);
+    }
+
+    /**
+     * The hazard interrupt's line, once a spell (F-25c6d; log only): which trigger cancelled the task, what the hazard
+     * test saw, the feet and floor, and each way off the retreat would consider with why it was refused. E-40c4's
+     * Nether players stood 37 to 130 game minutes where every task was cancelled and no retreat was offered.
+     */
+    private void logHazardSpell(Entry entry, ServerPlayerEntity player, boolean creeper, boolean fall) {
+        BlockPos feet = player.getBlockPos();
+        var world = player.getServerWorld();
+        java.util.List<String> triggers = new java.util.ArrayList<>();
+        if (isHazardousSituation(player)) triggers.add("hazard");
+        if (creeper) triggers.add("creeper");
+        if (fall) triggers.add("fall to break");
+        String[] dirs = {"north", "south", "east", "west"};
+        BlockPos[] adj = {feet.north(), feet.south(), feet.east(), feet.west()};
+        java.util.List<String> cells = new java.util.ArrayList<>();
+        for (int d = 0; d < 4; d++) {
+            String why = retreatRefusal(player, adj[d]);
+            cells.add(dirs[d] + " " + (why == null ? "free" : why));
+        }
+        for (int c = 0; c < 4; c++) {
+            String why = cornerRefusal(player, feet, c);
+            cells.add(CORNERS[c] + " " + (why == null ? "free" : why));
+        }
+        boolean inLava = player.isInLava() || world.getFluidState(feet).isIn(FluidTags.LAVA);
+        String escape = !inLava ? "not in lava" : lavaBank(player, feet).map(b -> "to " + b.toShortString()).orElse("no dry ground in sight");
+        // The creeper trigger reads the last tactical observation: which creepers it held, and how old it is and where it
+        // was made, so a stale one (from before a portal, or a failing refresh) shows as such.
+        String creepers = "none";
+        var obs = entry.lastTacticalObservation;
+        if (creeper && obs != null) {
+            java.util.List<String> lit = new java.util.ArrayList<>();
+            for (var mob : obs.observedMobs()) {
+                if (mob.isCreeper() && (mob.isIgnited() || (mob.fuseTicksRemaining() >= 0 && mob.fuseTicksRemaining() <= 25))) {
+                    lit.add(String.format(java.util.Locale.ROOT, "%.1f off, fuse %d%s", mob.distance(), mob.fuseTicksRemaining(), mob.isIgnited() ? ", ignited" : ""));
+                }
+            }
+            creepers = lit + " in an observation " + (server.getTicks() - obs.tick()) + " ticks old, made in " + obs.dimension();
+        }
+        KindredMod.LOGGER.info("{} hazard spell at {} in {}: trigger {}; saw {}; feet {}, floor {}; retreat cells: {}; lava escape: {}; creepers: {}; cancelling {}",
+                entry.data.displayName(), feet.toShortString(), world.getRegistryKey().getValue().getPath(), String.join(" and ", triggers),
+                hazardSeen(player), blockName(world.getBlockState(feet)), blockName(world.getBlockState(feet.down())),
+                String.join(", ", cells), escape, creepers, entry.skillId);
+        entry.hazardSpellTick = server.getTicks();
+        entry.hazardSpellCancels = 0;
+    }
+
     /** Swimming or sunk: not wading on a shallow bottom with the head above the surface. */
     static boolean inDeepWater(ServerPlayerEntity player) {
         if (player.isSubmergedInWater()) return true;
@@ -3123,7 +3282,15 @@ final class PlayerRuntime {
             entry.lastTacticalObservation = obs;
             entry.lastTacticalDecision = dev.kindred.core.tactics.TacticalPriorityPolicy.evaluate(obs, candidates);
             entry.lastTacticalRefreshTick = tick;
+            entry.tacticalFailureLogged = false;
         } catch (Exception ignored) {
+            // The last observation stays in use while the refresh fails, so a failure is said once (F-25c6d).
+            if (!entry.tacticalFailureLogged) {
+                entry.tacticalFailureLogged = true;
+                KindredMod.LOGGER.info("{}: the tactical observation could not be refreshed at tick {}; the last, from tick {}, stays in use: {}",
+                        entry.data.displayName(), tick, entry.lastTacticalObservation == null ? "none" : String.valueOf(entry.lastTacticalObservation.tick()),
+                        String.valueOf(ignored));
+            }
         }
     }
 
@@ -3181,7 +3348,7 @@ final class PlayerRuntime {
         chronicle.tick();
         if (tick % LEDGER_CHECK_TICKS == LEDGER_CHECK_TICKS - 1) {
             checkLedgers();
-            logCost(tick / LEDGER_CHECK_TICKS + 1);
+            logCostNow();
         }
         if (tick % 20 == 11 && factionsWorld()) {
             factions.tick(server.getPlayerManager().getPlayerList());
@@ -3542,6 +3709,11 @@ final class PlayerRuntime {
      * or a drop it cannot take, where its path ends short of the player.
      */
     static boolean mobCanReachToEat(ServerPlayerEntity player, double range) {
+        return mobReachingToEat(player, range) != null;
+    }
+
+    /** As {@link #mobCanReachToEat}, the mob found, or null: what a meal held back is logged with (F-25c4dh4). */
+    static net.minecraft.entity.mob.HostileEntity mobReachingToEat(ServerPlayerEntity player, double range) {
         for (var mob : player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class,
                 player.getBoundingBox().expand(range, 2, range), m -> m.isAlive() && m.getTarget() == player
                         && !(m instanceof net.minecraft.entity.ai.RangedAttackMob) && !(m instanceof net.minecraft.entity.mob.CreeperEntity))) {
@@ -3549,12 +3721,32 @@ final class PlayerRuntime {
             if (d2 > range * range) continue;
             // Within two it can get at the player only if it sees it or a path reaches it: not through a wall (F-25c4dh3).
             boolean sees = mob.canSee(player);
-            if (d2 <= 2.0 * 2.0 && sees) return true;
+            if (d2 <= 2.0 * 2.0 && sees) return mob;
             if (!sees && d2 > 2.0 * 2.0) continue;
             var path = mob.getNavigation().findPathTo(player, 1);
-            if (path != null && path.reachesTarget()) return true;
+            if (path != null && path.reachesTarget()) return mob;
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * In plain terms: a diagnostic line, at a fight's start and at its end, of how the player stood: its health and food,
+     * its armour and weapon, the mobs about it, and how dark it was (F-25c4dh4). E-40's iteration 27 had more zombie deaths
+     * than 26 in long fights before the first chestplate, with no meal in them, and its consoles could not say why: no
+     * health, no light but at a death, no mobs counted. Log only; nothing it decides reads it.
+     */
+    static String fightState(ServerPlayerEntity player) {
+        if (player == null) return "no body";
+        var world = player.getServerWorld();
+        var mobs = new java.util.TreeMap<String, Integer>();
+        for (var mob : world.getEntitiesByClass(net.minecraft.entity.mob.HostileEntity.class, player.getBoundingBox().expand(8, 4, 8),
+                m -> m.isAlive() && player.squaredDistanceTo(m) <= 8 * 8))
+            mobs.merge(Registries.ENTITY_TYPE.getId(mob.getType()).getPath(), 1, Integer::sum);
+        var hunger = player.getHungerManager();
+        BlockPos feet = player.getBlockPos();
+        return String.format(java.util.Locale.ROOT, "health %.1f, food %d, saturation %.1f, armour %d, weapon %s; mobs within 8 %s; light %d at Y %d",
+                player.getHealth(), hunger.getFoodLevel(), hunger.getSaturationLevel(), player.getArmor(),
+                Registries.ITEM.getId(player.getMainHandStack().getItem()).getPath(), mobs.isEmpty() ? "none" : mobs, world.getLightLevel(feet), feet.getY());
     }
 
     private List<NativeTaskCandidate> evaluateEssentialSurvivalCandidates(Entry entry, NativePlayerBody body, boolean admitted, boolean mayEdit) {
@@ -3585,27 +3777,40 @@ final class PlayerRuntime {
         if (isHazardousSituation(player)) {
             String[] dirs = new String[]{"north", "south", "east", "west"};
             BlockPos[] adj = new BlockPos[]{feetPos.north(), feetPos.south(), feetPos.east(), feetPos.west()};
+            int pick = -1;
             for (int d = 0; d < 4; d++) {
-                BlockPos targetFeet = adj[d];
-                BlockPos targetGround = targetFeet.down();
-                if (!world.isChunkLoaded(targetFeet) || !world.isInBuildLimit(targetFeet.up()) || !world.getWorldBorder().contains(targetFeet)) continue;
-                var targetSupport = world.getBlockState(targetGround);
-                if (!targetSupport.isSideSolidFullSquare(world, targetGround, Direction.UP)
-                        || targetSupport.isOf(Blocks.MAGMA_BLOCK) || targetSupport.isOf(Blocks.CACTUS)
-                        || !world.getFluidState(targetFeet).isEmpty()) continue;
-                var targetFeetState = world.getBlockState(targetFeet);
-                if (targetFeetState.isOf(Blocks.FIRE) || targetFeetState.isOf(Blocks.SOUL_FIRE)
-                        || targetFeetState.isOf(Blocks.SWEET_BERRY_BUSH) || targetFeetState.isOf(Blocks.POWDER_SNOW)
-                        || targetFeetState.isOf(Blocks.LAVA)) continue;
-                var box = player.getBoundingBox().offset(net.minecraft.util.math.Vec3d.ofBottomCenter(targetFeet).subtract(player.getPos()));
-                if (!world.isSpaceEmpty(player, box)) continue;
+                if (retreatRefusal(player, adj[d]) == null) { pick = d; break; }
+            }
+            // A corner's cell only out of lava: in lava, F-25c6a's escape below makes for dry ground as before.
+            boolean inLava = player.isInLava() || world.getFluidState(feetPos).isIn(FluidTags.LAVA);
+            String direction = pick >= 0 ? dirs[pick] : inLava ? null : diagonalRetreat(player, feetPos);
+            if (direction != null) {
 
                 // Found a safe retreat direction
-                UUID taskId = UUID.nameUUIDFromBytes(("hazard_retreat:" + entry.data.id() + ":" + feetPos.asLong() + ":" + dirs[d]).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                UUID taskId = UUID.nameUUIDFromBytes(("hazard_retreat:" + entry.data.id() + ":" + feetPos.asLong() + ":" + direction).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
                         dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
-                candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", dirs[d], "blocks", "1")));
-                break;
+                candidates.add(new NativeTaskCandidate(candidate, "native_retreat", Map.of("direction", direction, "blocks", "1")));
+            }
+            // In fire, not lava, with no cell of the eight to step to (F-25c6g): the fire at its feet put out, as a player
+            // punches it out. e40c5's 31102026 Echo stood 423 ticks in fire atop a one-wide nether_wart_block column, every
+            // cell refused for "floor air not a full top" and 140 tasks cancelled with nothing in their place; staged, a
+            // body that could be hurt burned to death there with #492's corner cells in.
+            BlockPos fireCell = feetPos;
+            if (direction == null && !inLava && mayEdit && world.getBlockState(fireCell).isIn(BlockTags.FIRE)) {
+                UUID taskId = UUID.nameUUIDFromBytes(("fire_at_feet:" + entry.data.id() + ":" + fireCell.asLong() + ":" + server.getTicks() / 40)
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                var candidate = new dev.kindred.core.TaskPreferences.Candidate(taskId, dev.kindred.core.TaskPreferences.Priority.URGENT, 99.0,
+                        dev.kindred.core.TaskPreferences.Affinities.none(), new dev.kindred.core.TaskPreferences.Eligibility(true, true, true, true));
+                entry.fireAtFeetTaskId = taskId;
+                entry.fireAtFeetCell = fireCell.toImmutable();
+                candidates.add(new NativeTaskCandidate(candidate, "native_break", Map.of("x", String.valueOf(fireCell.getX()),
+                        "y", String.valueOf(fireCell.getY()), "z", String.valueOf(fireCell.getZ()))));
+                if (server.getTicks() - entry.fireAtFeetLoggedTick >= 1200) {
+                    entry.fireAtFeetLoggedTick = server.getTicks();
+                    KindredMod.LOGGER.info("{} puts out the fire at its feet at {}, no cell of the eight to step to (F-25c6g)",
+                            entry.data.displayName(), fireCell.toShortString());
+                }
             }
             // In lava with lava on every side (F-25c6a): no cell beside it to step to, so it makes for the nearest dry
             // ground it can see, up and across, rather than giving up every task it begins as a hazard with nothing in
@@ -3699,7 +3904,8 @@ final class PlayerRuntime {
         // players died eating (505-kindred-33951 with cooked porkchop in hand) and the staged second zombie killed its player
         // mid-meal (F-25c4dh). Only one that can reach it: walled in for the night with a zombie outside, it eats as before.
         // And with the bar at six or below, where hunger is about to cost health, only one already in reach holds it back.
-        boolean pressedToEat = mobCanReachToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
+        var pressing = mobReachingToEat(player, foodLevel <= 6 ? 3.0 : 6.0);
+        boolean pressedToEat = pressing != null;
         // With nothing better held, rotten flesh or raw chicken is eaten when hurt with too little in the bar to heal (under
         // 18) or too hungry to sprint, as a player does: their hunger costs less than going on unhealed. In E-40's iteration
         // 8 (`e40a8-aed3e82`) 20 of the 23 deaths came with the bar under 18, and Echo on 101 died at two health and two
@@ -3707,6 +3913,12 @@ final class PlayerRuntime {
         boolean lastResort = (needsHealth && foodLevel < 18 || foodLevel <= 6) && !holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
         java.util.function.Predicate<ItemStack> eligible = stack -> isEligibleFood(stack, canEatVanilla, needsHealth) && worth.test(stack)
                 || lastResort && canEatVanilla && (stack.isOf(Items.ROTTEN_FLESH) || stack.isOf(Items.CHICKEN));
+        // A meal it would take held back by that mob, logged once a spell (F-25c4dh4): "refused, or never asked for".
+        boolean heldBack = pressedToEat && (canEatVanilla || needsHealth) && !outOfBreath && holdsEligibleFood(player, canEatVanilla, needsHealth, worth);
+        if (heldBack && !entry.mealHeldBack) KindredMod.LOGGER.info("{} meal held back: {} {} blocks off can get at it ({})", entry.data.displayName(),
+                Registries.ENTITY_TYPE.getId(pressing.getType()).getPath(), String.format(java.util.Locale.ROOT, "%.1f", Math.sqrt(player.squaredDistanceTo(pressing))),
+                fightState(player));
+        entry.mealHeldBack = heldBack;
         if ((canEatVanilla || needsHealth) && !outOfBreath && !pressedToEat) {
             int foodSlot = -1;
             double bestFoodScore = Double.NEGATIVE_INFINITY;
@@ -5215,6 +5427,9 @@ final class PlayerRuntime {
                 }
             }
             if ("native_bridge".equals(task.skill())) entry.campaign.bridgeEnded(completed ? Map.of() : entry.runner.lastProgress());
+            // Cut short for its safety, a hazard's retreat or a fall to break: the campaign told so in so many words, not by the
+            // reason's text (F-25c4dm2).
+            if (!completed && entry.hazardInterrupted) entry.campaign.cutForSafety(task);
             entry.campaign.taskFinished(task, completed, server.getTicks(), completed ? "" : entry.runner.reason().orElse(""));
         }
         entry.routineRefreshPending = true;
@@ -5727,7 +5942,7 @@ final class PlayerRuntime {
             int damage = hallDamage(world, standing);
             if (damage > 0) {
                 String why = "Repairing its trading hall, " + damage + (damage == 1 ? " block" : " blocks") + " out of place";
-                var plan = hallPlan(standing);
+                var plan = hallPlan(world, standing);
                 var repair = new dev.kindred.core.construction.Blueprint("the trading hall's repair", plan.source(), plan.creator(), plan.license(),
                         plan.blocks(), List.of());
                 if (startBuild(server.getCommandSource(), id, repair, new BlockPos(standing.x(), standing.y(), standing.z()), 0) != 1) return false;
@@ -6137,7 +6352,9 @@ final class PlayerRuntime {
     static final int HALL_CELLS = 3;
 
     private boolean startHall(Entry entry, PlayerMemoryStore.Hall hall, String why) {
-        var plan = hallPlan(hall);
+        var world = server.getWorld(net.minecraft.registry.RegistryKey.of(net.minecraft.registry.RegistryKeys.WORLD, Identifier.of(hall.dimension())));
+        if (world == null) return false;
+        var plan = hallPlan(world, hall);
         if (startBuild(server.getCommandSource(), entry.data.id(), plan, new BlockPos(hall.x(), hall.y(), hall.z()), 0) != 1) return false;
         entry.hallBuild = entry.build;
         noteBase(entry, why);
@@ -6690,9 +6907,21 @@ final class PlayerRuntime {
         return entry == null ? "" : entry.lifeNote;
     }
 
-    /** The plan its trading hall was built on. */
-    private static dev.kindred.core.construction.Blueprint hallPlan(PlayerMemoryStore.Hall hall) {
-        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone");
+    /**
+     * How its trading hall's cells are laid out, read from what stands (F-22c122): a hall built before, one wall between
+     * its cells, is repaired as it was built and never moved; one on open ground is laid as halls are built now.
+     */
+    private static dev.kindred.core.construction.TradingHall.Layout hallLayout(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        var origin = new BlockPos(hall.x(), hall.y(), hall.z());
+        return dev.kindred.core.construction.TradingHall.standing(hall.cells(), hall.wood(), "cobblestone", p -> {
+            BlockPos at = origin.add(p.x(), p.y(), p.z());
+            return world.isChunkLoaded(at) ? BuildRunner.spec(world.getBlockState(at)) : null;
+        });
+    }
+
+    /** The plan its trading hall was built on: its cells laid out as what stands has them (F-22c122). */
+    private static dev.kindred.core.construction.Blueprint hallPlan(ServerWorld world, PlayerMemoryStore.Hall hall) {
+        return dev.kindred.core.construction.TradingHall.of(hall.cells(), hall.wood(), "cobblestone", hallLayout(world, hall));
     }
 
     /**
@@ -6702,7 +6931,7 @@ final class PlayerRuntime {
     private static int hallDamage(ServerWorld world, PlayerMemoryStore.Hall hall) {
         int damage = 0;
         var origin = new BlockPos(hall.x(), hall.y(), hall.z());
-        for (var block : hallPlan(hall).blocks()) {
+        for (var block : hallPlan(world, hall).blocks()) {
             BlockPos at = origin.add(block.at().x(), block.at().y(), block.at().z());
             if (!world.isChunkLoaded(at)) return 0;
             if (!BuildRunner.spec(world.getBlockState(at)).sameAs(block.spec())) damage++;
@@ -7817,12 +8046,28 @@ final class PlayerRuntime {
         boolean burningInFight = "native_fight".equals(entry.skillId) && body.entity().isOnFire() && !body.entity().isInLava()
                 && !isHazardousSituation(body.entity(), false);
         // Nor a stop to putting that fire out, its own water poured or walked into (F-25c6b).
-        boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false);
+        boolean puttingOut = entry.fireOutTaskId != null && entry.fireOutTaskId.equals(entry.currentTaskId) && !isHazardousSituation(body.entity(), false)
+                // Nor to putting out the fire at its feet, while that fire is still there and it stands in it (F-25c6g).
+                || entry.fireAtFeetTaskId != null && entry.fireAtFeetTaskId.equals(entry.currentTaskId) && "native_break".equals(entry.skillId)
+                        && entry.fireAtFeetCell != null && entry.fireAtFeetCell.equals(body.entity().getBlockPos())
+                        && body.entity().getServerWorld().getBlockState(entry.fireAtFeetCell).isIn(BlockTags.FIRE)
+                        && !body.entity().isInLava();
         // A long fall to break with water ends whatever else it was doing (E-07d).
         boolean breakFall = clutchSlot(body.entity()) >= 0 && !"native_clutch".equals(entry.skillId);
+        // A spell of hazard ends on the first tick none of the interrupt's triggers holds (F-25c6d's diagnostic).
+        if (!isHazardousSituation(body.entity()) && !creeperThreat && !breakFall && entry.hazardSpellLogged) {
+            entry.hazardSpellLogged = false;
+            KindredMod.LOGGER.info("{} hazard spell over at {} after {} ticks, {} task(s) cancelled", entry.data.displayName(),
+                    body.entity().getBlockPos().toShortString(), server.getTicks() - entry.hazardSpellTick, entry.hazardSpellCancels);
+        }
         if (usable && busy && (isHazardousSituation(body.entity()) && !burningInFight && !puttingOut || creeperThreat && !handlingCreeper || breakFall)
                 && !"native_retreat".equals(entry.skillId) && !"native_lava_escape".equals(entry.skillId) && !"native_clutch".equals(entry.skillId)
                 && !escapingWater) {
+            if (!entry.hazardSpellLogged) {
+                entry.hazardSpellLogged = true;
+                logHazardSpell(entry, body.entity(), creeperThreat && !handlingCreeper, breakFall);
+            }
+            entry.hazardSpellCancels++;
             entry.hazardInterrupted = true;
             entry.runner.lease().ifPresent(entry.arbiter::cancel);
             entry.runner.abort(breakFall && !isHazardousSituation(body.entity()) ? "Falling: the fall to be broken with water"
@@ -7933,6 +8178,7 @@ final class PlayerRuntime {
         }
 
         if (decision.action() == dev.kindred.core.PlayerDecisionLoop.Action.RUN_SKILL) {
+            if (!java.util.Objects.equals(entry.currentTaskId, entry.netheriteTaskId)) netheriteUnsent(entry, taskCandidates, "a skill under way, " + entry.skillId);
             holdSkillTick(entry);
             entry.runner.tick();
             observeRunner(entry);
@@ -7941,10 +8187,13 @@ final class PlayerRuntime {
             var chosen = selection.candidate();
             entry.currentTaskId = chosen.id();
             var match = taskCandidates.stream().filter(tc -> tc.candidate().id().equals(chosen.id())).findFirst();
+            if (!chosen.id().equals(entry.netheriteTaskId)) netheriteUnsent(entry, taskCandidates,
+                    match.map(other -> "chose " + other.skill() + " " + other.arguments() + " instead").orElse("the choice matched no candidate"));
             if (match.isPresent()) {
                 NativeTaskCandidate candidateToDispatch = match.get();
                 bindBodyBlockScanBudget(body);
                 if (!validateCandidateStillExecutable(entry, body, candidateToDispatch)) {
+                    netheriteUnsent(entry, taskCandidates, "no longer executable");
                     entry.cachedRoutineCandidates = List.of();
                     entry.routineRefreshPending = true;
                     attentionScheduler.invalidate(entry.data.id(), WorkKind.ROUTINE_GOALS);
@@ -7969,6 +8218,7 @@ final class PlayerRuntime {
                     }
                     entry.pendingSource = candidateToDispatch.source();
                     int res = dispatchNativeTask(Actor.console(), entry, candidateToDispatch.skill(), candidateToDispatch.arguments(), true);
+                    if (res != 1) netheriteUnsent(entry, taskCandidates, "refused: " + entry.blocker);
                     if (res == 1 && chosen.id().equals(entry.tacticalRetreatTaskId)) entry.lastTacticalRetreatTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.barricadeTaskId)) entry.lastBarricadeTick = server.getTicks();
                     if (res == 1 && chosen.id().equals(entry.attentionTaskId)) entry.attendedAt = entry.addressedAt;
@@ -7993,6 +8243,7 @@ final class PlayerRuntime {
                         // A reroll's step refused, counted as a failure, so that it is not asked for tick after tick (E-45c).
                         KindredMod.LOGGER.info("{} reroll {} refused: {}", entry.data.displayName(), candidateToDispatch.skill(), entry.blocker);
                         entry.reroll.failed++;
+                        entry.rerollRefused++;
                         entry.routineRefreshPending = true;
                         entry.cachedRoutineCandidates = List.of();
                     }
@@ -8014,6 +8265,7 @@ final class PlayerRuntime {
                 entry.currentTaskId = null;
             }
         } else {
+            netheriteUnsent(entry, taskCandidates, decision.action() + ": " + decision.reason());
             if (!entry.nativeWorkPending && (entry.activity == null || entry.activity.phase() == PaidActivitySession.Phase.IDLE)) {
                 if (!taskCandidates.isEmpty()) {
                     entry.currentTaskId = null;
@@ -8039,26 +8291,58 @@ final class PlayerRuntime {
         }
     }
 
-    private SpawnLocation nativeSpawn(ServerCommandSource source) {
+    /** The eight blocks round {@code source}'s position at its own height, as a native player has always been made. */
+    private SpawnLocation ringSpawn(ServerCommandSource source) {
         var world = source.getWorld();
         var base = source.getPosition();
         for (int[] offset : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}}) {
             double x = Math.floor(base.x) + offset[0] + 0.5;
             double z = Math.floor(base.z) + offset[1] + 0.5;
-            BlockPos pos = BlockPos.ofFloored(x, base.y, z);
-            var bounds = new net.minecraft.util.math.Box(x - .3, base.y, z - .3, x + .3, base.y + 1.8, z + .3);
-            if (world.isChunkLoaded(pos) && world.isInBuildLimit(pos) && world.getWorldBorder().contains(bounds)
-                    && world.isSpaceEmpty(null, bounds) && world.getOtherEntities(null, bounds).isEmpty()
-                    && world.getFluidState(pos).isEmpty() && world.getBlockState(pos.down()).isSolidBlock(world, pos.down())) {
-                return new SpawnLocation(x, base.y, z, 0);
-            }
+            if (spawnFree(world, x, base.y, z)) return new SpawnLocation(x, base.y, z, 0);
         }
         return null;
     }
 
-    /** Whether a native player could be made at {@code source}'s position now, as the roster spawn takes it (F-26's starters). */
+    /**
+     * Where a native player is made for {@code source}: the ring round its position first, as always; only if that fails,
+     * the ground a human joining there would be put on (M-06i4a). That is vanilla's own search ({@code getWorldSpawnPos}):
+     * in a dimension with sky light and not in adventure mode, every column within {@code spawnRadius} (cut by the
+     * border) in vanilla's order, seeded by the new player's id, each judged by vanilla's {@code findOverworldSpawn},
+     * which refuses a column topped by fluid. Narrower than vanilla: only columns in loaded chunks, the spot found must
+     * also be free as the ring's are, and there is no fallback into water: none found is null, the same refusal.
+     */
+    private SpawnLocation nativeSpawn(ServerCommandSource source, UUID id) {
+        SpawnLocation ring = ringSpawn(source);
+        if (ring != null) return ring;
+        var world = source.getWorld();
+        if (!world.getDimension().hasSkyLight() || server.getSaveProperties().getGameMode() == net.minecraft.world.GameMode.ADVENTURE) return null;
+        var base = BlockPos.ofFloored(source.getPosition());
+        int radius = SpawnColumns.radius(server.getSpawnRadius(world), world.getWorldBorder().getDistanceInsideBorder(base.getX(), base.getZ()));
+        return SpawnColumns.first(base.getX(), base.getZ(), radius, id.getMostSignificantBits() ^ id.getLeastSignificantBits(),
+                (x, z) -> world.isChunkLoaded(x >> 4, z >> 4),
+                (x, z) -> {
+                    BlockPos ground = dev.kindred.fabric.mixin.SpawnLocatingInvoker.kindred$findOverworldSpawn(world, x, z);
+                    return ground != null && spawnFree(world, ground.getX() + 0.5, ground.getY(), ground.getZ() + 0.5)
+                            ? new SpawnLocation(ground.getX() + 0.5, ground.getY(), ground.getZ() + 0.5, 0) : null;
+                });
+    }
+
+    /** A player's box at ({@code x}, {@code y}, {@code z}) loaded, in the border, empty of blocks and entities, dry, on a solid block. */
+    private static boolean spawnFree(net.minecraft.server.world.ServerWorld world, double x, double y, double z) {
+        BlockPos pos = BlockPos.ofFloored(x, y, z);
+        var bounds = new net.minecraft.util.math.Box(x - .3, y, z - .3, x + .3, y + 1.8, z + .3);
+        return world.isChunkLoaded(pos) && world.isInBuildLimit(pos) && world.getWorldBorder().contains(bounds)
+                && world.isSpaceEmpty(null, bounds) && world.getOtherEntities(null, bounds).isEmpty()
+                && world.getFluidState(pos).isEmpty() && world.getBlockState(pos.down()).isSolidBlock(world, pos.down());
+    }
+
+    /**
+     * Whether a native player could be made at {@code source}'s position by the ring round it, as the roster spawn takes
+     * it ({@code EvalBootstrap}'s starters, which look outward for such a spot themselves, so they are made where they
+     * always were; M-06i4a's search is not asked).
+     */
     boolean nativeSpawnable(ServerCommandSource source) {
-        return nativeSpawn(source) != null;
+        return ringSpawn(source) != null;
     }
 
     int create(ServerCommandSource source, String name) {
@@ -8711,6 +8995,7 @@ final class PlayerRuntime {
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.netheriteTaskId)) {
             entry.netheriteAt = server.getTicks() + 600;
+            entry.netheriteHoldCause = "its step blocked";
             entry.routineRefreshPending = true;
         }
         // A furnace or crafting table it put down for its netherite is its own to come back to (E-16c).
@@ -8728,6 +9013,7 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeSmithAction smith && state == SkillRunner.State.COMPLETED) {
             say(entry, dev.kindred.core.Netherite.said(smith.piece()), "");
             entry.netheriteAt = server.getTicks() + 20;
+            entry.netheriteHoldCause = "a piece upgraded";
             entry.routineRefreshPending = true;
         }
         if (state == SkillRunner.State.BLOCKED && finishedTaskId != null && finishedTaskId.equals(entry.brewTaskId)) {
@@ -8816,6 +9102,7 @@ final class PlayerRuntime {
         if (entry.nativeTask instanceof NativeTradeAction trade) tradeEnded(entry, trade, state);
         // A reroll's step done, the next one planned from what it did; refused, counted (E-45c).
         if (entry.reroll != null && state != SkillRunner.State.RUNNING) {
+            if (state == SkillRunner.State.BLOCKED) entry.rerollRefused++;
             entry.reroll.failed = state == SkillRunner.State.BLOCKED ? entry.reroll.failed + 1 : 0;
             entry.routineRefreshPending = true;
         }
@@ -8952,6 +9239,8 @@ final class PlayerRuntime {
             String label = outcomeLabel(entry, lifeLabel);
             KindredMod.LOGGER.info("{} {} {}{}{}", entry.data.displayName(), entry.skillId, state,
                     entry.runner.reason().map(r -> ": " + r).orElse(""), label.isEmpty() ? "" : " [" + label + "]");
+            if ("native_fight".equals(entry.skillId)) KindredMod.LOGGER.info("{} fight ends {}{}: {}", entry.data.displayName(), state,
+                    entry.runner.reason().map(r -> " (" + r + ")").orElse(""), fightState(entry.nativeBody == null ? null : entry.nativeBody.entity()));
             if (watch != null) entry.decided(server.getTicks(), entry.skillId + " " + state + entry.runner.reason().map(r -> ": " + r).orElse("")
                     + (label.isEmpty() ? "" : " [" + label + "]"));
             runObserver.ended(entry.data.displayName(), entry.skillId, state.name(), label);
@@ -10590,11 +10879,15 @@ final class PlayerRuntime {
         // Its base's stage being built (M-06i2): a walk other than to defend its land waits till the stage is done, and
         // is kept. A walk under way when a stage falls due goes on to its end first; the stage begins after it.
         if (move.kind() != dev.kindred.core.factions.FactionPlay.Kind.DEFEND && factionBaseBegun(entry)) return null;
-        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without.
+        // A target it found no way to: not asked again until its wait is over; set aside after three, chosen without, at
+        // once. A place it once set aside as open water it saw, chosen again after its wait and set aside again by a
+        // refusal (asked from where it could not see the water), is weighed as water is: the next choice at the decision
+        // interval (M-06m1; F-35j1). On #465's CI (run 45056595996, attempt 2) such a place was chosen again, refused once
+        // and re-chosen 5 ticks later, and the paced open-water test failed on it.
         if (play.setAside(tick).contains(move.target())) {
             settledInFlight(entry, play, player, move);
             play.move = null;
-            play.decidedAt = Long.MIN_VALUE / 2;
+            play.decidedAt = play.setAsideAsWater(move.target()) ? tick : Long.MIN_VALUE / 2;
             return null;
         }
         // Every faction walk waits after a run of refusals, wherever they were to, until it has moved on or come up; no
@@ -11038,6 +11331,41 @@ final class PlayerRuntime {
         return entry == null ? List.of(List.of(), List.of(), List.of())
                 : List.of(List.copyOf(entry.factionPlay.completedForTest), List.copyOf(entry.factionPlay.overWaterForTest),
                         List.copyOf(entry.factionPlay.arrivedForTest));
+    }
+
+    /** For fixtures (M-06k9): its plans out of the water and the dry-ground searches they asked, since it was made. */
+    int[] drySearchForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.campaign == null) return new int[] {0, 0};
+        return new int[] {(int) entry.campaign.surfacePlans, (int) entry.campaign.drySearches};
+    }
+
+    /**
+     * For fixtures (M-06m1): the open-water look toward its live move's end from where it stands now, as its faction play
+     * makes it (F-35j): "all water seen", or the first column it has not seen as water.
+     */
+    String factionWaterLookForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null || entry.campaign == null || entry.nativeBody == null || entry.factionPlay.move == null) return "no look (no move)";
+        var body = entry.nativeBody.entity();
+        BlockPos to = FactionsPlayer.destination(entry.factionPlay.move, body);
+        if (to == null) return "no look (no destination)";
+        int[] at = entry.campaign.knowledge().waterLookBreak(body.getBlockPos(), to, FactionsPlayer.OPEN_WATER);
+        return at == null ? "all water seen toward " + to.toShortString() : "the first column not seen as water toward " + to.toShortString() + ": " + at[0] + ", " + at[1];
+    }
+
+    /**
+     * For fixtures (M-06m1): {@code target} recorded as set aside as open water it saw at {@code tick}, as the open-water
+     * look records it, or ({@code water} false) refused once at {@code tick}, as a refused walk is.
+     */
+    void factionTargetRecordForTest(UUID player, String target, long tick, boolean water) {
+        requireThread();
+        var entry = entries.get(player);
+        if (entry == null) return;
+        if (water) entry.factionPlay.openWater(target, tick);
+        else entry.factionPlay.refused(target, tick);
     }
 
     List<Long> factionDecisionsForTest(UUID player) {
@@ -11768,6 +12096,8 @@ final class PlayerRuntime {
         BlockPos cart, push;
         final BlockPos floor, slot, door, origin;
         final int cells, cellIndex;
+        /** How its hall's cells are laid out, read from what stands as it was planned (F-22c122). */
+        dev.kindred.core.construction.TradingHall.Layout layout = dev.kindred.core.construction.TradingHall.Layout.CURRENT;
         /** Every rail it has put down, to take up again; and how often it has laid the line again. */
         final Set<BlockPos> laid = new HashSet<>();
         int replans;
@@ -12012,8 +12342,8 @@ final class PlayerRuntime {
                         return bringCandidates(entry, body);
                     }
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
-                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
-                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells, b.layout,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex), dev.kindred.core.construction.RailRoute.BOAT_ROOM);
                     if (again.isEmpty()) return giveUp(entry, body, "No rail line with room for the " + b.noun + " in its boat from where it sits.");
                     var r = again.get();
                     b.rails = r.rails().stream().map(p -> new BlockPos(p.x(), p.y(), p.z())).toList();
@@ -12212,7 +12542,7 @@ final class PlayerRuntime {
                 // The line laid along the bank past the boat: a rolling empty cart takes up a boat its box comes within a
                 // fifth of a block of, there beside its rail as well as before it, and carries it on, villager and all.
                 var ground = bringGround(world, b);
-                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex);
+                var cell = dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex);
                 var hallAt = new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ());
                 dev.kindred.core.construction.RailRoute.Route best = null;
                 BlockPos dock = null;
@@ -12220,7 +12550,7 @@ final class PlayerRuntime {
                     var bank = boat.getBlockPos().offset(d);
                     // Close enough for the cart's box, passing the bank column's middle, to meet the boat's.
                     if (Math.hypot(boat.getX() - (bank.getX() + 0.5), boat.getZ() - (bank.getZ() + 0.5)) > 1.3) continue;
-                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, cell,
+                    var line = dev.kindred.core.construction.RailRoute.plan(ground, bank.getX(), bank.getZ(), hallAt, b.cells, b.layout, cell,
                             dev.kindred.core.construction.RailRoute.BOAT_ROOM);
                     if (line.isEmpty() || !line.get().bridge().isEmpty()) continue;
                     if (best == null || line.get().rails().size() < best.rails().size()) {
@@ -12353,8 +12683,8 @@ final class PlayerRuntime {
                 if (on < 1 || on > 4) {
                     if (b.replans >= 4) return giveUp(entry, body, "The " + b.noun + " kept wandering off the line.");
                     var again = dev.kindred.core.construction.RailRoute.plan(bringGround(world, b), villager.getBlockX(), villager.getBlockZ(),
-                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells,
-                            dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex), heldBoat(world, b) != null
+                            new dev.kindred.core.construction.Pos(b.origin.getX(), b.origin.getY(), b.origin.getZ()), b.cells, b.layout,
+                            dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex), heldBoat(world, b) != null
                                     ? dev.kindred.core.construction.RailRoute.BOAT_ROOM : dev.kindred.core.construction.RailRoute.CART_ROOM);
                     if (again.isEmpty()) return giveUp(entry, body, "No rail line from where the " + b.noun + " wandered to.");
                     b.replans++;
@@ -12885,7 +13215,7 @@ final class PlayerRuntime {
                 }
                 // The bridge taken back toward the hall: the block furthest from its door first, from the block beside it
                 // on the hall's side, so that it ends on the hall's bank. A block broken over the water floats up beside it.
-                var in = dev.kindred.core.construction.RailRoute.approach(b.cells);
+                var in = dev.kindred.core.construction.RailRoute.approach(b.cells, b.layout);
                 BlockPos approach = b.origin.add(in.x(), in.y(), in.z());
                 BlockPos furthest = null;
                 for (var at : b.bridged) {
@@ -12966,7 +13296,7 @@ final class PlayerRuntime {
                     return endBring(entry, "I've brought the " + b.noun + " home: it's in its cell in my trading hall." + leftInCell(world, b), true);
                 }
                 // The door put back as the hall's plan has it, by the build runner, which places a door as players do.
-                var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone");
+                var hall = dev.kindred.core.construction.TradingHall.of(b.cells, b.wood, "cobblestone", b.layout);
                 var door = new ArrayList<dev.kindred.core.construction.Blueprint.Block>();
                 var rel = new dev.kindred.core.construction.Pos(b.door.getX() - b.origin.getX(), b.door.getY() - b.origin.getY(), b.door.getZ() - b.origin.getZ());
                 for (var block : hall.blocks()) if (block.at().x() == rel.x() && block.at().z() == rel.z() && (block.at().y() == rel.y() || block.at().y() == rel.y() + 1)) door.add(block);
@@ -12998,7 +13328,8 @@ final class PlayerRuntime {
         var player = body.entity();
         var world = player.getServerWorld();
         BlockPos origin = new BlockPos(hall.x(), hall.y(), hall.z());
-        var cells = dev.kindred.core.construction.TradingHall.cells(hall.cells());
+        var layout = hallLayout(world, hall);
+        var cells = dev.kindred.core.construction.TradingHall.cells(hall.cells(), layout);
         var holding = Valuables.holding(player, lootWanted(entry));
         var around = new net.minecraft.util.math.Box(origin).expand(BRING_RANGE);
         for (var villager : world.getEntitiesByClass(net.minecraft.entity.passive.VillagerEntity.class, around, v -> v.isAlive() && !v.isBaby() && !v.hasVehicle())) {
@@ -13029,7 +13360,7 @@ final class PlayerRuntime {
                 return null;
             }
             var route = dev.kindred.core.construction.RailRoute.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
-                    new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                    new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), layout, free);
             // By boat across water where no line is laid over it, or where its bridge wants more plain blocks than it has:
             // held in a boat, rowed over, let go of on the far bank and held again there (one that strolls only: one that
             // does not would not wade ashore). Its line from the far bank, with a boat's room, is what the bill is made by.
@@ -13037,9 +13368,9 @@ final class PlayerRuntime {
             int bridgeBlocks = route.map(r -> (int) r.bridge().stream().filter(p -> world.getBlockState(new BlockPos(p.x(), p.y(), p.z())).isReplaceable()).count()).orElse(0);
             boolean shortForBridge = bridgeBlocks > 0 && (shutterSlot(player) < 0 ? 0 : plainBlocks(player)) < 1 + bridgeBlocks;
             if ((route.isEmpty() || shortForBridge) && !villager.isAiDisabled() && boatSlot(player) >= 0
-                    && opensOverhead(player, origin, hall.cells(), cells.indexOf(free))) {
+                    && opensOverhead(player, origin, hall.cells(), layout, cells.indexOf(free))) {
                 var across = dev.kindred.core.construction.WaterCrossing.plan(ground(world), villager.getBlockX(), villager.getBlockZ(),
-                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), free);
+                        new dev.kindred.core.construction.Pos(origin.getX(), origin.getY(), origin.getZ()), hall.cells(), layout, free);
                 if (across.isPresent()) {
                     crossing = across.get();
                     route = Optional.of(crossing.home());
@@ -13105,10 +13436,11 @@ final class PlayerRuntime {
             var r = route.get();
             BlockPos floor = origin.add(free.stand().x(), free.stand().y(), free.stand().z());
             BlockPos slot = origin.add(free.jobBlock().x(), free.jobBlock().y(), free.jobBlock().z());
-            BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells()) / 2, 1, 7);
+            BlockPos door = origin.add(dev.kindred.core.construction.TradingHall.width(hall.cells(), layout) / 2, 1, 7);
             noteBring(entry, "Bringing the " + noun + " home");
             var bring = new Bring(id, noun, rails, bridge, new BlockPos(r.cart().x(), r.cart().y(), r.cart().z()), new BlockPos(r.push().x(), r.push().y(), r.push().z()),
                     floor, slot, door, origin, hall.cells(), cells.indexOf(free), hall.wood(), jobBlock);
+            bring.layout = layout;
             // One that strolls is held in a boat while the line is laid, where it has one to put down on it.
             if (!villager.isAiDisabled() && boatSlot(player) >= 0) bring.phase = Bring.Phase.HOLD;
             if (crossing != null) {
@@ -13382,7 +13714,7 @@ final class PlayerRuntime {
     /** The hall's blocks over the line that a villager riding in its boat would put its eyes into: over the doorway, then the lintel. */
     private static List<BlockPos> overhead(Bring b) {
         var out = new ArrayList<BlockPos>();
-        for (var p : dev.kindred.core.construction.RailRoute.overhead(b.cells, dev.kindred.core.construction.TradingHall.cells(b.cells).get(b.cellIndex))) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(b.cells, b.layout, dev.kindred.core.construction.TradingHall.cells(b.cells, b.layout).get(b.cellIndex))) {
             out.add(b.origin.add(p.x(), p.y(), p.z()));
         }
         return out;
@@ -13390,11 +13722,11 @@ final class PlayerRuntime {
 
     /** Whether it can take out the hall's blocks over the line, and so keep what they drop to put back: a tool that takes each. */
     private static boolean opensOverhead(ServerPlayerEntity player, Bring b) {
-        return opensOverhead(player, b.origin, b.cells, b.cellIndex);
+        return opensOverhead(player, b.origin, b.cells, b.layout, b.cellIndex);
     }
 
-    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, int cellIndex) {
-        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, dev.kindred.core.construction.TradingHall.cells(cells).get(cellIndex))) {
+    private static boolean opensOverhead(ServerPlayerEntity player, BlockPos origin, int cells, dev.kindred.core.construction.TradingHall.Layout layout, int cellIndex) {
+        for (var p : dev.kindred.core.construction.RailRoute.overhead(cells, layout, dev.kindred.core.construction.TradingHall.cells(cells, layout).get(cellIndex))) {
             var at = origin.add(p.x(), p.y(), p.z());
             var state = player.getServerWorld().getBlockState(at);
             if (state.isAir() || !state.isToolRequired()) continue;
@@ -13543,6 +13875,8 @@ final class PlayerRuntime {
         int tries, failed, nudges;
         long since;
         boolean givingUp;
+        /** Since when, standing on its lectern to break it, it has found no room to step off to; -1 when it has (F-22c116). */
+        long noRoomSince = -1;
         /** Each look's offers, in words, for fixtures. */
         final List<String> looks = new ArrayList<>();
         /** The ids of the steps it has given, to know its own refusals. */
@@ -13627,6 +13961,16 @@ final class PlayerRuntime {
                 if (slot < 0) {
                     // Just broken: the lectern lies where it fell a moment before it is picked up.
                     if (r.tries > 0 && now - r.since < 100) return List.of(waitTask(task, "For the lectern to be picked up"));
+                    // Lying where the break's own collection did not reach (in the hole it left, broken from a block beside
+                    // one up, stepped off onto): walked onto, for as long as a villager is given to take up a lectern (F-22c116).
+                    var lying = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
+                            item -> item.getStack().isOf(Items.LECTERN));
+                    if (r.tries > 0 && !lying.isEmpty() && now - r.since < JOB_NUDGE) {
+                        BlockPos drop = lying.getFirst().getBlockPos();
+                        return List.of(new NativeTaskCandidate(rerollTask(entry, "pickup:" + drop.asLong()), "native_goto", Map.of(
+                                "x", String.valueOf(drop.getX()), "y", String.valueOf(drop.getY()), "z", String.valueOf(drop.getZ()),
+                                "range", "0.5", "partial", "true")));
+                    }
                     KindredMod.LOGGER.info("{} reroll: no lectern to put down ({} lying near, entities ticking there {}, the villager's age {}); let be",
                             entry.data.displayName(), world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, player.getBoundingBox().expand(8),
                                     item -> item.getStack().isOf(Items.LECTERN)).size(), world.shouldTickEntity(r.lectern), villager == null ? -1 : villager.age);
@@ -13700,11 +14044,27 @@ final class PlayerRuntime {
                 }
                 if (!reach) return List.of(goNear(task, r.lectern));
                 // Standing on it, as a small pen leaves a player stepping up onto it: off it first (a break of the block
-                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground).
+                // underfoot is refused, and six refusals gave the reroll up with the lectern still in the ground). With no
+                // room to step off to, it waits for some rather than asking for a break it would be refused, for as long as
+                // a villager is given to let its job go; then it lets the villager be, the lectern left standing, and says
+                // why: never through refusals (F-22c116, CI #451: six refusals, the lectern left in the ground).
                 if (player.getBoundingBox().intersects(new net.minecraft.util.math.Box(r.lectern).stretch(0, 1, 0))) {
                     var off = offTheLectern(entry, world, r);
-                    if (off != null) return List.of(off);
+                    if (off != null) {
+                        r.noRoomSince = -1;
+                        return List.of(off);
+                    }
+                    if (r.noRoomSince < 0) r.noRoomSince = now;
+                    if (now - r.noRoomSince > JOB_WAIT) {
+                        say(entry, "There's no room to step off my lectern; I've left it standing.", "");
+                        entry.rerollGivenUp.add(r.villager);
+                        entry.reroll = null;
+                        entry.rerollAt = now + 1200;
+                        return null;
+                    }
+                    return List.of(waitTask(task, "For room off the lectern"));
                 }
+                r.noRoomSince = -1;
                 var args = new HashMap<>(at);
                 args.put("collect", "true");
                 return List.of(new NativeTaskCandidate(task, "native_break", Map.copyOf(args)));
@@ -13760,20 +14120,37 @@ final class PlayerRuntime {
     }
 
     /**
-     * A walk off the lectern's block to the middle of one beside it, clear of it: where it stood to begin with, else
-     * any side of the lectern with room to stand; or null when there is none.
+     * A walk off the lectern's block to the middle of one with room to stand, clear of it (see {@link #stepOffTo}), with
+     * where it stood to begin with tried first; or null when there is none.
      */
     private static NativeTaskCandidate offTheLectern(Entry entry, net.minecraft.server.world.ServerWorld world, Reroll r) {
-        var sides = new ArrayList<BlockPos>();
-        sides.add(r.stand);
-        for (Direction side : Direction.Type.HORIZONTAL) sides.add(r.lectern.offset(side));
-        for (BlockPos at : sides) {
-            if (at.equals(r.lectern) || !world.getBlockState(at).getCollisionShape(world, at).isEmpty()
+        BlockPos at = stepOffTo(world, r.lectern, r.stand);
+        if (at == null) return null;
+        return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
+                "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+    }
+
+    /**
+     * A cell to step off {@code block} to, before breaking it from beside (F-22c116): its feet and head clear, a full top
+     * face under it to stand on (glass is one, though not a solid block), no mob in it, and not over {@code block} itself. {@code first} (where it stood before, say) is tried
+     * first, then the four sides at {@code block}'s height, then the four beside it one up, where a block beside is a
+     * floor to step across onto from on top of it (as a pen's fill leaves one); null when there is none. Only cells beside
+     * it, a step from where it stands on it: a cell two across can lie behind a wall with no way round (a lectern by its
+     * pen's wall), and a walk there gets no nearer. The break of the block underfoot stays
+     * {@code RoamingEdits.breakDenial}'s to refuse: this only finds where to stand so that it is not asked for.
+     */
+    static BlockPos stepOffTo(net.minecraft.server.world.ServerWorld world, BlockPos block, BlockPos first) {
+        var cells = new ArrayList<BlockPos>();
+        if (first != null) cells.add(first);
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side));
+        for (Direction side : Direction.Type.HORIZONTAL) cells.add(block.offset(side).up());
+        for (BlockPos at : cells) {
+            if (at.getX() == block.getX() && at.getZ() == block.getZ()) continue;
+            if (!world.getBlockState(at).getCollisionShape(world, at).isEmpty()
                     || !world.getBlockState(at.up()).getCollisionShape(world, at.up()).isEmpty()
-                    || !world.getBlockState(at.down()).isSolidBlock(world, at.down())) continue;
+                    || !world.getBlockState(at.down()).isSideSolidFullSquare(world, at.down(), Direction.UP)) continue;
             if (!world.getOtherEntities(null, new net.minecraft.util.math.Box(at), e -> !(e instanceof ServerPlayerEntity)).isEmpty()) continue;
-            return new NativeTaskCandidate(rerollTask(entry, "off:" + at.asLong()), "native_goto", Map.of("x", String.valueOf(at.getX()),
-                    "y", String.valueOf(at.getY()), "z", String.valueOf(at.getZ()), "range", "0", "centre", "true", "partial", "true"));
+            return at.toImmutable();
         }
         return null;
     }
@@ -13851,6 +14228,12 @@ final class PlayerRuntime {
     List<String> rerollLooks(UUID id) {
         Entry entry = entries.get(id);
         return entry == null ? List.of() : List.copyOf(entry.rerollLooks);
+    }
+
+    /** The reroll's steps refused, for fixtures (F-22c116). */
+    int rerollStepsRefused(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null ? 0 : entry.rerollRefused;
     }
 
     /** Villagers it gave up rerolling, for fixtures. */
@@ -15005,9 +15388,45 @@ final class PlayerRuntime {
      * to spare; and the first piece upgraded at a smithing table of its own, one it holds put down beside it first.
      */
     private List<NativeTaskCandidate> netheriteCandidates(Entry entry, NativePlayerBody body) {
+        var steps = netheriteSteps(entry, body);
+        if (steps != null) entry.netheriteHeldWhy = null;
+        return steps;
+    }
+
+    /**
+     * Why its netherite gives no step (F-22c125, a diagnostic), said only when the reason changes, with its decision's
+     * state: on #493's CI the run gave none, unsaid, between its table going down and seven routine smelts, with the ingot
+     * due, and its body had come up "Stopped or unavailable" where locally it comes up "Awaiting local decision".
+     */
+    private void netheriteHeld(Entry entry, String why, String detail) {
+        if (why.equals(entry.netheriteHeldWhy)) return;
+        entry.netheriteHeldWhy = why;
+        KindredMod.LOGGER.info("{} netherite held: {} (its decision: {})", entry.data.displayName(), detail, entry.mindStatus);
+    }
+
+    /** Its netherite held until {@code until}, and why, said as {@link #netheriteHeld} says it. */
+    private List<NativeTaskCandidate> netheriteHold(Entry entry, long until, String why) {
+        entry.netheriteAt = until;
+        entry.netheriteHoldCause = why;
+        netheriteHeld(entry, why, why + ", until tick " + until);
+        return null;
+    }
+
+    private List<NativeTaskCandidate> netheriteSteps(Entry entry, NativePlayerBody body) {
         var player = body.entity();
         long now = server.getTicks();
-        if (now < entry.netheriteAt || !worldEditsEnabled() || matches.running(player.getUuid()).isPresent()) return null;
+        if (now < entry.netheriteAt) {
+            netheriteHeld(entry, String.valueOf(entry.netheriteHoldCause), entry.netheriteHoldCause + ", until tick " + entry.netheriteAt + " (now " + now + ")");
+            return null;
+        }
+        if (!worldEditsEnabled()) {
+            netheriteHeld(entry, "world edits off", "world edits off");
+            return null;
+        }
+        if (matches.running(player.getUuid()).isPresent()) {
+            netheriteHeld(entry, "in a match", "in a match");
+            return null;
+        }
         var inventory = player.getInventory();
         var held = new HashMap<String, Integer>();
         var pieces = new HashMap<Integer, String>();
@@ -15032,10 +15451,8 @@ final class PlayerRuntime {
             if (entry.campaign.smelting(body, Items.ANCIENT_DEBRIS) && pieces.size() > 0 && held.getOrDefault("minecraft:netherite_ingot", 0) == 0) {
                 return List.of(new NativeTaskCandidate(task, "native_wait", Map.of("seconds", "1")));
             }
-            entry.netheriteAt = now + 1200;
-            return null;
+            return netheriteHold(entry, now + 1200, "no step for what it holds");
         }
-        KindredMod.LOGGER.info("{} netherite: {}", entry.data.displayName(), step.get());
         task = stepTask(entry.data.id(), "netherite:" + step.get(), id -> entry.netheriteTaskId = id);
         Optional<PortalRunCampaign.Task> next = switch (step.get()) {
             case dev.kindred.core.Netherite.Step.Smelt smelt -> entry.campaign.smeltItem(body, Items.ANCIENT_DEBRIS, smelt.debris(), "Smelt ancient debris into scrap");
@@ -15043,11 +15460,12 @@ final class PlayerRuntime {
             case dev.kindred.core.Netherite.Step.Template template -> entry.campaign.craftAtTable(body, "netherite_upgrade_smithing_template");
             case dev.kindred.core.Netherite.Step.Upgrade upgrade -> Optional.empty();
         };
+        // The step and the skill it is to be taken with (F-22c125, a diagnostic): on #493's CI "netherite: Ingot[]" came twice
+        // every 120 ticks for 18 seconds with nothing run, and the line did not say what it was to do.
+        KindredMod.LOGGER.info("{} netherite: {}{}", entry.data.displayName(), step.get(), step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade ? ""
+                : next.map(t -> " by " + t.skill() + " " + t.args()).orElse(" by nothing it can do now"));
         if (!(step.get() instanceof dev.kindred.core.Netherite.Step.Upgrade upgrade)) {
-            if (next.isEmpty()) {
-                entry.netheriteAt = now + 1200;
-                return null;
-            }
+            if (next.isEmpty()) return netheriteHold(entry, now + 1200, "nothing it can do now for " + step.get());
             entry.netheriteStep = next.get();
             return List.of(new NativeTaskCandidate(task, next.get().skill(), next.get().args()));
         }
@@ -15057,29 +15475,20 @@ final class PlayerRuntime {
         if (table == null) {
             int tableSlot = -1;
             for (int slot = 0; slot < 36 && tableSlot < 0; slot++) if (inventory.getStack(slot).isOf(Items.SMITHING_TABLE)) tableSlot = slot;
-            if (tableSlot < 0) {
-                entry.netheriteAt = now + 2400;
-                return null;
-            }
+            if (tableSlot < 0) return netheriteHold(entry, now + 2400, "no smithing table");
             if (tableSlot >= 9) {
                 int free = 8;
                 for (int slot = 0; slot < 9; slot++) if (inventory.getStack(slot).isEmpty()) { free = slot; break; }
                 return List.of(new NativeTaskCandidate(task, "native_swap", Map.of("source", String.valueOf(tableSlot), "target", String.valueOf(free))));
             }
             BlockPos spot = workstationSpot(entry, player, "minecraft:smithing_table");
-            if (spot == null) {
-                entry.netheriteAt = now + 600;
-                return null;
-            }
+            if (spot == null) return netheriteHold(entry, now + 600, "no spot for its smithing table");
             entry.smithingTable = spot.toImmutable(); // Its own once put down; forgotten if it is not there.
             return List.of(new NativeTaskCandidate(task, "native_place", Map.of("slot", String.valueOf(tableSlot), "x", String.valueOf(spot.getX()),
                     "y", String.valueOf(spot.getY()), "z", String.valueOf(spot.getZ()), "side", "up")));
         }
         if (player.getEyePos().squaredDistanceTo(Vec3d.ofCenter(table)) > 4.5 * 4.5) {
-            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) {
-                entry.netheriteAt = now + 1200;
-                return null;
-            }
+            if (player.getBlockPos().getSquaredDistance(table) > 48 * 48) return netheriteHold(entry, now + 1200, "its smithing table too far");
             return List.of(new NativeTaskCandidate(task, "native_goto", Map.of("x", String.valueOf(table.getX()), "y", String.valueOf(table.getY()),
                     "z", String.valueOf(table.getZ()), "range", "2.5")));
         }
@@ -16488,7 +16897,7 @@ final class PlayerRuntime {
         }
         if (factionsWorld()) factions.flushAll(); // Online time to the second (M-06c).
         TerritoryGuard.deactivate(factions);
-        logCost(server.getTicks() / LEDGER_CHECK_TICKS + 1); // The cost check's last line, at the stop.
+        logCostNow(); // The cost check's last line, at the stop.
         running = false;
         matches.stopAll();
         flushMatches();
@@ -18994,6 +19403,18 @@ final class PlayerRuntime {
     /** Writes asked for after the stop and not tried, and callbacks dropped after it, for fixtures. */
     private int lateWritesRefused, lateCallbacksDropped, lateTellsRefused;
 
+    /** A fixture's view of a player's last tactical observation (F-25c6d), or null. */
+    dev.kindred.core.tactics.TacticalObservation tacticalObservationForTest(UUID player) {
+        requireThread();
+        var entry = entries.get(player);
+        return entry == null ? null : entry.lastTacticalObservation;
+    }
+
+    /** The spot the last accepted {@code createNative} found for its body, {x, y, z}, or null (M-06i4a's fixtures). */
+    double[] createSpawnForTest() { return lastCreateSpawn == null ? null : new double[] {lastCreateSpawn.x(), lastCreateSpawn.y(), lastCreateSpawn.z()}; }
+
+    private SpawnLocation lastCreateSpawn;
+
     /** Test-only and read-only: {writes refused after the stop, callbacks dropped after it, tells refused as it stops (their events written)}. */
     int[] lateAfterStopForTest() { return new int[] {lateWritesRefused, lateCallbacksDropped, lateTellsRefused}; }
 
@@ -19241,7 +19662,16 @@ final class PlayerRuntime {
         return id.toString().substring(0, 8);
     }
 
-    /** The cost line for {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
+    /**
+     * The cost line now, numbered by the world's day (the overworld's game time, {@link RecordGauge#worldDay}), so a
+     * restart goes on with the world's count, not a count of its own from 1 (M-06i4: after a restart at world time 61,286
+     * the line read "day 1" again). Still written every {@link #LEDGER_CHECK_TICKS} server ticks and at a stop.
+     */
+    CompletableFuture<String> logCostNow() {
+        return logCost(RecordGauge.worldDay(server.getOverworld().getTime()));
+    }
+
+    /** The cost line for world day {@code day}: the Record's growth, on disk and in memory, logged off the thread. */
     CompletableFuture<String> logCost(long day) {
         // The store's own counts: every event it wrote, the journal's and the action ledger's with the runtime's.
         SqliteCompanionStore database = store;
@@ -19253,10 +19683,28 @@ final class PlayerRuntime {
         heapHighWater = 0;
         // The body's position-keyed maps by player (F-31j), counted here on the server thread that changes them.
         String maps = bodyMaps();
+        String drySearches = drySearches();
         var line = RecordGauge.line(day, metadataDirectory.resolve("companions.sqlite"), held, growth)
-                .thenApply(text -> text + "; " + BODY_MAPS + " " + maps);
+                .thenApply(text -> text + "; " + DRY_SEARCHES + " " + drySearches + "; " + BODY_MAPS + " " + maps);
         line.thenAccept(KindredMod.LOGGER::info);
         return line;
+    }
+
+    /** The cost line's name for {@link #drySearches}, its counts in this order (M-06k9). */
+    static final String DRY_SEARCHES = "dry-ground searches by player, plans out of the water/searches/positions expanded";
+
+    /**
+     * Each player's way out of the water since it was made, for the cost line (M-06k9): its plans that weighed it, the
+     * searches for dry ground they asked (a search that found nothing is not asked again from the same cell for
+     * {@value PortalRunCampaign#DRY_MISS_TICKS} ticks), and the positions those searches expanded. Read only.
+     */
+    private String drySearches() {
+        var by = new java.util.TreeMap<String, String>();
+        for (Entry entry : entries.values()) {
+            var c = entry.campaign;
+            by.put(entry.data.displayName(), c == null ? "0/0/0" : c.surfacePlans + "/" + c.drySearches + "/" + c.drySearchNodes);
+        }
+        return by.toString();
     }
 
     /** The cost line's name for {@link #bodyMaps}, its sizes in this order (F-31j). */
@@ -19692,6 +20140,17 @@ final class PlayerRuntime {
         private long waterEscapeRetryTick;
         /** When it last logged being in lava with no dry ground in sight to make for (F-25c6a), at most once a minute. */
         private long lavaEscapeLoggedTick = -1200;
+        /** When F-25c6g's "puts out the fire at its feet" line was last logged, a line a minute at most. */
+        private long fireAtFeetLoggedTick = -1200;
+        /** F-25c6g's task putting out the fire at its feet, which the hazard interrupt lets run while that fire is there. */
+        private UUID fireAtFeetTaskId;
+        private BlockPos fireAtFeetCell;
+        /** The hazard interrupt's line written for this spell (F-25c6d), the tick it began and the tasks it cancelled. */
+        private boolean hazardSpellLogged;
+        private long hazardSpellTick;
+        private int hazardSpellCancels;
+        /** The tactical observation's refresh failing: logged at its first failure, again only after one succeeds (F-25c6d). */
+        private boolean tacticalFailureLogged;
         /** The task putting out the fire carried out of lava, let through the hazard abort (F-25c6b). */
         private UUID fireOutTaskId;
         /** Water it poured at its feet to put out a fire, and until when it means to take it back up (F-25c6b). */
@@ -19701,6 +20160,8 @@ final class PlayerRuntime {
         private int walksFailed;
         /** When its last fight broke off or lost its target, for a hunter that must make its own way to a runner (M-02a). */
         private long fightStalledAt = Long.MIN_VALUE / 2;
+        /** Whether its last look found a meal held back by a mob that can get at it (F-25c4dh4's line, once a spell). */
+        private boolean mealHeldBack;
         /** When a walk last failed, and where and when a hunter last saw a runner (M-02a). */
         private long walkFailedAt = Long.MIN_VALUE / 2, preySeenAt = Long.MIN_VALUE / 2;
         private BlockPos preySeen;
@@ -19756,6 +20217,11 @@ final class PlayerRuntime {
         private BlockPos smithingTable;
         private long netheriteAt;
         private UUID netheriteTaskId;
+        /** The netherite candidate last said to be offered and not dispatched (F-22c125), so that each offer is said once. */
+        private NativeTaskCandidate netheriteUnsentFor;
+        /** Why its netherite was last held, as said (F-22c125), and what set its next look. */
+        private String netheriteHeldWhy;
+        private String netheriteHoldCause;
         /** The run's own step it last took for its netherite (a furnace or table put down is then its own). */
         private PortalRunCampaign.Task netheriteStep;
         /** Whether its fights with players use its melee tactics (E-41b); off only for a benchmark's declared baseline. */
@@ -19878,6 +20344,8 @@ final class PlayerRuntime {
         };
         private final Set<UUID> rerollKept = new HashSet<>(), rerollGivenUp = new HashSet<>();
         private final List<String> rerollLooks = new ArrayList<>();
+        /** The reroll's steps refused, at dispatch or as they ran, for fixtures (F-22c116). */
+        private int rerollRefused;
         private long rerollAt;
         /**
          * Hit hard by a player (E-41g): who, and what it does about it, until when; whether what it is doing gives way to
@@ -19910,6 +20378,8 @@ final class PlayerRuntime {
         private UUID barricadeTaskId;
         private long lastBarricadeTick = Long.MIN_VALUE / 2;
         private boolean nativePending;
+        /** The spot {@code createNative} found for a fresh body, used once by its connect (M-06i4a). */
+        private SpawnLocation freshSpawn;
         /** A settlement of its unresolved actions under way (F-31g1): no second one, and no connection, meanwhile. */
         private boolean settling;
         private ConnectionToken pendingConnection;

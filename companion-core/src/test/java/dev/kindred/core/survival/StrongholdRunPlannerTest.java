@@ -126,10 +126,45 @@ class StrongholdRunPlannerTest {
 
     @Test
     void aStalledPearlHuntMovesOnWithEnoughForTheSearch() {
+        // F-25c6e (the lead, 2026-11-23): with the rods done, a stalled hunt goes home whatever the pearls, and the
+        // rest are hunted in the Overworld (below). Before, four pearls stalled stayed in the Nether ("four eyes are not
+        // enough to find it"), and with none it never went home.
         var four = justLit().in(Dimension.NETHER).rods(6).pearls(4).stalled().build();
-        assertEquals(Stage.PEARLS, StrongholdRunPlanner.stage(four), "four eyes are not enough to find it");
+        assertEquals(Stage.RETURN, StrongholdRunPlanner.stage(four), "rods done and the hunt stalled: home with four");
         var six = justLit().in(Dimension.NETHER).rods(6).pearls(6).stalled().build();
         assertEquals(Stage.RETURN, StrongholdRunPlanner.stage(six));
+    }
+
+    /**
+     * F-25c6e: with the rods in hand and no pearl coming, home through its portal, not left in the Nether (e40c4's
+     * 31102026 Sol: seven rods, then some 135 game minutes in PEARLS with one enderman seen, no pearl, no return).
+     */
+    @Test
+    void withTheRodsAndNoPearlComingItGoesHome() {
+        var none = justLit().ready().in(Dimension.NETHER).fortress().rods(7).stalled().build();
+        assertEquals(Stage.RETURN, StrongholdRunPlanner.stage(none), "rods done, no pearl, the hunt stalled: home");
+        assertEquals(List.of(Action.ENTER_PORTAL), actions(none));
+        var hunting = justLit().ready().in(Dimension.NETHER).fortress().rods(7).build();
+        assertEquals(Stage.PEARLS, StrongholdRunPlanner.stage(hunting), "not stalled yet: still hunting there");
+        var short_ = justLit().ready().in(Dimension.NETHER).fortress().rods(3).stalled().build();
+        assertEquals(Stage.BLAZE_RODS, StrongholdRunPlanner.stage(short_), "rods short: never home for a stalled pearl hunt");
+        var done = justLit().ready().in(Dimension.NETHER).fortress().rods(6).pearls(12).build();
+        assertEquals(Stage.RETURN, StrongholdRunPlanner.stage(done), "with the pearls, as before");
+    }
+
+    /**
+     * F-25c6e: back in the Overworld with the rods and short of pearls, it hunts endermen there: PEARLS, never NETHER
+     * again (no going back and forth); with the rods short, back to the Nether as before; with enough, the eyes.
+     */
+    @Test
+    void backHomeWithTheRodsAndShortOfPearlsItHuntsThemThereNotTheNetherAgain() {
+        var none = justLit().ready().rods(7).build();
+        assertEquals(Stage.PEARLS, StrongholdRunPlanner.stage(none), "rods, no pearl: hunt them here");
+        assertEquals(List.of(Action.SEEK_ENDERMAN), actions(none));
+        assertEquals(Stage.PEARLS, StrongholdRunPlanner.stage(justLit().ready().rods(7).pearls(4).build()), "four: still short of six");
+        assertEquals(Stage.PEARLS, StrongholdRunPlanner.stage(justLit().ready().rods(7).stalled().build()), "a stalled hunt here stays here");
+        assertEquals(Stage.NETHER, StrongholdRunPlanner.stage(justLit().ready().rods(2).build()), "rods short: the Nether, as before");
+        assertEquals(Stage.EYES, StrongholdRunPlanner.stage(justLit().ready().rods(6).pearls(6).build()), "enough: the eyes, as before");
     }
 
     @Test

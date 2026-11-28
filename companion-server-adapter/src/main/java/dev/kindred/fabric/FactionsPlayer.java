@@ -47,7 +47,8 @@ final class FactionsPlayer {
     /** What it chose to ask for, waiting for its turn to act. */
     FactionPlay.Choice chosen;
     /** A walk's target refused (no route) this many times in a row, and until when it is not asked again. */
-    record Refusals(int times, long until) { }
+    /** A target's refusals: how many, until when it waits, and whether it was ever set aside as open water it saw (M-06m1). */
+    record Refusals(int times, long until, boolean water) { }
     private final Map<String, Refusals> refused = new LinkedHashMap<>();
     /** After this many refusals in a row a target is set aside, and the faction world's choice is made without it. */
     static final int SET_ASIDE = 3;
@@ -69,7 +70,7 @@ final class FactionsPlayer {
         refusalsCounted++;
         var before = refused.get(target);
         int times = before == null ? 1 : before.times() + 1;
-        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
+        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10)), before != null && before.water()));
         if (streakFrom == null && at != null) {
             streakFrom = at.toImmutable();
             streakAtSurface = atSurface;
@@ -213,7 +214,7 @@ final class FactionsPlayer {
     void openWater(String target, long tick, net.minecraft.util.math.BlockPos at, boolean atSurface) {
         var before = refused.get(target);
         int times = Math.max(SET_ASIDE, before == null ? 0 : before.times() + 1);
-        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10))));
+        refused.put(target, new Refusals(times, tick + Math.min(BACKOFF_MAX, BACKOFF << Math.min(times - 1, 10)), true));
         overWater++;
         overWaterForTest.addLast(tick);
         if (overWaterForTest.size() > 64) overWaterForTest.removeFirst();
@@ -243,6 +244,12 @@ final class FactionsPlayer {
     long dryAtTick = Long.MIN_VALUE / 2;
 
     /** Whether a walk toward {@code target} waits now. */
+    /**
+     * Whether {@code target} was ever set aside as open water it saw (M-06m1): its record keeps that through later
+     * refusals, so that the place, set aside again by a refusal, is weighed as water is, at the decision interval.
+     */
+    boolean setAsideAsWater(String target) { var r = refused.get(target); return r != null && r.water(); }
+
     boolean waiting(String target, long tick) { var r = refused.get(target); return r != null && r.until() > tick; }
 
     /** The targets set aside now: refused {@value #SET_ASIDE} times in a row, their wait not over. */
@@ -357,6 +364,18 @@ final class FactionsPlayer {
                 var top = looks.ground(x, z);
                 if (top.isPresent()) return new BlockPos(x, top.get().getY() + 1, z);
             }
+            // In the chunk, no ground it sees straight ahead (M-06m2): the nearest ground it sees along the chunk's near edge, as a
+            // player makes for the causeway it sees rather than the sea ahead of it. Only what it sees counts; with none, as
+            // before. On main c7b19178 Ada three south of a causeway three wide had her walk's end over the sea, "the goal
+            // standable false, on air", and refused twice.
+            if (!far) {
+                var edge = alongEdge(chunk, player, x, z, y, world);
+                if (edge != null) {
+                    KindredMod.LOGGER.info("{} faction walk end moved to seen ground: {} for {}, along {}'s edge", player.getName().getString(),
+                            edge.toShortString(), new BlockPos(x, y, z).toShortString(), chunk.key());
+                    return edge;
+                }
+            }
             // A leg's end it sees no ground at (M-06i2c2): the farthest ground it sees along the way and could stand on, as a
             // player walks to the brink it can see rather than into the air past it. At its own height there a leg ended in
             // mid-air over a valley or inside a hillside, where no route ends: on Factions seed 20261030, 211 of 919 legs
@@ -390,6 +409,35 @@ final class FactionsPlayer {
             z = (int) Math.floor(player.getZ() + (z - player.getZ()) * LEG / far);
         }
         return new int[] {x, z, far > LEG ? 1 : 0};
+    }
+
+    /** Sight lines to ground along a chunk's near edge, for a walk's end with none straight ahead (M-06m2). */
+    static final int EDGE_LOOKS = 8;
+
+    /**
+     * The nearest ground it sees on the target chunk's near inset edge, for a walk's end whose own column shows none
+     * (M-06m2): the columns of the edge the walk's end was clamped to (x {@code x}, or z {@code z}), nearest it first, each
+     * looked down and up from its own height as {@link #destination} looks; null when it sees none. What it cannot see sets
+     * nothing: a column is ground only where a sight line of its own reaches it.
+     */
+    private static BlockPos alongEdge(Territory.Chunk chunk, ServerPlayerEntity player, int x, int z, int y, net.minecraft.server.world.ServerWorld world) {
+        int x0 = chunk.x() * 16 + INSET, x1 = chunk.x() * 16 + 15 - INSET, z0 = chunk.z() * 16 + INSET, z1 = chunk.z() * 16 + 15 - INSET;
+        var columns = new java.util.ArrayList<int[]>();
+        boolean acrossX = player.getBlockX() < x0 || player.getBlockX() > x1, acrossZ = player.getBlockZ() < z0 || player.getBlockZ() > z1;
+        if (acrossX) for (int cz = z0; cz <= z1; cz++) if (cz != z) columns.add(new int[] {x, cz});
+        if (acrossZ) for (int cx = x0; cx <= x1; cx++) if (cx != x && !(acrossX && cx == x)) columns.add(new int[] {cx, z});
+        if (columns.isEmpty()) return null;
+        columns.sort(java.util.Comparator.comparingDouble(c -> Math.hypot(c[0] + 0.5 - player.getX(), c[1] + 0.5 - player.getZ())));
+        var under = new java.util.ArrayList<BlockPos>();
+        for (int[] c : columns) {
+            if (!world.isChunkLoaded(c[0] >> 4, c[1] >> 4)) continue;
+            for (int d = 0; d <= 8; d++) {
+                under.add(new BlockPos(c[0], y + d - 1, c[1]));
+                if (d > 0) under.add(new BlockPos(c[0], y - d - 1, c[1]));
+            }
+        }
+        var ground = WorldKnowledge.looks(player, EDGE_LOOKS).firstSeen(under, below -> standable(world, below.getX(), below.getY() + 1, below.getZ()));
+        return ground.map(g -> g.up()).orElse(null);
     }
 
     /** Leaves broken toward one target before its walk gets somewhere (M-06i2c5). */

@@ -3,7 +3,7 @@
 Date: 2026-11-16
 Agent / branch: LOOPS, claude/cast-walk-1116
 Build: ff25b027 (the change and its fixture), on main 3360ef2
-Status: complete (2026-11-16)
+Status: reopened 2026-11-16 (#394's CI, run 43842018263): see F-25c4dj1
 
 ## The loop: E-40 iteration 23 (`e40a23-3115b1c`, #352), seed 505, Sol
 - **Source:** RUNNER 2's `claude/corpus-data-e40a23-1115`, `e40a23-3115b1c/505/console.txt.gz`.
@@ -75,4 +75,4 @@ Status: complete (2026-11-16)
 - **Where it is kept:** the runs, the report and the confirms are on `claude/spacer-runs-1112` under `gate25c4dj/`.
 
 ## Remaining
-- None for this row.
+- **Reopened 2026-11-16.** On #394's CI its fixture set out for the pool's source south of the alcove's line, and its dig went to and fro along its level. The fix and its evidence are [F-25c4dj1](F-25c4dj1.md).

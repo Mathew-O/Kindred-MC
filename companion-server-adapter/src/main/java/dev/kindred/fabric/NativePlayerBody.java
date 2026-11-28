@@ -861,16 +861,29 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     Optional<CraftPlan> planCraft(String recipeName, BlockPos knownWorkstation) {
+        return checkCraft(recipeName, knownWorkstation).plan();
+    }
+
+    /** A craft's plan, or why there is none: in the player's own words for the console (F-25c4dn). */
+    record CraftCheck(Optional<CraftPlan> plan, String why) {
+        static CraftCheck no(String why) { return new CraftCheck(Optional.empty(), why); }
+    }
+
+    /**
+     * As {@link #planCraft(String, BlockPos)}, with why a craft cannot be planned (F-25c4dn). Its refusals were all logged as
+     * "not the makings"; in E-40 iteration 27, 20 of 23 such lines on the four bodies of the crafting-table loop came with
+     * the pack full, no room for the result.
+     */
+    CraftCheck checkCraft(String recipeName, BlockPos knownWorkstation) {
         requireThread();
-        if (recipeName == null || recipeName.isBlank()
-                || player.currentScreenHandler != player.playerScreenHandler
-                || !player.playerScreenHandler.getCursorStack().isEmpty()
-                || !player.playerScreenHandler.getCraftingInput().isEmpty()) {
-            return Optional.empty();
+        if (recipeName == null || recipeName.isBlank()) return CraftCheck.no("no recipe");
+        if (player.currentScreenHandler != player.playerScreenHandler) return CraftCheck.no("a screen open");
+        if (!player.playerScreenHandler.getCursorStack().isEmpty() || !player.playerScreenHandler.getCraftingInput().isEmpty()) {
+            return CraftCheck.no("the crafting grid or cursor not empty");
         }
         var registryManager = player.getServerWorld().getRegistryManager();
         Optional<RecipeEntry<CraftingRecipe>> matchedEntry = craftingRecipe(recipeName);
-        if (matchedEntry.isEmpty()) return Optional.empty();
+        if (matchedEntry.isEmpty()) return CraftCheck.no("no such recipe");
 
         var recipeEntry = matchedEntry.get();
         var craftingRecipe = recipeEntry.value();
@@ -895,12 +908,12 @@ final class NativePlayerBody implements BodyAdapter {
             if (resolvedTable.isEmpty()) {
                 resolvedTable = findNearbyBlock(Blocks.CRAFTING_TABLE, 4.5);
             }
-            if (resolvedTable.isEmpty()) return Optional.empty();
+            if (resolvedTable.isEmpty()) return CraftCheck.no("no crafting table in reach");
             requiresWorkstation = true;
             workstationPos = resolvedTable.get();
             gridSize = 9;
         } else {
-            return Optional.empty();
+            return CraftCheck.no("no grid it fits");
         }
 
         Ingredient[] gridIngredients = new Ingredient[gridSize];
@@ -918,7 +931,7 @@ final class NativePlayerBody implements BodyAdapter {
             }
         } else {
             var ingredients = craftingRecipe.getIngredients();
-            if (ingredients.size() > gridSize) return Optional.empty();
+            if (ingredients.size() > gridSize) return CraftCheck.no("no grid it fits");
             for (int i = 0; i < ingredients.size(); i++) {
                 gridIngredients[i] = ingredients.get(i);
             }
@@ -940,13 +953,13 @@ final class NativePlayerBody implements BodyAdapter {
                     break;
                 }
             }
-            if (foundSlot == -1) return Optional.empty();
+            if (foundSlot == -1) return CraftCheck.no("not the makings");
             reservedCount[foundSlot]++;
             sourceSlots[gridSlot] = foundSlot;
         }
 
         var expectedResult = craftingRecipe.getResult(registryManager).copy();
-        if (expectedResult.isEmpty()) return Optional.empty();
+        if (expectedResult.isEmpty()) return CraftCheck.no("no result");
 
         int spaceAvailable = 0;
         for (int s = 0; s < 36; s++) {
@@ -958,9 +971,9 @@ final class NativePlayerBody implements BodyAdapter {
                 spaceAvailable += (expectedResult.getMaxCount() - effectiveCount);
             }
         }
-        if (spaceAvailable < expectedResult.getCount()) return Optional.empty();
+        if (spaceAvailable < expectedResult.getCount()) return CraftCheck.no("no room for the result");
 
-        return Optional.of(new CraftPlan(recipeEntry, sourceSlots, expectedResult, requiresWorkstation, workstationPos));
+        return new CraftCheck(Optional.of(new CraftPlan(recipeEntry, sourceSlots, expectedResult, requiresWorkstation, workstationPos)), "");
     }
 
     boolean craft2x2(ActionLease lease, CraftPlan plan) {
@@ -1497,6 +1510,27 @@ final class NativePlayerBody implements BodyAdapter {
     }
 
     /**
+     * Whether placing {@code stack} at {@code cell} puts the block in that cell, by vanilla's own rule: the cell's block may be
+     * replaced by it ({@code BlockState.canReplace} with an {@code ItemPlacementContext}), not {@code isReplaceable()}. The
+     * two differ for a sculk vein, which a block replaces though it is not replaceable: placed against its top, the block
+     * went into the vein's cell while the placement looked for it one above, and the outcome was held as uncertain for the
+     * rest of a run (E-40's iteration 30, seed 303, Echo; F-31g3).
+     */
+    static boolean takesBlock(ServerWorld world, ServerPlayerEntity player, BlockPos cell, Direction side, ItemStack stack) {
+        var face = Vec3d.ofCenter(cell).add(side.getOffsetX() * 0.5, side.getOffsetY() * 0.5, side.getOffsetZ() * 0.5);
+        var context = new net.minecraft.item.ItemPlacementContext(world, player, Hand.MAIN_HAND, stack, new BlockHitResult(face, side, cell, false));
+        return world.getBlockState(cell).canReplace(context);
+    }
+
+    /**
+     * A cell that is replaceable yet will not take this block (snow two or more layers deep, for a block): placed there,
+     * vanilla puts nothing in it, so the placement is refused before it is tried, as it ended with no effect before.
+     */
+    static boolean refusesBlock(ServerWorld world, ServerPlayerEntity player, BlockPos cell, Direction side, ItemStack stack) {
+        return world.getBlockState(cell).isReplaceable() && !takesBlock(world, player, cell, side, stack);
+    }
+
+    /**
      * A look for a placement (E-08b): the way the player faces and the point on the clicked face, which together give a
      * placed block its state (a stair's facing and half, a slab's half). Null keeps the face's middle and the current look.
      */
@@ -1512,9 +1546,12 @@ final class NativePlayerBody implements BodyAdapter {
         var world = player.getServerWorld();
         if (!world.isChunkLoaded(target)) return false;
 
+        // Where the block goes, by vanilla's own rule (F-31g3): into the cell when the item may replace what is there
+        // (air, water, a sculk vein), otherwise against it.
+        if (refusesBlock(world, player, target, clickedSide, stack)) return false;
         final BlockPos placedPos;
         final BlockPos clickedPos;
-        if (world.getBlockState(target).isReplaceable()) {
+        if (takesBlock(world, player, target, clickedSide, stack)) {
             placedPos = target;
             clickedPos = target.offset(clickedSide.getOpposite());
         } else {
@@ -1525,7 +1562,7 @@ final class NativePlayerBody implements BodyAdapter {
         if (!world.isChunkLoaded(placedPos) || !world.isChunkLoaded(clickedPos) || !world.isInBuildLimit(placedPos)) {
             return false;
         }
-        if (!world.getBlockState(placedPos).isReplaceable()) return false;
+        if (!takesBlock(world, player, placedPos, clickedSide, stack)) return false;
         if (player.getEyePos().squaredDistanceTo(placedPos.getX() + 0.5, placedPos.getY() + 0.5, placedPos.getZ() + 0.5) > 25.0) {
             return false;
         }
@@ -2956,6 +2993,12 @@ final class NativePlayerBody implements BodyAdapter {
             if (this != player) return; // A dead entity replaced by respawn no longer drives the body.
             beforeTick();
             if (isRemoved()) return;
+            // A client accepts a teleport once its new world has loaded. Until then vanilla holds the player in its
+            // teleportation state: the portal cooldown counts down only out of it (ServerPlayerEntity.tickPortalCooldown),
+            // and the player is invulnerable to all but a pearl in it (ServerPlayerEntity.isInvulnerableTo). With no client
+            // it was accepted only at the join, so after its first teleport a body could never go through a portal again
+            // and could never be hurt again (F-25b5). Accepted here, as a client would, a tick after it arrives.
+            if (isInTeleportationState()) onTeleportationDone();
             super.tick();
             // Human physics/item/hunger ticks normally come from the network handler. There is no client.
             super.playerTick();

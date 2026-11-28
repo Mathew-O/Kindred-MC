@@ -37,11 +37,13 @@ Kindred itself: the `companion-server-adapter` jar built from this repository at
 
 ## Install (a fresh server)
 
-1. Java 21; the Fabric server launcher for Minecraft 1.21.1 with Fabric Loader 0.19.5.
+1. Java 21; the Fabric server launcher for Minecraft 1.21.1 with Fabric Loader 0.19.5 (for example
+   `https://meta.fabricmc.net/v2/versions/loader/1.21.1/0.19.5/1.1.2/server/jar`, installer 1.1.2). The first start stops
+   until you have read Minecraft's EULA and set `eula=true` in `eula.txt`.
 2. Each mod in the index into `mods/`, its SHA-512 checked; the Kindred jar beside them.
 3. `server.properties`, `config/kindred/factions.properties` and `config/textile_backup.json5` from here. Memory on a 12 GB host: `-Xms8G -Xmx10G`.
 4. Start; choose the mode at the console: `aiplayer mode world factions` (kept in `<world>/kindred/mode.properties`
-   across restarts).
+   across restarts), and `aiplayer edits on` (AI players break and place nothing without it).
 5. As an operator: `/faction admin hub` (the safe zone round spawn, the border set in every dimension, the
    hub built).
 6. Pre-generate with Chunky (below), then back up (below), then open the whitelist.
