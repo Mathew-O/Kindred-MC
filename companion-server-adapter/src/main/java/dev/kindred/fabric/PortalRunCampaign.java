@@ -10,6 +10,7 @@ import dev.kindred.core.guide.Worth;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
+import dev.kindred.core.tactics.WayOffHeading;
 import dev.kindred.core.survival.StrategyAdvice;
 import dev.kindred.core.survival.SurvivalGoal;
 import dev.kindred.core.survival.WorldFacts;
@@ -7728,10 +7729,14 @@ final class PortalRunCampaign {
             return Optional.of(new Task("native_goto", coords(back.get(), Map.of("range", "1", "partial", "true", "sprint", "true")),
                     "Back off from " + name + " the way it came"));
         }
-        away = away.normalize().multiply(10);
+        // Along ground it can walk: straight away into rock or over a drop was refused, or ended a step out (F-25c4dh5).
+        away = wayOff(player, away, "back off from " + name);
+        // A turned way off is kept short: off the wall, not across the cave with the mob keeping pace and striking.
+        boolean turned = wayOffTurned;
+        away = away.multiply(turned ? TURNED_REACH : 10);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
         // At a sprint: walking, a zombie keeps pace and strikes the player's back all the way.
-        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Back off from " + name));
+        return Optional.of(new Task("native_goto", coords(target, Map.of("range", turned ? "1" : "3", "partial", "true", "sprint", "true")), "Back off from " + name));
     }
 
     /**
@@ -7826,11 +7831,105 @@ final class PortalRunCampaign {
         return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), OUT_OF_REACH + ": pillar up"));
     }
 
-    /** Sprint a dozen blocks straight away from a creeper; beyond seven its fuse goes out. */
-    private static Task runFrom(ServerPlayerEntity player, CreeperEntity creeper) {
+    /** How long a heading taken on a way off is kept for the next decision (F-25c4dh5): a back-off's own spell. */
+    static final long WAY_OFF_KEEP = 100;
+    /** How many cells along a heading must be walkable for it to count as a way off. */
+    static final int WAY_OFF_CELLS = 4;
+    /** The heading last taken on a way off, kept while it still gains and can be walked; -1 for none. */
+    private int wayOffHeading = -1;
+    /** When it was last taken. */
+    private long wayOffAt = Long.MIN_VALUE;
+    /** Whether this spell's turn for ground has been told. */
+    private boolean wayOffTold;
+    /** Whether the last way off was turned for ground rather than straight away. */
+    private boolean wayOffTurned;
+    /**
+     * How far a turned back-off aims: in f29e-on-505-echo-43893 a turned back-off at ten carried the player sixteen to
+     * twenty blocks across a cave with the zombie keeping pace and striking, where straight away ended at the wall in three
+     * or four and it dug in. At six it gets off the wall, near the straight one's own few blocks.
+     */
+    static final int TURNED_REACH = 6;
+
+    /**
+     * The direction to get away along, {@code away} straight from the threat (F-25c4dh5): {@code away} itself where the
+     * first few cells that way can be walked, else the walkable heading nearest it that still gains, the one taken last
+     * while it still gains and can be walked; straight away itself is never kept, so on open ground nothing changes. None, or a
+     * shooter after it: {@code away}, as before, and the walk is refused as it was.
+     */
+    private Vec3d wayOff(ServerPlayerEntity player, Vec3d away, String what) {
+        wayOffTurned = false;
+        // With a shooter after it, no turn: a walk along the turned heading kept it in the line of fire, where main's straight
+        // back-off was refused and cover taken (e40c1-eed2dc5-8675309-echo-173225, twice shot in dh5's first gate).
+        if (shooterAfter(player)) {
+            wayOffHeading = -1;
+            return away.normalize();
+        }
+        var navigator = new NativeNavigator(player.getServerWorld());
+        boolean spell = wayOffAt > Long.MIN_VALUE && lastTick - wayOffAt <= WAY_OFF_KEEP;
+        if (!spell) wayOffTold = false;
+        int straight = WayOffHeading.nearest(away.x, away.z);
+        var chosen = WayOffHeading.choose(away.x, away.z, i -> walkable(navigator, player, i), spell ? wayOffHeading : -1);
+        if (chosen.isEmpty()) {
+            wayOffHeading = -1;
+            return away.normalize();
+        }
+        int heading = chosen.getAsInt();
+        // Straight away is taken as it always was; only a turn is kept for the next decision.
+        if (heading == straight) {
+            wayOffHeading = -1;
+            return away.normalize();
+        }
+        wayOffHeading = heading;
+        wayOffAt = lastTick;
+        wayOffTurned = true;
+        if (!wayOffTold) {
+            wayOffTold = true;
+            KindredMod.LOGGER.info("{} heading turned for ground: {} straight away is {} degrees, not walkable; takes {} degrees", player.getName().getString(),
+                    what, Math.round(straight * 360.0 / WayOffHeading.HEADINGS), Math.round(heading * 360.0 / WayOffHeading.HEADINGS));
+        }
+        double[] unit = WayOffHeading.unit(heading);
+        return new Vec3d(unit[0], 0, unit[1]);
+    }
+
+    /** A shooter after the player within the back-off's own reach of sixteen blocks, as {@link #defend} tells them apart. */
+    private static boolean shooterAfter(ServerPlayerEntity player) {
+        return !player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                mob -> mob.isAlive() && mob.getTarget() == player && mob instanceof net.minecraft.entity.ai.RangedAttackMob).isEmpty();
+    }
+
+    /**
+     * Whether the first {@link #WAY_OFF_CELLS} cells along heading {@code i} from the player's feet can be walked, by the
+     * route finder's own reading: each a stand level with the last, a step up with head room, or a drop no deeper than
+     * {@link NativeNavigator#MAX_SAFE_DROP}; a corner cut only with one side of it open. Local blocks only.
+     */
+    private static boolean walkable(NativeNavigator navigator, ServerPlayerEntity player, int i) {
+        double[] unit = WayOffHeading.unit(i);
+        BlockPos at = player.getBlockPos();
+        for (int k = 1; k <= WAY_OFF_CELLS; k++) {
+            int x = (int) Math.floor(player.getX() + unit[0] * k), z = (int) Math.floor(player.getZ() + unit[1] * k);
+            if (x == at.getX() && z == at.getZ()) continue;
+            if (Math.abs(x - at.getX()) > 1 || Math.abs(z - at.getZ()) > 1) return false;
+            BlockPos level = new BlockPos(x, at.getY(), z);
+            if (x != at.getX() && z != at.getZ()
+                    && !(navigator.clear(new BlockPos(x, at.getY(), at.getZ())) || navigator.clear(new BlockPos(at.getX(), at.getY(), z)))) return false;
+            BlockPos next = navigator.standable(level) ? level
+                    : navigator.standable(level.up()) && navigator.passable(at.up(2)) ? level.up() : null;
+            // Down off an edge no deeper than the route finder itself drops, the body's two cells open on the way.
+            for (int d = 1; next == null && d <= NativeNavigator.MAX_SAFE_DROP && navigator.passable(level.down(d - 1))
+                    && navigator.passable(level.down(d - 1).up()); d++) {
+                if (navigator.standable(level.down(d))) next = level.down(d);
+            }
+            if (next == null) return false;
+            at = next;
+        }
+        return true;
+    }
+
+    /** Sprint a dozen blocks away from a creeper, along ground it can walk; beyond seven its fuse goes out. */
+    private Task runFrom(ServerPlayerEntity player, CreeperEntity creeper) {
         Vec3d away = player.getPos().subtract(creeper.getPos()).multiply(1, 0, 1);
         if (away.lengthSquared() < 1.0E-4) away = player.getRotationVector().multiply(-1, 0, -1);
-        away = away.normalize().multiply(12);
+        away = wayOff(player, away, "run from creeper").multiply(12);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
         return new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Run from creeper");
     }

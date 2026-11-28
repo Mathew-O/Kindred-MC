@@ -66,6 +66,7 @@
       "dev.kindred.fabric.NativeRespawnGameTests",
       "dev.kindred.fabric.NativePortalCampaignGameTests",
       "dev.kindred.fabric.NativeBackOffFlipGameTests",
+      "dev.kindred.fabric.NativeWayOffGameTests",
       "dev.kindred.fabric.NativeFightLogGameTests",
       "dev.kindred.fabric.NativeFloodedShaftGameTests",
       "dev.kindred.fabric.NativeLessonsGameTests",
