@@ -86,6 +86,13 @@ Environment: Linux, JDK 21, the manifest's Minecraft 1.21.1 and Fabric; GameTest
     - Two failed 3 of 3 on the branch alone and 3 of 3 on main alone: e40c1 8675309 sol-114191 and e40c4 303 kindred-200600.
   - 24 scenes newly pass against the baseline.
   - The marker fired once, in run 3, in the shape it is for: `Ra957361_1` on "Climb to the cave toward lava: bridge", `native_place COMPLETED` into the lava cell, then "walk on" over it and the next bridge steps. No hazard spell and no death followed for that player in the scene.
+    - Its scene is `e40a20-79a9aad-8675309-kindred-26400` (class "death: lava"), by `ReplayGameTests`' naming rule. It is not one of the 7 flagged.
+    - It passes 3 of 3 on the branch, as on the baseline.
+  - **Lava deaths, branch against baseline:** the 18 "death: lava" scenes failed 9, 9 and 10 times over the branch's three runs, 28 in all. The baseline 3354cb33's three runs (`claude/spacer-runs-1112`, `baseline-3354cb3/`) are also 9, 9 and 10, 28 in all. It is not above the baseline.
+    - Three scenes moved, none of them where the marker fired:
+      - `e40a22-d2389c9-505-echo-129201`: 2 of 3 on the baseline, 0 on the branch.
+      - `e40a17-7bc5b42-707-echo-36256`: 0 of 3 on the baseline, 1 on the branch.
+      - `e40a20-79a9aad-505-kindred-60851`: 2 of 3 on the baseline, 3 on the branch.
 
 ## Remaining
 
