@@ -777,7 +777,7 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchHerd", tickLimit = 6000)
     public void itsCowPenRunOnceItBreedsThePairAgainAfterTheWait(TestContext context) {
-        herdAgain(context, false);
+        herdAgain(context, false, false, false);
     }
 
     /**
@@ -788,10 +788,40 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchHerdCalfOut", tickLimit = 6000)
     public void aCalfThatSlipsOutAsItGoesInIsBroughtBackBeforeItIsDone(TestContext context) {
-        herdAgain(context, true);
+        herdAgain(context, true, false, false);
     }
 
-    private static void herdAgain(TestContext context, boolean calfOut) {
+    /**
+     * As the first, staged (F-22c129) as the calf left on main's CI (`1b6b2f9d`'s branch, run 45143611807): its cow pen run
+     * again, as it has left the pen and shut the gate, its calf is set once just outside the gate, so it turns back to bring
+     * it in; and the first tick it is bringing the calf back, the gate still shut, the player is set once in the gate's own
+     * cell, where CI's stood. On CI its walk round to the gate's front had no route from there, was refused twice more and
+     * the calf given up ("its walk refused"), the run done "No cows in sight to bring in; 1 got out". Held: the pair and the
+     * calves penned before it is done, as the first.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchHerdGateway", tickLimit = 6000)
+    public void inTheShutGatesCellAsItTurnsBackForACalfItStillBringsTheCalfIn(TestContext context) {
+        herdAgain(context, false, true, false);
+    }
+
+    /**
+     * As the first, staged (F-22c129) as the pig ranch on main's CI (`0ca2d9c9`, run 45277563010), where a piglet in the
+     * open gateway kept the pig behind it out: once it has left and shut the gate, one cow set once just outside the gate,
+     * so it turns back for it; then, the player inside with the gate open, the calf held in the gateway's cell each tick
+     * (STAGED) until the player acts on it (the ranch leading it), and released then. On CI the pig behind was given up as
+     * one that "would not come in", the run done "Only one pig in the pen; ... 2 got out": that give-up fails this at once,
+     * as CI's reason. No act on the calf within the ranch's wait to come in and 200 ticks more fails it outright: only
+     * acting on the one in the gateway can pass, not a longer wait. Held: the pair and the calves penned before it is done.
+     */
+    @GameTest(templateName = FixtureGround.WIDE, skyAccess = true, batchId = "ownRanchHerdGatewayBlocked", tickLimit = 6000)
+    public void aCalfInTheGatewayIsBroughtInFirstAndTheCowBehindItAfter(TestContext context) {
+        herdAgain(context, false, false, true);
+    }
+
+    /** The ranch's wait for a led animal to come in ({@code Ranch.COME_IN}), and the margin a blocked gateway is held past it. */
+    private static final long COME_IN = 300, HOLD_MARGIN = 200;
+
+    private static void herdAgain(TestContext context, boolean calfOut, boolean gateway, boolean blocked) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 5500);
         BlockPos o = NativeBaseGameTests.origin(context);
         BlockPos[] trunks = {o.add(34, 7, 10), o.add(34, 7, 22)};
@@ -800,7 +830,9 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
         BlockPos cowPen = o.add(22, 7, 27);
         long[] staged = {0}, doneAt = {-1};
         CowEntity[] calf = new CowEntity[1];
-        String[] slipped = {null};
+        CowEntity[] pair = new CowEntity[2];
+        String[] slipped = {null}, calfSet = {null}, inGate = {null}, cowSet = {null}, heldAt = {null}, released = {null}, failed = {null};
+        long[] heldFrom = {-1};
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Herder"))
@@ -827,8 +859,8 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                         world.setBlockState(cowPen.add(x, 0, z), x == 3 && z == 6 ? Blocks.OAK_FENCE_GATE.getDefaultState() : Blocks.OAK_FENCE.getDefaultState());
                     }
                     BlockPos inPen = cowPen.add(2, 0, 2).subtract(context.getAbsolutePos(BlockPos.ORIGIN));
-                    context.spawnEntity(EntityType.COW, inPen);
-                    context.spawnEntity(EntityType.COW, inPen.add(2, 0, 2));
+                    pair[0] = context.spawnEntity(EntityType.COW, inPen);
+                    pair[1] = context.spawnEntity(EntityType.COW, inPen.add(2, 0, 2));
                     calf[0] = context.spawnEntity(EntityType.COW, inPen.add(2, 0, 0));
                     calf[0].setBaby(true);
                     var player = f.player();
@@ -872,6 +904,59 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                         slipped[0] = "at " + calf[0].getBlockPos().toShortString() + ", tick " + world.getTime();
                         KindredMod.LOGGER.info("Own herd: the calf set outside the gate as it went in, {}", slipped[0]);
                     }
+                    // Staged (F-22c129): once it has left the pen and shut the gate behind it, its calf set once just outside the
+                    // gate; then the first tick it is bringing the calf back, the gate still shut, the player set once in the
+                    // gate's own cell, as CI's stood there.
+                    boolean gateOpen = world.getBlockState(gate).getOrEmpty(net.minecraft.block.FenceGateBlock.OPEN).orElse(false);
+                    String status = f.runtime.ranchStatus(f.id).orElse("");
+                    if (gateway && calfSet[0] == null && player != null && !inPen(cowPen, player.getBlockPos()) && !gateOpen
+                            && player.getBlockPos().getZ() > gate.getZ() && status.contains("leaving the pen")) {
+                        calf[0].refreshPositionAndAngles(gate.getX() + 0.5, gate.getY(), gate.getZ() + 1.5, 0, 0);
+                        calf[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        calfSet[0] = "at " + calf[0].getBlockPos().toShortString() + ", tick " + world.getTime();
+                        KindredMod.LOGGER.info("Own herd: STAGED, the calf set just outside the shut gate as it left, {}", calfSet[0]);
+                    }
+                    if (gateway && calfSet[0] != null && inGate[0] == null && player != null && !gateOpen && status.contains("bringing a cow back")) {
+                        player.refreshPositionAndAngles(gate.getX() + 0.5, gate.getY(), gate.getZ() + 0.5, player.getYaw(), player.getPitch());
+                        player.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                        inGate[0] = "the player at " + player.getBlockPos().toShortString() + ", the calf at " + calf[0].getBlockPos().toShortString() + ", tick " + world.getTime();
+                        KindredMod.LOGGER.info("Own herd: STAGED, the player set in the shut gate's cell as it turned back for the calf, {}", inGate[0]);
+                    }
+                    // Staged (F-22c129): once it has left and shut the gate, one cow set once just outside it; then, the player
+                    // inside with the gate open, the calf held in the gateway's cell each tick until the ranch leads it, at most
+                    // its wait to come in and HOLD_MARGIN more.
+                    if (blocked && player != null) {
+                        String diagnosis = f.runtime.ranchDiagnosisForTest(f.id).orElse("");
+                        String cow = pair[1].getUuidAsString().substring(0, 8), young = calf[0].getUuidAsString().substring(0, 8);
+                        if (cowSet[0] == null && !inPen(cowPen, player.getBlockPos()) && !gateOpen && player.getBlockPos().getZ() > gate.getZ()
+                                && status.contains("leaving the pen")) {
+                            pair[1].refreshPositionAndAngles(gate.getX() + 0.5, gate.getY(), gate.getZ() + 1.5, 0, 0);
+                            pair[1].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                            cowSet[0] = "cow " + cow + " at " + pair[1].getBlockPos().toShortString() + ", tick " + world.getTime();
+                            KindredMod.LOGGER.info("Own herd: STAGED, a cow set just outside the shut gate as it left, {}", cowSet[0]);
+                        }
+                        if (cowSet[0] != null && released[0] == null && failed[0] == null && heldFrom[0] < 0 && gateOpen
+                                && inPen(cowPen, player.getBlockPos()) && status.contains("bringing a cow back")) heldFrom[0] = world.getTime();
+                        if (heldFrom[0] >= 0 && released[0] == null && failed[0] == null) {
+                            if (diagnosis.contains(cow + " would not come in")) {
+                                failed[0] = "the cow behind the gateway's calf given up as one that would not come in, CI's reason: " + diagnosis;
+                            } else if (diagnosis.endsWith("leading " + young)) {
+                                released[0] = "tick " + world.getTime() + ", " + (world.getTime() - heldFrom[0]) + " ticks held: " + diagnosis;
+                                KindredMod.LOGGER.info("Own herd: the calf in the gateway released, the player acting on it, {}", released[0]);
+                            } else if (world.getTime() - heldFrom[0] > COME_IN + HOLD_MARGIN) {
+                                failed[0] = "no act on the gateway's calf within " + COME_IN + " + " + HOLD_MARGIN + " ticks; released at the cap: " + diagnosis;
+                            } else {
+                                calf[0].refreshPositionAndAngles(gate.getX() + 0.5, gate.getY(), gate.getZ() + 0.5, 0, 0);
+                                calf[0].setVelocity(net.minecraft.util.math.Vec3d.ZERO);
+                                if (heldAt[0] == null) {
+                                    heldAt[0] = "tick " + world.getTime() + ", the player at " + player.getBlockPos().toShortString();
+                                    KindredMod.LOGGER.info("Own herd: STAGED, the calf held in the gateway's cell, {}", heldAt[0]);
+                                }
+                            }
+                            if (failed[0] != null) KindredMod.LOGGER.info("Own herd: {}", failed[0]);
+                        }
+                    }
+                    if (failed[0] != null) throw new net.minecraft.test.GameTestException(failed[0]);
                     var pens = f.runtime.ownPens(f.id);
                     context.assertTrue(pens.size() == 1 && pens.get(0).ranAt() > staged[0] && f.runtime.ranchStatus(f.id).isEmpty(),
                             "Run again: " + f.runtime.ranchStatus(f.id).orElse("") + " / " + pens);
@@ -884,6 +969,10 @@ public final class NativeOwnRanchGameTests implements FabricGameTest {
                     long adults = penned.stream().filter(c -> !c.isBaby()).count(), calves = penned.stream().filter(CowEntity::isBaby).count();
                     KindredMod.LOGGER.info("Own herd: {}; {} cows and {} calves penned", f.runtime.ownPens(f.id), adults, calves);
                     if (calfOut) context.assertTrue(slipped[0] != null, "The calf set outside the gate as it went in");
+                    if (failed[0] != null) throw new net.minecraft.test.GameTestException(failed[0]);
+                    if (blocked) context.assertTrue(heldAt[0] != null && released[0] != null, "Staged: a cow outside the shut gate (" + cowSet[0]
+                            + "), the calf held in the gateway (" + heldAt[0] + ") and released as the player acted on it (" + released[0] + ")");
+                    if (gateway) context.assertTrue(inGate[0] != null, "Staged: the calf outside the shut gate (" + calfSet[0] + ") and the player in the gate's cell as it turned back");
                     // Every cow about, where, and whether in the pen's interior (F-22c86: #335's "1 and 2" had all four in at
                     // its run's end).
                     String herd = world.getEntitiesByClass(CowEntity.class, new Box(cowPen).expand(24), CowEntity::isAlive).stream()

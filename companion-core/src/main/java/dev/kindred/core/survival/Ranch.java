@@ -127,6 +127,12 @@ public final class Ranch {
     private long catchSince = -1;
     private Phase phase = Phase.BUILD;
     private UUID leading;
+    /**
+     * One of its kind standing in the open gateway while it waits inside for another to come in, drawn in first (F-22c129);
+     * the one it was waiting on, led again once the gateway is clear; and when the drawing began.
+     */
+    private UUID blocker, behind;
+    private long blockedSince = -1;
     private int relined;
     private long waitingSince = -1, clearSince = -1, gatewaySince = -1;
     /** Whether the animal it leads has been brought round to the front of the gate. */
@@ -427,6 +433,49 @@ public final class Ranch {
     }
 
     private Step fetch(Observation seen, boolean in, int adultsIn, java.util.function.Predicate<Animal> wanted) {
+        // In the gate's own cell it is neither in nor out, as LEAVE has it (F-22c124): out of the gateway first, the gate opened
+        // if shut, never a walk asked from there. Set in the shut gate's cell as it turned back for a calf outside, its walk
+        // round to the gate's front had no standable start, was refused three times and the calf given up ("its walk
+        // refused"), the run done "No cows in sight to bring in; 1 got out" (CI run 45143611807) (F-22c129).
+        if (!in && seen.feet().x() == gate().x() && seen.feet().z() == gate().z()) return out(seen, "Open the gate", "Out of the gateway");
+        // One of its kind in the open gateway while it waits inside keeps the one behind it out: drawn in off the gateway first,
+        // counted penned, and then the one behind led again, its wait to come in begun again (F-22c129). Waited past instead,
+        // the pig behind a piglet in the gateway was given up as one that "would not come in", the run done "Only one pig in
+        // the pen; no other in sight; 2 got out" (main's CI, run 45277563010). One that will not come off the gateway in its
+        // own wait to come in is given up likewise, never waited on for good.
+        if (in && seen.gateOpen()) {
+            var inGateway = seen.animals().stream().filter(a -> a.kind() == kind && a.at().x() == gate().x() && a.at().z() == gate().z()
+                    && !givenUp.contains(a.id()) && (leading == null || !a.id().equals(leading) || a.id().equals(blocker))).findFirst();
+            if (inGateway.isPresent() && (leading != null || blocker != null)) {
+                var b = inGateway.get();
+                if (!b.id().equals(blocker)) {
+                    behind = blocker == null ? leading : behind;
+                    blocker = b.id();
+                    blockedSince = seen.tick();
+                    penned.add(b.id());
+                }
+                leading = b.id();
+                goingFor = b.id();
+                waitingSince = -1;
+                if (seen.tick() - blockedSince > COME_IN) {
+                    givenUp.add(b.id());
+                    givenUpWhy.put(b.id(), "would not come off the gateway");
+                    leading = behind;
+                    blocker = behind = null;
+                    blockedSince = -1;
+                    return new Step.Wait(false, "That " + kind.noun() + " will not come off the gateway");
+                }
+                String draw = "Draw the " + kind.noun() + " in off the gateway";
+                return Math.sqrt(far().distanceSquared(seen.feet())) > 1.5 ? go(far(), 1, true, LEG, draw) : new Step.Wait(true, draw);
+            }
+        }
+        if (blocker != null) {
+            // The gateway clear: the one behind led again, its wait begun again.
+            leading = behind;
+            blocker = behind = null;
+            blockedSince = -1;
+            waitingSince = -1;
+        }
         // Where it last saw each it might bring in: one that wanders off while it works is looked for there.
         for (var a : seen.animals()) {
             if (a.kind() == kind && wanted.test(a) && !inside(a.at())) lastSeen.put(a.id(), a.at());

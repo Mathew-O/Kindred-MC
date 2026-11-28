@@ -7408,6 +7408,12 @@ final class PlayerRuntime {
         return entry == null || entry.ranch == null ? Optional.empty() : Optional.of(entry.ranch.progress());
     }
 
+    /** For fixtures: what its ranch run gave up, why, and which animal it is leading ({@code Ranch.diagnosis}); empty with none. */
+    Optional<String> ranchDiagnosisForTest(UUID id) {
+        Entry entry = entries.get(id);
+        return entry == null || entry.ranch == null ? Optional.empty() : Optional.of(entry.ranch.ranch.diagnosis());
+    }
+
     /**
      * Starts the field of a farm ward (M-06a): the ward of the keep whose plan stands at {@code keep}, as
      * {@code /aiplayer build farmward} builds it, its channel watered from a bucket the player holds, its soil tilled
