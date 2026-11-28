@@ -719,7 +719,7 @@ final class PortalRunCampaign {
     void taskFinished(Task task, boolean completed, long tick, String why) {
         bedTaskEnded(task, completed);
         // A swim back to the dry ground it last stood on that did not get there: that cell given up, and as before (M-06m3).
-        if (task != null && !completed && BACK_TO_DRY_LABEL.equals(task.label())) lastDryGivenUp = lastDry;
+        if (task != null && !completed && BACK_TO_DRY_LABEL.equals(task.label())) dryMemory.swimFailed();
         roomDropEnded(task, completed);
         if (task != null && completed) {
             if (completedForTest.size() >= 64) completedForTest.removeFirst();
@@ -2965,14 +2965,32 @@ final class PortalRunCampaign {
      */
     long surfacePlans, drySearches, drySearchNodes;
 
-    /** How far back it swims to the dry ground it last stood on, when none is in reach where it swims (M-06m3). */
-    static final int BACK_TO_DRY = 128;
     /** The swim back's label: its failure gives that cell up (M-06m3). */
     static final String BACK_TO_DRY_LABEL = "Get out of the water: back to dry ground it stood on";
-    /** Where it last stood on dry ground, on its own feet; and that cell, given up after a swim back to it failed. */
-    private BlockPos lastDry, lastDryGivenUp;
-    /** The squared distance its last swim back set out from; -1 before one. */
-    private double backFrom = -1;
+    /** Where it last stood on dry ground, on its own feet, in which dimension (M-06m3). */
+    private final dev.kindred.core.route.DryMemory dryMemory = new dev.kindred.core.route.DryMemory();
+
+    /**
+     * Where it stands now, as the runtime's tick reads its body each second, whatever task drives it (M-06m3): remembered
+     * if it is dry ground under its own feet, a solid top out of the water; a cell of another dimension forgotten. Read
+     * of its own feet only. A faction walk had carried Eli out to sea from land about 220 blocks off its goal's last plan,
+     * and the cell its plans had seen it stand on was out of the swim back's reach.
+     */
+    void noteDry(net.minecraft.server.network.ServerPlayerEntity player) {
+        var world = player.getServerWorld();
+        String dimension = world.getRegistryKey().getValue().toString();
+        dryMemory.in(dimension);
+        BlockPos here = player.getBlockPos();
+        if (player.isOnGround() && !player.isTouchingWater() && world.getFluidState(here).isEmpty()
+                && world.getBlockState(here.down()).isSideSolidFullSquare(world, here.down(), net.minecraft.util.math.Direction.UP)) {
+            dryMemory.stoodDry(dimension, new dev.kindred.core.route.Cell(here.getX(), here.getY(), here.getZ()));
+        }
+    }
+
+    /** At its death or its respawn: no dry ground remembered to swim back to (M-06m3). */
+    void forgetDry() {
+        dryMemory.forget();
+    }
 
     /**
      * Swimming or sunk: up to air and dry ground before anything else. Short of breath with the surface straight
@@ -2983,16 +3001,7 @@ final class PortalRunCampaign {
     private Optional<Task> surface(NativePlayerBody body) {
         var player = body.entity();
         // Where it last stood on dry ground, on its own feet (M-06m3): what it swims back to with none in reach.
-        BlockPos here = player.getBlockPos().toImmutable();
-        var standsOn = player.getServerWorld().getBlockState(here.down());
-        if (player.isOnGround() && !player.isTouchingWater() && player.getServerWorld().getFluidState(here).isEmpty()
-                && standsOn.isSideSolidFullSquare(player.getServerWorld(), here.down(), net.minecraft.util.math.Direction.UP)) {
-            if (!here.equals(lastDry)) {
-                lastDry = here;
-                lastDryGivenUp = null;
-                backFrom = -1;
-            }
-        }
+        noteDry(player);
         if (!PlayerRuntime.inDeepWater(player) && !wadingTwoDeep(player)) return Optional.empty();
         surfacePlans++;
         // Swimming across on the way somewhere, head above water with breath to spare: the crossing goes on (the
@@ -3055,16 +3064,10 @@ final class PortalRunCampaign {
         // (M-06m3). Its own memory only, the cell it stood on; no look at what is there now. A swim there that fails gives
         // it up until it stands dry again, and it does as before. In M-06k9's shipped runs a claim walk carried Kindred,
         // and Sol, out to sea; every plan was "up for air", 14,488 and 21,059 of them, the shore 24 to 75 blocks back.
-        if (lastDry != null && !lastDry.equals(lastDryGivenUp) && lastDry.getSquaredDistance(feet) <= (double) BACK_TO_DRY * BACK_TO_DRY
-                && !lastDry.isWithinDistance(feet, 3) && !blocked(lastDry)) {
-            // Each swim back from nearer than the last: one that left it no nearer gives the cell up, so no new loop.
-            double far = lastDry.getSquaredDistance(feet);
-            if (backFrom >= 0 && far >= backFrom) lastDryGivenUp = lastDry;
-            else {
-                backFrom = far;
-                return Optional.of(go(lastDry, 1.0, true, BACK_TO_DRY_LABEL));
-            }
-        }
+        // Each swim back from nearer than the last (DryMemory): one that left it no nearer gives the cell up, so no new loop.
+        var back = dryMemory.swimBack(world.getRegistryKey().getValue().toString(), new dev.kindred.core.route.Cell(feet.getX(), feet.getY(), feet.getZ()))
+                .map(c -> new BlockPos(c.x(), c.y(), c.z())).filter(c -> !blocked(c));
+        if (back.isPresent()) return Optional.of(go(back.get(), 1.0, true, BACK_TO_DRY_LABEL));
         if (player.isSubmergedInWater() && above != null && !above.equals(feet)) {
             return Optional.of(go(above, 0.5, true, "Get out of the water: up for air"));
         }
