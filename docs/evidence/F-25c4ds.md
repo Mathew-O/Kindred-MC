@@ -3,7 +3,7 @@
 Date: 2026-11-28
 Agent / branch: REFACTOR, claude/cast-approach-lava-1128, at the lead's word; a child of F-25c4 (the cast route's approach), split with COMMS B: the approach's own walk and bridge are this row's, and the hazard spell and the retreat after its cancel are COMMS's
 Build: the branch head in the PR, on main
-Status: in progress: the staged fixture passes; the corpus gate and the live read are to come
+Status: in progress: the staged fixture and the corpus gate pass; the live read is to come
 
 ## What iteration 30 showed (E-40, `e40a30-63b97ac`, batch 1)
 
@@ -79,10 +79,15 @@ Environment: Linux, JDK 21, the manifest's Minecraft 1.21.1 and Fabric; GameTest
 - **The bridge- and cast-sensitive set,** run once with the change: 155 of 155.
   - The classes: Bridge, Navigation, RescueRounds, CastFloor, CastPool, CastWalkUp, ToldLava, SwimUp, PortalCampaign, HalfCastFrame, CastWaterLost, CastRefusal, StageA, Nether, CastApproachLava, HazardEdge.
   - The marker fired once, at the fixture's own lava cell.
-- **The corpus gate:** RESULT_GATE.
+- **The corpus gate** (`tools/corpus/gate.sh 3`, on f1a4a6cb with main 79f80bd4 merged; baseline 3354cb33): passes.
+  - 307 of 472 scenes pass over 3 runs (65.0%).
+  - 7 flagged, all on the known-intermittent list; 0 confirmed, 7 cleared:
+    - Five failed 0 or 1 of 3 on the branch alone: diag-factions303 sol-58760, 8675309 kindred-112700 and kindred-123600, 505-echo-43893, 891567637 kindred-93075.
+    - Two failed 3 of 3 on the branch alone and 3 of 3 on main alone: e40c1 8675309 sol-114191 and e40c4 303 kindred-200600.
+  - 24 scenes newly pass against the baseline.
+  - The marker fired once, in run 3, in the shape it is for: `Ra957361_1` on "Climb to the cave toward lava: bridge", `native_place COMPLETED` into the lava cell, then "walk on" over it and the next bridge steps. No hazard spell and no death followed for that player in the scene.
 
 ## Remaining
 
-- The corpus gate, with the marker above.
 - The live read on E-40's next iteration: no bridge over a lava cell, and the marker where one was filled.
 - The cave-vines shape (open, above).
