@@ -64,6 +64,8 @@ final class NativeGoToSkill implements SkillBody {
     private double edgeClear;
     /** Stands passed over only for an edge within {@link #edgeClear} since the last plan, for the marker line (F-25c6h). */
     private int edgeRefused;
+    /** The walk has once found no route ending clear of edges and goes on with the plain safe stand rule (F-25c6h); once a walk. */
+    private boolean edgeFellBack;
     private NativeNavigator safety;
     private List<BlockPos> path;
     private boolean pathComplete;
@@ -285,6 +287,16 @@ final class NativeGoToSkill implements SkillBody {
                     target.toShortString(), found.expanded(), navigator.standable(start), navigator.standable(target),
                     world.getBlockState(target.down()), world.getBlockState(target), over.toShortString(), world.getBlockState(over));
             path = null;
+            // A preference, not a requirement (F-25c6h): with no stand clear of edges in reach of the search, a back-off that
+            // could end nowhere did not move at all, and a skeleton shot the player in a cave (e40a16 14534). Planned once
+            // more on the safe stand rule alone, as main ends it; once a walk, and never back again.
+            if (edgeClear > 0 && !edgeFellBack) {
+                edgeFellBack = true;
+                KindredMod.LOGGER.info("{} walk toward {}: no stand clear of edges within {} reachable; ending on a safe stand (F-25c6h)",
+                        player.getName().getString(), target.toShortString(), edgeClear);
+                edgeClear = 0;
+                return plan();
+            }
             return false;
         }
         path = found.nodes();
