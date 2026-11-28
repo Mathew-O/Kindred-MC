@@ -46,18 +46,36 @@ public final class NativeCastFloorAlongGameTests implements FabricGameTest {
      */
     @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "castFloorAlong", tickLimit = BUDGET + 400)
     public void atItsFramesFloorWithEveryStandThroughRockItDigsAlongAndCasts(TestContext context) {
+        along(context, new BlockPos(-4, 0, 0), "Along");
+    }
+
+    /**
+     * In plain terms: the same, its pocket so near the frame that the next block is within its reach by distance, though no
+     * face of it shows through the rock; it digs along to the frame rather than try the pour from its pocket again and again.
+     *
+     * Technical: F-25c4bx2. STAGED as the test above, its pocket two east of the row behind and two north, its eyes about 4
+     * from the next cell (within the pour's reach by distance), stone between it and every stand. In E-40 iteration 30's
+     * corpus gate (scene e40a20-79a9aad-20261030-kindred-126860), so placed, "Cast obsidian" was refused "No reachable face to
+     * pour against" three times, the cast set aside, and it waited until its watchdog moved it. Fails and passes as above.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, skyAccess = true, batchId = "castFloorAlongReach", tickLimit = BUDGET + 400)
+    public void atItsFramesFloorWithinReachOfTheNextCellThroughRockItDigsAlongAndCasts(TestContext context) {
+        along(context, new BlockPos(-6, 0, -2), "Reach");
+    }
+
+    private void along(TestContext context, BlockPos pocketAt, String name) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, BUDGET + 300);
         BlockPos o = context.getAbsolutePos(new BlockPos(40, 8, 40));
         BlockPos stand = o.add(-8, 0, 0);
         var site = new PortalRunCampaign.PortalSite(stand.offset(Direction.WEST, 2).offset(Direction.SOUTH, 1), Direction.NORTH, Direction.WEST, stand);
-        BlockPos pocket = o.add(-4, 0, 0);
+        BlockPos pocket = o.add(pocketAt);
         BlockPos next = site.at(3, 1);
         int[] watched = new int[1];
         String[] verdict = {null};
         StringBuilder seen = new StringBuilder();
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
-                .createAndAdd(() -> f.runtime.createNative(f.source, "Along"))
+                .createAndAdd(() -> f.runtime.createNative(f.source, name))
                 .createAndAdd(() -> f.established(context))
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
@@ -137,7 +155,7 @@ public final class NativeCastFloorAlongGameTests implements FabricGameTest {
                     context.assertTrue(world.getBlockState(next).isOf(Blocks.OBSIDIAN), "Not cast yet");
                 })
                 .createAndAdd(() -> {
-                    KindredMod.LOGGER.info("Cast floor along: the next cell cast after {} ticks; {}", watched[0], seen);
+                    KindredMod.LOGGER.info("Cast floor along ({}): the next cell cast after {} ticks; {}", name, watched[0], seen);
                     f.runtime.stop();
                 })
                 .createAndAdd(() -> context.assertTrue(f.runtime.shutdownComplete(), "Cleanup"))
