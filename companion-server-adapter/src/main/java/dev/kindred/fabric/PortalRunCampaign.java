@@ -7076,6 +7076,17 @@ final class PortalRunCampaign {
             Optional<Task> along = alongTheFloor(body, site);
             if (along.isPresent()) return along;
         }
+        // At the floor's level off its stands, a pour already refused from where it stands: a stand it can walk to, else its
+        // dig along, before the same pour again. Within reach of the next cell by distance and no face of it in sight, three
+        // refused pours set the cast aside and it waited until its watchdog moved it (F-25c4bx2's corpus gate, run 1, e40a20's
+        // 20261030 Kindred).
+        BlockPos feet = body.entity().getBlockPos();
+        if (feet.getY() == site.origin().getY() && castFailedStands.contains(feet.asLong()) && !stands(site).contains(feet)) {
+            Optional<Task> closer = stepCloser(body, site, across, cell);
+            if (closer.isPresent()) return closer;
+            Optional<Task> along = backUp(body, site);
+            if (along.isPresent()) return along;
+        }
         Optional<Task> now = eyeDistance(body.entity(), cell) <= CAST_REACH + 0.3 ? then.get() : Optional.<Task>empty();
         if (now.isPresent()) return now;
         Optional<Task> closer = stepCloser(body, site, across, cell);
