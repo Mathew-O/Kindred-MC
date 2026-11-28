@@ -101,6 +101,9 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
         boolean hidden = mode == Mode.HIDDEN || mode == Mode.HIDDEN_AT_FEET || mode == Mode.WATER_HELD_BACK;
         boolean atFeet = mode == Mode.HIDDEN_AT_FEET || mode == Mode.WATER_HELD_BACK;
         boolean[] droppedAtFeet = {false};
+        // A staging error, if the at-feet staging did not find exactly one drop at its own lava cell: then the test fails
+        // as a staging error naming the count, never as the property (F-22c118a; a neighbouring copy's drop was once taken).
+        String[] stagingError = {null};
         boolean[] heldBack = {false};
         // What armed the check (F-22c118a), whichever came first: the moment on its stand, or its goal line to take the
         // water back. Armed by the goal line, whether its water was back before the next goal: "" if so, else what was not.
@@ -184,16 +187,29 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 }
             }
             // Staged (F-22c118a): the obsidian's drop set at the player's feet as it is born, as CI's came to it at once.
-            if (atFeet && !droppedAtFeet[0] && f.player() != null) {
-                for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
-                        new net.minecraft.util.math.Box(context.getAbsolutePos(BlockPos.ORIGIN)).expand(8), i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN))) {
+            // Only this copy's own lava cell is searched: a wider box reached the next plot's lava cell, 13 blocks along, and
+            // carried a neighbouring copy's drop to this player when copies shared a batch.
+            if (atFeet && !droppedAtFeet[0] && stagingError[0] == null && f.player() != null) {
+                var world = context.getWorld();
+                var drops = world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(lava).expand(1),
+                        i -> i.isAlive() && i.getStack().isOf(Items.OBSIDIAN));
+                boolean mined = !world.getBlockState(lava).isOf(Blocks.OBSIDIAN) && !world.getFluidState(lava).isIn(FluidTags.LAVA);
+                int count = drops.stream().mapToInt(i -> i.getStack().getCount()).sum();
+                if (drops.size() > 1 || count > 1) {
+                    stagingError[0] = "Staging error: " + count + " obsidian in " + drops.size() + " drops at its own lava cell " + lava.toShortString() + ", not 1";
+                } else if (drops.size() == 1) {
+                    var item = drops.getFirst();
                     item.refreshPositionAndAngles(f.player().getX(), f.player().getY(), f.player().getZ(), 0, 0);
                     item.setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                     item.setPickupDelay(0);
                     droppedAtFeet[0] = true;
-                    KindredMod.LOGGER.info("Obsidian pickup: STAGED, the obsidian's drop set at the player's feet, at {}", f.player().getBlockPos().toShortString());
+                    KindredMod.LOGGER.info("Obsidian pickup: STAGED, the obsidian's drop (1 of 1 at its own lava cell) set at the player's feet, at {}", f.player().getBlockPos().toShortString());
+                } else if (mined) {
+                    stagingError[0] = "Staging error: 0 obsidian drops at its own lava cell " + lava.toShortString() + " once it was mined, not 1";
                 }
+                if (stagingError[0] != null) KindredMod.LOGGER.info("Obsidian pickup: {}", stagingError[0]);
             }
+            if (stagingError[0] != null) context.assertTrue(false, stagingError[0]);
             // Staged (F-22c118): the obsidian mined left lying where it fell, no player able to pick it up.
             if (mode == Mode.LEFT) {
                 for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
@@ -337,7 +353,7 @@ public final class NativeObsidianPickupGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     if (mode == Mode.LEFT || mode == Mode.WATER_HELD_BACK) return;
                     watch.run();
-                    if (atFeet) context.assertTrue(droppedAtFeet[0], "Staged: the obsidian's drop set at its feet as it was mined");
+                    if (atFeet) context.assertTrue(droppedAtFeet[0], "Staging error: no obsidian drop found at its own lava cell to set at its feet, not 1");
                     context.assertFalse(exploredFirst[0], "Went exploring with its obsidian left in the water: " + tail.get());
                     context.assertTrue(ItemMoves.count(f.player().getInventory(), Items.OBSIDIAN) == 1, "The obsidian mined and picked up: " + tail.get());
                 })
