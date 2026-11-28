@@ -1514,12 +1514,51 @@ final class PortalRunCampaign {
                 lastFeet.toShortString(), relocate.toShortString(), stuckLevel);
     }
 
-    /** The move elsewhere of attempt {@code level}: a heading turned once more for each, and every third home. */
+    /** How far above its feet a move elsewhere goes when the plan's own step was a climb up (F-25c4do1). */
+    static final int RELOCATE_RISE = 24;
+
+    /**
+     * The move elsewhere of attempt {@code level}: a heading turned once more for each, and every third home. When the
+     * plan's own step was a climb up (for food, the surface or another way), the new place is up as well as along, not at
+     * its own level: hurt and out of food at Y=-47 in E-40's iteration 30 (`e40a30-63b97ac`, 505 Kindred), its climb toward
+     * the surface for food was put off by one sideways move after another at that depth. Nor is it a place it saw to be
+     * open water: far out at sea, two moves 24 on along the sea's surface came before the one home that ended the spell
+     * (FACTIONS A's shipped-configuration runs on 101; F-25c4do1), nor a cell of water it saw at a shore, where land within
+     * two makes the water not open. Every heading toward water, it goes home if it has one.
+     */
     private void relocateFor(int level) {
         Direction heading = digDirection();
         for (int i = 0; i < level; i++) heading = heading.rotateYClockwise();
-        relocateTo(level % 3 == 0 && home != null && home.getSquaredDistance(lastFeet) > 16 * 16 ? home : lastFeet.offset(heading, 24));
+        boolean homeFar = home != null && home.getSquaredDistance(lastFeet) > 16 * 16;
+        if (level % 3 == 0 && homeFar) {
+            relocateTo(home);
+            return;
+        }
+        int rise = climbWanted() ? RELOCATE_RISE : 0;
+        Direction first = heading;
+        for (int turn = 0; turn < 4; turn++) {
+            BlockPos to = lastFeet.offset(heading, 24).up(rise);
+            if (!knowledge.seenWaterColumn(to) && !knowledge.seenOpenWaterToward(lastFeet, to, FactionsPlayer.OPEN_WATER)) {
+                if (rise > 0 || turn > 0) KindredMod.LOGGER.info("F-25c4do1: the move elsewhere from {} goes to {}: {}{}", lastFeet.toShortString(),
+                        to.toShortString(), rise > 0 ? "up " + rise + " for the plan's own climb (" + progress + ")" : "along",
+                        turn > 0 ? ", " + turn + " heading(s) toward water it saw passed over" : "");
+                relocateTo(to);
+                return;
+            }
+            heading = heading.rotateYClockwise();
+        }
+        KindredMod.LOGGER.info("F-25c4do1: the move elsewhere from {}: every heading toward water it saw; {}", lastFeet.toShortString(),
+                homeFar ? "home, " + home.toShortString() : "on as before");
+        relocateTo(homeFar ? home : lastFeet.offset(first, 24).up(rise));
     }
+
+    /** Whether the plan's own step, when the spell came, was a climb up (F-25c4do1). */
+    private boolean climbWanted() {
+        return progress != null && (progress.contains(" - Climb toward") || progress.contains("Climb to find another way"));
+    }
+
+    /** Where the move elsewhere under way is going, or null (fixtures only). */
+    BlockPos relocateTargetForTest() { return relocate; }
 
     /**
      * The watchdog's spell, three minutes with no progress, while a move elsewhere begun early for a rescue is under way
