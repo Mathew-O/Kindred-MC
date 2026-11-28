@@ -4132,6 +4132,7 @@ final class PortalRunCampaign {
             if (direction != digDirection()) spots.add(feet.offset(direction));
         }
         spots.add(feet.up().offset(digDirection().getOpposite()));
+        boolean castSkipped = false;
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (onTheWay(spot, feet)) continue;
@@ -4139,9 +4140,39 @@ final class PortalRunCampaign {
             // the torch too, and the pocket dark again, the next torch went back in, lap after lap (iteration 30's 303
             // Kindred, 541 times in under three minutes; 303 Echo, 547).
             if (inBedRoom(spot)) continue;
+            // Never in a cell its frame's cast will clear (F-22c127a): cleared, the torch dropped, it was picked up and lit there
+            // again, lap after lap (iteration 31's 20261030, Kindred at 24, 63, 88: 181 laps in 27 seconds, 263 on the seed).
+            if (inCastClear(spot)) {
+                castSkipped = true;
+                continue;
+            }
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
+        }
+        // Every open spot it tries in the cast's clear-set (beside a frame's corner, rock on its other sides): the nearest open
+        // cell clear of it within reach and two blocks, rather than the dark for good with torches in hand; with none, said
+        // once for the site.
+        if (castSkipped) {
+            BlockPos best = null;
+            double nearest = Double.MAX_VALUE;
+            for (BlockPos spot : BlockPos.iterate(feet.add(-2, 0, -2), feet.add(2, 1, 2))) {
+                if (spot.equals(feet) || spot.equals(feet.up()) || spots.contains(spot)) continue;
+                if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot) || onTheWay(spot, feet) || inCastClear(spot)) continue;
+                if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
+                double away = eyeDistance(player, spot);
+                if (away > REACH || away >= nearest) continue;
+                nearest = away;
+                best = spot.toImmutable();
+            }
+            if (best != null) return Optional.of(new Task("native_place", coords(best, Map.of("side", "up", "slot", String.valueOf(torch))),
+                    "Place a torch at " + best.toShortString()));
+            PortalSite site = portalSite;
+            if (site != null && castLightSiteTold != siteKey(site)) {
+                castLightSiteTold = siteKey(site);
+                KindredMod.LOGGER.info("{} light: no spot clear of the cast of its frame at {} within reach of {}", player.getName().getString(),
+                        site.origin().toShortString(), feet.toShortString());
+            }
         }
         return Optional.empty();
     }
@@ -7217,6 +7248,24 @@ final class PortalRunCampaign {
     /** Do {@code then} from where the player stands if {@code cell} is in reach, else step along the front row to a spot that is. */
     private Optional<Task> within(NativePlayerBody body, PortalSite site, int across, BlockPos cell, java.util.function.Supplier<Optional<Task>> then) {
         backOnFloor(body, site);
+        // Its dig along the floor under way: on to its stand before any pour or mould. From inside its own tunnel the next
+        // cell came within reach by distance with no face of it in sight, and three refused pours set the cast aside, the
+        // goal climbing away (F-25c4bx2's staged runs).
+        if (digAlong && site.origin().equals(digBackSite) && body.entity().getBlockY() == site.origin().getY()) {
+            Optional<Task> along = alongTheFloor(body, site);
+            if (along.isPresent()) return along;
+        }
+        // At the floor's level off its stands, a pour already refused from where it stands: a stand it can walk to, else its
+        // dig along, before the same pour again. Within reach of the next cell by distance and no face of it in sight, three
+        // refused pours set the cast aside and it waited until its watchdog moved it (F-25c4bx2's corpus gate, run 1, e40a20's
+        // 20261030 Kindred).
+        BlockPos feet = body.entity().getBlockPos();
+        if (feet.getY() == site.origin().getY() && castFailedStands.contains(feet.asLong()) && !stands(site).contains(feet)) {
+            Optional<Task> closer = stepCloser(body, site, across, cell);
+            if (closer.isPresent()) return closer;
+            Optional<Task> along = backUp(body, site);
+            if (along.isPresent()) return along;
+        }
         Optional<Task> now = eyeDistance(body.entity(), cell) <= CAST_REACH + 0.3 ? then.get() : Optional.<Task>empty();
         if (now.isPresent()) return now;
         Optional<Task> closer = stepCloser(body, site, across, cell);
@@ -7253,11 +7302,14 @@ final class PortalRunCampaign {
             digBackSince = lastTick;
             digBackEmptyAt = Long.MIN_VALUE / 2;
             digBackBegun = false;
+            digAlong = false;
+            digAlongSaid = null;
         }
-        if (y >= site.origin().getY()) {
+        if (y > site.origin().getY()) {
             backOnFloor(body, site);
             return Optional.empty();
         }
+        if (y == site.origin().getY()) return alongTheFloor(body, site);
         if (y > digBackBestY) {
             digBackBestY = y;
             digBackSince = lastTick;
@@ -7282,6 +7334,72 @@ final class PortalRunCampaign {
         abandonedSites.add(siteKey(site));
         clearTriedFrom.clear();
         digBackSite = null;
+        portalSite = null;
+        return Optional.empty();
+    }
+
+    /** Its dig along the frame's floor to its stand, and its label (F-25c4bx2). */
+    static final String DIG_ALONG = "Cast: dig along to the frame";
+    private int digAlongBest;
+    private boolean digAlong;
+    private BlockPos digAlongSaid;
+
+    /**
+     * At the frame's floor's level with no stand it can walk to: along the floor to its stand, by the same dig as the dig back
+     * up ({@code Digger.toward} to the block under {@code site.stand()}, the frame's cells and mould kept), with the same two
+     * failures that give the site up (F-25c4bx2). In E-40 iteration 30, batch 1's 505 Kindred, its lava refilled and its dig
+     * back up done, stood at the floor's level three to six blocks from its stands through rock: "Cast: step closer" was
+     * refused to all five, nothing dug along, and the goal climbed away ("no way on from here - Climb to find another way").
+     * Its progress is the distance across to its stand; two spells of {@link #DIG_BACK_TICKS} that get no nearer, or two
+     * with no cell to dig, give the site up. Beside its stand, the stands are its to walk to again.
+     */
+    private Optional<Task> alongTheFloor(NativePlayerBody body, PortalSite site) {
+        var player = body.entity();
+        BlockPos feet = player.getBlockPos();
+        BlockPos stand = site.stand();
+        int across = Math.max(Math.abs(feet.getX() - stand.getX()), Math.abs(feet.getZ() - stand.getZ()));
+        if (across <= 1) {
+            if (digAlong) {
+                digAlong = false;
+                for (BlockPos s : stands(site)) cellsAside.put(s.asLong(), lastTick);
+                event("dug along to its frame's stand at " + stand.toShortString());
+            }
+            return Optional.empty();
+        }
+        if (!digAlong) {
+            digAlong = true;
+            digAlongBest = across;
+            digBackSince = lastTick;
+        }
+        if (across < digAlongBest) {
+            digAlongBest = across;
+            digBackSince = lastTick;
+        } else if (lastTick - digBackSince > DIG_BACK_TICKS) {
+            digBackFailures++;
+            digBackSince = lastTick;
+            event("its dig along to the frame at " + site.origin().toShortString() + " got no nearer in " + DIG_BACK_TICKS + " ticks");
+        }
+        Optional<Task> dig = digBackFailures < 2 ? digger.toward(new Dig(body, frameCells(site)), cell(stand.down()), DIG_ALONG) : Optional.empty();
+        if (dig.isPresent()) {
+            // Said once a site, where the dig along begins.
+            if (digAlongSaid == null) {
+                digAlongSaid = feet;
+                KindredMod.LOGGER.info("F-25c4bx2-marker: {} at its frame's floor at {}, no walk to a stand: digs along to its stand at {}, {} across",
+                        player.getName().getString(), feet.toShortString(), stand.toShortString(), across);
+            }
+            return dig;
+        }
+        if (digBackFailures < 2 && lastTick - digBackEmptyAt <= DIG_BACK_TICKS) return Optional.empty();
+        digBackEmptyAt = lastTick;
+        if (++digBackFailures < 2) return Optional.empty();
+        KindredMod.LOGGER.info("{} gives up the frame site at {}: no way along to it from {}", player.getName().getString(),
+                site.origin().toShortString(), feet.toShortString());
+        event("gives up the frame site at " + site.origin().toShortString() + ": no way along to it");
+        abandonedSites.add(siteKey(site));
+        clearTriedFrom.clear();
+        digBackSite = null;
+        digAlong = false;
+        digAlongSaid = null;
         portalSite = null;
         return Optional.empty();
     }
@@ -8574,7 +8692,23 @@ final class PortalRunCampaign {
         return -1;
     }
 
-    /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
+    /**
+     * Whether {@code cell} is one its chosen frame's cast clears or builds on (F-22c127a): the frame's cells, the cells over
+     * them and the mould behind them ({@link #frameCells}), and the rows in front of the frame, which {@code clearPortalSite}
+     * clears of anything not replaceable (a torch is not) and the top cell's cast opens. A fixed set of at most 80 cells,
+     * read only while a frame site is chosen.
+     */
+    /** The frame site last said to leave it no spot for a torch clear of its cast (F-22c127a), said once a site. */
+    private long castLightSiteTold = Long.MIN_VALUE;
+
+    private boolean inCastClear(BlockPos cell) {
+        PortalSite site = portalSite;
+        if (site == null) return false;
+        if (frameCells(site).contains(cell.asLong())) return true;
+        for (int across = 0; across <= 3; across++) for (int up = 0; up <= 5; up++) if (site.front(across, up).equals(cell)) return true;
+        return false;
+    }
+
     /** Whether {@code cell} is one of the four kept for the bed it carries tonight: its two cells and the two over them. */
     private boolean inBedRoom(BlockPos cell) {
         if (bedRoomFor == null) return false;
@@ -8582,6 +8716,7 @@ final class PortalRunCampaign {
         return false;
     }
 
+    /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
     private static boolean bedRoom(ServerWorld world, BlockPos pos) {
         return world.isChunkLoaded(pos) && world.getBlockState(pos).isAir() && world.getFluidState(pos).isEmpty()
                 && world.getBlockState(pos.up()).isAir() && world.getBlockState(pos.down()).isSideSolidFullSquare(world, pos.down(), Direction.UP);
