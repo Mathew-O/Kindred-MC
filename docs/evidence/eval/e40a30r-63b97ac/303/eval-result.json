@@ -1,0 +1,63 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 303,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.365,
+  "items": {"windows": 7209, "gained": 6520, "paid": 6520, "lapsed": 213, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 129.5, "snapshotMicrosMax": 8171.9, "tagMicrosMean": 142.3, "tagMicrosMax": 42204.9, "bySource": {"container.take:furnace": 51, "pickup:class_1308.method_6099": 1, "pickup:class_2248.method_36993": 4507, "pickup:class_3222.method_7329": 1437, "pickup:class_52.method_331": 69, "screen:class_1707": 34, "screen:class_1714": 69, "screen:class_1723": 520, "use:item": 45}, "dropsByOrigin": {"class_1308.method_6099": 1, "class_1428.method_6007": 102, "class_2248.method_36993": 4542, "class_3222.method_7329": 158, "class_52.method_331": 157}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 18.56, "tickMsWorst": 1558.75, "tickMsWorstAt": 5838, "ticksOver50ms": 1376, "ticksOver200ms": 10, "heapMbMax": 933, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 720, "stone_tools": 1220, "iron_ingot": 6700, "iron_pickaxe": 25900, "obsidian": 141203, "portal_lit": 143948},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4791,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 2580, "stone_tools": 3140, "iron_ingot": 8300, "iron_pickaxe": 13020},
+      "deaths": [
+        {"tick": 14802, "cause": "Sol was blown up by Creeper", "x": -157, "y": 1, "z": -91, "light": 4, "timeOfDay": 14964, "dimension": "minecraft:overworld", "hunger": 15, "underSky": false, "stage": "Iron: fight back - Fight creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 84851, "cause": "Sol was shot by Skeleton", "x": -131, "y": 0, "z": -94, "light": 0, "timeOfDay": 13013, "dimension": "minecraft:overworld", "hunger": 16, "underSky": false, "stage": "Iron: fight back - Back off from skeleton", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 6332,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 2380, "stone_tools": 2700, "iron_ingot": 14220},
+      "deaths": [
+        {"tick": 7629, "cause": "Echo was slain by Zombie", "x": 38, "y": 61, "z": 164, "light": 0, "timeOfDay": 7791, "dimension": "minecraft:overworld", "hunger": 17, "underSky": false, "stage": "Iron: fight back - Back off from zombie", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"},
+        {"tick": 69140, "cause": "Echo was blown up by Creeper", "x": -132, "y": 8, "z": -35, "light": 0, "timeOfDay": 21302, "dimension": "minecraft:overworld", "hunger": 14, "underSky": false, "stage": "Iron: fight back - Fight creeper", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 139580, "x": -7, "y": 58, "z": 0, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 4143,
+      "chunkMinutes": 34670.4,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    }
+  }
+}

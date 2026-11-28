@@ -1,0 +1,59 @@
+{
+  "scenario": "starters=Kindred,Sol,Echo; goal=nether; edits=on; ticks=144000; sprint=on; strategist=off; voice=off; keep=none; lessons=on; atlas=on; rescue=on; advice=on",
+  "kind": "earned",
+  "policy": {"teleport": false, "freeItems": false},
+  "build": "0.1.0-SNAPSHOT",
+  "seed": 404,
+  "ticks": 144000,
+  "ticksRun": 144000,
+  "complete": true,
+  "days": 6.000,
+  "items": {"windows": 7209, "gained": 11003, "paid": 11003, "lapsed": 514, "untaggedPickups": 0, "forgottenDrops": 0, "snapshotMicrosMean": 105.9, "snapshotMicrosMax": 8918.0, "tagMicrosMean": 120.8, "tagMicrosMax": 12349.6, "bySource": {"container.take:furnace": 78, "pickup:class_2248.method_36993": 5224, "pickup:class_3222.method_7329": 5557, "pickup:class_52.method_331": 28, "screen:class_1714": 61, "screen:class_1723": 525, "use:item": 44}, "dropsByOrigin": {"class_1428.method_6007": 87, "class_1540.method_5773": 15, "class_1560.method_6099": 1, "class_2248.method_36993": 5333, "class_3222.method_7329": 223, "class_52.method_331": 92}, "violationCount": 0, "violations": []},
+  "server": {"tickMsMean": 14.67, "tickMsWorst": 3518.89, "tickMsWorstAt": 1, "ticksOver50ms": 825, "ticksOver200ms": 13, "heapMbMax": 1099, "samples": 7200},
+  "players": {
+    "Kindred": {
+      "stages": {"wooden_tool": 1700, "stone_tools": 3160, "iron_ingot": 9340, "iron_pickaxe": 31960, "obsidian": 49222},
+      "deaths": [
+        {"tick": 51931, "cause": "Kindred tried to swim in lava", "x": 57, "y": -56, "z": -67, "light": 15, "timeOfDay": 4093, "dimension": "minecraft:overworld", "hunger": 20, "underSky": false, "stage": "Iron: heal before going on", "stance": "PRESS_ON", "habits": "[]", "task": "nothing"}
+      ],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2718,
+      "chunkMinutes": 34675.2,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Sol": {
+      "stages": {"wooden_tool": 460, "stone_tools": 1540, "iron_ingot": 10820, "iron_pickaxe": 34960, "obsidian": 57215, "portal_lit": 59446},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2174,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 0,
+      "bridgeSeconds": 0.0
+    },
+    "Echo": {
+      "stages": {"wooden_tool": 440, "stone_tools": 2400, "iron_ingot": 5840, "iron_pickaxe": 39920},
+      "deaths": [],
+      "deathsNotListed": 0,
+      "stuck": [{"tick": 43780, "x": 81, "y": 21, "z": -78, "attempt": 1}],
+      "stuckNotListed": 0,
+      "rescues": [],
+      "rescuesNotListed": 0,
+      "tokens": 0,
+      "chunkLoads": 2159,
+      "chunkMinutes": 34680.0,
+      "bridgeBlocks": 2,
+      "bridgeSeconds": 0.9
+    }
+  }
+}
