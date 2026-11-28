@@ -123,6 +123,7 @@
       "dev.kindred.fabric.NativeWeaponToHandGameTests",
       "dev.kindred.fabric.NativeCastRefusalGameTests",
       "dev.kindred.fabric.NativeCastPoolGameTests",
+      "dev.kindred.fabric.NativeCastWalkUpGameTests",
       "dev.kindred.fabric.NativeObsidianPickupGameTests",
       "dev.kindred.fabric.NativeCastTableGameTests",
       "dev.kindred.fabric.NativeStrandedReturnGameTests",
