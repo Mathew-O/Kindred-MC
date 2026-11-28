@@ -1,1 +1,2 @@
 bx-1 (e412fb5a): 32 min, peak 3122 MB, 128 required tests failed, fence-top 27, disk 6.4G
+bxr-1 (3967f205): 33 min, peak 3283 MB, 119 required tests failed, fence-top 21, disk 6.2G
