@@ -136,6 +136,19 @@ final class RoamingEdits {
         return false;
     }
 
+    /**
+     * As {@link #placeDenial(ServerPlayerEntity, BlockPos, EditPolicy.ServerPolicy)} for placing the block {@code blockId}:
+     * a destination it replaces by vanilla's own rule (a sculk vein, which is not replaceable) is not occupied (F-31g3).
+     */
+    static String placeDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy, String blockId) {
+        String denial = placeDenial(player, pos, policy);
+        if (!"The destination is occupied".equals(denial) || blockId == null) return denial;
+        var id = net.minecraft.util.Identifier.tryParse(blockId);
+        var item = id == null ? null : net.minecraft.registry.Registries.ITEM.get(id);
+        if (item == null || item == net.minecraft.item.Items.AIR) return denial;
+        return NativePlayerBody.takesBlock(player.getServerWorld(), player, pos, Direction.UP, new net.minecraft.item.ItemStack(item)) ? null : denial;
+    }
+
     /** Why the player may not place a block here, or nothing when it may. */
     static String placeDenial(ServerPlayerEntity player, BlockPos pos, EditPolicy.ServerPolicy policy) {
         String common = common(player, pos, policy);
