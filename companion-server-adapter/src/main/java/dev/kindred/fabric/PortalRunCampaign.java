@@ -10,6 +10,7 @@ import dev.kindred.core.guide.Worth;
 import dev.kindred.core.survival.PlanPreferences;
 import dev.kindred.core.survival.PortalRunPlanner;
 import dev.kindred.core.survival.PortalRunSnapshot;
+import dev.kindred.core.tactics.WayOffHeading;
 import dev.kindred.core.survival.StrategyAdvice;
 import dev.kindred.core.survival.SurvivalGoal;
 import dev.kindred.core.survival.WorldFacts;
@@ -1223,6 +1224,7 @@ final class PortalRunCampaign {
     /** {@link #STUCK_TICKS}, or less for a fixture that cannot wait minutes for the watchdog. */
     private long stuckTicks = STUCK_TICKS;
     private long stuckClock;
+    private long waitingLoggedFor = Long.MIN_VALUE; // F-25c4do: the spell whose "waiting" line was logged.
     private boolean lastActive;
     private int stuckLevel;
     private BlockPos relocate;
@@ -1756,6 +1758,15 @@ final class PortalRunCampaign {
 
     /** For fixtures: the watchdog gives a spot up after {@code ticks} of no progress rather than three minutes. */
     void stuckTicksForTest(long ticks) { stuckTicks = ticks; }
+
+    /**
+     * For fixtures only, a setter: the eight-block cells from {@code from} to {@code to} stood in, as its watchdog records
+     * them when it walks there, and the heading its digs go along (F-25c4dq). Package-private; called from no main source.
+     */
+    void groundStoodInForTest(BlockPos from, BlockPos to, Direction heading) {
+        for (BlockPos cell : BlockPos.iterate(from, to)) seenCells.add(BlockPos.asLong(cell.getX() >> 3, cell.getY() >> 3, cell.getZ() >> 3));
+        digDirection(heading);
+    }
 
     /**
      * What a rescue's adviser is told (F-29, F-29b), about a thousand tokens: where it is and how it is; the light, the time
@@ -2902,11 +2913,17 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": " + steps.getFirst().why();
             return Optional.empty();
         }
+        StringBuilder refusedSteps = new StringBuilder(); // F-25c4do: the stage's steps and why each gave nothing, for "waiting".
         for (PortalRunPlanner.Step step : steps) {
-            if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
-            if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) continue; // Looking about for animals is daylight work.
+            if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) { refused(refusedSteps, step, "night, food in hand"); continue; }
+            if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) { refused(refusedSteps, step, "night"); continue; } // Looking about for animals is daylight work.
+            digger.forgetLastEmpty();
             Optional<Task> task = realize(step, snapshot, body, policy);
-            if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) continue;
+            if (task.isEmpty()) refused(refusedSteps, step, digger.lastEmpty().isEmpty() ? "no task" : "no task, " + digger.lastEmpty());
+            if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) {
+                refused(refusedSteps, step, "set aside until " + setAside.get(task.get()) + " [" + task.get().label() + "]");
+                continue;
+            }
             if (task.isPresent()) {
                 progress = stageLabel(stage) + ": " + step.why() + " - " + task.get().label();
                 return task;
@@ -2948,7 +2965,32 @@ final class PortalRunCampaign {
             return drop;
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
+        long spellStart = tick - stuckClock;
+        if (stuckSpells != waitingLoggedFor) {
+            waitingLoggedFor = stuckSpells; // Once a watchdog spell: the clock restarts on every small gain within one.
+            KindredMod.LOGGER.info("WAITING {} at {} tick {}, spell {} (its clock from {}), {}, tried elsewhere {}, tasks set aside {}, cells blocked {}, unreachable {}; buckets lava {} water {} empty {}, obsidian {}, site {}, chosen lava {}; steps: {}",
+                    player.getName().getString(), lastFeet.toShortString(), tick, stuckSpells, spellStart, stageLabel(stage), stuckLevel,
+                    setAside.values().stream().filter(until -> until > tick).count(),
+                    cellsAside.blockedUntil().values().stream().filter(until -> until > tick).count(),
+                    cellsAside.unreachableUntil().values().stream().filter(until -> until > tick).count(),
+                    ItemMoves.count(player.getInventory(), Items.LAVA_BUCKET), ItemMoves.count(player.getInventory(), Items.WATER_BUCKET),
+                    ItemMoves.count(player.getInventory(), Items.BUCKET), ItemMoves.count(player.getInventory(), Items.OBSIDIAN),
+                    portalSite == null ? "none" : portalSite.origin().toShortString(),
+                    castLava == null ? "none" : castLava.toShortString(), (legActive ? "the End trip's: " + stronghold.refusedSteps() + "; the portal's: " : "")
+                            + (refusedSteps.length() == 0 ? "none" : bounded(refusedSteps)));
+        }
         return Optional.empty();
+    }
+
+    /** F-25c4do: the "waiting" line's steps, cut at 1,200 characters so no one line can flood a long console. */
+    private static String bounded(CharSequence steps) {
+        return steps.length() <= 1200 ? steps.toString() : steps.subSequence(0, 1200) + " ... (" + (steps.length() - 1200) + " more characters)";
+    }
+
+    /** F-25c4do: one of the stage's steps that gave nothing, and why, for the once-a-spell "waiting" line. */
+    private static void refused(StringBuilder into, PortalRunPlanner.Step step, String why) {
+        if (into.length() > 0) into.append("; ");
+        into.append(step.action()).append(" (").append(step.why()).append("): ").append(why);
     }
 
     /**
@@ -4090,6 +4132,7 @@ final class PortalRunCampaign {
             if (direction != digDirection()) spots.add(feet.offset(direction));
         }
         spots.add(feet.up().offset(digDirection().getOpposite()));
+        boolean castSkipped = false;
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (onTheWay(spot, feet)) continue;
@@ -4097,9 +4140,39 @@ final class PortalRunCampaign {
             // the torch too, and the pocket dark again, the next torch went back in, lap after lap (iteration 30's 303
             // Kindred, 541 times in under three minutes; 303 Echo, 547).
             if (inBedRoom(spot)) continue;
+            // Never in a cell its frame's cast will clear (F-22c127a): cleared, the torch dropped, it was picked up and lit there
+            // again, lap after lap (iteration 31's 20261030, Kindred at 24, 63, 88: 181 laps in 27 seconds, 263 on the seed).
+            if (inCastClear(spot)) {
+                castSkipped = true;
+                continue;
+            }
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
+        }
+        // Every open spot it tries in the cast's clear-set (beside a frame's corner, rock on its other sides): the nearest open
+        // cell clear of it within reach and two blocks, rather than the dark for good with torches in hand; with none, said
+        // once for the site.
+        if (castSkipped) {
+            BlockPos best = null;
+            double nearest = Double.MAX_VALUE;
+            for (BlockPos spot : BlockPos.iterate(feet.add(-2, 0, -2), feet.add(2, 1, 2))) {
+                if (spot.equals(feet) || spot.equals(feet.up()) || spots.contains(spot)) continue;
+                if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot) || onTheWay(spot, feet) || inCastClear(spot)) continue;
+                if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
+                double away = eyeDistance(player, spot);
+                if (away > REACH || away >= nearest) continue;
+                nearest = away;
+                best = spot.toImmutable();
+            }
+            if (best != null) return Optional.of(new Task("native_place", coords(best, Map.of("side", "up", "slot", String.valueOf(torch))),
+                    "Place a torch at " + best.toShortString()));
+            PortalSite site = portalSite;
+            if (site != null && castLightSiteTold != siteKey(site)) {
+                castLightSiteTold = siteKey(site);
+                KindredMod.LOGGER.info("{} light: no spot clear of the cast of its frame at {} within reach of {}", player.getName().getString(),
+                        site.origin().toShortString(), feet.toShortString());
+            }
         }
         return Optional.empty();
     }
@@ -5249,7 +5322,21 @@ final class PortalRunCampaign {
     }
 
     private Optional<Task> descendOrTunnel(NativePlayerBody body, int top, int target, String what) {
-        return digger.descendOrTunnel(dig(body), top, target, what);
+        // A branch mine begun lays its legs where it has stood least: its own record of new ground, as an observation taken
+        // when the mine begins (F-25c4dq).
+        Side before = digger.heading();
+        digger.branchSeen(() -> {
+            var stoodIn = Set.copyOf(seenCells);
+            return c -> stoodIn.contains(BlockPos.asLong(c.x() >> 3, c.y() >> 3, c.z() >> 3));
+        });
+        var task = digger.descendOrTunnel(dig(body), top, target, what);
+        Cell laid = digger.takeBranchLaid();
+        if (laid != null) {
+            KindredMod.LOGGER.info("F-25c4dq-marker: {} branch mine for {} begun at {}: its legs laid {}, not {}, toward ground it has not stood in",
+                    body.entity().getName().getString(), what, pos(laid).toShortString(),
+                    digger.heading().name().toLowerCase(java.util.Locale.ROOT), before.name().toLowerCase(java.util.Locale.ROOT));
+        }
+        return task;
     }
 
     /**
@@ -6821,6 +6908,12 @@ final class PortalRunCampaign {
     private final Map<Long, Integer> fillRefusals = new HashMap<>();
     /** Spots a cast was refused or failed from since the last one that worked; the next try is from somewhere else. */
     private final Set<Long> castFailedStands = new java.util.HashSet<>();
+    /** Game ticks a frame cell's water is waited on to drain before it is filled in (F-22c128). */
+    private static final long DRAIN_WAIT = 200;
+    /** A gap in the waiting this long, in game ticks, and the wait on that cell starts over. */
+    private static final long DRAIN_GAP = 60;
+    /** The cell whose water is waited on, since when, the last tick it was, and the last cell the fill-in was told for. */
+    private long drainCell = Long.MIN_VALUE, drainFrom, drainLast, drainTold = Long.MIN_VALUE;
 
     /**
      * The cast's bucket of lava: filled at a source it has seen (walked to a leg at a time when far off), else looked for
@@ -7055,7 +7148,38 @@ final class PortalRunCampaign {
             // minutes (F-25c4ai).
             for (BlockPos open : at[1] == 4 ? List.of(cell, cell.up(), site.front(at[0], 5)) : List.of(cell, cell.up())) {
                 if (world.getBlockState(open).isAir()) continue;
-                if (!world.getFluidState(open).isEmpty()) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
+                if (!world.getFluidState(open).isEmpty()) {
+                    // Water left by the last cast drains in a moment; water that is still there after a while is no cast's, a
+                    // source or a flow from elsewhere, and is filled in with a block of its own, which the clearing digs out
+                    // after. Waited on without bound, on 707 Echo in E-40's iteration 30 (`e40a30r-63b97ac`) it stood "Cast:
+                    // let the water drain" for five and a half minutes, one block of its frame cast (F-22c128).
+                    long key = open.asLong();
+                    if (drainCell != key || lastTick - drainLast > DRAIN_GAP) {
+                        drainCell = key;
+                        drainFrom = lastTick;
+                    }
+                    drainLast = lastTick;
+                    // Once its bound has passed the cell is not waited on again: a step along the frame to fill it from would
+                    // otherwise start the wait over.
+                    if (drainTold != key && lastTick - drainFrom < DRAIN_WAIT) return Optional.of(new Task("native_wait", Map.of("seconds", "1"), "Cast: let the water drain"));
+                    if (drainTold != key) {
+                        drainTold = key;
+                        String why = "the water at " + open.toShortString() + " has not drained in " + DRAIN_WAIT / 20 + " seconds; filling it in to dig it out";
+                        KindredMod.LOGGER.info("{} cast: {}", player.getName().getString(), why);
+                        event("Cast: " + why);
+                    }
+                    Optional<Task> fill = within(body, site, at[0], open, () -> placeBlock(body, open, "Cast: block the standing water at " + open.toShortString()));
+                    if (fill.isPresent()) return fill;
+                    // No block to fill it with, or none it can put there from here: the site is set aside, as one whose
+                    // cell cannot be cleared is, and the plan chooses again, rather than wait on water that does not drain.
+                    // (The plan gives the cast only with the frame's blocks in hand: with none left it gets more first.)
+                    KindredMod.LOGGER.info("{} gives up the frame site at {}: the water at {} does not drain and no block can be put in it from here",
+                            player.getName().getString(), site.origin().toShortString(), open.toShortString());
+                    abandonedSites.add(siteKey(site));
+                    clearTriedFrom.clear();
+                    portalSite = null;
+                    return Optional.empty();
+                }
                 if (clearableNow(body, open)) return Optional.of(clearAt(open, "Cast: clear " + open.toShortString()));
                 // Out of reach from where it stands, back from the lava say: nearer the frame first, and only a block it
                 // cannot dig from there gives the site up. In the live pair on 458d192 Echo, back from the lava with the
@@ -7497,18 +7621,49 @@ final class PortalRunCampaign {
         // cannot reach it (vanilla's attack box grows sideways, never up, and a hoglin stands 1.4 high), and it gives up
         // a target it cannot reach. Only with no way up is it fought. Gold armour calms piglins, not hoglins.
         net.minecraft.entity.mob.MobEntity hoglin = hoglinAfter(player);
+        boolean targeted = hoglin != null;
         // Up out of one's reach, it stays up while a hoglin is near and sees it: hoglins wander close by rather than
         // leave, and one came straight back for the player that climbed down beside it (the fixture, at first).
         if (hoglin == null && treedSince >= 0 && lastTick < treedSince + TREED_GIVE_UP) hoglin = hoglinNear(player);
-        if (hoglin == null) treedSince = -1;
+        if (hoglin == null) {
+            if (treedSince >= 0) treedOver(player);
+            treedSince = -1;
+        }
         if (hoglin != null && outOfReach(player, hoglin)) {
-            if (treedSince < 0) treedSince = lastTick;
+            if (treedSince < 0) {
+                treedSince = lastTick;
+                treedWaits = treedStrikes = 0;
+                treedNextNote = lastTick + TREED_GIVE_UP;
+                KindredMod.LOGGER.info("{} treed spell at {} in {}: {}", player.getName().getString(), player.getBlockPos().toShortString(),
+                        player.getServerWorld().getRegistryKey().getValue().getPath(), treedSeen(player, hoglin, targeted));
+            } else if (lastTick >= treedNextNote) {
+                // A spell still on: noted at TREED_GIVE_UP and every ten minutes after, so one that never ends shows.
+                treedNextNote = lastTick + 12000;
+                KindredMod.LOGGER.info("{} treed spell at {} still on after {} ticks, {} wait decision(s), {} strike(s): {}", player.getName().getString(),
+                        player.getBlockPos().toShortString(), lastTick - treedSince, treedWaits, treedStrikes, treedSeen(player, hoglin, targeted));
+            }
+            treedLast = treedSeen(player, hoglin, targeted);
             // Kept up there a good while with it in reach below: it is struck from up there, where it cannot strike
             // back. The one time a hoglin is fought by choice, and with no risk.
             if (lastTick - treedSince >= TREED_TICKS && armed(player) && player.squaredDistanceTo(hoglin) <= 3.0 * 3.0) {
+                treedStrikes++;
                 return Optional.of(strike(player, hoglin, OUT_OF_REACH + ": strike it from above"));
             }
-            return Optional.of(new Task("native_wait", Map.of("seconds", "2"), OUT_OF_REACH + ": wait it out"));
+            // Up TREED_GIVE_UP with one after it that keeps its distance, out of strike reach: it goes on with its work, as
+            // it does once none is after it, and leaves that one be as long again unless it closes in (HOGLIN_CLOSE), when
+            // it is fought or got away from as any other. In e40c5 one watching from afar held 31102026 Echo up some 109 of
+            // its 161 Nether minutes, the last 273 waits to the run's end (F-25c6f).
+            if (targeted && lastTick - treedSince >= TREED_GIVE_UP) {
+                KindredMod.LOGGER.info("{} treed spell given up at {} after {} ticks with the hoglin still after it: {}; going on (F-25c6f)",
+                        player.getName().getString(), player.getBlockPos().toShortString(), lastTick - treedSince, treedSeen(player, hoglin, true));
+                ignoredFoes.put(hoglin.getUuid(), lastTick + TREED_GIVE_UP);
+                treedOver(player);
+                treedSince = -1;
+                hoglin = null;
+            } else {
+                treedWaits++;
+                return Optional.of(new Task("native_wait", Map.of("seconds", "2"), OUT_OF_REACH + ": wait it out"));
+            }
         }
         // Up only with time to get there: a hoglin already on it tosses a player off a pillar half built (it killed the
         // fixture's player once that way, never fighting back). Then it has to be fought.
@@ -7627,10 +7782,14 @@ final class PortalRunCampaign {
             return Optional.of(new Task("native_goto", coords(back.get(), Map.of("range", "1", "partial", "true", "sprint", "true")),
                     "Back off from " + name + " the way it came"));
         }
-        away = away.normalize().multiply(10);
+        // Along ground it can walk: straight away into rock or over a drop was refused, or ended a step out (F-25c4dh5).
+        away = wayOff(player, away, "back off from " + name);
+        // A turned way off is kept short: off the wall, not across the cave with the mob keeping pace and striking.
+        boolean turned = wayOffTurned;
+        away = away.multiply(turned ? TURNED_REACH : 10);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
         // At a sprint: walking, a zombie keeps pace and strikes the player's back all the way.
-        return Optional.of(new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Back off from " + name));
+        return Optional.of(new Task("native_goto", coords(target, Map.of("range", turned ? "1" : "3", "partial", "true", "sprint", "true")), "Back off from " + name));
     }
 
     /**
@@ -7652,16 +7811,39 @@ final class PortalRunCampaign {
     static final double HOGLIN_CLOSE = 4.0;
     /** Up out of a hoglin's reach this long with it in reach below, the player strikes it from there. */
     static final long TREED_TICKS = 600;
-    /** Up there this long with a hoglin near but not after it, the player goes on with its work. */
+    /** Up there this long with a hoglin near but not after it, or after it from beyond strike reach (F-25c6f), the player goes on with its work. */
     static final long TREED_GIVE_UP = 1800;
     /** When the player got up out of a hoglin's reach, or -1. */
     private long treedSince = -1;
+    /** The treed spell's decisions to wait and to strike from above (a decision, not a two-second wait: it is decided again often), its next "still on" note, and its last hoglin as seen (F-25c6f, log only). */
+    private int treedWaits, treedStrikes;
+    private long treedNextNote;
+    private String treedLast = "";
+
+    /**
+     * The hoglin a treed player is kept up by, as the spell's line gives it (F-25c6f, log only): its kind, how far off
+     * (and across, on the level), how far below, whether it is after the player or only near, whether it is in strike
+     * reach (3 blocks), and whether the player is armed.
+     */
+    private String treedSeen(ServerPlayerEntity player, net.minecraft.entity.mob.MobEntity hoglin, boolean targeted) {
+        double dx = hoglin.getX() - player.getX(), dz = hoglin.getZ() - player.getZ();
+        return String.format(java.util.Locale.ROOT, "%s %.1f away (%.1f across), %.1f below, %s, %s; armed %s",
+                net.minecraft.registry.Registries.ENTITY_TYPE.getId(hoglin.getType()).getPath(), player.distanceTo(hoglin),
+                Math.sqrt(dx * dx + dz * dz), player.getY() - hoglin.getY(), targeted ? "after it" : "near, not after it",
+                player.squaredDistanceTo(hoglin) <= 3.0 * 3.0 ? "in strike reach" : "out of strike reach", armed(player) ? "yes" : "no");
+    }
+
+    /** The treed spell's end, as the decision ended it: no hoglin after the player, nor one near within the give-up time. */
+    private void treedOver(ServerPlayerEntity player) {
+        KindredMod.LOGGER.info("{} treed spell over at {} after {} ticks, {} wait decision(s), {} strike(s); last: {}", player.getName().getString(),
+                player.getBlockPos().toShortString(), lastTick - treedSince, treedWaits, treedStrikes, treedLast);
+    }
 
     /** A hoglin or a zoglin after this player and in sight, the nearest. */
     private net.minecraft.entity.mob.MobEntity hoglinAfter(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, player.getBoundingBox().expand(16, 6, 16),
                         mob -> (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
-                                && mob.isAlive() && mob.getTarget() == player && player.canSee(mob))
+                                && mob.isAlive() && mob.getTarget() == player && player.canSee(mob) && !leftBe(player, mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
@@ -7669,8 +7851,13 @@ final class PortalRunCampaign {
     private net.minecraft.entity.mob.MobEntity hoglinNear(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, player.getBoundingBox().expand(16, 8, 16),
                         mob -> (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
-                                && mob.isAlive() && player.canSee(mob))
+                                && mob.isAlive() && player.canSee(mob) && !leftBe(player, mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** A hoglin a treed spell gave up on (F-25c6f), left be for a while unless it has closed in. */
+    private boolean leftBe(ServerPlayerEntity player, net.minecraft.entity.mob.MobEntity mob) {
+        return ignoredFoes.getOrDefault(mob.getUuid(), Long.MIN_VALUE) >= lastTick && player.squaredDistanceTo(mob) > HOGLIN_CLOSE * HOGLIN_CLOSE;
     }
 
     /** Already out of {@code hoglin}'s reach: its feet far enough below the player's. */
@@ -7697,11 +7884,105 @@ final class PortalRunCampaign {
         return Optional.of(new Task("native_pillar", coords(feet, Map.of("slot", String.valueOf(slot))), OUT_OF_REACH + ": pillar up"));
     }
 
-    /** Sprint a dozen blocks straight away from a creeper; beyond seven its fuse goes out. */
-    private static Task runFrom(ServerPlayerEntity player, CreeperEntity creeper) {
+    /** How long a heading taken on a way off is kept for the next decision (F-25c4dh5): a back-off's own spell. */
+    static final long WAY_OFF_KEEP = 100;
+    /** How many cells along a heading must be walkable for it to count as a way off. */
+    static final int WAY_OFF_CELLS = 4;
+    /** The heading last taken on a way off, kept while it still gains and can be walked; -1 for none. */
+    private int wayOffHeading = -1;
+    /** When it was last taken. */
+    private long wayOffAt = Long.MIN_VALUE;
+    /** Whether this spell's turn for ground has been told. */
+    private boolean wayOffTold;
+    /** Whether the last way off was turned for ground rather than straight away. */
+    private boolean wayOffTurned;
+    /**
+     * How far a turned back-off aims: in f29e-on-505-echo-43893 a turned back-off at ten carried the player sixteen to
+     * twenty blocks across a cave with the zombie keeping pace and striking, where straight away ended at the wall in three
+     * or four and it dug in. At six it gets off the wall, near the straight one's own few blocks.
+     */
+    static final int TURNED_REACH = 6;
+
+    /**
+     * The direction to get away along, {@code away} straight from the threat (F-25c4dh5): {@code away} itself where the
+     * first few cells that way can be walked, else the walkable heading nearest it that still gains, the one taken last
+     * while it still gains and can be walked; straight away itself is never kept, so on open ground nothing changes. None, or a
+     * shooter after it: {@code away}, as before, and the walk is refused as it was.
+     */
+    private Vec3d wayOff(ServerPlayerEntity player, Vec3d away, String what) {
+        wayOffTurned = false;
+        // With a shooter after it, no turn: a walk along the turned heading kept it in the line of fire, where main's straight
+        // back-off was refused and cover taken (e40c1-eed2dc5-8675309-echo-173225, twice shot in dh5's first gate).
+        if (shooterAfter(player)) {
+            wayOffHeading = -1;
+            return away.normalize();
+        }
+        var navigator = new NativeNavigator(player.getServerWorld());
+        boolean spell = wayOffAt > Long.MIN_VALUE && lastTick - wayOffAt <= WAY_OFF_KEEP;
+        if (!spell) wayOffTold = false;
+        int straight = WayOffHeading.nearest(away.x, away.z);
+        var chosen = WayOffHeading.choose(away.x, away.z, i -> walkable(navigator, player, i), spell ? wayOffHeading : -1);
+        if (chosen.isEmpty()) {
+            wayOffHeading = -1;
+            return away.normalize();
+        }
+        int heading = chosen.getAsInt();
+        // Straight away is taken as it always was; only a turn is kept for the next decision.
+        if (heading == straight) {
+            wayOffHeading = -1;
+            return away.normalize();
+        }
+        wayOffHeading = heading;
+        wayOffAt = lastTick;
+        wayOffTurned = true;
+        if (!wayOffTold) {
+            wayOffTold = true;
+            KindredMod.LOGGER.info("{} heading turned for ground: {} straight away is {} degrees, not walkable; takes {} degrees", player.getName().getString(),
+                    what, Math.round(straight * 360.0 / WayOffHeading.HEADINGS), Math.round(heading * 360.0 / WayOffHeading.HEADINGS));
+        }
+        double[] unit = WayOffHeading.unit(heading);
+        return new Vec3d(unit[0], 0, unit[1]);
+    }
+
+    /** A shooter after the player within the back-off's own reach of sixteen blocks, as {@link #defend} tells them apart. */
+    private static boolean shooterAfter(ServerPlayerEntity player) {
+        return !player.getServerWorld().getEntitiesByClass(HostileEntity.class, player.getBoundingBox().expand(16, 6, 16),
+                mob -> mob.isAlive() && mob.getTarget() == player && mob instanceof net.minecraft.entity.ai.RangedAttackMob).isEmpty();
+    }
+
+    /**
+     * Whether the first {@link #WAY_OFF_CELLS} cells along heading {@code i} from the player's feet can be walked, by the
+     * route finder's own reading: each a stand level with the last, a step up with head room, or a drop no deeper than
+     * {@link NativeNavigator#MAX_SAFE_DROP}; a corner cut only with one side of it open. Local blocks only.
+     */
+    private static boolean walkable(NativeNavigator navigator, ServerPlayerEntity player, int i) {
+        double[] unit = WayOffHeading.unit(i);
+        BlockPos at = player.getBlockPos();
+        for (int k = 1; k <= WAY_OFF_CELLS; k++) {
+            int x = (int) Math.floor(player.getX() + unit[0] * k), z = (int) Math.floor(player.getZ() + unit[1] * k);
+            if (x == at.getX() && z == at.getZ()) continue;
+            if (Math.abs(x - at.getX()) > 1 || Math.abs(z - at.getZ()) > 1) return false;
+            BlockPos level = new BlockPos(x, at.getY(), z);
+            if (x != at.getX() && z != at.getZ()
+                    && !(navigator.clear(new BlockPos(x, at.getY(), at.getZ())) || navigator.clear(new BlockPos(at.getX(), at.getY(), z)))) return false;
+            BlockPos next = navigator.standable(level) ? level
+                    : navigator.standable(level.up()) && navigator.passable(at.up(2)) ? level.up() : null;
+            // Down off an edge no deeper than the route finder itself drops, the body's two cells open on the way.
+            for (int d = 1; next == null && d <= NativeNavigator.MAX_SAFE_DROP && navigator.passable(level.down(d - 1))
+                    && navigator.passable(level.down(d - 1).up()); d++) {
+                if (navigator.standable(level.down(d))) next = level.down(d);
+            }
+            if (next == null) return false;
+            at = next;
+        }
+        return true;
+    }
+
+    /** Sprint a dozen blocks away from a creeper, along ground it can walk; beyond seven its fuse goes out. */
+    private Task runFrom(ServerPlayerEntity player, CreeperEntity creeper) {
         Vec3d away = player.getPos().subtract(creeper.getPos()).multiply(1, 0, 1);
         if (away.lengthSquared() < 1.0E-4) away = player.getRotationVector().multiply(-1, 0, -1);
-        away = away.normalize().multiply(12);
+        away = wayOff(player, away, "run from creeper").multiply(12);
         BlockPos target = BlockPos.ofFloored(player.getX() + away.x, player.getY(), player.getZ() + away.z);
         return new Task("native_goto", coords(target, Map.of("range", "3", "partial", "true", "sprint", "true")), "Run from creeper");
     }
@@ -8346,7 +8627,23 @@ final class PortalRunCampaign {
         return -1;
     }
 
-    /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
+    /**
+     * Whether {@code cell} is one its chosen frame's cast clears or builds on (F-22c127a): the frame's cells, the cells over
+     * them and the mould behind them ({@link #frameCells}), and the rows in front of the frame, which {@code clearPortalSite}
+     * clears of anything not replaceable (a torch is not) and the top cell's cast opens. A fixed set of at most 80 cells,
+     * read only while a frame site is chosen.
+     */
+    /** The frame site last said to leave it no spot for a torch clear of its cast (F-22c127a), said once a site. */
+    private long castLightSiteTold = Long.MIN_VALUE;
+
+    private boolean inCastClear(BlockPos cell) {
+        PortalSite site = portalSite;
+        if (site == null) return false;
+        if (frameCells(site).contains(cell.asLong())) return true;
+        for (int across = 0; across <= 3; across++) for (int up = 0; up <= 5; up++) if (site.front(across, up).equals(cell)) return true;
+        return false;
+    }
+
     /** Whether {@code cell} is one of the four kept for the bed it carries tonight: its two cells and the two over them. */
     private boolean inBedRoom(BlockPos cell) {
         if (bedRoomFor == null) return false;
@@ -8354,6 +8651,7 @@ final class PortalRunCampaign {
         return false;
     }
 
+    /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
     private static boolean bedRoom(ServerWorld world, BlockPos pos) {
         return world.isChunkLoaded(pos) && world.getBlockState(pos).isAir() && world.getFluidState(pos).isEmpty()
                 && world.getBlockState(pos.up()).isAir() && world.getBlockState(pos.down()).isSideSolidFullSquare(world, pos.down(), Direction.UP);

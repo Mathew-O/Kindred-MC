@@ -67,10 +67,48 @@ public final class NativeLootGameTests implements FabricGameTest {
         inventory.setStack(3, new ItemStack(Items.COBBLESTONE, 16));
     }
 
-    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "lootPortal", tickLimit = 2400)
+    /**
+     * Where the player stands as the portal's ground is laid round it (F-22c126): in from its structure's corner as far as
+     * its ground runs the other way, from 16 west and 5 north of here to 7 east and 5 south, so that all of it lies in its
+     * own structure, whose chunks the test server keeps ticking. On a structure as small as its plot, the portal lay 12
+     * blocks west of it: on #490's CI (run 45121160965, attempt 1) the west gold block's drop lay in a chunk nothing kept
+     * ticking, still "age 0 delay 10" and rising 71 ticks after it was mined, so no player could pick it up, and the player
+     * went on toward iron with one gold block of two ("Its gold blocks mined and kept").
+     */
+    private static BlockPos portalOrigin(TestContext context) {
+        return context.getAbsolutePos(new BlockPos(17, 1, 6));
+    }
+
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "lootPortal", tickLimit = 2400)
     public void aRuinedPortalsChestIsLootedOfWhatIsWorthTakingItsGoldMinedAndAnOpenedChestLeftAlone(TestContext context) {
+        portal(context, false);
+    }
+
+    /**
+     * The check still catches a gold block left behind (F-22c126): as the last, the west gold block's drop staged as CI's
+     * was, one no player can pick up (STAGED: its pickup delay made endless as it is born; on CI it was never ticked, so
+     * its delay never ran down). Passes only once the player, its collection over, has gone on to its next goal with that
+     * gold block left lying, and "Its gold blocks mined and kept" would have failed.
+     */
+    @GameTest(templateName = FixtureGround.FIELD, batchId = "lootPortalGoldLeft", tickLimit = 2400)
+    public void aGoldBlocksDropNoPlayerCanPickUpIsLeftAndTheCheckCatchesIt(TestContext context) {
+        portal(context, true);
+    }
+
+    private static void portal(TestContext context, boolean unpickable) {
         var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true);
         BlockPos[] at = new BlockPos[4]; // the portal's chest, two gold blocks, the opened chest
+        boolean[] staged = {false};
+        // Staged (F-22c126): the west gold block's drop made one no player can pick up, as it is born.
+        Runnable stage = () -> {
+            if (!unpickable || at[2] == null) return;
+            for (var item : context.getWorld().getEntitiesByClass(net.minecraft.entity.ItemEntity.class,
+                    new net.minecraft.util.math.Box(at[2]).expand(1.5), i -> i.isAlive() && i.getStack().isOf(Items.GOLD_BLOCK))) {
+                if (!item.cannotPickup() || !staged[0]) KindredMod.LOGGER.info("Loot fixture: STAGED, the west gold block's drop made one no player can pick up, at {}", item.getPos());
+                item.setPickupDelayInfinite();
+                staged[0] = true;
+            }
+        };
         context.createTimedTaskRunner()
                 .createAndAdd(() -> context.assertTrue(f.runtime.isReady(), "Ready"))
                 .createAndAdd(() -> f.runtime.createNative(f.source, "Looter"))
@@ -78,10 +116,9 @@ public final class NativeLootGameTests implements FabricGameTest {
                 .createAndAdd(() -> context.assertTrue(f.player().isOnGround(), "Standing"))
                 .createAndAdd(() -> {
                     var world = context.getWorld();
-                    BlockPos b = f.player().getBlockPos().toImmutable();
-                    // Open ground from the player to the portal, a stone floor and air above it: the test's structure is
-                    // walled round with barriers, which stand between the player and anything laid outside it.
-                    // Its open ground and the ruined portal on it, outside the plot: put back as the test ends (F-22c75b).
+                    BlockPos b = portalOrigin(context);
+                    // Open ground from the player to the portal, a stone floor and air above it, all of it in its own
+                    // structure (F-22c126): put back as the test ends (F-22c75b).
                     FixtureGround.keep(context, b.add(-16, -1, -5), b.add(7, 4, 5));
                     for (int x = -16; x <= 7; x++) for (int z = -5; z <= 5; z++) {
                         world.setBlockState(b.add(x, -1, z), Blocks.STONE.getDefaultState());
@@ -106,16 +143,36 @@ public final class NativeLootGameTests implements FabricGameTest {
                     world.setBlockState(at[3], Blocks.CHEST.getDefaultState());
                     ((ChestBlockEntity) world.getBlockEntity(at[3])).setStack(0, new ItemStack(Items.DIAMOND, 3));
                     world.setTimeOfDay(1000);
+                    f.player().refreshPositionAndAngles(b.getX() + 0.5, b.getY(), b.getZ() + 0.5, 0, 0);
+                    f.player().setVelocity(net.minecraft.util.math.Vec3d.ZERO);
                     kit(f);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                 })
                 .createAndAdd(() -> {
                     context.getWorld().setTimeOfDay(1000);
+                    stage.run();
                     var chest = (ChestBlockEntity) context.getWorld().getBlockEntity(at[0]);
                     context.assertTrue(chest.getLootTable() == null, "The ruined portal's chest opened: "
                             + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                 })
                 .createAndAdd(() -> {
+                    if (!unpickable) return;
+                    // The control: the west gold block mined and its drop left lying, the player gone on to its next goal.
+                    context.getWorld().setTimeOfDay(1000);
+                    stage.run();
+                    var world = context.getWorld();
+                    String progress = String.valueOf(f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
+                    boolean lying = !world.getEntitiesByClass(net.minecraft.entity.ItemEntity.class, new net.minecraft.util.math.Box(at[2]).expand(3),
+                            i -> i.isAlive() && i.getStack().isOf(Items.GOLD_BLOCK)).isEmpty();
+                    boolean onward = !progress.contains("gold block") && !progress.contains("Loot the chest") && !progress.contains("Walk to the chest");
+                    context.assertTrue(staged[0] && world.getBlockState(at[2]).isAir() && lying && onward
+                                    && f.player().getInventory().count(Items.GOLD_BLOCK) < 2,
+                            "Its west gold block's drop left lying, the player gone on, and the check caught it: " + held(f) + " - " + progress);
+                    KindredMod.LOGGER.info("Loot fixture: the gold block left lying, caught: {} - {}", held(f), progress);
+                    f.runtime.stop();
+                })
+                .createAndAdd(() -> {
+                    if (unpickable) return;
                     context.getWorld().setTimeOfDay(1000);
                     var world = context.getWorld();
                     boolean mined = world.getBlockState(at[1]).isAir() && world.getBlockState(at[2]).isAir();
@@ -123,6 +180,7 @@ public final class NativeLootGameTests implements FabricGameTest {
                             "Its gold blocks mined and kept: " + held(f) + " - " + f.runtime.panelBots(Actor.console()).getFirst().goalProgress());
                 })
                 .createAndAdd(() -> {
+                    if (unpickable) return;
                     var chest = (ChestBlockEntity) context.getWorld().getBlockEntity(at[0]);
                     var kept = notLeft(f, chest);
                     context.assertTrue(kept.isEmpty(), "Nothing worth taking left in it: " + kept);
