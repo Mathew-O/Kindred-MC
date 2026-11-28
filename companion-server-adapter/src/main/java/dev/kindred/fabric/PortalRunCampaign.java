@@ -7507,18 +7507,49 @@ final class PortalRunCampaign {
         // cannot reach it (vanilla's attack box grows sideways, never up, and a hoglin stands 1.4 high), and it gives up
         // a target it cannot reach. Only with no way up is it fought. Gold armour calms piglins, not hoglins.
         net.minecraft.entity.mob.MobEntity hoglin = hoglinAfter(player);
+        boolean targeted = hoglin != null;
         // Up out of one's reach, it stays up while a hoglin is near and sees it: hoglins wander close by rather than
         // leave, and one came straight back for the player that climbed down beside it (the fixture, at first).
         if (hoglin == null && treedSince >= 0 && lastTick < treedSince + TREED_GIVE_UP) hoglin = hoglinNear(player);
-        if (hoglin == null) treedSince = -1;
+        if (hoglin == null) {
+            if (treedSince >= 0) treedOver(player);
+            treedSince = -1;
+        }
         if (hoglin != null && outOfReach(player, hoglin)) {
-            if (treedSince < 0) treedSince = lastTick;
+            if (treedSince < 0) {
+                treedSince = lastTick;
+                treedWaits = treedStrikes = 0;
+                treedNextNote = lastTick + TREED_GIVE_UP;
+                KindredMod.LOGGER.info("{} treed spell at {} in {}: {}", player.getName().getString(), player.getBlockPos().toShortString(),
+                        player.getServerWorld().getRegistryKey().getValue().getPath(), treedSeen(player, hoglin, targeted));
+            } else if (lastTick >= treedNextNote) {
+                // A spell still on: noted at TREED_GIVE_UP and every ten minutes after, so one that never ends shows.
+                treedNextNote = lastTick + 12000;
+                KindredMod.LOGGER.info("{} treed spell at {} still on after {} ticks, {} wait decision(s), {} strike(s): {}", player.getName().getString(),
+                        player.getBlockPos().toShortString(), lastTick - treedSince, treedWaits, treedStrikes, treedSeen(player, hoglin, targeted));
+            }
+            treedLast = treedSeen(player, hoglin, targeted);
             // Kept up there a good while with it in reach below: it is struck from up there, where it cannot strike
             // back. The one time a hoglin is fought by choice, and with no risk.
             if (lastTick - treedSince >= TREED_TICKS && armed(player) && player.squaredDistanceTo(hoglin) <= 3.0 * 3.0) {
+                treedStrikes++;
                 return Optional.of(strike(player, hoglin, OUT_OF_REACH + ": strike it from above"));
             }
-            return Optional.of(new Task("native_wait", Map.of("seconds", "2"), OUT_OF_REACH + ": wait it out"));
+            // Up TREED_GIVE_UP with one after it that keeps its distance, out of strike reach: it goes on with its work, as
+            // it does once none is after it, and leaves that one be as long again unless it closes in (HOGLIN_CLOSE), when
+            // it is fought or got away from as any other. In e40c5 one watching from afar held 31102026 Echo up some 109 of
+            // its 161 Nether minutes, the last 273 waits to the run's end (F-25c6f).
+            if (targeted && lastTick - treedSince >= TREED_GIVE_UP) {
+                KindredMod.LOGGER.info("{} treed spell given up at {} after {} ticks with the hoglin still after it: {}; going on (F-25c6f)",
+                        player.getName().getString(), player.getBlockPos().toShortString(), lastTick - treedSince, treedSeen(player, hoglin, true));
+                ignoredFoes.put(hoglin.getUuid(), lastTick + TREED_GIVE_UP);
+                treedOver(player);
+                treedSince = -1;
+                hoglin = null;
+            } else {
+                treedWaits++;
+                return Optional.of(new Task("native_wait", Map.of("seconds", "2"), OUT_OF_REACH + ": wait it out"));
+            }
         }
         // Up only with time to get there: a hoglin already on it tosses a player off a pillar half built (it killed the
         // fixture's player once that way, never fighting back). Then it has to be fought.
@@ -7662,16 +7693,39 @@ final class PortalRunCampaign {
     static final double HOGLIN_CLOSE = 4.0;
     /** Up out of a hoglin's reach this long with it in reach below, the player strikes it from there. */
     static final long TREED_TICKS = 600;
-    /** Up there this long with a hoglin near but not after it, the player goes on with its work. */
+    /** Up there this long with a hoglin near but not after it, or after it from beyond strike reach (F-25c6f), the player goes on with its work. */
     static final long TREED_GIVE_UP = 1800;
     /** When the player got up out of a hoglin's reach, or -1. */
     private long treedSince = -1;
+    /** The treed spell's decisions to wait and to strike from above (a decision, not a two-second wait: it is decided again often), its next "still on" note, and its last hoglin as seen (F-25c6f, log only). */
+    private int treedWaits, treedStrikes;
+    private long treedNextNote;
+    private String treedLast = "";
+
+    /**
+     * The hoglin a treed player is kept up by, as the spell's line gives it (F-25c6f, log only): its kind, how far off
+     * (and across, on the level), how far below, whether it is after the player or only near, whether it is in strike
+     * reach (3 blocks), and whether the player is armed.
+     */
+    private String treedSeen(ServerPlayerEntity player, net.minecraft.entity.mob.MobEntity hoglin, boolean targeted) {
+        double dx = hoglin.getX() - player.getX(), dz = hoglin.getZ() - player.getZ();
+        return String.format(java.util.Locale.ROOT, "%s %.1f away (%.1f across), %.1f below, %s, %s; armed %s",
+                net.minecraft.registry.Registries.ENTITY_TYPE.getId(hoglin.getType()).getPath(), player.distanceTo(hoglin),
+                Math.sqrt(dx * dx + dz * dz), player.getY() - hoglin.getY(), targeted ? "after it" : "near, not after it",
+                player.squaredDistanceTo(hoglin) <= 3.0 * 3.0 ? "in strike reach" : "out of strike reach", armed(player) ? "yes" : "no");
+    }
+
+    /** The treed spell's end, as the decision ended it: no hoglin after the player, nor one near within the give-up time. */
+    private void treedOver(ServerPlayerEntity player) {
+        KindredMod.LOGGER.info("{} treed spell over at {} after {} ticks, {} wait decision(s), {} strike(s); last: {}", player.getName().getString(),
+                player.getBlockPos().toShortString(), lastTick - treedSince, treedWaits, treedStrikes, treedLast);
+    }
 
     /** A hoglin or a zoglin after this player and in sight, the nearest. */
     private net.minecraft.entity.mob.MobEntity hoglinAfter(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, player.getBoundingBox().expand(16, 6, 16),
                         mob -> (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
-                                && mob.isAlive() && mob.getTarget() == player && player.canSee(mob))
+                                && mob.isAlive() && mob.getTarget() == player && player.canSee(mob) && !leftBe(player, mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
     }
 
@@ -7679,8 +7733,13 @@ final class PortalRunCampaign {
     private net.minecraft.entity.mob.MobEntity hoglinNear(ServerPlayerEntity player) {
         return player.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, player.getBoundingBox().expand(16, 8, 16),
                         mob -> (mob instanceof net.minecraft.entity.mob.HoglinEntity || mob instanceof net.minecraft.entity.mob.ZoglinEntity)
-                                && mob.isAlive() && player.canSee(mob))
+                                && mob.isAlive() && player.canSee(mob) && !leftBe(player, mob))
                 .stream().min(java.util.Comparator.comparingDouble(player::squaredDistanceTo)).orElse(null);
+    }
+
+    /** A hoglin a treed spell gave up on (F-25c6f), left be for a while unless it has closed in. */
+    private boolean leftBe(ServerPlayerEntity player, net.minecraft.entity.mob.MobEntity mob) {
+        return ignoredFoes.getOrDefault(mob.getUuid(), Long.MIN_VALUE) >= lastTick && player.squaredDistanceTo(mob) > HOGLIN_CLOSE * HOGLIN_CLOSE;
     }
 
     /** Already out of {@code hoglin}'s reach: its feet far enough below the player's. */
