@@ -1,0 +1,1076 @@
+[
+ {
+  "batch": "e40a30",
+  "seed": "101",
+  "player": "Echo",
+  "tick": 59660,
+  "at": [
+   -346,
+   63,
+   -66
+  ],
+  "clock": "[15:12:33]",
+  "top": [
+   [
+    "native_goto COMPLETED [Walk under the logs at N, N, N]",
+    57
+   ],
+   [
+    "Stone: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/EchoN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "202",
+  "player": "Kindred",
+  "tick": 19320,
+  "at": [
+   -38,
+   19,
+   35
+  ],
+  "clock": "[14:51:18]",
+  "top": [
+   [
+    "native_swap COMPLETED [Seal the shelter at N, N, N: ready a block]",
+    12
+   ],
+   [
+    "Iron: Ready the bed it carries",
+    11
+   ],
+   [
+    "native_swap COMPLETED [Ready the bed it carries]",
+    11
+   ],
+   [
+    "Iron: its shelter sealed for the night - Seal the shelter at N, N, N: ready a block",
+    11
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "202",
+  "player": "Kindred",
+  "tick": 70680,
+  "at": [
+   -89,
+   -54,
+   1
+  ],
+  "clock": "[15:08:30]",
+  "top": [
+   [
+    "picked up N minecraft:cobbled_deepslate",
+    10
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: dig toward the lava flowing in at N, N, N: clear N, N, N",
+    10
+   ],
+   [
+    "native_break COMPLETED [Cast: dig toward the lava flowing in at N, N, N: clear N, N, N]",
+    9
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: dig toward the lava flowing in at N, N, N: advance",
+    4
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "202",
+  "player": "Kindred",
+  "tick": 93260,
+  "at": [
+   -88,
+   -54,
+   -3
+  ],
+  "clock": "[15:15:18]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: dig toward the lava at N, N, N: advance]",
+    16
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at N, N, N: advance (tried elsewhere N times)",
+    9
+   ],
+   [
+    "picked up N minecraft:cobbled_deepslate",
+    5
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: dig toward the lava at N, N, N: clear N, N, N (tried elsewhere N times)",
+    4
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "202",
+  "player": "Sol",
+  "tick": 50720,
+  "at": [
+   34,
+   -54,
+   -53
+  ],
+  "clock": "[15:00:28]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: walk up to the lava]",
+    49
+   ],
+   [
+    "Iron: Seal the shelter at N, N, N (tried elsewhere N time)",
+    3
+   ],
+   [
+    "native_place COMPLETED [Seal the shelter at N, N, N]",
+    2
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "202",
+  "player": "Sol",
+  "tick": 99880,
+  "at": [
+   -9,
+   66,
+   -27
+  ],
+  "clock": "[15:17:09]",
+  "top": [
+   [
+    "picked up N minecraft:dirt",
+    14
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    12
+   ],
+   [
+    "native_break COMPLETED [dig toward elsewhere: clear N, N, N]",
+    12
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: advance",
+    7
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "202",
+  "player": "Sol",
+  "tick": 116040,
+  "at": [
+   35,
+   64,
+   10
+  ],
+  "clock": "[15:22:01]",
+  "top": [
+   [
+    "native_goto COMPLETED [Approach sheep]",
+    7
+   ],
+   [
+    "Iron: Stock some food while animals are around - Approach sheep (tried elsewhere N times)",
+    6
+   ],
+   [
+    "native_attack COMPLETED [Hunt sheep]",
+    5
+   ],
+   [
+    "Iron: inventory full - Drop surplus gravel (tried elsewhere N times)",
+    4
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "20261030",
+  "player": "Sol",
+  "tick": 37480,
+  "at": [
+   49,
+   19,
+   1
+  ],
+  "clock": "[14:56:38]",
+  "top": [
+   [
+    "native_wait COMPLETED [Wait by the furnace]",
+    21
+   ],
+   [
+    "Iron: Wait for the furnace to smelt iron - Wait by the furnace",
+    7
+   ],
+   [
+    "Iron: Collect smelted items from the furnace - Take smelted iron",
+    6
+   ],
+   [
+    "native_smelt COMPLETED [Take smelted iron]",
+    6
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "20261030",
+  "player": "Echo",
+  "tick": 92740,
+  "at": [
+   -20,
+   -48,
+   126
+  ],
+  "clock": "[15:12:15]",
+  "top": [
+   [
+    "Iron: fight back - Take cover from zombie (tried elsewhere N times)",
+    10
+   ],
+   [
+    "native_break COMPLETED [Cast: clear N, N, N]",
+    9
+   ],
+   [
+    "native_place COMPLETED [Take cover from zombie]",
+    9
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: clear N, N, N (tried elsewhere N times)",
+    9
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "20261030",
+  "player": "Echo",
+  "tick": 116640,
+  "at": [
+   -24,
+   -54,
+   107
+  ],
+  "clock": "[15:19:31]",
+  "top": [
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: fill a bucket with lava",
+    14
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk up to the lava",
+    12
+   ],
+   [
+    "native_goto COMPLETED [Back off from zombie]",
+    12
+   ],
+   [
+    "Iron: fight back - Back off from zombie",
+    11
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "303",
+  "player": "Kindred",
+  "tick": 57000,
+  "at": [
+   -167,
+   -54,
+   128
+  ],
+  "clock": "[15:50:18]",
+  "top": [
+   [
+    "native_place COMPLETED [Place a torch at N, N, N]",
+    12
+   ],
+   [
+    "picked up N minecraft:torch",
+    12
+   ],
+   [
+    "Iron: Room for its bed at N, N, N",
+    11
+   ],
+   [
+    "native_break COMPLETED [Room for its bed at N, N, N]",
+    11
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "303",
+  "player": "Sol",
+  "tick": 78440,
+  "at": [
+   151,
+   115,
+   118
+  ],
+  "clock": "[16:02:04]",
+  "top": [
+   [
+    "Iron: Dig in for the night, its bed with it: clear N, N, N (tried elsewhere N time)",
+    15
+   ],
+   [
+    "native_break COMPLETED [Dig in for the night, its bed with it: clear N, N, N]",
+    10
+   ],
+   [
+    "Iron: Dig in for the night, its bed with it: step down (tried elsewhere N time)",
+    9
+   ],
+   [
+    "native_goto COMPLETED [Dig in for the night, its bed with it: step down]",
+    6
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "303",
+  "player": "Echo",
+  "tick": 21880,
+  "at": [
+   183,
+   36,
+   19
+  ],
+  "clock": "[15:37:15]",
+  "top": [
+   [
+    "native_break COMPLETED [Room for its bed at N, N, N]",
+    10
+   ],
+   [
+    "Iron: light the way - Place a torch at N, N, N",
+    10
+   ],
+   [
+    "native_place COMPLETED [Place a torch at N, N, N]",
+    10
+   ],
+   [
+    "picked up N minecraft:torch",
+    10
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "31102026",
+  "player": "Kindred",
+  "tick": 86540,
+  "at": [
+   120,
+   38,
+   342
+  ],
+  "clock": "[15:56:53]",
+  "top": [
+   [
+    "native_break COMPLETED [Dig down toward iron: clear N, N, N]",
+    15
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: clear N, N, N",
+    14
+   ],
+   [
+    "picked up N minecraft:cobblestone",
+    13
+   ],
+   [
+    "Iron: Mine iron ore (N/N) - Dig down toward iron: step down",
+    5
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "31102026",
+  "player": "Kindred",
+  "tick": 131880,
+  "at": [
+   26,
+   64,
+   374
+  ],
+  "clock": "[16:09:54]",
+  "top": [
+   [
+    "native_goto COMPLETED [dig toward elsewhere: advance]",
+    10
+   ],
+   [
+    "picked up N minecraft:sand",
+    9
+   ],
+   [
+    "native_break COMPLETED [dig toward elsewhere: clear N, N, N]",
+    8
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    7
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "31102026",
+  "player": "Echo",
+  "tick": 135100,
+  "at": [
+   112,
+   -54,
+   274
+  ],
+  "clock": "[16:10:53]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: walk up to the lava]",
+    60
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "505",
+  "player": "Sol",
+  "tick": 135300,
+  "at": [
+   20,
+   70,
+   18
+  ],
+  "clock": "[16:59:31]",
+  "top": [
+   [
+    "Iron: light the way - Place a torch at N, N, N (tried elsewhere N times)",
+    12
+   ],
+   [
+    "picked up N minecraft:dirt",
+    11
+   ],
+   [
+    "native_break COMPLETED [dig toward elsewhere: clear N, N, N]",
+    10
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    9
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "606",
+  "player": "Sol",
+  "tick": 138040,
+  "at": [
+   501,
+   -54,
+   -16
+  ],
+  "clock": "[17:06:03]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: step closer]",
+    40
+   ],
+   [
+    "picked up N minecraft:cobbled_deepslate",
+    6
+   ],
+   [
+    "native_break COMPLETED [Cast: clear N, N, N]",
+    5
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: clear N, N, N",
+    4
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "707",
+  "player": "Sol",
+  "tick": 58140,
+  "at": [
+   63,
+   36,
+   -98
+  ],
+  "clock": "[17:14:34]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: dig toward the lava at N, N, N: advance]",
+    36
+   ],
+   [
+    "Iron: no progress here for a while - make a way elsewhere: walk on",
+    5
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: advance",
+    5
+   ],
+   [
+    "native_goto COMPLETED [make a way elsewhere: walk on]",
+    5
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "707",
+  "player": "Sol",
+  "tick": 65340,
+  "at": [
+   62,
+   36,
+   -97
+  ],
+  "clock": "[17:16:47]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: dig toward the lava at N, N, N: advance]",
+    54
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/SolN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "707",
+  "player": "Sol",
+  "tick": 71920,
+  "at": [
+   57,
+   27,
+   -111
+  ],
+  "clock": "[17:18:38]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: walk up to the lava]",
+    57
+   ],
+   [
+    "chronicle: day N page (the plain list, N characters, N events cited)",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 81440,
+  "at": [
+   -11,
+   47,
+   -30
+  ],
+  "clock": "[17:21:27]",
+  "top": [
+   [
+    "Iron: fight back - Fight spider",
+    18
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Explore the cave toward lava",
+    18
+   ],
+   [
+    "native_fight BLOCKED: The fight broke off [Fight spider]",
+    5
+   ],
+   [
+    "fight ends BLOCKED (The fight broke off): health N.N, food N, saturation N.N, armour N, weapon stone_sword; mobs within N {spider=N}; light N at Y N",
+    5
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 105840,
+  "at": [
+   -11,
+   48,
+   -30
+  ],
+  "clock": "[17:23:53]",
+  "top": [
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: walk to the lava Sol found at N, N, N (tried elsewhere N time)",
+    19
+   ],
+   [
+    "Iron: fight back - Fight spider (tried elsewhere N time)",
+    18
+   ],
+   [
+    "native_fight BLOCKED: The fight broke off [Fight spider]",
+    5
+   ],
+   [
+    "fight ends BLOCKED (The fight broke off): health N.N, food N, saturation N.N, armour N, weapon stone_sword; mobs within N {spider=N}; light N at Y N",
+    5
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30",
+  "seed": "8675309",
+  "player": "Sol",
+  "tick": 53400,
+  "at": [
+   18,
+   -51,
+   76
+  ],
+  "clock": "[17:16:31]",
+  "top": [
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: clear N, N, N",
+    23
+   ],
+   [
+    "native_break COMPLETED [Cast: clear N, N, N]",
+    22
+   ],
+   [
+    "picked up N minecraft:cobbled_deepslate",
+    10
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: stand in front of the frame site",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "202",
+  "player": "Sol",
+  "tick": 112320,
+  "at": [
+   54,
+   -54,
+   107
+  ],
+  "clock": "[18:22:11]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: walk up to the lava]",
+    53
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [try elsewhere, toward N, N, N]",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "20261030",
+  "player": "Sol",
+  "tick": 62580,
+  "at": [
+   104,
+   -54,
+   37
+  ],
+  "clock": "[18:01:25]",
+  "top": [
+   [
+    "native_goto COMPLETED [Cast: walk up to the lava]",
+    56
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "native_goto BLOCKED: No walkable route toward N, N, N [try elsewhere, toward N, N, N]",
+    1
+   ],
+   [
+    "Iron: no progress here for a while - dig toward elsewhere: clear N, N, N",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "31102026",
+  "player": "Echo",
+  "tick": 100060,
+  "at": [
+   123,
+   67,
+   162
+  ],
+  "clock": "[19:00:00]",
+  "top": [
+   [
+    "picked up N minecraft:sand",
+    8
+   ],
+   [
+    "Wood: hurt and out of food - Cut through west for animals: clear N, N, N (tried elsewhere N times)",
+    8
+   ],
+   [
+    "native_break COMPLETED [Cut through west for animals: clear N, N, N]",
+    6
+   ],
+   [
+    "Wood: hurt and out of food - Cut through north for animals: clear N, N, N (tried elsewhere N times)",
+    5
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "505",
+  "player": "Sol",
+  "tick": 22500,
+  "at": [
+   7,
+   42,
+   -33
+  ],
+  "clock": "[19:21:09]",
+  "top": [
+   [
+    "native_goto COMPLETED [Tunnel past liquid toward iron: advance]",
+    60
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Kindred",
+  "tick": 58520,
+  "at": [
+   -82,
+   64,
+   99
+  ],
+  "clock": "[20:15:28]",
+  "top": [
+   [
+    "Wood: hurt and out of food - Cut through east for animals: clear N, N, N",
+    14
+   ],
+   [
+    "Wood: hurt and out of food - Cut through east for animals: advance",
+    9
+   ],
+   [
+    "Wood: hurt and out of food - Explore east for animals",
+    7
+   ],
+   [
+    "Wood: hurt and out of food - Cut through west for animals: clear N, N, N",
+    5
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Kindred",
+  "tick": 129720,
+  "at": [
+   -88,
+   72,
+   95
+  ],
+  "clock": "[20:30:03]",
+  "top": [
+   [
+    "hungry look planned from N, N, N (N of N nodes, ends N, N, N, incomplete), the sky last at N, N, N: looks",
+    32
+   ],
+   [
+    "Wood: hurt and out of food - Cut through east for animals: clear N, N, N",
+    5
+   ],
+   [
+    "native_break COMPLETED [Cut through east for animals: clear N, N, N]",
+    5
+   ],
+   [
+    "picked up N minecraft:dirt",
+    5
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 111960,
+  "at": [
+   -24,
+   -54,
+   36
+  ],
+  "clock": "[20:26:42]",
+  "top": [
+   [
+    "native_wait COMPLETED [Cast: let the water drain]",
+    60
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 116080,
+  "at": [
+   -13,
+   -54,
+   47
+  ],
+  "clock": "[20:27:27]",
+  "top": [
+   [
+    "native_wait COMPLETED [Cast: let the water drain]",
+    57
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/EchoN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 122520,
+  "at": [
+   -36,
+   -53,
+   44
+  ],
+  "clock": "[20:28:39]",
+  "top": [
+   [
+    "native_wait COMPLETED [Cast: let the water drain]",
+    57
+   ],
+   [
+    "Iron: no progress here for a while - try elsewhere, toward N, N, N",
+    1
+   ],
+   [
+    "spell replay captured in N.N ms on the server thread (N.N ms of its time)",
+    1
+   ],
+   [
+    "spell replay written to kindred/replays/world/EchoN (N KB)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 127820,
+  "at": [
+   -14,
+   -52,
+   41
+  ],
+  "clock": "[20:29:39]",
+  "top": [
+   [
+    "native_wait COMPLETED [Cast: let the water drain]",
+    52
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: let the water drain (tried elsewhere N times)",
+    2
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere N times)",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobblestone (tried elsewhere N times)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 135740,
+  "at": [
+   11,
+   -5,
+   18
+  ],
+  "clock": "[20:31:08]",
+  "top": [
+   [
+    "native_wait COMPLETED [Cast: let the water drain]",
+    52
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: let the water drain (tried elsewhere N times)",
+    3
+   ],
+   [
+    "Iron: inventory full - Drop surplus tuff (tried elsewhere N times)",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere N times)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "707",
+  "player": "Echo",
+  "tick": 139680,
+  "at": [
+   -13,
+   -15,
+   18
+  ],
+  "clock": "[20:31:46]",
+  "top": [
+   [
+    "native_wait COMPLETED [Cast: let the water drain]",
+    48
+   ],
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: let the water drain (tried elsewhere N times)",
+    3
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobbled deepslate (tried elsewhere N times)",
+    1
+   ],
+   [
+    "Iron: inventory full - Drop surplus tuff (tried elsewhere N times)",
+    1
+   ]
+  ]
+ },
+ {
+  "batch": "e40a30r",
+  "seed": "8675309",
+  "player": "Kindred",
+  "tick": 64280,
+  "at": [
+   -20,
+   -54,
+   101
+  ],
+  "clock": "[20:15:12]",
+  "top": [
+   [
+    "Iron: Cast the portal frame from lava and water - Cast: step closer",
+    13
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobblestone",
+    10
+   ],
+   [
+    "Iron: inventory full - Drop surplus andesite",
+    9
+   ],
+   [
+    "Iron: inventory full - Drop surplus cobbled deepslate",
+    9
+   ]
+  ]
+ }
+]

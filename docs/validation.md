@@ -126,9 +126,13 @@ New entries (from 2026-11-10) are one line per feature in [Entries by ID](#entri
 
 - [M-06i: a tree on land it may not work set aside in its plan](evidence/M-06i.md#a-tree-on-land-it-may-not-work-set-aside-in-its-plan-2026-11-11-claudem06i-refused-logs-1111).
 
+## A faction walk's end on ground it sees along the target chunk's near edge (M-06m2) — 23 November 2026 (`claude/m06m2-walk-end-seen-ground-1123`)
+
+- [M-06m2](evidence/M-06m2.md): the causeway fixture (STAGED, three south of its line) 0 of 3 before, 3 of 3 after, its controls unchanged; 17 faction-walk classes 41 of 41 ×3; the corpus gate passes (one confirmed scene cleared; no faction walk blocked anywhere in the corpus). The shipped configuration, one run a side: 16 walk ends moved to seen ground on the branch, none refused; blocked walks 13 against main's 30, the runs diverged, no effect claimed. In review.
+
 ## A swimmer's dry-ground search not asked again from the same cell for 20 ticks (M-06k9) — 23 November 2026 (`claude/m06k9-dry-miss-cache-1123`)
 
-- [M-06k9](evidence/M-06k9.md): the fixture 0 of 3 before (2.00 searches a plan), 3 of 3 after (0.38–0.42), dry ground still found at once on moving and within 20 ticks in place; water and swim classes 17 of 17 ×3; the corpus gate passes. In the shipped configuration the work counted from two commits (`05416e24`, `31fc6a46` the cache off): in the one long water spell 0.110 searches and 419 positions a plan against 1.997 and 7,979; no change elsewhere. Timed, not shown as worse (19.75 against 19.67 ticks a second, a 14% same-jar spread). In review.
+- [M-06k9](evidence/M-06k9.md): the fixture 0 of 3 before (2.00 searches a plan), 3 of 3 after (0.38–0.42), dry ground still found at once on moving and within 20 ticks in place; water and swim classes 17 of 17 ×3; the corpus gate passes. In the shipped configuration the work counted from two commits (`05416e24`, `31fc6a46` the cache off): in the one long water spell 0.110 searches and 419 positions a plan against 1.997 and 7,979; no change elsewhere. Timed, not shown as worse (19.75 against 19.67 ticks a second, a 14% same-jar spread). Done (#506, merged as `853b686c`).
 
 ## The hitches in the shipped configuration, and code against container (M-06k) — 22 November 2026 (`claude/m06k-shipped-read-1122`)
 

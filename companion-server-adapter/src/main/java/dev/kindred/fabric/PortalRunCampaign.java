@@ -1223,6 +1223,7 @@ final class PortalRunCampaign {
     /** {@link #STUCK_TICKS}, or less for a fixture that cannot wait minutes for the watchdog. */
     private long stuckTicks = STUCK_TICKS;
     private long stuckClock;
+    private long waitingLoggedFor = Long.MIN_VALUE; // F-25c4do: the spell whose "waiting" line was logged.
     private boolean lastActive;
     private int stuckLevel;
     private BlockPos relocate;
@@ -2902,11 +2903,17 @@ final class PortalRunCampaign {
             progress = stageLabel(stage) + ": " + steps.getFirst().why();
             return Optional.empty();
         }
+        StringBuilder refusedSteps = new StringBuilder(); // F-25c4do: the stage's steps and why each gave nothing, for "waiting".
         for (PortalRunPlanner.Step step : steps) {
-            if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) continue;
-            if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) continue; // Looking about for animals is daylight work.
+            if (night && step.action() == PortalRunPlanner.Action.HUNT && snapshot.edibleFood() > 0) { refused(refusedSteps, step, "night, food in hand"); continue; }
+            if (night && step.action() == PortalRunPlanner.Action.SEEK_FOOD) { refused(refusedSteps, step, "night"); continue; } // Looking about for animals is daylight work.
+            digger.forgetLastEmpty();
             Optional<Task> task = realize(step, snapshot, body, policy);
-            if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) continue;
+            if (task.isEmpty()) refused(refusedSteps, step, digger.lastEmpty().isEmpty() ? "no task" : "no task, " + digger.lastEmpty());
+            if (task.isPresent() && setAside.getOrDefault(task.get(), Long.MIN_VALUE) > tick) {
+                refused(refusedSteps, step, "set aside until " + setAside.get(task.get()) + " [" + task.get().label() + "]");
+                continue;
+            }
             if (task.isPresent()) {
                 progress = stageLabel(stage) + ": " + step.why() + " - " + task.get().label();
                 return task;
@@ -2948,7 +2955,32 @@ final class PortalRunCampaign {
             return drop;
         }
         progress = stageLabel(stage) + WAITING_FOR_A_STEP;
+        long spellStart = tick - stuckClock;
+        if (stuckSpells != waitingLoggedFor) {
+            waitingLoggedFor = stuckSpells; // Once a watchdog spell: the clock restarts on every small gain within one.
+            KindredMod.LOGGER.info("WAITING {} at {} tick {}, spell {} (its clock from {}), {}, tried elsewhere {}, tasks set aside {}, cells blocked {}, unreachable {}; buckets lava {} water {} empty {}, obsidian {}, site {}, chosen lava {}; steps: {}",
+                    player.getName().getString(), lastFeet.toShortString(), tick, stuckSpells, spellStart, stageLabel(stage), stuckLevel,
+                    setAside.values().stream().filter(until -> until > tick).count(),
+                    cellsAside.blockedUntil().values().stream().filter(until -> until > tick).count(),
+                    cellsAside.unreachableUntil().values().stream().filter(until -> until > tick).count(),
+                    ItemMoves.count(player.getInventory(), Items.LAVA_BUCKET), ItemMoves.count(player.getInventory(), Items.WATER_BUCKET),
+                    ItemMoves.count(player.getInventory(), Items.BUCKET), ItemMoves.count(player.getInventory(), Items.OBSIDIAN),
+                    portalSite == null ? "none" : portalSite.origin().toShortString(),
+                    castLava == null ? "none" : castLava.toShortString(), (legActive ? "the End trip's: " + stronghold.refusedSteps() + "; the portal's: " : "")
+                            + (refusedSteps.length() == 0 ? "none" : bounded(refusedSteps)));
+        }
         return Optional.empty();
+    }
+
+    /** F-25c4do: the "waiting" line's steps, cut at 1,200 characters so no one line can flood a long console. */
+    private static String bounded(CharSequence steps) {
+        return steps.length() <= 1200 ? steps.toString() : steps.subSequence(0, 1200) + " ... (" + (steps.length() - 1200) + " more characters)";
+    }
+
+    /** F-25c4do: one of the stage's steps that gave nothing, and why, for the once-a-spell "waiting" line. */
+    private static void refused(StringBuilder into, PortalRunPlanner.Step step, String why) {
+        if (into.length() > 0) into.append("; ");
+        into.append(step.action()).append(" (").append(step.why()).append("): ").append(why);
     }
 
     /**
@@ -4093,6 +4125,10 @@ final class PortalRunCampaign {
         for (BlockPos spot : spots) {
             if (!world.getBlockState(spot).isAir() || !world.getFluidState(spot).isEmpty() || blocked(spot)) continue;
             if (onTheWay(spot, feet)) continue;
+            // Never in the room kept for the bed it carries (F-22c127): the bed's room is cleared of whatever stands in it,
+            // the torch too, and the pocket dark again, the next torch went back in, lap after lap (iteration 30's 303
+            // Kindred, 541 times in under three minutes; 303 Echo, 547).
+            if (inBedRoom(spot)) continue;
             if (!world.getBlockState(spot.down()).isSideSolidFullSquare(world, spot.down(), Direction.UP) || !mayWork(body.entity(), spot)) continue;
             return Optional.of(new Task("native_place", coords(spot, Map.of("side", "up", "slot", String.valueOf(torch))),
                     "Place a torch at " + spot.toShortString()));
@@ -8321,6 +8357,13 @@ final class PortalRunCampaign {
     }
 
     /** Room for one half of a bed at {@code pos}: air, with air over it, on a solid top. */
+    /** Whether {@code cell} is one of the four kept for the bed it carries tonight: its two cells and the two over them. */
+    private boolean inBedRoom(BlockPos cell) {
+        if (bedRoomFor == null) return false;
+        for (BlockPos half : bedRoomFor) if (cell.equals(half) || cell.equals(half.up())) return true;
+        return false;
+    }
+
     private static boolean bedRoom(ServerWorld world, BlockPos pos) {
         return world.isChunkLoaded(pos) && world.getBlockState(pos).isAir() && world.getFluidState(pos).isEmpty()
                 && world.getBlockState(pos.up()).isAir() && world.getBlockState(pos.down()).isSideSolidFullSquare(world, pos.down(), Direction.UP);

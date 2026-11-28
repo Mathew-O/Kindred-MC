@@ -115,7 +115,14 @@ final class NativePlaceAction extends NativeRecordedAction {
                 return Step.blocked("Placement target is in an unloaded chunk", true);
             }
 
-            targetWasReplaceable = world.getBlockState(target).isReplaceable();
+            // Vanilla's own rule for where the block goes, as the body places it (F-31g3).
+            if (NativePlayerBody.refusesBlock(world, player, target, side, stack)) {
+                // As when vanilla put nothing there: the same refusal, at its cell, so the runtime lets a cell that keeps
+                // refusing be a while (F-22c77).
+                placedPos = target;
+                return Step.blocked(NO_EFFECT + " (the cell will not take this block)", true);
+            }
+            targetWasReplaceable = NativePlayerBody.takesBlock(world, player, target, side, stack);
             if (targetWasReplaceable) {
                 placedPos = target;
             } else {
@@ -128,7 +135,7 @@ final class NativePlaceAction extends NativeRecordedAction {
             if (!world.isChunkLoaded(placedPos) || !world.isInBuildLimit(placedPos)) {
                 return Step.blocked("Placement location is unloaded or outside build limits", true);
             }
-            if (!world.getBlockState(placedPos).isReplaceable()) {
+            if (!NativePlayerBody.takesBlock(world, player, placedPos, side, stack)) {
                 return Step.blocked("Placement location is already occupied by a non-replaceable block", true);
             }
             if (player.getEyePos().squaredDistanceTo(placedPos.getX() + 0.5, placedPos.getY() + 0.5, placedPos.getZ() + 0.5) > 25.0) {
@@ -201,7 +208,7 @@ final class NativePlaceAction extends NativeRecordedAction {
                     result = Step.blocked("Placement conservation check failed; reconcile", true);
                     admission.uncertain(result.reason());
                 }
-            } else if (before.matches(body) && world.getBlockState(placedPos).isReplaceable()) {
+            } else if (before.matches(body) && NativePlayerBody.takesBlock(world, body.entity(), placedPos, side, expectedStack)) {
                 result = Step.blocked(NO_EFFECT, true);
                 admission.noEffect(before.description() + "; all owned slots unchanged", result.reason());
             } else {
@@ -230,12 +237,12 @@ final class NativePlaceAction extends NativeRecordedAction {
         if (!world.isChunkLoaded(target) || !world.isChunkLoaded(placedPos) || !world.isInBuildLimit(placedPos)) return false;
 
         // Verify target replaceability has not drifted away from the planned destination
-        boolean currentTargetReplaceable = world.getBlockState(target).isReplaceable();
+        boolean currentTargetReplaceable = NativePlayerBody.takesBlock(world, player, target, side, expectedStack);
         if (currentTargetReplaceable != targetWasReplaceable) return false;
         BlockPos currentResolved = currentTargetReplaceable ? target : target.offset(side);
         if (!currentResolved.equals(placedPos)) return false;
 
-        if (!world.getBlockState(placedPos).isReplaceable()) return false;
+        if (!NativePlayerBody.takesBlock(world, player, placedPos, side, expectedStack)) return false;
         // The block clicked against still there: gone (dug out meanwhile, say), vanilla puts the block in its cell instead
         // of the one planned, and the outcome cannot be verified. A seal of Sol's went so in the live pair on 03faab9, and
         // Sol was taken out of the world for the rest of the run (F-25c4u).

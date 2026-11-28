@@ -58,7 +58,9 @@ final class StrongholdLeg {
     private final List<EyeFlights.Flight> flights = new ArrayList<>();
     private double[] estimate;
     private BlockPos asideFor;
-    private long pearlHuntSince = -1;
+    /** When the pearl hunt began, in server ticks; {@link #UNSET} before its first snapshot. */
+    private long pearlHuntSince = UNSET;
+    private static final long UNSET = Long.MIN_VALUE;
     private int pearlsAtHunt;
     private String dimension = "";
     private Direction heading;
@@ -160,6 +162,14 @@ final class StrongholdLeg {
     }
 
     StrongholdRunPlanner.Stage stage() { return stage; }
+
+    /**
+     * A fixture's stall (F-25c6e), STAGED: the pearl hunt's clock set back as if it had begun {@code ticks} ago, once, so
+     * a test need not wait the ten game minutes; what follows is the leg's own (the clock's own resets included).
+     */
+    void pearlHuntBegunForTest(long ticks) {
+        pearlHuntSince = campaign.lastTick() - ticks;
+    }
 
     /** On the move between places (across water, too), rather than working where it stands. */
     boolean crossing() {
@@ -325,9 +335,12 @@ final class StrongholdLeg {
         StrongholdRunSnapshot.Dimension dim = inNether ? StrongholdRunSnapshot.Dimension.NETHER
                 : overworld(player) ? StrongholdRunSnapshot.Dimension.OVERWORLD : StrongholdRunSnapshot.Dimension.END;
         // A pearl hunt that has gone on a long while without a pearl is stalled; a new pearl restarts the clock, and
-        // so does anything else it was doing before (the clock is the hunt's own, not the trip's).
+        // so does anything else it was doing before (the clock is the hunt's own, not the trip's). The way home it
+        // stalled into is not "anything else": restarted there, the hunt was not stalled the next pass and the stage
+        // went back to PEARLS a step after RETURN, so it never walked home (F-25c6e, NativeStrongholdGameTests).
         long now = campaign.lastTick();
-        if (stage != StrongholdRunPlanner.Stage.PEARLS || pearls + eyes > pearlsAtHunt || pearlHuntSince < 0) {
+        boolean hunting = stage == StrongholdRunPlanner.Stage.PEARLS || stage == StrongholdRunPlanner.Stage.RETURN;
+        if (!hunting || pearls + eyes > pearlsAtHunt || pearlHuntSince == UNSET) {
             pearlHuntSince = now;
             pearlsAtHunt = pearls + eyes;
         }
@@ -424,8 +437,10 @@ final class StrongholdLeg {
         if (stage == StrongholdRunPlanner.Stage.NETHER && overworld(player)) followUps.end(Objective.NETHER_TRIP, player, "going through to the Nether");
         Objective gate = stage == StrongholdRunPlanner.Stage.PREPARE ? Objective.NETHER_TRIP
                 : stage == StrongholdRunPlanner.Stage.PROVISION ? Objective.END_FIGHT : null;
+        refused.setLength(0);
         for (var step : StrongholdRunPlanner.plan(s, provisions)) {
             Optional<PortalRunCampaign.Task> task = realize(step, s, p, body, policy);
+            if (task.isEmpty()) refused.append(refused.length() == 0 ? "" : "; ").append(step.action()).append(" (").append(step.why()).append("): no task");
             if (task.isPresent()) {
                 progress = "End: " + label(stage) + ": " + step.why() + " - " + task.get().label();
                 if (gate != null) followUps.idle(gate, player, true);
@@ -436,6 +451,11 @@ final class StrongholdLeg {
         progress = stage == StrongholdRunPlanner.Stage.DONE ? "End: found the End portal" : "End: " + label(stage) + ": waiting for a feasible step";
         return Optional.empty();
     }
+
+    /** F-25c4do: the trip's steps that gave nothing at its last plan, for the once-a-spell "waiting" line. */
+    private final StringBuilder refused = new StringBuilder();
+
+    String refusedSteps() { return refused.length() == 0 ? "none" : refused.length() <= 600 ? refused.toString() : refused.substring(0, 600) + " ..."; }
 
     /** A stage of the trip in words, such as Blaze rods. */
     static String label(StrongholdRunPlanner.Stage stage) {

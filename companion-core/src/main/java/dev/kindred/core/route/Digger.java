@@ -291,6 +291,13 @@ public final class Digger {
 
     // ------------------------------------------------------------------ down
 
+    /** F-25c4do: why the last dig down or tunnel gave nothing, way by way; a diagnostic, read by the "waiting" line. */
+    private String lastEmpty = "";
+
+    public String lastEmpty() { return lastEmpty; }
+
+    public void forgetLastEmpty() { lastEmpty = ""; }
+
     /**
      * Toward {@code target} height for {@code what}: over the void nothing; above {@code top} (or within three of the
      * target), a staircase down, or with water or lava under every way down, a tunnel on until the ground below is solid;
@@ -298,7 +305,7 @@ public final class Digger {
      */
     public <T> Optional<T> descendOrTunnel(Body<T> body, int top, int target, String what) {
         // Over the void there is nothing below to reach: digging would only spend the island.
-        if (!body.groundBelow()) return Optional.empty();
+        if (!body.groundBelow()) { lastEmpty = "over the void"; return Optional.empty(); }
         int y = body.feet().y();
         // Looking for lava, a cell with lava under it is opened to see it (F-25c4ac).
         boolean lava = what.equals("lava");
@@ -324,9 +331,11 @@ public final class Digger {
         Cell feet = body.feet();
         if (feet.y() <= targetY) return tunnel(body, label);
         var world = body.world();
+        StringBuilder why = new StringBuilder("dig down:"); // F-25c4do: each way's refusal, for the "waiting" line.
         for (int turn = 0; turn < 4; turn++) {
             Cell ahead = feet.offset(heading);
             Cell step = ahead.down();
+            String no = null;
             List<Cell> clear = List.of(ahead.up(), ahead, step);
             // Water or lava under the step: that way down ends in it, so turn before digging anything there. Nor is a
             // step dug that opens onto a drop deeper than the navigator allows, a cave's ceiling: that leaves only a
@@ -338,6 +347,8 @@ public final class Digger {
                     // fallback carries it off sideways to dig down elsewhere (live runs 52 and 56 dug back down into
                     // the cave under spawn they had died in).
                     || body.dangerBelow(step) || !allowed.test(step.down());
+            if (refused) no = fluid(world, step.down()) != Terrain.Fluid.NONE ? "liquid under the step" : !landingWithin(world, step, feet) ? "a drop past the step"
+                    : !body.groundBelow() && passable(world, step.down()) ? "the void" : body.dangerBelow(step) ? "danger below" : "below not allowed";
             // Nor a step it would not then take, its landing set aside or by liquid, checked as below once the step is
             // open: dug anyway, the step stood open over a drop, its tunnel filled it as a pit, and the staircase dug it
             // out again. On 505 in E-40's iteration 12 (`e40a12-66a7c0a`) Kindred did so hundreds of times, then waited
@@ -345,13 +356,17 @@ public final class Digger {
             if (!refused) {
                 Cell landing = step;
                 while (passable(world, landing.down()) && landing.y() > feet.y() - MAX_SAFE_DROP) landing = landing.down();
-                if (liquidNear(world, landing) || body.blocked(landing)) refused = true;
+                if (liquidNear(world, landing) || body.blocked(landing)) { refused = true; no = liquidNear(world, landing) ? "liquid by the landing" : "landing set aside"; }
             }
             for (Cell cell : clear) {
-                if (!allowed.test(cell)) refused = true;
+                if (!allowed.test(cell)) { refused = true; if (no == null) no = "cell not allowed"; }
                 if (refused) break;
                 if (passable(world, cell)) continue;
-                if (body.blocked(cell) || liquidNear(world, cell) || body.islandEdge(cell)) { refused = true; break; }
+                if (body.blocked(cell) || liquidNear(world, cell) || body.islandEdge(cell)) {
+                    refused = true;
+                    no = (body.blocked(cell) ? "set aside " : liquidNear(world, cell) ? "liquid by " : "island edge ") + at(cell);
+                    break;
+                }
                 if (body.breakableNow(cell)) return Optional.of(body.clear(cell, label + ": clear " + at(cell)));
                 // A night shelter is dug by hand when there is no pickaxe: slow in rock, but better than waiting in the
                 // open (live run 59 died four times at night on the surface just after respawning with nothing).
@@ -359,6 +374,7 @@ public final class Digger {
                     return Optional.of(body.clear(cell, label + ": clear " + at(cell) + " by hand"));
                 }
                 refused = true;
+                no = "cannot break " + at(cell);
                 break;
             }
             if (!refused) {
@@ -369,9 +385,12 @@ public final class Digger {
                     steppedDown = true;
                     return Optional.of(body.go(landing, 0.4, false, label + ": step down"));
                 }
+                no = "landing unsafe";
             }
+            why.append(' ').append(heading).append(' ').append(no).append(';');
             heading = heading.clockwise();
         }
+        lastEmpty = why.toString();
         return Optional.empty();
     }
 
@@ -484,6 +503,7 @@ public final class Digger {
     public <T> Optional<T> tunnel(Body<T> body, String label, boolean revealLava) {
         var world = body.world();
         Cell feet = body.feet();
+        StringBuilder why = new StringBuilder("tunnel:"); // F-25c4do: each way's refusal, for the "waiting" line.
         for (int turn = 0; turn < tunnelTurns; turn++) {
             Cell ahead = feet.offset(heading);
             // A drop under the way ahead, too deep to step down and not one it would bridge: that way is not dug into at
@@ -491,21 +511,28 @@ public final class Digger {
             // branch mine on 505 came out on the crust over a cavern 34 deep, dug the crust out on three sides, found a drop
             // under each, and waited there for 97 minutes with no step left to climb (F-25c4bb).
             if (passable(world, ahead.down()) && passable(world, ahead.down(2)) && !bridgeDrops && !dug.contains(ahead.down().asLong())) {
+                why.append(' ').append(heading).append(" a drop ahead;");
                 heading = heading.clockwise();
                 continue;
             }
             boolean refused = false;
+            String no = null;
             for (Cell cell : List.of(ahead.up(), ahead)) {
                 if (passable(world, cell)) continue;
                 if (revealLava && cell.equals(ahead) && passable(world, ahead.up()) && !body.blocked(cell) && onlyLavaBelow(world, cell)
                         && body.opensOverLava(cell)) {
                     return Optional.of(body.openOverLava(cell, label + ": open " + at(cell) + " over lava"));
                 }
-                if (body.blocked(cell) || liquidNear(world, cell) || body.islandEdge(cell)) { refused = true; break; }
+                if (body.blocked(cell) || liquidNear(world, cell) || body.islandEdge(cell)) {
+                    refused = true;
+                    no = (body.blocked(cell) ? "set aside " : liquidNear(world, cell) ? "liquid by " : "island edge ") + at(cell);
+                    break;
+                }
                 if (body.breakableNow(cell)) return Optional.of(body.clear(cell, label + ": clear " + at(cell)));
                 // Its pickaxe gone, out from under the water by hand, as its climb goes up by hand (F-25c4bu).
                 if (tunnelByHand && body.handClearable(cell)) return Optional.of(body.clear(cell, label + ": clear " + at(cell) + " by hand"));
                 refused = true;
+                no = "cannot break " + at(cell);
                 break;
             }
             // Walking dug ground again is fine on the way to rock it can dig; pacing a dead-end corridor is not.
@@ -527,8 +554,15 @@ public final class Digger {
                 Optional<T> fill = body.fill(ahead.down(), label + ": fill " + at(ahead.down()));
                 if (fill.isPresent()) return fill;
             }
+            if (no == null) {
+                no = tunnelled.contains(ahead.asLong()) && !passable(world, ahead.down()) ? "dug corridor, no fresh face"
+                        : fluid(world, ahead) != Terrain.Fluid.NONE || liquidNear(world, ahead) ? "liquid at or by " + at(ahead)
+                        : body.blocked(ahead) ? "set aside " + at(ahead) : "no step " + at(ahead);
+            }
+            why.append(' ').append(heading).append(' ').append(no).append(';');
             heading = heading.clockwise();
         }
+        lastEmpty = why.toString();
         return Optional.empty();
     }
 
