@@ -33,6 +33,8 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
     static final int OUT = 34;
     /** How far east of the pool's rim its home is. */
     static final int HOME = 40;
+    /** How far east of the pool's rim the CARRIED case's home is: its goal's last plan there out of the swim back's 128. */
+    static final int HOME_FAR = 100;
     /** Ticks within which, once set out, its plan is the swim back. */
     static final int PLANNED = 100;
     /** The swim back's plan, as the goal's progress names it. */
@@ -43,17 +45,31 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
     /** It stood on the pad, then was set far out: it swims back to the pad and is out of the water within the bound. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "swimBack", tickLimit = 2400)
     public void farOutWithNoDryGroundInReachItSwimsBackToWhereItStoodDry(TestContext context) {
-        run(context, true);
+        run(context, Case.STOOD);
+    }
+
+    /**
+     * Its goal stopped while it stood on the pad, as a faction walk carries a body while its goal plans nothing; set out,
+     * its goal started again: it swims back to the pad all the same. On the failing shipped run (M-06m3) faction walks had
+     * carried Eli out to sea from land about 220 blocks off its goal's last plan, and no swim back was planned.
+     */
+    @GameTest(templateName = EMPTY_STRUCTURE, batchId = "swimBackCarried", tickLimit = 2600)
+    public void carriedFromWhereItsGoalLastPlannedItSwimsBackToWhereItStoodDryAllTheSame(TestContext context) {
+        run(context, Case.CARRIED);
     }
 
     /** The control: never stood dry since in the water; nothing to swim back to: still in the water at the bound. */
     @GameTest(templateName = EMPTY_STRUCTURE, batchId = "swimBackNever", tickLimit = 2400)
     public void withNowhereItStoodDryItIsStillInTheWaterAsBefore(TestContext context) {
-        run(context, false);
+        run(context, Case.NEVER);
     }
 
-    private static void run(TestContext context, boolean stood) {
-        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2300);
+    enum Case { STOOD, CARRIED, NEVER }
+
+    private static void run(TestContext context, Case which) {
+        boolean stood = which != Case.NEVER;
+        int home = which == Case.CARRIED ? HOME_FAR : HOME;
+        var f = new NativePaidSkillsGameTests.Fixture(context, writer -> writer, true, 2500);
         BlockPos[] at = new BlockPos[1];
         long[] set = {-1}, onPad = {-1}, swimBack = {-1};
         context.createTimedTaskRunner()
@@ -67,10 +83,10 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                     // p is the top water cell at the pool's middle; the pool's floor is four below it.
                     BlockPos p = f.player().getBlockPos().up(6);
                     at[0] = p;
-                    FixtureGround.keep(context, p.add(-R - 1, -5, -R - 1), p.add(R + 1 + HOME + 2, 4, R + 1));
+                    FixtureGround.keep(context, p.add(-R - 1, -5, -R - 1), p.add(R + 1 + home + 2, 4, R + 1));
                     // Home, where its goal starts, well east of the pool: inland, away from the shore it will swim back to,
                     // as in the shipped runs, where its explore turns (back toward home) does not take it to that shore.
-                    for (int x = R + HOME - 1; x <= R + HOME + 1; x++) for (int z = -1; z <= 1; z++) {
+                    for (int x = R + home - 1; x <= R + home + 1; x++) for (int z = -1; z <= 1; z++) {
                         world.setBlockState(p.add(x, 0, z), Blocks.BEDROCK.getDefaultState());
                         for (int y = 1; y <= 3; y++) world.setBlockState(p.add(x, y, z), Blocks.AIR.getDefaultState());
                     }
@@ -90,7 +106,7 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                     player.setHealth(20);
                     player.getHungerManager().setFoodLevel(20);
                     // Home first, where its goal starts; the control straight out in the water instead, never having stood dry.
-                    if (stood) place(f, p.add(R + HOME, 1, 0), false);
+                    if (stood) place(f, p.add(R + home, 1, 0), false);
                     else place(f, out(p), true);
                     context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal accepted");
                     onPad[0] = context.getTick();
@@ -98,6 +114,8 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                 .createAndAdd(() -> {
                     // At home a while, its goal's first plans made there; then on the pad, or (the control) out in the water.
                     context.assertTrue(context.getTick() - onPad[0] >= 40, "A while in");
+                    // CARRIED: its goal stopped, so that no plan of its own sees it stand on the pad.
+                    if (which == Case.CARRIED) context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NONE) == 1, "Goal stopped");
                     if (stood) place(f, at[0].add(-R + 1, 1, 0), false);
                     onPad[0] = context.getTick();
                 })
@@ -108,6 +126,7 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                         context.assertTrue(context.getTick() - onPad[0] >= 60, "On the pad a while");
                         context.assertTrue(player.isOnGround() && !player.isTouchingWater(), "Standing dry on the pad: " + player.getBlockPos().subtract(at[0]).toShortString());
                         place(f, out(at[0]), true);
+                        if (which == Case.CARRIED) context.assertTrue(f.runtime.startGoal(f.source, f.id, SurvivalGoal.NETHER_PORTAL) == 1, "Goal started again");
                     }
                     set[0] = context.getTick();
                 })
@@ -128,8 +147,8 @@ public final class NativeSwimBackGameTests implements FabricGameTest {
                             throw new net.minecraft.test.GameTestException("Not out yet: " + progress(f));
                         }
                         context.assertTrue(swimBack[0] >= 0, "Out of the water, its plan the swim back first: " + progress(f));
-                        KindredMod.LOGGER.info("Swim-back fixture: its plan the swim back {} ticks after it was set out; out of the water {} ticks after, at {} from the pool's middle; {}",
-                                swimBack[0], since, player.getBlockPos().subtract(at[0]).toShortString(), progress(f));
+                        KindredMod.LOGGER.info("Swim-back fixture ({}): its plan the swim back {} ticks after it was set out; out of the water {} ticks after, at {} from the pool's middle; {}",
+                                which, swimBack[0], since, player.getBlockPos().subtract(at[0]).toShortString(), progress(f));
                     } else {
                         if (since < BOUND) {
                             context.assertTrue(!dry, "Never stood dry: still in the water at " + since + " ticks; " + progress(f));
